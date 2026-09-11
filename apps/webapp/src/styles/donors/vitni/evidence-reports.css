@@ -1,0 +1,34 @@
+/*
+ * Source: vitni (https://github.com/nicoreed/vitni)
+ * Path: app/renderer/src/v2/workspaces/evidence-reports.css
+ * License: Apache-2.0
+ * Vendored: 2026-09-08
+ * Changes: Added license header only (verbatim copy).
+ */
+.v2-evidence-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:12px; }
+.v2-action-card { display:grid; grid-template-columns:36px 1fr; gap:1px 10px; align-items:center; padding:13px; border:1px solid var(--v2-border); border-radius:9px; background:#111823; color:inherit; text-align:left; cursor:pointer; }
+.v2-action-card:hover:not(:disabled) { border-color:#43536a; background:#141d29; }
+.v2-action-card:disabled { opacity:.46; cursor:not-allowed; }
+.v2-action-card > span { grid-row:1 / span 2; display:grid; width:36px; height:36px; place-items:center; border-radius:8px; background:var(--v2-purple-soft); color:var(--v2-purple); }
+.v2-action-card strong { color:var(--v2-text); font-size:11px; }
+.v2-action-card small { color:var(--v2-muted); font-size:8px; }
+.v2-evidence-metrics { margin-top:0; }
+.v2-evidence-list { display:grid; }
+.v2-evidence-row { display:grid; grid-template-columns:30px minmax(210px,1.5fr) minmax(90px,.6fr) minmax(90px,.6fr) 85px; align-items:center; gap:9px; min-height:49px; padding:7px 12px; border:0; border-bottom:1px solid var(--v2-border-soft); background:transparent; color:#8f9cad; text-align:left; cursor:pointer; }
+.v2-evidence-row:hover { background:rgba(255,255,255,.022); }
+.v2-evidence-icon { display:grid; width:28px; height:28px; place-items:center; border-radius:7px; background:rgba(88,214,141,.08); color:var(--v2-green); }
+.v2-evidence-copy { min-width:0; }
+.v2-evidence-copy strong,.v2-evidence-copy small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.v2-evidence-copy strong { color:var(--v2-text); font-size:10px; }
+.v2-evidence-copy small,.v2-evidence-row > span,.v2-evidence-row time { color:var(--v2-muted); font-size:8px; }
+.v2-report-principle { padding:22px; }
+.v2-report-chain { display:grid; grid-template-columns:repeat(7,auto); justify-content:center; align-items:center; gap:13px; padding:18px; border:1px solid var(--v2-border-soft); border-radius:9px; background:#0e151f; }
+.v2-report-chain span { min-width:120px; padding:12px; border:1px solid var(--v2-border); border-radius:8px; background:#131b26; }
+.v2-report-chain strong,.v2-report-chain small { display:block; }
+.v2-report-chain strong { color:var(--v2-text); font-size:11px; }
+.v2-report-chain small { margin-top:3px; color:var(--v2-muted); font-size:8px; }
+.v2-report-chain b { color:var(--v2-purple); font-weight:500; }
+.v2-report-note { display:flex; max-width:760px; gap:12px; align-items:flex-start; margin:18px auto 0; color:#78879a; }
+.v2-report-note svg { flex:none; margin-top:3px; color:var(--v2-purple); }
+.v2-report-note p { margin:0; font-size:10px; line-height:1.65; }
+@media (max-width: 1050px) { .v2-evidence-actions { grid-template-columns:1fr; } .v2-report-chain { grid-template-columns:1fr; } .v2-report-chain b { transform:rotate(90deg); text-align:center; } }

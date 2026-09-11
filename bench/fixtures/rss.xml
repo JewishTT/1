@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixtures News</title>
+    <link>http://fixtures.local/</link>
+    <description>Fixture RSS for COGNITIVE smoke validation</description>
+    <item>
+      <title>ACME Corp signs partnership with Globex</title>
+      <link>http://fixtures.local/news/announcement.html</link>
+      <pubDate>Mon, 01 Sep 2026 09:00:00 GMT</pubDate>
+      <description>ACME Corp and Globex announced a joint venture today. Jane Doe is appointed director.</description>
+    </item>
+    <item>
+      <title>ACME Corp quarterly results</title>
+      <link>http://fixtures.local/news/results.html</link>
+      <pubDate>Tue, 02 Sep 2026 10:00:00 GMT</pubDate>
+      <description>ACME Corp reported strong growth. CEO John Smith discussed the outlook.</description>
+    </item>
+  </channel>
+</rss>

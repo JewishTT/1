@@ -1,0 +1,49 @@
+{
+  "quick": true,
+  "results": [
+    {
+      "requests_per_second": 1670843.8503,
+      "new_urls_per_second": 9049776352.9334,
+      "resolution_latency_p50_ms": 0.0802,
+      "resolution_latency_p95_ms": 0.0891
+    },
+    {
+      "knowledge_docs_per_hour": 61016936020.8166,
+      "accepted_assertions_per_hour": 33942880932.973,
+      "classification_latency_p50_ms": 0.0005
+    },
+    {
+      "search_p50_ms": 0.0113,
+      "search_p95_ms": 0.0197,
+      "search_p99_ms": 0.0223
+    },
+    {
+      "projection_edges_per_second": 5747125933.0997,
+      "snapshot_p50_ms": 0.0101
+    },
+    {
+      "nodes": 40,
+      "edges": 780,
+      "dimensions": 3,
+      "runtime_s": 0.0003,
+      "mem_mb_est": 0.001,
+      "feature_stability_ok": 1.0,
+      "diameter": 1.3174
+    },
+    {
+      "statement_provenance_p50_ms": 0.0132,
+      "statement_provenance_p95_ms": 0.0523,
+      "correlation_pair_p50_ms": 0.1608,
+      "correlation_pair_p95_ms": 0.1914,
+      "correlation_edges": 20,
+      "claim_verdict_p50_ms": 0.1447,
+      "claim_verdict_p95_ms": 0.3142,
+      "engine_imported": 1.0
+    },
+    {
+      "cost_per_million_observations_usd": 0.4,
+      "cost_per_million_assertions_usd": 3.3333,
+      "cost_per_million_discoveries_usd": 20.0
+    }
+  ]
+}

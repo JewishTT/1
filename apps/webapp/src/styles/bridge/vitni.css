@@ -1,0 +1,273 @@
+/*
+ * vitni → webapp CSS bridge (Apache-2.0)
+ * Source: vitni (https://github.com/nicoreed/vitni), app/renderer/src/v2/v2.css
+ * Path: src/styles/donors/vitni/v2.css (vendored verbatim)
+ * License: Apache-2.0
+ * Vendored: 2026-09-08
+ * Changes: Adapter for our DOM. Our review/lineage components emit their own
+ *          semantic classes (.review-*, .lineage-*, .confidence-badge,
+ *          .node-review-status). This sheet re-themes those selectors using the
+ *          exact vitni v2 palette (the --v2-* tokens defined in v2.css) so the
+ *          pulled donor CSS actually drives the review/timeline UI.
+ */
+.review-queue,
+.review-filters,
+.review-queue-items,
+.review-item,
+.review-actions,
+.review-evidence,
+.review-corroboration,
+.review-conflict,
+.review-tone,
+.review-state-badge,
+.confidence-badge,
+.node-review-status,
+.lineage-facts,
+.lineage-fact,
+.lineage-fact-list,
+.lineage-step,
+.edge-relation {
+  --v2-bg: #090d14;
+  --v2-bg-soft: #0d121b;
+  --v2-panel: #111823;
+  --v2-panel-raised: #151e2a;
+  --v2-border: #263241;
+  --v2-border-soft: rgba(89, 104, 126, 0.28);
+  --v2-text: #edf2f7;
+  --v2-body: #b8c3d0;
+  --v2-muted: #788698;
+  --v2-purple: #8c6ee8;
+  --v2-purple-soft: rgba(140, 110, 232, 0.16);
+  --v2-green: #58d68d;
+  --v2-yellow: #eeb957;
+  --v2-red: #f0646d;
+  --v2-blue: #63aef5;
+}
+
+/* Review state badges — vitni .is-* chip states */
+.review-state-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border: 1px solid var(--v2-border);
+  border-radius: 99px;
+  font-style: normal;
+  font-size: 0.72rem;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+.review-state-badge.is-accepted,
+.review-state-badge.is-verified {
+  color: #77dea0;
+  border-color: rgba(88, 214, 141, 0.3);
+  background: rgba(88, 214, 141, 0.06);
+}
+.review-state-badge.is-rejected,
+.review-state-badge.is-disputed {
+  color: #f8878f;
+  border-color: rgba(240, 100, 109, 0.3);
+  background: rgba(240, 100, 109, 0.06);
+}
+.review-state-badge.is-unreviewed,
+.review-state-badge.is-unverified {
+  color: #f1c777;
+  border-color: rgba(238, 185, 87, 0.3);
+  background: rgba(238, 185, 87, 0.06);
+}
+
+/* Confidence badges — vitni state-chip treatment */
+.confidence-badge,
+.node-review-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border: 1px solid var(--v2-border);
+  border-radius: 99px;
+  font-size: 0.68rem;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: 0.4rem;
+}
+.node-review-status.is-clear {
+  color: #77dea0;
+  border-color: rgba(88, 214, 141, 0.3);
+  background: rgba(88, 214, 141, 0.06);
+}
+.node-review-status.is-conflict {
+  color: #f8878f;
+  border-color: rgba(240, 100, 109, 0.3);
+  background: rgba(240, 100, 109, 0.06);
+}
+.node-review-status.is-needs-review {
+  color: #f1c777;
+  border-color: rgba(238, 185, 87, 0.3);
+  background: rgba(238, 185, 87, 0.06);
+}
+
+/* Review queue rows — vitni activity/timeline row look */
+.review-queue-items {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.review-item {
+  padding: 10px 12px;
+  border: 1px solid var(--v2-border-soft);
+  border-left: 3px solid var(--v2-border);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(20, 28, 40, 0.6), rgba(15, 22, 32, 0.6));
+}
+.review-item:hover {
+  border-color: rgba(140, 110, 232, 0.4);
+}
+.review-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.review-subject {
+  font-weight: 650;
+  color: var(--v2-text);
+}
+.review-path {
+  color: var(--v2-muted);
+  font-size: 0.72rem;
+  margin: 2px 0 0;
+}
+.review-value {
+  color: var(--v2-body);
+  font-size: 0.78rem;
+  margin: 4px 0 0;
+}
+.review-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.review-evidence,
+.review-corroboration,
+.review-conflict,
+.review-tone {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  padding: 1px 7px;
+  border-radius: 99px;
+  border: 1px solid var(--v2-border-soft);
+  color: var(--v2-muted);
+  background: rgba(255, 255, 255, 0.02);
+}
+.review-conflict {
+  color: #f8878f;
+  border-color: rgba(240, 100, 109, 0.3);
+  background: rgba(240, 100, 109, 0.06);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Review action buttons — vitni button treatment */
+.review-actions {
+  display: inline-flex;
+  gap: 5px;
+  margin-left: auto;
+}
+.review-actions button {
+  border: 1px solid var(--v2-border);
+  border-radius: 6px;
+  background: #0e141e;
+  color: #8f9cac;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.review-actions button:hover {
+  color: var(--v2-text);
+  border-color: #415168;
+}
+.review-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Filter bar — vitni toolbar/filter pills */
+.review-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.review-filters input,
+.review-filters select {
+  border: 1px solid var(--v2-border);
+  border-radius: 7px;
+  background: #0e141e;
+  color: #aeb9c7;
+  font-size: 0.76rem;
+  padding: 6px 9px;
+  outline: none;
+}
+.review-filters input::placeholder {
+  color: #647286;
+}
+
+/* Lineage facts — vitni mini-timeline look */
+.lineage-facts {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--v2-border-soft);
+}
+.lineage-fact-group {
+  margin-bottom: 12px;
+}
+.lineage-fact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.lineage-fact {
+  position: relative;
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px;
+  padding: 6px 4px 6px 16px;
+  border-bottom: 1px solid rgba(89, 104, 126, 0.16);
+  font-size: 0.76rem;
+}
+.lineage-fact::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 12px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--v2-purple);
+  box-shadow: 0 0 8px rgba(140, 110, 232, 0.45);
+}
+.lineage-fact time {
+  color: var(--v2-muted);
+  font-size: 0.68rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.lineage-fact span {
+  color: var(--v2-body);
+}
+
+/* Lineage chain edges — vitni muted arrows */
+.edge-relation {
+  color: var(--v2-muted);
+  font-weight: 600;
+}

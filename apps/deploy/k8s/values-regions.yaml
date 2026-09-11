@@ -1,0 +1,58 @@
+# Helm-style values for regional deployment (T069, US3, FR-030).
+#
+# Render one Regional acquisition/frontier release per region from this values
+# file; the frontier ConfigMap (frontier-regions.yaml) supplies the routing and
+# partition facts. Per-region store prefixes must stay layered under (never
+# replace) the T061 tenant isolation prefixes in apps/shared/isolation.py:
+#   object prefix : <region.object_prefix>/raw/t/<tenant_slug>/
+#   index alias   : <region.index_alias_prefix>-observations--t-<tenant_slug>
+#   graph ns      : cognitive_<tenant_slug>  (region-scoped via separate index)
+#   Redis lease   : region:<region.id>:lease:*
+global:
+  partOf: cognitive
+  controlPlaneUrl: https://control.cognitive.example
+
+controlPlane:
+  replicaCount: 3
+  # Global routing table + quotas live here; regions fan out seeds on admission.
+  storage:
+    postgres: global
+    redis: global-routing
+
+# Select which region this release instance belongs to. Overridden per region
+# when re-rendering with `--set regionId=region-eu-west-1`.
+regionId: region-eu-west-1
+
+region:
+  # Frontier shard for this region. `frontierRegions` ConfigMap (deployed from
+  # frontier-regions.yaml) is the source of truth for partitions/tenants.
+  frontier:
+    enabled: true
+    postgresShard: region-local
+    redisNsPrefix: region:region-eu-west-1:lease:*
+    kafka:
+      cluster: region-kafka
+      partitionsFromConfigMap: true
+  workers:
+    http:
+      enabled: true
+      replicas: 6
+    browser:
+      enabled: true
+      replicas: 2
+      # browser fabric escalation-only route (T067) isolated per region
+      isolatedPool: true
+    document:
+      enabled: true
+      replicas: 3
+    occlusion: # placeholder for OCR/vision pools (T066 isolated pools)
+      enabled: true
+      replicas: 2
+  projection:
+    enabled: true
+    searchAliasScope: region-region-eu-west-1
+    # projections remain rebuildable per-region (I-12): no cross-region coupling
+  objectStore:
+    prefix: region/region-eu-west-1
+  graph:
+    namespaceScoped: cognitive

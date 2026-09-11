@@ -1,0 +1,18 @@
+{
+  "quick": true,
+  "results": [
+    {
+      "science_imported": 1.0,
+      "spectral_p50_ms": 665.735,
+      "spectral_per_second": 1.207076,
+      "spectral_scores_normalized": 1.0,
+      "spectral_significance_present": 1.0,
+      "motif_p50_ms": 29.9511,
+      "motif_per_second": 27.070193,
+      "motif_scores_normalized": 1.0,
+      "motif_significance_present": 1.0,
+      "over_budget_deferred": 1.0,
+      "over_budget_sampling_plan": 1.0
+    }
+  ]
+}

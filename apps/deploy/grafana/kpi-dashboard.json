@@ -1,0 +1,154 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "COGNITIVE Knowledge KPIs (T073)",
+  "uid": "cognitive-kpi",
+  "variables": [],
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Useful knowledge per total resource cost",
+      "description": "useful_observations / cost (SC-011 KPI). Higher is better.",
+      "unit": "n/dollar",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "over_time(cognitive_metrics{metric=\"useful_observations\"}[5m]) / over_time(cognitive_cost_total_dollars[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Freshness lag (observations)",
+      "description": "age gap between newest committed observation and oldest pending candidate.",
+      "unit": "s",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "cognitive_metrics{metric=\"freshness_lag_s\"}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue age (frontier)",
+      "description": "oldest item age still pending in the frontier queue.",
+      "unit": "s",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "cognitive_metrics{metric=\"queue_age_s\", category=\"frontier\"}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Projection lag",
+      "description": "events behind between source Kafka topic and projections.",
+      "unit": "events",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "cognitive_kafka_consumer_lag{topic=~\".*projection.*\"}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Duplicate ratio",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "cognitive_metrics{metric=\"duplicate_ratio\"}" }],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "thresholds": { "steps": [
+          { "color": "green", "value": null },
+          { "color": "yellow", "value": 0.15 }
+        ] } }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Throughput (obs/s)",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "cognitive_metrics{metric=\"throughput_per_s\"}" }]
+    },
+    {
+      "type": "stat",
+      "title": "Browser pool utilization",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "cognitive_worker_pool_utilization{kind=\"browser\"}" }]
+    },
+    {
+      "type": "stat",
+      "title": "Unhealthy worker pools",
+      "description": "Count of pools in failed state (T066 isolation).",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(cognitive_worker_pool_status{healthy=\"0\"}) OR vector(0)" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Storage growth (per store)",
+      "description": "Object store / ClickHouse growth signals (FR-030 locality).",
+      "unit": "decbytes",
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "cognitive_storage_bytes{store=\"observations\"}" },
+        { "expr": "cognitive_storage_bytes{store=\"events\"}" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s"
+}

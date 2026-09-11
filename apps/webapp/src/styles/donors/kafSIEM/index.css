@@ -1,0 +1,320 @@
+/*
+ * Source: kafSIEM (https://github.com/nicoreed/kafSIEM)
+ * Path: src/index.css
+ * License: Apache-2.0
+ * Vendored: 2026-09-08
+ * Changes: Added license header only (verbatim copy). Note: contains
+ * @import "tailwindcss" and @import "./theme.css" — requires Tailwind v4.
+ */
+/*
+ * kafSIEM
+ * Portions derived from novatechflow/osint-siem and cyberdude88/osint-siem.
+ * See NOTICE for provenance and LICENSE for repository-local terms.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
+@import "./theme.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 13px;
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  font-family: "Montserrat", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-siem-accent) 12%, transparent), transparent 32%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-siem-panel) 75%, transparent), transparent 26%),
+    var(--color-siem-bg);
+  color: var(--color-siem-text);
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
+select option {
+  background: var(--color-siem-panel);
+  color: var(--color-siem-text);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--color-siem-panel) 75%, transparent);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-siem-accent) 25%, transparent);
+  border-radius: 999px;
+}
+
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-right 0.26s ease-out;
+}
+
+.animate-alert-new-glow {
+  animation: alert-new-glow 1.8s ease-out forwards;
+}
+
+@keyframes alert-new-glow {
+  0% {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-siem-accent) 55%, transparent), 0 0 24px color-mix(in srgb, var(--color-siem-accent) 16%, transparent);
+  }
+  100% {
+    box-shadow: inset 0 0 0 1px transparent, 0 0 0 transparent;
+  }
+}
+
+@keyframes critical-badge-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-critical-badge {
+  animation: critical-badge-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in,
+  .animate-alert-new-glow,
+  .animate-critical-badge {
+    animation: none !important;
+  }
+}
+
+/* ── Leaflet cluster overrides ──────────────────────────────────── */
+
+.siem-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: "Roboto Mono", monospace;
+  font-weight: 600;
+  color: var(--color-siem-text);
+  border: 2px solid color-mix(in srgb, var(--color-siem-accent) 45%, transparent);
+}
+
+.siem-cluster span {
+  line-height: 1;
+}
+
+.siem-cluster-small {
+  font-size: 11px;
+  background: color-mix(in srgb, var(--color-siem-panel) 88%, transparent);
+}
+
+.siem-cluster-medium {
+  font-size: 12px;
+  background: color-mix(in srgb, var(--color-siem-accent) 22%, transparent);
+}
+
+.siem-cluster-large {
+  font-size: 13px;
+  background: color-mix(in srgb, var(--color-siem-high) 28%, transparent);
+  border-color: color-mix(in srgb, var(--color-siem-high) 55%, transparent);
+}
+
+/* ── Leaflet tooltip ────────────────────────────────────────────── */
+
+.siem-tooltip {
+  background: var(--color-siem-panel) !important;
+  border: 1px solid var(--color-siem-border) !important;
+  border-radius: 0.75rem !important;
+  color: var(--color-siem-text) !important;
+  font-family: "Montserrat", sans-serif !important;
+  font-size: 12px !important;
+  padding: 6px 10px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+}
+
+.siem-tooltip::before {
+  border-top-color: var(--color-siem-border) !important;
+}
+
+.siem-cluster-list-popup .leaflet-popup-content-wrapper,
+.siem-popup .leaflet-popup-content-wrapper {
+  background: rgba(3, 6, 10, 0.84) !important;
+  border: 1px solid rgba(71, 85, 105, 0.5) !important;
+  border-radius: 0.75rem !important;
+  color: var(--color-siem-text) !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.48) !important;
+  backdrop-filter: blur(4px);
+}
+
+.siem-cluster-list-popup .leaflet-popup-content,
+.siem-popup .leaflet-popup-content {
+  margin: 10px 12px !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+
+.siem-cluster-list-popup .leaflet-popup-tip,
+.siem-popup .leaflet-popup-tip {
+  background: rgba(3, 6, 10, 0.84) !important;
+}
+
+.siem-cluster-list-popup .leaflet-popup-close-button,
+.siem-popup .leaflet-popup-close-button {
+  color: #cbd5e1 !important;
+}
+
+.siem-risk-popup {
+  min-width: 240px;
+  max-width: 320px;
+}
+
+.siem-risk-popup-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.siem-risk-popup-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.siem-risk-popup-row {
+  border-bottom: 1px solid #334155;
+}
+
+.siem-risk-popup-label {
+  color: #94a3b8;
+  padding: 3px 8px 3px 0;
+}
+
+.siem-risk-popup-value {
+  text-align: right;
+}
+
+.siem-risk-popup-prob {
+  text-align: right;
+  color: #64748b;
+}
+
+.siem-risk-popup-total {
+  color: #f8fafc;
+  font-weight: 700;
+  padding: 5px 8px 2px 0;
+}
+
+.siem-risk-popup-total-value {
+  text-align: right;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.siem-risk-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.siem-risk-popup-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.siem-risk-popup-bar-cell {
+  width: 60px;
+  padding: 3px 6px;
+}
+
+.siem-risk-popup-bar {
+  height: 6px;
+  border-radius: 3px;
+  min-width: 2px;
+}
+
+.siem-risk-popup-grid {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #1e293b;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.siem-risk-popup-grid-stat {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.siem-risk-popup-grid-hot {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.siem-risk-popup-meta {
+  margin-top: 8px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* Hide default leaflet cluster styles that leak through */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background: transparent !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background: transparent !important;
+}
+

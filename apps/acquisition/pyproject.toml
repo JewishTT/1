@@ -1,0 +1,15 @@
+[project]
+name = "cognitive-acquisition"
+version = "0.1.0"
+description = "Acquisition subsystem: connector registry, bounded runner, SpiderFoot-style modules"
+requires-python = ">=3.11"
+dependencies = ["cognitive-shared"]
+
+[tool.uv.sources]
+cognitive-shared = { workspace = true }
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+markers = ["contract", "integration", "unit"]

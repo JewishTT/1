@@ -1,0 +1,105 @@
+/*
+ * SpiderFoot → webapp scoped sheet (MIT)
+ * Source: SpiderFoot (https://github.com/smicallef/spiderfoot)
+ * Path: spiderfoot/static/css/dark.css + spiderfoot.css (vendored verbatim)
+ * License: MIT
+ * Vendored: 2026-09-08
+ * Changes: Adaptation — rules are prefixed with `.sf-scope` so the donor
+ *          Bootstrap-style selectors only apply inside our "scan/connector"
+ *          surfaces (SearchPage result lists) instead of the whole app.
+ *          Applied where `sf-scope` surrogate set in markup.
+ */
+.sf-scope {
+  --sf-cyan: #059cd7;
+  --sf-cyan-hover: #037eaf;
+  --sf-panel: #3a3a3a;
+  --sf-panel-depth: #555;
+  --sf-bg: #1b1b1b;
+  --sf-border: #828181;
+}
+
+/* Scan event log rows — alternating panel / zebra like SF results */
+.sf-scope table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.sf-scope table td {
+  word-wrap: break-word;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sf-border);
+}
+.sf-scope tr {
+  background-color: var(--sf-panel) !important;
+}
+.sf-scope tr:nth-child(even) {
+  background-color: var(--sf-panel-depth);
+}
+.sf-scope table td input {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-border);
+  color: #fff;
+}
+.sf-scope table pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Connector result meta chips */
+.sf-scope .result {
+  background: var(--sf-panel);
+  border: 1px solid var(--sf-border);
+}
+.sf-scope .backends {
+  color: var(--sf-cyan);
+}
+.sf-scope .score {
+  color: var(--sf-cyan);
+  font-weight: 700;
+}
+
+/* Alert states — SF alert-info look */
+.sf-scope .alert-info {
+  border: 1px solid var(--sf-border);
+  background: var(--sf-panel);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+/* Modal / popover panels */
+.sf-scope .modal-content {
+  background-color: var(--sf-panel);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border-radius: 6px;
+}
+.sf-scope .popover-title {
+  background-color: var(--sf-panel-depth);
+  color: #fff;
+}
+.sf-scope .dropdown-menu {
+  background-color: var(--sf-panel-depth);
+}
+.sf-scope .dropdown-menu > li > a {
+  color: #fff;
+}
+.sf-scope .dropdown-menu > li > a:hover {
+  background-color: var(--sf-cyan);
+}
+
+/* SVG / axis deps for scan graphs (dendrograms etc) */
+.sf-scope svg text,
+.sf-scope .axis path,
+.sf-scope .axis line {
+  fill: #fff;
+  stroke: #fff;
+}
+
+/* Link colour in scan output */
+.sf-scope a {
+  color: var(--sf-cyan);
+}

@@ -1,0 +1,25 @@
+/*
+ * Source: vitni (https://github.com/nicoreed/vitni)
+ * Path: app/renderer/src/v2/workspaces/search.css
+ * License: Apache-2.0
+ * Vendored: 2026-09-08
+ * Changes: Added license header only (verbatim copy).
+ */
+.v2-search-workspace { max-width: 1120px; margin: 0 auto; }
+.v2-search-hero { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding:12px 14px; border:1px solid var(--v2-border); border-radius:9px; background:#0e141e; color:var(--v2-muted); box-shadow:0 16px 42px rgba(0,0,0,.14); }
+.v2-search-hero input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:var(--v2-text); font-size:13px; }
+.v2-search-hero kbd { color:#647286; font:9px ui-monospace,monospace; }
+.v2-search-groups { display:grid; gap:10px; }
+.v2-search-results { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; padding:7px; }
+.v2-search-result { display:flex; min-width:0; gap:9px; align-items:flex-start; padding:9px; border:1px solid transparent; border-radius:7px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
+.v2-search-result:hover { border-color:var(--v2-border-soft); background:rgba(255,255,255,.025); }
+.v2-search-result-icon { display:grid; width:29px; height:29px; flex:none; place-items:center; border-radius:7px; background:rgba(140,110,232,.09); color:var(--v2-purple); }
+.v2-search-result-icon.is-source { color:var(--v2-green); background:rgba(88,214,141,.08); }
+.v2-search-result-icon.is-assertion { color:var(--v2-yellow); background:rgba(238,185,87,.08); }
+.v2-search-result-icon.is-relationship { color:var(--v2-blue); background:rgba(99,174,245,.08); }
+.v2-search-result > span:last-child { min-width:0; }
+.v2-search-result strong,.v2-search-result small,.v2-search-result em { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.v2-search-result strong { color:var(--v2-text); font-size:10px; }
+.v2-search-result small { margin-top:1px; color:#8492a3; font-size:8px; }
+.v2-search-result em { margin-top:4px; color:#657286; font-size:8px; font-style:normal; }
+@media (max-width: 1000px) { .v2-search-results { grid-template-columns:1fr; } }

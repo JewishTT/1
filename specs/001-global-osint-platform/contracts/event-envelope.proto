@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package cognitive.events.v1;
+
+// Lineage-critical envelope for ALL platform events (Spec FR-023, §47).
+// event_id is the idempotency key for consumers.
+message EventEnvelope {
+  string event_id = 1;            // uuid; consumer idempotency key
+  string event_type = 2;          // e.g. "observation.created"
+  string event_version = 3;       // per-type payload version
+  string investigation_id = 4;
+  string correlation_id = 5;      // lineage: root intent correlation
+  string causation_id = 6;        // lineage: direct cause event
+  string producer = 7;            // e.g. "acquisition.worker-http"
+  string producer_version = 8;
+  string produced_at = 9;         // RFC3339
+  string observation_id = 10;
+  string entity_id = 11;
+  bytes payload = 12;             // typed per event_type, registry-validated
+}
+
+// Insight: Kafka is never the object store (I-5); payload carries references
+// and structured metadata, not raw blobs. Raw object URIs live in payloads.

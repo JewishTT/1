@@ -1,0 +1,69 @@
+{
+  "cluster": {
+    "n_gold": 5,
+    "n_pred": 5,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "false_merges": 0,
+    "false_splits": 0
+  },
+  "calibration": {
+    "brier": 0.0055,
+    "ece": 0.07,
+    "optimal_threshold": 0.1,
+    "gate_passed": true,
+    "n_labeled": 10
+  },
+  "brier_curve_bins": [
+    {
+      "bin": "0.0-0.1",
+      "n": 2,
+      "pred": 0.07,
+      "true": 0.0
+    },
+    {
+      "bin": "0.9-1.0",
+      "n": 8,
+      "pred": 0.93,
+      "true": 1.0
+    }
+  ],
+  "breakdown_by_type": {
+    "account": {
+      "n": 5,
+      "brier": 0.0063,
+      "acc": 1.0
+    },
+    "organization": {
+      "n": 1,
+      "brier": 0.0016,
+      "acc": 1.0
+    },
+    "person": {
+      "n": 4,
+      "brier": 0.0055,
+      "acc": 1.0
+    }
+  },
+  "breakdown_by_language": {
+    "unknown": {
+      "n": 10,
+      "brier": 0.0055,
+      "acc": 1.0
+    }
+  },
+  "breakdown_by_script": {
+    "unknown": {
+      "n": 10,
+      "brier": 0.0055,
+      "acc": 1.0
+    }
+  },
+  "calibrated_profile": {
+    "version": "CALIBRATED-v2",
+    "entity_type": "account",
+    "threshold_defer": 0.1,
+    "threshold_accept": 0.15
+  }
+}

@@ -1,0 +1,48 @@
+/*
+ * Source: PANO (https://github.com/nicoreed/PANO)
+ * Path: ui/styles/{node_style,edge_style,timeline_style,map_styles}.py
+ * License: CC BY-NC-4.0 (Creative Commons Attribution-NonCommercial 4.0)
+ * Vendored: 2026-09-08
+ * Changes: Converted PySide6 QColor values from Python style definitions to CSS custom properties.
+ *          Only color tokens ported; Qt widget dimensions/layout omitted (N/A for web).
+ */
+:root {
+  /* PANO node palette */
+  --pano-node-normal: #2d2d30;
+  --pano-node-selected: #37373a;
+  --pano-node-highlighted: #414144;
+  --pano-node-label: #e6e6e6;
+  --pano-node-property: #969696;
+  --pano-node-shadow: rgba(0, 0, 0, 0.2);
+  --pano-node-radius: 8px;
+  --pano-node-border-width: 1.5px;
+
+  /* PANO edge palette */
+  --pano-edge-color: #646464;
+  --pano-edge-label-color: #b4b4b4;
+  --pano-edge-label-bg: rgba(35, 35, 38, 0.78);
+  --pano-edge-width: 1.2px;
+
+  /* PANO timeline palette */
+  --pano-timeline-bg: #1e1e1e;
+  --pano-timeline-rail: #404040;
+  --pano-timeline-text: #ffffff;
+  --pano-timeline-event-fill: #2d2d2d;
+  --pano-timeline-event-accent: #0078d4;
+  --pano-timeline-font-family: "Geist Mono", ui-monospace, monospace;
+  --pano-timeline-font-size: 12px;
+
+  /* PANO map / dialog palette */
+  --pano-surface-bg: #1e1e1e;
+  --pano-surface-raised: #2d2d2d;
+  --pano-surface-selected: #3d3d3d;
+  --pano-surface-hover: #353535;
+  --pano-surface-active: #4d4d4d;
+  --pano-border-default: #555555;
+  --pano-border-focus: #777777;
+  --pano-text-primary: #ffffff;
+  --pano-text-button-accent: #0078d4;
+  --pano-text-button-accent-hover: #1084d8;
+  --pano-text-button-danger: #d42828;
+  --pano-text-button-danger-hover: #e13232;
+}

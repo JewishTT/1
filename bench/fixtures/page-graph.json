@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {"id": "http://fixtures.local/index.html", "type": "page"},
+    {"id": "http://fixtures.local/about.html", "type": "page"},
+    {"id": "http://fixtures.local/news/announcement.html", "type": "page"}
+  ],
+  "links": [
+    {"source": "http://fixtures.local/index.html", "target": "http://fixtures.local/about.html"},
+    {"source": "http://fixtures.local/index.html", "target": "http://fixtures.local/news/announcement.html"}
+  ]
+}

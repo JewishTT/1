@@ -1,0 +1,22 @@
+[tool.uv.workspace]
+members = [
+    "apps/shared",
+    "apps/control-plane",
+    "apps/acquisition",
+    "apps/interpretation",
+    "apps/admission",
+    "apps/projection",
+    "apps/feedback",
+    "apps/science",
+    "bench",
+]
+
+[project]
+name = "cognitive"
+version = "0.1.0"
+description = "Global OSINT intelligence platform (workspace root)"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pytest.ini_options]
+markers = ["contract", "integration", "unit"]

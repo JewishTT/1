@@ -1,0 +1,79 @@
+{
+  "editable": true,
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "COGNITIVE Ops (US3 / T068)",
+  "uid": "cognitive-ops",
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Throughput (obs/s)",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "cognitive_metrics{metric=\"throughput_per_s\"}" }]
+    },
+    {
+      "type": "stat",
+      "title": "Useful observations",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "cognitive_metrics{metric=\"useful_observations\"}" }]
+    },
+    {
+      "type": "stat",
+      "title": "Discovery yield",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "cognitive_metrics{metric=\"discovery_yield\"}" }],
+      "fieldConfig": { "defaults": { "unit": "percentunit" } }
+    },
+    {
+      "type": "stat",
+      "title": "Cost / 1M observations ($)",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "cognitive_metrics{metric=\"cost_per_1m_obs\"}" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Consumer lags (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "cognitive_metrics{metric=\"lags_s\"}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Frontier queue depth",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "cognitive_metrics{metric=\"queues\", category=\"frontier\"}" }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Worker pools (T066 isolation)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "cognitive_worker_pool_status",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        { "id": "organize", "options": {
+          "excludeByName": {},
+          "renameByName": { "kind": "Pool", "healthy": "Healthy", "active": "Active", "failures": "Failures" }
+        } }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

@@ -1,0 +1,16 @@
+/*
+ * Donor CSS layers — aggregated imports.
+ * Only scoped vendor stylesheets are imported here so they cannot collide with
+ * the app's own index.css. See src/styles/donors/INDEX.md for provenance/licensing.
+ */
+@import "./donors/pano/pano-tokens.css";
+@import "./donors/vitni/v2.css";
+@import "./donors/vitni/search.css";
+@import "./donors/vitni/evidence-reports.css";
+@import "./donors/rengine/timeline.css";
+@import "./donors/rengine/scrollspyNav.css";
+/* Adapters: bind donor tokens/classes to our review/lineage surfaces. */
+@import "./bridge/vitni.css";
+/* Scoped donor sheets: apply only inside the section classes below. */
+@import "./scoped/spiderfoot.css";
+@import "./scoped/netforensicai.css";

@@ -1,0 +1,60 @@
+# Regional frontier partition configuration (T069, US3, FR-030).
+#
+# Each region runs an isolated frontier shard whose seeds are a projection of
+# the global frontier restricted to that region's tenants. This ConfigMap is
+# consumed by the regional acquisition/deploy layer to:
+#   1. know which regions exist and their kind,
+#   2. map tenants to their home region (routing table),
+#   3. scope Redis lease/cooldown namespaces per region,
+#   4. scope regional store prefixes (object store, search index aliases,
+#      graph namespaces) that must match the T061 shared isolation prefixes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontier-regions
+  namespace: cognitive-osint
+  labels:
+    app.kubernetes.io/part-of: cognitive
+    component: frontier-regions
+data:
+  # The set of regions. `kind` drives whether a region is a full data plane
+  # ("member") or only a control-plane routing entry.
+  regions: |
+    - id: region-eu-west-1
+      kind: member
+      tenants: ["tenant-a", "tenant-b"]
+    - id: region-us-east-1
+      kind: member
+      tenants: ["tenant-c"]
+    - id: region-ap-south-1
+      kind: member
+      tenants: []
+
+  # Per-region frontier shard settings. `partitions` is the number of Kafka
+  # partitions allocated to the regional high-volume topics for that region.
+  region-frontier: |
+    region-eu-west-1:
+      redis_ns: "region:region-eu-west-1:lease:*"
+      partitions: 12
+      object_prefix: "region/region-eu-west-1"
+      index_alias_prefix: "region-region-eu-west-1"
+    region-us-east-1:
+      redis_ns: "region:region-us-east-1:lease:*"
+      partitions: 8
+      object_prefix: "region/region-us-east-1"
+      index_alias_prefix: "region-region-us-east-1"
+    region-ap-south-1:
+      redis_ns: "region:region-ap-south-1:lease:*"
+      partitions: 4
+      object_prefix: "region/region-ap-south-1"
+      index_alias_prefix: "region-region-ap-south-1"
+
+  # Global frontier fan-out: seeds are routed to a region by tenant home.
+  # `global_seeds` are admitted once and fanned out to the owning region.
+  global-seeds: |
+    - tenant_id: tenant-a
+      region: region-eu-west-1
+      seed_urls: ["https://example-a.invalid"]
+    - tenant_id: tenant-c
+      region: region-us-east-1
+      seed_urls: ["https://example-c.invalid"]

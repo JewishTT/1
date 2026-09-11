@@ -1,0 +1,8 @@
+# ruff config for all Python apps (T006)
+# Per-app pyproject.toml sections already set line-length/select; root keeps shared ignores.
+target-version = "py311"
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]
