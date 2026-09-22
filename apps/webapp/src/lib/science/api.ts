@@ -12,6 +12,8 @@ import type {
   CoverageView,
   ExperimentRun,
   HypothesisRecord,
+  InvariantParams,
+  InvariantResult,
   RankedOpportunity,
   ReproductionResult,
   RobustnessReport,
@@ -176,6 +178,11 @@ export const scienceApi = {
     return request<CoverageView>(
       `/hypotheses/coverage?project_id=${encodeURIComponent(projectId)}`,
     );
+  },
+
+  // ── Topological invariant (011/FR-009) ─────────────────────────
+  invariant(body: InvariantParams): Promise<InvariantResult> {
+    return request<InvariantResult>("/invariant", { method: "POST", body: JSON.stringify(body) });
   },
 };
 

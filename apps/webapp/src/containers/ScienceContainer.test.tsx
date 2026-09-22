@@ -11,6 +11,7 @@ vi.mock("../lib/science/api", () => ({
     listRobustness: vi.fn(),
     getReview: vi.fn(),
     comment: vi.fn(),
+    invariant: vi.fn(),
   },
 }));
 
@@ -77,5 +78,27 @@ describe("ScienceContainer", () => {
     vi.mocked(scienceApi.listClaims).mockRejectedValue(new Error("boom"));
     render(<ScienceContainer />);
     expect(await screen.findByTestId("error-view")).toBeInTheDocument();
+  });
+
+  it("runs the topological invariant from the panel and renders barcode stats", async () => {
+    vi.mocked(scienceApi.invariant).mockResolvedValue({
+      entity_id: "ENT-2001",
+      provider: "vr-z2-science",
+      structural_only: true,
+      series_len: 48,
+      embedding: { lag: 2, embed_dim: 2, points: [[0, 1]] },
+      diagrams: { "0": [[0, 1.5]] },
+      stats: { "0": { num_bars: 1, mean_persistence: 1.5, max_persistence: 1.5, total_persistence: 1.5 } },
+      digest: "af2ef693b83e6f7d1f1d200bc57e2c5ba19d51f3f22ac49f9d0ab25c1d248b17",
+    });
+    render(<ScienceContainer />);
+    await screen.findByTestId("ladder-table");
+    fireEvent.click(screen.getByTestId("run-topology-btn"));
+    await waitFor(() => expect(screen.getByTestId("topology-result")).toBeInTheDocument());
+    expect(screen.getByTestId("structural-badge")).toHaveTextContent("STRUCTURAL ONLY");
+    expect(screen.getByTestId("barcode-dim-0")).toBeInTheDocument();
+    expect(scienceApi.invariant).toHaveBeenCalledWith(
+      expect.objectContaining({ entity_id: "ENT-2001", lag: 2, embed_dim: 2, max_dim: 1 }),
+    );
   });
 });

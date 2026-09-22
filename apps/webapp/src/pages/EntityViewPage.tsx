@@ -1,4 +1,6 @@
 import { GraphElement, GraphPanel } from "../components/GraphPanel";
+import { TimelineView } from "../components/TimelineView";
+import { burstiness, eventsPerDay } from "../lib/timing";
 
 export interface EntityView {
   entity_id: string;
@@ -9,7 +11,7 @@ export interface EntityView {
   relationships: Array<Record<string, string>>;
   supporting_assertions: string[];
   evidence: Array<{ evidence_id: string; observation_id: string; immutable: boolean }>;
-  timeline: Array<{ observation_id: string; uri: string; immutable: boolean }>;
+  timeline: Array<{ observation_id: string; uri: string; immutable: boolean; observed_at?: string }>;
   structural_signals: Array<Record<string, unknown>>;
   correlations?: Array<{
     edge_id: string;
@@ -28,6 +30,7 @@ interface Props {
 
 export function EntityViewPage({ entity, graphElements = [] }: Props) {
   const asserted = entity.evidence.every((e) => e.immutable);
+  const timelineAt = entity.timeline.map((t) => t.observed_at ?? t.uri);
   return (
     <section data-testid="entity-view" data-entity-id={entity.entity_id}>
       <h1>{entity.canonical_identity["account"] ?? entity.entity_id}</h1>
@@ -67,17 +70,14 @@ export function EntityViewPage({ entity, graphElements = [] }: Props) {
 
         <div className="panel">
           <h2>Timeline</h2>
-          <ul data-testid="entity-timeline">
-            {entity.timeline.length === 0 ? (
-              <li>none</li>
-            ) : (
-              entity.timeline.map((t) => (
-                <li key={t.observation_id}>
-                  {t.observation_id} — {t.uri}
-                </li>
-              ))
-            )}
-          </ul>
+          <TimelineView
+            entries={entity.timeline.map((t) => ({
+              id: t.observation_id,
+              label: t.uri,
+              at: t.observed_at,
+            }))}
+            metrics={{ burstiness: burstiness(timelineAt), events_per_day: eventsPerDay(timelineAt) }}
+          />
         </div>
       </div>
 

@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from api.auth import TenantContext, resolve_tenant
+from api.sse import hub
 from services.catalog import Catalog, EntityRecord
 from services.review import ReviewDecision, ReviewService, ReviewTargetType
 
@@ -69,7 +70,17 @@ async def get_entity(
     view = _catalog.entity(entity_id)
     if view is None:
         raise HTTPException(status_code=404, detail="entity not found")
-    view["tenant_id"] = ctx.tenant_id
+    # Deterministic timeline clock for the temporality UI: observations are
+    # anchored to the first known version's first_seen where available.
+    versions = view.get("historical_versions") or []
+    first_seen = versions[0].get("first_seen", "") if versions and isinstance(versions[0], dict) else ""
+    enriched_timeline = []
+    for entry in view.get("timeline", []):
+        enriched = {**entry}
+        if first_seen and "observed_at" not in enriched:
+            enriched["observed_at"] = first_seen
+        enriched_timeline.append(enriched)
+    view = {**view, "timeline": enriched_timeline, "tenant_id": ctx.tenant_id}
     return view
 
 
@@ -101,6 +112,16 @@ async def create_review(
         target_id=target_id,
         decision=body.decision,
         reasoning=body.reasoning,
+    )
+    hub.publish(
+        "entity.updated",
+        {
+            "entity_id": target_id,
+            "tenant_id": ctx.tenant_id,
+            "event": "review.recorded",
+            "review_id": record.review_id,
+            "decision": body.decision.value,
+        },
     )
     return {"review": record.to_dict(), "event": "review.recorded"}
 

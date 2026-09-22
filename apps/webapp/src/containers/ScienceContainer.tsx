@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { usePipelineStream } from "../lib/stream";
 import { scienceApi } from "../lib/science/api";
-import type { ClaimReviewView, RobustnessReport } from "../lib/science/types";
+import type { ClaimReviewView, InvariantParams, InvariantResult, RobustnessReport } from "../lib/science/types";
 import { ScienceClaim, SciencePage } from "../pages/SciencePage";
 
 const EMPTY_REVIEW: ClaimReviewView = {
@@ -21,8 +22,11 @@ export function ScienceContainer() {
   const [reports, setReports] = useState<RobustnessReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [invariant, setInvariant] = useState<InvariantResult | null>(null);
+  const [invariantLoading, setInvariantLoading] = useState(false);
+  const [invariantError, setInvariantError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [claimsRaw, reportsRaw] = await Promise.all([
@@ -52,11 +56,18 @@ export function ScienceContainer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
+
+  // Live reactivity: any pipeline mutation refeshes the science surface.
+  usePipelineStream((event) => {
+    if (event.event === "entity.updated" || event.event === "science.invariant") {
+      void load();
+    }
+  });
 
   const comment = async (claimId: string, body: string) => {
     try {
@@ -67,8 +78,32 @@ export function ScienceContainer() {
     }
   };
 
+  const runInvariant = async (params: InvariantParams) => {
+    setInvariantLoading(true);
+    setInvariantError(null);
+    try {
+      const result = await scienceApi.invariant(params);
+      setInvariant(result);
+    } catch (err) {
+      setInvariantError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setInvariantLoading(false);
+    }
+  };
+
   if (loading) return <p data-testid="loading-view">Loading science…</p>;
   if (error) return <p data-testid="error-view">Error: {error}</p>;
 
-  return <SciencePage claims={claims} reports={reports} onComment={comment} onRefresh={load} />;
+  return (
+    <SciencePage
+      claims={claims}
+      reports={reports}
+      onComment={comment}
+      onRefresh={load}
+      onInvariant={runInvariant}
+      invariant={invariant}
+      invariantLoading={invariantLoading}
+      invariantError={invariantError}
+    />
+  );
 }

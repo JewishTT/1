@@ -115,3 +115,46 @@ export interface CoverageView {
   covered: number;
   ratio: number;
 }
+
+/** Topological invariant payloads (011/FR-009 — apps/control-plane science_tda). */
+
+export interface InvariantEmbedding {
+  lag: number;
+  embed_dim: number;
+  points: number[][];
+}
+
+export interface DimensionPersistenceStats {
+  num_bars: number;
+  mean_persistence: number;
+  max_persistence: number;
+  total_persistence: number;
+}
+
+export interface InvariantDrift {
+  metric: string;
+  changed: boolean;
+  delta_max_persistence: number;
+}
+
+export interface InvariantResult {
+  entity_id: string;
+  provider: string;
+  structural_only: boolean;
+  series_len: number;
+  embedding: InvariantEmbedding;
+  diagrams: Record<string, Array<[number, number | null]>>;
+  stats: Record<string, DimensionPersistenceStats>;
+  digest: string;
+  drift?: InvariantDrift;
+}
+
+export interface InvariantParams {
+  entity_id: string;
+  series: number[];
+  lag?: number;
+  embed_dim?: number;
+  max_dim?: number;
+  budget?: number;
+  prev_diagram?: Record<string, Array<[number, number | null]>>;
+}

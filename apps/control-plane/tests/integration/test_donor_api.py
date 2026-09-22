@@ -47,6 +47,13 @@ class TestDonorPatternApi:
         reviews = resp.json()["reviews"]
         assert reviews and reviews[0]["target_id"] == "ENT-2001"
 
+    def test_entity_timeline_carries_observed_at(self, client: TestClient) -> None:
+        resp = client.get("/api/v1/entities/ENT-2001")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["timeline"]
+        assert all(entry.get("observed_at") == "2026-01-01T00:00:00Z" for entry in body["timeline"])
+
     def test_connector_register_and_recon_plan(self, client: TestClient) -> None:
         reg = client.post(
             "/api/v1/connectors/register",

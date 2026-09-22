@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api import sse
 from api.routes import (
     connectors,
     entities,
@@ -26,6 +27,7 @@ from api.routes import (
     science_review,
     science_robustness,
     science_structure,
+    science_tda,
     science_temporal,
     search,
 )
@@ -60,6 +62,8 @@ app.include_router(science_robustness.router)
 app.include_router(science_review.router)
 app.include_router(science_causal.router)
 app.include_router(science_temporal.router)
+app.include_router(science_tda.router)
+app.include_router(sse.router)
 
 # Health probe
 @app.get("/health")

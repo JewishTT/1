@@ -70,7 +70,7 @@ export interface EntityView {
   relationships: Array<Record<string, string>>;
   supporting_assertions: string[];
   evidence: Array<{ evidence_id: string; observation_id: string; immutable: boolean }>;
-  timeline: Array<{ observation_id: string; uri: string; immutable: boolean }>;
+  timeline: Array<{ observation_id: string; uri: string; immutable: boolean; observed_at?: string }>;
   structural_signals: Array<Record<string, unknown>>;
   correlations?: Correlation[];
   map_points?: Array<{ lat: number; lon: number; label?: string }>;

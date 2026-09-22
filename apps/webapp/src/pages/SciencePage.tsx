@@ -1,8 +1,11 @@
 import { useState } from "react";
 
+import { TDAPanel } from "../components/TDAPanel";
 import type {
   ClaimRecord,
   ClaimReviewView,
+  InvariantParams,
+  InvariantResult,
   LadderGates,
   RobustnessReport,
 } from "../lib/science/types";
@@ -16,6 +19,12 @@ interface Props {
   reports: RobustnessReport[];
   onComment?: (claimId: string, body: string) => void;
   onRefresh?: () => void;
+  /** Topology panel is rendered only when the container wires an invariant runner. */
+  onInvariant?: (params: InvariantParams) => void;
+  invariant?: InvariantResult | null;
+  invariantLoading?: boolean;
+  invariantError?: string | null;
+  entityId?: string;
 }
 
 const GATE_LABELS: Array<keyof LadderGates> = [
@@ -33,7 +42,17 @@ function rungCells(gates: LadderGates): React.ReactNode {
   ));
 }
 
-export function SciencePage({ claims, reports, onComment, onRefresh }: Props) {
+export function SciencePage({
+  claims,
+  reports,
+  onComment,
+  onRefresh,
+  onInvariant,
+  invariant,
+  invariantLoading = false,
+  invariantError = null,
+  entityId = "ENT-2001",
+}: Props) {
   const [commentText, setCommentText] = useState<Record<string, string>>({});
 
   return (
@@ -139,6 +158,23 @@ export function SciencePage({ claims, reports, onComment, onRefresh }: Props) {
           </div>
         ))}
       </div>
+
+      {onInvariant && (
+        <div className="panel">
+          <h2>Topology · persistence invariant</h2>
+          <p className="op-label">
+            Series → Takens delay embedding → VR persistence (pure-python, no gudhi) → barcode +
+            digest + drift. Results are structural shape descriptors (I-6), not identity claims.
+          </p>
+          <TDAPanel
+            entityId={entityId}
+            result={invariant ?? null}
+            loading={invariantLoading}
+            error={invariantError ?? null}
+            onRun={onInvariant}
+          />
+        </div>
+      )}
     </section>
   );
 }
