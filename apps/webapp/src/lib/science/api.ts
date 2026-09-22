@@ -7,16 +7,25 @@ Containers adapt these raw payloads into the page prop shapes in ``types.ts``.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type {
+  CausalModelRecord,
   ClaimRecord,
   ClaimReviewView,
+  CommunityResult,
   CoverageView,
+  DiagramFeaturesResult,
   ExperimentRun,
+  GraphEdgeInput,
+  HypergraphResult,
   HypothesisRecord,
   InvariantParams,
   InvariantResult,
+  NetworkMeasuresResult,
+  PhodmsResult,
   RankedOpportunity,
   ReproductionResult,
   RobustnessReport,
+  StructureAnalyzeResult,
+  TemporalPathsResult,
 } from "./types";
 
 const SCIENCE_BASE = "/api/science";
@@ -183,6 +192,145 @@ export const scienceApi = {
   // ── Topological invariant (011/FR-009) ─────────────────────────
   invariant(body: InvariantParams): Promise<InvariantResult> {
     return request<InvariantResult>("/invariant", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  // ── Structure (network graph analysis — science_structure) ─────
+  structureAnalyze(body: {
+    graph_ref: string;
+    edges: GraphEdgeInput[];
+    kind?: "spectral" | "motif";
+    max_ops?: number;
+    max_permutations?: number;
+    n_permutations?: number;
+    seed?: number;
+  }): Promise<StructureAnalyzeResult> {
+    return request<StructureAnalyzeResult>("/structure/analyze", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  structureResult(resultId: string): Promise<StructureAnalyzeResult> {
+    return request<StructureAnalyzeResult>(`/structure/results/${encodeURIComponent(resultId)}`);
+  },
+
+  // ── Temporal (change-point science — science_temporal) ─────────
+  temporalBuildSeries(
+    variable: string,
+    samples: Array<{ time: string; value: number }>,
+  ): Promise<{ series_id: string; variable: string; values: number[]; timestamps: string[]; change_points: number[] }> {
+    return request<any>("/temporal/series", {
+      method: "POST",
+      body: JSON.stringify({ variable, samples }),
+    });
+  },
+
+  temporalChangePoints(
+    seriesId: string,
+    window = 5,
+    minShift = 1.0,
+  ): Promise<{ series_id: string; variable: string; values: number[]; timestamps: string[]; change_points: number[] }> {
+    return request<any>("/temporal/change-points", {
+      method: "POST",
+      body: JSON.stringify({ series_id: seriesId, window, min_shift: minShift }),
+    });
+  },
+
+  temporalSeries(seriesId: string): Promise<{ series_id: string; values: number[]; timestamps: string[]; change_points: number[] }> {
+    return request<any>(`/temporal/series/${encodeURIComponent(seriesId)}`);
+  },
+
+  // ── Causal DAGs (science_causal) ────────────────────────────────
+  causalClassify(body: {
+    outcome_attribute: string;
+    evidence?: Array<Record<string, unknown>>;
+    model_id?: string | null;
+    possible_confounders?: string[];
+  }): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>("/causal/classify", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  causalRegisterModel(body: {
+    model_id: string;
+    graph: Record<string, string[]>;
+    confounders?: string[];
+    assumptions?: string[];
+    scope_decl?: string[];
+  }): Promise<{ model_id: string; scope_decl: string[] }> {
+    return request<{ model_id: string; scope_decl: string[] }>("/causal/models", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  causalListModels(): Promise<{ models: Array<{ model_id: string; scope_decl: string[] }> }> {
+    return request<{ models: Array<{ model_id: string; scope_decl: string[] }> }>("/causal/models");
+  },
+
+  causalModel(modelId: string): Promise<CausalModelRecord> {
+    return request<CausalModelRecord>(`/causal/models/${encodeURIComponent(modelId)}`);
+  },
+};
+
+const NETWORK_BASE = "/api/v1/network";
+
+async function requestV1(path: string, init?: RequestInit): Promise<any> {
+  const res = await fetch(`${NETWORK_BASE}${path}`, {
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    ...init,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail ?? res.statusText),
+    );
+  }
+  return res.json();
+}
+
+/** /api/v1/network — projection-plane network & TDA features surface. */
+export const networkApi = {
+  measures(edges: GraphEdgeInput[]): Promise<NetworkMeasuresResult> {
+    return requestV1("/measures", { method: "POST", body: JSON.stringify({ edges }) });
+  },
+
+  communities(edges: GraphEdgeInput[]): Promise<CommunityResult> {
+    return requestV1("/communities", { method: "POST", body: JSON.stringify({ edges }) });
+  },
+
+  hypergraph(observations: Record<string, string[]>, minDegree = 1): Promise<HypergraphResult> {
+    return requestV1("/hypergraph", {
+      method: "POST",
+      body: JSON.stringify({ observations, min_degree: minDegree }),
+    });
+  },
+
+  temporal(
+    edges: Array<{ source: string; target: string; t: number; edge_id?: string }>,
+    source?: string,
+    target?: string,
+  ): Promise<TemporalPathsResult> {
+    return requestV1("/temporal", {
+      method: "POST",
+      body: JSON.stringify({ edges, source, target }),
+    });
+  },
+
+  diagramFeatures(body: {
+    entity_id: string;
+    series: number[];
+    lag?: number;
+    embed_dim?: number;
+    max_dim?: number;
+    budget?: number;
+    metric?: string;
+    prev_diagrams?: Record<string, Array<[number, number | null]>>;
+  }): Promise<DiagramFeaturesResult> {
+    return requestV1("/diagram-features", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  phodms(body: {
+    clouds: number[][][];
+    thresholds?: number[];
+  }): Promise<PhodmsResult> {
+    return requestV1("/phodms", { method: "POST", body: JSON.stringify(body) });
   },
 };
 

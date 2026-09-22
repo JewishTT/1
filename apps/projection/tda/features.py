@@ -356,7 +356,7 @@ def betti_curve(pairs: Sequence[tuple[float, float | None]], n_grid: int = 64) -
         return [0.0] * n_grid
     births = [float(b) for b, _ in pairs]
     deaths = [float(d) if d is not None and d != _INF else _INF for _, d in pairs]
-    lo, hi = min(births), max(d for d in deaths if d != _INF) or (min(births) + 1.0)
+    lo, hi = min(births), max((d for d in deaths if d != _INF), default=min(births) + 1.0)
     grid = np.linspace(lo, hi, n_grid)
     curve = []
     for t in grid:

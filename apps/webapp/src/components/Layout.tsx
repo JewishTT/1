@@ -35,6 +35,7 @@ const NAV: Record<ModuleKey, NavSection[]> = {
       label: "Science",
       items: [
         { to: "/science", label: "Science Console", icon: "◈" },
+        { to: "/network", label: "Network Analysis", icon: "✳" },
         { to: "/hypotheses", label: "Hypotheses", icon: "☰" },
         { to: "/experiments", label: "Experiments", icon: "⧉" },
       ],
@@ -63,6 +64,7 @@ const NAV: Record<ModuleKey, NavSection[]> = {
 
 const TITLES: Array<{ prefix: string; title: string }> = [
   { prefix: "/economic", title: "Intelligence Economy" },
+  { prefix: "/network", title: "Network & TDA analysis" },
   { prefix: "/ops", title: "SpecOps Console" },
   { prefix: "/quarantine", title: "Quarantine (DLQ)" },
   { prefix: "/intel", title: "OSINT // Intel Board" },

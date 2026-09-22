@@ -12,6 +12,7 @@ import { HypothesisContainer } from "./containers/HypothesisContainer";
 import { ExperimentContainer } from "./containers/ExperimentContainer";
 import { IntelligenceContainer } from "./containers/IntelligenceContainer";
 import { EconomicsContainer } from "./containers/EconomicsContainer";
+import { NetworkAnalysisContainer } from "./containers/NetworkAnalysisContainer";
 
 export function App() {
   return (
@@ -20,6 +21,7 @@ export function App() {
         <Route index element={<Navigate to="/intel" replace />} />
         <Route path="intel" element={<IntelligenceContainer />} />
         <Route path="economic" element={<EconomicsContainer />} />
+        <Route path="network" element={<NetworkAnalysisContainer />} />
         <Route path="search" element={<SearchContainer />} />
         <Route path="investigations/:id" element={<InvestigationContainer />} />
         <Route path="entities/:id" element={<EntityViewContainer />} />
