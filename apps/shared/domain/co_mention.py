@@ -14,9 +14,8 @@ remains the only source of entity identity (I-6).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
 
 from domain.hypergraph import HyperEdge, HyperGraph, hyperedge_id
 from domain.stream_events import emit_hyperedge
@@ -101,13 +100,14 @@ class CoMentionHyperedgeWriter:
         for members, count in sorted(fans.items()):
             if len(members) < 2:
                 continue
+            edge_uid = hyperedge_id(edge_type, members, tenant_id=self._tenant)
             edge = HyperEdge(
                 edge_type=edge_type,
                 members=members,
                 weight=float(count),
                 tenant_id=self._tenant,
                 provenance={
-                    "event_id": f"evt-co-mention-{hyperedge_id(edge_type, members, tenant_id=self._tenant)[3:]}",
+                    "event_id": f"evt-co-mention-{edge_uid[3:]}",
                     "window_s": builder.window_s,
                     "algorithm": "co_mention_fan",
                 },

@@ -14,8 +14,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from network.cc_session import CCPageRecord, Transport
-
 
 class ByteTransport(Protocol):
     async def fetch(self, filename: str, offset: int, length: int) -> bytes: ...

@@ -11,7 +11,6 @@ the analysis output itself (drift is measured *between* hashes).
 from __future__ import annotations
 
 import hashlib
-import json
 from collections.abc import Sequence
 
 _PERSISTENCE_EPS = 1e-9
@@ -89,4 +88,4 @@ class PersistenceDiagram:
         }
 
 
-__all__ = ["PersistenceDiagram", "simplify", "persistence"]
+__all__ = ["PersistenceDiagram", "persistence", "simplify"]

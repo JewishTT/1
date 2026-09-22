@@ -17,8 +17,6 @@ randomness, no hidden tuning (I-12, C-3 honest rebuild).
 
 from __future__ import annotations
 
-import math
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 

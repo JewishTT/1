@@ -18,7 +18,7 @@ candidate list. No randomness, no wall-clock dependence.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Protocol
 
 try:  # duckdb is an optional heavy dep — import lazily at session creation

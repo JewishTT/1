@@ -19,7 +19,7 @@ production talks to ClickHouse. Empty/None metric values are stored as NULL
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Protocol
 
 from domain.temporal_metrics import temporal_metrics
@@ -121,7 +121,7 @@ class SeriesProjector:
                     tenant_id=self._tenant,
                     entity_id=entity_id,
                     key=key,
-                    ts=timestamps[-1] if timestamps else datetime.now(timezone.utc),
+                    ts=timestamps[-1] if timestamps else datetime.now(UTC),
                     metric_name=name,
                     metric_value=float(value) if value is not None else None,
                     series_hash=series_hash,
