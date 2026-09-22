@@ -1,0 +1,6 @@
+These modules were moved to `orchestrator/app/services/` to match test imports:
+ - holehe_service.py
+ - maigret_service.py
+ - merge_utils.py
+ - opensearch_client.py
+

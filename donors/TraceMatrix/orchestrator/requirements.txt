@@ -1,0 +1,24 @@
+# Orchestrator runtime dependencies
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+httpx==0.27.2
+requests==2.32.4
+python-dotenv==1.0.1
+redis==5.0.8
+opensearch-py==2.7.1
+trafilatura==1.12.2
+sentence-transformers==3.0.1
+# Extra for EmailStr support (installs email-validator)
+pydantic[email]
+pytest==8.3.3
+pytest-asyncio==0.24.0
+# test deps
+respx==0.22.0
+
+# ingest/file_meta deps
+Pillow>=10.3
+pypdf>=4.2
+
+# OSINT tools (CLI usage via subprocess)
+maigret==0.5.0
+holehe

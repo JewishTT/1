@@ -2,11 +2,21 @@ import { Correlation, EntityView } from "./api";
 
 export type IntelNodeKind = "entity" | "correlate" | "relationship" | "observation" | "source";
 
+export type EntityType =
+  | "account"
+  | "organisation"
+  | "device"
+  | "location"
+  | "infrastructure"
+  | "tool"
+  | "unknown";
+
 export interface IntelNode {
   id: string;
   label: string;
   kind: IntelNodeKind;
   materialized: boolean;
+  type: EntityType;
 }
 
 export interface IntelEdge {
@@ -28,6 +38,40 @@ function displayLabel(entityId: string, entity?: EntityView): string {
   const account = identity["account"];
   if (account) return String(account);
   return entity.aliases[0] ?? entityId;
+}
+
+/**
+ * Classify an atomic entity into a presentation-type by its canonical identity
+ * dimensions and current_state. Used only for node colour/iconography — the
+ * catalog remains type-less; this is a read-only view projection (I-3).
+ */
+export function classifyEntity(entity: EntityView): EntityType {
+  const identity = new Set(Object.keys(entity.canonical_identity ?? {}));
+
+  const has = (...keys: string[]) => keys.some((k) => identity.has(k));
+  const state = entity.current_state ?? {};
+  const stateKind = (["entity_type", "type", "primary_type"] as const)
+    .map((k) => state[k])
+    .find((v): v is string => typeof v === "string" && v.length > 0)
+    ?.toLowerCase();
+
+  if (has("account", "username", "handle", "email", "social", "phone", "telegram")) return "account";
+  if (has("organisation", "company", "legal_name", "org", "organisation_name")) return "organisation";
+  if (has("device", "imei", "idfa", "mac", "hardware", "serial")) return "device";
+  if (has("lat", "lon", "latlon", "coordinate", "city", "address", "geo")) return "location";
+  if (has("domain", "hostname", "alexa", "asn", "ip", "infrastructure", "netblock", "tld")) {
+    return "infrastructure";
+  }
+  if (has("tool", "exploit", "malware", "software", "cve")) return "tool";
+
+  if (stateKind?.includes("account") || stateKind === "person" || stateKind === "user") return "account";
+  if (stateKind?.includes("org")) return "organisation";
+  if (stateKind?.includes("device") || stateKind === "hardware") return "device";
+  if (stateKind?.includes("geo") || stateKind === "location" || stateKind === "place") return "location";
+  if (stateKind?.includes("domain") || stateKind === "host" || stateKind === "ip") return "infrastructure";
+  if (stateKind?.includes("tool") || stateKind === "malware") return "tool";
+
+  return "unknown";
 }
 
 function sourceHost(uri: string): string | null {
@@ -52,14 +96,21 @@ export function buildIntelGraph(
   const nodes = new Map<string, IntelNode>();
   const edges = new Map<string, IntelEdge>();
 
-  const upsertNode = (id: string, label: string | undefined, kind: IntelNodeKind, materialized: boolean) => {
+  const upsertNode = (
+    id: string,
+    label: string | undefined,
+    kind: IntelNodeKind,
+    materialized: boolean,
+    type?: EntityType,
+  ) => {
     if (!nodes.has(id)) {
-      nodes.set(id, { id, label: label ?? id, kind, materialized });
+      nodes.set(id, { id, label: label ?? id, kind, materialized, type: type ?? "unknown" });
     }
   };
 
   for (const entity of Object.values(entities)) {
-    upsertNode(entity.entity_id, displayLabel(entity.entity_id, entity), "entity", true);
+    const type = classifyEntity(entity);
+    upsertNode(entity.entity_id, displayLabel(entity.entity_id, entity), "entity", true, type);
     for (const rel of entity.relationships ?? []) {
       const target = rel["target"] as string | undefined;
       if (!target) continue;
@@ -119,8 +170,14 @@ export function buildIntelGraph(
       // Re-anchor a materialised entity node to kind "entity".
       const aNode = nodes.get(a)!;
       const bNode = nodes.get(b)!;
-      if (entities[a]) aNode.kind = "entity";
-      if (entities[b]) bNode.kind = "entity";
+      if (entities[a]) {
+        aNode.kind = "entity";
+        aNode.type = classifyEntity(entities[a]);
+      }
+      if (entities[b]) {
+        bNode.kind = "entity";
+        bNode.type = classifyEntity(entities[b]);
+      }
       edges.set(corr.edge_id, {
         id: corr.edge_id,
         source: a,
@@ -132,4 +189,16 @@ export function buildIntelGraph(
   }
 
   return { nodes: [...nodes.values()], edges: [...edges.values()] };
+}
+
+/** Drop provenance (observation/source) nodes and their edges, keeping the map to entities only. */
+export function stripProvenance(graph: IntelGraph): IntelGraph {
+  const dropped = new Set(
+    graph.nodes.filter((n) => n.kind === "observation" || n.kind === "source").map((n) => n.id),
+  );
+  if (dropped.size === 0) return graph;
+  return {
+    nodes: graph.nodes.filter((n) => !dropped.has(n.id)),
+    edges: graph.edges.filter((e) => !dropped.has(e.source) && !dropped.has(e.target)),
+  };
 }

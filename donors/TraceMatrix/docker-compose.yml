@@ -1,0 +1,208 @@
+services:
+  orchestrator:
+    container_name: osint-orchestrator
+    build: ./orchestrator
+    working_dir: /app
+    ports: ["8000:8000"]
+    environment:
+      - GOOGLE_CSE_API_KEY=${GOOGLE_CSE_API_KEY}
+      - GOOGLE_CSE_CX=${GOOGLE_CSE_CX}
+      - REACHER_BASE_URL=${REACHER_BASE_URL}
+      - SEARX_BASE=${SEARX_BASE}
+      - OPENSEARCH_URL=${OPENSEARCH_URL}
+      - REDIS_URL=${REDIS_URL}
+      - OSINT_INDEX=${OSINT_INDEX}
+      - EMBED_DIM=${EMBED_DIM}
+      - OPENSEARCH_HOST=opensearch
+      - OPENSEARCH_PORT=9200
+      - OPENSEARCH_USER=admin
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-admin}
+      - PYTHONPATH=/app
+      - SEARXNG_BASE_URL=http://searxng:8080
+      - SEARXNG_URL=http://searxng:8080
+    volumes:
+      - ./exports:/app/exports
+      - ./:/app
+    depends_on:
+      opensearch:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks: [osint]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/docs >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: osint-searxng
+    env_file:
+      - .env   # MUST contain SEARXNG_SECRET=<random_long_secret>
+    environment:
+      - SEARXNG_SECRET=${SEARXNG_SECRET}
+    ports: ["8081:8080"]
+    volumes:
+      - ./config/searxng-settings.yml:/etc/searxng/settings.yml
+      - ./searxng-cache:/var/cache/searxng
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [osint]
+
+  opensearch:
+    image: opensearchproject/opensearch:2
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - bootstrap.memory_lock=true
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - DISABLE_SECURITY_PLUGIN=true
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nproc: 65535
+      nofile: { soft: 65535, hard: 65535 }
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    ports: ["9200:9200"]
+    networks: [osint]
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2
+    environment:
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    ports: ["5601:5601"]
+    networks: [osint]
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [osint]
+
+  # Optional extras
+  social-analyzer:
+    image: bukshee/social-analyzer:latest
+    environment:
+      - PORT=9005
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=256
+    ports: ["9005:9005"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9005 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    profiles: ["extras"]
+    networks: [osint]
+
+  reacher:
+    image: reacherhq/backend:latest
+    environment:
+      - LOG_LEVEL=info
+    ports: ["8082:8080"]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    profiles: ["extras"]
+    networks: [osint]
+
+  theharvester:
+    image: ghcr.io/laramies/theharvester:latest
+    entrypoint: ["/bin/sh", "-c", "tail -f /dev/null"]
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./data/harvester_results:/results
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    profiles: ["osint"]
+    networks: [osint]
+
+  phoneinfoga:
+    image: sundowndev/phoneinfoga:latest
+    command: "serve -p 8080"
+    ports: ["8083:8080"]
+    networks: [osint]
+
+  # Unit tests against mocked deps
+  orchestrator-tests:
+    build: ./orchestrator
+    working_dir: /app
+    command: ["pytest", "-q"]
+    environment:
+      - GOOGLE_CSE_API_KEY=${GOOGLE_CSE_API_KEY}
+      - GOOGLE_CSE_CX=${GOOGLE_CSE_CX}
+      - REACHER_BASE_URL=${REACHER_BASE_URL}
+      - SEARX_BASE=${SEARX_BASE}
+      - OPENSEARCH_URL=${OPENSEARCH_URL}
+      - REDIS_URL=${REDIS_URL}
+      - OSINT_INDEX=${OSINT_INDEX}
+      - EMBED_DIM=${EMBED_DIM}
+      - PYTHONPATH=/app
+      - SEARXNG_BASE_URL=http://searxng:8080
+      - SEARXNG_URL=http://searxng:8080
+    volumes:
+      - ./exports:/app/exports
+      - ./tests:/app/tests
+      - ./orchestrator:/app/orchestrator
+    depends_on:
+      opensearch:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles: ["tests"]
+    networks: [osint]
+
+  # E2E tests that hit the live orchestrator
+  tests-runner:
+    build: ./orchestrator
+    working_dir: /app
+    command: ["pytest", "-vv"]
+    environment:
+      - ORCH_URL=http://orchestrator:8000
+      - PYTHONPATH=/app
+      - GOOGLE_CSE_API_KEY=${GOOGLE_CSE_API_KEY}
+      - GOOGLE_CSE_CX=${GOOGLE_CSE_CX}
+      - REACHER_BASE_URL=${REACHER_BASE_URL}
+      - SEARX_BASE=${SEARX_BASE}
+      - OPENSEARCH_URL=${OPENSEARCH_URL}
+      - REDIS_URL=${REDIS_URL}
+      - OSINT_INDEX=${OSINT_INDEX}
+      - EMBED_DIM=${EMBED_DIM}
+      - SEARXNG_BASE_URL=http://searxng:8080
+      - SEARXNG_URL=http://searxng:8080
+    volumes:
+      - ./exports:/app/exports
+      - ./tests:/app/tests
+      - ./orchestrator:/app/orchestrator
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    networks: [osint]
+    profiles: ["tests"]
+
+networks:
+  osint: {}

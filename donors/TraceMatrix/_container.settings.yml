@@ -1,0 +1,89 @@
+use_default_settings: true
+
+general:
+  debug: false
+  instance_name: "osint-searx"
+  contact_url: ""
+  enable_metrics: false
+
+server:
+  port: 8080
+  bind_address: "0.0.0.0"
+  limiter: false
+  methods: [GET, POST]
+  # secret_key: "change-me"   # or set env SEARXNG_SECRET_KEY
+  # base_url: "http://localhost:8081/"  # if you browse via host:8081
+
+ui:
+  query_in_title: false
+  default_locale: en
+  default_theme: simple
+  categories_as_tabs:
+    general: "General"
+    images: "Images"
+    videos: "Videos"
+    news: "News"
+    map: "Map"
+    it: "IT"
+    science: "Science"
+    files: "Files"
+    music: "Music"
+    social media: "Social"
+    shopping: "Shopping"
+
+outgoing:
+  request_timeout: 6.0
+  useragent_suffix: "osint-searx"
+  enable_http2: true
+
+search:
+  safe_search: 0
+  autocomplete: ""  # off
+  default_lang: "en"
+  ban_time_on_fail: 10
+
+engines:
+  # --- General ---
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+    categories: [general]
+    disabled: false
+  - name: qwant
+    engine: qwant
+    shortcut: qw
+    categories: [general]
+    disabled: false
+  - name: wikibooks
+    engine: wikibooks
+    categories: [general]
+    disabled: true
+
+  # --- Images ---
+  - name: duckduckgo images
+    engine: duckduckgo_images
+    shortcut: ddi
+    categories: [images]
+    disabled: false
+  - name: wikimedia
+    engine: wikimedia
+    categories: [images]
+    disabled: false
+  - name: flickr_noapi
+    engine: flickr_noapi
+    categories: [images]
+    disabled: true
+
+  # --- Files / PDFs ---
+  - name: general file search
+    engine: google
+    categories: [files]
+    disabled: true  # needs key/cx
+  - name: ygg
+    engine: ygg
+    categories: [files]
+    disabled: true
+
+locales:
+  en:
+    spelling: false

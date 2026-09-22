@@ -1,0 +1,92 @@
+fallback:
+  enabled: true
+  when:
+    no_urls_provided: true
+    auto_discovery_zero_results: true
+
+plan:
+  steps:
+    - name: auto_discovery
+      enabled: true
+      timeout_s: 12
+      retries: 1
+
+    - name: media_discovery
+      enabled: true
+      images:
+        enabled: true
+        searxng_url: ${SEARXNG_URL}
+        limit: 24
+        timeout_s: 12
+      pdfs:
+        enabled: true
+        searxng_url: ${SEARXNG_URL}
+        limit: 16
+        timeout_s: 12
+
+    - name: hybrid_search
+      enabled: true
+      engines:
+        searxng:
+          url: ${SEARXNG_URL}
+          query_template: "{{ name }} {{ keywords|join(' ') }}"
+          limit: 30
+          timeout_s: 12
+        opensearch:
+          url: ${OPENSEARCH_URL}
+          index: "osint-*"
+          k: 50
+          timeout_s: 10
+        social_analyzer:
+          url: ${SOCIAL_ANALYZER_URL}
+          limit: 10
+          timeout_s: 12
+      merge:
+        method: "rrf"
+        rrf_k: 60
+        dedupe:
+          by: ["url", "canonical", "title_hash"]
+          normalize_domains: true
+
+    - name: enrich
+      enabled: true
+      providers: [reacher]
+      reacher:
+        url: ${REACHER_URL}
+        parallel: 8
+        timeout_s: 10
+
+    - name: ingest
+      enabled: true
+      limit: 60
+      store:
+        opensearch_index: "osint-ingested"
+        upsert_on: ["url"]
+
+    - name: export
+      enabled: true
+      formats: ["csv","json"]
+      dir: ${ORCH_EXPORT_DIR}
+      filename_template: "run_{yyyy}{mm}{dd}_{HH}{MM}{SS}_{slug(name)}.ext"
+      csv:
+        max_rows: ${ORCH_EXPORT_MAX_ROWS}
+        include_headers: true
+      json:
+        pretty: true
+      split_by_entity: true
+
+guardrails:
+  timeouts:
+    per_step_s: 45
+    global_s: 120
+  limits:
+    search_limit: 30
+    ingest_limit: 200
+  on_error:
+    continue: true
+    log_level: "warning"
+
+logging:
+  level: "info"
+  sample_payloads: false
+

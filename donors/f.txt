@@ -1,0 +1,650 @@
+
+arXiv is now an independent nonprofit!
+Learn more
+×
+License: CC BY 4.0
+arXiv:2603.05222v1 [cs.SI] 05 Mar 2026
+Cognitive Warfare: Definition, Framework, and Case Study
+Bonnie Rushing
+Laboratory for Cybersecurity Dynamics
+Department of Computer Science
+University of Colorado Colorado Springs
+US Air Force
+William Hersch
+Military and Strategic Studies Department
+US Air Force Academy
+Shouhuai Xu
+Laboratory for Cybersecurity Dynamics
+Department of Computer Science
+University of Colorado Colorado Springs
+Abstract
+Cognitive warfare has emerged as a central feature of modern conflict, yet it remains inconsistently defined and difficult to evaluate. Existing approaches often treat cognitive operations as a subset of information operations, limiting the ability to assess cognitive attacker-defender interactions or determine when advantage has been achieved. This article proposes a unified definition of cognitive warfare, introduces an interaction framework grounded in the OODA loop, and identifies measurable attributes associated with cognitive superiority. To illustrate the use of the framework, a notional case study demonstrates how these concepts can be applied to assess cognitive attacks and defenses in a contested environment. Thus, the framework provides joint force leaders and analysts with a practical foundation for understanding, comparing, and evaluating cognitive warfare campaigns.
+
+Disclaimer: “The views expressed are those of the author and do not reflect the official policy or position of the US Air Force, Department of War, or the US Government.”
+
+1Introduction
+Contemporary competition increasingly targets the cognitive dimension of conflict. Rather than seeking decisive effects through physical force alone, adversaries aim to shape perception, manipulate belief, degrade trust, and influence decision-making at scale [6, 19]. These activities operate largely below the threshold of armed conflict, even more so than cyber operations, yet they can produce strategic effects by altering how individuals and organizations observe their environment, orient to information, decide on courses of action, and act. As a result, cognitive advantage has become a central component of military effectiveness and national power.
+
+Despite growing recognition of this challenge, cognitive warfare remains inconsistently defined and poorly evaluated. This is evidenced by the 2026 NDAA, which mandates that the Department of War propose a systematic definition [20, sec. “Narrative Intelligence and Cognitive Warfare”]. Indeed, existing doctrine and policy often subsume cognitive effects within broader information operations or influence activities, emphasizing message dissemination, narrative competition, or engagement metrics [21, 14, 17]. While these perspectives capture important elements of the problem, they provide limited insight into whether cognitive attacks actually degrade decision quality or confer sustained advantage. Moreover, many existing models implicitly treat cognitive influence as a unidirectional activity, focusing on attacker techniques while underemphasizing defender adaptation, resilience, and learning [5].
+
+This article argues that cognitive warfare is best understood as an interactive struggle over human cognition, in which attackers and defenders continuously adapt in pursuit of advantage. Drawing on the Observe–Orient–Decide–Act (OODA) loop of Col John Boyd [13], cognitive warfare can be framed as a competition to disrupt, delay, or distort an opponent’s cognitive processes while protecting one’s own [6, 8]. Within this framework, success is not measured solely by visibility or reach, but by the extent to which cognitive effects translate into degraded judgment, altered behavior, or loss of trust over time. Specifically, our investigation is centered on the following research questions (RQs):
+
+RQ1:
+What attributes are essential for modeling and characterizing cognitive warfare?
+
+RQ2:
+How should cognitive warfare be rigorously defined in a manner that distinguishes it from related concepts such as information operations and influence activities?
+
+RQ3:
+How should we define cognitive superiority?
+
+1.1Contributions
+The article makes three contributions. First, the article introduces a novel framework for understanding and characterizing cognitive warfare, dubbed the Multi-Horizon Cognitive OODA framework. The framework has three features: (i) It models cognitive warfare as a sustained attacker–defender competition over decision advantage, rather than a unidirectional messaging activity. (ii) It utilizes the OODA loop as a starting point, but goes much beyond by introducing and incorporating the notion of temporal horizon to describe the short-term vs. long-term effects of cognitive attacks and defenses. (iii) It is also consistent with doctrinal framing of the cognitive dimension and with decision-centric treatments of influence and cognition.
+
+Second, the article demonstrates the usefulness of the framework via a notional case study of cognitive attacks and defenses in a contested information environment. The case study shows how the framework provides a shared conceptual foundation for supporting joint force leaders and analysts in understanding when cognitive advantage has been gained or lost, and how cognitive warfare can be more effectively planned, assessed, and countered.
+
+Third, the article discusses the implications of cognitive warfare for the Joint Force, such as: cognitive warfare should be institutionalized as a decision-centric operational concept; decision resilience is a key capability; simulation and wargames should incorporate cognitive stressors.
+
+1.2Related Work
+Prior work relevant to cognitive warfare spans (i) definitions of influence and cognition in conflict, (ii) models of attacker-defender interaction in the information environment, and (iii) efforts to evaluate the effectiveness of influence activities.
+
+Prior Studies on Definitions of Cognitive Warfare and Influence.
+Existing definitions of cognitive warfare and related concepts vary widely in scope and emphasis. US policy and joint doctrine sources describe the cognitive dimension as the domain of human perception, decision-making, and action, often situating it within the broader information environment [6, 19]. NATO and allied analyses extend this view, framing cognitive warfare as a deliberate effort to exploit cognitive vulnerabilities in individuals and societies to achieve strategic advantage [4, 12]. Academic literature offers a broader view, drawing on psychology, social sciences, and information disorder research to examine how beliefs, trust, and narratives can be manipulated [21, 8]. However, these definitions often diverge in whether they emphasize mechanisms (e.g., persuasion, manipulation), effects (e.g., belief change, behavioral response), or levels of analysis (individual versus population). As a result, cognitive warfare is frequently discussed without a shared, effects-based definition that clearly distinguishes it from information operations or strategic communication. By contrast, we propose a systematic definition of cognitive warfare.
+
+Prior Studies on Attacker–Defender Interaction Models.
+A second body of work examines attacker-defender dynamics in the information environment, including wargaming, threat modeling, and influence operations analysis, and the closely related cyber domain [23, 24, 25]. Studies on information environment wargames and cognitive wargaming highlight the importance of adaptation, learning, and competition between adversaries [14, 5]. These efforts demonstrate the value of modeling interaction rather than treating influence as a static activity. Nevertheless, many existing cognitive attack-defense models remain either attacker-centric or structurally static, focusing on tactics and messaging while giving limited attention to defender cognition, resilience, and feedback loops. Even when the OODA loop is referenced, it is often applied conceptually rather than operationally, leaving gaps in how cognitive effects propagate through decision-making processes over time [22]. By contrast, this article presents a conceptual foundation that can be leveraged to build mathematically sound cognitive attack-defense dynamics models, similar to cybersecurity dynamics models [23, 24, 25].
+
+Prior Studies on Metrics and Evaluation of Cognitive Effects.
+Evaluating success in cognitive warfare presents a persistent challenge. Much of the existing evaluation literature relies on proxy measures such as engagement, reach, or exposure, particularly in studies of misinformation and influence campaigns [15, 1]. While these metrics are useful for understanding dissemination and susceptibility, they do not directly indicate whether cognitive attacks degrade decision quality or confer lasting advantage. Recent work on psychological sophistication, social engineering, and training effectiveness suggests promising directions for more meaningful measurement, including the assessment of cognitive vulnerability, adaptation, and learning [10, 18]. However, these approaches are rarely integrated into a unified framework capable of supporting comparative evaluation or determining cognitive superiority in contested environments. By contrast, this article introduces a suite of novel metrics to measure the effectiveness of cognitive attacks and defenses.
+
+1.3Paper Outline
+The rest of the article is organized as follows. Section 2 presents the framework. Section 3 presents our case study. Section 4 concludes the article.
+
+2Conceptual Framework for Cognitive Warfare
+This section introduces a conceptual framework for cognitive warfare grounded in Boyd’s OODA loop. The framework has three novel features. First, the framework models cognitive warfare as a sustained attacker–defender competition over decision advantage, rather than a unidirectional messaging activity. Second, we distinguish cognitive warfare effects by temporal horizon: (i) acute (short-horizon) effects that manifest within minutes to days and are observable as immediate degradation of OODA performance (e.g., misperception, delayed decisions, reduced confidence); and (ii) chronic (long-horizon) effects that accumulate over weeks to years and gradually shift the target’s priors, trust calibration, and identity frames, namely that chronic effects “re-parameterize” acute OODA loops by shaping what is noticed, what is believed to be credible, and which actions appear legitimate or feasible. These horizons enable us to systematically analyze how cognitive effects emerge, accumulate, and translate into relative decision superiority under sustained contest. Thus, we call this the Multi-Horizon Cognitive OODA framework. Third, the framework is consistent with doctrinal framing of the cognitive dimension and decision-centric treatments of influence and cognition [6, 19, 8, 21, 16]. Specifically, joint doctrine characterizes the cognitive dimension in terms of how individuals and groups perceive, process, and act on information, and it emphasizes that operational success depends on shaping adversary decision-making while protecting one’s own [6, 19]. Our framework operationalizes this doctrinal intent by (i) mapping contestable cognitive functions to OODA stages (observe, orient, decide, act), (ii) treating cognitive warfare as an adaptive attacker–defender interaction rather than a one-way messaging activity, and (iii) making evaluation explicitly decision-centric (e.g., decision latency, decision error, trust calibration) rather than visibility-centric [6, 8, 21].
+
+Refer to caption
+Figure 1:The proposed framework for describing, understanding, and characterizing cognitive warfare. Each OODA loop stage represents a contested function in which the cognitive attacker (red) seeks to disrupt, delay, or distort the defender’s cognitive processes, while the cognitive defender (blue) seeks to preserve decision advantage. Feedback loops reflect the adaptive nature of both sides. Cognitive superiority is achieved when one actor (i.e., attacker or defender) maintains sufficient advantage to perform OODA loop actions with reduced interference across short (acute) and long (chronic) horizons.
+Figure 1 highlights the framework. In what follows we elaborate its core tenets: cognitive warfare attributes definition (answering RQ1), cognitive attacks definition, cognitive defenses definition, the cognitive attack-defense effects mapping to the OODA loop, cognitive warfare definition (answering RQ2), and cognitive superiority definition (answering RQ3).
+
+2.1Defining Attributes to Characterize Cognitive Warfare (Answering RQ1)
+To enable systematic definition and evaluation, we characterize cognitive warfare using three families of attributes that apply symmetrically to both attackers and defenders: objectives (what effects an actor seeks to produce or prevent), capabilities (what an actor can do under contest to achieve or deny those effects), and cost and efficiency (the resources required to sustain advantage).
+
+This three-family structure is consistent with (i) doctrinal emphasis on decision advantage and effects in the cognitive dimension [6, 19], (ii) empirical findings that exposure/engagement proxies are insufficient to infer cognitive impact [21, 15, 1], and (iii) a long tradition of modeling adversarial contests by specifying objectives, capabilities, and resource asymmetries [14, 23, 25].
+
+1. Objectives (Effects over short and long horizons).
+Objectives specify the intended or avoided cognitive effects and incorporate two embedded attributes: decision degradation and temporal horizon. The decision degradation attribute reflects measurable changes in OODA performance, including increased decision latency, increased decision error, reduced confidence, or induced misaligned action within mission-relevant time windows [6, 8]. The temporal horizon attribute distinguishes between short-horizon (acute) objectives, which manifest within minutes to days as immediate OODA disruption, and long-horizon (chronic) objectives, which accumulate over weeks to years as persistent shifts in trust calibration, belief alignment, and interpretive priors that shape subsequent decision cycles [4, 11, 21]. In both cases, objectives should be stated with explicit target populations, time windows, and decision consequences to support comparison and assessment.
+
+2. Capabilities (Achieving objectives under contest).
+Capabilities specify the mechanisms an actor can employ to achieve (or deny) cognitive objectives in an adaptive attacker–defender contest and incorporate two embedded attributes: interaction/adaptation and scalability/amplification [14, 5]. The interaction/adaptation attribute reflects the ability to adjust tactics, detect adversary activity, reduce recovery time, and learn under sustained contest. The scalability and amplification attribute reflects the ability to generate, constrain, or mitigate cognitive effects rapidly and at scale, including access and delivery, narrative engineering, and optimization mechanisms [21, 2]. For attackers, these capabilities include access, narrative engineering, amplification, and adaptation. For defenders, they include detection and assessment, cognitive resilience, response and mitigation, and organizational learning [15, 18]. Capability assessment emphasizes performance under pressure, whether an actor can adapt faster than an opponent, reduce recovery time following disruption, or limit amplification before acute effects translate into measurable decision degradation.
+
+3. Cost and efficiency (Sustaining advantage).
+Cost and efficiency constitute a distinct attribute reflecting the asymmetric cost structure of cognitive warfare. Cognitive contests often allow relatively low-resource actions to generate disproportionate cognitive effects, particularly in digitally mediated environments [7, 11]. Accordingly, evaluation requires assessing not only whether objectives are achieved, but whether they are achieved efficiently and sustainably under prolonged competition. These attributes capture the resource burden required to generate or deny cognitive effects at scale over time and enables comparative assessment of which actor can sustain cognitive advantage.
+
+Together, these three attribute families provide a practical and measurable basis for characterizing cognitive warfare as a dynamic interaction rather than a unidirectional influence process [14, 5], thereby addressing RQ1. Table 1 summarizes the attribute families in a symmetric attacker-defender structure, making explicit the framework’s decision-centric focus on OODA performance and its distinction between short-horizon disruption and long-horizon conditioning.
+
+Table 1:Symmetric attribute structure for evaluating cognitive warfare. The three attribute families organize decision-centric and temporal elements within an attacker–defender contest.
+Attribute Family
+Embedded Attribute
+Attacker Expression
+Defender Expression
+Objectives
+Decision degradation (acute)
+Increase decision latency, error, hesitation, or induce misaligned action within mission-relevant time windows.
+Preserve OODA integrity, tempo, and execution fidelity under cognitive pressure.
+Temporal conditioning (chronic)
+Shift trust calibration, belief alignment, and interpretive priors over time.
+Preserve institutional trust, calibrated belief, and cohesion across extended horizons.
+Capabilities
+Adaptation and interaction
+Adjust tactics, narratives, and delivery mechanisms under defender pressure.
+Detect, mitigate, recover, and learn faster than adversary adaptations.
+Scalability and amplification
+Amplify narratives rapidly and broadly to maximize acute and cumulative effects.
+Limit amplification, reduce exposure, and constrain spread before effects degrade decisions.
+Cost and Efficiency
+Asymmetric cost structure
+Achieve cognitive effects at scale with minimal resource expenditure.
+Deny or mitigate adversary effects without unsustainable resource burden.
+ 
+2.2Cognitive Attacks Definition
+Unlike information activities that focus primarily on message dissemination or visibility, cognitive attacks are defined by their intended effects on human cognition. In particular, they seek to degrade how actors observe, orient, decide, and act by exploiting cognitive biases, trust relationships, and mental shortcuts [6, 8]. Technology and information platforms function as enablers of scale and persistence, but the human cognitive process remains the primary target. This prompts us to adopt a recent definition.
+
+Definition 1 (Cognitive Attacks [16])Cognitive attacks are operations that target human minds, aiming to manipulate perceptions and beliefs, which may be weaponized and enhanced through technology and deceptive information, typically to affect the decision-making and actions of individuals or broader populations to gain advantage.
+Definition 1 emphasizes decision degradation and behavioral impact as the distinguishing outcomes of cognitive attacks, rather than information exposure alone. As such, cognitive attacks are most meaningfully evaluated by whether they measurably alter judgment, delay or distort decision-making, or induce actions (or inaction) that advantage the attacker over the relevant time horizon (short/acute vs. long/chronic) and level of analysis (individual, organizational, population).
+
+Inspired by how adversarial contests are specified in cybersecurity (objectives, capabilities, and adaptation under defense), we propose specifying cognitive attacks in terms of their objectives and capabilities, consistent with the attribute families introduced in Section 2.1 [23, 25, 14]. In particular, attacker objectives correspond to the objectives family (decision degradation over acute horizons and conditioning over chronic horizons), while attacker capabilities correspond to the capabilities family (delivery, narrative engineering, amplification, and adaptation under contest) [6, 21, 14].
+
+2.2.1Attacker Objectives
+In the context of cognitive warfare, the attacker’s objective is not merely to disseminate information, but to generate cognitive effects that translate into decision advantage [6, 19, 11]. To avoid conflating levels of war with time-scale, we specify attacker objectives by temporal horizon: (i) short-horizon (acute) objectives that manifest within minutes to days as immediate degradation of OODA performance, and (ii) long-horizon (chronic) objectives that accumulate over weeks to years by shifting priors, trust calibration, and identity frames. That is, attacker objectives should be specified with explicit time horizons, target populations, and intended decision consequences to support evaluation and comparison.
+
+Short-horizon (acute) attacker objectives.
+Short-horizon objectives aim to misdirect attention, degrade critical thinking, or induce specific behavioral responses among operators, staffs, or commanders within mission-relevant time windows. More specifically, short-horizon objectives include (i) observation (perception) effects, shaping what the target notices or accepts as credible; (ii) orientation effects, biasing interpretation through framing, identity cues, emotional priming, or causal narratives; (iii) decision effects, increasing hesitation, confusion, overconfidence, or reliance on cognitive shortcuts; and (iv) action effects, eliciting behaviors beneficial to the attacker, including non-action [21, 8, 6].
+
+Long-horizon (chronic) attacker objectives.
+Long-horizon objectives often involve persistent erosion of institutional trust, polarization of populations, or normalization of false beliefs that constrain political and military decision space over time [4, 12].
+
+2.2.2Attacker Capabilities
+Attacker capabilities are the resources and mechanisms used to produce cognitive effects and sustain them under contest. Attacker capabilities are assessed not only by their existence but by their effectiveness under defender pressure. For instance, at the short-horizon, whether the attacker can maintain or escalate cognitive effects across the OODA loop despite detection, counter-messaging, training, and other defensive measures [6, 19]. We organize capabilities into four categories that can be applied to achieve both short-horizon (acute) and long-horizon (chronic) objectives:
+
+• Access and delivery is the ability to reach target audiences through platforms, interpersonal channels, or compromised information pathways, including spoofed or deceptive sources [21].
+• Content and narrative engineering is the ability to craft persuasive or manipulative messages tailored to cognitive vulnerabilities, social identity cues, and situational stressors [2, 8].
+• Amplification and optimization includes tactics that increase visibility, perceived consensus, and salience (e.g., coordinated inauthentic behavior, timing strategies, and microtargeting), thereby influencing what targets observe and treat as socially validated [21, 14].
+• Adaptation and resilience: the capability to adjust tactics, narratives, and delivery methods in response to defender mitigation, public awareness, or platform enforcement [14, 5]. The DISARM framework provides a structured taxonomy of adversary tactics and techniques that can be used to parameterize this capability set for red-team modeling and comparative analysis [3].
+2.3Cognitive Defense Definition
+In the context of cognitive warfare, defenses are not limited to counter-messaging or platform enforcement, but encompass the deliberate actions and capacities that prevent, absorb, or recover from adversary efforts to degrade decision-making. This prompts us to define:
+
+Definition 2 (Cognitive Defenses)Cognitive defenses are operations and capacities that protect human minds from adversarial efforts to manipulate perceptions and beliefs, preserving or restoring sound decision-making and action in pursuit of sustained advantage.
+Similarly, we specify cognitive defenses in terms of defender objectives (the cognitive effects the defender seeks to preserve across horizons) and defender capabilities (the mechanisms used to achieve those objectives under contest).
+
+2.3.1Defender Objectives
+In general, cognitive defenses do not require eliminating, or preventing all exposure to, all adversary narratives. Defensive success is achieved when adversary activity fails to produce meaningful degradation of defender performance over the relevant horizon(s). Symmetric to attacker objectives, defender objectives are specified by temporal horizon: (i) short-horizon (acute) objectives that preserve OODA integrity and tempo under immediate cognitive pressure, and (ii) long-horizon (chronic) objectives that preserve institutional trust, social cohesion, and trust calibration over time.
+
+Short-horizon (acute) defensive objectives.
+Preserve decision advantage by protecting the integrity and tempo of the defender’s OODA loop in mission-relevant time windows: maintaining situational awareness, preventing confusion, and enabling timely and accurate decisions by operators, staffs, and commanders. More specifically, the defender objective corresponds directly to the OODA loop stages and describes what the defender aims to protect: observation protection, orientation protection, decision protection, and action protection.
+
+Long-horizon (chronic) defensive objectives.
+Preserve institutional trust, social cohesion, and confidence in authoritative decision processes over extended time horizons, thereby reducing the attacker’s ability to constrain political or military decision space.
+
+2.3.2Defender Capabilities
+In general, defender capabilities go much beyond counter-messaging and include detection, resilience, adaptation, and learning across the cognitive domain. Specifically, defender capabilities are the mechanisms that can be used to achieve defensive objectives. Defender capabilities are evaluated by their ability to reduce the effectiveness, persistence, or scalability of cognitive attacks while preserving decision speed and accuracy under sustained adversarial pressure. In parallel to attacker capabilities, we consider four kinds of defender capabilities:
+
+• Detection and assessment capabilities enable defenders to identify cognitive attacks, attribute intent, and assess potential impact. This includes recognizing manipulative tactics, coordinated influence activity, and indicators of cognitive stress or distortion within target populations. Effective detection supports timely defensive action but is insufficient on its own.
+• Cognitive resilience capabilities aim to reduce susceptibility to manipulation by strengthening critical thinking, trust calibration, and awareness of adversarial techniques. For instance, research on psychological inoculation, prebunking, and training effectiveness demonstrates that exposure to tactics and techniques can improve resistance to cognitive attacks over time [15, 9, 18].
+• Response and mitigation capabilities include counter-framing, authoritative signaling, and procedural safeguards that reduce the influence of adversarial narratives without amplifying them. For instance, these measures operate primarily at the orientation and decision stages of the OODA loop, helping defenders recover from partial cognitive compromise.
+• Adaptation and learning capabilities allow defenders to adjust defensive strategies as adversaries evolve their tactics. Wargaming and iterative evaluation play a critical role in this process by enabling defenders to rehearse cognitive contests, test assumptions, and identify vulnerabilities before they are exploited in real-world operations.
+2.4The Cognitive Attack-Defense Effects Mapping to the OODA Loop
+Since attacker’s acute and chronic objectives are different, attacker’s acute and chronic effects are also different. The same applies to defender’s acute and chronic effects. Still, the two objectives are related to each other because chronic (long-horizon) objectives shift the baselines and priors of acute effects. Table 2 describes the acute effects mapped to the OODA loop.
+
+Table 2:Mapping Acute (Short-Horizon) Attacker and Defender Effects to the OODA Loop.
+OODA Stage
+Attacker Effect Category
+Defender Effect Category
+Observe
+Observation Effects. Shape what the target notices or accepts as credible through selective exposure, deception, or information saturation.
+Observation Protection. Preserve accurate observation and credibility judgments despite deception, noise, and manipulated information.
+Orient
+Orientation Effects. Bias interpretation through framing, identity cues, emotional priming, or causal narratives.
+Orientation Protection. Preserve sound sensemaking despite adversarial framing, bias exploitation, and narrative pressure.
+Decide
+Decision Effects. Increase hesitation, confusion, overconfidence, or reliance on cognitive shortcuts that degrade judgment.
+Decision Protection. Preserve decision quality, tempo, and confidence under cognitive stress and uncertainty.
+Act
+Action Effects. Elicit behaviors beneficial to the attacker, including premature action, misaligned action, or deliberate non-action.
+Action Protection. Preserve execution fidelity and prevent attacker-induced actions or inaction that undermine mission intent.
+ 
+On the other hand, chronic (long-horizon) effects operate by shifting the baseline conditions under which those cycles run. Specifically, chronic cognitive effects re-parameterize OODA by shaping (i) what is treated as salient or credible at the Observe stage, (ii) the interpretive priors and identity frames applied during Orient, (iii) the confidence thresholds and risk perceptions that govern Decide, and (iv) the perceived legitimacy and feasibility of options at Act [6, 4, 11, 21]. In this way, long-horizon conditioning increases the likelihood that short-horizon disruptions translate into measurable decision degradation under contest.
+
+2.5Cognitive Warfare Definition (Answering RQ2)
+Building on the definitions of cognitive attacks and cognitive defenses, we now define cognitive warfare. Importantly, the definition is informed by the three attribute families introduced in Section 2.1. First, the objectives family motivates an effects-based definition centered on decision degradation across acute and chronic horizons (rather than exposure or messaging alone). Second, the capabilities family motivates modeling cognitive warfare as an interactive and adaptive contest, because both attackers and defenders employ scalable delivery, narrative engineering, mitigation, and learning under ongoing opposition. Third, the cost and efficiency family motivates the emphasis on sustained competition, since asymmetric resource structures often determine which actor can maintain pressure or resilience over time [6, 19, 14, 5, 21].
+
+Definition 3 (Cognitive Warfare)Cognitive warfare is a sustained and adaptive contest over human decision-making in which adversaries seek relative advantage by shaping or disrupting perception, interpretation, judgment, and action over time.
+Definition 3 states that cognitive warfare, like cyber warfare, is inherently interactive because cognitive attackers and defenders continuously observe, respond, and adapt to one another across iterative OODA cycles. This attribute distinguishes cognitive warfare from predominantly unidirectional messaging models. Moreover, unlike related activities such as information operations or psychological operations, cognitive warfare is distinguished not by the tools employed, but by its primary target, effects, and evaluative criteria. Furthermore, we compare cognitive warfare with information operations, psychological operations, and influence activities across six distinguishing dimensions, depicted in Table 3 and elaborated below.
+
+Table 3:Comparison between cognitive warfare and related concepts. Cognitive warfare is distinguished from information operations, psychological operations, and influence activities across six dimensions. Unlike related concepts that emphasize informational coordination, persuasion, or audience engagement, cognitive warfare targets human cognition directly, defines success through decision degradation, and is evaluated through decision-centric outcomes.
+Dimension
+Cognitive Warfare
+Information Operations
+Psychological Operations
+Influence Activities
+Primary Target
+Human cognition: perception, orientation, decision, and action
+Information environment, systems, and channels
+Attitudes and beliefs of target audiences
+Public opinion, legitimacy, and political will
+Central Objective
+Decision degradation under contest: altered judgment, delayed/distorted decisions, constrained courses of action
+Informational coordination: synchronize information-related activities across domains
+Persuasion/messaging effects: attitudinal or behavioral change in target audiences
+Shape perceptions to coerce, deter, legitimize, or undermine
+Interaction Model
+Dynamic, adaptive attacker–defender contest with continuous feedback across OODA loops
+Coordination-centric: integrate and synchronize capabilities; feedback often indirect
+Predominantly unidirectional: message–audience focus with limited adaptive modeling
+Predominantly unidirectional: actor–audience focus; adaptation varies by campaign
+Time Horizon
+Multi-horizon: short-horizon (acute) OODA disruption (minutes–days) and long-horizon (chronic) conditioning (weeks–years) with cumulative effects
+Typically aligned to operation/campaign timelines; may be short or sustained depending on mission design
+Campaign-based messaging; commonly short-to-mid duration, though repeatable across campaigns
+Varies widely: short-term bursts through sustained, long-running narrative efforts
+Level of Analysis
+Independent of time horizon: individual, unit, organization, institution, or population (effects may propagate across levels)
+Often operational/strategic planning focus, but effects may target any level depending on integrated activities
+Primarily population or subgroup (target audience) level; can include elite decision-makers
+Primarily population or decision-elite level; can also target communities and institutions
+Evaluation Criteria
+Decision-centric outcomes: decision quality, tempo, confidence, trust calibration, and behavior under contest
+Operational effectiveness: mission objectives achieved via coordinated information-related activities
+Reach/exposure plus attitudinal/behavioral measures (surveys, compliance indicators, messaging effects)
+Reach/engagement plus perception and legitimacy indicators; attribution and impact often uncertain
+ 
+First, the human mind is the primary contested domain. Cognitive warfare directly targets perception, orientation, decision-making, and action, rather than information systems or physical infrastructure [6, 4]. While cyber and information capabilities may be used as enablers, success is ultimately determined by effects on human cognition.
+
+Second, effects on decision-making are the central objective. Cognitive warfare seeks to degrade judgment, distort situational understanding, increase hesitation or error, and constrain available courses of action [8, 16]. This emphasis on decision degradation differentiates cognitive warfare from activities focused primarily on persuasion, messaging, or audience reach.
+
+Third, cognitive warfare is inherently interactive and adaptive. Attackers and defenders continuously observe, respond, and adjust to one another’s actions, producing a dynamic contest rather than a one-directional influence effort [14, 5]. As a result, both offense and defense must be analyzed together to understand cognitive advantage.
+
+Fourth, cognitive effects operate across multiple levels of analysis. Cognitive warfare may target individuals and units at the tactical level, organizations and institutions at the operational level, or populations and decision elites at the strategic level [21, 12]. Effects at one level may propagate to others over time, particularly when trust and legitimacy are eroded.
+
+Fifth, cognitive warfare unfolds over extended time horizons. Unlike discrete cyber or kinetic actions, cognitive warfare often relies on persistence, repetition, and cumulative effects that shape beliefs and behavior gradually [4, 11]. This temporal dimension complicates detection and assessment but is central to strategic impact.
+
+Sixth, cognitive warfare is evaluable through decision-centric outcomes. While exposure and engagement metrics may indicate activity, cognitive warfare is most meaningfully assessed by whether cognitive effects translate into measurable changes in decision quality, decision speed, trust, or behavior under contest [6, 19].
+
+The preceding six dimensions collectively distinguish cognitive warfare as a distinct form of conflict centered on cognition itself, rather than merely an extension of information operations, psychological operations, or cyber activity, addressing RQ2.
+
+2.6Defining Cognitive Superiority (Answering RQ3)
+The concept of cognitive superiority draws on the established notion of air superiority, which describes a condition in which one actor possesses sufficient advantage to operate without prohibitive interference [7]. Air superiority does not imply absolute control or elimination of adversary capabilities, but rather a relative and context-dependent freedom of action. Adapting this logic to the cognitive domain provides an analytical foundation for defining advantage under sustained cognitive contest.
+
+The preceding attributes provide a structural basis for defining cognitive superiority. Intuitively, superiority is not determined by any single indicator, but by comparative performance across attributes over a defined period of contest. An actor demonstrates cognitive superiority when its decision performance remains resilient while its adversary experiences sustained degradation, when it adapts more rapidly to evolving tactics, and when it generates or denies cognitive effects at a speed, scale, and cost that the opponent cannot effectively counter. That s, superiority is therefore not static; it emerges from comparative adaptation speed, detection capability, and resilience under sustained contest.
+
+Definition 4 (Cognitive Superiority)Cognitive superiority is a condition in which one actor maintains a sustained comparative advantage in the cognitive domain as manifested by the cognitive capabilities to achieve its cognitive objectives (across defined temporal horizons by preserving or degrading decision performance within the OODA cycle) at will and higher speed, with much higher cost-effectiveness than its opponent.
+Definition 4 states that superiority occurs when attacker objectives across short- and long-horizons persist despite defender actions and measurably degrade defender OODA performance (e.g., increased decision latency, increased decision error, or degraded trust calibration in authoritative channels). It anchors superiority in measurable OODA performance across short- and long-horizon effects, incorporates adaptive attacker–defender interaction, and accounts for speed, scalability, and cost efficiency under sustained competition. Cognitive superiority does not require control of perception or belief; it exists when an actor sustains relative decision advantage under contest. Superiority is lost when adversarial influence introduces sufficient cognitive friction to delay decisions, distort judgment, or constrain viable courses of action, even absent overt persuasion [19].
+
+Definition 4 does not state that cognitive superiority require control of perception or belief; it exists when an actor sustains relative decision advantage under contest. An actor may retain superiority despite exposure to adversarial narratives so long as its OODA processes remain resilient and effective. Conversely, superiority is lost when adversarial influence introduces sufficient cognitive friction to delay decisions, distort judgment, or constrain viable courses of action, even absent overt persuasion or belief change. Unlike traditional influence metrics that emphasize reach or attitudinal shifts, cognitive superiority is evaluated through decision-centric outcomes: whether actors can observe accurately, orient coherently, decide confidently, and act effectively under pressure [19]. This framing provides a practical foundation for assessing cognitive advantage in dynamic attacker–defender interaction and motivates the following case study.
+
+3Case Study: Cognitive Warfare in a Notional Contested Information Environment
+To demonstrate the usefulness of the framework, we present a notional case study of cognitive warfare in a contested information environment. The purpose is not to replicate a specific real-world operation, but to illustrate how an analyst could specify attacker and defender objectives/capabilities, map acute effects to OODA stages, account for chronic conditioning, and evaluate cognitive superiority using decision-centric indicators.
+
+Case Study Notation. To simplify presentation, we use compact labels throughout the case study: AAO
+#
+ (Attacker Acute Objective), ACO
+#
+ (Attacker Chronic Objective), AC
+#
+ (Attacker Capability), ACE
+#
+ (Attacker Cost and Efficiency), DAO
+#
+ (Defender Acute Objective), DCO
+#
+ (Defender Chronic Objective), DC
+#
+ (Defender Capability), and DCE
+#
+ (Defender Cost and Efficiency).
+
+3.1Scenario Settings
+Operating context.
+A joint task force (JTF) is deployed to support stability operations in the fictional partner nation of Norland. Norland’s government is negotiating a logistics access agreement that would enable allied basing and humanitarian throughput. A near-peer adversary (Red) seeks to prevent ratification by degrading trust in the JTF and the Norland government, while also creating acute decision friction during a short, high-stakes operational window. We present out case study online at https://sites.google.com/view/cognitivewarfarecasestudy/.
+
+Key actors and decision nodes.
+The defender (Blue) includes: (i) the JTF commander and staff, (ii) Norland’s Ministry of Transport and Interior, (iii) local emergency managers, and (iv) a Norland public audience whose cooperation affects freedom of maneuver. The attacker (Red) includes: (i) influence operators, (ii) cyber-enabled access teams, and (iii) coordinated inauthentic networks used to amplify narratives.
+
+Time horizons and campaign phases.
+We frame the contest across two horizons:
+
+• Acute phase (72 hours). Red triggers a surge of deceptive and saturating content timed to a logistics incident (real but ambiguous) to create immediate OODA disruption within the JTF/Norland decision cycle.
+• Chronic phase (Weeks–Months). Red conducts persistent conditioning to erode trust in institutions and increase belief receptivity to crisis narratives.
+Critical decisions (examples).
+During the acute 72-hour window, Blue must rapidly decide: (D1) whether to pause convoy movement, (D2) whether to impose curfews, (D3) whether to publicly attribute the incident, and (D4) whether to continue the basing ratification timeline. These decisions create measurable opportunities for decision latency, decision error, and misaligned action under cognitive pressure.
+
+Notional data streams available for assessment.
+The assessment cell has access to: (i) time-stamped command-and-control (C2) logs (decision timestamps, meeting cadence), (ii) incident reports and after-action notes, (iii) social media monitoring summaries (volume/velocity indicators), and (iv) limited public sentiment polling (coarse trust indicators). This supports decision-centric evaluation without relying solely on exposure metrics.
+
+3.2Cognitive Attacker Objectives, Capabilities, Cost and Efficiency
+3.2.1Attacker Objectives (Acute and Chronic)
+We specify attacker objectives by horizon and by intended decision consequences.
+
+Acute (short-horizon) attacker objectives.
+During the 72-hour window, Red seeks immediate OODA disruption:
+
+• AAO1 (Observe): Create information saturation and selective deception such that Blue/Norland decision-makers cannot rapidly establish shared situational awareness.
+• AAO2 (Orient): Induce attribution ambiguity and emotionally salient framing (fear/anger) to bias sensemaking toward worst-case interpretations.
+• AAO3 (Decide): Increase decision latency (delays, re-litigating assumptions) and increase decision error risk (premature pauses, misattribution, overreaction).
+• AAO4 (Act): Elicit misaligned action or non-action (e.g., unnecessary restrictions that reduce freedom of maneuver; delayed convoy movement that undermines confidence).
+Chronic (long-horizon) attacker objectives.
+Over weeks–months, Red aims to shift interpretive priors and trust calibration in Norland:
+
+• ACO1: Institutional trust erosion. Reduce trust in Norland institutions and in allied presence, increasing baseline skepticism toward official statements.
+• ACO2: Identity-frame polarization. Strengthen identity cues (“us vs. them”) that bias orientation and increase narrative receptivity during crises.
+• ACO3: Credibility inversion. Increase the perceived credibility of non-authoritative channels relative to official channels, thereby re-parameterizing observation and orientation under uncertainty.
+3.2.2Attacker Capabilities (Applied Under Contest)
+Red leverages four capability categories (Section 2.2.1): access/delivery, narrative engineering, amplification, and adaptation.
+
+AC1: Access and Delivery.
+Red maintains persistent access to key information pathways:
+
+• Channel access: seeded local-language outlets, influencer proxies, and impersonation-ready accounts.
+• Targeted delivery: microtargeted content aimed at emergency managers and civil society nodes.
+Operationally, this capability is implemented through pre-positioned personas and cutouts, localized content pipelines, and routine seeding that normalizes Red-aligned sources prior to the acute window [21, 14].
+
+AC2: Content and Narrative Engineering.
+Red prepares pre-scripted narrative variants tied to likely incidents:
+
+• Narrative motifs: “foreign troops caused the incident,” “government is hiding the truth,” “aid is being diverted.”
+• Cognitive levers: fear priming, blame assignment, false dilemmas, and credibility hijacking via look-alike sources.
+Operationally, this capability is implemented via rapid A/B testing of frames, reuse of proven motifs, and tailoring to identity cues and situational stressors to increase plausibility and salience [2, 8, 21].
+
+AC3: Amplification and Optimization.
+Red uses coordinated networks to maximize early salience:
+
+• Velocity: high burst rate in the first hours to shape what audiences observe as “what everyone is talking about.”
+• Perceived consensus: synchronized reposting to simulate agreement and inevitability.
+Operationally, this capability is implemented using coordinated inauthentic behavior (e.g., bot-assisted reposting and synchronized accounts), timing strategies, and cross-platform reseeding to sustain visibility during the acute decision window [21, 14].
+
+AC4: Adaptation and Resilience.
+Red adjusts narrative variants in response to Blue mitigation:
+
+• Pivoting: shifting from “it happened” to “they are covering it up” when debunks appear.
+• Reseeding: reintroducing claims through new accounts after takedowns.
+Operationally, this capability is implemented via playbooks that map likely defender responses to prepared pivots, plus rapid regeneration of delivery accounts and content variants when platforms enforce removal [14, 5, 3].
+
+3.2.3Attacker Cost and Efficiency
+Red’s resource investment is modest relative to the potential operational disruption:
+
+• ACE1: Low marginal cost per narrative variant due to reuse of templates and automation-assisted content generation.
+• ACE2: High leverage via algorithmic amplification and social retransmission: limited initial seeding can yield large downstream effects.
+• ACE3: Asymmetric burden transfer: Blue must verify, coordinate, message, and manage second-order effects, often at higher cost and slower tempo.
+3.3Cognitive Defender Objectives, Capabilities, Cost and Efficiency
+3.3.1Defender Objectives (Acute and Chronic)
+Blue’s defensive objectives are symmetric to Red’s attack objectives.
+
+Acute (short-horizon) defensive objectives.
+• DAO1 (Observe): Maintain accurate observation and credibility judgments despite attacker employment of access, deception, and saturation capabilities (AC1, AC3 in this case study), ensuring that shared situational awareness converges within mission-relevant time windows.
+• DAO2 (Orient): Preserve coherent sensemaking despite attacker employment of narrative engineering and emotional priming capabilities (AC2 in this case study), preventing attribution ambiguity and framing bias from fragmenting staff interpretation.
+• DAO3 (Decide): Preserve decision tempo and decision quality and avoid overreaction or underreaction despite attacker amplification and ambiguity-inducing tactics (AC2–AC3), including attempts to trigger precautionary pauses, premature attribution, or escalatory signaling.
+• DAO4 (Act): Preserve execution fidelity and prevent attacker-induced misaligned action or paralyzing non-action despite coordinated narrative surges and perceived consensus effects (AC3), ensuring that operational activities remain aligned with mission intent.
+Chronic (long-horizon) defensive objectives.
+• DCO1: Preserve calibrated trust. Sustain confidence in authoritative processes without requiring unanimous belief despite attacker sustained employment of credibility inversion and trust-erosion narratives (ACO1 and AC2 in this case study).
+• DCO2: Maintain cohesion. Reduce polarization and preserve shared interpretive priors needed for crisis response despite attacker identity-frame amplification and “us versus them” conditioning (ACO2 and AC3 in this case study).
+• DCO3: Strengthen credibility routing. Ensure decision-makers and the public know where and how to verify critical claims despite attacker sustained reseeding, impersonation, and salience manipulation tactics (AC1–AC4), thereby reducing long-term susceptibility during future acute events.
+3.3.2Defender Capabilities (Applied Under Contest)
+DC1: Detection and Assessment.
+Blue maintains a small assessment cell responsible for identifying cognitive attack indicators, including narrative velocity spikes, coordinated posting patterns, anomalous source behavior, and sudden framing convergence across platforms. The cell integrates open-source monitoring, intelligence reporting, and incident logs to assess potential impact on OODA stages (e.g., observation distortion or orientation divergence). However, attribution confidence is limited, reporting pipelines are fragmented, and senior decision-makers receive mixed-quality or delayed assessments. As a result, detection does not consistently translate into timely orientation protection [21, 14].
+
+DC2: Cognitive Resilience.
+Blue has implemented awareness training focused on misinformation recognition, credibility routing, and verification discipline. These programs draw on inoculation-style approaches and decision-science insights intended to reduce susceptibility to manipulative framing and cognitive shortcuts [15, 9, 18]. However, training penetration is uneven across staff sections and partner-nation counterparts. During crisis conditions, time pressure and stress reduce adherence to verification protocols, increasing reliance on heuristics and prior beliefs. Thus, resilience exists but is inconsistently applied under acute pressure.
+
+DC3: Response and Mitigation.
+Blue possesses the capability to issue authoritative statements, synchronize messaging with Norland officials, and deploy counter-framing to stabilize orientation. Response mechanisms include pre-drafted holding statements, designated spokesperson channels, and procedural safeguards for fact validation. Nevertheless, clearance processes, legal review, and interagency coordination introduce latency during the acute window. Additionally, counter-framing is implemented cautiously to avoid amplifying adversarial narratives, which can slow corrective salience [21]. Consequently, mitigation reduces long-term narrative persistence but may not prevent short-horizon decision friction.
+
+DC4: Adaptation and Learning.
+Blue conducts periodic tabletop exercises and cognitive wargaming sessions designed to stress-test decision processes under information contest [5]. After-action reviews identify vulnerabilities in credibility routing, coordination tempo, and decision thresholds. However, institutional learning cycles are slower than Red’s narrative pivoting tempo. While lessons are eventually integrated into procedures and training updates, adaptation is episodic rather than continuous. As a result, Blue improves over longer horizons but struggles to match attacker adaptation speed during acute phases.
+
+3.3.3Defender Cost and Efficiency
+Defender Cost and Efficiency.
+Blue faces a structurally asymmetric cost profile in which defensive actions require coordination, verification, and sustained staffing.
+
+• DCE1: Verification burden. Establishing ground truth requires cross-organization coordination, forensic review, and legal clearance. This burden can be measured intuitively by time-to-confirmation, number of coordination touchpoints required, and personnel-hours expended per incident.
+• DCE2: Coordination overhead. Aligning public messaging and operational responses across JTF, Norland ministries, and partner entities increases latency. This can be measured by time from detection to synchronized public statement, number of approval layers, and divergence between internal and external communication timelines.
+• DCE3: Sustained staffing costs. Persistent monitoring, analytic tooling, and rehearsal cycles require dedicated personnel and infrastructure. This can be measured through sustained manpower allocation, training cycle frequency, analytic tool maintenance costs, and opportunity costs relative to other mission priorities.
+3.4Evaluation of Cognitive Superiority
+We now evaluate the contest using the framework’s three attribute families (objectives, capabilities, and cost and efficiency) and a decision-centric interpretation of cognitive superiority (Definition 4). The goal is to show how an analyst can reach a defensible superiority judgment without collapsing evaluation into engagement-only metrics.
+
+3.4.1OODA-Stage Acute Effects and Observable Indicators
+Table 4 provides a notional mapping from acute attacker effects to decision-centric observables that a JTF assessment cell could realistically track.
+
+Table 4:Notional acute (short-horizon) indicators for evaluating OODA disruption in the case study.
+Stage
+Attacker Effect (Acute)
+Decision-Centric Observable (Examples)
+Observe
+Saturation + selective deception reduces shared situational awareness.
+Increased time-to-validate critical facts; conflicting “ground truth” artifacts; higher rework in common operating picture.
+Orient
+Framing and emotional priming bias interpretation; attribution ambiguity spreads.
+Increased divergence in staff interpretations; repeated re-litigating of assumptions; elevated reliance on non-authoritative sources.
+Decide
+Induced hesitation/overreaction increases decision latency and error risk.
+Longer time from incident notification to decision; higher number of decision reversals; deviation from pre-briefed decision thresholds.
+Act
+Misaligned action or non-action undermines mission intent.
+Pauses that reduce freedom of maneuver; delayed convoys; inconsistent public guidance; operational objectives missed in time window.
+ 
+3.4.2Chronic Conditioning and Its Interaction with Acute Disruption
+In this notional scenario, Red’s chronic objectives (AC1-AC3) shape the priors that feed acute OODA cycles. For example, if credibility inversion and trust erosion have progressed, then during the acute 72-hour incident, Blue’s authoritative corrections are slower to restore orientation coherence. This produces a compounding effect: chronic conditioning increases the probability that acute deception yields measurable decision degradation (e.g., longer latency and greater risk of misaligned action).
+
+3.4.3Why the attacker achieves cognitive superiority in the notional scenario
+We argue Red achieves cognitive superiority in this case study because it outperforms Blue across the three attribute families:
+
+(1) Objectives achieved (decision degradation over horizons).
+During the acute window, the defender experiences measurable degradation consistent with AAO1–AAO4: delayed convergence on shared situational awareness, contested interpretation, slowed decision tempo, and at least one misaligned operational pause. Over the chronic horizon, trust erosion and credibility inversion increase receptivity to Red narratives, raising the baseline difficulty of rapid restoration.
+
+(2) Capabilities dominate under contest (adaptation + amplification).
+Red’s amplification velocity in the first hours shapes what is salient before Blue’s coordination and clearance processes can respond. Red also pivots narratives faster than Blue can synchronize counter-framing, sustaining contest pressure across observe–orient–decide stages. Blue’s detection exists but does not translate into sufficiently rapid mitigation to preserve decision tempo.
+
+(3) Cost and efficiency favor the attacker (asymmetric burden transfer).
+Red’s marginal cost to generate narrative variants and reseed after takedowns is low relative to the operational and coordination costs imposed on Blue (verification, alignment, public communication, and second-order consequence management). Under sustained contest, this asymmetry allows Red to maintain pressure longer than Blue can sustain high-tempo mitigation without tradeoffs.
+
+3.4.4Compact Comparative Summary
+Table 5 summarizes the superiority judgment using your three-family structure. We draw two conclusions. First, given the stated objectives, capability performance under contest, and asymmetric cost structure, the attacker satisfies the core condition of cognitive superiority (Definition 4): Red maintains sustained comparative advantage by achieving its cognitive objectives at higher speed and with higher cost-effectiveness than Blue, producing decision-centric degradation (latency, coherence loss, and action misalignment) during the mission-relevant window.
+
+Table 5:Notional superiority assessment summary using the three attribute families.
+Family
+Attacker (Red)
+Defender (Blue)
+Objectives
+Achieves acute OODA disruption and leverages chronic conditioning to increase receptivity and reduce recovery.
+Seeks to preserve OODA integrity, but experiences measurable latency and partial misalignment under pressure.
+Capabilities
+High amplification velocity + rapid pivoting sustains pressure across OODA stages.
+Detection exists but response/coordination delays reduce mitigation effectiveness within the acute window.
+Cost / Efficiency
+Low-cost narrative generation imposes high verification and coordination costs on Blue.
+Higher cost structure to verify, align, communicate, and manage second-order effects.
+ 
+Second, the case study also clarifies what would be required for Blue to regain advantage: reduce decision latency via rehearsed verification procedures, pre-authorized messaging lanes, and faster cross-entity synchronization; increase resilience through targeted inoculation and credibility routing; and constrain amplification earlier to prevent acute salience dominance. These changes directly improve Blue capability performance under contest without requiring perfect suppression of adversary narratives.
+
+3.5Discussion
+3.5.1Further Discussion on the Case Study
+The case study demonstrates how the framework enables systematic analysis of cognitive warfare beyond message-centric or exposure-based models. Several observations emerge from the scenario.
+
+First, the case study reinforces that cognitive warfare is fundamentally decision-centric. The attacker’s acute objectives were not merely to shape narratives, but to introduce measurable friction into the defender’s OODA cycle. Decision latency increased, interpretive coherence decreased, and at least one operational pause reflected action-stage misalignment. These outcomes illustrate that cognitive effects become operationally relevant when they translate into degraded perception, delayed orientation, distorted judgment, or misaligned action.
+
+Second, the scenario highlights the interaction between chronic conditioning and acute disruption. Chronic erosion of institutional trust and credibility inversion reshaped the interpretive priors that fed the defender’s acute decision cycles. As a result, authoritative corrective messaging required more time to restore orientation coherence. The case therefore illustrates how long-horizon conditioning re-parameterizes short-horizon OODA performance, increasing the probability that acute deception will produce measurable operational degradation.
+
+Third, the case reveals the centrality of adaptation speed in determining relative advantage. Although the defender possessed detection and mitigation mechanisms, coordination latency and clearance procedures reduced mitigation effectiveness during the acute window. In contrast, the attacker demonstrated rapid narrative pivoting and amplification optimization. Cognitive superiority, therefore, emerged not from control of belief, but from comparative performance under sustained contest.
+
+Fourth, the asymmetric cost structure of cognitive warfare significantly influenced contest dynamics. The attacker’s marginal cost to generate and reseed narrative variants was relatively low, while the defender incurred substantial verification, synchronization, and communication burdens. This cost asymmetry prolonged cognitive pressure and reduced defender agility. The case thus underscores that sustainable cognitive advantage depends not only on achieving effects, but on achieving them efficiently under prolonged competition.
+
+Several limitations should be acknowledged. This case study is notional and does not draw on real operational data. Observable indicators such as decision latency and orientation divergence are presented illustratively rather than empirically measured. Additionally, the scenario simplifies complex interagency, allied, and sociopolitical dynamics that would influence real-world outcomes. Future research should empirically test the proposed attribute families against historical cases and simulation-based experiments to validate measurable thresholds for cognitive superiority.
+
+Despite these limitations, the case study demonstrates the analytic utility of the Multi-Horizon Cognitive OODA framework and clarifies how cognitive warfare can be evaluated systematically rather than descriptively.
+
+3.5.2Implications for the Joint Force
+The framework, as manifested through the case study, has the following implications for doctrine, force design, training, and operational assessment, which suggest that cognitive advantage is not achieved through information dominance alone but through resilient decision processes and adaptive organizational performance under sustained contest.
+
+1. Institutionalize Cognitive Warfare as a Decision-Centric Operational Concept.
+Cognitive warfare should not be treated as a subordinate element of missions such as public affairs or cyber operations. Rather, it represents a sustained contest over decision advantage that directly affects mission outcomes. Doctrine should explicitly incorporate cognitive objectives, capability development, and superiority assessment within operational planning processes.
+
+2. Prioritize Decision Resilience Training.
+Because cognitive superiority hinges on preserving OODA integrity under pressure, training programs should emphasize decision-making under information saturation, ambiguity, and adversarial framing. Cognitive resilience, including recognition of manipulative tactics, credibility routing, and stress-aware decision protocols, should be integrated into professional military education and live exercises.
+
+3. Incorporate Cognitive Stressors into Simulation and Wargaming.
+Operational exercises should include realistic adversarial amplification dynamics and narrative pivoting behaviors to test adaptation speed and recovery time. Embedding cognitive stress within simulations enables commanders and staffs to identify vulnerabilities in orientation coherence and decision tempo before real-world exploitation occurs.
+
+4. Reduce Organizational Latency.
+The case study illustrates how coordination overhead can degrade defensive performance. Cross-functional cognitive defense teams that integrate intelligence, operations, behavioral expertise, and communication functions may reduce response delays and improve mitigation effectiveness during acute windows.
+
+5. Adopt Decision-Centric Measures of Effectiveness.
+Assessment frameworks should move beyond reach and engagement metrics to incorporate decision latency, decision error frequency, recovery time, and trust calibration indicators. Embedding these measures into after-action reviews and readiness evaluations will enable systematic assessment of cognitive superiority.
+
+4Conclusion
+This article introduced the Multi-Horizon Cognitive OODA framework, including a novel definition of cognitive warfare and cognitive superiority, to model cognitive attacker–defender interaction as a dynamic contest over decision advantage. By distinguishing acute (short-horizon) disruption from chronic (long-horizon) conditioning and organizing analysis around objectives, capabilities, and cost and efficiency, the framework provides a systematic basis for evaluating cognitive superiority.
+
+A notional case study demonstrated the usefulness of the framework and how cognitive warfare manifests operationally when adversarial activities translate into measurable degradation of observation accuracy, orientation coherence, decision tempo, and action fidelity. It further illustrated that cognitive superiority does not require control of perception or belief. Rather, superiority emerges when one actor sustains comparative advantage in preserving or degrading OODA performance at greater speed and with greater cost-efficiency than its opponent. As a result, decision resilience under contested information conditions will become a defining determinant of operational and strategic success.
+
+Future work should empirically validate measurable indicators of cognitive superiority, develop quantitative models of cognitive attack–defense dynamics analogous to cybersecurity dynamics models, and integrate cognitive performance metrics into joint operational assessment frameworks.
+
+References
+[1]
+M. Basol, J. Roozenbeek, and S. van der Linden (2020)
+Good news about bad news: gamified inoculation boosts confidence and cognitive immunity against fake news.
+Journal of Cognition 3 (1), pp. 1–9.
+External Links: Document
+Cited by: §1.2, §2.1.
+[2]
+R. B. Cialdini (2009)
+Influence: science and practice.
+5 edition, Pearson Education, Boston, MA.
+Cited by: 2nd item, §2.1, §3.2.2.
+[3]
+DISARM Foundation (2024)
+DISARM framework explorer.
+Note: Accessed Aug. 31, 2025
+External Links: Link
+Cited by: 4th item, §3.2.2.
+[4]
+F. du Cluzel (2020)
+Cognitive warfare.
+NATO Allied Command Transformation (Innovation Hub).
+Note: Accessed 31 Jan 2026
+External Links: Link
+Cited by: §1.2, §2.1, §2.2.1, §2.4, §2.5, §2.5.
+[5]
+B. Hutchins and M. Peck (2022)
+Cognitive wargaming: understanding and countering information influence.
+Technical report
+NATO Strategic Communications Centre of Excellence.
+Note: Riga, Latvia
+Cited by: §1.2, §1, 4th item, §2.1, §2.1, §2.5, §2.5, §3.2.2, §3.3.2.
+[6]
+Joint Chiefs of Staff (2022)
+Joint Publication 3-04: Information in Joint Operations.
+Joint Chiefs of Staff, Washington, D.C..
+Note: Defines the cognitive dimension of the information environment as the domain of human perception, decision, and action.
+Cited by: §1.2, §1, §1, §2.1, §2.1, §2.2.1, §2.2.1, §2.2.2, §2.2, §2.2, §2.4, §2.5, §2.5, §2.5, §2.
+[7]
+Joint Chiefs of Staff (2022)
+Joint Publication 3-0: Joint Operations.
+Joint Chiefs of Staff, Washington, D.C..
+Cited by: §2.1, §2.6.
+[8]
+D. Kahneman (2011)
+Thinking, fast and slow.
+Farrar, Straus and Giroux.
+Cited by: §1.2, §1, 2nd item, §2.1, §2.2.1, §2.2, §2.5, §2, §3.2.2.
+[9]
+K. Kiili, J. Siuko, and M. Ninaus (2024)
+Tackling misinformation with games: a systematic literature review.
+Interactive Learning Environments, pp. 1–16.
+External Links: Document, Link
+Cited by: 2nd item, §3.3.2.
+[10]
+T. T. Longtchi, R. M. Rodriguez, K. Gwartney, E. Ear, D. P. Azari, C. P. Kelley, and S. Xu (2024)
+Quantifying psychological sophistication of malicious emails.
+IEEE Access (), pp. 1–1.
+External Links: Document
+Cited by: §1.2.
+[11]
+NATO Science & Technology Organization (2026)
+Cognitive warfare: nato chief scientist research report.
+NATO Science & Technology Organization.
+Note: Accessed 31 Jan 2026
+External Links: Link
+Cited by: §2.1, §2.1, §2.2.1, §2.4, §2.5.
+[12]
+NATO Strategic Communications Centre of Excellence (2023)
+Defence strategic communications, volume 11, autumn 2022.
+Defence Strategic Communications 11.
+Note: Riga: NATO StratCom COE
+External Links: Document
+Cited by: §1.2, §2.2.1, §2.5.
+[13]
+F. P. B. Osinga (2007)
+Science, strategy and war: the strategic theory of john boyd.
+Routledge, London.
+Cited by: §1.
+[14]
+C. Paul, L. Wong, and E. Bartels (2020)
+Opportunities for including the information environment in u.s. marine corps wargames.
+RAND Corporation.
+External Links: Document, Link
+Cited by: §1.2, §1, 3rd item, 4th item, §2.1, §2.1, §2.1, §2.2, §2.5, §2.5, §3.2.2, §3.2.2, §3.2.2, §3.3.2.
+[15]
+J. Roozenbeek and S. van der Linden (2020)
+Breaking harmony square: a game that “inoculates” against political misinformation.
+Harvard Kennedy School Misinformation Review 1 (8).
+External Links: Document
+Cited by: §1.2, 2nd item, §2.1, §2.1, §3.3.2.
+[16]
+B. Rushing and S. Xu (2026)
+Characterising cyber cognitive attacks.
+RUSI Journal 171 (2).
+Cited by: §2.5, §2, Definition 1.
+[17]
+B. Rushing (2024)
+Analysis of media influence on military decision-making.
+The 19th International Conference on Cyber Warfare and Security 19 (1), pp. 308–316.
+Cited by: §1.
+[18]
+E. Salas, S. I. Tannenbaum, K. Kraiger, and K. A. Smith-Jentsch (2012)
+The science of training and development in organizations: what matters in practice.
+Psychological Science in the Public Interest 13 (2), pp. 74–101.
+Cited by: §1.2, 2nd item, §2.1, §3.3.2.
+[19]
+U.S. Department of Defense (2023)
+Department of Defense Information Operations Strategy.
+Note: https://media.defense.gov/2023/May/31/2003231168/-1/-1/0/DoD-Information-Operations-Strategy-2023.pdfEmphasizes the cognitive dimension as central to future competition and warfare.
+Cited by: §1.2, §1, §2.1, §2.2.1, §2.2.2, §2.5, §2.5, §2.6, §2.6, §2.
+[20]
+U.S. Senate Committee on Armed Services (2025)
+National Defense Authorization Act for Fiscal Year 2026.
+Technical Report S. Rep. No. 119-39, U.S. Government Publishing Office.
+Note: 119th Cong., 1st sess. See section “Narrative Intelligence and Cognitive Warfare.”
+External Links: Link
+Cited by: §1.
+[21]
+C. Wardle and H. Derakhshan (2017)
+Information disorder: toward an interdisciplinary framework for research and policy making.
+Council of Europe, Strasbourg, France.
+External Links: Link
+Cited by: §1.2, §1, 1st item, 3rd item, §2.1, §2.1, §2.1, §2.2.1, §2.2, §2.4, §2.5, §2.5, §2, §3.2.2, §3.2.2, §3.2.2, §3.3.2, §3.3.2.
+[22]
+D. Wilden, M. Nasim, and P. Williams (2023)
+On benchmarking and validation in wargames: a scoping review and agenda for future research.
+In European Conference on Cyber Warfare and Security (ECCWS),
+pp. 1–10.
+External Links: Link
+Cited by: §1.2.
+[23]
+S. Xu (2014)
+Cybersecurity dynamics.
+In Proceedings of the 2014 Symposium and Bootcamp on the Science of Security, HotSoS 2014, Raleigh, NC, USA, April 08 - 09, 2014,
+pp. 14.
+External Links: Document
+Cited by: §1.2, §2.1, §2.2.
+[24]
+S. Xu (2019)
+Cybersecurity dynamics: a foundation for the science of cybersecurity.
+In Proactive and Dynamic Network Defense,
+Vol. 74, pp. 1–31.
+Cited by: §1.2.
+[25]
+S. Xu (2020)
+The cybersecurity dynamics way of thinking and landscape.
+In Proceedings of the 7th ACM Workshop on Moving Target Defense, MTD@CCS 2020, USA, November 9, 2020,
+pp. 69–80.
+External Links: Document
+Cited by: §1.2, §2.1, §2.2.
+4.1Author biographies
+Bonnie Rushing (SMSgt, USAF) is the first enlisted member assigned to a doctoral program. She is currently pursuing a Ph.D. in Cybersecurity in the Laboratory for Cybersecurity Dynamics at the University of Colorado Colorado Springs through the Air Force Institute of Technology. Since enlisting in 2009, she has served as a Special Operations airborne linguist, signals intelligence team lead, and US Air Force Academy senior faculty member. She has flown 700+ flight hours aboard four C-130 variants, deployed across Latin America, and taught strategy, innovation, and joint operations wargaming. Her research focuses on social engineering, media association, and cognitive security, with multiple peer-reviewed publications and international-level awards. Her honors include the Defense Meritorious Service Medal, BEYA and WOC Technology Leader Awards, and “40 Under 40” in STEM. More at www.thebonnierushing.com.
+
+Dr. William “Ox” Hersch, Ph.D. (Col, USAF, retired) is a proven educator and practitioner of military and strategic studies with an eclectic background as an instructor, educator, leader, and operator. Originally from Pennsylvania, Dr. Hersch received his commission at Officer Training School, Maxwell Air Force Base, Alabama and served over 25 years on Active Duty. He is a veteran of both OPERATION ENDURING FREEDOM and OPERATION IRAQI FREEDOM, with over 1,800 total flight hours and 400 combat hours in the B-1B Lancer. Dr. Hersch is a graduated Political-Military Affairs Specialist, holds a Doctoral Degree in Military Strategy, and is practiced at developing, researching, teaching, and executing adaptive strategies across the spectrum of conflict.
+
+Dr. Shouhuai Xu, Ph.D. is the Gallogly Chair Professor in Cybersecurity and the Founding Director of the Laboratory for Cybersecurity Dynamics, Department of Computer Science, University of Colorado Colorado Springs (UCCS). His research interest includes unifying cyber warfare, cognitive warfare, and electronic warfare into a single framework. His research has won several awards, including the 1st place at the 2019 Worldwide Adversarial Malware Classification Challenge organized by the MIT Lincoln Lab, 2023 USCYBERCOM Cyber REcon Analyst Award, 2024 USCYBERCOM Cyber REcon Hunter Award, 1st place at the 2024 US DoD NSIN/UC2 Cyber Innovators Challenge (Topic 3), and 2025 ACM SIGSOFT Distinguished Paper Award. His research has been funded by AFOSR, AFRL, ARL, ARO, DOE, NSA, NSF and ONR. He is the Technology Pillar Lead of an NSF Regional Innovation Hub (Phase 1), which focuses on making space infrastructures and systems resilient. He co-initiated the International Conference on Science of Cyber Security (SciSec) and serves as its Steering Committee Chair. He has served as Program Committee co-chair for several international conferences. He is/was an Associate Editor of IEEE Transactions on Dependable and Secure Computing (IEEE TDSC), IEEE Transactions on Information Forensics and Security (IEEE T-IFS), IEEE Transactions on Network Science and Engineering (IEEE TNSE), and Scientific Reports. He is a Distinguished Member of ACM (class 2024). More at https://xu-lab.org.
+
+
+
+
+
+We gratefully acknowledge support from our major funders, member institutions, and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status(opens in new tab)
+Major funding support from
+Simons Foundation
+Simons Foundation International
+Schmidt Sciences

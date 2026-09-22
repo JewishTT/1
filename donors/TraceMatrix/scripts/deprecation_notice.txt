@@ -1,0 +1,8 @@
+Windows .bat scripts are deprecated in this repository. Use the Unix/WSL equivalents under scripts/*.sh:
+- scripts/rebuild_orchestrator.sh
+- scripts/check_searx_config.sh
+- scripts/generate_secrets.sh
+- scripts/purge_env_history.sh
+
+Run them inside WSL or any Unix-like environment.
+
