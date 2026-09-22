@@ -50,7 +50,7 @@ function KindCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="panel" style={{ borderRadius: 10, padding: "var(--md, 0.875rem)" }}>
+    <div className="panel net-card">
       <div className="intel-canvas-head" style={{ borderBottom: 0, paddingBottom: 8 }}>
         <span className="op-label">
           {icon} {title}
@@ -91,7 +91,7 @@ export function NetworkAnalysisPage(props: Props) {
       : undefined;
 
   return (
-    <section className="intel-board" data-testid="net-board">
+    <section className="intel-board network-board" data-testid="net-board">
       <aside className="intel-seedbank" data-testid="net-seedbank">
         <div className="intel-canvas-head" style={{ borderBottom: 0 }}>
           <span className="op-label">NETWORK SANDBOX</span>

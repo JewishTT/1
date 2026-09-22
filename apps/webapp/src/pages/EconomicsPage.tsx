@@ -30,15 +30,24 @@ export function EconomicsPage({ metrics, onRefresh }: Props) {
   const waste = metrics.useful_observations * metrics.duplicate_ratio;
 
   return (
-    <section data-testid="economic-dashboard">
-      <div className="tiles" style={{ marginBottom: "1rem" }}>
+    <section className="command-page economics-page" data-testid="economic-dashboard">
+      <div className="page-banner">
+        <div>
+          <span className="op-label">ECON / RESOURCE INTELLIGENCE</span>
+          <h1>Intelligence economy</h1>
+          <p className="panel-note">Cost, yield and worker capacity across the evidence pipeline.</p>
+        </div>
+        <span className="status-chip status-chip-live">LEDGER LINKED</span>
+      </div>
+
+      <div className="tiles command-metrics">
         <Tile label="cost / 1M obs" value={`$${metrics.cost_per_1m_obs.toFixed(2)}`} />
         <Tile label="running budget" value={`$${runningBudget.toFixed(2)}`} />
         <Tile label="duplicate waste (obs)" value={waste.toLocaleString()} />
         <Tile label="discovery yield" value={`${(metrics.discovery_yield * 100).toFixed(0)}%`} />
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Throughput economics</h2>
         <div className="tiles">
           <Tile label="throughput / s" value={metrics.throughput_per_s} />
@@ -47,7 +56,7 @@ export function EconomicsPage({ metrics, onRefresh }: Props) {
         </div>
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Storage growth (projection-lag)</h2>
         {storageEntries.length === 0 ? (
           <p className="panel-note">No storage stats.</p>
@@ -62,7 +71,7 @@ export function EconomicsPage({ metrics, onRefresh }: Props) {
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Pipeline latency</h2>
         {lagEntries.length === 0 ? (
           <p className="panel-note">No lags.</p>
@@ -77,7 +86,7 @@ export function EconomicsPage({ metrics, onRefresh }: Props) {
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Queue load</h2>
         {queueEntries.length === 0 ? (
           <p className="panel-note">No queues.</p>
@@ -92,7 +101,7 @@ export function EconomicsPage({ metrics, onRefresh }: Props) {
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Worker pool CAPEX / OPEX</h2>
         {poolEntries.length === 0 ? (
           <p className="panel-note">No pool data.</p>

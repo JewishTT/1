@@ -490,3 +490,678 @@ button { font-family: inherit; }
   border-left: 2px solid var(--acc); border-top: 2px solid var(--acc); opacity: 0.7; }
 .neon-bracket::after { content: ""; position: absolute; right: 8px; bottom: 8px; width: 12px; height: 12px;
   border-right: 2px solid var(--acc); border-bottom: 2px solid var(--acc); opacity: 0.7; }
+
+/* ── 2026 intelligence theater refresh ───────────────────────────────
+ * A harder, more deliberate visual system: black field, lime signal
+ * traces, blue-white evidence, and red threat markers. The selectors
+ * intentionally sit at the end of this file so every existing surface
+ * inherits the new shell without changing page behavior.
+ */
+:root {
+  --c-bg: #020604;
+  --c-surface: #07100d;
+  --c-surface-2: #0b1712;
+  --c-surface-3: #102219;
+  --c-glass: rgba(5, 13, 10, 0.9);
+  --c-border: rgba(135, 180, 143, 0.24);
+  --c-border-hi: rgba(160, 255, 77, 0.56);
+  --c-text: #e8f0e8;
+  --c-text-2: #b7c8ba;
+  --c-muted: #819385;
+  --c-fg-muted: #819385;
+  --c-text-dim: #5b6d60;
+  --c-accent: #a6ff4d;
+  --c-accent-2: #d5ff9b;
+  --c-accent-soft: rgba(166, 255, 77, 0.13);
+  --c-danger: #ff665f;
+  --c-danger-hover: #ff8b78;
+  --c-warning: #f5b942;
+  --c-success: #9eea6a;
+  --acc: #a6ff4d;
+  --acc-2: #d5ff9b;
+  --acc-soft: rgba(166, 255, 77, 0.13);
+  --acc-glow: 0 0 18px rgba(166, 255, 77, 0.2), inset 0 0 12px rgba(166, 255, 77, 0.045);
+  --sidebar-w: 248px;
+  --header-h: 62px;
+}
+
+[data-module="economic"] {
+  --acc: #75e6a1;
+  --acc-2: #c0ffd4;
+  --acc-soft: rgba(117, 230, 161, 0.13);
+  --acc-glow: 0 0 18px rgba(117, 230, 161, 0.2), inset 0 0 12px rgba(117, 230, 161, 0.045);
+}
+
+[data-module="specops"] {
+  --acc: #ff6e61;
+  --acc-2: #ffb09a;
+  --acc-soft: rgba(255, 110, 97, 0.14);
+  --acc-glow: 0 0 18px rgba(255, 110, 97, 0.22), inset 0 0 12px rgba(255, 110, 97, 0.05);
+}
+
+body {
+  color: var(--c-text);
+  background-color: var(--c-bg);
+  background-image:
+    radial-gradient(900px 540px at 42% -10%, rgba(114, 176, 125, 0.08), transparent 64%),
+    radial-gradient(700px 520px at 100% 100%, rgba(49, 107, 113, 0.12), transparent 66%),
+    linear-gradient(180deg, #020604 0%, #030806 100%);
+  letter-spacing: 0.01em;
+}
+
+body::before {
+  background-image:
+    linear-gradient(rgba(150, 255, 97, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(150, 255, 97, 0.055) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.58;
+  mask-image: radial-gradient(100% 75% at 52% 0%, #000 28%, transparent 100%);
+}
+
+body::after {
+  background: repeating-linear-gradient(0deg, rgba(216, 255, 217, 0.018) 0 1px, transparent 1px 4px);
+  opacity: 0.42;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: 0.04em;
+}
+
+h1 {
+  font-weight: 600;
+  letter-spacing: 0.015em;
+}
+
+h2 {
+  color: var(--acc);
+  text-shadow: 0 0 16px var(--acc-soft);
+}
+
+a {
+  color: var(--acc);
+}
+
+/* The shell is intentionally flatter and more architectural than a
+ * consumer dashboard: thin rails, hard corners, and quiet hierarchy. */
+.layout {
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: var(--header-h) 1fr;
+}
+
+.sidebar {
+  gap: 1rem;
+  padding: 1.1rem 0.8rem 0.9rem;
+  background:
+    linear-gradient(90deg, rgba(4, 12, 8, 0.98), rgba(5, 12, 9, 0.92)),
+    repeating-linear-gradient(0deg, transparent 0 35px, rgba(166, 255, 77, 0.025) 36px);
+  border-right: 1px solid rgba(166, 255, 77, 0.24);
+  box-shadow: inset -12px 0 30px rgba(0, 0, 0, 0.24), 12px 0 34px rgba(0, 0, 0, 0.32);
+}
+
+.sidebar-header {
+  padding: 0.1rem 0.35rem 0.6rem;
+  border-bottom: 1px solid rgba(166, 255, 77, 0.18);
+}
+
+.brand-row {
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.brand-mark {
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid var(--acc);
+  color: var(--acc);
+  font-size: 0.68rem;
+  letter-spacing: 0;
+  box-shadow: 0 0 14px var(--acc-soft), inset 0 0 10px var(--acc-soft);
+  transform: rotate(45deg);
+}
+
+.brand-mark::first-letter {
+  display: inline-block;
+  transform: rotate(-45deg);
+}
+
+.brand-name {
+  font-size: 1rem;
+  letter-spacing: 0.28em;
+}
+
+.brand-sub {
+  display: block;
+  margin: 0.45rem 0 0 2.2rem;
+  font-size: 0.56rem;
+  color: #789079;
+  letter-spacing: 0.2em;
+}
+
+.module-tabs {
+  gap: 0;
+  padding: 0;
+  border: 1px solid rgba(135, 180, 143, 0.2);
+  border-radius: 3px;
+  background: rgba(0, 5, 3, 0.58);
+}
+
+.module-tab {
+  border-radius: 0;
+  padding: 0.48rem 0.2rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+}
+
+.module-tab + .module-tab {
+  border-left: 1px solid rgba(135, 180, 143, 0.16);
+}
+
+.module-tab[data-active="true"] {
+  background: linear-gradient(180deg, rgba(166, 255, 77, 0.17), rgba(166, 255, 77, 0.045));
+  box-shadow: inset 0 -2px 0 var(--acc), var(--acc-glow);
+}
+
+.nav {
+  gap: 0.08rem;
+}
+
+.group-label {
+  margin: 0.9rem 0.5rem 0.34rem;
+  color: #6a816d;
+  font-size: 0.56rem;
+  letter-spacing: 0.3em;
+}
+
+.nav-link {
+  position: relative;
+  border-radius: 2px;
+  padding: 0.54rem 0.62rem;
+  color: #9eafa0;
+  font-size: 0.78rem;
+}
+
+.nav-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  background: transparent;
+}
+
+.nav-link:hover {
+  background: rgba(166, 255, 77, 0.06);
+  color: var(--c-text);
+  text-decoration: none;
+}
+
+.nav-link.active {
+  background: linear-gradient(90deg, rgba(166, 255, 77, 0.16), rgba(166, 255, 77, 0.025));
+  border-color: rgba(166, 255, 77, 0.24);
+  box-shadow: inset 0 0 20px rgba(166, 255, 77, 0.04);
+}
+
+.nav-link.active::before {
+  background: var(--acc);
+  box-shadow: 0 0 12px var(--acc);
+}
+
+.nav-icon {
+  color: #7eaa80;
+  filter: none;
+}
+
+.nav-link.active .nav-icon {
+  color: var(--acc);
+  filter: drop-shadow(0 0 7px var(--acc));
+}
+
+.sidebar-foot {
+  padding: 0.75rem 0.45rem 0.15rem;
+  border-top-color: rgba(135, 180, 143, 0.2);
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+}
+
+.header {
+  padding: 0 1.4rem;
+  background:
+    linear-gradient(180deg, rgba(5, 13, 9, 0.96), rgba(3, 8, 6, 0.82)),
+    repeating-linear-gradient(90deg, transparent 0 92px, rgba(166, 255, 77, 0.04) 93px 94px);
+  border-bottom: 1px solid rgba(166, 255, 77, 0.22);
+}
+
+.header::after {
+  content: "SECURE / EVIDENCE-FIRST / LINKED";
+  margin-left: auto;
+  margin-right: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.16em;
+  color: #66816d;
+}
+
+.header .crumb {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+}
+
+.header-right {
+  gap: 0.7rem;
+}
+
+.header-clock {
+  padding-left: 0.7rem;
+  border-left: 1px solid rgba(135, 180, 143, 0.24);
+  font-size: 0.62rem;
+}
+
+.header-link {
+  border-radius: 2px;
+  padding: 0.3rem 0.6rem;
+  background: rgba(166, 255, 77, 0.08);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+}
+
+.main {
+  padding: 1.15rem 1.25rem 1.5rem;
+}
+
+.panel {
+  border-radius: 3px;
+  border-color: rgba(135, 180, 143, 0.25);
+  background: linear-gradient(145deg, rgba(7, 16, 11, 0.93), rgba(2, 7, 5, 0.9));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(208, 255, 202, 0.035);
+}
+
+.panel::before {
+  background: linear-gradient(90deg, transparent, rgba(166, 255, 77, 0.6), transparent);
+}
+
+.btn {
+  border-radius: 2px;
+  border-color: rgba(135, 180, 143, 0.32);
+  background: rgba(9, 22, 14, 0.96);
+  color: #b7cbb9;
+  letter-spacing: 0.04em;
+}
+
+.btn:hover {
+  border-color: var(--acc);
+  color: var(--acc-2);
+  box-shadow: 0 0 15px var(--acc-soft);
+}
+
+.btn-primary {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: #071006;
+  box-shadow: 0 0 14px rgba(166, 255, 77, 0.18);
+}
+
+.status-chip {
+  border-radius: 2px;
+  border-color: rgba(135, 180, 143, 0.3);
+  background: rgba(8, 19, 12, 0.8);
+  font-size: 0.57rem;
+  letter-spacing: 0.14em;
+}
+
+/* Intelligence board: the central map is the visual anchor. */
+.intel-board {
+  grid-template-columns: 250px 1fr;
+  gap: 0.7rem;
+  height: calc(100vh - var(--header-h) - 2.55rem);
+}
+
+.intel-seedbank,
+.intel-canvas {
+  border-radius: 3px;
+  border-color: rgba(135, 180, 143, 0.3);
+}
+
+.intel-seedbank {
+  background:
+    linear-gradient(180deg, rgba(8, 20, 12, 0.96), rgba(3, 9, 6, 0.96)),
+    repeating-linear-gradient(0deg, transparent 0 30px, rgba(166, 255, 77, 0.025) 31px);
+}
+
+.intel-canvas {
+  background:
+    radial-gradient(720px 420px at 50% 44%, rgba(49, 100, 73, 0.14), transparent 68%),
+    linear-gradient(180deg, rgba(1, 7, 4, 0.96), rgba(1, 4, 3, 0.99));
+}
+
+.intel-canvas::after {
+  content: "LIVE GRAPH / PROVENANCE LAYER / 03";
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.75rem;
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.17em;
+  color: rgba(139, 182, 143, 0.52);
+  pointer-events: none;
+}
+
+.intel-canvas-head {
+  min-height: 46px;
+  padding: 0.55rem 0.75rem;
+  background: rgba(2, 9, 5, 0.68);
+  border-bottom-color: rgba(166, 255, 77, 0.2);
+}
+
+.intel-canvas-body::before {
+  background-image:
+    linear-gradient(rgba(166, 255, 77, 0.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 255, 77, 0.075) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.62;
+}
+
+.intel-legend {
+  left: 0.75rem;
+  bottom: 0.75rem;
+  border-radius: 2px;
+  border-color: rgba(135, 180, 143, 0.32);
+  background: rgba(2, 8, 5, 0.84);
+}
+
+.canvas-toolbar {
+  gap: 0.2rem;
+}
+
+.toolbar-select,
+.toolbar-btn {
+  border-radius: 2px;
+  border-color: rgba(135, 180, 143, 0.28);
+  background: rgba(7, 18, 11, 0.95);
+}
+
+.toolbar-btn:hover,
+.toolbar-btn[data-active="true"] {
+  border-color: var(--acc);
+  color: var(--acc);
+  box-shadow: 0 0 12px var(--acc-soft);
+}
+
+.intel-inspector {
+  border-radius: 3px;
+  border-color: rgba(166, 255, 77, 0.45);
+  background: rgba(3, 11, 7, 0.94);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.62), 0 0 26px rgba(166, 255, 77, 0.08);
+}
+
+.intel-feed {
+  height: 70px;
+  background: rgba(1, 6, 4, 0.9);
+  border-top-color: rgba(166, 255, 77, 0.2);
+}
+
+.feed-item {
+  border-radius: 2px;
+  background: rgba(5, 15, 9, 0.92);
+}
+
+.feed-item[data-kind="entity.updated"] {
+  border-color: rgba(166, 255, 77, 0.52);
+  box-shadow: 0 0 14px rgba(166, 255, 77, 0.12);
+}
+
+.seed-add {
+  padding: 0.7rem;
+  border-bottom-color: rgba(135, 180, 143, 0.2);
+}
+
+.seed-node {
+  border-radius: 2px;
+  background: rgba(4, 13, 8, 0.76);
+}
+
+.seed-node[data-selected="true"] {
+  border-color: var(--acc);
+  background: var(--acc-soft);
+  box-shadow: 0 0 15px var(--acc-soft);
+}
+
+.node-card {
+  border-radius: 3px;
+  background: linear-gradient(145deg, rgba(8, 24, 14, 0.98), rgba(2, 8, 5, 0.98));
+}
+
+@media (max-width: 980px) {
+  .header::after {
+    display: none;
+  }
+  .intel-board {
+    grid-template-columns: 210px 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    overflow: auto;
+  }
+  .layout {
+    display: block;
+    min-height: 100vh;
+  }
+  .sidebar {
+    position: relative;
+    height: auto;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid rgba(166, 255, 77, 0.22);
+  }
+  .nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.15rem 0.5rem;
+  }
+  .group-label {
+    grid-column: 1 / -1;
+  }
+  .header {
+    height: var(--header-h);
+  }
+  .main {
+    overflow: visible;
+  }
+  .intel-board {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 800px;
+  }
+  .intel-seedbank {
+    min-height: 300px;
+  }
+  .intel-canvas {
+    min-height: 600px;
+  }
+}
+
+/* ── Secondary command surfaces ─────────────────────────────────────── */
+.command-page {
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+}
+
+.page-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+  padding: 0.2rem 0.1rem 0.95rem;
+  border-bottom: 1px solid rgba(166, 255, 77, 0.2);
+}
+
+.page-banner h1 {
+  margin: 0.28rem 0 0.18rem;
+  font-size: 1.55rem;
+}
+
+.page-banner .panel-note {
+  max-width: 620px;
+  color: #829785;
+}
+
+.status-chip-live {
+  border-color: rgba(166, 255, 77, 0.5);
+  color: var(--acc);
+  box-shadow: 0 0 12px var(--acc-soft);
+}
+
+.command-metrics {
+  grid-column: 1 / -1;
+  margin-bottom: 0.1rem;
+}
+
+.command-metrics .op-tile {
+  min-height: 86px;
+  justify-content: space-between;
+  padding: 0.7rem 0.8rem;
+}
+
+.command-metrics .op-value {
+  font-size: 1.25rem;
+}
+
+.economics-page {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.economics-page .page-banner {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.economics-page .command-panel {
+  grid-column: span 6;
+  margin-bottom: 0;
+  min-height: 132px;
+}
+
+.economics-page .command-panel:last-child {
+  grid-column: 1 / -1;
+}
+
+.command-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.8rem;
+}
+
+.command-panel h2::before {
+  content: "▸";
+  color: var(--acc);
+  font-size: 0.8em;
+}
+
+.command-panel ul {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.command-panel li {
+  padding: 0.35rem 0.45rem;
+  border: 1px solid rgba(135, 180, 143, 0.12);
+  background: rgba(4, 12, 7, 0.56);
+}
+
+.command-panel li::before {
+  content: "·";
+  display: inline-block;
+  margin-right: 0.38rem;
+  color: var(--acc);
+}
+
+.ops-page {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.ops-page .page-banner {
+  grid-column: 1 / -1;
+}
+
+.ops-page .command-panel {
+  margin-bottom: 0;
+}
+
+.ops-page .command-panel:first-of-type,
+.ops-page .command-panel:nth-of-type(2) {
+  min-height: 154px;
+}
+
+.ops-page .command-panel ul {
+  margin-top: 0.15rem;
+}
+
+.ops-page .command-panel li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.net-card {
+  border-radius: 3px !important;
+  padding: 0.85rem !important;
+  background:
+    linear-gradient(145deg, rgba(8, 21, 12, 0.96), rgba(2, 8, 5, 0.94)),
+    repeating-linear-gradient(90deg, transparent 0 34px, rgba(166, 255, 77, 0.025) 35px);
+}
+
+.network-board .net-grid {
+  padding: 0;
+  gap: 0.7rem;
+  align-content: start;
+}
+
+.network-board .net-grid::before {
+  content: "STRUCTURAL ANALYSIS / DERIVED SIGNALS";
+  grid-column: 1 / -1;
+  padding: 0.1rem 0.1rem 0.05rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  color: #6d866f;
+}
+
+.network-board .net-result {
+  margin-top: 0.75rem;
+}
+
+.network-board .net-pair pre {
+  border-radius: 2px;
+  border-color: rgba(135, 180, 143, 0.22);
+  background: rgba(0, 6, 3, 0.72);
+  color: #a9c5aa;
+}
+
+@media (max-width: 920px) {
+  .economics-page,
+  .ops-page {
+    display: flex;
+    flex-direction: column;
+  }
+  .economics-page .command-panel,
+  .economics-page .command-panel:last-child {
+    width: 100%;
+  }
+}

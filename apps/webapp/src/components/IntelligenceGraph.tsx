@@ -14,13 +14,13 @@ interface Props {
 
 // ── Volumetric entity-type palette ─────────────────────────────────────
 export const TYPE_META: Record<EntityType, { accent: string; icon: string }> = {
-  account: { accent: "#22d3ee", icon: "M12 8a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.67 0-8 2.6-8 6v1h16v-1c0-3.4-3.33-6-8-6Z" },
-  organisation: { accent: "#fbbf24", icon: "M5 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17M3 21h16M9 7h3M9 11h3M9 15h3" },
-  device: { accent: "#34d399", icon: "M8 2h8a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm4 18h.01" },
-  location: { accent: "#60a5fa", icon: "M12 21s-6.5-5.66-6.5-10.5A6.5 6.5 0 0 1 18.5 10.5C18.5 15.34 12 21 12 21ZM12 12.5a2 2 0 1 0-2-2 2 2 0 0 0 2 2Z" },
-  infrastructure: { accent: "#a78bfa", icon: "M4 4h16v7H4Zm0 9h16v7H4Zm4 1.5h.01M4 7.5h.01M20 7.5h.01" },
-  tool: { accent: "#f87171", icon: "m21 3-3.6 3.6M8.5 12A4.5 4.5 0 1 0 13.6 5.4L10 9 8.5 12Zm-2 2-3.5 3.5A2.1 2.1 0 0 0 3 21h0a2.1 2.1 0 0 0 3.5-0.5L10 17" },
-  unknown: { accent: "#7c889d", icon: "M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9Zm.5-10.5c.83-.5 1.5-1 1.5-2a2 2 0 1 0-4 0M12 16h.01" },
+  account: { accent: "#b5ff69", icon: "M12 8a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.67 0-8 2.6-8 6v1h16v-1c0-3.4-3.33-6-8-6Z" },
+  organisation: { accent: "#ff8d70", icon: "M5 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17M3 21h16M9 7h3M9 11h3M9 15h3" },
+  device: { accent: "#8ce3a0", icon: "M8 2h8a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm4 18h.01" },
+  location: { accent: "#8ed7db", icon: "M12 21s-6.5-5.66-6.5-10.5A6.5 6.5 0 0 1 18.5 10.5C18.5 15.34 12 21 12 21ZM12 12.5a2 2 0 1 0-2-2 2 2 0 0 0 2 2Z" },
+  infrastructure: { accent: "#82adff", icon: "M4 4h16v7H4Zm0 9h16v7H4Zm4 1.5h.01M4 7.5h.01M20 7.5h.01" },
+  tool: { accent: "#ff6670", icon: "m21 3-3.6 3.6M8.5 12A4.5 4.5 0 1 0 13.6 5.4L10 9 8.5 12Zm-2 2-3.5 3.5A2.1 2.1 0 0 0 3 21h0a2.1 2.1 0 0 0 3.5-0.5L10 17" },
+  unknown: { accent: "#9aac9d", icon: "M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9Zm.5-10.5c.83-.5 1.5-1 1.5-2a2 2 0 1 0-4 0M12 16h.01" },
 };
 
 function tint(hex: string, amount: number): string {
@@ -44,7 +44,7 @@ function entitySublabel(node: IntelNode): string {
 
 const VOLUME: Record<string, object> = {
   entity: {
-    "background-color": "#0e1626",
+    "background-color": "#0a160d",
     "border-width": 2.5,
     "border-opacity": 0.95,
     "shadow-blur": 26,
@@ -52,7 +52,7 @@ const VOLUME: Record<string, object> = {
     width: 78,
     height: 78,
     shape: "ellipse",
-    color: "#e6edf7",
+    color: "#e7f4e5",
     "font-size": 10,
     label: "data(label)\ndata(sublabel)",
     "text-wrap": "wrap",
@@ -62,12 +62,12 @@ const VOLUME: Record<string, object> = {
     "text-halign": "center",
     "line-height": 1.3,
     "font-family": "'Geist Mono', Consolas, monospace",
-    "underlay-color": "#05070d",
+    "underlay-color": "#020604",
     "underlay-opacity": 0.4,
     "underlay-padding": 7,
   },
   correlate: {
-    "background-color": "#0a0f1a",
+    "background-color": "#100d0b",
     "border-width": 2,
     "border-style": "dashed",
     "border-opacity": 0.85,
@@ -76,7 +76,7 @@ const VOLUME: Record<string, object> = {
     width: 56,
     height: 56,
     shape: "round-rectangle",
-    color: "#aeb9c9",
+    color: "#d7c5b7",
     "font-size": 9,
     label: "data(label)\ndata(sublabel)",
     "text-wrap": "wrap",
@@ -86,7 +86,7 @@ const VOLUME: Record<string, object> = {
     "font-family": "'Geist Mono', Consolas, monospace",
   },
   relationship: {
-    "background-color": "#131e33",
+    "background-color": "#0f1110",
     "border-width": 1.5,
     "border-opacity": 0.9,
     "shadow-blur": 12,
@@ -94,18 +94,18 @@ const VOLUME: Record<string, object> = {
     width: 40,
     height: 40,
     shape: "triangle",
-    color: "#c9cfe3",
+    color: "#cbd9ca",
     "font-size": 8,
     label: "",
     "font-family": "'Geist Mono', Consolas, monospace",
   },
   observation: {
-    "background-color": "#070d18",
-    "border-color": "#34d399",
+    "background-color": "#06120a",
+    "border-color": "#a6ff4d",
     "border-width": 1.5,
     "border-opacity": 0.9,
     "shadow-blur": 12,
-    "shadow-color": "#34d399",
+    "shadow-color": "#a6ff4d",
     "shadow-opacity": 0.5,
     width: 36,
     height: 36,
@@ -118,12 +118,12 @@ const VOLUME: Record<string, object> = {
     "font-family": "'Geist Mono', Consolas, monospace",
   },
   source: {
-    "background-color": "#0a0f1a",
-    "border-color": "#7c889d",
+    "background-color": "#0a100c",
+    "border-color": "#8ca28d",
     "border-width": 1,
     "border-opacity": 0.7,
     "shadow-blur": 8,
-    "shadow-color": "#7c889d",
+    "shadow-color": "#8ca28d",
     "shadow-opacity": 0.3,
     width: 30,
     height: 30,
@@ -138,11 +138,11 @@ const VOLUME: Record<string, object> = {
 };
 
 const EDGE_STYLE: Record<string, object> = {
-  possible_match: { "line-color": "#22d3ee", width: 1.6, "line-style": "solid", "arrow-color": "#22d3ee" },
-  assertion: { "line-color": "#e879f9", width: 1.3, "line-style": "dotted", "arrow-color": "#e879f9" },
-  relationship: { "line-color": "#a78bfa", width: 1.1, "line-style": "dashed", "arrow-color": "#a78bfa" },
-  evidence: { "line-color": "#34d399", width: 1.2, "line-style": "dashed", "arrow-color": "#34d399" },
-  source_host: { "line-color": "#3b4a63", width: 0.9, "line-style": "dotted", "arrow-color": "#3b4a63" },
+  possible_match: { "line-color": "#b5ff69", width: 1.8, "line-style": "solid", "arrow-color": "#b5ff69" },
+  assertion: { "line-color": "#ff9b82", width: 1.3, "line-style": "dotted", "arrow-color": "#ff9b82" },
+  relationship: { "line-color": "#8ed7db", width: 1.1, "line-style": "dashed", "arrow-color": "#8ed7db" },
+  evidence: { "line-color": "#8ce3a0", width: 1.3, "line-style": "dashed", "arrow-color": "#8ce3a0" },
+  source_host: { "line-color": "#526a59", width: 0.9, "line-style": "dotted", "arrow-color": "#526a59" },
 };
 
 // ── Maltego Detail-View card overlaid on the canvas near the node ─────────
@@ -364,13 +364,13 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
             style: {
               label: e.reason,
               "font-size": 7,
-              "label-background-color": "#05070d",
+              "label-background-color": "#020604",
               "label-background-opacity": 0.75,
               "label-background-padding": "2px",
               "label-rotation": "autorotate",
               "text-wrap": "ellipsis",
               "text-max-width": "120px",
-              color: "#7c889d",
+              color: "#8da58f",
               "font-family": "'Geist Mono', Consolas, monospace",
             },
           })),
@@ -395,9 +395,9 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
             selector: "edge",
             style: {
               "curve-style": "bezier",
-              "line-color": "#3b4a63",
+              "line-color": "#526a59",
               width: 1.2,
-              color: "#7c889d",
+              color: "#8da58f",
               "font-size": 7,
               "font-family": "'Geist Mono', Consolas, monospace",
             },
@@ -411,7 +411,7 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
             selector: ":selected",
             style: {
               "border-width": 3.5,
-              "border-color": "#22d3ee",
+               "border-color": "#b5ff69",
               "shadow-blur": 30,
               "shadow-opacity": 0.85,
             } as cytoscape.Css.Node,

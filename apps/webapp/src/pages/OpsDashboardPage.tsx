@@ -39,13 +39,19 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
   const poolEntries = Object.entries(metrics.pools ?? {});
 
   return (
-    <section data-testid="ops-dashboard">
-      <h1>Operations dashboard</h1>
-      <button type="button" data-testid="refresh-btn" onClick={onRefresh}>
-        Refresh
-      </button>
+    <section className="command-page ops-page" data-testid="ops-dashboard">
+      <div className="page-banner">
+        <div>
+          <span className="op-label">SPEC / CONTROL PLANE</span>
+          <h1>Operations dashboard</h1>
+          <p className="panel-note">Pipeline health, freshness and worker readiness at a glance.</p>
+        </div>
+        <button className="btn btn-primary btn-sm" type="button" data-testid="refresh-btn" onClick={onRefresh}>
+          ↻ REFRESH
+        </button>
+      </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Throughput & knowledge</h2>
         <div className="tiles">
           <Tile label="throughput" value={metrics.throughput_per_s} />
@@ -55,7 +61,7 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
         </div>
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Cost & utilization</h2>
         <div className="tiles">
           <Tile label="cost / 1M obs" value={`$${metrics.cost_per_1m_obs}`} />
@@ -63,7 +69,7 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
         </div>
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Lags (freshness-lag)</h2>
         {lagEntries.length === 0 ? (
           <p>No lags.</p>
@@ -78,7 +84,7 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Queues (queue-age)</h2>
         {queueEntries.length === 0 ? (
           <p>No queues.</p>
@@ -93,7 +99,7 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Storage growth (projection-lag)</h2>
         {storageEntries.length === 0 ? (
           <p>No storage stats.</p>
@@ -108,7 +114,7 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel command-panel">
         <h2>Worker pools</h2>
         {poolEntries.length === 0 ? (
           <p>No pool data.</p>
