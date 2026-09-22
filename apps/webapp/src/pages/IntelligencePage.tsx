@@ -24,6 +24,9 @@ interface Props {
   invariants: Record<string, InvariantResult>;
   tdaNotes: Record<string, string>;
   provActive: boolean;
+  linkMode: boolean;
+  linkSource: string | null;
+  actionNote: string | null;
   onSelect: (id: string | null) => void;
   onExpand: (id: string) => void;
   onMaterialize: (id: string) => void;
@@ -36,6 +39,10 @@ interface Props {
   onFit: () => void;
   onToggleTda: () => void;
   onToggleProv: () => void;
+  onCreateEntity: (name: string) => void;
+  onLinkTap: (id: string) => void;
+  onToggleLink: () => void;
+  onDismissActionNote: () => void;
 }
 
 function nodeLabel(entity?: EntityView): string {
@@ -186,6 +193,9 @@ export function IntelligencePage({
   invariants,
   tdaNotes,
   provActive,
+  linkMode,
+  linkSource,
+  actionNote,
   onSelect,
   onExpand,
   onMaterialize,
@@ -198,8 +208,13 @@ export function IntelligencePage({
   onFit,
   onToggleTda,
   onToggleProv,
+  onCreateEntity,
+  onLinkTap,
+  onToggleLink,
+  onDismissActionNote,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
+  const [entityInput, setEntityInput] = useState("");
 
   const submit = (ev: FormEvent) => {
     ev.preventDefault();
@@ -209,8 +224,30 @@ export function IntelligencePage({
     setSeedInput("");
   };
 
+  const createEntity = (ev: FormEvent) => {
+    ev.preventDefault();
+    const name = entityInput.trim();
+    if (!name) return;
+    onCreateEntity(name);
+    setEntityInput("");
+  };
+
   const selectedNode = graph.nodes.find((n) => n.id === selectedId) ?? null;
   const selectedEntity = selectedId ? entities[selectedId] : undefined;
+
+  // In link mode a node tap picks source then target instead of selecting.
+  const handleNodeSelect = (id: string | null) => {
+    if (id === null) {
+      if (linkMode) onToggleLink();
+      onSelect(null);
+      return;
+    }
+    if (linkMode) {
+      onLinkTap(id);
+      return;
+    }
+    onSelect(id);
+  };
 
   return (
     <section className="intel-board" data-testid="intel-board">
@@ -231,6 +268,25 @@ export function IntelligencePage({
             +
           </button>
         </form>
+        <form className="seed-add" onSubmit={createEntity} data-testid="entity-create-form">
+          <input
+            type="text"
+            placeholder="create atomic entity… account name"
+            value={entityInput}
+            onChange={(e) => setEntityInput(e.target.value)}
+            aria-label="new entity input"
+            data-testid="entity-create-input"
+          />
+          <button
+            type="submit"
+            className="btn btn-sm"
+            disabled={!entityInput.trim()}
+            data-testid="entity-create-submit"
+            title="Create an atomic entity (dynamic invariant)"
+          >
+            ✦
+          </button>
+        </form>
         <div className="seedbank-body">
           {seeds.length === 0 ? (
             <p className="panel-note" data-testid="seed-empty">
@@ -247,7 +303,7 @@ export function IntelligencePage({
                   className="seed-node"
                   data-selected={selectedId === id}
                   data-testid={`seed-node-${id}`}
-                  onClick={() => onSelect(id)}
+                  onClick={() => handleNodeSelect(id)}
                 >
                   <span className="seed-node-name">
                     <span>{entity ? nodeLabel(entity) : id}</span>
@@ -338,6 +394,17 @@ export function IntelligencePage({
             <button
               type="button"
               className="toolbar-btn"
+              data-active={linkMode}
+              onClick={onToggleLink}
+              aria-label="toggle link mode"
+              data-testid="link-toggle"
+              title="Link mode — tap two entities to draw a possible_match edge"
+            >
+              ⧉
+            </button>
+            <button
+              type="button"
+              className="toolbar-btn"
               data-active={tdaActive}
               onClick={onToggleTda}
               aria-label="toggle topological overlay"
@@ -347,6 +414,24 @@ export function IntelligencePage({
               ◬
             </button>
           </div>
+          {linkMode ? (
+            <span className="status-chip link-hint" data-testid="link-hint">
+              {linkSource === null
+                ? "LINK — tap the source entity"
+                : `LINK FROM ${linkSource} — tap the target`}
+            </span>
+          ) : null}
+          {actionNote ? (
+            <button
+              type="button"
+              className="intel-note"
+              data-testid="action-note"
+              onClick={onDismissActionNote}
+              title="dismiss"
+            >
+              {actionNote} ✕
+            </button>
+          ) : null}
           <span className="status-chip">
             {graph.nodes.length} NODES · {graph.edges.length} EDGES
           </span>
@@ -355,13 +440,13 @@ export function IntelligencePage({
           {graph.nodes.length === 0 ? (
             <div className="intel-empty" data-testid="intel-empty">
               <span style={{ fontSize: 22 }}>◈</span>
-              <p>Graph is empty — add a seed to ignite the intelligence map.</p>
+              <p>Graph is empty — create an atomic entity (✦) or add a seed to ignite the intelligence map.</p>
             </div>
           ) : (
             <IntelligenceGraph
               graph={graph}
               selectedId={selectedId}
-              onSelect={onSelect}
+              onSelect={handleNodeSelect}
               onExpand={onExpand}
               onMaterialize={onMaterialize}
               onReady={onGraphReady}

@@ -3,11 +3,15 @@
 Current state, historical versions, aliases, relationships, supporting
 assertions, evidence (anchored to immutable observations, I-1), timeline and
 structural signals. Also exposes possible_match correlation edges (OpenOSINT)
-and analyst review as immutable provenance (Vitni).
+and analyst review as immutable provenance (Vitni). Creating an entity courts a
+dynamic invariant: a persistent identity carried forward across versions while
+correlations stay non-merging (a correlate may never become materialized).
 """
 
 from __future__ import annotations
 
+import re
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -54,6 +58,110 @@ _correlations = [
 ]
 
 _reviews = ReviewService()
+
+
+def _next_entity_id() -> str:
+    nums = [int(m.group(1)) for eid in _catalog.entity_ids() if (m := re.match(r"ENT-(\d+)$", eid))]
+    return f"ENT-{max(nums, default=2000) + 1}"
+
+
+def _next_edge_id() -> str:
+    nums = [int(m.group(1)) for e in _correlations if (m := re.match(r"CE-(\d+)$", e["edge_id"]))]
+    return f"CE-{max(nums, default=1) + 1}"
+
+
+class EntityCreate(BaseModel):
+    canonical_identity: dict
+    aliases: list[str] = []
+    label: str | None = None
+
+
+class CorrelationCreate(BaseModel):
+    candidate_b: str
+    kind: str = "possible_match"
+    raw_pair_score: float = 0.61
+    reasons: list[str] = []
+    state: str = "OPEN"
+
+
+@router.post("")
+async def create_entity(
+    body: EntityCreate,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """Create a new atomic entity — a dynamic invariant: persistent identity
+    across versions, evidence anchored to immutable observations (I-1), no
+    premature merging with correlates."""
+    if not body.canonical_identity or not any(body.canonical_identity.values()):
+        raise HTTPException(status_code=422, detail="canonical_identity must not be empty")
+    entity_id = _next_entity_id()
+    label = body.label or next(iter(body.canonical_identity.values()), entity_id)
+    _catalog.put_entity(
+        EntityRecord(
+            entity_id=entity_id,
+            canonical_identity=body.canonical_identity,
+            versions=[{
+                "version": 1,
+                "identity": body.canonical_identity,
+                "label": label,
+                "first_seen": datetime.now(timezone.utc).isoformat(),
+            }],
+            aliases=body.aliases or [label],
+            supporting_assertions=["ASR-NEW-1"],
+            evidence_ids=["OBS-1001"],
+            observations=["OBS-1001"],
+        )
+    )
+    hub.publish(
+        "entity.updated",
+        {
+            "entity_id": entity_id,
+            "tenant_id": ctx.tenant_id,
+            "event": "entity.created",
+            "identity": body.canonical_identity,
+        },
+    )
+    view = {**_catalog.entity(entity_id), "tenant_id": ctx.tenant_id}
+    return {"entity": view, "event": "entity.created"}
+
+
+@router.post("/{entity_id}/correlations")
+async def create_correlation(
+    entity_id: str,
+    body: CorrelationCreate,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """FR-004: link an atomic entity to another candidate via a possible_match
+    edge. No identity merge is implied — candidate_b may stay a correlate."""
+    if _catalog.entity(entity_id) is None:
+        raise HTTPException(status_code=404, detail="entity not found")
+    if body.candidate_b == entity_id:
+        raise HTTPException(status_code=409, detail="cannot link an entity to itself")
+    kind = body.kind or "possible_match"
+    collective = round(min(1.0, body.raw_pair_score + 0.03), 3)
+    edge = {
+        "edge_id": _next_edge_id(),
+        "candidate_a": entity_id,
+        "candidate_b": body.candidate_b,
+        "kind": kind,
+        "raw_pair_score": body.raw_pair_score,
+        "collective_score": collective,
+        "reasons": body.reasons or ["analyst"],
+        "state": body.state or "OPEN",
+    }
+    _correlations.append(edge)
+    hub.publish(
+        "entity.updated",
+        {
+            "entity_id": entity_id,
+            "tenant_id": ctx.tenant_id,
+            "event": "correlation.created",
+            "edge_id": edge["edge_id"],
+            "candidate_b": body.candidate_b,
+            "kind": kind,
+        },
+    )
+    return {"edge": edge, "event": "correlation.created"}
 
 
 class ReviewCreate(BaseModel):

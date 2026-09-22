@@ -55,6 +55,10 @@ class Catalog:
     def put_entity(self, record: EntityRecord) -> None:
         self._entities[record.entity_id] = record
 
+    def entity_ids(self) -> list[str]:
+        """Sorted ids so callers can mint the next id for a new atomic entity."""
+        return sorted(self._entities)
+
     def put_finding(self, record: FindingRecord) -> None:
         self._findings[record.finding_id] = record
 

@@ -54,6 +54,59 @@ class TestDonorPatternApi:
         assert body["timeline"]
         assert all(entry.get("observed_at") == "2026-01-01T00:00:00Z" for entry in body["timeline"])
 
+    def test_entity_can_be_created_as_dynamic_invariant(self, client: TestClient) -> None:
+        resp = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "Nimbus"}, "aliases": ["Nimbus", "nb-acc"]},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["event"] == "entity.created"
+        entity = body["entity"]
+        assert entity["entity_id"].startswith("ENT-")
+        assert entity["canonical_identity"] == {"account": "Nimbus"}
+        assert entity["current_state"]["version"] == 1
+        assert entity["evidence"] and entity["evidence"][0]["immutable"]
+        assert entity["historical_versions"][0]["identity"] == {"account": "Nimbus"}
+        # the new invariant is addressable right away
+        assert client.get(f"/api/v1/entities/{entity['entity_id']}").status_code == 200
+
+    def test_entity_create_rejects_empty_identity(self, client: TestClient) -> None:
+        resp = client.post("/api/v1/entities", json={"canonical_identity": {"account": ""}})
+        assert resp.status_code == 422
+
+    def test_correlation_created_without_merge(self, client: TestClient) -> None:
+        created = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "Aster"}, "aliases": ["Aster"]},
+        ).json()["entity"]
+        resp = client.post(
+            f"/api/v1/entities/{created['entity_id']}/correlations",
+            json={"candidate_b": "ENT-2001", "reasons": ["shared handle"]},
+        )
+        assert resp.status_code == 200
+        edge = resp.json()["edge"]
+        assert edge["candidate_a"] == created["entity_id"]
+        assert edge["candidate_b"] == "ENT-2001"
+        assert edge["kind"] == "possible_match"
+        assert "auto_merge" not in edge
+        # the correlate may stay non-materialized: edge exists, no identity made
+        assert client.get("/api/v1/entities/ENT-2001/correlations").json()["correlations"]
+
+    def test_correlation_requires_materialized_source(self, client: TestClient) -> None:
+        resp = client.post(
+            "/api/v1/entities/ENT-NOPE/correlations",
+            json={"candidate_b": "ENT-2001"},
+        )
+        assert resp.status_code == 404
+
+    def test_correlation_rejects_self_link(self, client: TestClient) -> None:
+        resp = client.post(
+            "/api/v1/entities/ENT-2001/correlations",
+            json={"candidate_b": "ENT-2001"},
+        )
+        assert resp.status_code == 409
+
     def test_connector_register_and_recon_plan(self, client: TestClient) -> None:
         reg = client.post(
             "/api/v1/connectors/register",

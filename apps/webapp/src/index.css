@@ -348,6 +348,11 @@ button { font-family: inherit; }
   flex-direction: column; }
 .intel-canvas-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
   padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--c-border); }
+.intel-note { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.2rem 0.55rem;
+  border: 1px solid var(--acc, #f0a832); border-radius: 0.5rem; background: rgba(240, 168, 50, 0.1);
+  font-family: var(--font-mono); font-size: 0.62rem; color: #f0a832; cursor: pointer; }
+.link-hint { border: 1px solid var(--acc, #22d3ee); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25),
+  0 0 16px rgba(34, 211, 238, 0.25); color: #22d3ee; }
 .intel-canvas-body { flex: 1; position: relative; }
 .intel-canvas-body::before { content: ""; position: absolute; inset: 0;
   background-image: linear-gradient(rgba(34, 211, 238, 0.045) 1px, transparent 1px),

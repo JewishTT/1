@@ -106,6 +106,82 @@ export function IntelligenceContainer() {
 
   const onSelect = useCallback((id: string | null) => setSelectedId(id), []);
 
+  // ── Create / link (atomic entities as dynamic invariants) ─────────────
+  const [actionNote, setActionNote] = useState<string | null>(null);
+  const [linkMode, setLinkMode] = useState(false);
+  const [linkSource, setLinkSource] = useState<string | null>(null);
+
+  const toggleLink = useCallback(() => {
+    setLinkMode((v) => {
+      const next = !v;
+      if (!next) setLinkSource(null);
+      return next;
+    });
+  }, []);
+
+  const clearActionNote = useCallback(() => setActionNote(null), []);
+
+  const refreshNeighbourhood = useCallback(
+    async (entityId: string) => {
+      try {
+        const corrData = await api.getCorrelations(entityId);
+        setCorrelations((prev) => ({ ...prev, [entityId]: corrData.correlations }));
+      } catch {
+        // neighbourhood refresh is best-effort; keep the map intact
+      }
+    },
+    [],
+  );
+
+  const handleCreateEntity = useCallback(
+    async (name: string) => {
+      const label = name.trim();
+      if (!label) return;
+      try {
+        const res = await api.createEntity({
+          canonical_identity: { account: label },
+          aliases: [label],
+          label,
+        });
+        await materialize(res.entity.entity_id);
+        setActionNote(`Atomic entity created — ${res.entity.entity_id}`);
+      } catch (err) {
+        setActionNote(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [materialize],
+  );
+
+  const handleLinkTap = useCallback(
+    async (targetId: string) => {
+      if (linkSource === null) {
+        setLinkSource(targetId);
+        return;
+      }
+      const source = linkSource;
+      setLinkMode(false);
+      setLinkSource(null);
+      if (targetId === source || /^(OBS|SRC)-/.test(targetId) || /^(OBS|SRC)-/.test(source)) {
+        setActionNote("Cannot link provenance slots — pick two materialized entities");
+        return;
+      }
+      try {
+        const res = await api.linkEntities(source, {
+          candidate_b: targetId,
+          kind: "possible_match",
+          reasons: ["analyst"],
+        });
+        // A correlate may stay non-materialized (no merge); hydrate if it is one.
+        void materialize(targetId);
+        await Promise.all([refreshNeighbourhood(source), refreshNeighbourhood(targetId)]);
+        setActionNote(`Linked ${res.edge.candidate_a} ↔ ${res.edge.candidate_b} (${res.edge.kind})`);
+      } catch (err) {
+        setActionNote(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [linkSource, materialize, refreshNeighbourhood],
+  );
+
   // ── Canvas controls (layout / zoom / fit) routed to the active cytoscape ──
   const cyRef = useRef<cytoscape.Core | null>(null);
   const [layoutName, setLayoutName] = useState("cose");
@@ -241,6 +317,13 @@ export function IntelligenceContainer() {
       onFit={onFit}
       onToggleTda={toggleTda}
       onToggleProv={() => setProvActive((v) => !v)}
+      linkMode={linkMode}
+      linkSource={linkSource}
+      actionNote={actionNote}
+      onCreateEntity={handleCreateEntity}
+      onLinkTap={handleLinkTap}
+      onToggleLink={toggleLink}
+      onDismissActionNote={clearActionNote}
     />
   );
 }

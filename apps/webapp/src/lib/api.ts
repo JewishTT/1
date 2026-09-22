@@ -227,6 +227,34 @@ export const api = {
     );
   },
 
+  /** Create a new atomic entity (dynamic invariant — persistent identity, versioned, evidence-anchored). */
+  createEntity(body: {
+    canonical_identity: Record<string, string>;
+    aliases?: string[];
+    label?: string;
+  }): Promise<{ entity: EntityView & { tenant_id: string }; event: string }> {
+    return request<{ entity: EntityView & { tenant_id: string }; event: string }>("/entities", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** Link an entity to another candidate via possible_match — no identity merge. */
+  linkEntities(
+    entityId: string,
+    body: {
+      candidate_b: string;
+      kind?: string;
+      raw_pair_score?: number;
+      reasons?: string[];
+    },
+  ): Promise<{ edge: Correlation; event: string }> {
+    return request<{ edge: Correlation; event: string }>(
+      `/entities/${encodeURIComponent(entityId)}/correlations`,
+      { method: "POST", body: JSON.stringify(body) },
+    );
+  },
+
   /** Submit analyst review (FR-006, Vitni pattern). */
   submitReview(
     targetId: string,
