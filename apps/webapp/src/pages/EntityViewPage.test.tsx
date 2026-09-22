@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { EntityViewPage, EntityView } from "./EntityViewPage";
@@ -20,7 +21,7 @@ const ENTITY: EntityView = {
 
 describe("EntityViewPage", () => {
   it("renders identity, aliases, evidence, timeline and signals", () => {
-    render(<EntityViewPage entity={ENTITY} />);
+    render(<MemoryRouter><EntityViewPage entity={ENTITY} /></MemoryRouter>);
     expect(screen.getByTestId("entity-view")).toHaveAttribute("data-entity-id", "ENT-2001");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Yard");
     expect(screen.getByTestId("entity-aliases")).toHaveTextContent("yard-account");
@@ -29,18 +30,20 @@ describe("EntityViewPage", () => {
   });
 
   it("confirms evidence integrity against I-1", () => {
-    render(<EntityViewPage entity={ENTITY} />);
+    render(<MemoryRouter><EntityViewPage entity={ENTITY} /></MemoryRouter>);
     expect(screen.getByTestId("evidence-integrity")).toHaveTextContent("immutable observations");
   });
 
   it("flags broken evidence", () => {
     render(
-      <EntityViewPage
-        entity={{
-          ...ENTITY,
-          evidence: [{ evidence_id: "E-1", observation_id: "OBS-1", immutable: false }],
-        }}
-      />,
+      <MemoryRouter>
+        <EntityViewPage
+          entity={{
+            ...ENTITY,
+            evidence: [{ evidence_id: "E-1", observation_id: "OBS-1", immutable: false }],
+          }}
+        />
+      </MemoryRouter>,
     );
     expect(screen.getByTestId("evidence-integrity")).toHaveTextContent("broken");
   });

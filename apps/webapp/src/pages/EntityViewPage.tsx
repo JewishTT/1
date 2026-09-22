@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { GraphElement, GraphPanel } from "../components/GraphPanel";
 import { TimelineView } from "../components/TimelineView";
 import { burstiness, eventsPerDay } from "../lib/timing";
@@ -33,7 +34,16 @@ export function EntityViewPage({ entity, graphElements = [] }: Props) {
   const timelineAt = entity.timeline.map((t) => t.observed_at ?? t.uri);
   return (
     <section data-testid="entity-view" data-entity-id={entity.entity_id}>
-      <h1>{entity.canonical_identity["account"] ?? entity.entity_id}</h1>
+      <h1>
+        {entity.canonical_identity["account"] ?? entity.entity_id}{" "}
+        <Link
+          to={`/intel?entity=${encodeURIComponent(entity.entity_id)}`}
+          className="header-link"
+          data-testid="intel-board-link"
+        >
+          ◈ OPEN IN INTEL BOARD
+        </Link>
+      </h1>
 
       <div className="panel">
         <h2>Current state</h2>
