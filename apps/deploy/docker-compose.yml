@@ -1,10 +1,14 @@
 name: cognitive-dev
 
 # COGNITIVE dev topology (T005): single-node self-hosted stack.
+# Dev profiles (T136): `core` (data plane: minio/postgres/kafka/redis/temporal),
+# `streaming` (redpanda/flink/nessie), `collectors` (browsertrix), `analytics`
+# (opensearch/clickhouse/neo4j). Run e.g.: docker compose --profile core --profile analytics up -d
 
 services:
   minio:
-    image: minio/minio:RELEASE.2024-08-17T01-24-54Z
+    profiles: ["core"]
+    image: quay.io/minio/minio:RELEASE.2024-08-17T01-24-54Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: demo
@@ -18,7 +22,8 @@ services:
       retries: 20
 
   minio-init:
-    image: minio/mc:latest
+    profiles: ["core"]
+    image: quay.io/minio/mc:latest
     depends_on:
       minio:
         condition: service_healthy
@@ -31,6 +36,7 @@ services:
       "
 
   kafka:
+    profiles: ["core"]
     image: confluentinc/cp-kafka:7.7.0
     environment:
       KAFKA_NODE_ID: 1
@@ -55,6 +61,7 @@ services:
       retries: 30
 
   schema-registry:
+    profiles: ["core"]
     image: confluentinc/cp-schema-registry:7.7.0
     depends_on: [kafka]
     environment:
@@ -69,6 +76,7 @@ services:
       retries: 30
 
   postgres:
+    profiles: ["core"]
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: cognitive
@@ -83,6 +91,7 @@ services:
       retries: 20
 
   redis:
+    profiles: ["core"]
     image: redis:7-alpine
     ports: ["6379:6379"]
     healthcheck:
@@ -92,6 +101,7 @@ services:
       retries: 20
 
   opensearch:
+    profiles: ["analytics"]
     image: opensearchproject/opensearch:2.14.0
     environment:
       discovery.type: single-node
@@ -108,6 +118,7 @@ services:
       retries: 30
 
   clickhouse:
+    profiles: ["analytics"]
     image: clickhouse/clickhouse-server:24.8
     ports: ["8123:8123", "9009:9000"]
     volumes: [clickhouse-data:/var/lib/clickhouse]
@@ -118,6 +129,7 @@ services:
       retries: 30
 
   neo4j:
+    profiles: ["analytics"]
     image: neo4j:5-community
     environment:
       NEO4J_AUTH: neo4j/cognitive
@@ -132,6 +144,7 @@ services:
       retries: 30
 
   temporal:
+    profiles: ["core"]
     image: temporalio/auto-setup:1.25.2
     depends_on: [postgres]
     environment:
@@ -147,6 +160,77 @@ services:
       timeout: 5s
       retries: 30
 
+  # --- Streaming / collector profiles (research R-06/R-10, plan phase C/D) ---
+
+  redpanda:
+    profiles: ["streaming"]
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 512M
+      - --node-id 0
+      - --kafka-addr PLAINTEXT://0.0.0.0:19092
+      - --advertise-kafka-addr PLAINTEXT://localhost:19092
+      - --schema-registry-addr 0.0.0.0:18081
+      - --rpc-addr 0.0.0.0:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --set redpanda.enable_metrics_reporter=false
+      - --set redpanda.enable_usage_metrics=false
+    ports: ["19092:19092", "18081:18081", "19644:9644", "33145:33145"]
+    volumes: [redpanda-data:/var/lib/redpanda/data]
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "info"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+
+  redpanda-console:
+    profiles: ["streaming"]
+    image: docker.redpanda.com/redpandadata/console:latest
+    depends_on: [redpanda]
+    environment:
+      KAFKA_BROKERS: redpanda:19092
+      SCHEMAREGISTRY_URL: http://redpanda:18081
+    ports: ["18080:8080"]
+
+  flink-jobmanager:
+    profiles: ["streaming"]
+    image: flink:1.19.1
+    command: jobmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        jobmanager.memory.process.size: 1600m
+        taskmanager.numberOfTaskSlots: 4
+    ports: ["18082:8081"]
+
+  flink-taskmanager:
+    profiles: ["streaming"]
+    image: flink:1.19.1
+    command: taskmanager
+    depends_on: [flink-jobmanager]
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.memory.process.size: 1600m
+        taskmanager.numberOfTaskSlots: 4
+
+  nessie:
+    profiles: ["streaming"]
+    image: projectnessie/nessie:latest
+    environment:
+      QUARKUS_HTTP_PORT: 19120
+      nessie.version.store.type: INMEMORY
+    ports: ["19120:19120"]
+
+  browsertrix:
+    profiles: ["collectors"]
+    image: webrecorder/browsertrix-crawler:latest
+    # CLI/one-shot crawler: pulled here; runs are scheduled via the ThumbCrawl
+    # adapter (T098) rather than a long-running daemon.
+
 volumes:
   minio-data:
   kafka-data:
@@ -154,3 +238,4 @@ volumes:
   opensearch-data:
   clickhouse-data:
   neo4j-data:
+  redpanda-data:

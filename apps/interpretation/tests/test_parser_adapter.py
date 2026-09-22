@@ -24,9 +24,61 @@ class _CsvAdapter:
     def parse(self, artifact) -> list[Finding]:
         text = bytes(artifact).decode("utf-8", errors="replace")
         return [
-            Finding(kind="csv_row", value=row, offset=i)
-            for i, row in enumerate(text.splitlines())
+            Finding(kind="csv_row", value=row, offset=i) for i, row in enumerate(text.splitlines())
         ]
+
+
+class TestParserFormats:
+    def test_csv_rows_become_segments(self):
+        registry = ParserRegistry()
+        body = b"name,email\nJane,jane@x.test\nBob,bob@y.test\n"
+        segs = registry.parse(body, "text/csv")
+        assert len(segs) == 2
+        assert "Jane" in segs[0].text and "jane@x.test" in segs[0].text
+        assert segs[0].meta["fields"]["name"] == "Jane"
+
+    def test_csv_header_only_yields_no_rows(self):
+        registry = ParserRegistry()
+        assert registry.parse(b"just,one,row\n", "text/csv") == []
+
+    def test_rss_feed_segments(self):
+        registry = ParserRegistry()
+        body = (
+            b'<?xml version="1.0"?><rss><channel><title>Acme alerts</title>'
+            b"<item><title>Entity disclosed</title><link>http://x.test/1</link>"
+            b"<description>Offshore structure found</description></item>"
+            b"<item><title>Second watch</title><link>http://x.test/2</link></item>"
+            b"</channel></rss>"
+        )
+        segs = registry.parse(body, "application/rss+xml")
+        assert any(
+            "Entity disclosed" in s.text
+            and "Offshore structure" in s.text
+            and "http://x.test/1" in s.text
+            for s in segs
+        )
+        assert any("Second watch" in s.text for s in segs)
+
+    def test_atom_feed_segments(self):
+        registry = ParserRegistry()
+        body = (
+            b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">'
+            b"<title>Watch feed</title>"
+            b"<entry><title>Flagged org</title><summary>Beneficial owner traced</summary>"
+            b"<id>urn:x:1</id></entry>"
+            b"</feed>"
+        )
+        segs = registry.parse(body, "application/atom+xml")
+        assert any("Flagged org" in s.text and "Beneficial owner" in s.text for s in segs)
+
+    def test_plain_xml_degrades_to_html_text(self):
+        registry = ParserRegistry()
+        segs = registry.parse(b"<root><tag>hello world</tag></root>", "application/xml")
+        assert any("hello world" in s.text for s in segs)
+
+    def test_malformed_feed_returns_empty(self):
+        registry = ParserRegistry()
+        assert registry.parse(b"<rss><channel>", "application/rss+xml") == []
 
 
 class TestParserAdapter:

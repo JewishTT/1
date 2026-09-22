@@ -54,6 +54,12 @@ class ParserAdapter(Protocol):
     Adapters are deterministic (same artifact → same findings) and isolated
     (heavy/unsafe formats run in isolated worker classes, C-7). Convention:
     adapters also carry ``name: str`` and ``content_types: list[str]``.
+
+    Spec 007 extraction adapters (html_full, structured, documents, plaintext)
+    additionally implement ``extract(artifact) -> ExtractionResult``; the
+    extraction lane detects them via ``hasattr(adapter, "extract")`` so this
+    method stays OUT of the runtime protocol (adding it would break legacy
+    parse-only adapters on ``isinstance`` checks, NFR-4).
     """
 
     def can_parse(self, artifact: Any) -> bool: ...
@@ -102,8 +108,10 @@ class ParserRegistry:
         self._parsers: dict[str, Any] = {
             "text/html": self._parse_html,
             "application/xhtml+xml": self._parse_html,
-            "application/xml": self._parse_html,
-            "application/rss+xml": self._parse_html,
+            "application/xml": self._parse_feed,
+            "application/rss+xml": self._parse_feed,
+            "application/atom+xml": self._parse_feed,
+            "text/csv": self._parse_csv,
             "application/json": self._parse_json,
             "text/plain": self._parse_text,
         }
@@ -163,6 +171,49 @@ class ParserRegistry:
     def adapters(self) -> list[ParserAdapter]:
         return list(self._adapters)
 
+    def extract_artifact(self, artifact: Any) -> Any:
+        """Spec-007 extraction lane: run ALL extraction-aware adapters, merged.
+
+        Every registered adapter that ``can_parse`` AND implements ``extract``
+        runs in name-stable order (documents < html_full < structured), so a
+        single artifact yields both body segments and structured mentions.
+        Results are merged into one ``ExtractionResult``; per-adapter faults
+        are quarantined and skipped (C-7 isolation). No adapter → ``None``.
+        """
+        from extractors.types import ExtractionResult
+
+        raw = _as_bytes(artifact)
+        self._guard_size(raw)
+        merged = None
+        for adapter in self._dispatch_order():
+            if not hasattr(adapter, "extract"):
+                continue
+            try:
+                if not adapter.can_parse(artifact):
+                    continue
+                result = adapter.extract(artifact)
+                if result is None:
+                    continue
+                if not isinstance(result, ExtractionResult):
+                    raise TypeError(f"{adapter.name}.extract returned {type(result).__name__}")
+                merged = result if merged is None else _merge_extraction(merged, result)
+            except (ParserLimitError, RecursionError):
+                self._quarantine("parser.depth_or_time_limit", raw)
+                raise
+            except Exception as exc:  # noqa: BLE001 - adapter isolation
+                self._quarantine(f"parser.adapter_fault:{adapter.name}", raw, detail=str(exc))
+                continue
+        return merged
+
+    def normalize_encoding(self, body: bytes) -> str:
+        """Charset-normalized text (deterministic; crashes never escape)."""
+        try:
+            from extractors.language import decode_bytes
+
+            return decode_bytes(body)[0]
+        except Exception:  # noqa: BLE001 - hostile bytes still degrade to utf-8
+            return body.decode("utf-8", errors="replace")
+
     def _dispatch_order(self) -> list[ParserAdapter]:
         """Name-stable adapter order: same artifact → same adapter every time."""
         return sorted(self._adapters, key=lambda a: a.name)
@@ -189,14 +240,68 @@ class ParserRegistry:
     def _parse_html(self, body: bytes) -> list[Segment]:
         extractor = _TextExtract()
         try:
-            extractor.feed(body.decode("utf-8", errors="replace"))
+            extractor.feed(self.normalize_encoding(body))
         except Exception:  # noqa: BLE001 - parser isolation: one bad doc must not kill the pipeline
             return []
         return [
-            Segment(text=t, offset=i, kind="text")
-            for i, (_, t) in enumerate(extractor.parts)
-            if t
+            Segment(text=t, offset=i, kind="text") for i, (_, t) in enumerate(extractor.parts) if t
         ]
+
+    def _parse_csv(self, body: bytes) -> list[Segment]:
+        import csv
+
+        text = self.normalize_encoding(body)
+        try:
+            rows = list(csv.reader(text.splitlines()))
+        except Exception:  # noqa: BLE001 - malformed CSV → no segments, not a crash
+            return []
+        if not rows:
+            return []
+        header = [c.strip() for c in rows[0]]
+        segments: list[Segment] = []
+        for i, row in enumerate(rows[1:], start=1):
+            cells = dict(zip(header, [c.strip() for c in row])) if len(header) == len(row) else {}
+            meta = {"kind": "csv-row", "row": i}
+            if cells:
+                meta["fields"] = cells
+            segments.append(
+                Segment(
+                    text=" ".join(c.strip() for c in row if c.strip()),
+                    offset=i,
+                    kind="text",
+                    meta=meta,
+                )
+            )
+        return segments
+
+    def _parse_feed(self, body: bytes) -> list[Segment]:
+        import xml.etree.ElementTree as ET
+
+        text = self.normalize_encoding(body)
+        try:
+            root = ET.fromstring(text)
+        except (ET.ParseError, ValueError):
+            return []
+        segments: list[Segment] = []
+        for el in root.iter():
+            tag = el.tag.rsplit("}", 1)[-1].lower()
+            # RSS items and Atom entries are the per-document records.
+            if tag in ("item", "entry"):
+                title = _child_text(el, "title")
+                link = _child_text(el, "link") or _child_text(el, "id")
+                summary = _child_text(el, "description") or _child_text(el, "summary")
+                snippet = " ".join(x for x in (title, summary) if x)
+                meta = {"kind": "feed-entry"}
+                if link:
+                    meta["uri"] = link
+                    snippet = f"{snippet} {link}".strip()
+                if title:
+                    meta["title"] = title
+                if snippet:
+                    segments.append(
+                        Segment(text=snippet, offset=len(segments), kind="text", meta=meta)
+                    )
+        return segments if segments else self._parse_html(body)
 
     def _parse_json(self, body: bytes) -> list[Segment]:
         import json
@@ -224,15 +329,53 @@ class ParserRegistry:
                 meta={"kind": "json-array"},
             )
         if isinstance(node, dict):
-            text = " ".join(
-                s.text for s in (self._walk_json(v, depth + 1) for v in node.values())
-            )
+            text = " ".join(s.text for s in (self._walk_json(v, depth + 1) for v in node.values()))
             return Segment(text=text, offset=0, kind="text", meta={"kind": "json-object"})
         return Segment(text=str(node), offset=0, kind="text", meta={"kind": "scalar"})
 
     def _parse_text(self, body: bytes) -> list[Segment]:
-        text = body.decode("utf-8", errors="replace")
+        text = self.normalize_encoding(body)
         return [Segment(text=text, offset=0, kind="text")] if text.strip() else []
+
+
+def _merge_extraction(acc: Any, result: Any) -> Any:
+    """Combine two ExtractionResults: segments + mentions, stable key order."""
+    seen_segments = {_seg_core(s) for s in acc.segments}
+    for s in result.segments:
+        if _seg_core(s) in seen_segments:
+            continue
+        seen_segments.add(_seg_core(s))
+        acc.segments.append(s)
+    acc.mentions = _merge_mentions(list(acc.mentions), list(result.mentions))
+    return acc
+
+
+def _seg_core(seg: Any) -> tuple:
+    return (seg.offset, seg.kind, seg.text)
+
+
+def _merge_mentions(left: list[Any], right: list[Any]) -> list[Any]:
+    seen: set[tuple] = {_mention_key(m) for m in left}
+    out = list(left)
+    for m in right:
+        key = _mention_key(m)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(m)
+    return sorted(out, key=_mention_key)
+
+
+def _mention_key(m: Any) -> tuple:
+    return (m.offset, m.kind, m.value)
+
+
+def _child_text(el: Any, tag: str) -> str:
+    """Text of the first direct child with local name ``tag`` (RSS/Atom agnostic)."""
+    for child in el:
+        if child.tag.rsplit("}", 1)[-1].lower() == tag:
+            return " ".join((child.text or "").split())
+    return ""
 
 
 def _as_bytes(artifact: Any) -> bytes:

@@ -1,0 +1,1 @@
+"""Hermetic contract tests for the deterministic stack (spec 007)."""

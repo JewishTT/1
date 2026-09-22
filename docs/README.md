@@ -12,6 +12,8 @@ findings always link back to raw evidence.
 - Specification: `specs/001-global-osint-platform/` (plan.md, spec.md, research.md,
   data-model.md, contracts/)
 - Donor-pattern integration: `specs/002-donor-pattern-integration/`
+- Deterministic entity-extraction stack (spec 007): `specs/007-deterministic-entity-extraction-stack/`
+  (extraction lane, parsers, offline dictionaries, contract tests)
 
 ## Design decisions (ADRs)
 

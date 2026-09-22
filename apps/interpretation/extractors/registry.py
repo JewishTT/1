@@ -4,6 +4,14 @@ Turn parser segments into typed entities: persons, orgs, indicators (IP/URL/hash
 email/domain/CVE), temporal expressions, geolocations. Each extractor returns
 typed mentions; the registry fans a segment across all applicable extractors and
 tags output with a stable source id.
+
+Spec 007 (deterministic extraction stack): this module also exposes
+``DeterministicExtractorSet`` — the deterministic post-processor that runs the
+no-ML extractors (persons, places, orgs, dictionary entities, contacts) over a
+decoded segment, gates every mention against the active OntologyPack
+(``allows_type``, kafSIEM pattern) and returns spec ``TypedMention`` records.
+``register_deterministic_extractors`` additionally mirrors the deterministic
+extractors into the legacy fan-out registry as stable ``Mention`` producers.
 """
 
 from __future__ import annotations
@@ -12,6 +20,9 @@ import ipaddress
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
+
+from extractors import contacts, dictionary_entities, orgs, persons, places
+from extractors.types import TypedMention
 
 
 @dataclass
@@ -97,3 +108,86 @@ class ExtractorRegistry:
                 m.attrs.setdefault("source", source_id or "unknown")
                 out.append(m)
         return out
+
+
+class DeterministicExtractorSet:
+    """Spec-007 deterministic extractor fan-out over a decoded text segment.
+
+    Runs the no-ML extractors in a fixed name order; every mention is gated by
+    the active OntologyPack (``allows_type``), deduplicated on
+    ``(kind, value, normalized.canonical)`` keeping first-in-order, and tagged
+    with a stable ``segment`` reference. Pure rule + dictionary logic.
+    """
+
+    def __init__(self, ontology_pack=None) -> None:
+        self._ontology = ontology_pack
+        self._extractors: list[tuple[str, Callable[[str], list[TypedMention]]]] = []
+
+    def register(self, name: str, fn: Callable[[str], list[TypedMention]]) -> None:
+        if name not in [n for n, _ in self._extractors]:
+            self._extractors.append((name, fn))
+
+    def register_builtin(self) -> None:
+        self.register("contacts", contacts.extract_contacts)
+        self.register("dictionary_entities", dictionary_entities.extract_dictionary_entities)
+        self.register("orgs", orgs.extract_organizations)
+        self.register("persons", persons.extract_persons)
+        self.register("places", places.extract_places)
+
+    def names(self) -> list[str]:
+        return [n for n, _ in sorted(self._extractors, key=lambda e: e[0])]
+
+    def extract(
+        self,
+        text: str,
+        *,
+        segment_ref: str | None = None,
+        lang: str | None = None,
+    ) -> list[TypedMention]:
+        extractors = dict(sorted(self._extractors, key=lambda e: e[0]))
+        out: list[TypedMention] = []
+        seen: set[tuple] = set()
+        for fn in extractors.values():
+            for m in fn(text, lang_hint=lang):
+                if self._ontology is not None and not self._ontology.allows_type(m.kind):
+                    continue
+                key = (m.kind, m.value, m.normalized.canonical if m.normalized else None)
+                if key in seen:
+                    continue
+                seen.add(key)
+                if m.lang is None:
+                    m.lang = lang
+                if segment_ref and not m.evidence.get("segment_ref"):
+                    m.evidence["segment_ref"] = segment_ref
+                out.append(m)
+        return sorted(out, key=lambda m: (m.offset, m.kind, m.value))
+
+
+def register_deterministic_extractors(registry: ExtractorRegistry) -> None:
+    """Mirror the deterministic extractors into a legacy ExtractorRegistry.
+
+    Producers are stable-name wrappers around the spec-007 extractors so the
+    existing fan-out path (pipeline) also thrives: same rules, zero ML.
+    """
+
+    def wrap(fn: Callable[[str], list[TypedMention]]) -> Extractor:
+        def ex(text: str) -> list[Mention]:
+            return [
+                Mention(
+                    kind=m.kind,
+                    value=m.value,
+                    offset=m.offset,
+                    confidence=m.confidence,
+                    attrs={
+                        "extractor": m.extractor,
+                        "source": m.source,
+                        "lang": m.lang or "unknown",
+                    },
+                )
+                for m in fn(text)
+            ]
+
+        return ex
+
+    registry.register("persons", wrap(persons.extract_persons))
+    registry.register("contacts", wrap(contacts.extract_contacts))

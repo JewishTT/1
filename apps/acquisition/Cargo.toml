@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+    "contracts",
+    "observation-gate",
     "worker-http",
     "worker-browser",
     "dispatcher",
@@ -15,6 +17,8 @@ edition = "2021"
 license = "MIT"
 
 [workspace.dependencies]
+cognitive-acq-contracts = { path = "contracts" }
+cognitive-acq-observation-gate = { path = "observation-gate" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "net", "signal"] }
 reqwest = { version = "0.12", features = ["rustls-tls"] }
 hyper = { version = "1", features = ["full"] }

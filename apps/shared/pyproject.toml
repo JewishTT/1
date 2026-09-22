@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["config", "events", "storage", "domain", "observability", "workflow", "scoring", "contracts", "security", "donor"]
+packages = ["config", "events", "storage", "domain", "observability", "workflow", "scoring", "contracts", "security", "donor", "network", "ids", "datasets"]
 
 [project]
 name = "cognitive-shared"
@@ -25,6 +25,9 @@ dependencies = [
     "opentelemetry-sdk>=1.25",
     "opentelemetry-exporter-otlp>=1.25",
     "prometheus-client>=0.20",
+    # spec 007: dictionary dataset infra (T001)
+    "pyahocorasick>=2.1",
+    "charset-normalizer>=3.3",
 ]
 
 [dependency-groups]

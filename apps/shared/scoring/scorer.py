@@ -63,6 +63,102 @@ class AdaptiveState:
         self.change_rate = self._alpha * (1.0 if changed else 0.0) + (1 - self._alpha) * self.change_rate
 
 
+@dataclass
+class SourceState:
+    """T111: adaptive state at the SOURCE granularity (yield/change/cost/errors).
+
+    Immutable, copy-on-refresh: each observation produces a new instance so the
+    state machine stays history-free and testable. ``utility_factor()`` folds
+    the source beliefs into the scheduler's expected gain.
+    """
+
+    source_id: str
+    source_kind: str = "web"
+    yield_rate: float = 0.5
+    change_rate: float = 0.5
+    freshness: float = 0.5
+    cost: float = 0.0
+    error_rate: float = 0.0
+    independence_yield: float = 0.0
+    window_n: int = 0
+    _alpha: float = 0.2
+
+    def updated(
+        self,
+        *,
+        outcome: Outcome,
+        changed: bool = True,
+        cost: float = 0.0,
+        independence_yield: float = 0.0,
+        fresh: bool = True,
+    ) -> "SourceState":
+        succeeded = outcome in (Outcome.SUCCESS, Outcome.UNCHANGED, Outcome.DUPLICATE)
+        a = self._alpha
+        return SourceState(
+            source_id=self.source_id,
+            source_kind=self.source_kind,
+            yield_rate=(1 - a) * self.yield_rate + a * (1.0 if succeeded else 0.0),
+            change_rate=(1 - a) * self.change_rate + a * (1.0 if changed else 0.0),
+            freshness=(1 - a) * self.freshness + a * (1.0 if fresh else 0.0),
+            cost=(1 - a) * self.cost + a * cost,
+            error_rate=(1 - a) * self.error_rate + a * (0.0 if succeeded else 1.0),
+            independence_yield=(1 - a) * self.independence_yield + a * independence_yield,
+            window_n=self.window_n + 1,
+            _alpha=self._alpha,
+        )
+
+    def utility_factor(self) -> float:
+        """1.0 = healthy; compressed by failures, boosted by independence yield."""
+        base = 0.5 + 0.5 * self.yield_rate
+        independence = 0.5 + 0.5 * self.independence_yield
+        reliability = max(0.0, 1.0 - 2.0 * self.error_rate)
+        return base * independence * reliability
+
+
+@dataclass
+class WorkerClassState:
+    """T112: adaptive state at the WORKER-CLASS granularity.
+
+    Throughput/saturation/latency/failure as copy-on-refresh beliefs; feeds the
+    scheduler through ``capacity_factor()`` (resources, R-3).
+    """
+
+    worker_class: str
+    throughput: float = 0.0
+    latency_ms: float = 0.0
+    saturation: float = 0.0
+    failure_rate: float = 0.0
+    queue_age_s: float = 0.0
+    window_n: int = 0
+    _alpha: float = 0.2
+
+    def updated(
+        self,
+        *,
+        outcome: Outcome,
+        latency_ms: float = 0.0,
+        throughput: float | None = None,
+        saturation: float | None = None,
+        queue_age_s: float | None = None,
+    ) -> "WorkerClassState":
+        a = self._alpha
+        failed = outcome is Outcome.FAILURE
+        return WorkerClassState(
+            worker_class=self.worker_class,
+            throughput=(1 - a) * self.throughput + a * (throughput or 0.0),
+            latency_ms=(1 - a) * self.latency_ms + a * latency_ms,
+            saturation=(1 - a) * self.saturation + a * (saturation or self.saturation),
+            failure_rate=(1 - a) * self.failure_rate + a * (1.0 if failed else 0.0),
+            queue_age_s=(1 - a) * self.queue_age_s + a * (queue_age_s or 0.0),
+            window_n=self.window_n + 1,
+            _alpha=self._alpha,
+        )
+
+    def capacity_factor(self) -> float:
+        """1.0 = idle/healthy; degrades with saturation and failure rate."""
+        return max(0.0, 1.0 - self.saturation) * max(0.0, 1.0 - 2.0 * self.failure_rate)
+
+
 class UtilityScorerProtocol(Protocol):
     def score(self, task: dict, context: dict) -> UtilityScore: ...
     def feature_vector(self, host_key: str) -> AdaptiveState: ...
@@ -74,6 +170,8 @@ class HeuristicUtilityScorer:
 
     def __init__(self) -> None:
         self._host_state: dict[str, AdaptiveState] = {}
+        self._source_state: dict[str, SourceState] = {}
+        self._worker_state: dict[str, WorkerClassState] = {}
         self._default = AdaptiveState(host_key="*")
 
     def score(self, task: dict, context: dict) -> UtilityScore:
@@ -107,6 +205,20 @@ class HeuristicUtilityScorer:
         )
         utility = numerator / denominator if denominator > 0 else 0.0
 
+        # T111: source-level adaptive beliefs modulate expected utility.
+        source_id = task.get("source_id")
+        if source_id:
+            source = self._source_state.get(source_id)
+            if source is not None:
+                utility *= source.utility_factor()
+
+        # T112: worker-class adaptive beliefs modulate utility (capacity-aware).
+        worker_class = task.get("worker_class")
+        if worker_class:
+            worker = self._worker_state.get(worker_class)
+            if worker is not None:
+                utility *= worker.capacity_factor()
+
         # Backpressure: downstream lag reduces priority (FR-028, R-11).
         lag = context.get("downstream_lag_s", 0.0)
         if lag > 10.0:
@@ -136,3 +248,61 @@ class HeuristicUtilityScorer:
             state.cooldown_until_ms = 60_000
         else:
             state.cooldown_until_ms = 0
+
+    # --- T111/T112 adaptive state surfaces (source + worker-class levels) ---
+
+    def source_state(self, source_id: str) -> SourceState:
+        return self._source_state.setdefault(source_id, SourceState(source_id=source_id))
+
+    def worker_state(self, worker_class: str) -> WorkerClassState:
+        return self._worker_state.setdefault(worker_class, WorkerClassState(worker_class=worker_class))
+
+    def adjust_source(
+        self,
+        source_id: str,
+        outcome: Outcome,
+        *,
+        changed: bool = True,
+        cost: float = 0.0,
+        independence_yield: float = 0.0,
+        fresh: bool = True,
+    ) -> SourceState:
+        self._source_state[source_id] = self.source_state(source_id).updated(
+            outcome=outcome,
+            changed=changed,
+            cost=cost,
+            independence_yield=independence_yield,
+            fresh=fresh,
+        )
+        return self._source_state[source_id]
+
+    def adjust_worker(
+        self,
+        worker_class: str,
+        outcome: Outcome,
+        *,
+        latency_ms: float = 0.0,
+        throughput: float | None = None,
+        saturation: float | None = None,
+        queue_age_s: float | None = None,
+    ) -> WorkerClassState:
+        self._worker_state[worker_class] = self.worker_state(worker_class).updated(
+            outcome=outcome,
+            latency_ms=latency_ms,
+            throughput=throughput,
+            saturation=saturation,
+            queue_age_s=queue_age_s,
+        )
+        return self._worker_state[worker_class]
+
+
+def lifecycle_to_outcome(lifecycle: str) -> Outcome:
+    """Map ObservationGate lifecycle -> scorer Outcome (feedbacks, T116-T118)."""
+    return {
+        "created": Outcome.SUCCESS,
+        "changed": Outcome.SUCCESS,
+        "unchanged": Outcome.UNCHANGED,
+        "duplicate": Outcome.DUPLICATE,
+        "failed": Outcome.FAILURE,
+        "quarantined": Outcome.FAILURE,
+    }.get(lifecycle, Outcome.FAILURE)

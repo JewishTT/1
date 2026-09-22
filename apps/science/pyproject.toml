@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["claims", "hypotheses", "causal", "temporal", "structure", "robustness", "experiments", "review", "store", "errors"]
+packages = ["claims", "hypotheses", "causal", "temporal", "structure", "robustness", "experiments", "review", "store", "errors", "tda", "kinetics", "beliefs", "econ", "fixtures", "sims", "operators"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "_events.py" = "_events.py"

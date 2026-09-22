@@ -103,3 +103,41 @@ class TestEventEnvelopeContract:
         )
         assert child.correlation_id == "root"
         assert child.causation_id == "root"
+
+    def test_v2_fabric_fields_roundtrip(self) -> None:
+        """T103: envelopes carry tenant/source/work/region routing fields."""
+        env = build_envelope(
+            event_type="acquisition.outcome",
+            event_version="2.0",
+            producer="worker-http",
+            producer_version="0.4.0",
+            payload=b'{"raw_ref": "s3://..._placeholder"}',
+            tenant_id="TENANT-42",
+            source_id="SRC-7",
+            work_id="W-FABRIC-1",
+            region_id="eu-west",
+        )
+        assert env.tenant_id == "TENANT-42"
+        assert env.source_id == "SRC-7"
+        assert env.work_id == "W-FABRIC-1"
+        assert env.region_id == "eu-west"
+
+        raw = env.SerializeToString()
+        decoded = EventEnvelope()
+        decoded.ParseFromString(raw)
+        assert decoded.tenant_id == "TENANT-42"
+        assert decoded.region_id == "eu-west"
+
+    def test_v2_extra_fields_default_empty(self) -> None:
+        """Backward-compatible: v1-style call sites keep empty v2 fields."""
+        env = build_envelope(
+            event_type="observation.created",
+            event_version="1.0",
+            producer="worker-http",
+            producer_version="0.3.0",
+            payload=b"",
+        )
+        assert env.tenant_id == ""
+        assert env.source_id == ""
+        assert env.work_id == ""
+        assert env.region_id == ""

@@ -1,0 +1,1 @@
+"""Enrichment layer (spec/010 §0.9): deterministic enrichers, NO AI."""

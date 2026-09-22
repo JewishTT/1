@@ -2,14 +2,22 @@
 name = "cognitive-acquisition"
 version = "0.1.0"
 description = "Acquisition subsystem: connector registry, bounded runner, SpiderFoot-style modules"
-requires-python = ">=3.11"
-dependencies = ["cognitive-shared"]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "certstream>=1.11",
+    "cognitive-shared",
+    "crawlee[playwright]>=1.10.0",
+    "pyarrow>=25.0.1",
+    "scrapy>=2.19.0",
+    "warcio>=1.8.1",
+]
 
 [tool.uv.sources]
 cognitive-shared = { workspace = true }
 
 [dependency-groups]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.6"]
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 markers = ["contract", "integration", "unit"]

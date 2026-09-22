@@ -22,7 +22,7 @@ Adaptation notes
   activity/route layer from these markers, matching the existing
   ``record_marker("checkpoint", ...)`` pattern).
 - The monitor counters/failed counters themselves are owned by
-  ``domain.investigation.InvestigationMonitor`` (T028) and reused here.
+  ``cp_domain.investigation.InvestigationMonitor`` (T028) and reused here.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from typing import ClassVar
 
 from temporalio import workflow
 
-from domain.investigation import InvestigationMonitor
+from cp_domain.investigation import InvestigationMonitor
 
 TASK_QUEUE = "cognitive-investigations"
 

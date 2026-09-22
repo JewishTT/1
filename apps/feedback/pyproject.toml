@@ -12,6 +12,7 @@ description = "Feedback engine, utility scoring, stopping policy"
 requires-python = ">=3.11"
 dependencies = [
     "cognitive-shared",
+    "cognitive-control-plane",
     "numpy>=1.26",
 ]
 
@@ -20,6 +21,7 @@ dev = [ "pytest>=8.2", "pytest-asyncio>=0.23", "ruff>=0.5" ]
 
 [tool.uv.sources]
 cognitive-shared = { workspace = true }
+cognitive-control-plane = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

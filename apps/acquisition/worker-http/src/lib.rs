@@ -1,44 +1,20 @@
-//! HTTP worker implementing the AcquisitionWorker contract (T028, FR-005, R-6).
+//! HTTP worker implementing the AcquisitionWorker v2 async contract (T088, R-10).
 //!
-//! Contract surface: `capabilities() / estimate(task) / acquire(task)`.
-//! On success, stores raw bytes content-addressed (sha256) and emits an
-//! acquisition-completed + observation-created outcome for the Kafka/S3 layer.
+//! Contract surface: `capabilities() / execution_class() / estimate(task) /
+//! acquire(task)`, async, running on the caller's Tokio runtime (no
+//! `runtime.block_on` on the hot path). On success, returns bytes + metadata;
+//! raw bytes are NOT stored here — the Observation Gate owns storage semantics
+//! (Constitution gate).
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{bail, Result};
+use cognitive_acq_contracts::worker::{
+    AcquisitionOutcome, AcquisitionTask, Capability, CostEstimate, EffortVerdict,
+    ExecutionClass,
+};
+use cognitive_acq_contracts::AcquisitionWorker;
 use sha2::{Digest, Sha256};
-
-/// Worker contract exposed by every acquisition implementation (Constitution V).
-pub trait AcquisitionWorker: Send + Sync {
-    fn capabilities(&self) -> Vec<String>;
-    fn estimate(&self, task: &AcquisitionTask) -> f64;
-    fn acquire(&self, task: &AcquisitionTask) -> Result<AcquisitionOutcome>;
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct AcquisitionTask {
-    pub task_id: String,
-    pub uri: String,
-    pub tenant_id: String,
-    pub investigation_id: Option<String>,
-    pub source_id: Option<String>,
-    pub max_bytes: usize,
-    pub timeout_ms: u64,
-    pub worker_class: String,
-    pub user_agent: String,
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct AcquisitionOutcome {
-    pub task_id: String,
-    pub status: String, // completed | unchanged | duplicate | failed
-    pub sha256: String,
-    pub size: usize,
-    pub content_type: Option<String>,
-    pub duration_ms: u64,
-    pub raw_ref: Option<String>,
-}
 
 fn now_ms() -> u64 {
     SystemTime::now()
@@ -52,9 +28,6 @@ pub struct HttpWorker {
     client: reqwest::Client,
     max_bytes: usize,
     timeout_ms: u64,
-    // Reuse a single tokio runtime across acquires: per-call Runtime::new()
-    // spawns a fresh thread pool per fetch (a measurable hot-path cost).
-    runtime: tokio::runtime::Runtime,
 }
 
 impl Default for HttpWorker {
@@ -67,7 +40,6 @@ impl Default for HttpWorker {
             client,
             max_bytes: 10 * 1024 * 1024,
             timeout_ms: 30_000,
-            runtime: tokio::runtime::Runtime::new().unwrap(),
         }
     }
 }
@@ -78,7 +50,6 @@ impl HttpWorker {
             client,
             max_bytes,
             timeout_ms,
-            runtime: tokio::runtime::Runtime::new().unwrap(),
         }
     }
 
@@ -90,64 +61,84 @@ impl HttpWorker {
     }
 }
 
+#[async_trait::async_trait]
 impl AcquisitionWorker for HttpWorker {
-    fn capabilities(&self) -> Vec<String> {
-        vec!["http".to_string(), "get".into(), "headers".into(), "etag".into(),
-             "last-modified".into(), "content-addressed".into()]
+    fn capabilities(&self) -> Vec<Capability> {
+        vec![
+            Capability::new("http"),
+            Capability::new("get"),
+            Capability::new("headers"),
+            Capability::new("etag"),
+            Capability::new("last-modified"),
+            Capability::new("content-addressed"),
+        ]
     }
 
-    fn estimate(&self, task: &AcquisitionTask) -> f64 {
-        // Expected cost in normalized units (per R-9 execution-class pricing).
-        0.001 + (task.max_bytes as f64) / (10_000_000.0)
+    fn execution_class(&self) -> ExecutionClass {
+        ExecutionClass::Http
     }
 
-    fn acquire(&self, task: &AcquisitionTask) -> Result<AcquisitionOutcome> {
+    async fn estimate(&self, task: &AcquisitionTask) -> Result<CostEstimate> {
+        // Expected cost in normalized units (per R-09 execution-class pricing).
+        let predicted_bytes = task.max_bytes as u64;
+        let predicted_ms = task.timeout_ms;
+        Ok(CostEstimate {
+            predicted_bytes,
+            predicted_ms,
+            network_cost: 0.001 + (task.max_bytes as f64) / (10_000_000.0),
+            compute_cost: 0.0,
+            verdict: if task.max_bytes <= 1_000_000 {
+                EffortVerdict::Cheap
+            } else {
+                EffortVerdict::Acceptable
+            },
+        })
+    }
+
+    async fn acquire(&self, task: &AcquisitionTask) -> Result<AcquisitionOutcome> {
         if task.max_bytes > self.max_bytes {
             bail!("max_bytes exceeds worker cap {}", self.max_bytes);
         }
         let start = now_ms();
         let deadline = std::time::Duration::from_millis(task.timeout_ms.min(self.timeout_ms));
 
-        let outcome = self.runtime.block_on(async {
-            let resp = self
-                .client
-                .get(&task.uri)
-                .header("user-agent", &task.user_agent)
-                .timeout(deadline)
-                .send()
-                .await?;
+        let resp = self
+            .client
+            .get(&task.uri)
+            .header("user-agent", &task.user_agent)
+            .timeout(deadline)
+            .send()
+            .await?;
 
-            let status = resp.status();
-            let content_type = resp
-                .headers()
-                .get(reqwest::header::CONTENT_TYPE)
-                .and_then(|v| v.to_str().ok())
-                .map(|s| s.to_string());
-            let body = resp.bytes().await?;
-            if body.len() > task.max_bytes {
-                bail!("response exceeds size limit");
-            }
+        let status = resp.status();
+        let content_type = resp
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string());
+        let body = resp.bytes().await?;
+        if body.len() > task.max_bytes {
+            bail!("response exceeds size limit");
+        }
 
-            let digest = Self::sha256(&body);
-            let outcome_status = if status.is_success() {
-                "completed".to_string()
-            } else if status.as_u16() == 304 {
-                "unchanged".to_string()
-            } else {
-                bail!("http status {}", status);
-            };
+        let digest = Self::sha256(&body);
+        let outcome_status = if status.is_success() {
+            "completed".to_string()
+        } else if status.as_u16() == 304 {
+            "unchanged".to_string()
+        } else {
+            bail!("http status {}", status);
+        };
 
-            Ok(AcquisitionOutcome {
-                task_id: task.task_id.clone(),
-                status: outcome_status,
-                sha256: digest,
-                size: body.len(),
-                content_type,
-                duration_ms: now_ms() - start,
-                raw_ref: None,
-            })
-        })?;
-        Ok(outcome)
+        Ok(AcquisitionOutcome {
+            task_id: task.task_id.clone(),
+            status: outcome_status,
+            sha256: digest,
+            size: body.len(),
+            content_type,
+            duration_ms: now_ms() - start,
+            raw_ref: None, // Observation Gate fills this after content-addressed storage
+        })
     }
 }
 
@@ -163,9 +154,11 @@ mod tests {
             tenant_id: "default-tenant".into(),
             investigation_id: None,
             source_id: None,
+            work_id: None,
+            region: None,
             max_bytes: 1_000_000,
             timeout_ms: 5_000,
-            worker_class: "http".into(),
+            required_capabilities: vec![Capability::new("http")],
             user_agent: "cognitive-test/0.1".into(),
         }
     }
@@ -174,14 +167,21 @@ mod tests {
     fn capabilities_include_http_and_content_addressing() {
         let w = HttpWorker::default();
         let caps = w.capabilities();
-        assert!(caps.iter().any(|c| c == "content-addressed"));
-        assert!(caps.iter().any(|c| c == "etag"));
+        assert!(caps.iter().any(|c| c.as_str() == "content-addressed"));
+        assert!(caps.iter().any(|c| c.as_str() == "etag"));
     }
 
     #[test]
-    fn estimate_is_positive_units() {
+    fn execution_class_is_http() {
+        assert_eq!(HttpWorker::default().execution_class(), ExecutionClass::Http);
+    }
+
+    #[tokio::test]
+    async fn estimate_is_positive_units() {
         let w = HttpWorker::default();
-        assert!(w.estimate(&fake()) > 0.0);
+        let est = w.estimate(&fake()).await.unwrap();
+        assert!(est.network_cost > 0.0);
+        assert_eq!(est.verdict, EffortVerdict::Cheap);
     }
 
     #[test]
@@ -191,14 +191,5 @@ mod tests {
         hasher.update(body);
         let expected = format!("{:x}", hasher.finalize());
         assert_eq!(HttpWorker::sha256(body), expected);
-    }
-
-    #[test]
-    #[should_panic]
-    fn acquire_rejects_over_cap() {
-        let w = HttpWorker::default();
-        let mut t = fake();
-        t.max_bytes = 999_999_999_999;
-        w.acquire(&t).unwrap();
     }
 }

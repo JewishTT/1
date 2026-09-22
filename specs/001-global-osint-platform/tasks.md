@@ -204,6 +204,83 @@ Tests are included because the Constitution (SC-005) requires invariant enforcem
 - [x] T075 Final validation: full `quickstart.md` scenario + all stories' independent tests green on clean compose stack
 - [x] T076 Project docs (`docs/README.md`, architecture overview, contribution guide)
 
+## Phase 7: Global Collection Fabric (Architecture Review Extension, T088–T136)
+
+**Source**: `specs/001-global-collection-fabric/` (architecture review + phased plan, research.md R-01..R-15). IDs continue the repo series from T087. Grouping per research.md R-15.
+
+### Setup (scaffolding)
+
+- [x] T126 [P] Create `apps/acquisition/{contracts,adapters,observation-gate}` directory skeletons (with README + module stubs) in `1/apps/acquisition/`
+- [x] T127 [P] Register new top-level app groups in workspace manifests: add `apps/bulk-ingestion`, `apps/projection/streams`, `apps/projection/lakehouse` to `1/pyproject.toml` `[tool.uv.workspace]` members; add matching crate crates where Rust-based
+- [x] T128 Register the T088–T136 task block in the platform backlog `1/specs/001-global-osint-platform/tasks.md` (Phase A–E grouping from research.md R-15)
+
+### Foundational Contracts (blocks all stories)
+
+- [x] T088 [P] Async `AcquisitionWorker` trait (capabilities(), estimate(), acquire()) + worker outcome/audit structure in `1/apps/acquisition/contracts/`
+- [x] T089 [P] `CollectionAdapter` trait (resolve policy requirements, capability surface, lifecycle: init/start/suspend/stop) in `1/apps/acquisition/contracts/`
+- [x] T090 [P] Capability registry + selection (R-03: capability-intersection match; CapabilityGap; fallback baseline `http`) in `1/apps/acquisition/adapters/` and Rust `contracts/`
+- [x] T103 [P] EventEnvelope v2: mandatory `tenant_id` + routing fields `source_id`/`work_id`/`region_id` on every envelope (proto + generated bindings + `build_envelope`) in `1/apps/shared/events/`
+- [x] T104 [P] Event catalog: register acquisition lifecycle + feedback three-way split event types in `1/apps/shared/events/topics.py`
+- [x] T129 [P] Implement Observation Manifest schema + validation (json model from contracts/observation-manifest.md) in `1/apps/acquisition/contracts/manifest.rs`
+- [x] T137 [P] Contract test for async `AcquisitionWorker` trait in `1/apps/acquisition/tests/contract/test_worker.rs`
+- [x] T138 [P] Contract test for `CollectionAdapter` trait in `1/apps/acquisition/tests/contract/test_adapter.rs`
+- [x] T139 [P] Contract test for `EventEnvelope` v2 proto fields in `1/apps/shared/tests/contract/test_event_envelope.py`
+
+### US1 — Closed-Loop Acquisition (Core)
+
+- [x] T091 [US1] Move AcquisitionWorker to async; worker-http implements `capabilities()` (RFC-9110 ETag/Last-Modified) in `contracts/capabilities.md`, `estimate()`, `acquire()` in `1/apps/acquisition/worker-http/`
+- [x] T110 [US1] Implement worker capability-aware scheduling (choose execution class by match + cost) in `1/apps/acquisition/dispatcher/`
+- [x] T132 [US1] Implement intelligence scheduler stage (utility/novelty/freshness/expected-gain/cost) in `1/apps/acquisition/dispatcher/` (reuses `apps/shared/scoring/scorer.py` UtilityScore)
+- [x] T133 [US1] Implement resource scheduler stage (region, worker-class availability, browser capacity, host concurrency, queue depth, source limits) in `1/apps/acquisition/dispatcher/`
+- [x] T130 [US1] Implement Observation Gate: single content-addressed write path (sha256 → S3/MinIO) with mandatory `raw_ref` on every outcome in `1/apps/acquisition/observation-gate/`
+- [x] T131 [US1] Emit observation lifecycle events (`created`/`changed`/`unchanged`/`duplicate`) from the gate into Redpanda in `1/apps/acquisition/observation-gate/`
+- [x] T111 [US1] Extend adaptive state to source level (`SourceState`: yield/change_rate/freshness/cost/error_rate/independence_yield) in `1/apps/shared/scoring/scorer.py`
+- [x] T112 [US1] Extend adaptive state to worker-class level (`WorkerClassState`: throughput/latency/saturation/failure_rate/queue_age) in `1/apps/shared/scoring/scorer.py`
+- [x] T114 [P] [US1] Add collection metrics (collector throughput, frontier enqueue/dequeue rate, scheduler decision latency) in `1/apps/shared/scoring/metrics.py` and `1/bench/`
+- [x] T116 [US1] Implement source-independence feedback branch (yield/cost/freshness → next utility) in `1/apps/feedback/`
+- [x] T117 [US1] Implement entity-resolution → acquisition-hypothesis feedback (aliases/identifiers → new retrieval keys → FrontierItems) in `1/apps/feedback/`
+- [x] T118 [US1] Implement finding → new-work feedback (FindingCandidate → UtilityScorer → Frontier) in `1/apps/feedback/`
+
+### US2 — Expert Search & Analysis
+
+- [x] T102 [US2] Add Common Crawl index access (existing `commoncrawl` dependency; badges/pagination) in `1/apps/shared/network/commoncrawl.py`
+- [x] T095 [US2] Implement capability-annotated engine facade (badge: `capability.match-by-badges`) in `1/apps/control-plane/badges/`
+- [x] T109 [US2] Implement cross-semantic search retriever (fuzzy badge + capability-aware, fuzzy over badge names/aliases) in `1/apps/interpretation/search/`
+- [x] T094 [US2] Implement Entity/ID mismatch adapter (badge matching, entity-link dedupe, modify urgency) in `1/apps/control-plane/modifier/`
+- [x] T093 [US2] Implement WARC retrieval (fetch WARC, scan CDX) in `1/apps/acquisition/adapters/warc/`
+- [x] T092 [US2] Implement Common Crawl discovery reservoir (WPEX/WAT/WET index → frontier) in `1/apps/acquisition/adapters/commoncrawl/`
+- [x] T105 [US2] Add crawler headless browser cluster + visibility overlay (SS/Collusion cluster ↔ coverage overlay) in `1/apps/acquisition/worker-browser/`
+- [x] T106 [US2] Add crawler archival mode (WARC/ARClint; visibility overlay) in `1/apps/acquisition/worker-http/`
+- [x] T107 [US2] Add crawler JS rendering (headless, leftover DOM; visibility overlay) in `1/apps/acquisition/worker-browser/`
+- [x] T098 [US2] Add Browsertrix engine adapter (browser worker pool) in `1/apps/acquisition/adapters/browsertrix/`
+- [x] T096 [US2] Add Heritrix engine adapter (archival WARC-first collection) in `1/apps/acquisition/adapters/heritrix/`
+- [x] T099 [US2] Add StormCrawler engine adapter (distributed streaming crawl engine) in `1/apps/acquisition/adapters/stormcrawler/`
+- [x] T100 [US2] Add Nutch engine adapter (bulk crawl backend) in `1/apps/acquisition/adapters/nutch/`
+
+### US3 — Operate, Govern, Scale
+
+- [x] T113 [US3] Implement region-level backpressure in `1/apps/acquisition/dispatcher/`
+- [x] T119 [US3] Implement multi-region frontier partitioning with globally unique `observation_id`/`event_id`/`entity_id` in `1/apps/acquisition/frontier/`
+- [x] T120 [US3] Implement collector replay/reprocessing (resume from durable state after crash) in `1/apps/acquisition/observation-gate/`
+- [x] T121 [US3] Implement historical archive replay (Common Crawl bulk → batch discovery → Frontier) in `1/apps/bulk-ingestion/historical/`
+- [x] T122 [US3] Write bulk/live convergence tests (common URL in archive + live) in `1/apps/acquisition/tests/integration/test_bulk_live_convergence.py`
+- [x] T123 [US3] Add 1M-observation acquisition benchmark in `1/bench/`
+- [x] T124 [P] [US3] Add 10M-observation acquisition benchmark in `1/bench/`
+- [x] T125 [US3] Add failure/replay chaos tests (kill worker mid-acquisition; replay projection) in `1/bench/`
+- [x] T101 [US3] Implement re-observation dedup + three-way split on Etag (`304`/`hash`-only changes/no-change) in `1/apps/acquisition/frontier/`
+- [x] T108 [US3] Implement bulk historical backfill package (Common Crawl + Wayback CDX, linio via archive) in `1/apps/bulk-ingestion/`
+- [x] T127b [US3] Implement collector replay/reprocessing (resume from durable state after crash) in `1/apps/acquisition/observation-gate/` (alias of T120; listed here for full coverage)
+
+### Polish (Final)
+
+- [x] T115 [P] Add cost-per-useful-observation KPI (`useful_findings / (network+compute+storage+worker cost)`) to `1/bench/` and `1/apps/shared/scoring/metrics.py`
+- [x] T134 [P] Run full quickstart.md validation (scenarios A/B/C) and record results in `1/docs/`
+- [x] T135 [P] Update architecture docs (data-plane, topic taxonomy, feedback loops, phased deployment) in `1/docs/`
+- [x] T136 [P] Add dev compose profiles (`core`/`streaming`/`collectors`/`analytics`) in `1/apps/deploy/docker-compose.yml`
+- [x] T140 [P] Expose the Collection Fabric zero-layer as backend endpoints under `1/apps/control-plane/api/routes/fabric.py` (badge/engine selection T095, re-observation+etag T101, modifier T094, cross-semantic search T109, frontier T119, worker pools, region backpressure T113, throttle, bulk backfill plan/cdx/replay T108/T121) with controller-side hermetic tests in `1/apps/control-plane/tests/unit/test_fabric_endpoints.py`
+
+**Execution order**: Setup (T126/T127/T128) → Foundational (T088/T089/T090/T103/T104/T129 + T137/T138/T139) → US1 closed loop → US2 → US3 → Polish. Details in `specs/001-global-collection-fabric/plan.md`.
+
 ---
 
 ## Dependencies & Execution Order
@@ -292,3 +369,4 @@ Task: "Source registry"
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
 - Architecture contracts (events, AcquisitionWorker, Graph* abstraction, UtilityScorer) must NEVER break — Constitution No-MVP rule (§81/§82)
+

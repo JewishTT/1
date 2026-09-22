@@ -1,0 +1,1 @@
+"""Resolution layer (spec/010 §0.8): pure matching mathematics, NO AI."""

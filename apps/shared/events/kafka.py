@@ -40,6 +40,10 @@ def build_envelope(
     observation_id: str | None = None,
     entity_id: str | None = None,
     event_id: str | None = None,
+    tenant_id: str | None = None,
+    source_id: str | None = None,
+    work_id: str | None = None,
+    region_id: str | None = None,
 ) -> Envelope:
     return Envelope(
         event_id=event_id or str(uuid4()),
@@ -54,6 +58,10 @@ def build_envelope(
         observation_id=observation_id or "",
         entity_id=entity_id or "",
         payload=payload,
+        tenant_id=tenant_id or "",
+        source_id=source_id or "",
+        work_id=work_id or "",
+        region_id=region_id or "",
     )
 
 

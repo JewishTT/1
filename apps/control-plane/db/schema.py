@@ -163,12 +163,21 @@ class FrontierItem(Base):
     host_key: Mapped[str | None] = mapped_column(String(255))
     priority: Mapped[float] = mapped_column(Float, default=0.0)
     state: Mapped[str] = mapped_column(String(32), default="READY")
+    retries: Mapped[int] = mapped_column(Integer, default=0)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_digest: Mapped[str | None] = mapped_column(String(64))
+    last_etag: Mapped[str | None] = mapped_column(String(255))
+    partition: Mapped[str] = mapped_column(String(64), default="global")
     next_schedule_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
         Index("ix_frontier_tenant", "tenant_id"),
         Index("ix_frontier_host", "host_key"),
+        Index("ix_frontier_partition", "partition"),
+        # FR-005: Postgres is authoritative; dedup lives here as a unique
+        # schedule key (one live frontier item per tenant+uri).
+        Index("uq_frontier_schedule", "tenant_id", "uri", unique=True),
     )
 
 
@@ -727,4 +736,40 @@ class Claim(Base):
     __table_args__ = (
         Index("ix_claims_tenant", "tenant_id"),
         Index("ix_claims_verdict", "verdict"),
+    )
+
+
+class EntityStreamRow(Base):
+    """Atomic entity fabric substrate (feature 009, block A): append-only.
+
+    The ALL capital of the platform — the atomic entity's life-stream. Every
+    mutation is one immutable row; state/series/hypergraph are rebuildable
+    projections of this flow (I-11/I-12). Never updated or deleted: a row is
+    identified by ``record_hash`` (content-addressed) and its stream order is
+    enforced by the composite key (tenant, entity, sequence).
+
+    Payload carries refs only (I-5): raw evidence stays in object storage and
+    is reachable via ``observation_id``.
+    """
+
+    __tablename__ = "entity_stream"
+
+    tenant_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    entity_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    sequence: Mapped[int] = mapped_column(Integer, primary_key=True)
+    record_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    kind: Mapped[str] = mapped_column(String(32))
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    payload: Mapped[dict] = mapped_column(JSONB)
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    observation_id: Mapped[str] = mapped_column(String(64), default="")
+    dataset_id: Mapped[str] = mapped_column(String(64), default="")
+    extraction_version: Mapped[str] = mapped_column(String(32), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_entity_stream_tenant", "tenant_id"),
+        Index("ix_entity_stream_entity", "entity_id"),
+        Index("ix_entity_stream_hash", "record_hash"),
     )

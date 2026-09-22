@@ -20,12 +20,21 @@ class _FakeStore:
         self.stored = []
 
     async def put_raw(self, body, *, tenant_id, meta=None):
-        return RawObjectRef(
-            uri=f"s3://knowledge/raw/{tenant_id}/202609/{len(body)}",
-            sha256=ContentRouter.sha256(body),
-            size=len(body),
-            tenant_prefix=f"{tenant_id}/202609",
-            year_month="202609",
+        return (await self.put_raw_dedup(body, tenant_id=tenant_id, meta=meta))[0]
+
+    async def put_raw_dedup(self, body, *, tenant_id, meta=None):
+        digest = ContentRouter.sha256(body)
+        existed = digest in self.stored
+        self.stored.append(digest)
+        return (
+            RawObjectRef(
+                uri=f"s3://knowledge/raw/{tenant_id}/202609/{len(body)}",
+                sha256=digest,
+                size=len(body),
+                tenant_prefix=f"{tenant_id}/202609",
+                year_month="202609",
+            ),
+            existed,
         )
 
 

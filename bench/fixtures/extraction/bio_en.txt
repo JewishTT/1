@@ -1,0 +1,6 @@
+Sergey Ivanov was born in Kazan in 1985. He studied at Kazan Federal University
+and later moved to Moscow, where he works as a research engineer at the Academy
+of Sciences.
+
+Contact: sergey@example-ivanov.ru, phone +7 495 123-45-67, Telegram @s_ivanov.
+His sister Olga Ivanova lives in Saint Petersburg.

@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes import (
     connectors,
     entities,
+    fabric,
     findings,
     investigations,
     metrics,
@@ -48,7 +49,7 @@ app.add_middleware(
 # Mount routers under `/api/v1/` to match the Vite proxy + test clients.
 for _router in (investigations.router, search.router, entities.router,
                 findings.router, quarantine.router, metrics.router,
-                connectors.router, resolutions.router):
+                connectors.router, resolutions.router, fabric.router):
     app.include_router(_router, prefix="/api/v1")
 
 # Science fabric routes carry their own `/api/science` prefix (science-api.md).

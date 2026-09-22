@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from security import SecurityBlocked, validate_seed_url
 
 from api.auth import TenantContext, resolve_tenant
-from domain.investigation import (
+from cp_domain.investigation import (
     Investigation,
     InvestigationInvalidTransition,
     InvestigationState,

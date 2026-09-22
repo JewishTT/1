@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pytest
 
-from domain.investigation import (
+from cp_domain.investigation import (
     MONITOR_COUNTERS,
     Investigation,
     InvestigationMonitor,

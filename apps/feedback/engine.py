@@ -45,33 +45,51 @@ class FeedbackEngine:
         actions: list[FeedbackAction] = []
         if signal.kind == "entity":
             actions.append(
-                FeedbackAction(action="discover", target=f"entity:{signal.payload.get('entity_id', signal.source_id)}",
-                               priority=0.4 + 0.1 * signal.weight, reason="new entity needs breadth")
+                FeedbackAction(
+                    action="discover",
+                    target=f"entity:{signal.payload.get('entity_id', signal.source_id)}",
+                    priority=0.4 + 0.1 * signal.weight,
+                    reason="new entity needs breadth",
+                )
             )
         elif signal.kind == "relation":
             actions.append(
-                FeedbackAction(action="recrawl", target=f"relation:{signal.source_id}",
-                               priority=0.5 + 0.1 * signal.weight, reason="new relation warrants revalidation")
+                FeedbackAction(
+                    action="recrawl",
+                    target=f"relation:{signal.source_id}",
+                    priority=0.5 + 0.1 * signal.weight,
+                    reason="new relation warrants revalidation",
+                )
             )
         elif signal.kind == "discovery":
             actions.append(
-                FeedbackAction(action="discover", target=signal.source_id,
-                               priority=0.3, reason="fresh discovery seed")
+                FeedbackAction(
+                    action="discover",
+                    target=signal.source_id,
+                    priority=0.3,
+                    reason="fresh discovery seed",
+                )
             )
         elif signal.kind == "topological":
             actions.append(
-                FeedbackAction(action="budget", target=signal.source_id,
-                               priority=min(1.0, 0.2 + signal.weight),
-                               reason="topological signal suggests deepening source",
-                               payload=signal.payload)
+                FeedbackAction(
+                    action="budget",
+                    target=signal.source_id,
+                    priority=min(1.0, 0.2 + signal.weight),
+                    reason="topological signal suggests deepening source",
+                    payload=signal.payload,
+                )
             )
         rec = FeedbackRecommendation(actions=actions, source=signal.kind)
         self.history.append(rec)
         if self._emitter:
-            self._emitter("feedback.generated", {
-                "recommendation_id": rec.recommendation_id,
-                "actions": [a.__dict__ for a in actions],
-            })
+            self._emitter(
+                "feedback.generated",
+                {
+                    "recommendation_id": rec.recommendation_id,
+                    "actions": [a.__dict__ for a in actions],
+                },
+            )
         return rec
 
     def latest(self) -> FeedbackRecommendation | None:

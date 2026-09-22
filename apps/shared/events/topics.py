@@ -22,9 +22,12 @@ EVENT_CATALOG: dict[str, str] = {
     "frontier.enqueued": "frontier",
     # Acquisition
     "acquisition.assigned": "acquisition",
+    "acquisition.request": "acquisition",
+    "acquisition.outcome": "acquisition",
     "acquisition.completed": "acquisition",
     "acquisition.failed": "acquisition",
     "observation.created": "observation",
+    "observation.changed": "observation",
     "observation.unchanged": "observation",
     "observation.duplicate": "observation",
     # Interpretation
@@ -49,9 +52,12 @@ EVENT_CATALOG: dict[str, str] = {
     "projection.completed": "projection",
     # TDA
     "tda.completed": "tda",
-    # Findings / feedback
+    # Findings / feedback (three-way split, T116-T118)
     "finding.created": "knowledge",
     "feedback.generated": "feedback",
+    "feedback.source": "feedback",
+    "feedback.entity": "feedback",
+    "feedback.system": "feedback",
     # Donor patterns (feature 002: donor-pattern-integration)
     "statement.created": "statement",
     "correlation.edge_created": "correlation",
@@ -65,6 +71,13 @@ EVENT_CATALOG: dict[str, str] = {
     "recon.plan_completed": "recon",
     "ontology.registered": "ontology",
     "claim.assessed": "claim",
+    # Atomic entity fabric (feature 009: stream-first, process-centric)
+    "entity.stream.appended": "entity-stream",
+    "entity.state.projected": "entity-stream",
+    "entity.series.projected": "entity-stream",
+    "hyperedge.created": "hypergraph",
+    "hyperedge.temporal_version_created": "hypergraph",
+    "hyperedge.expired": "hypergraph",
     # Governance / ops (audit, budgets)
     "policy.budget_exceeded": "governance",
     "audit.access": "governance",
@@ -89,6 +102,13 @@ EVENT_CATALOG: dict[str, str] = {
     "science.experiment.reproduction": "science",
     "science.review.commented": "science",
     "science.review.status_changed": "science",
+    # Zero-layer contact harvesting (feature 010)
+    "zero_layer.seed_detected": "zero_layer",
+    "zero_layer.harvest_started": "zero_layer",
+    "zero_layer.observation": "zero_layer",
+    "zero_layer.harvest_cycle_complete": "zero_layer",
+    "zero_layer.enrichment": "zero_layer",
+    "zero_layer.feedback_seeds": "zero_layer.feedback_seeds",
 }
 
 # Dead-letter / quarantine lanes (best-effort delivery + idempotency, R-7).

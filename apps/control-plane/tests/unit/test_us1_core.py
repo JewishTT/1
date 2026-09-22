@@ -7,13 +7,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pytest
 
-from domain.investigation import (
+from cp_domain.investigation import (
     Investigation,
     InvestigationInvalidTransition,
     InvestigationState,
     InvestigationValidationError,
 )
-from domain.policy import Budget, Policy, PolicyDecision, PolicyEngine, ResourceLimit
+from cp_domain.policy import Budget, Policy, PolicyDecision, PolicyEngine, ResourceLimit
 from services.policy_service import PolicyService
 from services.source_registry import SourceProfile, SourceRegistry
 

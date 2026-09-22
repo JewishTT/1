@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from domain.policy import Budget, Policy, PolicyDecision, PolicyEngine, ResourceLimit
+from cp_domain.policy import Budget, Policy, PolicyDecision, PolicyEngine, ResourceLimit
 
 
 class PolicyService:

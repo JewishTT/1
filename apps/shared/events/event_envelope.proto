@@ -17,6 +17,14 @@ message EventEnvelope {
   string observation_id = 10;
   string entity_id = 11;
   bytes payload = 12;             // typed per event_type, registry-validated
+
+  // v2 / Global Collection Fabric additions (T103): tenant isolation at the
+  // envelope level and routing/trace bookkeeping. tenant_id MUST be set on
+  // every envelope (produced at the authorized boundary).
+  string tenant_id = 13;
+  string source_id = 14;
+  string work_id = 15;
+  string region_id = 16;
 }
 
 // Insight: Kafka is never the object store (I-5); payload carries references

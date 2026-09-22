@@ -3,11 +3,13 @@ members = [
     "apps/shared",
     "apps/control-plane",
     "apps/acquisition",
+    "apps/bulk-ingestion",
     "apps/interpretation",
     "apps/admission",
     "apps/projection",
     "apps/feedback",
     "apps/science",
+    "apps/zero",
     "bench",
 ]
 

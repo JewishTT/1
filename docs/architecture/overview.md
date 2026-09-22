@@ -20,7 +20,7 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `apps/shared` | Contracts, events, storage, domain invariants, observability | Python |
 | `apps/control-plane` | Investigations, policy/budget, frontier, review, query planner, HTTP API | Python/FastAPI |
 | `apps/acquisition` | Discovery, frontier, dispatcher, content router, HTTP/browser workers | Rust + Python |
-| `apps/interpretation` | Parsers, NER/normalization, candidate aggregation | Python |
+| `apps/interpretation` | Parsers, deterministic entity-extraction stack (structure/dictionary/morphology rules, spec 007), NER/normalization, candidate aggregation | Python |
 | `apps/admission` | Blocking/resolution, assertion extraction, source independence, calibrated admission | Python |
 | `apps/projection` | Graph abstraction, search/analytics projectors, snapshots, TDA | Python |
 | `apps/feedback` | Recrawl/priority feedback, stopping policy | Python |
@@ -51,12 +51,24 @@ Topic catalog and schemas: `apps/shared/events/`.
 - **Neo4j** — graph backend behind the `graph/abstraction.py` interface.
 - **Temporal** — investigation lifecycle + recrawl workflows.
 
+The collection fabric's data-plane pieces (content-addressed gate, ETag
+re-observation, WARC archival/range retrieval, bulk historical replay +
+backfill, partitioned frontier) are documented in
+[fabric-collection.md](./fabric-collection.md).
+
+## Phased deployment
+
+The dev stack is gated by Compose profiles (T136): `core`
+(minio/kafka/postgres/redis/temporal) → `streaming` (redpanda/flink/nessie) →
+`collectors` (browsertrix) → `analytics` (opensearch/clickhouse/neo4j).
+
 ## Run it
 
 Single-node dev topology + validation:
 
 ```bash
-docker compose -f apps/deploy/docker-compose.yml up -d
+docker compose -f apps/deploy/docker-compose.yml \
+  --profile core --profile analytics up -d
 uv run python -m bench.run --scenario smoke-val
 ```
 

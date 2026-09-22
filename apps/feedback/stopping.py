@@ -27,8 +27,13 @@ class SourceStats:
 
 
 class StoppingPolicy:
-    def __init__(self, sleep_below: float = 0.15, stop_below: float = 0.05,
-                 guard_frontier: int = 100_000, window: int = 8) -> None:
+    def __init__(
+        self,
+        sleep_below: float = 0.15,
+        stop_below: float = 0.05,
+        guard_frontier: int = 100_000,
+        window: int = 8,
+    ) -> None:
         self._sleep_below = sleep_below
         self._stop_below = stop_below
         self._guard_frontier = guard_frontier
@@ -39,17 +44,19 @@ class StoppingPolicy:
         stats = self._stats.setdefault(source_id, SourceStats(source_id=source_id))
         stats.gains.append(gain)
         if len(stats.gains) > stats.max_history:
-            stats.gains = stats.gains[-stats.max_history:]
+            stats.gains = stats.gains[-stats.max_history :]
 
     def set_frontier_size(self, source_id: str, frontier_size: int) -> None:
-        self._stats.setdefault(source_id, SourceStats(source_id=source_id)).frontier_size = frontier_size
+        self._stats.setdefault(
+            source_id, SourceStats(source_id=source_id)
+        ).frontier_size = frontier_size
 
     def state_for(self, source_id: str) -> StopState:
         stats = self._stats.get(source_id)
         if stats is None:
             return StopState.RUN
         if stats.gains:
-            recent = stats.gains[-self._window:]
+            recent = stats.gains[-self._window :]
             avg_gain = sum(recent) / len(recent)
             if avg_gain < self._stop_below:
                 return StopState.STOP
@@ -63,5 +70,5 @@ class StoppingPolicy:
         stats = self._stats.get(source_id)
         if not stats or not stats.gains:
             return 0.0
-        recent = stats.gains[-self._window:]
+        recent = stats.gains[-self._window :]
         return sum(recent) / len(recent)
