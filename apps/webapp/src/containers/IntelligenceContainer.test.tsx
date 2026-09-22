@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Correlation, EntityView } from "../lib/api";
-import { buildIntelGraph } from "../lib/intelGraph";
+import { buildIntelGraph, classifyEntity, stripProvenance } from "../lib/intelGraph";
 import { scienceApi } from "../lib/science/api";
 
 describe("intel graph assembler", () => {
@@ -85,6 +85,45 @@ describe("intel graph assembler", () => {
     expect(graph.edges).toContainEqual(
       expect.objectContaining({ id: "SRC-OBS-1001-SRC-fixtures.local", kind: "source_host" }),
     );
+  });
+
+  it("classifies entity type by canonical identity dimensions", () => {
+    expect(classifyEntity({ ...ENTITY, canonical_identity: { account: "Yard" } })).toBe("account");
+    expect(classifyEntity({ ...ENTITY, canonical_identity: { domain: "example.org", ip: "1.2.3.4" } })).toBe("infrastructure");
+    expect(classifyEntity({ ...ENTITY, canonical_identity: { org: "ACME" } })).toBe("organisation");
+    expect(classifyEntity({ ...ENTITY, canonical_identity: {} })).toBe("unknown");
+  });
+
+  it("bakes entity counters and attrs into node data for the detail card", () => {
+    const rich: EntityView = {
+      ...ENTITY,
+      evidence: [{ evidence_id: "E-1", observation_id: "OBS-1001", immutable: true }],
+      timeline: [{ observation_id: "OBS-1001", uri: "http://fixtures.local/report.html", immutable: true }],
+      supporting_assertions: ["ASR-9001"],
+      aliases: ["Yard", "yard-account"],
+    };
+    const node = buildIntelGraph({ "ENT-2001": rich }, { "ENT-2001": [] }).nodes[0];
+    expect(node.counts).toEqual({ ev: 1, tl: 1, versions: 0, signals: 0 });
+    expect(node.attrs).toEqual({ account: "Yard" });
+    expect(node.assertions).toEqual(["ASR-9001"]);
+    expect(node.aliases).toEqual(["Yard", "yard-account"]);
+  });
+
+  it("strips provenance nodes and edges on demand", () => {
+    const withEvidence: EntityView = {
+      ...ENTITY,
+      evidence: [{ evidence_id: "E-1", observation_id: "OBS-1001", immutable: true }],
+      timeline: [
+        { observation_id: "OBS-1001", uri: "http://fixtures.local/report.html", immutable: true },
+      ],
+    };
+    const full = buildIntelGraph({ "ENT-2001": withEvidence }, { "ENT-2001": [CORR] });
+    const stripped = stripProvenance(full);
+    const kinds = Object.fromEntries(stripped.nodes.map((n) => [n.id, n.kind]));
+    expect(kinds["OBS-1001"]).toBeUndefined();
+    expect(kinds["SRC-fixtures.local"]).toBeUndefined();
+    expect(kinds["ENT-2001"]).toBe("entity");
+    expect(stripped.edges.every((e) => e.kind !== "evidence" && e.kind !== "source_host")).toBe(true);
   });
 });
 
@@ -281,5 +320,28 @@ describe("IntelligenceContainer (Maltego-style)", () => {
     fireEvent.click(screen.getByTestId("fit"));
     fireEvent.change(screen.getByTestId("layout-select"), { target: { value: "grid" } });
     expect(screen.getByTestId("layout-select")).toHaveValue("grid");
+  });
+
+  it("opens a Maltego detail card with atomic attributes on seed click", async () => {
+    render(await renderIntel());
+    await waitFor(() => expect(screen.getByTestId("seed-node-ENT-2001")).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId("seed-node-ENT-2001"));
+    await waitFor(() => expect(screen.getByTestId("node-card-ENT-2001")).toBeInTheDocument());
+    expect(screen.getByTestId("node-card-attrs")).toHaveTextContent("account");
+    expect(screen.getByTestId("node-card-attrs")).toHaveTextContent("Yard");
+    expect(screen.getByTestId("node-card-ENT-2001")).toHaveTextContent("EV 1");
+    fireEvent.click(screen.getByTestId("node-card-close"));
+    expect(screen.queryByTestId("node-card-ENT-2001")).not.toBeInTheDocument();
+  });
+
+  it("toggles the provenance layer and hides observation/source legend entries", async () => {
+    render(await renderIntel());
+    await waitFor(() => expect(screen.getByTestId("seed-node-ENT-2001")).toBeInTheDocument());
+    expect(screen.getByTestId("intel-legend").getAttribute("data-provenance")).toBe("true");
+    expect(screen.getAllByText(/OBS/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByTestId("prov-toggle"));
+    expect(screen.getByTestId("prov-toggle").getAttribute("data-active")).toBe("false");
+    expect(screen.queryByText(/OBS/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/SOURCE/)).not.toBeInTheDocument();
   });
 });

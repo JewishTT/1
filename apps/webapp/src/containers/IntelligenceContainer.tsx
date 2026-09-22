@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import type cytoscape from "cytoscape";
 
 import { api, Correlation, EntityView } from "../lib/api";
-import { buildIntelGraph } from "../lib/intelGraph";
+import { buildIntelGraph, stripProvenance } from "../lib/intelGraph";
 import { scienceApi } from "../lib/science/api";
 import type { InvariantResult } from "../lib/science/types";
 import { buildTemporalSeriesFromTimeline } from "../lib/science/tdaLayer";
@@ -141,6 +141,7 @@ export function IntelligenceContainer() {
   const [tdaLoading, setTdaLoading] = useState(false);
   const [invariants, setInvariants] = useState<Record<string, InvariantResult>>({});
   const [tdaNotes, setTdaNotes] = useState<Record<string, string>>({});
+  const [provActive, setProvActive] = useState(true);
 
   const toggleTda = useCallback(async () => {
     if (tdaActive) {
@@ -205,10 +206,10 @@ export function IntelligenceContainer() {
     ].slice(0, 9));
   });
 
-  const graph = useMemo(
-    () => buildIntelGraph(entities, correlations),
-    [entities, correlations],
-  );
+  const graph = useMemo(() => {
+    const assembled = buildIntelGraph(entities, correlations);
+    return provActive ? assembled : stripProvenance(assembled);
+  }, [entities, correlations, provActive]);
 
   if (!loaded) return <LoadingView message="Wiring the intelligence map…" />;
   if (error && seeds.length === 0) return <ErrorView error={error} onRetry={() => void materialize(seeds[0] ?? "")} />;
@@ -227,6 +228,7 @@ export function IntelligenceContainer() {
       tdaLoading={tdaLoading}
       invariants={invariants}
       tdaNotes={tdaNotes}
+      provActive={provActive}
       onSelect={onSelect}
       onExpand={onExpand}
       onMaterialize={materialize}
@@ -238,6 +240,7 @@ export function IntelligenceContainer() {
       onZoomOut={onZoomOut}
       onFit={onFit}
       onToggleTda={toggleTda}
+      onToggleProv={() => setProvActive((v) => !v)}
     />
   );
 }

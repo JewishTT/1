@@ -361,6 +361,31 @@ button { font-family: inherit; }
   font-family: var(--font-mono); font-size: 0.6rem; color: var(--c-text-dim); }
 .intel-legend span b { font-weight: 600; }
 
+/* ── Node info card (Maltego Detail View overlay) ─────────────────────── */
+.node-card { position: absolute; z-index: 9; width: 320px; max-width: min(320px, calc(100% - 24px));
+  border: 1px solid var(--c-border-hi); border-radius: 14px; padding: 0.8rem 0.9rem;
+  background: linear-gradient(160deg, #0b1524 0%, #05070d 78%), radial-gradient(120% 60% at 20% 0%, var(--acc-soft, rgba(34,211,238,0.16)), transparent 60%);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.55), 0 18px 46px rgba(0,0,0,0.6), 0 0 34px var(--acc-soft, transparent), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px); display: flex; flex-direction: column; gap: 0.55rem; }
+.node-card::before { content: ""; position: absolute; inset: -1px; border-radius: 14px; padding: 1px;
+  background: linear-gradient(150deg, var(--acc, #22d3ee), transparent 45%, rgba(255,255,255,0.06));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.node-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.node-card-title { font-size: 0.95rem; font-weight: 700; color: var(--c-text); letter-spacing: 0.01em;
+  text-shadow: 0 0 14px var(--acc-soft, rgba(34,211,238,0.35)); }
+.node-card-id { font-family: var(--font-mono); font-size: 0.62rem; color: var(--c-text-dim); }
+.node-card-ring { display: flex; flex-direction: column; gap: 0.4rem; }
+.node-card-attrs { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.7rem; align-items: baseline; }
+.node-card-attr { display: contents; }
+.node-card-attr-k { font-family: var(--font-mono); font-size: 0.62rem; color: var(--acc, #22d3ee);
+  text-transform: uppercase; letter-spacing: 0.08em; }
+.node-card-attr-v { font-family: var(--font-mono); font-size: 0.72rem; color: var(--c-text-2);
+  overflow-wrap: anywhere; }
+.node-card-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; border-bottom: 1px dashed var(--c-border); }
+.node-card-row:last-child { border-bottom: 0; }
+.node-card-rows { max-height: 132px; overflow-y: auto; }
+
 /* Canvas toolbar: layout select, zoom/fit, TOPO layer arm switch */
 .canvas-toolbar { display: flex; align-items: center; gap: 0.25rem; }
 .toolbar-select { background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-2);

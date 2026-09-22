@@ -17,6 +17,12 @@ export interface IntelNode {
   kind: IntelNodeKind;
   materialized: boolean;
   type: EntityType;
+  counts?: { ev: number; tl: number; versions: number; signals: number };
+  attrs?: Record<string, string>;
+  aliases?: string[];
+  assertions?: string[];
+  evidence?: Array<{ evidence_id: string; observation_id: string; immutable: boolean }>;
+  reason?: string;
 }
 
 export interface IntelEdge {
@@ -111,6 +117,19 @@ export function buildIntelGraph(
   for (const entity of Object.values(entities)) {
     const type = classifyEntity(entity);
     upsertNode(entity.entity_id, displayLabel(entity.entity_id, entity), "entity", true, type);
+    nodes.set(entity.entity_id, {
+      ...nodes.get(entity.entity_id)!,
+      counts: {
+        ev: (entity.evidence ?? []).length,
+        tl: (entity.timeline ?? []).length,
+        versions: (entity.historical_versions ?? []).length,
+        signals: (entity.structural_signals ?? []).length,
+      },
+      attrs: { ...(entity.canonical_identity ?? {}) },
+      aliases: entity.aliases ?? [],
+      assertions: entity.supporting_assertions ?? [],
+      evidence: entity.evidence ? entity.evidence.map((e) => ({ ...e })) : [],
+    });
     for (const rel of entity.relationships ?? []) {
       const target = rel["target"] as string | undefined;
       if (!target) continue;

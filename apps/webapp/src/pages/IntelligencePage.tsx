@@ -23,6 +23,7 @@ interface Props {
   tdaLoading: boolean;
   invariants: Record<string, InvariantResult>;
   tdaNotes: Record<string, string>;
+  provActive: boolean;
   onSelect: (id: string | null) => void;
   onExpand: (id: string) => void;
   onMaterialize: (id: string) => void;
@@ -34,6 +35,7 @@ interface Props {
   onZoomOut: () => void;
   onFit: () => void;
   onToggleTda: () => void;
+  onToggleProv: () => void;
 }
 
 function nodeLabel(entity?: EntityView): string {
@@ -183,6 +185,7 @@ export function IntelligencePage({
   tdaLoading,
   invariants,
   tdaNotes,
+  provActive,
   onSelect,
   onExpand,
   onMaterialize,
@@ -194,6 +197,7 @@ export function IntelligencePage({
   onZoomOut,
   onFit,
   onToggleTda,
+  onToggleProv,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
 
@@ -323,6 +327,17 @@ export function IntelligencePage({
             <button
               type="button"
               className="toolbar-btn"
+              data-active={provActive}
+              onClick={onToggleProv}
+              aria-label="toggle provenance layer"
+              data-testid="prov-toggle"
+              title="Provenance layer"
+            >
+              ⬡
+            </button>
+            <button
+              type="button"
+              className="toolbar-btn"
               data-active={tdaActive}
               onClick={onToggleTda}
               aria-label="toggle topological overlay"
@@ -348,6 +363,7 @@ export function IntelligencePage({
               selectedId={selectedId}
               onSelect={onSelect}
               onExpand={onExpand}
+              onMaterialize={onMaterialize}
               onReady={onGraphReady}
             />
           )}
@@ -361,7 +377,7 @@ export function IntelligencePage({
             selectedId={selectedId}
             onToggle={onToggleTda}
           />
-          <div className="intel-legend">
+          <div className="intel-legend" data-provenance={provActive} data-testid="intel-legend">
             <span>
               <b style={{ color: "#22d3ee" }}>●</b> ENTITY
             </span>
@@ -371,12 +387,16 @@ export function IntelligencePage({
             <span>
               <b style={{ color: "#a78bfa" }}>▲</b> RELATED
             </span>
-            <span>
-              <b style={{ color: "#34d399" }}>◇</b> OBS
-            </span>
-            <span>
-              <b style={{ color: "#7c889d" }}>⬡</b> SOURCE
-            </span>
+            {provActive ? (
+              <>
+                <span>
+                  <b style={{ color: "#34d399" }}>◇</b> OBS
+                </span>
+                <span>
+                  <b style={{ color: "#7c889d" }}>⬡</b> SOURCE
+                </span>
+              </>
+            ) : null}
           </div>
         </div>
         <IntroFeed feed={feed} />
