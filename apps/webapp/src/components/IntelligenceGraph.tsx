@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type cytoscape from "cytoscape";
 import { IntelGraph } from "../lib/intelGraph";
 
 interface Props {
@@ -6,6 +7,7 @@ interface Props {
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
   onExpand?: (id: string) => void;
+  onReady?: (cy: cytoscape.Core) => void;
 }
 
 const NODE_STYLE: Record<string, object> = {
@@ -62,16 +64,54 @@ const NODE_STYLE: Record<string, object> = {
     label: "",
     "font-family": "'Geist Mono', Consolas, monospace",
   },
+  observation: {
+    "background-color": "#070d18",
+    "border-color": "#34d399",
+    "border-width": 1.5,
+    "shadow-blur": 10,
+    "shadow-color": "#34d399",
+    "shadow-opacity": 0.45,
+    width: 30,
+    height: 30,
+    shape: "diamond",
+    color: "#a5b4c7",
+    "font-size": 8,
+    label: "data(label)",
+    "text-valign": "bottom",
+    "text-margin-y": 4,
+    "font-family": "'Geist Mono', Consolas, monospace",
+  },
+  source: {
+    "background-color": "#0a0f1a",
+    "border-color": "#7c889d",
+    "border-width": 1,
+    "shadow-blur": 8,
+    "shadow-color": "#7c889d",
+    "shadow-opacity": 0.3,
+    width: 26,
+    height: 26,
+    shape: "round-hexagon",
+    color: "#7c889d",
+    "font-size": 7,
+    label: "data(label)",
+    "text-valign": "bottom",
+    "text-margin-y": 4,
+    "font-family": "'Geist Mono', Consolas, monospace",
+  },
 };
 
 const EDGE_STYLE: Record<string, object> = {
   possible_match: { "line-color": "#22d3ee", width: 1.6, "line-style": "solid", "arrow-color": "#22d3ee" },
   assertion: { "line-color": "#e879f9", width: 1.3, "line-style": "dotted", "arrow-color": "#e879f9" },
   relationship: { "line-color": "#a78bfa", width: 1.1, "line-style": "dashed", "arrow-color": "#a78bfa" },
+  evidence: { "line-color": "#34d399", width: 1.2, "line-style": "dashed", "arrow-color": "#34d399" },
+  source_host: { "line-color": "#3b4a63", width: 0.9, "line-style": "dotted", "arrow-color": "#3b4a63" },
 };
 
-export function IntelligenceGraph({ graph, onSelect, onExpand }: Props) {
+export function IntelligenceGraph({ graph, onSelect, onExpand, onReady }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -126,6 +166,14 @@ export function IntelligenceGraph({ graph, onSelect, onExpand }: Props) {
             style: NODE_STYLE.relationship as never,
           },
           {
+            selector: 'node[kind="observation"]',
+            style: NODE_STYLE.observation as never,
+          },
+          {
+            selector: 'node[kind="source"]',
+            style: NODE_STYLE.source as never,
+          },
+          {
             selector: "edge",
             style: {
               "curve-style": "bezier",
@@ -170,13 +218,14 @@ export function IntelligenceGraph({ graph, onSelect, onExpand }: Props) {
       });
       cy.on("dbltap", "node", (evt) => onExpand?.(evt.target.id()));
       cy.fit(undefined, 40);
+      onReadyRef.current?.(cy);
     });
 
     return () => {
       cancelled = true;
       cy?.destroy();
     };
-  }, [graph, onSelect, onExpand]);
+  }, [graph, onSelect, onExpand, onReady]);
 
   return (
     <div

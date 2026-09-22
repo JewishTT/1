@@ -1,6 +1,6 @@
 import { Correlation, EntityView } from "./api";
 
-export type IntelNodeKind = "entity" | "correlate" | "relationship";
+export type IntelNodeKind = "entity" | "correlate" | "relationship" | "observation" | "source";
 
 export interface IntelNode {
   id: string;
@@ -13,7 +13,7 @@ export interface IntelEdge {
   id: string;
   source: string;
   target: string;
-  kind: "possible_match" | "relationship" | "assertion";
+  kind: "possible_match" | "relationship" | "assertion" | "evidence" | "source_host";
   reason: string;
 }
 
@@ -28,6 +28,15 @@ function displayLabel(entityId: string, entity?: EntityView): string {
   const account = identity["account"];
   if (account) return String(account);
   return entity.aliases[0] ?? entityId;
+}
+
+function sourceHost(uri: string): string | null {
+  try {
+    const parsed = new URL(uri);
+    return parsed.hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -63,6 +72,42 @@ export function buildIntelGraph(
         kind: "relationship",
         reason: String(rel["type"] ?? "linked"),
       });
+    }
+
+    // Immutable observations anchored to this entity (I-1) plus their hosting
+    // source domains — observation/source node kinds keep provenance visible
+    // on the intelligence map.
+    const uriByObs = new Map(
+      (entity.timeline ?? [])
+        .filter((t) => t.observation_id && t.uri)
+        .map((t) => [t.observation_id as string, t.uri as string]),
+    );
+    for (const ev of entity.evidence ?? []) {
+      const obsId = ev.observation_id;
+      if (!obsId) continue;
+      upsertNode(obsId, obsId, "observation", false);
+      edges.set(`EV-${entity.entity_id}-${obsId}`, {
+        id: `EV-${entity.entity_id}-${obsId}`,
+        source: entity.entity_id,
+        target: obsId,
+        kind: "evidence",
+        reason: ev.immutable ? "immutable" : "volatile",
+      });
+      const uri = uriByObs.get(obsId);
+      if (uri) {
+        const host = sourceHost(uri);
+        if (host) {
+          const srcId = `SRC-${host}`;
+          upsertNode(srcId, host, "source", false);
+          edges.set(`SRC-${obsId}-${srcId}`, {
+            id: `SRC-${obsId}-${srcId}`,
+            source: obsId,
+            target: srcId,
+            kind: "source_host",
+            reason: host,
+          });
+        }
+      }
     }
   }
 

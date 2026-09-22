@@ -350,6 +350,53 @@ button { font-family: inherit; }
   padding: 0.4rem 0.55rem; border: 1px solid var(--c-border); border-radius: 0.5rem; background: rgba(5, 8, 15, 0.8);
   font-family: var(--font-mono); font-size: 0.6rem; color: var(--c-text-dim); }
 .intel-legend span b { font-weight: 600; }
+
+/* Canvas toolbar: layout select, zoom/fit, TOPO layer arm switch */
+.canvas-toolbar { display: flex; align-items: center; gap: 0.25rem; }
+.toolbar-select { background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-2);
+  font-family: var(--font-mono); font-size: 0.68rem; padding: 0.22rem 0.4rem; border-radius: 0.35rem; }
+.toolbar-btn { min-width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--c-border); border-radius: 0.35rem; background: var(--c-surface); color: var(--c-text-2);
+  font-family: var(--font-mono); font-size: 0.8rem; cursor: pointer; transition: all 120ms ease; }
+.toolbar-btn:hover { border-color: var(--c-border-hi); color: var(--acc); }
+.toolbar-btn[data-active="true"] { border-color: var(--acc); color: var(--acc);
+  background: var(--acc-soft); box-shadow: var(--acc-glow); }
+
+/* ── TDA overlay layer ─────────────────────────────────────────────────── */
+.tda-layer { position: absolute; left: 0.7rem; top: 0.7rem; z-index: 7; width: 302px;
+  border: 1px solid rgba(167, 139, 250, 0.55); border-radius: 0.7rem; background: rgba(8, 13, 24, 0.94);
+  backdrop-filter: blur(6px); box-shadow: 0 0 22px rgba(167, 139, 250, 0.18); overflow: hidden; }
+.tda-layer-head { display: flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--c-border); }
+.tda-layer-title { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.14em;
+  color: #a78bfa; text-transform: uppercase; }
+.icon-btn { margin-left: auto; border: none; background: none; color: var(--c-text-dim); cursor: pointer;
+  font-size: 0.8rem; line-height: 1; padding: 2px 4px; }
+.icon-btn:hover { color: var(--c-danger); }
+.tda-layer-status { padding: 0.6rem; font-family: var(--font-mono); font-size: 0.68rem; color: var(--c-text-dim); }
+.tda-layer-body { padding: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.tda-entity { display: flex; flex-direction: column; gap: 0.3rem; }
+.tda-entity-name { font-family: var(--font-mono); font-weight: 600; font-size: 0.78rem; color: var(--c-text); }
+.tda-kv { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.68rem; color: var(--c-text-dim); }
+.tda-kv b { font-weight: 600; color: var(--c-text-2); }
+.tda-bars { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.2rem; }
+.tda-bar-row { display: grid; grid-template-columns: 26px 1fr 22px; align-items: center; gap: 0.4rem;
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--c-text-dim); }
+.tda-bar-track { height: 6px; border-radius: 3px; background: rgba(167, 139, 250, 0.12); overflow: hidden; }
+.tda-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #8b5cf6, #e879f9);
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.6); }
+.tda-loop { margin-top: 0.2rem; border: 1px solid rgba(232, 121, 249, 0.4); border-radius: 0.4rem;
+  padding: 0.3rem 0.45rem; font-size: 0.66rem; font-family: var(--font-mono); color: #e879f9; }
+.tda-layer-divider { height: 1px; background: var(--c-border); margin: 0.2rem 0; }
+.tda-layers { display: flex; flex-direction: column; gap: 0.3rem; }
+.tda-layers-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.14em; color: var(--c-text-dim); }
+.tda-layer-chip { display: flex; align-items: center; gap: 0.45rem; font-family: var(--font-mono); font-size: 0.66rem;
+  color: var(--c-text-2); }
+.tda-layer-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+.loop-dot { width: 8px; height: 8px; border-radius: 50%; background: #e879f9; box-shadow: 0 0 8px #e879f9;
+  animation: pulse 1.6s infinite; }
+.tda-note-text { color: var(--c-text-dim); font-size: 0.62rem; }
+.tda-loop-summary { font-family: var(--font-mono); font-size: 0.62rem; color: #e879f9; margin-top: 0.2rem; }
 .intel-seedbank { grid-area: bank; border: 1px solid var(--c-border); border-radius: 0.75rem; background: var(--c-glass);
   display: flex; flex-direction: column; overflow: hidden; }
 .seedbank-body { flex: 1; overflow-y: auto; padding: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem; }

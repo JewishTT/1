@@ -2,8 +2,13 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { Correlation, EntityView } from "../lib/api";
 import { IntelGraph, IntelNode } from "../lib/intelGraph";
+import type { InvariantResult } from "../lib/science/types";
 import { StreamEvent } from "../lib/stream";
 import { IntelligenceGraph } from "../components/IntelligenceGraph";
+import { TDALayer } from "../components/TDALayer";
+import type cytoscape from "cytoscape";
+
+const LAYOUTS = ["cose", "concentric", "grid", "circle", "breadthfirst"];
 
 interface Props {
   graph: IntelGraph;
@@ -12,11 +17,23 @@ interface Props {
   correlations: Record<string, Correlation[]>;
   selectedId: string | null;
   feed: Array<{ id: string; event: StreamEvent; at: string }>;
+  entityLabels: Record<string, string>;
+  layoutName: string;
+  tdaActive: boolean;
+  tdaLoading: boolean;
+  invariants: Record<string, InvariantResult>;
+  tdaNotes: Record<string, string>;
   onSelect: (id: string | null) => void;
   onExpand: (id: string) => void;
   onMaterialize: (id: string) => void;
   onAddSeed: (id: string) => void;
   onRemoveSeed: (id: string) => void;
+  onGraphReady: (cy: cytoscape.Core) => void;
+  onLayoutChange: (name: string) => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onFit: () => void;
+  onToggleTda: () => void;
 }
 
 function nodeLabel(entity?: EntityView): string {
@@ -72,6 +89,12 @@ function IntelInspector({
   onExpand: (id: string) => void;
   onMaterialize: (id: string) => void;
 }) {
+  const provenance = node.kind === "observation"
+    ? "Immutable observation slot (I-1) — provenance evidence node, not an addressable catalog entity."
+    : node.kind === "source"
+      ? "Hosting domain inferred from the observation URI — aggregated source decorator."
+      : null;
+
   return (
     <aside className="intel-inspector" data-testid="intel-inspector">
       <div className="intel-inspector-head">
@@ -123,6 +146,10 @@ function IntelInspector({
               </Link>
             </div>
           </>
+        ) : provenance ? (
+          <div className="panel-actions">
+            <p className="panel-note">{provenance}</p>
+          </div>
         ) : (
           <div className="panel-actions">
             <p className="panel-note">
@@ -150,11 +177,23 @@ export function IntelligencePage({
   correlations,
   selectedId,
   feed,
+  entityLabels,
+  layoutName,
+  tdaActive,
+  tdaLoading,
+  invariants,
+  tdaNotes,
   onSelect,
   onExpand,
   onMaterialize,
   onAddSeed,
   onRemoveSeed,
+  onGraphReady,
+  onLayoutChange,
+  onZoomIn,
+  onZoomOut,
+  onFit,
+  onToggleTda,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
 
@@ -258,6 +297,41 @@ export function IntelligencePage({
       <div className="intel-canvas" data-testid="intel-canvas">
         <div className="intel-canvas-head">
           <span className="op-label">INTELLIGENCE MAP — LIVE LINK ANALYSIS</span>
+          <div className="canvas-toolbar">
+            <select
+              className="toolbar-select"
+              value={layoutName}
+              onChange={(e) => onLayoutChange(e.target.value)}
+              aria-label="graph layout"
+              data-testid="layout-select"
+            >
+              {LAYOUTS.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <button type="button" className="toolbar-btn" onClick={onZoomOut} aria-label="zoom out" data-testid="zoom-out">
+              −
+            </button>
+            <button type="button" className="toolbar-btn" onClick={onFit} aria-label="fit graph" data-testid="fit">
+              ⤢
+            </button>
+            <button type="button" className="toolbar-btn" onClick={onZoomIn} aria-label="zoom in" data-testid="zoom-in">
+              +
+            </button>
+            <button
+              type="button"
+              className="toolbar-btn"
+              data-active={tdaActive}
+              onClick={onToggleTda}
+              aria-label="toggle topological overlay"
+              data-testid="tda-toggle"
+              title="TOPO layer"
+            >
+              ◬
+            </button>
+          </div>
           <span className="status-chip">
             {graph.nodes.length} NODES · {graph.edges.length} EDGES
           </span>
@@ -274,9 +348,19 @@ export function IntelligencePage({
               selectedId={selectedId}
               onSelect={onSelect}
               onExpand={onExpand}
+              onReady={onGraphReady}
             />
           )}
           {selectedNode && <IntelInspector node={selectedNode} entity={selectedEntity} onExpand={onExpand} onMaterialize={onMaterialize} />}
+          <TDALayer
+            active={tdaActive}
+            loading={tdaLoading}
+            invariants={invariants}
+            notes={tdaNotes}
+            entityLabels={entityLabels}
+            selectedId={selectedId}
+            onToggle={onToggleTda}
+          />
           <div className="intel-legend">
             <span>
               <b style={{ color: "#22d3ee" }}>●</b> ENTITY
@@ -286,6 +370,12 @@ export function IntelligencePage({
             </span>
             <span>
               <b style={{ color: "#a78bfa" }}>▲</b> RELATED
+            </span>
+            <span>
+              <b style={{ color: "#34d399" }}>◇</b> OBS
+            </span>
+            <span>
+              <b style={{ color: "#7c889d" }}>⬡</b> SOURCE
             </span>
           </div>
         </div>
