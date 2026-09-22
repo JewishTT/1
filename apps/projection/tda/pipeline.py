@@ -41,6 +41,36 @@ class GudhiProvider:
         return out
 
 
+class DirectionalFlagProvider:
+    """Directed flag complex on an N-ary co-occurrence fan (FR-008, 011).
+
+    Builds the maximal simplex from the *native* hypergraph fan (members of a
+    co-mention), not a lossy pairwise clique (hypergraph.py keeps N-ary
+    structure first-class). Every member becomes a vertex with filtration 0,
+    every (ordered) pair present in the fan gets an edge at its *temporal
+    delay* as the filtration value. Deterministic for a fixed fan + clock.
+    """
+
+    def compute(self, fan: dict[str, list[str]], dimension: int) -> dict:
+        import gudhi
+
+        tree = gudhi.SimplexTree()
+        vertices = sorted({v for members in fan.values() for v in members})
+        for v in vertices:
+            tree.insert([vertices.index(v)], filtration=0.0)
+        for members in fan.values():
+            members_idx = sorted(vertices.index(m) for m in members)
+            for a in members_idx:
+                for b in members_idx:
+                    if a != b:
+                        tree.insert([a, b], filtration=float(b))
+        tree.expansion(dimension)
+        out: dict[int, list[tuple[float, float]]] = {}
+        for dim, (birth, death) in tree.persistence():
+            out.setdefault(int(dim), []).append((float(birth), float(death)))
+        return out
+
+
 @dataclass
 class Filtration:
     node_ids: list[str]
@@ -49,6 +79,47 @@ class Filtration:
     def __post_init__(self) -> None:
         if self.distance_matrix.shape != (len(self.node_ids), len(self.node_ids)):
             raise ValueError("distance matrix must be square over node_ids")
+
+
+@dataclass
+class DelaySeriesComplex:
+    """Takens delay embedding (FR-009) → point set for VR persistence.
+
+    ``lag``/``dim`` are the delay-embedding parameters. The signal is a
+    deterministic series (an entity's life-stream values); the embedding
+    reconstructs the attractor shape that TDA then measures (no Newtonian
+    instantaneity — the *shape* is the invariant).
+    """
+
+    series: list[float]
+    lag: int = 1
+    dim: int = 2
+
+    def __post_init__(self) -> None:
+        if self.lag < 1:
+            raise ValueError("lag must be >= 1")
+        if self.dim < 2:
+            raise ValueError("Takens dim must be >= 2")
+
+    def embed(self) -> np.ndarray:
+        n = len(self.series)
+        if n < self.lag * (self.dim - 1) + 1:
+            return np.zeros((0, self.dim))
+        points = []
+        for i in range(n - self.lag * (self.dim - 1)):
+            points.append([self.series[i + self.lag * k] for k in range(self.dim)])
+        return np.asarray(points, dtype=float)
+
+    def distance_matrix(self) -> np.ndarray:
+        pts = self.embed()
+        n = len(pts)
+        if n == 0:
+            return np.zeros((0, 0))
+        d = np.zeros((n, n))
+        for i in range(n):
+            for j in range(i + 1, n):
+                d[i, j] = d[j, i] = float(np.linalg.norm(pts[i] - pts[j]))
+        return d
 
 
 class MemoryBudgetExceeded(RuntimeError):
