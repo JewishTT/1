@@ -584,7 +584,12 @@ class GraphInvariant:
         object.__setattr__(
             self,
             "links",
-            tuple(sorted(self.links, key=lambda l: (l.relation, l.target_id, l.target_kind))),
+            tuple(
+                sorted(
+                    self.links,
+                    key=lambda link: (link.relation, link.target_id, link.target_kind),
+                )
+            ),
         )
 
     @property
@@ -839,7 +844,7 @@ def from_entity_stream(
     proxy_rows: list[TDAProxy] = []
     prev_count = 0
     for index, (start, end) in enumerate(spans):
-        window_entries = grouped[(start, end)]
+        window_entries = grouped.get((start, end), [])  # gap window → dormant, no events
         timestamps = sorted(
             (_entry_field(entry, "ts") for entry, _ in window_entries), key=lambda t: t
         )
@@ -1020,7 +1025,9 @@ def window_tda_input(
 def to_multiplex(invariant: GraphInvariant) -> tuple[MultiplexLayer, ...]:
     """Lossless multiplex-over-time layers, one per lifecycle slice (ordered)."""
     me = invariant.identity.entity_id
-    by_window = {row.window_start: dict(row.neighbor_weights) for row in invariant.topology.window_topology}
+    by_window = {
+        row.window_start: dict(row.neighbor_weights) for row in invariant.topology.window_topology
+    }
     layers: list[MultiplexLayer] = []
     for slice_ in invariant.lifecycle.slices:
         weights = by_window.get(slice_.window_start, {})

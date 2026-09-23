@@ -38,6 +38,7 @@ def _entry(
     ent: str = "EA-1",
     kind: str = "mention",
     record_hash: str | None = None,
+    tenant_id: str = "tenant-a",
 ) -> dict:
     return {
         "entity_id": ent,
@@ -45,7 +46,7 @@ def _entry(
         "ts": ts if ts is not None else T0 + timedelta(hours=i),
         "sequence": i + 1,
         "observation_id": obs or f"obs-{i:04d}",
-        "tenant_id": "tenant-a",
+        "tenant_id": tenant_id,
         "record_hash": record_hash if record_hash is not None else f"rh-{i:04d}",
         "payload": payload or {},
     }
@@ -84,12 +85,17 @@ def test_content_id_is_prefix_of_digest() -> None:
 
 
 def test_window_bounds_epoch_aligned() -> None:
-    start, end = window_bounds(T0, timedelta(days=7))
+    # Epoch-anchored: pick a timestamp ON a 7-day boundary (1970-01-01 + 2817*7d)
+    # so the same-window expectation below holds for the epoch grid — the
+    # calendar week (e.g. 2024-01-01, a Monday) is NOT an epoch-aligned boundary.
+    boundary = datetime(1970, 1, 1, tzinfo=UTC) + timedelta(days=7 * 2817)
+    start, end = window_bounds(boundary, timedelta(days=7))
+    assert start == boundary
     assert end - start == timedelta(days=7)
-    assert start <= T0 < end
+    assert start <= boundary < end
     # 3 days later is the same window; 8 days later is the next one
-    assert window_bounds(T0 + timedelta(days=3), timedelta(days=7))[0] == start
-    assert window_bounds(T0 + timedelta(days=8), timedelta(days=7))[0] == end
+    assert window_bounds(boundary + timedelta(days=3), timedelta(days=7))[0] == start
+    assert window_bounds(boundary + timedelta(days=8), timedelta(days=7))[0] == end
 
 
 def test_window_bounds_requires_tz_and_positive_window() -> None:
@@ -139,7 +145,10 @@ def test_revision_bump_changes_digest_not_identity() -> None:
 
 def test_lifecycle_states_derived_deterministically() -> None:
     def at(hour: int, n: int) -> list[dict]:
-        return [_entry(i + hour * 10 + j, ts=T0 + HOUR * hour + timedelta(minutes=j)) for j in range(n)]
+        return [
+            _entry(hour * 10 + j, ts=T0 + HOUR * hour + timedelta(minutes=j))
+            for j in range(n)
+        ]
 
     entries = at(0, 3) + at(1, 5) + at(2, 3) + at(4, 3)  # window 3 is an empty gap
     inv = from_entity_stream(entries, tenant_id="tenant-a", window=HOUR)
@@ -194,9 +203,20 @@ def test_static_object_content_addressing_and_immutability() -> None:
 def test_static_object_descriptor_has_no_text() -> None:
     secret = "MEMO: NUCLEAR LAUNDRY PROTOCOL"
     obj = static_object_for(secret.encode("utf-8"), media_type="text/plain")
-    serialized = json.dumps(obj.to_dict())
+    descriptor = obj.to_dict()
+    serialized = json.dumps(descriptor)
     assert secret not in serialized
-    assert "text" not in serialized  # only a descriptor, never content (I-5)
+    # only a descriptor, never content (I-5): fixed key set with no payload field
+    assert set(descriptor) == {
+        "kind",
+        "object_id",
+        "media_type",
+        "content_sha256",
+        "byte_length",
+        "captured_at",
+        "source_uri",
+    }
+    assert descriptor["byte_length"] == len(secret.encode("utf-8"))
 
 
 # -- embedded-vs-linked boundary --------------------------------------------
@@ -311,7 +331,7 @@ def test_to_multiplex_layers_align_with_slices() -> None:
     inv = from_entity_stream(entries, tenant_id="tenant-a", window=HOUR)
     layers = to_multiplex(inv)
     assert len(layers) == len(inv.lifecycle.slices)
-    for layer, slice_ in zip(layers, inv.lifecycle.slices):
+    for layer, slice_ in zip(layers, inv.lifecycle.slices, strict=True):
         assert layer.window_start == slice_.window_start
         assert layer.window_end == slice_.window_end
         assert "EA-1" in layer.nodes

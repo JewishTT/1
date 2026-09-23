@@ -11,6 +11,12 @@ interface Props {
   onExpand?: (id: string) => void;
   onMaterialize?: (id: string) => void;
   onReady?: (cy: cytoscape.Core) => void;
+  /**
+   * Timelapse slice at T (011/FR-009): restrict the canvas to these node/edge
+   * ids. `null`/omitted renders the full graph (back-compatible). Edges are
+   * kept only when both endpoints are visible — no dangling edges, ever.
+   */
+  visible?: { nodeIds: readonly string[]; edgeIds: readonly string[] } | null;
 }
 
 // ── Volumetric entity-type palette ─────────────────────────────────────
@@ -338,7 +344,7 @@ function NodeInfoCard({
   );
 }
 
-export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMaterialize, onReady }: Props) {
+export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMaterialize, onReady, visible = null }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
   const onReadyRef = useRef(onReady);
@@ -378,10 +384,20 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
           } as never,
         }));
 
+      const nodeIdSet = visible ? new Set(visible.nodeIds) : null;
+      const edgeIdSet = visible ? new Set(visible.edgeIds) : null;
+      const liveNodes = nodeIdSet ? graph.nodes.filter((n) => nodeIdSet.has(n.id)) : graph.nodes;
+      const liveIds = new Set(liveNodes.map((n) => n.id));
+      const liveEdges = edgeIdSet
+        ? graph.edges.filter(
+            (e) => edgeIdSet.has(e.id) && liveIds.has(e.source) && liveIds.has(e.target),
+          )
+        : graph.edges;
+
       cy = mod.default({
         container: hostRef.current,
         elements: [
-          ...graph.nodes.map((n) => ({
+          ...liveNodes.map((n) => ({
             data: {
               id: n.id,
               label: n.label,
@@ -392,7 +408,7 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
               tl: n.counts?.tl ?? 0,
             },
           })),
-          ...graph.edges.map((e) => ({
+          ...liveEdges.map((e) => ({
             data: { id: e.id, source: e.source, target: e.target, kind: e.kind, reason: e.reason },
             style: {
               label: e.reason,
@@ -455,7 +471,7 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
           },
         ],
         layout: {
-          ...deterministicLayout("cose", graph.nodes.map((n) => n.id)),
+          ...deterministicLayout("cose", liveNodes.map((n) => n.id)),
           animate: true,
           componentSpacing: 80,
           nodeRepulsion: 9000,
@@ -480,7 +496,7 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
       cy?.destroy();
       if (cyRef.current === cy) cyRef.current = null;
     };
-  }, [graph, onSelect, onExpand, onReady]);
+  }, [graph, onSelect, onExpand, onReady, visible]);
 
   const accent =
     selectedNode?.kind === "entity"

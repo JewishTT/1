@@ -14,6 +14,9 @@ findings always link back to raw evidence.
 - Donor-pattern integration: `specs/002-donor-pattern-integration/`
 - Deterministic entity-extraction stack (spec 007): `specs/007-deterministic-entity-extraction-stack/`
   (extraction lane, parsers, offline dictionaries, contract tests)
+- Dynamic entity invariant (spec 012): `specs/012-dynamic-entity-invariant/` — the
+  atomic-entity graph model; narrative: `docs/architecture/dynamic-entity-invariant.md`
+- Stream processing / nervous system: `docs/architecture/stream-processing.md`
 
 ## Design decisions (ADRs)
 

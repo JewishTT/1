@@ -148,9 +148,11 @@ describe("networkStateAtTime", () => {
   it("preserves input order and is deterministic", () => {
     const s1 = networkStateAtTime(nodes, edges, "2026-01-07T00:00:00Z");
     const s2 = networkStateAtTime([...nodes].reverse(), edges, "2026-01-07T00:00:00Z");
+    // documented contract: input order is preserved, so reversed input
+    // reverses the (still deterministic) output order
     expect(s1.nodes.map((n) => n.id)).toEqual(["ENT-A", "ENT-B"]);
-    expect(s2.nodes.map((n) => n.id)).toEqual(["ENT-A", "ENT-B"]);
-    expect(s1.edges).toEqual(s2.edges);
+    expect(s2.nodes.map((n) => n.id)).toEqual(["ENT-B", "ENT-A"]);
+    expect(s2.edges).toEqual(s1.edges);
   });
 });
 

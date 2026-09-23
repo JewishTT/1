@@ -48,15 +48,29 @@ export function TimelineSlider({
 
   const onScrubRef = useRef(onScrub);
   onScrubRef.current = onScrub;
-  const valueRef = useRef(value);
-  valueRef.current = value;
+  // Play cursor: while playing the slider advances its own position (a
+  // controlled parent echoes onScrub back into `value`; if it does not, the
+  // cursor still walks deterministically to the window end). A closed window
+  // (min === max) has nothing to scrub — the controls are honestly disabled.
+  const playRef = useRef(value);
 
-  const disabled = !(Number.isFinite(min) && Number.isFinite(max) && min <= max);
+  const disabled = !(Number.isFinite(min) && Number.isFinite(max) && min < max);
   const clamped = disabled ? min : Math.min(Math.max(value, min), max);
   const step = disabled ? 1 : Math.max(1, Math.floor((max - min) / 200));
   const axis = [...new Set(ticks.filter((tk) => Number.isFinite(tk) && tk >= min && tk <= max))].sort(
     (a, b) => a - b,
   );
+
+  // Keep the play cursor in sync with the controlled value (parent echo).
+  useEffect(() => {
+    playRef.current = value;
+  }, [value]);
+
+  const togglePlay = () => {
+    if (disabled) return;
+    if (!playing) playRef.current = clamped; // start from the shown instant
+    setPlaying((p) => !p);
+  };
 
   // Deterministic play: advance fixed steps until the window end, then stop.
   useEffect(() => {
@@ -64,12 +78,14 @@ export function TimelineSlider({
     const span = Math.max(1, max - min);
     const stepMs = span / 60;
     const id = window.setInterval(() => {
-      const current = valueRef.current;
+      const current = playRef.current;
       if (current >= max) {
         setPlaying(false);
         return;
       }
-      onScrubRef.current(Math.min(max, current + stepMs));
+      const next = Math.min(max, current + stepMs);
+      playRef.current = next;
+      onScrubRef.current(next);
     }, 150);
     return () => window.clearInterval(id);
   }, [playing, min, max]);
@@ -80,7 +96,7 @@ export function TimelineSlider({
         <button
           type="button"
           className="toolbar-btn"
-          onClick={() => setPlaying((p) => (disabled ? p : !p))}
+          onClick={togglePlay}
           disabled={disabled}
           aria-label={playing ? "pause timelapse" : "play timelapse"}
           data-testid="timelapse-play"

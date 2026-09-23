@@ -221,25 +221,34 @@ describe("snapshotGraph", () => {
 
 describe("restoreGraph", () => {
   it("applies positions, zoom, pan and selection when the key matches", () => {
-    const cy = fakeCy({
+    // Source: the canonical view — both nodes selected, saved zoom/pan.
+    const source = fakeCy({
+      nodes: SNAPSHOT_GRAPH.nodes.map((n) => ({ ...n, selected: true })),
+      edges: SNAPSHOT_GRAPH.edges,
+      zoom: 1.25,
+      pan: { x: 30, y: -12 },
+    });
+    const snap = snapshotGraph(source.cy as never);
+
+    // Target: same topology, different (scrambled) view state.
+    const target = fakeCy({
       nodes: SNAPSHOT_GRAPH.nodes.map((n, i) => ({ ...n, x: i, y: i * 2 })),
       edges: SNAPSHOT_GRAPH.edges,
       zoom: 0.5,
       pan: { x: 1, y: 1 },
     });
-    const snap = snapshotGraph(cy.cy as never);
-    const restored = restoreGraph(cy.cy as never, snap, snap.entitiesKey);
+    const restored = restoreGraph(target.cy as never, snap, snap.entitiesKey);
 
     expect(restored).toEqual(["ENT-2001", "ENT-2002"]);
-    expect(cy.selectedIds()).toEqual(["ENT-2001", "ENT-2002"]);
-    expect(cy.positions()).toEqual(
+    expect(target.selectedIds()).toEqual(["ENT-2001", "ENT-2002"]);
+    expect(target.positions()).toEqual(
       expect.arrayContaining([
         { id: "ENT-2001", x: 12.5, y: 40 },
         { id: "ENT-2002", x: -8, y: 22 },
       ]),
     );
-    expect(cy.zoom()).toBe(1.25);
-    expect(cy.pan()).toEqual({ x: 30, y: -12 });
+    expect(target.zoom()).toBe(1.25);
+    expect(target.pan()).toEqual({ x: 30, y: -12 });
   });
 
   it("clamps zoom into the canvas bounds", () => {

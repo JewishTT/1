@@ -243,7 +243,10 @@ class Mention(Base):
     offsets: Mapped[dict | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    __table_args__ = (Index("ix_mentions_obs", "observation_id"), Index("ix_mentions_tenant", "tenant_id"))
+    __table_args__ = (
+        Index("ix_mentions_obs", "observation_id"),
+        Index("ix_mentions_tenant", "tenant_id"),
+    )
 
 
 class Candidate(Base):
@@ -532,6 +535,103 @@ class AuditLog(Base):
     __table_args__ = (Index("ix_audit_logs_tenant", "tenant_id"),)
 
 
+class MaterializationRunState(str, enum.Enum):
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    PUBLISHED = "PUBLISHED"
+    FAILED = "FAILED"
+    QUARANTINED = "QUARANTINED"
+
+
+class TemporalMaterializationRun(Base):
+    __tablename__ = "temporal_materialization_runs"
+
+    run_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), index=True)
+    entity_id: Mapped[str] = mapped_column(String(64), index=True)
+    source_cut_id: Mapped[str] = mapped_column(String(96), index=True)
+    state: Mapped[MaterializationRunState] = mapped_column(
+        Enum(MaterializationRunState), default=MaterializationRunState.QUEUED
+    )
+    projection_generation: Mapped[int] = mapped_column(Integer, default=0)
+    integrity_fingerprint: Mapped[str | None] = mapped_column(String(64))
+    payload: Mapped[dict | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index(
+            "uq_temporal_run_generation",
+            "tenant_id",
+            "entity_id",
+            "projection_generation",
+            unique=True,
+        ),
+    )
+
+
+class TemporalWindowRevision(Base):
+    __tablename__ = "temporal_window_revisions"
+
+    revision_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), index=True)
+    entity_id: Mapped[str] = mapped_column(String(64), index=True)
+    source_cut_id: Mapped[str] = mapped_column(String(96), index=True)
+    revision_number: Mapped[int] = mapped_column(Integer)
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    lifecycle_state: Mapped[str] = mapped_column(String(24))
+    payload: Mapped[dict | None] = mapped_column(JSONB)
+
+    __table_args__ = (
+        Index(
+            "uq_temporal_window_revision",
+            "tenant_id",
+            "entity_id",
+            "window_start",
+            "revision_number",
+            unique=True,
+        ),
+    )
+
+
+class TemporalHistoryPublication(Base):
+    __tablename__ = "temporal_history_publications"
+
+    publication_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), index=True)
+    entity_id: Mapped[str] = mapped_column(String(64), index=True)
+    source_cut_id: Mapped[str] = mapped_column(String(96), index=True)
+    projection_generation: Mapped[int] = mapped_column(Integer)
+    integrity_fingerprint: Mapped[str] = mapped_column(String(64))
+    payload: Mapped[dict | None] = mapped_column(JSONB)
+    published_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_temporal_publication_generation",
+            "tenant_id",
+            "entity_id",
+            "projection_generation",
+            unique=True,
+        ),
+    )
+
+
+class TemporalMaterializationAudit(Base):
+    __tablename__ = "temporal_materialization_audit"
+
+    audit_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), index=True)
+    entity_id: Mapped[str] = mapped_column(String(64), index=True)
+    run_id: Mapped[str] = mapped_column(String(96), index=True)
+    action: Mapped[str] = mapped_column(String(64))
+    reason: Mapped[str] = mapped_column(Text, default="")
+    payload: Mapped[dict | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 # ---------------------------------------------------------------------------
 # Donor-pattern tables (feature 002: donor-pattern-integration)
 # ---------------------------------------------------------------------------
@@ -710,7 +810,9 @@ class OntologyPack(Base):
     status: Mapped[OntologyPackStatusState] = mapped_column(
         Enum(OntologyPackStatusState), default=OntologyPackStatusState.DRAFT
     )
-    registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    registered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
     __table_args__ = (Index("ix_ontology_packs_tenant", "tenant_id"),)
 

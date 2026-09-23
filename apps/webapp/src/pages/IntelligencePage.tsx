@@ -5,6 +5,7 @@ import { IntelGraph, IntelNode } from "../lib/intelGraph";
 import type { InvariantResult } from "../lib/science/types";
 import { StreamEvent } from "../lib/stream";
 import { IntelligenceGraph } from "../components/IntelligenceGraph";
+import { GraphStateBar } from "../components/GraphStateBar";
 import { TimelineSlider } from "../components/TimelineSlider";
 import { TDALayer } from "../components/TDALayer";
 import {
@@ -56,6 +57,12 @@ interface Props {
   ccTemporality: Record<string, CcTemporalityPayload>;
   ccTemporalityBusy: boolean;
   onCcTemporality: (id: string) => void;
+  graphViewStatus: string | null;
+  graphViewEnabled: boolean;
+  onSaveView: () => void;
+  onRestoreView: () => void;
+  onExportView: () => void;
+  onImportView: (file: File) => void;
 }
 
 function nodeLabel(entity?: EntityView): string {
@@ -381,10 +388,17 @@ export function IntelligencePage({
   ccTemporality,
   ccTemporalityBusy,
   onCcTemporality,
+  graphViewStatus,
+  graphViewEnabled,
+  onSaveView,
+  onRestoreView,
+  onExportView,
+  onImportView,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
   const [entityInput, setEntityInput] = useState("");
   const [timelapseT, setTimelapseT] = useState<number | null>(null);
+  const [timelapseEngaged, setTimelapseEngaged] = useState(false);
 
   const submit = (ev: FormEvent) => {
     ev.preventDefault();
@@ -460,6 +474,21 @@ export function IntelligencePage({
     () => networkStateAtTime(timelapseNodes, timelapseEdges, timelapseActiveT),
     [timelapseNodes, timelapseEdges, timelapseActiveT],
   );
+
+  // Scrubbing engages the replay: from the first scrub on, the canvas shows the
+  // network AS IT WAS at T (unknown nodes are dropped, never fabricated — I-3).
+  const handleTimelapseScrub = (next: number) => {
+    setTimelapseEngaged(true);
+    setTimelapseT(next);
+  };
+
+  const timelapseVisible = useMemo(() => {
+    if (!timelapseEngaged || timelapseBounds === null) return null;
+    return {
+      nodeIds: timelapseNetwork.nodes.map((n) => n.id),
+      edgeIds: timelapseNetwork.edges.map((e) => e.id),
+    };
+  }, [timelapseEngaged, timelapseBounds, timelapseNetwork]);
 
   // In link mode a node tap picks source then target instead of selecting.
   const handleNodeSelect = (id: string | null) => {
@@ -642,6 +671,14 @@ export function IntelligencePage({
               ◬
             </button>
           </div>
+          <GraphStateBar
+            disabled={!graphViewEnabled}
+            status={graphViewStatus}
+            onSave={onSaveView}
+            onRestore={onRestoreView}
+            onExport={onExportView}
+            onImportFile={onImportView}
+          />
           {linkMode ? (
             <span className="status-chip link-hint" data-testid="link-hint">
               {linkSource === null
@@ -679,6 +716,7 @@ export function IntelligencePage({
               onExpand={onExpand}
               onMaterialize={onMaterialize}
               onReady={onGraphReady}
+              visible={timelapseVisible}
             />
           )}
           {selectedNode && <IntelInspector node={selectedNode} entity={selectedEntity} onExpand={onExpand} onMaterialize={onMaterialize} ccTemporality={ccTemporality[selectedNode.id]} ccTemporalityBusy={ccTemporalityBusy} onCcTemporality={onCcTemporality} />}
@@ -718,7 +756,7 @@ export function IntelligencePage({
           t={timelapseActiveT}
           frames={timelapseFrames}
           network={timelapseNetwork}
-          onScrub={setTimelapseT}
+          onScrub={handleTimelapseScrub}
         />
         <IntroFeed feed={feed} />
       </div>

@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Correlation, EntityView } from "../lib/api";
+import { makeEdgeId } from "../lib/edgeFormation";
 import { buildIntelGraph, classifyEntity, stripProvenance } from "../lib/intelGraph";
 import { scienceApi } from "../lib/science/api";
 
@@ -39,11 +40,25 @@ describe("intel graph assembler", () => {
     expect(ids).toContainEqual(["ENT-2001", "entity"]);
     expect(ids).toContainEqual(["ENT-2002", "correlate"]);
     expect(ids).toContainEqual(["ENT-2003", "relationship"]);
+    // Edges are content-addressed by the deterministic factory (edgeFormation):
+    // same ordered pair + kind + provenance source ⇒ same id on every reload.
     expect(graph.edges).toContainEqual(
-      expect.objectContaining({ id: "CE-200001", kind: "possible_match" }),
+      expect.objectContaining({
+        id: makeEdgeId("ENT-2001", "ENT-2002", "possible_match", "CE-200001"),
+        source: "ENT-2001",
+        target: "ENT-2002",
+        kind: "possible_match",
+        reason: "email",
+      }),
     );
     expect(graph.edges).toContainEqual(
-      expect.objectContaining({ id: "REL-ENT-2001-ENT-2003", kind: "relationship" }),
+      expect.objectContaining({
+        id: makeEdgeId("ENT-2001", "ENT-2003", "relationship", "candidate_of"),
+        source: "ENT-2001",
+        target: "ENT-2003",
+        kind: "relationship",
+        reason: "candidate_of",
+      }),
     );
   });
 
@@ -80,10 +95,22 @@ describe("intel graph assembler", () => {
     expect(kinds["OBS-1001"]).toBe("observation");
     expect(kinds["SRC-fixtures.local"]).toBe("source");
     expect(graph.edges).toContainEqual(
-      expect.objectContaining({ id: "EV-ENT-2001-OBS-1001", kind: "evidence" }),
+      expect.objectContaining({
+        id: makeEdgeId("ENT-2001", "OBS-1001", "evidence", "E-1"),
+        source: "ENT-2001",
+        target: "OBS-1001",
+        kind: "evidence",
+        reason: "immutable",
+      }),
     );
     expect(graph.edges).toContainEqual(
-      expect.objectContaining({ id: "SRC-OBS-1001-SRC-fixtures.local", kind: "source_host" }),
+      expect.objectContaining({
+        id: makeEdgeId("OBS-1001", "SRC-fixtures.local", "source_host", "fixtures.local"),
+        source: "OBS-1001",
+        target: "SRC-fixtures.local",
+        kind: "source_host",
+        reason: "fixtures.local",
+      }),
     );
   });
 

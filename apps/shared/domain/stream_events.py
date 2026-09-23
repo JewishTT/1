@@ -161,11 +161,9 @@ def hyperedge_expired_envelope(edge: HyperEdge, expired_at: Any) -> Any:
             "edge_type": edge.edge_type,
             "members": list(edge.members),
             "valid_until": edge.valid_until.isoformat() if edge.valid_until else None,
-            "expired_at": (
-                expired_at.isoformat()
-                if hasattr(expired_at, "isoformat")
-                else expired_at
-            ),
+            "expired_at": expired_at.isoformat()
+            if hasattr(expired_at, "isoformat")
+            else expired_at,
             "tenant_id": edge.tenant_id,
         },
         default=str,
@@ -189,3 +187,46 @@ def emit_hyperedge_expired(edge: HyperEdge, producer, expired_at: Any) -> None:
         hyperedge_expired_envelope(edge, expired_at=expired_at),
         key=edge.logical_id,
     )
+
+
+def materialization_event_envelope(history, *, event_type: str, run_id: str) -> Any:
+    """Build a refs-only materialization event envelope."""
+    payload = json.dumps(
+        {
+            "run_id": run_id,
+            "entity_id": history.entity_id,
+            "publication_id": history.publication.publication_id,
+            "source_cut_id": history.publication.source_cut.cut_id,
+            "projection_generation": history.publication.projection_generation,
+            "integrity_fingerprint": history.publication.integrity_fingerprint,
+        },
+        sort_keys=True,
+    ).encode("utf-8")
+    return build_envelope(
+        event_type=event_type,
+        event_version="1.0",
+        producer="projection.temporal-materialization",
+        producer_version="0.1.0",
+        payload=payload,
+        entity_id=history.entity_id,
+        event_id=f"evt-{history.publication.integrity_fingerprint}",
+        tenant_id=history.tenant_id,
+        work_id=run_id,
+    )
+
+
+def emit_materialization_event(history, producer, *, event_type: str, run_id: str) -> None:
+    producer.produce(
+        topic_for(event_type),
+        materialization_event_envelope(history, event_type=event_type, run_id=run_id),
+        key=history.entity_id,
+    )
+
+
+__all__ = [
+    "emit_hyperedge",
+    "emit_hyperedge_expired",
+    "emit_hyperedge_temporal_version",
+    "emit_materialization_event",
+    "materialization_event_envelope",
+]

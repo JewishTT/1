@@ -75,6 +75,10 @@ EVENT_CATALOG: dict[str, str] = {
     "entity.stream.appended": "entity-stream",
     "entity.state.projected": "entity-stream",
     "entity.series.projected": "entity-stream",
+    "temporal.materialization.started": "temporal-materialization",
+    "temporal.materialization.progress": "temporal-materialization",
+    "temporal.materialization.ready": "temporal-materialization",
+    "temporal.materialization.failed": "temporal-materialization",
     "hyperedge.created": "hypergraph",
     "hyperedge.temporal_version_created": "hypergraph",
     "hyperedge.expired": "hypergraph",
@@ -142,7 +146,12 @@ NERVOUS_SYSTEM_EVENT_TYPES: tuple[str, ...] = (
     "replay.stream",
     "series.invariant",
     "tda.feature.series",
+    "temporal.materialization.started",
+    "temporal.materialization.progress",
+    "temporal.materialization.ready",
+    "temporal.materialization.failed",
 )
+
 
 # Event types whose payload carries versioned protobuf (registry-validated).
 def topic_for(event_type: str) -> str:

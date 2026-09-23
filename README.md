@@ -59,11 +59,12 @@ Full validation: `uv run python -m bench.run --scenario smoke-val` walks the who
 | `009-donor-full-catalogue` | Donor full catalogue |
 | `010-zero-layer-contact-harvesting` | Zero-layer contact harvesting pipeline |
 | `011-atomic-entity-commoncrawl-tda` | Atomic entity × Common Crawl pilot × TDA |
+| `012-dynamic-entity-invariant` | Dynamic entity invariant (atomic-entity graph model, TDA-ready temporality) |
 
 ## Documentation
 
 - [Docs index](docs/README.md)
-- Architecture: [overview](docs/architecture/overview.md) · [collection fabric](docs/architecture/fabric-collection.md) · [multi-region topology](docs/architecture/multi-region.md)
+- Architecture: [overview](docs/architecture/overview.md) · [collection fabric](docs/architecture/fabric-collection.md) · [multi-region topology](docs/architecture/multi-region.md) · [dynamic entity invariant](docs/architecture/dynamic-entity-invariant.md) · [stream processing](docs/architecture/stream-processing.md)
 - [Quickstart / validation guide](specs/001-global-osint-platform/quickstart.md)
 - [Contributing](docs/CONTRIBUTING.md)
 

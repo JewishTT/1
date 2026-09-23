@@ -92,6 +92,16 @@ class TestWorkflowWiring:
     def test_recrawl_workflow_defined(self):
         assert hasattr(RecrawlWorkflow, "run")
 
+    def test_temporal_materialization_workflow_is_defined(self):
+        from workflows.temporal_materialization import (
+            MaterializationWorkflowInput,
+            TemporalEntityMaterializationWorkflow,
+        )
+
+        assert hasattr(TemporalEntityMaterializationWorkflow, "run")
+        request = MaterializationWorkflowInput("tenant", "entity", ("record-1",), "run-1")
+        assert request.mode == "rebuild"
+
     def test_investigation_workflow_has_signal_handlers(self):
         from workflows.investigation import InvestigationWorkflow
 

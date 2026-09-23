@@ -8,6 +8,15 @@ import { scienceApi } from "../lib/science/api";
 import type { InvariantResult } from "../lib/science/types";
 import { buildTemporalSeriesFromTimeline } from "../lib/science/tdaLayer";
 import { StreamEvent, usePipelineStream } from "../lib/stream";
+import {
+  entitiesKeyFromGraph,
+  exportGraphJSON,
+  loadGraphStateFromStorage,
+  parseGraphJSON,
+  restoreGraph,
+  saveGraphStateToStorage,
+  snapshotGraph,
+} from "../lib/graphState";
 import { IntelligencePage } from "../pages/IntelligencePage";
 
 interface FeedEntry {
@@ -204,10 +213,16 @@ export function IntelligenceContainer() {
   // ── Canvas controls (layout / zoom / fit) routed to the active cytoscape ──
   const cyRef = useRef<cytoscape.Core | null>(null);
   const [layoutName, setLayoutName] = useState("cose");
+  const [graphReady, setGraphReady] = useState(false);
+  const [graphViewStatus, setGraphViewStatus] = useState<string | null>(null);
   const onGraphReady = useCallback((cy: cytoscape.Core) => {
     cyRef.current = cy;
+    setGraphReady(true);
     cy.on("destroy", () => {
-      if (cyRef.current === cy) cyRef.current = null;
+      if (cyRef.current === cy) {
+        cyRef.current = null;
+        setGraphReady(false);
+      }
     });
   }, []);
   const onLayoutChange = useCallback((name: string) => {
@@ -306,6 +321,89 @@ export function IntelligenceContainer() {
     return provActive ? assembled : stripProvenance(assembled);
   }, [entities, correlations, provActive]);
 
+  // ── Graph VIEW state persistence (deterministic save/restore/export/import) ─
+  // The bar owns the UX; the container owns the live cytoscape core. A restore
+  // is REFUSED (honest no-op) when the topology key no longer matches — the
+  // saved view can never be applied to a different graph (I-12).
+  const saveGraphView = useCallback(() => {
+    const cy = cyRef.current;
+    if (!cy) {
+      setGraphViewStatus("no graph mounted");
+      return;
+    }
+    try {
+      const ok = saveGraphStateToStorage(snapshotGraph(cy));
+      setGraphViewStatus(ok ? "view saved to this browser" : "storage unavailable");
+    } catch (err) {
+      setGraphViewStatus(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
+
+  const restoreGraphView = useCallback(() => {
+    const cy = cyRef.current;
+    if (!cy) {
+      setGraphViewStatus("no graph mounted");
+      return;
+    }
+    const state = loadGraphStateFromStorage();
+    if (!state) {
+      setGraphViewStatus("nothing saved yet");
+      return;
+    }
+    const applied = restoreGraph(cy, state, entitiesKeyFromGraph(graph));
+    setGraphViewStatus(
+      applied
+        ? `view restored · ${applied.length} selected`
+        : "restore refused: graph topology changed",
+    );
+  }, [graph]);
+
+  const exportGraphView = useCallback(() => {
+    const cy = cyRef.current;
+    if (!cy) {
+      setGraphViewStatus("no graph mounted");
+      return;
+    }
+    try {
+      const json = exportGraphJSON(snapshotGraph(cy));
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "cognitive-graph-view.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setGraphViewStatus("view exported");
+    } catch (err) {
+      setGraphViewStatus(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
+
+  const importGraphView = useCallback(
+    (file: File) => {
+      const cy = cyRef.current;
+      if (!cy) {
+        setGraphViewStatus("no graph mounted");
+        return;
+      }
+      void file
+        .text()
+        .then((text) => {
+          const state = parseGraphJSON(text);
+          const applied = restoreGraph(cy, state, entitiesKeyFromGraph(graph));
+          setGraphViewStatus(
+            applied
+              ? `view imported · ${applied.length} selected`
+              : "import refused: graph topology changed",
+          );
+        })
+        .catch((err: unknown) => {
+          setGraphViewStatus(err instanceof Error ? err.message : String(err));
+        });
+    },
+    [graph],
+  );
+
   if (!loaded) return <LoadingView message="Wiring the intelligence map…" />;
   if (error && seeds.length === 0) return <ErrorView error={error} onRetry={() => void materialize(seeds[0] ?? "")} />;
 
@@ -346,6 +444,12 @@ export function IntelligenceContainer() {
       ccTemporality={ccTemporality}
       ccTemporalityBusy={ccTemporalityBusy}
       onCcTemporality={(id) => void pullCcTemporality(id)}
+      graphViewStatus={graphViewStatus}
+      graphViewEnabled={graphReady}
+      onSaveView={saveGraphView}
+      onRestoreView={restoreGraphView}
+      onExportView={exportGraphView}
+      onImportView={importGraphView}
     />
   );
 }
