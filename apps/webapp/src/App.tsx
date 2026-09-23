@@ -13,6 +13,7 @@ import { ExperimentContainer } from "./containers/ExperimentContainer";
 import { IntelligenceContainer } from "./containers/IntelligenceContainer";
 import { EconomicsContainer } from "./containers/EconomicsContainer";
 import { NetworkAnalysisContainer } from "./containers/NetworkAnalysisContainer";
+import { SpecOpsContainer } from "./containers/SpecOpsContainer";
 
 export function App() {
   return (
@@ -29,6 +30,7 @@ export function App() {
         <Route path="connectors" element={<ConnectorsContainer />} />
         <Route path="quarantine" element={<QuarantineContainer />} />
         <Route path="ops" element={<OpsContainer />} />
+        <Route path="ops/graph" element={<SpecOpsContainer />} />
         <Route path="science" element={<ScienceContainer />} />
         <Route path="hypotheses" element={<HypothesisContainer />} />
         <Route path="experiments" element={<ExperimentContainer />} />

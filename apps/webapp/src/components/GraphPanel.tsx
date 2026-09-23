@@ -35,11 +35,13 @@ export function GraphPanel({ elements, title = "Graph region" }: Props) {
         elements: [
           ...elements
             .filter((e) => e.kind === "node")
+            .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
             .map((e) => ({
               data: { id: e.id, label: e.label },
             })),
           ...elements
             .filter((e) => e.kind === "edge")
+            .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
             .map((e) => ({
               data: {
                 id: e.id,
@@ -71,7 +73,7 @@ export function GraphPanel({ elements, title = "Graph region" }: Props) {
             },
           },
         ],
-        layout: { name: "cose" },
+        layout: { name: "cose", randomize: false },
       });
     });
     return () => cy?.destroy();

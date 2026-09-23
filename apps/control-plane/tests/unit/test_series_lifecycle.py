@@ -15,6 +15,7 @@ from services.series_lifecycle import (
     SeriesProjector,
     SeriesRow,
     SeriesTableDDL,
+    project_cc_series,
 )
 
 pytestmark = pytest.mark.unit
@@ -88,3 +89,73 @@ def test_ddl_contains_replacing_merge_tree_semantics() -> None:
     assert "ReplacingMergeTree(ts)" in SeriesTableDDL
     assert "PARTITION BY toYYYYMM(ts)" in SeriesTableDDL
     assert "ORDER BY (tenant_id, entity_id, key, metric_name, ts)" in SeriesTableDDL
+
+
+# ---------------------------------------------------------------------------
+# CC-TEMPORALITY v1: project_cc_series (bucketing by observed_at, determinism)
+# ---------------------------------------------------------------------------
+
+
+def _cc_obs(digest: str, iso: str, url: str = "http://example.com") -> dict[str, object]:
+    return {"url": url, "observed_at": iso, "status": 200, "digest": digest}
+
+
+class TestProjectCcSeries:
+    def test_empty_input_yields_empty_series(self) -> None:
+        assert project_cc_series("e1", []) == []
+        # unparseable observed_at is skipped, not fabricated (I-3)
+        assert project_cc_series("e1", [_cc_obs("d1", "not-a-timestamp")]) == []
+
+    def test_bucketing_by_observed_at_daily_utc(self) -> None:
+        rows = project_cc_series(
+            "e1",
+            [
+                _cc_obs("d1", "2024-03-01T10:00:00+00:00"),
+                _cc_obs("d2", "2024-03-01T22:00:00+00:00"),
+                _cc_obs("d3", "2024-03-02T08:00:00+00:00"),
+            ],
+        )
+        buckets = [
+            r for r in rows if r.metric_name == "cc_capture_count"
+        ]
+        assert [(r.ts.isoformat(), r.metric_value) for r in buckets] == [
+            ("2024-03-01T00:00:00+00:00", 2.0),
+            ("2024-03-02T00:00:00+00:00", 1.0),
+        ]
+        # temporal metrics materialized (burstiness/events_per_day) via SeriesProjector
+        metric_names = {r.metric_name for r in rows}
+        assert {"burstiness_b", "events_per_day"} <= metric_names
+        for row in rows:
+            assert row.entity_id == "e1"
+            assert row.key == "cc_captures"
+            assert row.source_provenance.startswith("cc-index@")
+            assert row.series_hash.startswith("cc-")
+
+    def test_dedup_by_digest_and_observed_at(self) -> None:
+        dup = _cc_obs("d1", "2024-03-01T10:00:00Z")
+        rows = project_cc_series("e1", [dup, dict(dup), _cc_obs("d2", "2024-03-01T11:00:00Z")])
+        counts = [r.metric_value for r in rows if r.metric_name == "cc_capture_count"]
+        assert counts == [2.0]  # duplicate (digest, observed_at) collapsed
+
+    def test_determinism_order_independent_and_repeatable(self) -> None:
+        observations = [
+            _cc_obs("d1", "2024-03-03T10:00:00Z"),
+            _cc_obs("d2", "2024-03-01T10:00:00Z"),
+            _cc_obs("d3", "2024-03-02T10:00:00Z"),
+        ]
+        first = project_cc_series("e1", observations)
+        second = project_cc_series("e1", observations)
+        shuffled = project_cc_series("e1", list(reversed(observations)))
+        assert first == second
+        assert first == shuffled  # sorted internally → order-independent
+
+    def test_rows_land_in_series_table(self) -> None:
+        table = MemorySeriesTable()
+        rows = project_cc_series(
+            "e1",
+            [_cc_obs("d1", "2024-03-01T10:00:00Z"), _cc_obs("d2", "2024-03-02T10:00:00Z")],
+            table=table,
+        )
+        assert rows
+        canonical = table.canonical(entity_id="e1", key="cc_captures")
+        assert {r.metric_name for r in canonical} >= {"cc_capture_count", "burstiness_b", "events_per_day"}

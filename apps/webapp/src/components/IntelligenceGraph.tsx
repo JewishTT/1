@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type cytoscape from "cytoscape";
+import { deterministicLayout } from "../lib/edgeFormation";
 import { EntityType, IntelGraph, IntelNode } from "../lib/intelGraph";
 
 interface Props {
@@ -39,13 +40,15 @@ function svgIcon(paths: string, color: string): string {
 function entitySublabel(node: IntelNode): string {
   if (node.kind !== "entity" || !node.counts) return node.id;
   const { ev, tl, versions, signals } = node.counts;
-  return `${node.id} · ${ev} ev · ${tl} tl · ${versions} v${signals > 0 ? ` · ${signals} sig` : ""}`;
+  const version = node.invariant?.version ?? versions;
+  return `${node.id} · INV v${version} · ${ev} ev · ${tl} tl${signals > 0 ? ` · ${signals} sig` : ""}`;
 }
 
 const VOLUME: Record<string, object> = {
   entity: {
     "background-color": "#0a160d",
-    "border-width": 2.5,
+    "border-width": 3.5,
+    "border-style": "double",
     "border-opacity": 0.95,
     "shadow-blur": 26,
     "shadow-opacity": 0.6,
@@ -205,7 +208,7 @@ function NodeInfoCard({
       : node.kind === "source"
         ? "Hosting domain inferred from the observation URI — aggregated source decorator."
         : node.kind === "correlate"
-          ? "Correlate node — candidate not yet materialized into the atomic catalog."
+          ? "Candidate signal — not yet materialized into the atomic invariant catalog."
           : node.kind === "relationship"
             ? `Linked by relationship edge · ${node.reason ?? "—"}`
             : null;
@@ -222,7 +225,7 @@ function NodeInfoCard({
           <div className="chip-row">
             <span className="status-chip">{node.kind.toUpperCase()}</span>
             {node.kind === "entity" ? <span className="status-chip">{node.type.toUpperCase()}</span> : null}
-            {node.materialized ? <span className="status-chip">MATERIALIZED</span> : null}
+            {node.materialized ? <span className="status-chip status-chip-live">LIVE INVARIANT</span> : null}
           </div>
           <div className="node-card-title">{node.label}</div>
           <div className="node-card-id">{node.id}</div>
@@ -233,11 +236,18 @@ function NodeInfoCard({
       </div>
 
       <div className="node-card-ring">
-        <span className="op-label">SIGNAL MARK</span>
+        {node.kind === "entity" ? <span className="op-label">INVARIANT STATE</span> : <span className="op-label">SIGNAL MARK</span>}
         <div className="chip-row">
           <span className="status-chip">EV {node.counts?.ev ?? 0}</span>
           <span className="status-chip">TL {node.counts?.tl ?? 0}</span>
-          <span className="status-chip">VERSIONS {node.counts?.versions ?? 0}</span>
+          {node.kind === "entity" ? (
+            <>
+              <span className="status-chip">V{node.invariant?.version ?? node.counts?.versions ?? 0}</span>
+              <span className="status-chip">HISTORY {node.invariant?.history_depth ?? node.counts?.versions ?? 0}</span>
+            </>
+          ) : (
+            <span className="status-chip">VERSIONS {node.counts?.versions ?? 0}</span>
+          )}
           <span className="status-chip">SIG {node.counts?.signals ?? 0}</span>
         </div>
       </div>
@@ -245,7 +255,7 @@ function NodeInfoCard({
       {node.kind === "entity" && node.attrs && (
         <>
           <div className="node-card-ring">
-            <span className="op-label">ATOMIC IDENTITY</span>
+            <span className="op-label">CURRENT ASSERTED IDENTITY</span>
             <div className="node-card-attrs" data-testid="node-card-attrs">
               {Object.entries(node.attrs).map(([k, v]) => (
                 <div key={k} className="node-card-attr">
@@ -255,6 +265,29 @@ function NodeInfoCard({
               ))}
             </div>
           </div>
+          {node.invariant ? (
+            <div className="node-card-ring">
+              <span className="op-label">PERSISTENCE ANCHOR</span>
+              <div className="node-card-rows" data-testid="node-card-invariant">
+                <div className="node-card-row">
+                  <span className="node-card-attr-k">CONTINUITY</span>
+                  <span className="node-card-attr-v">{node.invariant.continuity}</span>
+                </div>
+                <div className="node-card-row">
+                  <span className="node-card-attr-k">DIGEST</span>
+                  <span className="node-card-attr-v">{node.invariant.identity_digest}</span>
+                </div>
+                <div className="node-card-row">
+                  <span className="node-card-attr-k">FIRST SEEN</span>
+                  <span className="node-card-attr-v">{node.invariant.first_seen ?? "—"}</span>
+                </div>
+                <div className="node-card-row">
+                  <span className="node-card-attr-k">LAST SEEN</span>
+                  <span className="node-card-attr-v">{node.invariant.last_seen ?? "—"}</span>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {node.aliases && node.aliases.length > 0 && (
             <div className="node-card-ring">
               <span className="op-label">ALIASES</span>
@@ -294,11 +327,11 @@ function NodeInfoCard({
         )}
         {node.kind === "correlate" && !node.materialized && (
           <button type="button" className="btn btn-primary btn-sm" onClick={() => onMaterialize(node.id)} data-testid="node-card-materialize">
-            ◉ MATERIALIZE ENTITY
+            ◉ MATERIALIZE INVARIANT
           </button>
         )}
         <Link to={`/entities/${node.id}`} className="btn btn-sm">
-          OPEN ENTITY PAGE
+          OPEN INVARIANT PAGE
         </Link>
       </div>
     </div>
@@ -421,7 +454,12 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
             style: { "shadow-blur": 34, "shadow-opacity": 0.9 } as cytoscape.Css.Node,
           },
         ],
-        layout: { name: "cose", animate: true, randomize: false, componentSpacing: 80, nodeRepulsion: 9000 },
+        layout: {
+          ...deterministicLayout("cose", graph.nodes.map((n) => n.id)),
+          animate: true,
+          componentSpacing: 80,
+          nodeRepulsion: 9000,
+        } as cytoscape.LayoutOptions,
         userZoomingEnabled: true,
         minZoom: 0.2,
         maxZoom: 3,

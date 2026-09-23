@@ -158,6 +158,7 @@ class BadgeFacade:
             except ImportError:
                 return self.seed_defaults()
             registry = REGISTRY
+        before = len(self)
         for source in registry:
             try:
                 self.register(
@@ -167,6 +168,11 @@ class BadgeFacade:
                 )
             except ValueError:
                 continue
+        if before == 0 and len(self) == 0:
+            # Adapters register on import; a cold process holds an empty registry.
+            # Best effort must still yield the canonical execution-class surface
+            # rather than an empty façade.
+            return self.seed_defaults()
         return self
 
     def match_by_badges(

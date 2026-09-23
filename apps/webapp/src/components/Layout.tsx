@@ -56,6 +56,7 @@ const NAV: Record<ModuleKey, NavSection[]> = {
       label: "Operations",
       items: [
         { to: "/ops", label: "SpecOps Console", icon: "⚡" },
+        { to: "/ops/graph", label: "Entity Graph", icon: "◉" },
         { to: "/quarantine", label: "Quarantine / DLQ", icon: "⏻" },
       ],
     },
@@ -65,6 +66,7 @@ const NAV: Record<ModuleKey, NavSection[]> = {
 const TITLES: Array<{ prefix: string; title: string }> = [
   { prefix: "/economic", title: "Intelligence Economy" },
   { prefix: "/network", title: "Network & TDA analysis" },
+  { prefix: "/ops/graph", title: "SpecOps Entity Graph" },
   { prefix: "/ops", title: "SpecOps Console" },
   { prefix: "/quarantine", title: "Quarantine (DLQ)" },
   { prefix: "/intel", title: "OSINT // Intel Board" },

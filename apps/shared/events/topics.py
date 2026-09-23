@@ -109,6 +109,23 @@ EVENT_CATALOG: dict[str, str] = {
     "zero_layer.harvest_cycle_complete": "zero_layer",
     "zero_layer.enrichment": "zero_layer",
     "zero_layer.feedback_seeds": "zero_layer.feedback_seeds",
+    # CommonCrawl temporality contour (feature 011) — layer contract:
+    # L1 emits a deterministic pull plan, L0 pulls raw captures, L1 extracts
+    # observations, L2 projects the series. Each layer consumes only the
+    # previous layer's event (I-5: payloads carry refs/ids, never blobs).
+    "cc.plan_ready": "cc_temporality",
+    "cc.captures_pulled": "cc_temporality",
+    "cc.observations_extracted": "cc_temporality",
+    "cc.series_projected": "cc_temporality",
+    # Nervous system stream plane (feature: nervous-system, bus topology).
+    # The hermetic EventBus is the substrate: deterministic replay (I-12) makes
+    # every projection rebuildable. WHERE FEATURES LAND is anchored here —
+    # TDA becomes a time series, never a "TDA graph" (see
+    # docs/architecture/stream-processing.md).
+    "cc.capture.series": "cc_temporality",  # CC capture timeline rebuilt as a series (I-12)
+    "replay.stream": "stream",  # consumer-group watermark / cursor checkpoint
+    "series.invariant": "series",  # deterministic-replay verification gate (I-12)
+    "tda.feature.series": "tda",  # TDA features => time series, never a graph
 }
 
 # Dead-letter / quarantine lanes (best-effort delivery + idempotency, R-7).
@@ -116,6 +133,16 @@ TOPIC_DLQ = "events.dlq"
 TOPIC_QUARANTINE = "events.quarantine"
 
 TOPICS = sorted(set(EVENT_CATALOG.values()) | {TOPIC_DLQ, TOPIC_QUARANTINE})
+
+# Event types the nervous-system EventBus substrate produces/replays (I-12).
+# Versioned refs-only payloads; registered with the Schema Registry by
+# ``registry.register_bus_defaults``.
+NERVOUS_SYSTEM_EVENT_TYPES: tuple[str, ...] = (
+    "cc.capture.series",
+    "replay.stream",
+    "series.invariant",
+    "tda.feature.series",
+)
 
 # Event types whose payload carries versioned protobuf (registry-validated).
 def topic_for(event_type: str) -> str:

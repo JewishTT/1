@@ -36,6 +36,7 @@ describe("Layout (NEXUS shell)", () => {
     renderLayout("/ops");
     expect(screen.getByTestId("nexus-shell")).toHaveAttribute("data-module", "specops");
     expect(screen.getByTestId("section-nav")).toHaveTextContent("SpecOps Console");
+    expect(screen.getByTestId("section-nav")).toHaveTextContent("Entity Graph");
     expect(screen.getByTestId("section-nav")).toHaveTextContent("Quarantine / DLQ");
   });
 

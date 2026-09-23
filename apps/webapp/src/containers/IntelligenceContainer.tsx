@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type cytoscape from "cytoscape";
 
-import { api, Correlation, EntityView } from "../lib/api";
+import { api, Correlation, CcTemporalityPayload, EntityView } from "../lib/api";
 import { buildIntelGraph, stripProvenance } from "../lib/intelGraph";
 import { scienceApi } from "../lib/science/api";
 import type { InvariantResult } from "../lib/science/types";
@@ -46,6 +46,8 @@ export function IntelligenceContainer() {
   const [feed, setFeed] = useState<FeedEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [ccTemporality, setCcTemporality] = useState<Record<string, CcTemporalityPayload>>({});
+  const [ccTemporalityBusy, setCcTemporalityBusy] = useState(false);
   const inFlight = useRef<Set<string>>(new Set());
 
   const materialize = useCallback(async (entityId: string) => {
@@ -91,6 +93,23 @@ export function IntelligenceContainer() {
     });
     setSelectedId((prev) => (prev === entityId ? null : prev));
   }, []);
+
+  // CC temporality (CC-TEMPORALITY v1): one honest pull per entity — the
+  // backend plans, transports, extracts and projects the series in a single
+  // auditable call; the UI only renders what came back (never fabricates).
+  const pullCcTemporality = useCallback(async (entityId: string) => {
+    if (ccTemporalityBusy) return;
+    setCcTemporalityBusy(true);
+    setError(null);
+    try {
+      const payload = await api.ccTemporality(entityId);
+      setCcTemporality((prev) => ({ ...prev, [entityId]: payload }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCcTemporalityBusy(false);
+    }
+  }, [ccTemporalityBusy]);
 
   const onExpand = useCallback(
     (entityId: string) => {
@@ -324,6 +343,9 @@ export function IntelligenceContainer() {
       onLinkTap={handleLinkTap}
       onToggleLink={toggleLink}
       onDismissActionNote={clearActionNote}
+      ccTemporality={ccTemporality}
+      ccTemporalityBusy={ccTemporalityBusy}
+      onCcTemporality={(id) => void pullCcTemporality(id)}
     />
   );
 }

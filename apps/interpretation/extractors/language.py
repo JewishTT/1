@@ -11,6 +11,8 @@ counts, no model. Morphology packs are swappable and tiered:
 
 from __future__ import annotations
 
+import codecs
+import re
 import threading
 from dataclasses import dataclass
 from typing import Protocol
@@ -18,16 +20,57 @@ from typing import Protocol
 import charset_normalizer  # type: ignore[import-not-found]
 
 _CYRILLIC = "\u0400\u04FF"
+_UTF8_FAMILY = frozenset({"utf-8", "utf8", "utf", "us-ascii", "ascii", "unicode-1-1-utf-8"})
+_HTML_GUARD = rb"(?:<html|<head|<body|<!doctype)"
+_CHARSET_META = re.compile(
+    rb"(?:<meta[^>]+charset\s*=\s*[\"']?\s*|charset\s*=\s*)([a-zA-Z0-9._+-]+)",
+    re.IGNORECASE,
+)
+
+
+def _declared_charset(data: bytes) -> str | None:
+    """Charset declared in an HTML payload head (deterministic, None otherwise)."""
+    if not re.search(_HTML_GUARD, data[:2048], re.IGNORECASE):
+        return None
+    match = _CHARSET_META.search(data[:4096])
+    if match is None:
+        return None
+    codec = match.group(1).decode("ascii", errors="ignore").strip()
+    try:
+        codecs.lookup(codec)
+    except (LookupError, ValueError):
+        return None
+    return codec
+
+
+def _decode_clean(data: bytes, codec: str) -> str | None:
+    """Decode with ``codec`` only when it produces no replacement chars."""
+    try:
+        text = data.decode(codec)
+    except (UnicodeDecodeError, LookupError, ValueError):
+        return None
+    if "\ufffd" in text:
+        return None
+    return text
 
 
 def decode_bytes(data: bytes) -> tuple[str, str]:
     """Decode bytes using detected charset; returns (text, charset_name).
 
     Deterministic: same bytes → same detection result (charset-normalizer is
-    a pure heuristic with a stable best() choice for a given input).
+    a pure heuristic with a stable best() choice for a given input). An HTML
+    payload that DECLARES a single-byte charset is honored — but only when the
+    bytes are not valid UTF-8, so a stale/mislabeled UTF-8 page ("windows-1251"
+    over real UTF-8 bytes) still decodes correctly instead of becoming mojibake.
     """
     if not data:
         return "", "utf-8"
+    declared = _declared_charset(data)
+    is_utf8 = _decode_clean(data, "utf-8")
+    if is_utf8 is None and declared is not None and declared.lower() not in _UTF8_FAMILY:
+        decoded = _decode_clean(data, declared)
+        if decoded is not None:
+            return decoded, declared
     try:
         best = charset_normalizer.from_bytes(data).best()
     except Exception:  # noqa: BLE001 - a detection failure never kills the lane

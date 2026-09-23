@@ -47,6 +47,21 @@ _EN_SKIP_WORDS = frozenset(
 _EN_ORG_SUFFIX = re.compile(
     r"(University|Institute|Inc\.?|Corp\.?|Ltd\.?|LLC|LLP|Academy|Ministry|Foundation)$", re.IGNORECASE
 )
+# Title-case windows that are interface/boilerplate words, never person names
+# ("Contact Email", "Navigation Home", "Privacy Terms" ...). Deterministic guard
+# over the pattern-only EN path (FR-4: pattern hits stay honest, not noisy).
+_EN_NONPERSON_WORDS = frozenset(
+    word.casefold()
+    for word in (
+        "contact", "email", "phone", "telephone", "telegram", "github", "address",
+        "navigation", "home", "about", "footer", "search", "login", "logout",
+        "register", "sign", "menu", "blog", "news", "privacy", "terms", "copyright",
+        "rights", "reserved", "sitemap", "website", "support", "send", "message",
+        "name", "password", "username", "user", "profile", "settings", "account",
+        "subscribe", "share", "follow", "comment", "reply", "more", "back", "next",
+        "previous", "top", "main", "file", "edit", "delete", "view", "open",
+    )
+)
 
 
 @dataclass

@@ -15,6 +15,8 @@ dependencies = [
     "cognitive-science",
     "cognitive-interpretation",
     "cognitive-bulk-ingestion",
+    "cognitive-zero",
+    "cognitive-acquisition",
     "fastapi>=0.111",
     "uvicorn[standard]>=0.30",
     "httpx>=0.27",
@@ -33,6 +35,8 @@ cognitive-shared = { workspace = true }
 cognitive-science = { workspace = true }
 cognitive-interpretation = { workspace = true }
 cognitive-bulk-ingestion = { workspace = true }
+cognitive-zero = { workspace = true }
+cognitive-acquisition = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -9,6 +9,8 @@ in-memory catalog for smoke/tests; real adapters sit behind the same surface.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass, field
 
 
@@ -66,10 +68,45 @@ class Catalog:
         record = self._entities.get(entity_id)
         if record is None:
             return None
+        current = record.current()
+        first_seen = (
+            record.versions[0].get("first_seen")
+            if record.versions and isinstance(record.versions[0], dict)
+            else None
+        )
+        last_seen = (
+            current.get("last_seen")
+            or current.get("observed_at")
+            or current.get("first_seen")
+            or first_seen
+        )
+        # Deterministic identity digest over the canonical identity dimensions.
+        identity_digest = "sha256:" + hashlib.sha256(
+            json.dumps(
+                record.canonical_identity,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=True,
+            ).encode("utf-8")
+        ).hexdigest()[:16]
         return {
             "entity_id": record.entity_id,
             "canonical_identity": record.canonical_identity,
-            "current_state": record.current(),
+            "current_state": current,
+            # The entity id is the stable anchor; the asserted identity may be
+            # re-versioned as new evidence arrives. This projection makes the
+            # atomic-entity-as-dynamic-invariant contract explicit to every
+            # client instead of forcing each UI to reverse-engineer it from
+            # historical_versions.
+            "identity_invariant": {
+                "status": "MATERIALIZED",
+                "continuity": "PERSISTENT",
+                "version": current.get("version", len(record.versions)),
+                "history_depth": len(record.versions),
+                "identity_digest": identity_digest,
+                "first_seen": first_seen,
+                "last_seen": last_seen,
+            },
             "historical_versions": record.versions,
             "aliases": record.aliases,
             "relationships": record.relationships,

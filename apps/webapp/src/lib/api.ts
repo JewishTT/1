@@ -61,10 +61,26 @@ export interface Correlation {
   state: string;
 }
 
+/**
+ * Atomic-entity invariant projection (backend services/catalog.py): the entity
+ * id is the stable anchor while the asserted identity is carried forward across
+ * versions. Rendered verbatim by the intel board and entity page.
+ */
+export interface IdentityInvariant {
+  status: "MATERIALIZED" | string;
+  continuity: "PERSISTENT" | string;
+  version: number;
+  history_depth: number;
+  identity_digest: string;
+  first_seen: string | null;
+  last_seen: string | null;
+}
+
 export interface EntityView {
   entity_id: string;
   canonical_identity: Record<string, string>;
   current_state: Record<string, unknown>;
+  identity_invariant?: IdentityInvariant;
   historical_versions: Array<Record<string, unknown>>;
   aliases: string[];
   relationships: Array<Record<string, string>>;
@@ -74,6 +90,33 @@ export interface EntityView {
   structural_signals: Array<Record<string, unknown>>;
   correlations?: Correlation[];
   map_points?: Array<{ lat: number; lon: number; label?: string }>;
+}
+
+// ── CC temporality (CC-TEMPORALITY v1) ──────────────────────────
+
+/** One normalized Common Crawl capture observation (L1 extract output). */
+export interface CcTemporalityCapture {
+  url: string;
+  observed_at: string; // ISO-UTC
+  status: number;
+  digest: string;
+}
+
+/** Final payload of POST /entities/{id}/cc-temporality. */
+export interface CcTemporalityPayload {
+  entity_id: string;
+  plan: {
+    kind: string;
+    url_query: string;
+    match_type: string;
+    surt_prefix: string | null;
+    limit: number;
+  } | null;
+  captures: CcTemporalityCapture[];
+  series: Array<{ t: string; count: number }>;
+  metrics: { burstiness: number | null; events_per_day: number | null };
+  notes: string[];
+  tenant_id?: string;
 }
 
 export interface FindingView {
@@ -194,6 +237,55 @@ export interface ReplayResponse {
   replayed_from_quarantine: boolean;
 }
 
+// ── SpecOps (entity graph + Maltego-style tools) ───────────────────
+
+/** One node in the SpecOps entity graph; entity_type is an uppercase label like "EMAIL". */
+export interface SpecOpsGraphNode {
+  id: string;
+  label: string;
+  entity_type: string;
+  properties: Record<string, string>;
+}
+
+/** One edge in the SpecOps entity graph. */
+export interface SpecOpsGraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  kind: string;
+}
+
+/** GET /entities/graph payload — whole-graph projection, Maltego-style. */
+export interface SpecOpsGraphResponse {
+  nodes: SpecOpsGraphNode[];
+  edges: SpecOpsGraphEdge[];
+}
+
+/** Registered Maltego-style tool available against entity types. */
+export interface ToolSpec {
+  tool_id: string;
+  name: string;
+  category: string;
+  entity_types: string[];
+  method: string;
+  source: string;
+  license: string;
+  attribution: string;
+  run_mode: string;
+  command_template: string[];
+  description: string;
+}
+
+/** Enqueued tool run (POST /tools/{tool_id}/enqueue). */
+export interface ToolRun {
+  tool_id: string;
+  entity_type: string;
+  entity_value: string;
+  entity_id?: string;
+  status: string;
+  command: string[];
+}
+
 // ── Endpoints ────────────────────────────────────────────────────
 
 export const api = {
@@ -224,6 +316,15 @@ export const api = {
   getCorrelations(entityId: string): Promise<{ entity_id: string; correlations: Correlation[] }> {
     return request<{ entity_id: string; correlations: Correlation[] }>(
       `/entities/${encodeURIComponent(entityId)}/correlations`,
+    );
+  },
+
+  /** Pull the entity's Common Crawl temporality (CC-TEMPORALITY v1).
+   *  Synchronous bounded pull: plan → CC index → series; empty data ⇒ honest notes. */
+  ccTemporality(entityId: string): Promise<CcTemporalityPayload> {
+    return request<CcTemporalityPayload>(
+      `/entities/${encodeURIComponent(entityId)}/cc-temporality`,
+      { method: "POST" },
     );
   },
 
@@ -503,6 +604,30 @@ export const api = {
     return request<{ record_id: string; re_evaluated: "rejected" | "accepted"; tenant_id: string }>(
       `/dlq/${encodeURIComponent(recordId)}/re-evaluate`,
       { method: "POST" },
+    );
+  },
+
+  // ── SpecOps (entity graph + Maltego-style tools) ──────────────────
+
+  /** Whole-graph projection of entities plus their edges, Maltego-style. */
+  specOpsGraph(): Promise<SpecOpsGraphResponse> {
+    return request<SpecOpsGraphResponse>("/entities/graph");
+  },
+
+  /** List registered tools, optionally scoped to one entity type. */
+  listTools(entityType?: string): Promise<{ tools: ToolSpec[] }> {
+    const params = entityType ? `?entity_type=${encodeURIComponent(entityType)}` : "";
+    return request<{ tools: ToolSpec[] }>(`/tools${params}`);
+  },
+
+  /** Enqueue a tool run against one entity value. */
+  enqueueTool(
+    toolId: string,
+    body: { entity_type: string; entity_value: string; entity_id?: string },
+  ): Promise<{ run: ToolRun; event: string }> {
+    return request<{ run: ToolRun; event: string }>(
+      `/tools/${encodeURIComponent(toolId)}/enqueue`,
+      { method: "POST", body: JSON.stringify(body) },
     );
   },
 };

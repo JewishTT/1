@@ -11,7 +11,7 @@ correlations stay non-merging (a correlate may never become materialized).
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -20,7 +20,9 @@ from pydantic import BaseModel
 from api.auth import TenantContext, resolve_tenant
 from api.sse import hub
 from services.catalog import Catalog, EntityRecord
+from services.cc_temporality import run_cc_temporality
 from services.review import ReviewDecision, ReviewService, ReviewTargetType
+from services.tool_catalog import infer_entity_type
 
 router = APIRouter(prefix="/entities", tags=["entities"])
 
@@ -104,7 +106,7 @@ async def create_entity(
                 "version": 1,
                 "identity": body.canonical_identity,
                 "label": label,
-                "first_seen": datetime.now(timezone.utc).isoformat(),
+                "first_seen": datetime.now(UTC).isoformat(),
             }],
             aliases=body.aliases or [label],
             supporting_assertions=["ASR-NEW-1"],
@@ -168,6 +170,56 @@ class ReviewCreate(BaseModel):
     decision: ReviewDecision
     reasoning: str = ""
     target_type: ReviewTargetType = ReviewTargetType.CANDIDATE
+
+
+@router.get("")
+async def list_entities(
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """Compact entity overview: id, canonical identity, inferred entity type
+    and alias label for every atomic entity in the catalog."""
+    views: list[dict] = []
+    for entity_id in _catalog.entity_ids():
+        view = _catalog.entity(entity_id)
+        identity = view.get("canonical_identity") or {}
+        aliases = view.get("aliases") or []
+        label = aliases[0] if aliases else next(iter(identity.values()), entity_id)
+        views.append({
+            "entity_id": entity_id,
+            "canonical_identity": identity,
+            "entity_type": infer_entity_type(identity),
+            "label": label,
+        })
+    return {"entities": views, "tenant_id": ctx.tenant_id}
+
+
+@router.get("/graph")
+async def list_graph(
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """Entity→correlation graph projection: nodes from the catalog entities,
+    edges from possible_match correlations (OpenOSINT pattern, no merge)."""
+    nodes: list[dict] = []
+    for entity_id in _catalog.entity_ids():
+        view = _catalog.entity(entity_id)
+        identity = view.get("canonical_identity") or {}
+        nodes.append({
+            "id": entity_id,
+            "label": next(iter(identity.values()), entity_id),
+            "entity_type": infer_entity_type(identity),
+            "properties": identity,
+        })
+    edges = [
+        {
+            "id": e["edge_id"],
+            "source": e["candidate_a"],
+            "target": e["candidate_b"],
+            "kind": e["kind"],
+            "label": e["kind"],
+        }
+        for e in _correlations
+    ]
+    return {"nodes": nodes, "edges": edges, "tenant_id": ctx.tenant_id}
 
 
 @router.get("/{entity_id}")
@@ -241,3 +293,23 @@ async def list_reviews(
 ) -> dict:
     records = _reviews.by_target(ctx.tenant_id, ReviewTargetType.CANDIDATE, target_id)
     return {"target_id": target_id, "reviews": [r.to_dict() for r in records]}
+
+
+@router.post("/{entity_id}/cc-temporality")
+async def pull_cc_temporality(
+    entity_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """Pull the entity's Common Crawl temporality (CC-TEMPORALITY v1).
+
+    Synchronous, bounded (limit ≤ 50) orchestration: plan → index pull →
+    normalize → series projection. Missing data comes back as empty structures
+    plus honest notes (I-3) — never a fabricated series.
+    """
+    view = _catalog.entity(entity_id)
+    if view is None:
+        raise HTTPException(status_code=404, detail="entity not found")
+    payload = run_cc_temporality(
+        entity_id, view.get("canonical_identity") or {}, session=None
+    )
+    return {**payload, "tenant_id": ctx.tenant_id}

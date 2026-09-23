@@ -734,7 +734,7 @@ source = { virtual = "." }
 [[package]]
 name = "cognitive-acquisition"
 version = "0.1.0"
-source = { virtual = "apps/acquisition" }
+source = { editable = "apps/acquisition" }
 dependencies = [
     { name = "certstream" },
     { name = "cognitive-shared" },
@@ -870,10 +870,12 @@ source = { editable = "apps/control-plane" }
 dependencies = [
     { name = "alembic" },
     { name = "clickhouse-connect" },
+    { name = "cognitive-acquisition" },
     { name = "cognitive-bulk-ingestion" },
     { name = "cognitive-interpretation" },
     { name = "cognitive-science" },
     { name = "cognitive-shared" },
+    { name = "cognitive-zero" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "neo4j" },
@@ -893,10 +895,12 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
     { name = "clickhouse-connect", specifier = ">=0.7" },
+    { name = "cognitive-acquisition", editable = "apps/acquisition" },
     { name = "cognitive-bulk-ingestion", editable = "apps/bulk-ingestion" },
     { name = "cognitive-interpretation", editable = "apps/interpretation" },
     { name = "cognitive-science", editable = "apps/science" },
     { name = "cognitive-shared", editable = "apps/shared" },
+    { name = "cognitive-zero", editable = "apps/zero" },
     { name = "fastapi", specifier = ">=0.111" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "neo4j", specifier = ">=5.21" },

@@ -31,6 +31,7 @@ from api.routes import (
     science_tda,
     science_temporal,
     search,
+    tools,
 )
 
 
@@ -53,7 +54,7 @@ app.add_middleware(
 for _router in (investigations.router, search.router, entities.router,
                 findings.router, quarantine.router, metrics.router,
                 connectors.router, resolutions.router, fabric.router,
-                network.router):
+                network.router, tools.router):
     app.include_router(_router, prefix="/api/v1")
 
 # Science fabric routes carry their own `/api/science` prefix (science-api.md).

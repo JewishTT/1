@@ -1,11 +1,21 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Correlation, EntityView } from "../lib/api";
+import { Correlation, CcTemporalityPayload, EntityView } from "../lib/api";
 import { IntelGraph, IntelNode } from "../lib/intelGraph";
 import type { InvariantResult } from "../lib/science/types";
 import { StreamEvent } from "../lib/stream";
 import { IntelligenceGraph } from "../components/IntelligenceGraph";
+import { TimelineSlider } from "../components/TimelineSlider";
 import { TDALayer } from "../components/TDALayer";
+import {
+  deduceTimeline,
+  networkStateAtTime,
+  timeBounds,
+  TimelapseEdge,
+  TimelapseEvent,
+  TimelapseNode,
+  NetworkTimelapseState,
+} from "../lib/timelapse";
 import type cytoscape from "cytoscape";
 
 const LAYOUTS = ["cose", "concentric", "grid", "circle", "breadthfirst"];
@@ -43,6 +53,9 @@ interface Props {
   onLinkTap: (id: string) => void;
   onToggleLink: () => void;
   onDismissActionNote: () => void;
+  ccTemporality: Record<string, CcTemporalityPayload>;
+  ccTemporalityBusy: boolean;
+  onCcTemporality: (id: string) => void;
 }
 
 function nodeLabel(entity?: EntityView): string {
@@ -87,16 +100,143 @@ function IntroFeed({ feed }: { feed: Props["feed"] }) {
   );
 }
 
+/** CC temporality panel (CC-TEMPORALITY v1): daily bars, honest metrics, captures.
+ *  Empty data is rendered as an honest empty state (I-3) — never fabricated. */
+function CcTemporalPanel({ data }: { data: CcTemporalityPayload }) {
+  const max = Math.max(1, ...data.series.map((p) => p.count));
+  return (
+    <div className="node-card-ring" data-testid="cc-temporal-panel">
+      <span className="op-label">CC TEMPORALITY</span>
+      {data.plan ? (
+        <div className="insp-row" data-testid="cc-temporal-plan">
+          {data.plan.kind} · {data.plan.match_type} · {data.plan.url_query}
+        </div>
+      ) : null}
+      <div
+        className="cc-temporal-bars"
+        data-testid="cc-temporal-bars"
+        style={{ display: "flex", alignItems: "flex-end", gap: 3, minHeight: 8 }}
+      >
+        {data.series.length === 0 ? (
+          <span className="insp-row" data-testid="cc-temporal-bars-empty">—</span>
+        ) : (
+          data.series.map((p) => (
+            <div
+              key={p.t}
+              className="cc-temporal-bar"
+              data-testid="cc-temporal-bar"
+              title={`${p.t}: ${p.count}`}
+              style={{
+                width: 10,
+                height: `${Math.round(6 + 40 * (p.count / max))}px`,
+                background: "var(--acc, #b5ff69)",
+              }}
+            />
+          ))
+        )}
+      </div>
+      <div className="chip-row">
+        <span className="status-chip" data-testid="cc-temporal-metric-burstiness">
+          B {data.metrics.burstiness == null ? "—" : data.metrics.burstiness.toFixed(2)}
+        </span>
+        <span className="status-chip" data-testid="cc-temporal-metric-epd">
+          {data.metrics.events_per_day == null ? "—" : `${data.metrics.events_per_day.toFixed(2)}/d`}
+        </span>
+      </div>
+      <div className="node-card-rows" data-testid="cc-temporal-captures">
+        {data.captures.slice(0, 5).map((c) => (
+          <div key={`${c.digest}-${c.observed_at}`} className="node-card-row">
+            <span className="node-card-attr-v">{c.observed_at.slice(0, 10)}</span>
+            <span className="op-label">{c.url}</span>
+          </div>
+        ))}
+        {data.captures.length > 5 ? (
+          <div className="insp-row">+{data.captures.length - 5} more captures</div>
+        ) : null}
+      </div>
+      {data.notes.length > 0 ? (
+        <div className="panel-note" data-testid="cc-temporal-notes">
+          {data.notes.join(" · ")}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Timelapse panel (011/FR-009): deterministic state-at-time replay of the
+ *  invariant graph. Entities without temporal anchors render as an honest
+ *  empty state (I-3) — never a fabricated slice. Additive UI only. */
+function TimelapsePanel({
+  bounds,
+  t,
+  frames,
+  network,
+  onScrub,
+}: {
+  bounds: [number, number] | null;
+  t: number;
+  frames: number[];
+  network: NetworkTimelapseState;
+  onScrub: (next: number) => void;
+}) {
+  return (
+    <div className="panel command-panel" data-testid="timelapse-panel">
+      <div className="intel-canvas-head" style={{ borderBottom: 0 }}>
+        <span className="op-label">TIMELAPSE — STATE AT T</span>
+        <span className="status-chip" data-testid="timelapse-panel-counts">
+          N {network.aliveNodeCount} · E {network.aliveEdgeCount}
+        </span>
+      </div>
+      {bounds === null ? (
+        <p className="panel-note" data-testid="timelapse-panel-empty">
+          No observed_at anchors to replay — network state at past instants is unknown (I-3).
+        </p>
+      ) : (
+        <>
+          <TimelineSlider
+            min={bounds[0]}
+            max={bounds[1]}
+            value={t}
+            counts={{ nodes: network.aliveNodeCount, edges: network.aliveEdgeCount }}
+            onScrub={onScrub}
+            ticks={frames}
+          />
+          <div className="chip-row" data-testid="timelapse-active-nodes">
+            {network.nodes.length === 0 ? (
+              <span className="status-chip">NO ACTIVE NODES AT T</span>
+            ) : (
+              network.nodes.slice(0, 8).map((n) => (
+                <span key={n.id} className="status-chip ACTIVE" title={n.id} data-testid="timelapse-active-node">
+                  {n.label}
+                </span>
+              ))
+            )}
+            {network.nodes.length > 8 ? (
+              <span className="status-chip">+{network.nodes.length - 8}</span>
+            ) : null}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function IntelInspector({
   node,
   entity,
   onExpand,
   onMaterialize,
+  ccTemporality,
+  ccTemporalityBusy,
+  onCcTemporality,
 }: {
   node: IntelNode;
   entity?: EntityView;
   onExpand: (id: string) => void;
   onMaterialize: (id: string) => void;
+  ccTemporality?: CcTemporalityPayload | null;
+  ccTemporalityBusy?: boolean;
+  onCcTemporality: (id: string) => void;
 }) {
   const provenance = node.kind === "observation"
     ? "Immutable observation slot (I-1) — provenance evidence node, not an addressable catalog entity."
@@ -119,6 +259,22 @@ function IntelInspector({
         </div>
         {entity ? (
           <>
+            <div className="chip-row">
+              <span className="status-chip status-chip-live">LIVE INVARIANT</span>
+              <span className="status-chip">
+                v{entity.identity_invariant?.version ?? entity.historical_versions.length}
+              </span>
+              <span className="status-chip">
+                {entity.identity_invariant?.continuity ?? "PERSISTENT"}
+              </span>
+            </div>
+            <div>
+              <div className="op-label">INVARIANT CONTINUITY</div>
+              <div className="insp-row" data-testid="inspector-invariant">
+                {entity.identity_invariant?.identity_digest ?? "digest pending"} ·{" "}
+                {entity.identity_invariant?.history_depth ?? entity.historical_versions.length} observed version(s)
+              </div>
+            </div>
             <div>
               <div className="op-label">ALIASES</div>
               <div className="insp-row">{entity.aliases.length > 0 ? entity.aliases.join(" · ") : "—"}</div>
@@ -147,6 +303,15 @@ function IntelInspector({
               </div>
             </div>
             <div className="panel-actions">
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                disabled={ccTemporalityBusy}
+                onClick={() => onCcTemporality(node.id)}
+                data-testid="inspector-cc-temporal"
+              >
+                {ccTemporalityBusy ? "◌ PULLING CC…" : "⏱ PULL CC TEMPORALITY"}
+              </button>
               <button type="button" className="btn btn-primary btn-sm" onClick={() => onExpand(node.id)} data-testid="inspector-expand">
                 ⧉ EXPAND NEIGHBOURHOOD
               </button>
@@ -154,6 +319,7 @@ function IntelInspector({
                 OPEN ENTITY PAGE
               </Link>
             </div>
+            {ccTemporality ? <CcTemporalPanel data={ccTemporality} /> : null}
           </>
         ) : provenance ? (
           <div className="panel-actions">
@@ -162,7 +328,7 @@ function IntelInspector({
         ) : (
           <div className="panel-actions">
             <p className="panel-note">
-              Correlate node — candidate not yet materialized into the atomic catalog.
+              Candidate signal — not yet materialized into the atomic invariant catalog.
             </p>
             <button
               type="button"
@@ -170,7 +336,7 @@ function IntelInspector({
               onClick={() => onMaterialize(node.id)}
               data-testid="inspector-materialize"
             >
-              ◉ MATERIALIZE ENTITY
+              ◉ MATERIALIZE INVARIANT
             </button>
           </div>
         )}
@@ -212,9 +378,13 @@ export function IntelligencePage({
   onLinkTap,
   onToggleLink,
   onDismissActionNote,
+  ccTemporality,
+  ccTemporalityBusy,
+  onCcTemporality,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
   const [entityInput, setEntityInput] = useState("");
+  const [timelapseT, setTimelapseT] = useState<number | null>(null);
 
   const submit = (ev: FormEvent) => {
     ev.preventDefault();
@@ -234,6 +404,62 @@ export function IntelligencePage({
 
   const selectedNode = graph.nodes.find((n) => n.id === selectedId) ?? null;
   const selectedEntity = selectedId ? entities[selectedId] : undefined;
+
+  // ── Timelapse (011/FR-009): deterministic state-at-time reconstruction ──
+  // Replay log = every observed_at on every loaded entity's timeline. Nodes
+  // with no temporal anchors are "unknown" at T, never "absent" (I-3).
+  const timelapseEvents = useMemo<TimelapseEvent[]>(() => {
+    const out: TimelapseEvent[] = [];
+    for (const [id, entity] of Object.entries(entities)) {
+      for (const entry of entity.timeline ?? []) {
+        if (entry.observed_at) out.push({ entityId: id, at: entry.observed_at });
+      }
+    }
+    return out;
+  }, [entities]);
+
+  const timelapseBounds = useMemo(() => timeBounds(timelapseEvents), [timelapseEvents]);
+  const timelapseFrames = useMemo(
+    () => deduceTimeline(timelapseEvents).map((f) => f.atMs),
+    [timelapseEvents],
+  );
+
+  useEffect(() => {
+    setTimelapseT((prev) =>
+      timelapseBounds &&
+      (prev === null || prev < timelapseBounds[0] || prev > timelapseBounds[1])
+        ? timelapseBounds[0]
+        : prev,
+    );
+  }, [timelapseBounds]);
+
+  const timelapseNodes = useMemo<TimelapseNode[]>(
+    () =>
+      graph.nodes.map((n) => {
+        const entity = entities[n.id];
+        return {
+          id: n.id,
+          label: n.label,
+          seasons: entity
+            ? (entity.timeline ?? [])
+                .map((te) => te.observed_at)
+                .filter((v): v is string => Boolean(v))
+            : undefined,
+        };
+      }),
+    [graph.nodes, entities],
+  );
+
+  const timelapseEdges = useMemo<TimelapseEdge[]>(
+    () => graph.edges.map((e) => ({ id: e.id, source: e.source, target: e.target, kind: e.kind })),
+    [graph.edges],
+  );
+
+  const timelapseActiveT = timelapseBounds ? (timelapseT ?? timelapseBounds[0]) : 0;
+  const timelapseNetwork = useMemo(
+    () => networkStateAtTime(timelapseNodes, timelapseEdges, timelapseActiveT),
+    [timelapseNodes, timelapseEdges, timelapseActiveT],
+  );
 
   // In link mode a node tap picks source then target instead of selecting.
   const handleNodeSelect = (id: string | null) => {
@@ -307,10 +533,12 @@ export function IntelligencePage({
                 >
                   <span className="seed-node-name">
                     <span>{entity ? nodeLabel(entity) : id}</span>
-                    <span className="op-label">{entity ? "ENTITY" : "EXT"}</span>
+                    <span className="op-label">{entity ? "INVARIANT" : "EXT CANDIDATE"}</span>
                   </span>
                   <span className="seed-node-meta">
-                    {entity ? `${entity.evidence.length} ev · ${entity.aliases.length} aliases` : "external correlate"}
+                    {entity
+                      ? `v${entity.identity_invariant?.version ?? entity.historical_versions.length} · ${entity.evidence.length} ev · ${entity.aliases.length} aliases`
+                      : "external candidate signal"}
                   </span>
                   <span className="seed-actions">
                     <span
@@ -356,7 +584,7 @@ export function IntelligencePage({
 
       <div className="intel-canvas" data-testid="intel-canvas">
         <div className="intel-canvas-head">
-          <span className="op-label">INTELLIGENCE MAP — LIVE LINK ANALYSIS</span>
+          <span className="op-label">INVARIANT GRAPH — LIVE RESOLUTION STATE</span>
           <div className="canvas-toolbar">
             <select
               className="toolbar-select"
@@ -433,14 +661,15 @@ export function IntelligencePage({
             </button>
           ) : null}
           <span className="status-chip">
-            {graph.nodes.length} NODES · {graph.edges.length} EDGES
+            {graph.nodes.filter((n) => n.kind === "entity").length} INVARIANTS ·{" "}
+            {graph.nodes.filter((n) => n.kind === "correlate").length} CANDIDATES · {graph.edges.length} EDGES
           </span>
         </div>
         <div className="intel-canvas-body">
           {graph.nodes.length === 0 ? (
             <div className="intel-empty" data-testid="intel-empty">
               <span style={{ fontSize: 22 }}>◈</span>
-              <p>Graph is empty — create an atomic entity (✦) or add a seed to ignite the intelligence map.</p>
+              <p>No invariant anchors loaded — materialize a dynamic invariant (✦) or add an existing anchor to resolve its neighbourhood.</p>
             </div>
           ) : (
             <IntelligenceGraph
@@ -452,7 +681,7 @@ export function IntelligencePage({
               onReady={onGraphReady}
             />
           )}
-          {selectedNode && <IntelInspector node={selectedNode} entity={selectedEntity} onExpand={onExpand} onMaterialize={onMaterialize} />}
+          {selectedNode && <IntelInspector node={selectedNode} entity={selectedEntity} onExpand={onExpand} onMaterialize={onMaterialize} ccTemporality={ccTemporality[selectedNode.id]} ccTemporalityBusy={ccTemporalityBusy} onCcTemporality={onCcTemporality} />}
           <TDALayer
             active={tdaActive}
             loading={tdaLoading}
@@ -464,7 +693,7 @@ export function IntelligencePage({
           />
           <div className="intel-legend" data-provenance={provActive} data-testid="intel-legend">
             <span>
-              <b style={{ color: "#22d3ee" }}>●</b> ENTITY
+              <b style={{ color: "#22d3ee" }}>●</b> ATOMIC INVARIANT
             </span>
             <span>
               <b style={{ color: "#f0a832" }}>□</b> CORRELATE
@@ -484,6 +713,13 @@ export function IntelligencePage({
             ) : null}
           </div>
         </div>
+        <TimelapsePanel
+          bounds={timelapseBounds}
+          t={timelapseActiveT}
+          frames={timelapseFrames}
+          network={timelapseNetwork}
+          onScrub={setTimelapseT}
+        />
         <IntroFeed feed={feed} />
       </div>
     </section>

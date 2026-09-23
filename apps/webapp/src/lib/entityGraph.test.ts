@@ -77,4 +77,29 @@ describe("buildEntityGraphElements", () => {
     const allIds = elements.map((e) => e.id);
     expect(new Set(allIds).size).toBe(allIds.length);
   });
+
+  it("is deterministic — the same entity yields identical elements twice", () => {
+    const first = buildEntityGraphElements(ENTITY, ENTITY.correlations ?? []);
+    const second = buildEntityGraphElements(ENTITY, ENTITY.correlations ?? []);
+    expect(first.map((e) => `${e.kind}:${e.id}`)).toEqual(second.map((e) => `${e.kind}:${e.id}`));
+  });
+
+  it("is order-invariant — swapped correlation order produces identical edge ids", () => {
+    const correlations = [
+      ...(ENTITY.correlations ?? []),
+      {
+        edge_id: "CE-200002",
+        candidate_a: "ENT-2001",
+        candidate_b: "ENT-2002",
+        kind: "possible_match",
+        raw_pair_score: 0.6,
+        collective_score: 0.6,
+        reasons: ["handle"],
+        state: "OPEN",
+      },
+    ];
+    const forward = buildEntityGraphElements(ENTITY, correlations).filter((e) => e.kind === "edge");
+    const backward = buildEntityGraphElements(ENTITY, [...correlations].reverse()).filter((e) => e.kind === "edge");
+    expect(forward.map((e) => e.id)).toEqual(backward.map((e) => e.id));
+  });
 });

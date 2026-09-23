@@ -1,4 +1,5 @@
-import { Correlation, EntityView } from "./api";
+import { Correlation, EntityView, IdentityInvariant } from "./api";
+import { formEdges, EdgeSeed, ObservationCoOccurrence } from "./edgeFormation";
 
 export type IntelNodeKind = "entity" | "correlate" | "relationship" | "observation" | "source";
 
@@ -22,6 +23,9 @@ export interface IntelNode {
   aliases?: string[];
   assertions?: string[];
   evidence?: Array<{ evidence_id: string; observation_id: string; immutable: boolean }>;
+  /** Backend invariant projection — present only on materialized entity nodes. */
+  invariant?: IdentityInvariant;
+  currentState?: Record<string, unknown>;
   reason?: string;
 }
 
@@ -29,7 +33,7 @@ export interface IntelEdge {
   id: string;
   source: string;
   target: string;
-  kind: "possible_match" | "relationship" | "assertion" | "evidence" | "source_host";
+  kind: "possible_match" | "relationship" | "assertion" | "evidence" | "source_host" | "co_occurrence";
   reason: string;
 }
 
@@ -94,13 +98,27 @@ function sourceHost(uri: string): string | null {
  * correlation neighbourhoods (FR-004 possible_match edges — no merge implied)
  * plus explicit relationships. Correlate nodes keep their materialised flag so
  * the UI can offer "materialize this candidate" actions.
+ *
+ * All edges flow through the deterministic edge factory (edgeFormation.ts):
+ * content-addressed ids over (ordered pair, provenance kind, source), dedupe,
+ * stable id-sorted emit order — same entities ⇒ identical graph across reloads.
  */
 export function buildIntelGraph(
   entities: Record<string, EntityView>,
   correlations: Record<string, Correlation[]>,
 ): IntelGraph {
   const nodes = new Map<string, IntelNode>();
-  const edges = new Map<string, IntelEdge>();
+
+  // Kind priority: a node re-anchored from a weaker kind (e.g. correlate) to a
+  // stronger kind (entity) must not degrade back, and rich per-entity payload
+  // (counts/attrs/aliases/invariant) must survive every upsert.
+  const kindPriority: Record<IntelNodeKind, number> = {
+    source: 0,
+    observation: 1,
+    relationship: 2,
+    correlate: 3,
+    entity: 4,
+  };
 
   const upsertNode = (
     id: string,
@@ -109,10 +127,26 @@ export function buildIntelGraph(
     materialized: boolean,
     type?: EntityType,
   ) => {
-    if (!nodes.has(id)) {
+    const existing = nodes.get(id);
+    if (!existing) {
       nodes.set(id, { id, label: label ?? id, kind, materialized, type: type ?? "unknown" });
+      return;
     }
+    const preferredKind =
+      kindPriority[kind] > kindPriority[existing.kind] ? kind : existing.kind;
+    nodes.set(id, {
+      ...existing,
+      label: existing.label === id && label ? label : existing.label,
+      kind: preferredKind,
+      materialized: existing.materialized || materialized,
+      type: type && (preferredKind === kind || existing.type === "unknown") ? type : existing.type,
+    });
   };
+
+  const seeds: EdgeSeed[] = [];
+  // Same observation hosting two materialized entities ⇒ co-mention edge,
+  // provenance-anchored on the observation (co_occurrence kind).
+  const coOccurrence = new Map<string, string[]>();
 
   for (const entity of Object.values(entities)) {
     const type = classifyEntity(entity);
@@ -129,17 +163,18 @@ export function buildIntelGraph(
       aliases: entity.aliases ?? [],
       assertions: entity.supporting_assertions ?? [],
       evidence: entity.evidence ? entity.evidence.map((e) => ({ ...e })) : [],
+      invariant: entity.identity_invariant,
+      currentState: entity.current_state,
     });
     for (const rel of entity.relationships ?? []) {
       const target = rel["target"] as string | undefined;
       if (!target) continue;
       upsertNode(target, target, "relationship", Boolean(entities[target]));
-      const edgeId = `REL-${entity.entity_id}-${target}`;
-      edges.set(edgeId, {
-        id: edgeId,
-        source: entity.entity_id,
-        target,
+      seeds.push({
+        a: entity.entity_id,
+        b: target,
         kind: "relationship",
+        source: String(rel["type"] ?? "linked"),
         reason: String(rel["type"] ?? "linked"),
       });
     }
@@ -152,15 +187,21 @@ export function buildIntelGraph(
         .filter((t) => t.observation_id && t.uri)
         .map((t) => [t.observation_id as string, t.uri as string]),
     );
+    for (const t of entity.timeline ?? []) {
+      if (!t.observation_id) continue;
+      const list = coOccurrence.get(t.observation_id) ?? [];
+      if (!list.includes(entity.entity_id)) list.push(entity.entity_id);
+      coOccurrence.set(t.observation_id, list);
+    }
     for (const ev of entity.evidence ?? []) {
       const obsId = ev.observation_id;
       if (!obsId) continue;
       upsertNode(obsId, obsId, "observation", false);
-      edges.set(`EV-${entity.entity_id}-${obsId}`, {
-        id: `EV-${entity.entity_id}-${obsId}`,
-        source: entity.entity_id,
-        target: obsId,
+      seeds.push({
+        a: entity.entity_id,
+        b: obsId,
         kind: "evidence",
+        source: ev.evidence_id,
         reason: ev.immutable ? "immutable" : "volatile",
       });
       const uri = uriByObs.get(obsId);
@@ -169,11 +210,11 @@ export function buildIntelGraph(
         if (host) {
           const srcId = `SRC-${host}`;
           upsertNode(srcId, host, "source", false);
-          edges.set(`SRC-${obsId}-${srcId}`, {
-            id: `SRC-${obsId}-${srcId}`,
-            source: obsId,
-            target: srcId,
+          seeds.push({
+            a: obsId,
+            b: srcId,
             kind: "source_host",
+            source: host,
             reason: host,
           });
         }
@@ -184,30 +225,37 @@ export function buildIntelGraph(
   for (const edgeList of Object.values(correlations)) {
     for (const corr of edgeList ?? []) {
       const { candidate_a: a, candidate_b: b, kind, reasons } = corr;
+      // Priority-aware upsert keeps a materialized entity node anchored to
+      // kind "entity" with all of its invariant payload intact.
       upsertNode(a, displayLabel(a, entities[a]), "correlate", Boolean(entities[a]));
       upsertNode(b, displayLabel(b, entities[b]), "correlate", Boolean(entities[b]));
-      // Re-anchor a materialised entity node to kind "entity".
-      const aNode = nodes.get(a)!;
-      const bNode = nodes.get(b)!;
-      if (entities[a]) {
-        aNode.kind = "entity";
-        aNode.type = classifyEntity(entities[a]);
-      }
-      if (entities[b]) {
-        bNode.kind = "entity";
-        bNode.type = classifyEntity(entities[b]);
-      }
-      edges.set(corr.edge_id, {
-        id: corr.edge_id,
-        source: a,
-        target: b,
+      seeds.push({
+        a,
+        b,
         kind: kind === "possible_match" ? "possible_match" : "assertion",
+        source: corr.edge_id,
         reason: (reasons ?? []).join(", ") || kind,
       });
     }
   }
 
-  return { nodes: [...nodes.values()], edges: [...edges.values()] };
+  const observations: ObservationCoOccurrence[] = [...coOccurrence.entries()]
+    .filter(([, ids]) => ids.length > 1)
+    .map(([observation_id, ids]) => ({ observation_id, nodes: ids.sort() }));
+
+  const nodeIds = [...nodes.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const edges = formEdges(nodeIds, { observations, seeds });
+
+  return {
+    nodes: nodeIds.map((id) => nodes.get(id)!),
+    edges: edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      kind: e.kind,
+      reason: e.reason,
+    })),
+  };
 }
 
 /** Drop provenance (observation/source) nodes and their edges, keeping the map to entities only. */

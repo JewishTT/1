@@ -2,11 +2,13 @@ import { Link } from "react-router-dom";
 import { GraphElement, GraphPanel } from "../components/GraphPanel";
 import { TimelineView } from "../components/TimelineView";
 import { burstiness, eventsPerDay } from "../lib/timing";
+import type { IdentityInvariant } from "../lib/api";
 
 export interface EntityView {
   entity_id: string;
   canonical_identity: Record<string, string>;
   current_state: Record<string, unknown>;
+  identity_invariant?: IdentityInvariant;
   historical_versions: Array<Record<string, unknown>>;
   aliases: string[];
   relationships: Array<Record<string, string>>;
@@ -44,6 +46,29 @@ export function EntityViewPage({ entity, graphElements = [] }: Props) {
           ◈ OPEN IN INTEL BOARD
         </Link>
       </h1>
+
+      <div className="panel">
+        <h2>Identity invariant</h2>
+        {entity.identity_invariant ? (
+          <div data-testid="entity-invariant">
+            <p>
+              Status <strong>{entity.identity_invariant.status}</strong> · continuity{" "}
+              <strong>{entity.identity_invariant.continuity}</strong> · version{" "}
+              <strong>v{entity.identity_invariant.version}</strong> ·{" "}
+              {entity.identity_invariant.history_depth} observed version(s)
+            </p>
+            <p>
+              digest <code>{entity.identity_invariant.identity_digest}</code> · first seen{" "}
+              {entity.identity_invariant.first_seen ?? "—"} · last seen{" "}
+              {entity.identity_invariant.last_seen ?? "—"}
+            </p>
+          </div>
+        ) : (
+          <p data-testid="entity-invariant">
+            Invariant projection pending — asserted identity carried across {entity.historical_versions.length} historical version(s).
+          </p>
+        )}
+      </div>
 
       <div className="panel">
         <h2>Current state</h2>

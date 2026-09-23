@@ -54,6 +54,31 @@ class TestDonorPatternApi:
         assert body["timeline"]
         assert all(entry.get("observed_at") == "2026-01-01T00:00:00Z" for entry in body["timeline"])
 
+    def test_entity_view_projects_identity_invariant(self, client: TestClient) -> None:
+        """The atomic entity must surface its dynamic-invariant projection: a
+        stable anchor id plus versioned, digest-backed continuity."""
+        resp = client.get("/api/v1/entities/ENT-2001")
+        assert resp.status_code == 200
+        body = resp.json()
+        inv = body["identity_invariant"]
+        assert inv["status"] == "MATERIALIZED"
+        assert inv["continuity"] == "PERSISTENT"
+        assert inv["version"] == 1
+        assert inv["history_depth"] == 1
+        assert inv["identity_digest"].startswith("sha256:")
+        assert inv["first_seen"] == "2026-01-01T00:00:00Z"
+        assert inv["last_seen"] == "2026-01-01T00:00:00Z"
+
+        created = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "Pulse"}},
+        ).json()["entity"]
+        assert created["identity_invariant"]["version"] == 1
+        assert created["identity_invariant"]["history_depth"] == 1
+        # Same identity dimensions -> same digest (deterministic invariant).
+        fresh = client.get(f"/api/v1/entities/{created['entity_id']}").json()
+        assert fresh["identity_invariant"]["identity_digest"] == created["identity_invariant"]["identity_digest"]
+
     def test_entity_can_be_created_as_dynamic_invariant(self, client: TestClient) -> None:
         resp = client.post(
             "/api/v1/entities",
