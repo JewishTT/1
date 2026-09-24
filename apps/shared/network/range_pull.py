@@ -16,7 +16,33 @@ from typing import Protocol
 
 
 class ByteTransport(Protocol):
+    """Fetch one exact byte range from a WARC object."""
+
     async def fetch(self, filename: str, offset: int, length: int) -> bytes: ...
+
+
+@dataclass(frozen=True)
+class HttpByteTransport:
+    """Minimal Common Crawl HTTP range transport.
+
+    Common Crawl publishes WARC objects over HTTPS. The response is deliberately
+    bounded to the indexed byte range; callers never download the whole crawl.
+    """
+
+    base_url: str = "https://data.commoncrawl.org"
+    timeout: float = 120.0
+
+    async def fetch(self, filename: str, offset: int, length: int) -> bytes:
+        if offset < 0 or length <= 0:
+            raise ValueError("offset must be non-negative and length must be positive")
+        import httpx
+
+        url = f"{self.base_url.rstrip('/')}/{filename.lstrip('/')}"
+        headers = {"Range": f"bytes={offset}-{offset + length - 1}"}
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            return response.content
 
 
 @dataclass(frozen=True)
@@ -32,6 +58,7 @@ class WarcPull:
     warc_date: str | None
     digest: str | None
     payload: bytes
+    warc_record_id: str | None = None
 
     def as_text(self, encoding: str = "utf-8", errors: str = "replace") -> str:
         return self.payload.decode(encoding, errors=errors)
@@ -94,8 +121,43 @@ def split_warc_records(blob: bytes) -> list[WarcPull]:
             warc_date=headers.get("warc-date"),
             digest=headers.get("warc-block-digest"),
             payload=blob[payload_offset:],
+            warc_record_id=headers.get("warc-record-id"),
         )
     ]
 
 
-__all__ = ["ByteTransport", "WarcPull", "parse_warc_prefix", "split_warc_records"]
+async def pull_warc_range(
+    transport: ByteTransport,
+    *,
+    filename: str,
+    offset: int,
+    length: int,
+) -> WarcPull:
+    """Fetch and parse one indexed WARC range without losing its locator."""
+    blob = await transport.fetch(filename, offset, length)
+    records = split_warc_records(blob)
+    if not records:
+        raise ValueError(f"range {filename}@{offset},{length} contains no WARC record")
+    record = records[0]
+    return WarcPull(
+        filename=filename,
+        offset=offset,
+        length=length,
+        record_type=record.record_type,
+        content_type=record.content_type,
+        url=record.url,
+        warc_date=record.warc_date,
+        digest=record.digest,
+        payload=record.payload,
+        warc_record_id=record.warc_record_id,
+    )
+
+
+__all__ = [
+    "ByteTransport",
+    "HttpByteTransport",
+    "WarcPull",
+    "parse_warc_prefix",
+    "pull_warc_range",
+    "split_warc_records",
+]

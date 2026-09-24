@@ -18,6 +18,17 @@ async def health(ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None) 
     }
 
 
+@router.get("/temporal-materializations/{run_id}/audit")
+async def audit(
+    run_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    return {
+        "run_id": run_id,
+        "entries": _materialization_operations.audit(run_id, tenant_id=ctx.tenant_id),
+    }
+
+
 @router.get("/temporal-materializations/{run_id}")
 async def status(
     run_id: str, ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None

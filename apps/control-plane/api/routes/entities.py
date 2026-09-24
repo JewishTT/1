@@ -16,6 +16,7 @@ from typing import Annotated
 
 from domain.dynamics import StreamRecord
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from projection.temporal_materialization.operations import MaterializationOperations
 from pydantic import BaseModel
 
@@ -24,6 +25,7 @@ from api.sse import hub
 from services.catalog import Catalog, EntityRecord
 from services.cc_temporality import run_cc_temporality
 from services.review import ReviewDecision, ReviewService, ReviewTargetType
+from services.temporal_materialization_dispatch import start_entity_materialization
 from services.temporal_materialization_service import temporal_materialization_service
 from services.tool_catalog import infer_entity_type
 
@@ -103,7 +105,7 @@ class CorrelationCreate(BaseModel):
     state: str = "OPEN"
 
 
-@router.post("")
+@router.post("", status_code=202)
 async def create_entity(
     body: EntityCreate,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
@@ -114,6 +116,10 @@ async def create_entity(
     if not body.canonical_identity or not any(body.canonical_identity.values()):
         raise HTTPException(status_code=422, detail="canonical_identity must not be empty")
     entity_id = _next_entity_id()
+    for item in body.source_records:
+        record = StreamRecord.from_dict(item)
+        if record.entity_id != entity_id or record.tenant_id != ctx.tenant_id:
+            raise HTTPException(status_code=422, detail="source record scope mismatch")
     label = body.label or next(iter(body.canonical_identity.values()), entity_id)
     _catalog.put_entity(
         EntityRecord(
@@ -134,42 +140,46 @@ async def create_entity(
         )
     )
     hub.publish(
-        "entity.updated",
+        "entity.created",
         {
             "entity_id": entity_id,
             "tenant_id": ctx.tenant_id,
-            "event": "entity.created",
             "identity": body.canonical_identity,
         },
     )
     materialization = None
-    if body.source_records:
-        from datetime import timedelta
-
-        records = []
-        for item in body.source_records:
-            record = StreamRecord.from_dict(item)
-            if record.entity_id != entity_id or record.tenant_id != ctx.tenant_id:
-                raise HTTPException(status_code=422, detail="source record scope mismatch")
-            records.append(record)
-        result = temporal_materialization_service.materialize(
-            records,
-            tenant_id=ctx.tenant_id,
-            entity_id=entity_id,
-            window=timedelta(days=7),
-        )
-        run_id = "run-" + result.history.publication.integrity_fingerprint[:24]
-        _materialization_operations.start(run_id, tenant_id=ctx.tenant_id, entity_id=entity_id)
-        _materialization_operations.mark(run_id, "RUNNING")
-        materialization = {
-            "run_id": run_id,
-            "status": "STARTED",
-            "changed": result.changed,
-            "revision": result.revision,
-        }
+    launch = await start_entity_materialization(
+        tenant_id=ctx.tenant_id,
+        entity_id=entity_id,
+        identity=body.canonical_identity,
+    )
+    _materialization_operations.start(
+        launch.run_id, tenant_id=ctx.tenant_id, entity_id=entity_id
+    )
+    if launch.status == "QUEUED":
+        effective_status = "QUEUED"
+        reason = ""
+    else:
+        _materialization_operations.mark(launch.run_id, "DEFERRED", reason=launch.reason)
+        effective_status = "DEFERRED"
+        reason = launch.reason
+    materialization = {
+        "run_id": launch.run_id,
+        "workflow_id": launch.workflow_id,
+        "status": effective_status,
+    }
+    if effective_status == "QUEUED":
         hub.publish("temporal.materialization.started", {"entity_id": entity_id, **materialization})
+    else:
+        hub.publish(
+            "temporal.materialization.failed",
+            {"entity_id": entity_id, **materialization, "reason": reason},
+        )
     view = {**_catalog.entity(entity_id), "tenant_id": ctx.tenant_id}
-    return {"entity": view, "event": "entity.created", "materialization": materialization}
+    return JSONResponse(
+        status_code=202,
+        content={"entity": view, "event": "entity.created", "materialization": materialization},
+    )
 
 
 @router.get("/{entity_id}/temporal-history")

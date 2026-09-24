@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { GraphElement, GraphPanel } from "../components/GraphPanel";
 import { TimelineView } from "../components/TimelineView";
+import { TemporalMaterializationPanel } from "../components/TemporalMaterializationPanel";
 import { burstiness, eventsPerDay } from "../lib/timing";
-import type { IdentityInvariant } from "../lib/api";
+import { api, type IdentityInvariant, type TemporalFeatureView, type TemporalHistoryView } from "../lib/api";
 
 export interface EntityView {
   entity_id: string;
@@ -34,6 +36,26 @@ interface Props {
 export function EntityViewPage({ entity, graphElements = [] }: Props) {
   const asserted = entity.evidence.every((e) => e.immutable);
   const timelineAt = entity.timeline.map((t) => t.observed_at ?? t.uri);
+  const [temporalHistory, setTemporalHistory] = useState<TemporalHistoryView | null>(null);
+  const [temporalFeatures, setTemporalFeatures] = useState<TemporalFeatureView[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    void Promise.all([api.getTemporalHistory(entity.entity_id), api.getTemporalFeatures(entity.entity_id)])
+      .then(([history, featureData]) => {
+        if (active) {
+          setTemporalHistory(history);
+          setTemporalFeatures(featureData.features);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setTemporalHistory(null);
+          setTemporalFeatures([]);
+        }
+      });
+    return () => { active = false; };
+  }, [entity.entity_id]);
   return (
     <section data-testid="entity-view" data-entity-id={entity.entity_id}>
       <h1>
@@ -115,6 +137,19 @@ export function EntityViewPage({ entity, graphElements = [] }: Props) {
           />
         </div>
       </div>
+
+      {temporalHistory ? (
+        <TemporalMaterializationPanel
+          entityId={entity.entity_id}
+          history={temporalHistory}
+          features={temporalFeatures}
+        />
+      ) : (
+        <section className="panel" data-testid="temporal-materialization-empty">
+          <h2>Temporal materialization</h2>
+          <p className="panel-note">No published temporal history for this entity yet.</p>
+        </section>
+      )}
 
       <div className="panel">
         <h2>Structural signals</h2>

@@ -79,14 +79,33 @@ def test_order_independent_of_upstream_row_order() -> None:
         assert out == base
 
 
-def test_dedup_by_digest_keeps_first_in_order() -> None:
+def test_dedup_by_digest_keeps_distinct_temporal_captures() -> None:
     records = [
         _rec("https://example.com/a", "20230201120000", "DUP"),
-        _rec("https://example.com/a", "20230101120000", "DUP"),  # earlier, kept
+        _rec("https://example.com/a", "20230101120000", "DUP"),
         _rec("https://example.com/b", "20230102120000", "B"),
     ]
     out = pull_capture_index("example.com", "domain", None, session=FakeSession(records))
-    assert [r.timestamp for r in out] == ["20230101120000", "20230102120000"]
+    assert [r.timestamp for r in out] == ["20230101120000", "20230201120000", "20230102120000"]
+
+
+def test_dedup_only_exact_capture_identity() -> None:
+    records = [
+        _rec("https://example.com/a", "20230101120000", "DUP"),
+        _rec("https://example.com/a", "20230101120000", "DUP"),
+    ]
+    out = pull_capture_index("example.com", "domain", None, session=FakeSession(records))
+    assert len(out) == 1
+
+
+def test_raw_capture_preserves_warc_locator_provenance() -> None:
+    out = pull_capture_index("example.com", "domain", None, session=FakeSession(_records()))
+    assert out[0].warc_filename == "crawldata/0.warc.gz"
+    assert out[0].offset == 10
+    assert out[0].locator == "crawldata/0.warc.gz@10,40"
+    assert out[0].to_dict()["crawl"] == "CC-MAIN-FIXTURE"
+    assert out[0].to_dict()["subset"] == ""
+    assert out[0].capture_id.startswith("evt-")
 
 
 def test_limit_stops_mid_batch_and_is_exact() -> None:

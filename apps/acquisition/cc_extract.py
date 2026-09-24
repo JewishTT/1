@@ -6,19 +6,18 @@ Pure functions only: no network, no global state. Accepts ``Mapping`` records
 ``observed_at`` and deduplicated by ``(digest, observed_at)`` — deterministic
 (first occurrence wins), streaming-friendly (one pass, O(1) per record).
 
-Every normalized observation is *content-addressed* (I-1): ``record_hash`` is
-a deterministic sha256 over the immutable content and ``record_id`` the
-corresponding ``evt-<record_hash>``. Replays therefore produce byte-identical
-records, and the downstream store dedupes by ``(url, observed_at, digest)``
-idempotently (I-11) — the CC-TEMPORALITY v1 capture-record contract.
+Content addressing (I-1): ``record_hash``/``record_id`` are deterministic
+functions of the immutable capture identity and content metadata. Replays
+therefore produce byte-identical records, while captures at different fetch
+times remain distinct temporal observations.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Iterable, Mapping
 
 __all__ = ["CaptureObservation", "iso_utc_from_cc_timestamp", "normalize_captures"]
 
@@ -35,6 +34,16 @@ class CaptureObservation:
     observed_at: str  # ISO-UTC, e.g. "2023-10-12T00:00:00Z"
     status: int
     digest: str
+    crawl: str = ""
+    subset: str = ""
+    warc_filename: str = ""
+    offset: int = 0
+    length: int = 0
+    warc_record_id: str = ""
+
+    @property
+    def locator(self) -> str:
+        return f"{self.warc_filename}@{self.offset},{self.length}"
 
     @property
     def record_hash(self) -> str:
@@ -45,6 +54,12 @@ class CaptureObservation:
                 "observed_at": self.observed_at,
                 "status": self.status,
                 "digest": self.digest,
+                "crawl": self.crawl,
+                "subset": self.subset,
+                "warc_filename": self.warc_filename,
+                "offset": self.offset,
+                "length": self.length,
+                "warc_record_id": self.warc_record_id,
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -86,16 +101,18 @@ def normalize_captures(
     - CC 14-digit ``timestamp`` -> ISO-UTC (an already-ISO ``observed_at``
       passes through unchanged).
     - Records without a URL or a parseable timestamp are dropped.
-    - Sort key: ``observed_at`` (stable); duplicates by ``(digest, observed_at)``
-      collapse to the first occurrence.
+    - Sort key: ``observed_at`` (stable); duplicate *capture identities* collapse
+      to the first occurrence, not equal content digests.
     """
     out: list[CaptureObservation] = []
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[object, ...]] = set()
     for record in raw:
         url = str(record.get("url", "")).strip()
         if not url:
             continue
         timestamp = record.get("timestamp")
+        if timestamp is None:
+            timestamp = record.get("fetch_time")
         if timestamp is None:
             timestamp = record.get("observed_at")
         if timestamp is None:
@@ -108,7 +125,20 @@ def normalize_captures(
         if observed_at is None:
             continue
         digest = str(record.get("digest", "")).strip()
-        key = (digest, observed_at)
+        crawl = str(record.get("crawl") or record.get("collection") or "").strip()
+        subset = str(record.get("subset", "")).strip()
+        warc_filename = str(record.get("warc_filename", "")).strip()
+        offset = _as_int(record.get("offset", record.get("warc_record_offset", 0)))
+        length = _as_int(record.get("length", record.get("warc_record_length", 0)))
+        warc_record_id = str(record.get("warc_record_id", "")).strip()
+        # Legacy mappings have no locator. In that case digest is the only
+        # available discriminator between otherwise identical captures.
+        identity_locator = (
+            (warc_filename, offset, length, warc_record_id)
+            if warc_filename or offset or length or warc_record_id
+            else ("digest-fallback", digest)
+        )
+        key = (crawl, subset, url, observed_at, *identity_locator)
         if key in seen:
             continue
         seen.add(key)
@@ -116,8 +146,14 @@ def normalize_captures(
             CaptureObservation(
                 url=url,
                 observed_at=observed_at,
-                status=_as_int(record.get("status", 0)),
+                status=_as_int(record.get("status", record.get("fetch_status", 0))),
                 digest=digest,
+                crawl=crawl,
+                subset=subset,
+                warc_filename=warc_filename,
+                offset=offset,
+                length=length,
+                warc_record_id=warc_record_id,
             )
         )
     out.sort(key=lambda o: o.observed_at)

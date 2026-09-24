@@ -53,9 +53,56 @@ async def test_query_domain_deterministic(tmp_path: Path) -> None:
         ]
         loc = first[0].locator
         assert loc == "crawldata/0.warc.gz@10,40"
+        assert first[0].crawl == "CC-MAIN-2023-40"
+        assert first[0].subset == ""
 
         other = sess.query_domain("other.org")
         assert [h.url for h in other] == ["https://other.org/x"]
+    finally:
+        sess.close()
+
+
+@pytest.mark.asyncio
+async def test_query_domain_reads_current_schema_and_partitions(tmp_path: Path) -> None:
+    if not CcIndexSession.available():
+        pytest.skip("duckdb not installed")
+    import duckdb
+
+    parquet = tmp_path / "cc-current.parquet"
+    duckdb.execute(
+        """
+        COPY (
+            SELECT 'https://example.com/a' AS url,
+                   '20240101120000' AS fetch_time,
+                   200 AS fetch_status,
+                   'text/html' AS content_mime_type,
+                   'sha256:a' AS content_digest,
+                   'crawldata/0.warc.gz' AS warc_filename,
+                   10 AS warc_record_offset,
+                   40 AS warc_record_length,
+                   'CC-MAIN-2024-10' AS crawl,
+                   'warc' AS subset,
+                   'record-a' AS warc_record_id,
+                   'example.com' AS url_host_registered_domain,
+                   'com,example)/a' AS url_surtkey
+            UNION ALL SELECT 'https://other.org/x', '20240101120000', 200,
+                   'text/html', 'sha256:x', 'crawldata/1.warc.gz', 1, 5,
+                   'CC-MAIN-2024-10', 'warc', 'record-x', 'other.org', 'org,other)/x'
+            UNION ALL SELECT 'https://example.com/other', '20240101120000', 200,
+                   'text/html', 'sha256:b', 'crawldata/2.warc.gz', 2, 6,
+                   'CC-MAIN-2023-40', 'warc', 'record-b', 'example.com', 'com,example)/other'
+            UNION ALL SELECT 'https://example.computer/x', '20240101120000', 200,
+                   'text/html', 'sha256:c', 'crawldata/3.warc.gz', 3, 7,
+                   'CC-MAIN-2024-10', 'warc', 'record-c', 'example.computer', 'com,example,computer)/x'
+        ) TO '__(tmp)' (FORMAT PARQUET);
+        """.replace("'__(tmp)'", f"'{parquet.as_posix()}'")
+    )
+    sess = CcIndexSession(index_path=str(parquet), crawl="CC-MAIN-2024-10", subset="warc")
+    try:
+        rows = sess.query_domain("example.com", match_type="domain")
+        assert [(row.url, row.warc_record_id, row.locator) for row in rows] == [
+            ("https://example.com/a", "record-a", "crawldata/0.warc.gz@10,40")
+        ]
     finally:
         sess.close()
 

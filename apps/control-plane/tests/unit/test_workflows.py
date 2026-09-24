@@ -96,11 +96,85 @@ class TestWorkflowWiring:
         from workflows.temporal_materialization import (
             MaterializationWorkflowInput,
             TemporalEntityMaterializationWorkflow,
+            reconcile_and_publish,
         )
 
         assert hasattr(TemporalEntityMaterializationWorkflow, "run")
+        assert callable(reconcile_and_publish)
         request = MaterializationWorkflowInput("tenant", "entity", ("record-1",), "run-1")
         assert request.mode == "rebuild"
+
+    @pytest.mark.asyncio
+    async def test_activity_builds_cc_records(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from workflows import temporal_materialization as module
+
+        def fake_run(entity_id: str, identity: dict[str, str], session: object = None):
+            return {
+                "captures": [
+                    {
+                        "url": "https://example.com/a",
+                        "observed_at": "2024-01-01T00:00:00Z",
+                        "status": 200,
+                        "digest": "sha256:x",
+                        "record_id": "evt-1",
+                        "locator": "warc.gz@1,2",
+                        "crawl": "CC-MAIN-2024-10",
+                        "subset": "warc",
+                    }
+                ]
+            }
+
+        monkeypatch.setattr("services.cc_temporality.run_cc_temporality", fake_run)
+        result = await module.reconcile_and_publish("t1", "e1", [], "run-1", {"domain": "example.com"})
+        assert result["status"] == "READY"
+        assert result["publication"]["source_cut"]["source_record_ids"]
+
+    @pytest.mark.asyncio
+    async def test_temporal_dispatch_starts_deterministic_workflow(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from services import temporal_materialization_dispatch as dispatch
+
+        class FakeClient:
+            def __init__(self) -> None:
+                self.calls: list[tuple[object, object, str, str]] = []
+
+            async def start_workflow(self, workflow: object, request: object, *, id: str, task_queue: str):
+                self.calls.append((workflow, request, id, task_queue))
+
+        client = FakeClient()
+
+        async def connect():
+            return client
+
+        monkeypatch.setattr("workflow.client.connect_temporal", connect)
+        first = await dispatch.start_entity_materialization(
+            tenant_id="t1", entity_id="e1", identity={"domain": "example.com"}
+        )
+        second = await dispatch.start_entity_materialization(
+            tenant_id="t1", entity_id="e1", identity={"domain": "example.com"}
+        )
+        assert first.status == second.status == "QUEUED"
+        assert first.run_id == second.run_id
+        assert first.workflow_id == second.workflow_id
+        assert len(client.calls) == 2
+        assert client.calls[0][1].entity_identity == {"domain": "example.com"}
+
+    @pytest.mark.asyncio
+    async def test_temporal_dispatch_defers_on_connection_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from services import temporal_materialization_dispatch as dispatch
+
+        async def fail():
+            raise OSError("temporal down")
+
+        monkeypatch.setattr("workflow.client.connect_temporal", fail)
+        launch = await dispatch.start_entity_materialization(
+            tenant_id="t1", entity_id="e1", identity={"domain": "example.com"}
+        )
+        assert launch.status == "DEFERRED"
+        assert launch.workflow_id.endswith(launch.run_id)
 
     def test_investigation_workflow_has_signal_handlers(self):
         from workflows.investigation import InvestigationWorkflow

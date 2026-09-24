@@ -70,6 +70,8 @@ def test_operations_can_resume_failed_run() -> None:
     assert ops.mark("r1", "FAILED", reason="x")["status"] == "QUARANTINED"
     assert ops.get("r1", tenant_id="b") is None
     assert ops.health(tenant_id="a")[0]["status"] == "QUARANTINED"
+    assert ops.audit("r1", tenant_id="a")
+    assert ops.audit("r1", tenant_id="b") == []
 
 
 def test_reconcile_reports_missing_and_extra() -> None:

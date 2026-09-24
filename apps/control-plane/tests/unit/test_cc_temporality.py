@@ -71,11 +71,12 @@ class TestRunCcTemporality:
         assert payload["plan"]["match_type"] == "domain"
         assert payload["plan"]["surt_prefix"] == "http://com,example,"
         assert payload["plan"]["limit"] == 50
-        # L0 transport dedup collapsed the mirror row
-        assert len(payload["captures"]) == 2
+        # Same digest at a different fetch time is a distinct temporal capture.
+        assert len(payload["captures"]) == 3
+        assert payload["captures"][0]["record_id"] != payload["captures"][1]["record_id"]
         assert payload["captures"][0]["observed_at"] == "2023-10-12T03:01:04Z"
         assert payload["series"] == [
-            {"t": "2023-10-12", "count": 1},
+            {"t": "2023-10-12", "count": 2},
             {"t": "2023-10-14", "count": 1},
         ]
         assert payload["metrics"]["events_per_day"] > 0

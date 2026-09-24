@@ -72,6 +72,7 @@ EVENT_CATALOG: dict[str, str] = {
     "ontology.registered": "ontology",
     "claim.assessed": "claim",
     # Atomic entity fabric (feature 009: stream-first, process-centric)
+    "entity.created": "entity-stream",
     "entity.stream.appended": "entity-stream",
     "entity.state.projected": "entity-stream",
     "entity.series.projected": "entity-stream",

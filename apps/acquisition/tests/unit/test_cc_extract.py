@@ -50,6 +50,8 @@ def test_normalize_single_record() -> None:
             observed_at="2023-10-12T00:00:00Z",
             status=200,
             digest="abc",
+            crawl="CC-MAIN-2023-40",
+            length=456,
         )
     ]
 
@@ -62,6 +64,30 @@ def test_normalize_sorts_by_observed_at() -> None:
         ]
     )
     assert [o.url for o in obs] == ["https://e.com/earlier", "https://e.com/later"]
+
+
+def test_normalize_preserves_locator_provenance() -> None:
+    obs = normalize_captures(
+        [
+            {
+                "url": "https://e.com/a",
+                "fetch_time": "20231012000000",
+                "fetch_status": "200",
+                "content_mime_type": "text/html",
+                "content_digest": "abc",
+                "crawl": "CC-MAIN-2024-10",
+                "subset": "warc",
+                "warc_filename": "crawl/0.warc.gz",
+                "warc_record_offset": 10,
+                "warc_record_length": 456,
+                "warc_record_id": "record-1",
+            }
+        ]
+    )[0]
+    assert obs.crawl == "CC-MAIN-2024-10"
+    assert obs.subset == "warc"
+    assert obs.locator == "crawl/0.warc.gz@10,456"
+    assert obs.warc_record_id == "record-1"
 
 
 def test_normalize_dedups_by_digest_and_observed_at() -> None:

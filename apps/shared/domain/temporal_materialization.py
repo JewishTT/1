@@ -264,7 +264,7 @@ def _windows(records: tuple[StreamRecord, ...], window: timedelta) -> tuple[Temp
                 len(bucket),
                 min(times) if times else None,
                 max(times) if times else None,
-                tuple(r.record_hash for r in bucket),
+                tuple(r.record_id for r in bucket),
                 tuple(r.observation_id for r in bucket if r.observation_id),
             )
         )
@@ -290,7 +290,7 @@ def materialize_history(
     cut = SourceCut(
         tenant_id,
         entity_id,
-        tuple(r.record_hash for r in ordered),
+        tuple(r.record_id for r in ordered),
         tuple(r.record_hash for r in ordered),
         windows[0].window_start,
         windows[-1].window_end,

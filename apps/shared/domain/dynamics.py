@@ -160,6 +160,7 @@ class StreamRecord:
     extraction_version: str = ""
     sequence: int = 0
     record_hash: str = ""
+    record_id: str = ""
 
     def __post_init__(self) -> None:
         if not self.entity_id:
@@ -171,6 +172,7 @@ class StreamRecord:
         if self.ts.tzinfo is None:
             raise StreamAppendRejected("stream record ts must be timezone-aware (I-12)")
         object.__setattr__(self, "record_hash", self.record_hash or self.compute_hash())
+        object.__setattr__(self, "record_id", self.record_id or f"stream-{self.record_hash}")
 
     def compute_hash(self) -> str:
         """Deterministic sha256 over the immutable content of this record."""
@@ -207,6 +209,7 @@ class StreamRecord:
             "extraction_version": self.extraction_version,
             "sequence": self.sequence,
             "record_hash": self.record_hash,
+            "record_id": self.record_id,
         }
 
     @classmethod
@@ -229,6 +232,7 @@ class StreamRecord:
             extraction_version=data.get("extraction_version", ""),
             sequence=data.get("sequence", 0),
             record_hash=data.get("record_hash", ""),
+            record_id=data.get("record_id", ""),
         )
 
 

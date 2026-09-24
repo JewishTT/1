@@ -16,12 +16,15 @@ each yields an *empty* structure plus a note in ``notes``, never a fabricated
 series or interpolated point.
 """
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import sys
-from datetime import UTC, datetime
+from collections.abc import Mapping
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 # Import bootstrap (mirrors zero/tests/conftest.py): the workspace apps are
 # resolved by path until ``uv sync`` installs cognitive-zero/cognitive-acquisition.
@@ -30,12 +33,12 @@ for _p in (_APPS_DIR, _APPS_DIR / "zero"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from acquisition.cc_extract import CaptureObservation, normalize_captures  # noqa: E402
-from acquisition.cc_plan import build_cc_plan  # noqa: E402
-from api.sse import hub  # noqa: E402
-from domain.temporal_metrics import burstiness, events_per_day  # noqa: E402
-from services.series_lifecycle import SeriesRow, project_cc_series  # noqa: E402
-from zero.cc_capture import RawCapture, pull_capture_index  # noqa: E402
+from acquisition.cc_extract import CaptureObservation, normalize_captures
+from acquisition.cc_plan import build_cc_plan
+from api.sse import hub
+from domain.temporal_metrics import burstiness, events_per_day
+from services.series_lifecycle import SeriesRow, project_cc_series
+from zero.cc_capture import RawCapture, pull_capture_index
 
 _EMPTY_METRICS: dict[str, float | None] = {"burstiness": None, "events_per_day": None}
 
@@ -62,6 +65,14 @@ def _observations_payload(observations: list[CaptureObservation]) -> list[dict[s
             "observed_at": o.observed_at,
             "status": o.status,
             "digest": o.digest,
+            "crawl": o.crawl,
+            "subset": o.subset,
+            "warc_filename": o.warc_filename,
+            "offset": o.offset,
+            "length": o.length,
+            "warc_record_id": o.warc_record_id,
+            "locator": o.locator,
+            "record_id": o.record_id,
         }
         for o in observations
     ]
@@ -78,7 +89,7 @@ def _series_payload(rows: list[SeriesRow]) -> list[dict[str, Any]]:
 
 def _metrics_payload(observations: list[CaptureObservation]) -> dict[str, float | None]:
     timestamps = [
-        datetime.fromisoformat(o.observed_at.replace("Z", "+00:00")).replace(tzinfo=UTC)
+        datetime.fromisoformat(o.observed_at)
         for o in observations
     ]
     if not timestamps:

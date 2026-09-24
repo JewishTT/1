@@ -20,6 +20,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Protocol
+from urllib.parse import urlsplit
 
 try:  # duckdb is an optional heavy dep — import lazily at session creation
     import duckdb
@@ -43,6 +44,8 @@ class CCPageRecord:
     offset: int
     length: int
     crawl: str
+    subset: str = ""
+    warc_record_id: str = ""
 
     @property
     def locator(self) -> str:
@@ -60,6 +63,8 @@ class CCPageRecord:
             "offset": self.offset,
             "length": self.length,
             "crawl": self.crawl,
+            "subset": self.subset,
+            "warc_record_id": self.warc_record_id,
             "locator": self.locator,
         }
 
@@ -80,7 +85,8 @@ class CcIndexSession:
     """
 
     index_path: str
-    crawl: str = "CC-MAIN-2023-40"
+    crawl: str = ""
+    subset: str = ""
 
     @classmethod
     def available(cls) -> bool:
@@ -98,43 +104,105 @@ class CcIndexSession:
     def close(self) -> None:
         self._conn.close()
 
-    def query_domain(self, url_pattern: str) -> list[CCPageRecord]:
-        """Deterministic candidate hits for a domain prefix (FR-001).
+    def query_domain(
+        self, url_pattern: str, *, surt_prefix: str | None = None, match_type: str = "domain"
+    ) -> list[CCPageRecord]:
+        """Return exact-host hits from either legacy or current CC schema.
 
-        ``url_pattern`` is a single host/prefix, e.g. ``example.com``.
-        Matching: ``url LIKE 'example.com%' OR url LIKE 'www.example.com%'``
-        — deterministic, index-friendly (CC index is clustered by host).
+        The current URL index names capture fields ``fetch_time``,
+        ``fetch_status``, ``content_mime_type``, ``content_digest`` and
+        ``warc_record_*``.  Small hermetic fixtures still use the older names,
+        so aliases are resolved from the parquet schema instead of guessing.
+        Host matching is boundary-aware: ``example.com`` never matches
+        ``example.computer`` or ``example.com.evil``.
         """
-        pat = url_pattern.strip().rstrip("/")
-        if not pat:
+        raw = url_pattern.strip().rstrip("/")
+        if not raw:
             return []
-        pat_q = pat.replace("'", "''")
-        like = f"{pat_q}%"
-        www = f"www.{pat_q}%"
-        rows = self._conn.execute(
-            """
-            SELECT "url", "timestamp", "status", "mime", "digest",
-                   "filename", "offset", "length"
-            FROM read_parquet(?) AS p
-            WHERE regexp_replace("url",
-                    '^[a-zA-Z][a-zA-Z0-9+.-]*://(www[.])?', '') LIKE ?
-               OR regexp_replace("url",
-                    '^[a-zA-Z][a-zA-Z0-9+.-]*://(www[.])?', '') LIKE ?
-            ORDER BY "url", "timestamp"
-            """,
-            [self.index_path, like, www],
-        ).fetchall()
+        parsed = urlsplit(raw if "://" in raw else f"//{raw}")
+        host = (parsed.hostname or raw).lower().rstrip(".")
+        if host.startswith("www."):
+            host = host[4:]
+        if not host:
+            return []
+
+        description = self._conn.execute(
+            "SELECT * FROM read_parquet(?) LIMIT 0", [self.index_path]
+        ).description
+        columns = {str(item[0]) for item in description}
+
+        def column(*names: str, default: str = "NULL") -> str:
+            for name in names:
+                if name in columns:
+                    return f'"{name}"'
+            return default
+
+        url_col = column("url")
+        time_col = column("fetch_time", "timestamp", default="CAST(NULL AS VARCHAR)")
+        status_col = column(
+            "fetch_status", "status", default="CAST(NULL AS BIGINT)"
+        )
+        mime_col = column(
+            "content_mime_type", "mime", default="CAST(NULL AS VARCHAR)"
+        )
+        digest_col = column(
+            "content_digest", "digest", default="CAST(NULL AS VARCHAR)"
+        )
+        filename_col = column("warc_filename", "filename")
+        offset_col = column("warc_record_offset", "offset", default="CAST(NULL AS BIGINT)")
+        length_col = column("warc_record_length", "length", default="CAST(NULL AS BIGINT)")
+        crawl_col = column("crawl")
+        subset_col = column("subset")
+        record_id_col = column("warc_record_id", "record_id")
+        host_col = column(
+            "url_host_name",
+            default=(
+                f"regexp_extract(lower({url_col}), "
+                "'^[a-z][a-z0-9+.-]*://([^/:?#]+)', 1)"
+            ),
+        )
+
+        registered_host_col = column("url_host_registered_domain")
+        if match_type == "domain" and registered_host_col != "NULL":
+            host_col = registered_host_col
+            where = [f"lower({host_col}) = lower(?)"]
+            params = [host]
+        else:
+            where = [f"(lower({host_col}) = lower(?) OR lower({host_col}) LIKE lower(?))"]
+            params = [host, f"%.{host}"]
+        if crawl_col != "NULL" and self.crawl:
+            where.append(f"lower({crawl_col}) = lower(?)")
+            params.append(self.crawl)
+        if subset_col != "NULL" and self.subset:
+            where.append(f"lower({subset_col}) = lower(?)")
+            params.append(self.subset)
+        if "url_surtkey" in columns and surt_prefix:
+            where.append("lower(\"url_surtkey\") LIKE lower(?)")
+            surt = surt_prefix.removeprefix("http://").rstrip(",/")
+            params.append(surt if surt.endswith("%") else f"{surt}%")
+
+        sql = f"""
+            SELECT {url_col}, {time_col}, {status_col}, {mime_col}, {digest_col},
+                   {filename_col}, {offset_col}, {length_col},
+                   {crawl_col}, {subset_col}, {record_id_col}
+            FROM read_parquet(?)
+            WHERE {' AND '.join(where)}
+            ORDER BY {url_col}, {time_col}
+        """
+        rows = self._conn.execute(sql, [self.index_path, *params]).fetchall()
         return [
             CCPageRecord(
-                url=r[0],
-                timestamp=r[1],
+                url=str(r[0] or ""),
+                timestamp=str(r[1] or ""),
                 status=int(r[2] or 0),
-                mime=r[3] or "",
-                digest=r[4] or "",
-                warc_filename=r[5],
-                offset=int(r[6]),
-                length=int(r[7]),
-                crawl=self.crawl,
+                mime=str(r[3] or ""),
+                digest=str(r[4] or ""),
+                warc_filename=str(r[5] or ""),
+                offset=int(r[6] or 0),
+                length=int(r[7] or 0),
+                crawl=str(r[8] or self.crawl),
+                subset=str(r[9] or self.subset),
+                warc_record_id=str(r[10] or ""),
             )
             for r in rows
         ]
@@ -142,8 +210,9 @@ class CcIndexSession:
     def query_hosts(self, limit: int = 50) -> list[str]:
         """Deterministic host inventory (for surface/feedback)."""
         rows = self._conn.execute(
-            "SELECT DISTINCT hostname(url) AS h FROM read_parquet(?) "
-            "WHERE hostname(url) != '' ORDER BY h LIMIT ?",
+            "SELECT DISTINCT regexp_extract(lower(\"url\"), "
+            "'^[a-z][a-z0-9+.-]*://([^/:?#]+)', 1) AS h "
+            "FROM read_parquet(?) WHERE h != '' ORDER BY h LIMIT ?",
             [self.index_path, limit],
         ).fetchall()
         return [r[0] for r in rows]

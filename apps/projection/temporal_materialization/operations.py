@@ -21,6 +21,7 @@ class MaterializationOperations:
         self.max_in_flight = max_in_flight
         self.max_retries = max_retries
         self._runs: dict[str, dict[str, Any]] = {}
+        self._audit: dict[tuple[str, str], list[dict[str, Any]]] = {}
         self._lock = RLock()
 
     def start(self, run_id: str, *, tenant_id: str, entity_id: str) -> dict[str, Any]:
@@ -43,6 +44,7 @@ class MaterializationOperations:
                 "created_at": datetime.now(UTC),
             }
             self._runs[run_id] = state
+            self._record_audit(state, "run.queued", reason="")
             return dict(state)
 
     def mark(self, run_id: str, status: str, *, reason: str = "") -> dict[str, Any]:
@@ -65,6 +67,7 @@ class MaterializationOperations:
                     status = "QUARANTINED"
             state["status"] = status
             state["reason"] = reason
+            self._record_audit(state, f"run.{status.lower()}", reason=reason)
             return dict(state)
 
     def resume(self, run_id: str, *, tenant_id: str) -> dict[str, Any] | None:
@@ -80,6 +83,26 @@ class MaterializationOperations:
     def health(self, *, tenant_id: str) -> list[dict[str, Any]]:
         with self._lock:
             return [dict(item) for item in self._runs.values() if item["tenant_id"] == tenant_id]
+
+    def audit(self, run_id: str, *, tenant_id: str) -> list[dict[str, Any]]:
+        with self._lock:
+            state = self._runs.get(run_id)
+            if state is None or state["tenant_id"] != tenant_id:
+                return []
+            return [dict(item) for item in self._audit.get((tenant_id, run_id), [])]
+
+    def _record_audit(self, state: dict[str, Any], action: str, *, reason: str) -> None:
+        key = (str(state["tenant_id"]), str(state["run_id"]))
+        self._audit.setdefault(key, []).append(
+            {
+                "tenant_id": state["tenant_id"],
+                "entity_id": state["entity_id"],
+                "run_id": state["run_id"],
+                "action": action,
+                "reason": reason,
+                "at": datetime.now(UTC).isoformat(),
+            }
+        )
 
     def get(self, run_id: str, *, tenant_id: str) -> dict[str, Any] | None:
         with self._lock:

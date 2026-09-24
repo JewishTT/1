@@ -20,29 +20,29 @@
 - [x] T010 [P] Add idempotent event consumer and Temporal rebuild workflow bindings in `apps/projection/temporal_materialization/`.
 - [x] T011 [P] Add operational health, quarantine, retry/backpressure, and reconciliation services in `apps/projection/temporal_materialization/`.
 - [x] T012 [P] Add FastAPI current/history/features/health/audit/rebuild routes in `apps/control-plane/api/routes/`.
-- [ ] T013 [P] Add frontend timeline, point-in-time, source-cut, revision, and provenance view in `apps/webapp/src/`.
+- [x] T013 [P] Add frontend timeline, point-in-time, source-cut, revision, and provenance view in `apps/webapp/src/`.
 - [x] T014 [P] Add integration tests for publication atomicity, failure recovery, replay equality, and tenant isolation in `apps/shared/tests/contract/` and `apps/control-plane/tests/`.
 - [x] T015 Run `uv run pytest` for the affected shared/domain/control-plane/projection suites.
 
-## Phase 3: User Story 1 Р Р†Р вЂљРІР‚Сњ Timeline and point-in-time views (P1)
+## Phase 3: User Story 1 Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р В Р вЂ№Р В Р вЂ Р Р†Р вЂљРЎвЂєР РЋРЎвЂєР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В Р Р‹Р Р†РІР‚С›РЎС›Р В Р’В Р вЂ™Р’В Р В Р’В Р В РІР‚в„–Р В Р’В Р В Р вЂ№Р В Р Р‹Р Р†РІР‚С›РЎС› Timeline and point-in-time views (P1)
 
 - [x] T016 [US1] Implement timeline/current/point-in-time materialization queries backed by the publication head.
 - [x] T017 [US1] Implement explicit dormant windows, source-cut visibility, and last-valid-publication fallback.
 - [x] T018 [US1] Add user-story tests for complete timelines, gaps, point-in-time consistency, and deterministic rebuilds.
 
-## Phase 4: User Story 2 Р Р†Р вЂљРІР‚Сњ Late evidence and safe revisions (P1)
+## Phase 4: User Story 2 Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р В Р вЂ№Р В Р вЂ Р Р†Р вЂљРЎвЂєР РЋРЎвЂєР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В Р Р‹Р Р†РІР‚С›РЎС›Р В Р’В Р вЂ™Р’В Р В Р’В Р В РІР‚в„–Р В Р’В Р В Р вЂ№Р В Р Р‹Р Р†РІР‚С›РЎС› Late evidence and safe revisions (P1)
 
-- [ ] T019 [US2] Implement late-event revision dependency tracking and immutable window revision publication.
-- [ ] T020 [US2] Implement exact duplicate no-op, contradiction quarantine, interrupted rebuild resume, and audit decisions.
-- [ ] T021 [US2] Add user-story tests for late events, duplicate delivery, contradictions, and resume equality.
+- [x] T019 [US2] Implement late-event revision dependency tracking and immutable window revision publication.
+- [x] T020 [US2] Implement exact duplicate no-op, contradiction quarantine, interrupted rebuild resume, and audit decisions.
+- [x] T021 [US2] Add user-story tests for late events, duplicate delivery, contradictions, and resume equality.
 
-## Phase 5: User Story 3 Р Р†Р вЂљРІР‚Сњ Aligned feature series (P2)
+## Phase 5: User Story 3 Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р В Р вЂ№Р В Р вЂ Р Р†Р вЂљРЎвЂєР РЋРЎвЂєР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В Р Р‹Р Р†РІР‚С›РЎС›Р В Р’В Р вЂ™Р’В Р В Р’В Р В РІР‚в„–Р В Р’В Р В Р вЂ№Р В Р Р‹Р Р†РІР‚С›РЎС› Aligned feature series (P2)
 
 - [x] T022 [US3] Implement lifecycle/activity/relationship feature records aligned one-to-one with temporal windows.
 - [x] T023 [US3] Implement unavailable-vs-zero semantics, structural-only labels, and source-cut provenance.
 - [x] T024 [US3] Add user-story tests for feature alignment, insufficient data, and traceable structural values.
 
-## Phase 6: User Story 4 Р Р†Р вЂљРІР‚Сњ Operations and audit (P2)
+## Phase 6: User Story 4 Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р В Р вЂ№Р В Р вЂ Р Р†Р вЂљРЎвЂєР РЋРЎвЂєР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В Р Р‹Р Р†РІР‚С›РЎС›Р В Р’В Р вЂ™Р’В Р В Р’В Р В РІР‚в„–Р В Р’В Р В Р вЂ№Р В Р Р‹Р Р†РІР‚С›РЎС› Operations and audit (P2)
 
 - [x] T025 [US4] Implement health/current/rebuilding/degraded/quarantined status projections.
 - [x] T026 [US4] Implement tenant-safe audit access, bounded retries, backpressure, and run reconciliation controls.
@@ -50,6 +50,6 @@
 
 ## Phase 7: Polish and validation
 
-- [ ] T028 Run the feature quickstart validation in `specs/014-temporal-materialization/quickstart.md`.
-- [ ] T029 Run full affected Python tests and frontend typecheck/tests.
-- [ ] T030 Verify no raw evidence mutation, no timeless temporal relations, no unbounded retry/backlog behavior, and mark tasks complete only after validation.
+- [x] T028 Run the feature quickstart validation in `specs/014-temporal-materialization/quickstart.md`.
+- [x] T029 Run full affected Python tests and frontend typecheck/tests.
+- [x] T030 Verify no raw evidence mutation, no timeless temporal relations, no unbounded retry/backlog behavior, and mark tasks complete only after validation.

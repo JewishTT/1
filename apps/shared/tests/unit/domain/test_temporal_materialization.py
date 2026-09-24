@@ -51,6 +51,7 @@ def test_replay_is_deterministic_and_dedupes_exact_records() -> None:
         first.publication.source_cut.source_record_ids
         == second.publication.source_cut.source_record_ids
     )
+    assert first.publication.source_cut.source_record_ids != first.publication.source_cut.source_record_hashes
     assert len(first.publication.revisions) == 1
 
 

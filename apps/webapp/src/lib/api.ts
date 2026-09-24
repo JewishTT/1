@@ -92,7 +92,51 @@ export interface EntityView {
   map_points?: Array<{ lat: number; lon: number; label?: string }>;
 }
 
-// ── CC temporality (CC-TEMPORALITY v1) ──────────────────────────
+export interface TemporalWindowView {
+  window_start: string;
+  window_end: string;
+  lifecycle: string;
+  event_count: number;
+  first_seen: string | null;
+  last_seen: string | null;
+  source_record_ids: string[];
+  observation_refs: string[];
+}
+
+export interface TemporalHistoryView {
+  tenant_id: string;
+  entity_id: string;
+  publication: {
+    publication_id: string;
+    source_cut: { cut_id: string; coverage_start: string; coverage_end: string };
+    revisions: Array<{
+      revision_id: string;
+      revision_number: number;
+      window: TemporalWindowView;
+      window_fingerprint: string;
+      source_cut_id: string;
+    }>;
+    integrity_fingerprint: string;
+    projection_generation: number;
+  };
+  status?: string;
+  is_latest_valid?: boolean;
+}
+
+export interface TemporalFeatureView {
+  feature_name: string;
+  value: string | number | null;
+  available: boolean;
+  structural_only: boolean;
+  source_record_ids: string[];
+  feature_fingerprint: string;
+}
+
+export interface TemporalMaterializationHealth {
+  runs: Array<Record<string, unknown>>;
+  tenant_id: string;
+}
+
 
 /** One normalized Common Crawl capture observation (L1 extract output). */
 export interface CcTemporalityCapture {
@@ -313,6 +357,18 @@ export const api = {
   },
 
   /** Correlation edges for an entity (T020, FR-004) — no merge implied. */
+  getTemporalHistory(entityId: string): Promise<TemporalHistoryView> {
+    return request<TemporalHistoryView>(`/entities/${encodeURIComponent(entityId)}/temporal-history/current`);
+  },
+
+  getTemporalFeatures(entityId: string): Promise<{ features: TemporalFeatureView[]; source_cut: { cut_id: string } }> {
+    return request(`/entities/${encodeURIComponent(entityId)}/temporal-features`);
+  },
+
+  getTemporalHealth(): Promise<TemporalMaterializationHealth> {
+    return request<TemporalMaterializationHealth>("/temporal-materializations/health");
+  },
+
   getCorrelations(entityId: string): Promise<{ entity_id: string; correlations: Correlation[] }> {
     return request<{ entity_id: string; correlations: Correlation[] }>(
       `/entities/${encodeURIComponent(entityId)}/correlations`,

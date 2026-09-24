@@ -47,14 +47,13 @@ def test_create_entity_starts_materialization(
             "source_records": [record],
         },
     )
-    assert response.status_code == 200
+    assert response.status_code == 202
     body = response.json()
-    assert body["materialization"]["status"] == "STARTED"
+    assert body["materialization"]["status"] in {"QUEUED", "DEFERRED"}
     assert body["materialization"]["run_id"].startswith("run-")
     entity_id = body["entity"]["entity_id"]
     history = client.get(f"/api/v1/entities/{entity_id}/temporal-history")
-    assert history.status_code == 200
-    assert history.json()["publication"]["revisions"]
+    assert history.status_code == 404
 
 
 def test_current_and_features_endpoints(client: TestClient) -> None:
@@ -97,6 +96,8 @@ def test_health_and_run_status_are_tenant_scoped(client: TestClient) -> None:
     run_id = created.json()["run_id"]
     assert client.get(f"/api/v1/temporal-materializations/{run_id}").status_code == 200
     assert client.get("/api/v1/temporal-materializations/health").json()["runs"]
+    audit = client.get(f"/api/v1/temporal-materializations/{run_id}/audit")
+    assert audit.status_code == 200 and audit.json()["entries"]
     record = {
         "entity_id": "ENT-9002",
         "kind": "fact",

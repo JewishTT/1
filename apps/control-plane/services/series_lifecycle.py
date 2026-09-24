@@ -20,9 +20,10 @@ from __future__ import annotations
 
 import hashlib
 from collections import Counter
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Iterable, Mapping, Protocol
+from typing import Protocol
 
 from domain.temporal_metrics import temporal_metrics
 
@@ -166,22 +167,27 @@ def project_cc_series(
     Contract CC-TEMPORALITY v1: mapping keys are ``url``/``observed_at``/
     ``status``/``digest`` (what L1 ``normalize_captures`` emits). The projector
     is a pure function of its input — deterministic bucketing by ``observed_at``
-    (daily UTC buckets, honest counts — I-3), dedup by ``(digest, observed_at)``,
-    and temporal metrics (burstiness, events_per_day, ...) materialized through
-    the existing ``SeriesProjector`` (ReplacingMergeTree-ready, ClickHouse-ready).
-    """
-    seen: set[tuple[str, str]] = set()
+    (daily UTC buckets, honest counts — I-3), dedup by capture identity (record
+    id/locator when present, digest only as a legacy fallback), and temporal
+    metrics materialized through the existing ``SeriesProjector``.    """
+    seen: set[tuple[object, ...]] = set()
     events: list[tuple[datetime, str]] = []
     for obs in observations:
         ts = _parse_observed_at(obs.get("observed_at"))
         if ts is None:
             continue  # unparseable timestamp: skipped, not fabricated
-        digest = str(obs.get("digest") or "")
-        identity = (digest, ts.isoformat())
+        digest = str(obs.get("digest") or obs.get("content_digest") or "")
+        locator = str(obs.get("locator") or "")
+        capture_id = str(obs.get("capture_id") or obs.get("record_id") or "")
+        identity = (
+            (capture_id, locator, digest)
+            if (capture_id or locator)
+            else (digest, ts.isoformat())
+        )
         if identity in seen:
             continue
         seen.add(identity)
-        events.append((ts, digest))
+        events.append((ts, capture_id or locator or digest))
     events.sort(key=lambda e: (e[0], e[1]))
     if not events:
         return []  # empty stream ⇒ empty projection (I-3)
