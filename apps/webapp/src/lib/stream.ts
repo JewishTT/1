@@ -18,7 +18,14 @@ export interface StreamEvent {
 export const STREAM_URL = "/api/v1/stream";
 
 /** Event types the UI reacts to (mirrors the pipeline publish vocabulary). */
-const SUBSCRIBED_EVENTS = ["entity.updated", "science.invariant", "pipeline.advance"] as const;
+const SUBSCRIBED_EVENTS = [
+  "entity.updated",
+  "temporal.materialization.started",
+  "temporal.materialization.ready",
+  "temporal.materialization.failed",
+  "science.invariant",
+  "pipeline.advance",
+] as const;
 
 /**
  * Parses raw SSE text into the first described event. SSE blocks carry

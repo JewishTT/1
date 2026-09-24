@@ -38,23 +38,36 @@ export function EntityViewPage({ entity, graphElements = [] }: Props) {
   const timelineAt = entity.timeline.map((t) => t.observed_at ?? t.uri);
   const [temporalHistory, setTemporalHistory] = useState<TemporalHistoryView | null>(null);
   const [temporalFeatures, setTemporalFeatures] = useState<TemporalFeatureView[]>([]);
+  const [materializationStatus, setMaterializationStatus] = useState<string>("");
 
   useEffect(() => {
     let active = true;
-    void Promise.all([api.getTemporalHistory(entity.entity_id), api.getTemporalFeatures(entity.entity_id)])
-      .then(([history, featureData]) => {
+    const load = async () => {
+      try {
+        const status = await api.getEntityMaterializationStatus(entity.entity_id);
+        if (active) setMaterializationStatus(String(status.status ?? ""));
+      } catch {
+        if (active) setMaterializationStatus("");
+      }
+      try {
+        const [history, featureData] = await Promise.all([
+          api.getTemporalHistory(entity.entity_id),
+          api.getTemporalFeatures(entity.entity_id),
+        ]);
         if (active) {
           setTemporalHistory(history);
           setTemporalFeatures(featureData.features);
         }
-      })
-      .catch(() => {
+      } catch {
         if (active) {
           setTemporalHistory(null);
           setTemporalFeatures([]);
         }
-      });
-    return () => { active = false; };
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 2000);
+    return () => { active = false; window.clearInterval(timer); };
   }, [entity.entity_id]);
   return (
     <section data-testid="entity-view" data-entity-id={entity.entity_id}>
@@ -147,7 +160,7 @@ export function EntityViewPage({ entity, graphElements = [] }: Props) {
       ) : (
         <section className="panel" data-testid="temporal-materialization-empty">
           <h2>Temporal materialization</h2>
-          <p className="panel-note">No published temporal history for this entity yet.</p>
+          <p className="panel-note">Run: {materializationStatus || "pending"} ? polling for accepted Common Crawl captures.</p>
         </section>
       )}
 

@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
 type ModuleKey = "osint" | "economic" | "specops";
@@ -110,6 +110,7 @@ function Clock() {
 
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [module, setModule] = useState<ModuleKey>(() => resolveModule(location.pathname));
 
   useEffect(() => {
@@ -143,7 +144,10 @@ export function Layout() {
               className="module-tab"
               data-module-tab={m.key}
               data-active={module === m.key}
-              onClick={() => setModule(m.key)}
+              onClick={() => {
+                setModule(m.key);
+                navigate(m.key === "osint" ? "/intel" : m.key === "economic" ? "/economic" : "/ops");
+              }}
             >
               <span className="mt-dot" aria-hidden="true" />
               {m.short}

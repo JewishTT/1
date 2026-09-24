@@ -158,7 +158,7 @@ services:
       POSTGRES_SEEDS: postgres
     ports: ["7233:7233", "8088:8088"]
     healthcheck:
-      test: ["CMD", "tctl", "workflow", "list", "-n", "default"]
+      test: ["CMD", "tctl", "workflow", "list", "--pagesize", "1"]
       interval: 10s
       timeout: 5s
       retries: 30

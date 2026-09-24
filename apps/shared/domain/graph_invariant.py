@@ -97,10 +97,10 @@ class InvariantIdentity:
 
     ``entity_id`` and ``stream_anchor`` together are the canonical stream
     anchor: the anchor is the content address of the stream's GENESIS record
-    (``evt-<record_hash>`` when the record carries one) so appending further
-    events never moves the identity — re-versioning changes ``revision`` and
-    the provenance head, never this block (identity stability). ``type_label``
-    is the registered schema/class label (explicit, never guessed).
+    (``evt-<record_hash>`` when the record carries one). Genesis is the lowest
+    accepted stream sequence, not the earliest event time, so a late arrival
+    with an older timestamp cannot move identity. ``type_label`` is the
+    registered schema/class label (explicit, never guessed).
     """
 
     entity_id: str
@@ -406,10 +406,11 @@ class ProvenanceBlock:
     """Provenance of THIS projection write (I-12: every write carries it).
 
     Hermetic by design: no wall-clock ``built_at`` — determinism forbids it.
-    ``stream_head`` is the sha256 over the ordered source record hashes (the
-    chain tip; changes when events are appended); ``event_id`` follows the
-    ``evt-<record_hash>`` convention over the head, exactly like
-    ``entity.state.projected``. ``source_hashes`` are the folded record hashes.
+    ``stream_head`` is the sha256 over the source record hashes in canonical
+    stream order (the chain tip; changes when events are appended); ``event_id``
+    follows the ``evt-<record_hash>`` convention over the head, exactly like
+    ``entity.state.projected``. ``source_hashes`` preserve that order because
+    the sequence, not event time, defines provenance order for late arrivals.
     """
 
     tenant_id: str
@@ -423,7 +424,14 @@ class ProvenanceBlock:
     def __post_init__(self) -> None:
         if not self.tenant_id:
             raise ValueError("provenance requires tenant_id (I-12)")
-        object.__setattr__(self, "source_hashes", tuple(sorted(set(self.source_hashes))))
+        # ``source_hashes`` is already in canonical stream-sequence order.
+        # Deduplicate without changing that order; lexical sorting here would
+        # move a late-arriving hash ahead of earlier stream records.
+        object.__setattr__(
+            self,
+            "source_hashes",
+            tuple(dict.fromkeys(str(value) for value in self.source_hashes)),
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -758,10 +766,12 @@ def from_entity_stream(
     Contract (mirrors ``fold_events``): the input is any sequence of mappings
     or objects exposing ``ts``/``kind``/``sequence``/``record_hash``/
     ``observation_id``/``payload`` (e.g. ``domain.dynamics.StreamRecord``).
-    Entries are sorted by ``(ts, sequence, stream hash)``, exact duplicates are
-    idempotent-deduped (I-11), so  the same set of events in ANY order replays
-    to a byte-identical invariant. Timestamps must be tz-aware (I-12); the
-    stream must be non-empty and single-tenant/single-entity (I-12).
+    Entries are ordered by ``(sequence, ts, stream hash)``, so an accepted
+    stream prefix remains stable when a later sequence carries an older event
+    time. Exact duplicates are idempotent-deduped (I-11), so the same set of
+    events in ANY input order replays to a byte-identical invariant. Timestamps
+    must be tz-aware (I-12); temporal windows still use event time. The stream
+    must be non-empty and single-tenant/single-entity (I-12).
 
     Neighbor/community hints are read from record payloads where present
     (``payload["neighbors"]`` as ``{id: weight}`` or id list, ``payload[
@@ -792,7 +802,9 @@ def from_entity_stream(
     if not prepared:
         raise ValueError("from_entity_stream requires >= 1 stream entry (identity source, I-3)")
 
-    prepared.sort(key=lambda item: (item[1], item[2], item[0]))
+    # Stream order is the accepted append order. Event time remains independent:
+    # a late arrival sorts into its timestamp window without becoming genesis.
+    prepared.sort(key=lambda item: (item[2], item[1], item[0]))
 
     entity_ids = {str(_entry_field(entry, "entity_id") or "") for _, _, _, entry in prepared}
     entity_ids.discard("")

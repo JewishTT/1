@@ -64,6 +64,21 @@ class Catalog:
     def put_finding(self, record: FindingRecord) -> None:
         self._findings[record.finding_id] = record
 
+    def finding_ids(self) -> list[str]:
+        return sorted(self._findings)
+
+    def append_observation(self, entity_id: str, observation: dict) -> None:
+        """Attach a captured observation to an entity and immutable evidence map."""
+        record = self._entities.get(entity_id)
+        if record is None:
+            raise KeyError(entity_id)
+        observation_id = str(observation["observation_id"])
+        self._observations[observation_id] = dict(observation)
+        if observation_id not in record.observations:
+            record.observations.append(observation_id)
+        if observation_id not in record.evidence_ids:
+            record.evidence_ids.append(observation_id)
+
     def entity(self, entity_id: str) -> dict | None:
         record = self._entities.get(entity_id)
         if record is None:
@@ -165,5 +180,9 @@ class Catalog:
             "observation_id": obs.get("observation_id", observation_id),
             "uri": obs.get("uri", ""),
             "content_hash": obs.get("content_hash", ""),
+            "observed_at": obs.get("observed_at"),
+            "provenance": obs.get("provenance", {}),
+            "interpretation": obs.get("interpretation", {}),
+            "admission": obs.get("admission", {}),
             "immutable": True,  # I-1
         }

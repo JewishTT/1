@@ -10,6 +10,7 @@ correlations stay non-merging (a correlate may never become materialized).
 
 from __future__ import annotations
 
+import asyncio
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
@@ -23,7 +24,9 @@ from pydantic import BaseModel
 from api.auth import TenantContext, resolve_tenant
 from api.sse import hub
 from services.catalog import Catalog, EntityRecord
+from acquisition.entity_search import build_entity_search_surface
 from services.cc_temporality import run_cc_temporality
+from services.entity_pipeline import run_live_entity_pipeline
 from services.review import ReviewDecision, ReviewService, ReviewTargetType
 from services.temporal_materialization_dispatch import start_entity_materialization
 from services.temporal_materialization_service import temporal_materialization_service
@@ -72,6 +75,49 @@ _correlations = [
 
 _reviews = ReviewService()
 _materialization_operations = MaterializationOperations()
+# Process-local stream seam used by the fallback worker; production worker
+# replaces this with the SQL entity_stream repository.
+_entity_streams: dict[tuple[str, str], list[StreamRecord]] = {}
+_temporal_results: dict[tuple[str, str], dict] = {}
+
+
+async def _resolve_temporal_run(run_id: str, state: dict) -> dict:
+    """Reconcile the API operation view with the live Temporal execution."""
+    if state.get("status") in {"READY", "PUBLISHED"}:
+        return state
+    try:
+        from workflow.client import connect_temporal
+        client = await connect_temporal()
+        workflow_id = f"{state['entity_id']}/temporal-materialization/{run_id}"
+        result = await client.get_workflow_handle(workflow_id).result()
+        _temporal_results[(state["tenant_id"], state["entity_id"])] = result
+        from domain.dynamics import StreamRecord as _StreamRecord
+        persisted = [_StreamRecord.from_dict(item) for item in result.get("records", [])]
+        _entity_streams[(state["tenant_id"], state["entity_id"])] = persisted
+        for record in persisted:
+            if record.observation_id:
+                _catalog.append_observation(state["entity_id"], {
+                    "observation_id": record.observation_id,
+                    "uri": str(record.payload.get("url", "")),
+                    "content_hash": str(record.payload.get("digest", "")),
+                    "observed_at": record.payload.get("event_at", record.ts.isoformat()),
+                    "provenance": {"source": "common_crawl", "locator": record.payload.get("locator", ""), "record_id": record.record_id},
+                    "interpretation": {"title": "", "byte_length": 0},
+                    "admission": record.payload.get("admission", {}),
+                    "interpretation": record.payload.get("interpretation", {}),
+                })
+        state = _materialization_operations.mark(run_id, "PUBLISHED")
+        hub.publish("temporal.materialization.ready", {
+            "run_id": run_id,
+            "entity_id": state["entity_id"],
+            "status": "PUBLISHED",
+            "publication_id": result.get("publication", {}).get("publication_id", ""),
+        })
+    except Exception as exc:
+        message = str(exc)
+        if "workflow completed" not in message.lower() and "not found" not in message.lower():
+            return _materialization_operations.mark(run_id, "FAILED", reason=message)
+    return state
 
 
 def _next_entity_id() -> str:
@@ -121,6 +167,7 @@ async def create_entity(
         if record.entity_id != entity_id or record.tenant_id != ctx.tenant_id:
             raise HTTPException(status_code=422, detail="source record scope mismatch")
     label = body.label or next(iter(body.canonical_identity.values()), entity_id)
+    search_surface = build_entity_search_surface(entity_id, body.canonical_identity)
     _catalog.put_entity(
         EntityRecord(
             entity_id=entity_id,
@@ -134,11 +181,22 @@ async def create_entity(
                 }
             ],
             aliases=body.aliases or [label],
-            supporting_assertions=["ASR-NEW-1"],
-            evidence_ids=["OBS-1001"],
-            observations=["OBS-1001"],
+            supporting_assertions=[],
+            evidence_ids=[],
+            observations=[],
         )
     )
+    for item in body.source_records:
+        record = StreamRecord.from_dict(item)
+        _entity_streams.setdefault((ctx.tenant_id, entity_id), []).append(record)
+        if record.observation_id:
+            _catalog.append_observation(entity_id, {
+                "observation_id": record.observation_id,
+                "uri": str(record.payload.get("url", "")),
+                "content_hash": str(record.payload.get("digest", "")),
+                "observed_at": record.payload.get("event_at", record.ts.isoformat()),
+                "provenance": {"source": "entity.created.source_records", "record_id": record.record_id},
+            })
     hub.publish(
         "entity.created",
         {
@@ -163,6 +221,15 @@ async def create_entity(
         _materialization_operations.mark(launch.run_id, "DEFERRED", reason=launch.reason)
         effective_status = "DEFERRED"
         reason = launch.reason
+    # Local verification fallback: production uses Temporal; when its endpoint
+    # is absent, run the same capture/materialization chain in this process so
+    # API/UI can still demonstrate a complete vertical slice.
+    if effective_status == "DEFERRED" and not body.source_records:
+        asyncio.create_task(run_live_entity_pipeline(
+            tenant_id=ctx.tenant_id, entity_id=entity_id,
+            identity=body.canonical_identity, source_records=body.source_records,
+            catalog=_catalog, operations=_materialization_operations,
+        ))
     materialization = {
         "run_id": launch.run_id,
         "workflow_id": launch.workflow_id,
@@ -175,11 +242,46 @@ async def create_entity(
             "temporal.materialization.failed",
             {"entity_id": entity_id, **materialization, "reason": reason},
         )
-    view = {**_catalog.entity(entity_id), "tenant_id": ctx.tenant_id}
+    view = {**_catalog.entity(entity_id), "tenant_id": ctx.tenant_id, "search_surface": search_surface.as_dict()}
     return JSONResponse(
         status_code=202,
-        content={"entity": view, "event": "entity.created", "materialization": materialization},
+        content={"entity": view, "event": "entity.created", "search_surface": search_surface.as_dict(), "materialization": materialization},
     )
+
+
+@router.get("/{entity_id}/stream")
+async def entity_stream(
+    entity_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """Return the append-only accepted stream for an entity."""
+    if _catalog.entity(entity_id) is None:
+        raise HTTPException(status_code=404, detail="entity not found")
+    records = _entity_streams.get((ctx.tenant_id, entity_id), [])
+    return {"entity_id": entity_id, "tenant_id": ctx.tenant_id, "records": [r.to_dict() for r in records]}
+
+
+@router.get("/{entity_id}/invariant")
+async def entity_invariant(
+    entity_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    result = _temporal_results.get((ctx.tenant_id, entity_id))
+    if result is not None and result.get("invariant"):
+        return {"entity_id": entity_id, "tenant_id": ctx.tenant_id, "invariant": result["invariant"]}
+    raise HTTPException(status_code=404, detail="invariant not found")
+
+
+@router.get("/{entity_id}/materialization-status")
+async def entity_materialization_status(
+    entity_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """Return the latest run for an entity for UI polling."""
+    runs = [r for r in _materialization_operations.health(tenant_id=ctx.tenant_id) if r["entity_id"] == entity_id]
+    if not runs:
+        raise HTTPException(status_code=404, detail="materialization run not found")
+    return await _resolve_temporal_run(str(runs[-1]["run_id"]), runs[-1])
 
 
 @router.get("/{entity_id}/temporal-history")
@@ -188,9 +290,17 @@ async def temporal_history(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
 ) -> dict:
     history = temporal_materialization_service.current(tenant_id=ctx.tenant_id, entity_id=entity_id)
-    if history is None:
-        raise HTTPException(status_code=404, detail="temporal history not found")
-    return history.to_dict()
+    if history is not None:
+        return history.to_dict()
+    result = _temporal_results.get((ctx.tenant_id, entity_id))
+    if result is not None:
+        return {
+            "tenant_id": ctx.tenant_id,
+            "entity_id": entity_id,
+            "publication": result.get("publication", {}),
+            "status": "current",
+        }
+    raise HTTPException(status_code=404, detail="temporal history not found")
 
 
 @router.get("/{entity_id}/temporal-history/at")
@@ -251,7 +361,12 @@ async def temporal_history_current(
 ) -> dict:
     history = temporal_materialization_service.current(tenant_id=ctx.tenant_id, entity_id=entity_id)
     if history is None:
-        raise HTTPException(status_code=404, detail="temporal history not found")
+        result = _temporal_results.get((ctx.tenant_id, entity_id))
+        if result is None:
+            raise HTTPException(status_code=404, detail="temporal history not found")
+        payload = {"tenant_id": ctx.tenant_id, "entity_id": entity_id, "publication": result.get("publication", {}), "status": "current"}
+        payload["is_latest_valid"] = True
+        return payload
     payload = history.to_dict()
     payload["is_latest_valid"] = True
     payload["status"] = "current"
@@ -264,14 +379,24 @@ async def temporal_features(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
 ) -> dict:
     history = temporal_materialization_service.current(tenant_id=ctx.tenant_id, entity_id=entity_id)
-    if history is None:
+    if history is not None:
+        return {
+            "tenant_id": ctx.tenant_id,
+            "entity_id": entity_id,
+            "source_cut": history.publication.source_cut.to_dict(),
+            "projection_generation": history.publication.projection_generation,
+            "features": [feature.to_dict() for feature in history.publication.features],
+        }
+    result = _temporal_results.get((ctx.tenant_id, entity_id))
+    if result is None:
         raise HTTPException(status_code=404, detail="temporal history not found")
+    publication = result.get("publication", {})
     return {
         "tenant_id": ctx.tenant_id,
         "entity_id": entity_id,
-        "source_cut": history.publication.source_cut.to_dict(),
-        "projection_generation": history.publication.projection_generation,
-        "features": [feature.to_dict() for feature in history.publication.features],
+        "source_cut": publication.get("source_cut", {}),
+        "projection_generation": publication.get("projection_generation", 1),
+        "features": publication.get("features", []),
     }
 
 

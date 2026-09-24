@@ -1,34 +1,21 @@
-"""WARC/WET byte-range pull (FR-003, 011).
-
-The CC index gives byte-exact WARC addresses (`warc_filename@offset,length`).
-A single HTTP Range GET (or S3 range request) materializes exactly one WARC
-record — no corpus download. We parse the WARC header prefix and hand the
-payload (headers or plaintext WET text) to the deterministic extractor.
-
-Transport is injectable (FR-015 seam): tests use a fake that serves bytes for
-the exact range, so the whole pilot runs network-free (SC-002).
-"""
-
+"""WARC/WET byte-range pull (FR-003, 011)."""
 from __future__ import annotations
 
+import gzip
+import re
 from dataclasses import dataclass
 from typing import Protocol
 
+_CONTENT_RANGE_RE = re.compile(r"^bytes\s+(\d+)-(\d+)/(\d+)$", re.IGNORECASE)
+
 
 class ByteTransport(Protocol):
-    """Fetch one exact byte range from a WARC object."""
-
     async def fetch(self, filename: str, offset: int, length: int) -> bytes: ...
 
 
 @dataclass(frozen=True)
 class HttpByteTransport:
-    """Minimal Common Crawl HTTP range transport.
-
-    Common Crawl publishes WARC objects over HTTPS. The response is deliberately
-    bounded to the indexed byte range; callers never download the whole crawl.
-    """
-
+    """Bounded Common Crawl HTTP range transport."""
     base_url: str = "https://data.commoncrawl.org"
     timeout: float = 120.0
 
@@ -36,19 +23,22 @@ class HttpByteTransport:
         if offset < 0 or length <= 0:
             raise ValueError("offset must be non-negative and length must be positive")
         import httpx
-
         url = f"{self.base_url.rstrip('/')}/{filename.lstrip('/')}"
-        headers = {"Range": f"bytes={offset}-{offset + length - 1}"}
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
+        expected_end = offset + length - 1
+        async with httpx.AsyncClient(timeout=self.timeout, trust_env=False) as client:
+            response = await client.get(url, headers={"Range": f"bytes={offset}-{expected_end}"})
+            if response.status_code != 206:
+                raise ValueError(f"range request returned HTTP {response.status_code}; expected 206")
+            match = _CONTENT_RANGE_RE.match(response.headers.get("content-range", "").strip())
+            if not match or int(match.group(1)) != offset or int(match.group(2)) != expected_end:
+                raise ValueError(f"invalid Content-Range; expected bytes {offset}-{expected_end}")
+            if len(response.content) != length:
+                raise ValueError(f"range response length {len(response.content)} != requested {length}")
             return response.content
 
 
 @dataclass(frozen=True)
 class WarcPull:
-    """Result of one byte-range pull (FR-003)."""
-
     filename: str
     offset: int
     length: int
@@ -73,11 +63,6 @@ def _decode_header_field(value: bytes) -> str:
 
 
 def parse_warc_prefix(blob: bytes) -> tuple[dict[str, str], int]:
-    """Split a WARC/WET record into header dict + payload offset.
-
-    Handles both ``\\r\\n`` (strict WARC) and ``\\n`` (some WET producers)
-    line endings. Returns (headers, byte offset of payload start).
-    """
     for terminator in (_WARC_HEADER_END, _WARC_HEADER_END_SHORT):
         idx = blob.find(terminator)
         if idx >= 0:
@@ -86,7 +71,6 @@ def parse_warc_prefix(blob: bytes) -> tuple[dict[str, str], int]:
             break
     else:
         return {}, 0
-
     headers: dict[str, str] = {}
     lines = header_bytes.split(b"\r\n") if b"\r\n" in header_bytes else header_bytes.split(b"\n")
     for line in lines:
@@ -94,70 +78,44 @@ def parse_warc_prefix(blob: bytes) -> tuple[dict[str, str], int]:
         if not line or line.startswith(b"WARC/") or b":" not in line:
             continue
         key, _, value = line.partition(b":")
-        headers[_decode_header_field(key).strip().lower()] = _decode_header_field(
-            value
-        ).strip()
+        headers[_decode_header_field(key).strip().lower()] = _decode_header_field(value).strip()
     return headers, payload_offset
 
 
-def split_warc_records(blob: bytes) -> list[WarcPull]:
-    """Parse the raw record bytes into (header, payload) results.
+def _decompress_warc_members(blob: bytes) -> bytes:
+    if blob.startswith(b"\x1f\x8b"):
+        return gzip.decompress(blob)
+    return blob
 
-    A proper WARC stream may contain many records; the CC index aligns each
-    range to exactly one record, but we stay tolerant: scan until the byte
-    budget described by ``content-length`` is exhausted.
-    """
-    headers, payload_offset = parse_warc_prefix(blob)
+
+def split_warc_records(blob: bytes) -> list[WarcPull]:
+    decoded = _decompress_warc_members(blob)
+    headers, payload_offset = parse_warc_prefix(decoded)
     if not headers:
         return []
-    return [
-        WarcPull(
-            filename="",
-            offset=0,
-            length=len(blob),
-            record_type=headers.get("warc-type"),
-            content_type=headers.get("content-type"),
-            url=headers.get("warc-target-uri"),
-            warc_date=headers.get("warc-date"),
-            digest=headers.get("warc-block-digest"),
-            payload=blob[payload_offset:],
-            warc_record_id=headers.get("warc-record-id"),
-        )
-    ]
+    # The transport already bounds the compressed indexed range.  Do not
+    # reinterpret WARC Content-Length here: WET fixtures and HTTP payload
+    # framing may disagree, and truncating here drops the response body.
+    payload = decoded[payload_offset:]
+    return [WarcPull(
+        filename="", offset=0, length=len(blob), record_type=headers.get("warc-type"),
+        content_type=headers.get("content-type"), url=headers.get("warc-target-uri"),
+        warc_date=headers.get("warc-date"), digest=headers.get("warc-block-digest"),
+        payload=payload, warc_record_id=headers.get("warc-record-id"),
+    )]
 
 
-async def pull_warc_range(
-    transport: ByteTransport,
-    *,
-    filename: str,
-    offset: int,
-    length: int,
-) -> WarcPull:
-    """Fetch and parse one indexed WARC range without losing its locator."""
+async def pull_warc_range(transport: ByteTransport, *, filename: str, offset: int, length: int) -> WarcPull:
     blob = await transport.fetch(filename, offset, length)
     records = split_warc_records(blob)
     if not records:
         raise ValueError(f"range {filename}@{offset},{length} contains no WARC record")
     record = records[0]
     return WarcPull(
-        filename=filename,
-        offset=offset,
-        length=length,
-        record_type=record.record_type,
-        content_type=record.content_type,
-        url=record.url,
-        warc_date=record.warc_date,
-        digest=record.digest,
-        payload=record.payload,
-        warc_record_id=record.warc_record_id,
+        filename=filename, offset=offset, length=length, record_type=record.record_type,
+        content_type=record.content_type, url=record.url, warc_date=record.warc_date,
+        digest=record.digest, payload=record.payload, warc_record_id=record.warc_record_id,
     )
 
 
-__all__ = [
-    "ByteTransport",
-    "HttpByteTransport",
-    "WarcPull",
-    "parse_warc_prefix",
-    "pull_warc_range",
-    "split_warc_records",
-]
+__all__ = ["ByteTransport", "HttpByteTransport", "WarcPull", "parse_warc_prefix", "pull_warc_range", "split_warc_records"]

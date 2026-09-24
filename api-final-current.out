@@ -1,0 +1,15 @@
+INFO:     127.0.0.1:59686 - "GET /api/v1/entities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/entities/graph HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/connectors HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/connectors/recon-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/dlq HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/metrics/pools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/science/claims HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/science/robustness HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/science/hypotheses HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/science/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/investigations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59686 - "GET /api/v1/findings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50423 - "GET /health HTTP/1.1" 200 OK

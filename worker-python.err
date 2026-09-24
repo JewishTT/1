@@ -1,0 +1,138 @@
+Completing activity as failed ({'activity_id': '1', 'activity_type': 'temporal_materialization.reconcile_and_publish', 'attempt': 1, 'namespace': 'default', 'task_queue': 'cognitive-temporal-materialization', 'workflow_id': 'ENT-9001/temporal-materialization/run-5a4d72f55771d90e25dda82e', 'workflow_run_id': '3adb21ab-ba1d-45d7-a0e6-6809545424d0', 'workflow_type': 'TemporalEntityMaterializationWorkflow'})
+Traceback (most recent call last):
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 351, in _handle_start_activity_task
+    result = await self._execute_activity(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 681, in _execute_activity
+    return await impl.execute_activity(input)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 889, in execute_activity
+    return await input.fn(*input.args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\workflows\temporal_materialization.py", line 42, in reconcile_and_publish
+    hits = await client.discover(plan.url_query, crawl=crawl, page=0, matchType=plan.match_type, filter="status:200", limit=1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 75, in discover
+    text = await self._get(index_url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 60, in _get
+    response.raise_for_status()
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '404 Not Found' for url 'https://index.commoncrawl.org/CC-MAIN-2025-30-index?url=Temporal&output=json&page=0&matchType=prefix&filter=status%3A200&limit=1'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+Completing activity as failed ({'activity_id': '1', 'activity_type': 'temporal_materialization.reconcile_and_publish', 'attempt': 2, 'namespace': 'default', 'task_queue': 'cognitive-temporal-materialization', 'workflow_id': 'ENT-9001/temporal-materialization/run-5a4d72f55771d90e25dda82e', 'workflow_run_id': '3adb21ab-ba1d-45d7-a0e6-6809545424d0', 'workflow_type': 'TemporalEntityMaterializationWorkflow'})
+Traceback (most recent call last):
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 351, in _handle_start_activity_task
+    result = await self._execute_activity(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 681, in _execute_activity
+    return await impl.execute_activity(input)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 889, in execute_activity
+    return await input.fn(*input.args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\workflows\temporal_materialization.py", line 42, in reconcile_and_publish
+    hits = await client.discover(plan.url_query, crawl=crawl, page=0, matchType=plan.match_type, filter="status:200", limit=1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 75, in discover
+    text = await self._get(index_url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 60, in _get
+    response.raise_for_status()
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '404 Not Found' for url 'https://index.commoncrawl.org/CC-MAIN-2025-30-index?url=Temporal&output=json&page=0&matchType=prefix&filter=status%3A200&limit=1'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+Completing activity as failed ({'activity_id': '1', 'activity_type': 'temporal_materialization.reconcile_and_publish', 'attempt': 3, 'namespace': 'default', 'task_queue': 'cognitive-temporal-materialization', 'workflow_id': 'ENT-9001/temporal-materialization/run-5a4d72f55771d90e25dda82e', 'workflow_run_id': '3adb21ab-ba1d-45d7-a0e6-6809545424d0', 'workflow_type': 'TemporalEntityMaterializationWorkflow'})
+Traceback (most recent call last):
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 351, in _handle_start_activity_task
+    result = await self._execute_activity(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 681, in _execute_activity
+    return await impl.execute_activity(input)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 889, in execute_activity
+    return await input.fn(*input.args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\workflows\temporal_materialization.py", line 42, in reconcile_and_publish
+    hits = await client.discover(plan.url_query, crawl=crawl, page=0, matchType=plan.match_type, filter="status:200", limit=1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 75, in discover
+    text = await self._get(index_url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 60, in _get
+    response.raise_for_status()
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://index.commoncrawl.org/CC-MAIN-2025-30-index?url=Temporal&output=json&page=0&matchType=prefix&filter=status%3A200&limit=1'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+Completing activity as failed ({'activity_id': '1', 'activity_type': 'temporal_materialization.reconcile_and_publish', 'attempt': 1, 'namespace': 'default', 'task_queue': 'cognitive-temporal-materialization', 'workflow_id': 'ENT-9001/temporal-materialization/run-5a4d72f55771d90e25dda82e', 'workflow_run_id': '6db47b20-fd9b-4257-81dd-e7e8a92b0da1', 'workflow_type': 'TemporalEntityMaterializationWorkflow'})
+Traceback (most recent call last):
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 351, in _handle_start_activity_task
+    result = await self._execute_activity(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 681, in _execute_activity
+    return await impl.execute_activity(input)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 889, in execute_activity
+    return await input.fn(*input.args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\workflows\temporal_materialization.py", line 42, in reconcile_and_publish
+    hits = await client.discover(plan.url_query, crawl=crawl, page=0, matchType=plan.match_type, filter="status:200", limit=1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 75, in discover
+    text = await self._get(index_url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 60, in _get
+    response.raise_for_status()
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '404 Not Found' for url 'https://index.commoncrawl.org/CC-MAIN-2025-30-index?url=Temporal&output=json&page=0&matchType=prefix&filter=status%3A200&limit=1'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+Completing activity as failed ({'activity_id': '1', 'activity_type': 'temporal_materialization.reconcile_and_publish', 'attempt': 2, 'namespace': 'default', 'task_queue': 'cognitive-temporal-materialization', 'workflow_id': 'ENT-9001/temporal-materialization/run-5a4d72f55771d90e25dda82e', 'workflow_run_id': '6db47b20-fd9b-4257-81dd-e7e8a92b0da1', 'workflow_type': 'TemporalEntityMaterializationWorkflow'})
+Traceback (most recent call last):
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 351, in _handle_start_activity_task
+    result = await self._execute_activity(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 681, in _execute_activity
+    return await impl.execute_activity(input)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 889, in execute_activity
+    return await input.fn(*input.args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\workflows\temporal_materialization.py", line 42, in reconcile_and_publish
+    hits = await client.discover(plan.url_query, crawl=crawl, page=0, matchType=plan.match_type, filter="status:200", limit=1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 75, in discover
+    text = await self._get(index_url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 60, in _get
+    response.raise_for_status()
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Server error '504 Gateway Time-out' for url 'https://index.commoncrawl.org/CC-MAIN-2025-30-index?url=Temporal&output=json&page=0&matchType=prefix&filter=status%3A200&limit=1'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+Completing activity as failed ({'activity_id': '1', 'activity_type': 'temporal_materialization.reconcile_and_publish', 'attempt': 3, 'namespace': 'default', 'task_queue': 'cognitive-temporal-materialization', 'workflow_id': 'ENT-9001/temporal-materialization/run-5a4d72f55771d90e25dda82e', 'workflow_run_id': '6db47b20-fd9b-4257-81dd-e7e8a92b0da1', 'workflow_type': 'TemporalEntityMaterializationWorkflow'})
+Traceback (most recent call last):
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 351, in _handle_start_activity_task
+    result = await self._execute_activity(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 681, in _execute_activity
+    return await impl.execute_activity(input)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\temporalio\worker\_activity.py", line 889, in execute_activity
+    return await input.fn(*input.args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\workflows\temporal_materialization.py", line 42, in reconcile_and_publish
+    hits = await client.discover(plan.url_query, crawl=crawl, page=0, matchType=plan.match_type, filter="status:200", limit=1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 75, in discover
+    text = await self._get(index_url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\network\commoncrawl.py", line 60, in _get
+    response.raise_for_status()
+  File "C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '404 Not Found' for url 'https://index.commoncrawl.org/CC-MAIN-2025-30-index?url=Temporal&output=json&page=0&matchType=prefix&filter=status%3A200&limit=1'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404

@@ -59,7 +59,13 @@ export function InvestigationContainer() {
         setPauseRequested(inv.state === "PAUSED");
         setError(null);
       })
-      .catch((err: Error) => setError(err.message))
+      .catch((err: Error) => {
+        if (id === "0") {
+          setError("No investigation is selected. Create one from the Investigations screen first.");
+        } else {
+          setError(err.message);
+        }
+      })
       .finally(() => setLoading(false));
   }, [id]);
 

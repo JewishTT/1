@@ -167,7 +167,7 @@ export function IntelligenceContainer() {
       if (!label) return;
       try {
         const res = await api.createEntity({
-          canonical_identity: { account: label },
+          canonical_identity: { domain: label },
           aliases: [label],
           label,
         });

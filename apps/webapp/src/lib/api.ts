@@ -369,6 +369,18 @@ export const api = {
     return request<TemporalMaterializationHealth>("/temporal-materializations/health");
   },
 
+  getEntityInvariant(entityId: string): Promise<{ entity_id: string; invariant: Record<string, unknown> }> {
+    return request(`/entities/${encodeURIComponent(entityId)}/invariant`);
+  },
+
+  getEntityStream(entityId: string): Promise<{ entity_id: string; records: Array<Record<string, unknown>> }> {
+    return request(`/entities/${encodeURIComponent(entityId)}/stream`);
+  },
+
+  getEntityMaterializationStatus(entityId: string): Promise<Record<string, unknown>> {
+    return request(`/entities/${encodeURIComponent(entityId)}/materialization-status`);
+  },
+
   getCorrelations(entityId: string): Promise<{ entity_id: string; correlations: Correlation[] }> {
     return request<{ entity_id: string; correlations: Correlation[] }>(
       `/entities/${encodeURIComponent(entityId)}/correlations`,
@@ -471,6 +483,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ pair_key: pairKey, decision, reasoning }),
     });
+  },
+
+  listFindings(): Promise<{ findings: Array<FindingView & { tenant_id: string }> }> {
+    return request<{ findings: Array<FindingView & { tenant_id: string }> }>("/findings");
   },
 
   /** Finding detail (T053, US2). */

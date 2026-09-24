@@ -36,6 +36,11 @@ _catalog.put_finding(
 )
 
 
+@router.get("")
+async def list_findings(ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None) -> dict:
+    return {"findings": [_catalog.finding(fid) | {"tenant_id": ctx.tenant_id} for fid in _catalog.finding_ids() if _catalog.finding(fid) is not None]}
+
+
 @router.get("/{finding_id}")
 async def get_finding(
     finding_id: str,

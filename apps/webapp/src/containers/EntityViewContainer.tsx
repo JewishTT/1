@@ -42,9 +42,9 @@ export function EntityViewContainer() {
   // Live reactivity: a review recorded (or any pipeline mutation of this
   // entity) refreshes the detail + graph without a manual reload.
   usePipelineStream((event) => {
-    if (event.event === "entity.updated") {
-      const payload = event.data as { entity_id?: string } | null;
-      if (id && payload?.entity_id === id) void refresh(id);
+    const payload = event.data as { entity_id?: string } | null;
+    if (id && payload?.entity_id === id && event.event !== "temporal.materialization.started") {
+      void refresh(id);
     }
   });
 

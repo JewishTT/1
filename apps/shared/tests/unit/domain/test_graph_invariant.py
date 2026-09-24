@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from dataclasses import FrozenInstanceError
@@ -132,6 +133,40 @@ def test_identity_stable_across_reversioning() -> None:
     # the projection version changed (more events), the identity did not
     assert early.integrity_digest != grown.integrity_digest
     assert early.provenance.stream_head != grown.provenance.stream_head
+
+
+def test_late_arrival_with_older_event_time_keeps_stream_anchor() -> None:
+    initial = [_entry(1), _entry(2)]
+    late = _entry(0, ts=T0 - timedelta(minutes=30), record_hash="rh-0000-late")
+    late["sequence"] = 4
+
+    early = from_entity_stream(initial, tenant_id="tenant-a")
+    grown = from_entity_stream(initial + [late], tenant_id="tenant-a")
+    reordered = from_entity_stream(list(reversed(initial + [late])), tenant_id="tenant-a")
+
+    assert early.identity.stream_anchor == "evt-rh-0001"
+    assert grown.identity.stream_anchor == early.identity.stream_anchor
+    assert reordered.identity.stream_anchor == early.identity.stream_anchor
+    assert grown.integrity_digest == reordered.integrity_digest
+
+
+def test_late_arrival_appends_to_stream_ordered_provenance() -> None:
+    initial = [_entry(1), _entry(2)]
+    late = _entry(0, ts=T0 - timedelta(minutes=30), record_hash="rh-0000-late")
+    late["sequence"] = 4
+    entries = initial + [late]
+
+    early = from_entity_stream(initial, tenant_id="tenant-a")
+    grown = from_entity_stream(entries, tenant_id="tenant-a")
+    reordered = from_entity_stream(list(reversed(entries)), tenant_id="tenant-a")
+    expected_order = ("rh-0001", "rh-0002", "rh-0000-late")
+    expected_head = hashlib.sha256("\n".join(expected_order).encode()).hexdigest()
+
+    assert early.provenance.source_hashes == expected_order[:2]
+    assert grown.provenance.source_hashes == expected_order
+    assert grown.provenance.source_hashes == reordered.provenance.source_hashes
+    assert grown.provenance.stream_head == expected_head
+    assert grown.provenance.event_id == f"evt-{expected_head}"
 
 
 def test_revision_bump_changes_digest_not_identity() -> None:
