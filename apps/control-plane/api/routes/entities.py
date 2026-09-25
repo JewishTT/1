@@ -15,7 +15,9 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
+from acquisition.entity_search import build_entity_search_surface
 from domain.dynamics import StreamRecord
+from domain.temporal_worldline import build_worldline
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from projection.temporal_materialization.operations import MaterializationOperations
@@ -24,7 +26,6 @@ from pydantic import BaseModel
 from api.auth import TenantContext, resolve_tenant
 from api.sse import hub
 from services.catalog import Catalog, EntityRecord
-from acquisition.entity_search import build_entity_search_surface
 from services.cc_temporality import run_cc_temporality
 from services.entity_pipeline import run_live_entity_pipeline
 from services.review import ReviewDecision, ReviewService, ReviewTargetType
@@ -102,8 +103,6 @@ async def _resolve_temporal_run(run_id: str, state: dict) -> dict:
                     "content_hash": str(record.payload.get("digest", "")),
                     "observed_at": record.payload.get("event_at", record.ts.isoformat()),
                     "provenance": {"source": "common_crawl", "locator": record.payload.get("locator", ""), "record_id": record.record_id},
-                    "interpretation": {"title": "", "byte_length": 0},
-                    "admission": record.payload.get("admission", {}),
                     "interpretation": record.payload.get("interpretation", {}),
                 })
         state = _materialization_operations.mark(run_id, "PUBLISHED")
@@ -113,7 +112,7 @@ async def _resolve_temporal_run(run_id: str, state: dict) -> dict:
             "status": "PUBLISHED",
             "publication_id": result.get("publication", {}).get("publication_id", ""),
         })
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - Temporal transport errors are normalized into run state
         message = str(exc)
         if "workflow completed" not in message.lower() and "not found" not in message.lower():
             return _materialization_operations.mark(run_id, "FAILED", reason=message)
@@ -247,6 +246,45 @@ async def create_entity(
         status_code=202,
         content={"entity": view, "event": "entity.created", "search_surface": search_surface.as_dict(), "materialization": materialization},
     )
+
+
+@router.get("/{entity_id}/worldline")
+async def entity_worldline(
+    entity_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """Return the evidence-backed temporal worldline rebuilt from the stream."""
+    if _catalog.entity(entity_id) is None:
+        raise HTTPException(status_code=404, detail="entity not found")
+    records = _entity_streams.get((ctx.tenant_id, entity_id), [])
+    if not records:
+        result = _temporal_results.get((ctx.tenant_id, entity_id), {})
+        records = [StreamRecord.from_dict(item) for item in result.get("records", [])]
+    if not records:
+        raise HTTPException(status_code=404, detail="worldline not found")
+    worldline = build_worldline(records, tenant_id=ctx.tenant_id, entity_id=entity_id, require_evidence=False)
+    return worldline.to_dict()
+
+
+@router.get("/{entity_id}/admission")
+async def entity_admission(
+    entity_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+) -> dict:
+    """Return admission decisions and relation claims for accepted captures."""
+    if _catalog.entity(entity_id) is None:
+        raise HTTPException(status_code=404, detail="entity not found")
+    records = _entity_streams.get((ctx.tenant_id, entity_id), [])
+    result = _temporal_results.get((ctx.tenant_id, entity_id), {})
+    if not records:
+        records = [StreamRecord.from_dict(item) for item in result.get("records", [])]
+    decisions: list[dict] = []
+    relations: list[dict] = []
+    for record in records:
+        payload = record.payload or {}
+        decisions.extend(payload.get("interpretation", {}).get("admission", {}).get("decisions", []))
+        relations.extend(payload.get("interpretation", {}).get("relations", []))
+    return {"entity_id": entity_id, "tenant_id": ctx.tenant_id, "decisions": decisions, "relations": relations, "counts": {"decisions": len(decisions), "relations": len(relations)}}
 
 
 @router.get("/{entity_id}/stream")

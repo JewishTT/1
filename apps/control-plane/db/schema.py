@@ -577,6 +577,7 @@ class TemporalWindowRevision(Base):
     entity_id: Mapped[str] = mapped_column(String(64), index=True)
     source_cut_id: Mapped[str] = mapped_column(String(96), index=True)
     revision_number: Mapped[int] = mapped_column(Integer)
+    projection_generation: Mapped[int] = mapped_column(Integer, default=1)
     window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     lifecycle_state: Mapped[str] = mapped_column(String(24))
@@ -589,6 +590,7 @@ class TemporalWindowRevision(Base):
             "entity_id",
             "window_start",
             "revision_number",
+            "projection_generation",
             unique=True,
         ),
     )
@@ -616,6 +618,20 @@ class TemporalHistoryPublication(Base):
             "projection_generation",
             unique=True,
         ),
+    )
+
+
+class TemporalHistoryHead(Base):
+    """One serialized generation head per tenant/entity."""
+
+    __tablename__ = "temporal_history_heads"
+
+    tenant_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    entity_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    projection_generation: Mapped[int] = mapped_column(Integer, default=0)
+    publication_id: Mapped[str | None] = mapped_column(String(96))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
@@ -874,4 +890,63 @@ class EntityStreamRow(Base):
         Index("ix_entity_stream_tenant", "tenant_id"),
         Index("ix_entity_stream_entity", "entity_id"),
         Index("ix_entity_stream_hash", "record_hash"),
+    )
+
+
+class MaterializationOutbox(Base):
+    """Durable hand-off between entity creation and Temporal launch."""
+
+    __tablename__ = "materialization_outbox"
+
+    outbox_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    entity_id: Mapped[str] = mapped_column(String(64))
+    run_id: Mapped[str] = mapped_column(String(96))
+    workflow_id: Mapped[str] = mapped_column(String(128))
+    identity: Mapped[dict] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(String(24), default="PENDING")
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("uq_materialization_outbox_run", "tenant_id", "run_id", unique=True),
+        Index("ix_materialization_outbox_ready", "status", "available_at"),
+        Index("ix_materialization_outbox_entity", "tenant_id", "entity_id"),
+    )
+
+
+class MaterializationCursor(Base):
+    """Durable checkpoint for a bounded Common Crawl materialization run.
+
+    The cursor is a per-(tenant, entity, run, partition, page) work item.  It is
+    intentionally append-friendly at the repository boundary: a completed page
+    may be retried safely, while the cursor lets a later Temporal attempt resume
+    after the last durable page instead of restarting the whole crawl scan.
+    """
+
+    __tablename__ = "materialization_cursors"
+
+    cursor_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    entity_id: Mapped[str] = mapped_column(String(64))
+    run_id: Mapped[str] = mapped_column(String(96))
+    crawl: Mapped[str] = mapped_column(String(64))
+    page: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(24), default="PENDING")
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    result_payload: Mapped[dict | None] = mapped_column(JSONB)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_materialization_cursor_scope", "tenant_id", "entity_id", "run_id"),
+        Index("uq_materialization_cursor_page", "tenant_id", "entity_id", "run_id", "crawl", "page", unique=True),
     )

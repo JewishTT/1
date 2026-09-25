@@ -1,11 +1,26 @@
 """Risk-sensitive calibrated admission (T086, FR-013/FR-014).
 
-Categorical hard-reject rules are applied FIRST by the admission engine (see
-`admission.py`): invalid identifier → REJECT; explicit strong contradiction →
-QUARANTINE/REJECT; insufficient evidence → DEFER; strong corroboration →
-ACCEPT. CalibrationProfile is keyed by (entity_type, language, script) with
-per-type thresholds. Uncertified bootstrap: UNCALIBRATED v1 (later calibrated
-per T085). Consumes T081-T084, T087.
+The admission lane applies a single ordered ladder of rules, first match wins
+(see `admission.py`):
+
+  1. invalid identifier                      → REJECT
+  2. explicit strong contradiction           → QUARANTINE
+  3. corroboration below the defer floor     → DEFER
+  4. independence below the profile floor    → DEFER
+  5. resolution match to an admitted entity  → ACCEPT_EXISTING
+  6. strong corroboration / sound structure  → ACCEPT_NEW
+  7. nothing decisive                        → DEFER
+
+Ordering is the whole policy, so it is written out explicitly here rather than
+implied by the order of a list comprehension. Hard rejects come first because a
+malformed or contradicted record must never be merged into an existing entity,
+however well it matches. The existing-entity check sits *below* the evidence
+floors on purpose: a duplicate sighting of a weakly evidenced candidate still
+defers, because merging propagates that weakness into the entity it merges into.
+
+CalibrationProfile is keyed by (entity_type, language, script) with per-type
+thresholds. Uncertified bootstrap: UNCALIBRATED v1 (later calibrated per T085).
+Consumes T081-T084, T087.
 """
 
 from __future__ import annotations
@@ -23,6 +38,11 @@ class CalibrationProfile:
     require_independence: bool = False
     min_independent_support: float = 0.4
     version: str = "UNCALIBRATED-v1"
+    # A candidate that resolution matched to an already-admitted entity is not a
+    # new entity: it is a second sighting of one. Above this match score the
+    # admission lane merges it into the existing entity (ACCEPT_EXISTING)
+    # instead of minting a duplicate (ACCEPT_NEW).
+    threshold_match: float = 0.8
 
 
 @dataclass
@@ -37,6 +57,16 @@ class AdmissionInput:
     has_valid_identifier: bool = True
     strong_contradiction: bool = False
     evidence_counts: dict[str, int] = field(default_factory=dict)
+    # Set by the resolution lane when this candidate was matched to an entity
+    # that is already admitted. ``match_confirmed`` distinguishes a reviewed
+    # merge from an automatic one that only cleared the score bar.
+    matched_entity_id: str | None = None
+    match_score: float = 0.0
+    match_confirmed: bool = False
+
+    @property
+    def has_existing_match(self) -> bool:
+        return bool(self.matched_entity_id)
 
 
 class MediaProfile:

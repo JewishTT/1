@@ -8,10 +8,13 @@ import re
 from datetime import datetime
 from typing import Any
 
-from acquisition.entity_search import build_entity_search_surface
+from acquisition.cc_plan import build_cc_plan
 from domain.dynamics import StreamRecord
+from domain.temporal_worldline import build_worldline
 from network.commoncrawl import CommonCrawlClient
 from network.range_pull import HttpByteTransport, pull_warc_range
+
+from services.capture_interpretation import interpret_warc_capture
 from services.catalog import Catalog
 from services.temporal_materialization_service import temporal_materialization_service
 
@@ -45,7 +48,14 @@ async def run_live_entity_pipeline(*, tenant_id: str, entity_id: str, identity: 
             crawl = os.getenv("CC_CRAWL", "CC-MAIN-2025-30")
             client = CommonCrawlClient(timeout=90.0)
             try:
-                hits = await client.discover(plan.url_query, crawl=crawl, page=0, matchType=plan.match_type, filter="status:200", limit=1)
+                hits = await client.discover_partitions(
+                    plan.url_query,
+                    crawls=None if os.getenv("CC_HISTORICAL_PARTITIONS", "0") == "1" else [crawl],
+                    max_crawls=max(1, int(os.getenv("CC_MAX_CRAWLS", "3"))),
+                    max_pages=max(1, int(os.getenv("CC_MAX_PAGES", "3"))),
+                    matchType=plan.match_type, filter="status:200",
+                    limit=max(1, int(os.getenv("CC_PAGE_LIMIT", "50"))),
+                )
             except Exception:
                 if plan.match_type != "domain" or plan.url_query.startswith(("http://", "https://")):
                     raise
@@ -54,18 +64,22 @@ async def run_live_entity_pipeline(*, tenant_id: str, entity_id: str, identity: 
                 raise ValueError("Common Crawl index returned no captures")
             transport = HttpByteTransport(timeout=90.0)
             records = []
-            for sequence, hit in enumerate(hits[:20], 1):
+            for sequence, hit in enumerate(hits[:max(1, int(os.getenv("CC_MAX_CAPTURES", "100")))], 1):
                 locator = str(hit["uri"]).removeprefix("s3://data.commoncrawl.org/")
                 filename, _, query_text = locator.partition("?")
                 query = dict(part.split("=", 1) for part in query_text.split("&") if "=" in part)
                 offset, length = int(query["offset"]), int(query["length"])
                 warc = await pull_warc_range(transport, filename=filename, offset=offset, length=length)
-                body = warc.payload.split(b"\r\n\r\n", 1)[-1]
                 observed_at = _iso_cc(str(hit.get("timestamp", "")))
                 observation_id = "OBS-CC-" + hashlib.sha256(f"{entity_id}:{filename}:{offset}:{length}".encode()).hexdigest()[:20]
-                result = _interpret_and_admit(str(hit["url"]), body, observation_id)
-                catalog.append_observation(entity_id, {"observation_id": observation_id, "uri": str(hit["url"]), "content_hash": result["content_hash"], "observed_at": observed_at, "provenance": {"source": "common_crawl", "crawl": crawl, "warc_filename": filename, "offset": offset, "length": length, "warc_record_id": warc.warc_record_id}, "interpretation": result["interpretation"], "admission": result["admission"]})
-                records.append(StreamRecord(entity_id=entity_id, tenant_id=tenant_id, kind="cc.capture", ts=datetime.fromisoformat(observed_at), payload={"event_at": observed_at, "url": str(hit["url"]), "observation_id": observation_id, "source": "common_crawl", "locator": f"{filename}@{offset},{length}", "admission": result["admission"]}, observation_id=observation_id, sequence=sequence))
+                result = interpret_warc_capture(
+                    entity_id=entity_id, tenant_id=tenant_id, warc=warc,
+                    url=str(hit["url"]), observed_at=observed_at,
+                    observation_id=observation_id, crawl=str(hit.get("crawl", crawl)),
+                    page=int(hit.get("page", 0)), locator=f"{filename}@{offset},{length}",
+                )
+                catalog.append_observation(entity_id, {"observation_id": observation_id, "uri": str(hit["url"]), "content_hash": result["content_sha256"], "observed_at": observed_at, "provenance": {"source": "common_crawl", "crawl": result["crawl"], "page": result["page"], "warc_filename": filename, "offset": offset, "length": length, "warc_record_id": warc.warc_record_id}, "interpretation": result["interpretation"], "admission": result["admission"]})
+                records.append(StreamRecord(entity_id=entity_id, tenant_id=tenant_id, kind="cc.capture", ts=datetime.fromisoformat(observed_at), payload=result, observation_id=observation_id, sequence=sequence))
         if not records:
             raise ValueError("pipeline produced no accepted records")
         # Keep the accepted stream available to the API/UI projection.  The
@@ -73,11 +87,14 @@ async def run_live_entity_pipeline(*, tenant_id: str, entity_id: str, identity: 
         from api.routes.entities import _entity_streams
         _entity_streams[(tenant_id, entity_id)] = list(records)
         result = temporal_materialization_service.materialize(records, tenant_id=tenant_id, entity_id=entity_id)
+        worldline = build_worldline(records, tenant_id=tenant_id, entity_id=entity_id, require_evidence=False)
+        from api.routes import entities as entities_route
+        entities_route._temporal_results[(tenant_id, entity_id)] = {"worldline": worldline.to_dict(), "records": [record.to_dict() for record in records], "publication": result.history.publication.to_dict(), "invariant": {}}
         operations.mark(run_id, "READY")
         operations.mark(run_id, "PUBLISHED")
         from api.sse import hub
         hub.publish("temporal.materialization.ready", {"run_id": run_id, "entity_id": entity_id, "status": "PUBLISHED", "publication_id": result.history.publication.publication_id})
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - normalize local fallback failure to run state
         operations.mark(run_id, "FAILED", reason=str(exc))
         from api.sse import hub
         hub.publish("temporal.materialization.failed", {"run_id": run_id, "entity_id": entity_id, "status": "FAILED", "reason": str(exc)})

@@ -26,8 +26,14 @@ async def run_worker() -> None:
     await worker.run()
 
 
+async def run_worker_with_relay() -> None:
+    """Run Temporal activities and the durable outbox relay concurrently."""
+    from services.materialization_outbox_relay import run_outbox_relay_forever
+    await asyncio.gather(run_worker(), run_outbox_relay_forever())
+
+
 if __name__ == "__main__":
-    asyncio.run(run_worker())
+    asyncio.run(run_worker_with_relay())
 
 
-__all__ = ["run_worker"]
+__all__ = ["run_worker", "run_worker_with_relay"]

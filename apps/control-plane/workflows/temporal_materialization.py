@@ -25,11 +25,13 @@ class MaterializationWorkflowInput:
 async def reconcile_and_publish(tenant_id: str, entity_id: str, source_record_ids: list[str], run_id: str, entity_identity: dict[str, str]) -> dict[str, Any]:
     import asyncio
     import os
+
     from acquisition.entity_search import build_entity_search_surface
     from domain.dynamics import StreamRecord
     from domain.temporal_materialization import materialize_history
     from network.commoncrawl import CommonCrawlClient
     from network.range_pull import HttpByteTransport, pull_warc_range
+
     from services.cc_temporality import run_cc_temporality
 
     records: list[StreamRecord] = []
@@ -39,6 +41,11 @@ async def reconcile_and_publish(tenant_id: str, entity_id: str, source_record_id
     plan = surface.cc_plan
     if plan is None:
         raise ValueError("identity has no Common Crawl URL/domain/host/site/name")
+    if os.getenv("COGNITIVE_DURABLE_SQL", "0") == "1":
+        from services.cc_cursor_materialization import run_cursor_materialization
+        return await run_cursor_materialization(
+            tenant_id=tenant_id, entity_id=entity_id, run_id=run_id, surface=surface
+        )
     crawl = os.getenv("CC_CRAWL", "CC-MAIN-2025-30")
     client = CommonCrawlClient(timeout=90.0)
     partition_crawls = None if os.getenv("CC_HISTORICAL_PARTITIONS", "0") == "1" else [crawl]
@@ -46,7 +53,7 @@ async def reconcile_and_publish(tenant_id: str, entity_id: str, source_record_id
     max_pages = int(os.getenv("CC_MAX_PAGES", "1"))
     try:
         hits = await client.discover_partitions(plan.url_query, crawls=partition_crawls, max_crawls=max_crawls, max_pages=max_pages, matchType=plan.match_type, filter="status:200", limit=1)
-    except Exception:
+    except Exception:  # noqa: BLE001 - preserve the hermetic adapter fallback
         if plan.match_type != "domain" or plan.url_query.startswith(("http://", "https://")):
             # Preserve the hermetic activity seam while the live direct path
             # remains the production route.
@@ -78,6 +85,21 @@ async def reconcile_and_publish(tenant_id: str, entity_id: str, source_record_id
                     observation_id=capture.get("record_id", ""), sequence=1,
                 ))
                 hits = []
+    if not records and not hits:
+        # A bounded index page may legitimately be empty; retain the hermetic
+        # adapter seam for deployments/tests that provide a local capture
+        # source, while still failing closed when that source has no evidence.
+        cc = await asyncio.to_thread(run_cc_temporality, entity_id, entity_identity, session=None)
+        captures = list(cc.get("captures", []))
+        if not captures:
+            raise ValueError("Common Crawl index returned no captures")
+        capture = captures[0]
+        records.append(StreamRecord(
+            entity_id=entity_id, tenant_id=tenant_id, kind="cc.capture",
+            ts=datetime.fromisoformat(capture["observed_at"]),
+            payload={"event_at": capture["observed_at"], "source": "common_crawl", "url": capture.get("url", ""), "digest": capture.get("digest", ""), "assertion_id": capture.get("record_id", ""), "admission": {"decision": "ACCEPT_NEW", "status": "ACCEPTED"}},
+            observation_id=capture.get("record_id", ""), sequence=1,
+        ))
     if not records:
         if not hits:
             raise ValueError("Common Crawl index returned no captures")
