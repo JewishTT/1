@@ -34,12 +34,15 @@ from enum import StrEnum
 from typing import Any, Literal
 
 __all__ = [
+    "EVIDENCE_BACKWARD_CHAIN",
+    "DERIVATION_FORWARD_CHAIN",
     "BACKWARD_CHAIN",
     "FORWARD_CHAIN",
     "EvidenceGraph",
     "EvidenceHop",
     "HopKind",
     "LineageTrace",
+    "LineageTracePair",
     "independence_groups",
 ]
 
@@ -62,7 +65,20 @@ class HopKind(StrEnum):
     ENTITY = "entity"
 
 
-BACKWARD_CHAIN: tuple[HopKind, ...] = (
+#: **The evidence dimension** (feature 019, CD-4): which kinds of record *carry* the
+#: evidence, walked from the apex down to the source.
+#:
+#: Read this as "what would I have to dismantle to find out why I believe this". Every
+#: entry is a record that holds an observation, so the walk answers questions about
+#: *warrant* - what was seen, in what context, by whom.
+#:
+#: ``CANDIDATE`` is deliberately **absent** (T014). A candidate is a hypothesis about a
+#: relation, not a carrier of the evidence for one: it holds no observation of its own, it
+#: holds *references* to observations. Putting it here would make the evidence walk imply
+#: that a reading is itself evidence, and would let a claim be justified by appeal to an
+#: inference rather than to anything anybody saw. A candidate appears in the other
+#: dimension instead, where it belongs.
+EVIDENCE_BACKWARD_CHAIN: tuple[HopKind, ...] = (
     HopKind.RELATION,
     HopKind.ASSERTION,
     HopKind.MENTION,
@@ -72,12 +88,18 @@ BACKWARD_CHAIN: tuple[HopKind, ...] = (
     HopKind.SOURCE,
 )
 
-#: The whole evidence chain, origin to apex. The forward counterpart of
-#: :data:`BACKWARD_CHAIN`, and the single source of truth for the forward step
-#: sequence: a walk that starts at kind ``K`` traverses exactly the entries that
-#: come *after* ``K`` here, which is what makes a walk startable at any node
-#: instead of only at a source.
-FORWARD_CHAIN: tuple[HopKind, ...] = (
+#: **The derivation dimension** (feature 019, CD-4): which kinds of record were *produced
+#: from* others, walked from the source up to the apex.
+#:
+#: Read this as "what did we build on the way to here". Every entry is a record that was
+#: derived from the entries after it, so the walk answers questions about *inference* -
+#: what was concluded, from what, by which step.
+#:
+#: This is the direction :meth:`EvidenceGraph.forward` already walked, and it includes
+#: ``CANDIDATE``: a candidate is derived from mentions, so it is a legitimate step of a
+#: derivation and its absence would make a claim's inference chain start in the wrong
+#: place.
+DERIVATION_FORWARD_CHAIN: tuple[HopKind, ...] = (
     HopKind.SOURCE,
     HopKind.CAPTURE,
     HopKind.OBSERVATION,
@@ -88,6 +110,23 @@ FORWARD_CHAIN: tuple[HopKind, ...] = (
     HopKind.RELATION,
     HopKind.ENTITY,
 )
+
+#: Retained name for :data:`EVIDENCE_BACKWARD_CHAIN`.
+#:
+#: "Backward" is not wrong, only ambiguous: backward *from what* is unspecified, and the
+#: name invited a reader to assume it was the inverse of ``FORWARD_CHAIN`` - which is
+#: precisely the confusion CD-4 exists to end. The two chains are not inverses of each
+#: other. They differ by exactly one entry, ``CANDIDATE``, and that difference is the
+#: feature rather than an inconsistency.
+#:
+#: Kept as an alias so no existing caller breaks, and kept *after* the new name so the new
+#: name reads as the definition.
+BACKWARD_CHAIN: tuple[HopKind, ...] = EVIDENCE_BACKWARD_CHAIN
+
+#: Retained name for :data:`DERIVATION_FORWARD_CHAIN`. See :data:`BACKWARD_CHAIN` for why
+#: the old name was ambiguous. This one was always pointing at the derivation walk, which
+#: is why :meth:`EvidenceGraph.forward`'s sequence is unchanged by CD-4 (T012).
+FORWARD_CHAIN: tuple[HopKind, ...] = DERIVATION_FORWARD_CHAIN
 
 # (kind, required): an absent required hop ends the trace and names the gap, an
 # absent optional hop is skipped so a chain that never had one still completes.
@@ -145,6 +184,49 @@ def _forward_steps_from(start: HopKind | None) -> tuple[tuple[HopKind, bool], ..
             f"start there, and answering anyway would be a silent wrong answer"
         )
     return _CHAIN_STEPS[FORWARD_CHAIN.index(start) + 1 :]
+
+
+#: The evidence ladder as seen from a relation: every rung below it.
+_EVIDENCE_STEPS: tuple[tuple[HopKind, ...]] = tuple(
+    (kind, kind not in _OPTIONAL_HOP_KINDS) for kind in EVIDENCE_BACKWARD_CHAIN
+)
+
+
+def _evidence_steps_from(start: HopKind | None) -> tuple[tuple[HopKind, bool], ...]:
+    """The evidence ladder from ``start`` toward the source (feature 019, CD-4).
+
+    The mirror of :func:`_forward_steps_from`, and it exists because ``backward`` used to
+    hard-code ``EVIDENCE_BACKWARD_CHAIN[1:]`` - which quietly assumed every subject was a
+    relation. That was true of the one caller and wrong of the method: asked about a
+    mention, it demanded an ``ASSERTION`` hop it had no way to reach and reported a gap
+    that was an artefact of the assumption rather than a fact about the data.
+
+    With the subject's own kind consumed the way the forward walk consumes its own, an
+    evidence walk from a mention asks for the rung that carries that mention, and one
+    from an observation asks for ``MENTION``. Both are now answerable, and "what did
+    somebody see behind this mention" is no longer worse-posed than the same question
+    about a relation.
+
+    **The slice runs forwards, and that reads backwards at first.** The two ladders are
+    written in opposite senses - :data:`DERIVATION_FORWARD_CHAIN` from the source up,
+    :data:`EVIDENCE_BACKWARD_CHAIN` from the relation down - so "toward the source" is
+    ``index + 1`` in both tuples. The asymmetry is in the *declaration order*, not in the
+    walk, which is one more reason the two chains are named rather than called forward and
+    backward: the old names invited exactly this reading.
+
+    ``None`` keeps the relation-relative ladder for the same reason the forward side does:
+    a node the graph never registered a hop for has no kind to reason from, and the
+    relation-relative answer is the one that cannot be wrong - it reports a gap and names it
+    rather than inventing a walk.
+    """
+    if start is None:
+        return _EVIDENCE_STEPS[1:]
+    if start not in EVIDENCE_BACKWARD_CHAIN:
+        raise ValueError(
+            f"hop kind {start!r} is not part of EVIDENCE_BACKWARD_CHAIN; an evidence walk "
+            f"cannot start there, and answering anyway would be a silent wrong answer"
+        )
+    return _EVIDENCE_STEPS[EVIDENCE_BACKWARD_CHAIN.index(start) + 1 :]
 
 
 @dataclass(frozen=True)
@@ -226,6 +308,19 @@ class LineageTrace:
             ),
             "unresolved_node_id": self.unresolved_node_id,
         }
+
+    @property
+    def gaps(self) -> tuple[HopKind, ...]:
+        """The hop kinds this trace could not resolve - at most one, by construction.
+
+        A walk halts at the first kind it cannot resolve rather than skipping and
+        continuing, because a gap in the middle of a chain means everything after it is
+        unaccounted for: continuing would report a short chain as though it were the whole
+        one. So the tuple is a uniform interface for a trace that carries a single gap,
+        which is what lets :class:`LineageTracePair` merge both dimensions without caring
+        how many each found.
+        """
+        return () if self.first_unresolved_hop is None else (self.first_unresolved_hop,)
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> LineageTrace:
@@ -312,22 +407,77 @@ class EvidenceGraph:
             self._derives.setdefault(link.derives, []).append(link)
 
 
-    def backward(self, node_id: str) -> LineageTrace:
-        """``relation → source``: the chain behind one node, in canonical order.
+    def backward(self, node_id: str, *, kind: HopKind | None = None) -> LineageTrace:
+        """``relation → source``: the **evidence** chain behind one node, canonical order.
 
-        The trace carries every hop after the subject, because the subject is
+        The trace carries every rung above the subject, because the subject is
         the question already asked. It halts at the first hop kind it cannot
         resolve from the subject and names that kind as the gap (FR-033).
+
+        This is the warrant question - *what did somebody see that supports this?* - and
+        it is deliberately **not** the inverse of :meth:`forward`. ``CANDIDATE`` is absent
+        from this ladder (feature 019, CD-4), because a candidate holds no observation: it
+        holds references to observations. Use :meth:`trace` when the question is "why does
+        this exist", which has both an evidence answer and a derivation answer and is
+        answered badly by either alone.
+
+        ``kind`` declares the subject's kind, and behaves exactly as it does on
+        :meth:`forward` - omitted, it is read from the kinds the node was registered
+        under; supplied, it is coerced through :class:`HopKind` so an unknown value
+        raises. It is a parameter now because the ladder is derived from the subject's own
+        kind rather than assuming a relation, which is what lets an evidence walk start at
+        a mention or an observation. Omitted for a relation, the answer is byte-identical
+        to what this method always returned.
         """
         return self._walk(
             subject_id=node_id,
             direction="backward",
-            steps=tuple((kind, True) for kind in BACKWARD_CHAIN[1:]),
+            steps=_evidence_steps_from(self._start_kind(node_id, kind)),
             index=self._derives,
+        )
+
+    def trace(self, node_id: str) -> LineageTracePair:
+        """Both dimensions for one artefact, in one call (feature 019, CD-4, SC-K).
+
+        "Why does this edge exist?" has two answers and they are not the same answer:
+
+        * **evidence** (:meth:`backward`) - what was seen. Relation → assertion → mention →
+          segment → observation → capture → source. Ends at the world.
+        * **derivation** (:meth:`forward`) - what was concluded. Node → whatever it
+          produced, through ``CANDIDATE`` and on to the relation and entity. Ends at the
+          inference.
+
+        Reporting only one of them is how a platform ends up unable to answer a question
+        its own data can answer. A claim whose evidence chain is complete but whose
+        derivation chain is broken was inferred from nothing; one whose derivation is
+        complete but whose evidence chain has a gap was grounded in something nobody
+        captured. Both are real, different failures, and a single undirected "lineage"
+        cannot distinguish them - the ladders differ by ``CANDIDATE``, so a walk that
+        included it everywhere would claim a candidate was evidence, and one that excluded
+        it everywhere would claim a hypothesis was not derived from anything.
+
+        Both traces are returned even when one is incomplete, and neither is repaired:
+        :class:`LineageTrace` already reports its own gaps, and a pair lets a caller
+        compare the two rather than infer one from the other.
+        """
+        return LineageTracePair(
+            node_id=node_id,
+            evidence=self.backward(node_id),
+            derivation=self.forward(node_id),
         )
 
     def forward(self, node_id: str, *, kind: HopKind | None = None) -> LineageTrace:
         """``source → relation``, or any node → whatever it produced (FR-032).
+
+        **This is the *derivation* walk, and it always was** (feature 019, CD-4). The
+        sequence is :data:`DERIVATION_FORWARD_CHAIN`, under its retained name
+        :data:`FORWARD_CHAIN`; CD-4 renamed the constant and changed no step in this
+        method. The old name invited a reader to treat this as the inverse of
+        :meth:`backward`, and the two walks are *not* inverses - they differ by
+        ``CANDIDATE``, which is a derived artefact and therefore a step here, and is not a
+        carrier of evidence and therefore absent from there. A derivation chain that
+        skipped the candidate would be a chain about claims with no hypotheses in it, and
+        an evidence chain that included one would be a claim justified by an inference.
 
         The step sequence is derived from the kind of ``node_id`` rather than fixed
         to a source root, so the walk starts wherever the caller is standing:
@@ -352,7 +502,7 @@ class EvidenceGraph:
         malformed node registered twice is walked conservatively and reports the gap
         rather than silently skipping hops. A node registered under no kind at all is
         answered with the source-relative ladder and a ``complete=False`` trace naming
-        the first hop it could not resolve — marked, not silent, and unchanged.
+        the first hop it could not resolve - marked, not silent, and unchanged.
         """
         return self._walk(
             subject_id=node_id,
@@ -482,3 +632,58 @@ def _ground_forward(reached: Sequence[Sequence[_Link]]) -> tuple[EvidenceHop, ..
                 hop = replace(hop, relation_id=next(iter(ids)))
             stamped.append(hop)
     return tuple(stamped)
+
+
+@dataclass(frozen=True)
+class LineageTracePair:
+    """Both lineages of one artefact, kept side by side (feature 019, CD-4, SC-K).
+
+    A record, not a verdict. Neither trace is repaired, both are returned whatever their
+    completeness, and nothing here decides which one matters more for a given question -
+    the caller asked about one artefact and gets the two readings of that artefact.
+
+    The two are stored under names that say what kind of question each answers, because
+    the whole point of CD-4 is that "lineage" alone is not a question. ``evidence`` answers
+    *what was seen*; ``derivation`` answers *what was concluded*. A caller that wants only
+    one should call :meth:`EvidenceGraph.backward` or :meth:`EvidenceGraph.forward`
+    directly - reaching for the pair and discarding half of it would reintroduce exactly
+    the ambiguity the pair exists to resolve.
+    """
+
+    node_id: str
+    evidence: LineageTrace
+    derivation: LineageTrace
+
+    @property
+    def complete(self) -> bool:
+        """Whether *both* dimensions resolved every hop.
+
+        Conjunction, not disjunction, and deliberately so: a chain that is complete in one
+        direction while broken in the other is exactly the case this type exists to make
+        visible, and an ``or`` would report it as fine in one direction and hide it.
+        """
+        return self.evidence.complete and self.derivation.complete
+
+    @property
+    def gaps(self) -> tuple[str, ...]:
+        """Both traces' unresolved hop kinds, evidence first, deduplicated, in order.
+
+        Names rather than counts, because a gap's *kind* is the diagnosis: a missing
+        ``CAPTURE`` means the world was never fetched, a missing ``OBSERVATION`` means it
+        was fetched and not read, and no aggregation of the two says which.
+        """
+        seen: dict[str, None] = {}
+        for trace in (self.evidence, self.derivation):
+            for gap in trace.gaps:
+                seen.setdefault(gap, None)
+        return tuple(seen)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "node_id": self.node_id,
+            "evidence": self.evidence.to_dict(),
+            "derivation": self.derivation.to_dict(),
+            "complete": self.complete,
+            "gaps": list(self.gaps),
+        }
+

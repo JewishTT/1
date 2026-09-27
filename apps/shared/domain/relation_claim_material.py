@@ -101,6 +101,7 @@ from typing import Any
 from domain.evidence_context import EvidenceContext
 from domain.relation_candidate import (
     ADMISSIBLE_CANDIDATE_STATUSES,
+    CONTRADICTING_CANDIDATE_STATUSES,
     CandidateContractError,
     CandidateNotAdmissible,
     CandidateStatus,
@@ -355,6 +356,21 @@ class RelationClaimMaterial:
         object.__setattr__(self, "arity_mode", RelationArityMode(self.arity_mode))
         object.__setattr__(self, "evidence_grade", EvidenceGrade(self.evidence_grade))
         object.__setattr__(self, "candidate_status", CandidateStatus(self.candidate_status))
+
+        if not self.relation_type:
+            raise MaterialContractError(
+                "material_requires_resolved_predicate",
+                "material crosses a boundary a candidate may not (CD-6, FR-010): a "
+                "RelationCandidate may name no operator type and carry only the surface it "
+                "was read from, because a relation the platform cannot name is still a real "
+                "relation and dropping it would lose the observation to the limits of the "
+                "vocabulary. Material and claim may not, because a claim asserts something "
+                "about the world in vocabulary terms and there is nothing to assert. Resolve "
+                "the predicate first - let a SemanticRegime read the candidate's "
+                "relation_surface and produce a second reading that names a type - and build "
+                "material from that reading. Do not invent a type to get past this: an "
+                "invented one is a committed falsehood about the world.",
+            )
 
         contract = self._contract_claim()
         for name in _CANONICALISED_FIELDS:
@@ -818,13 +834,33 @@ def admit(
     only place a material stops being one. Two refusals, both typed, both naming their reason:
 
     * :class:`domain.relation_candidate.CandidateNotAdmissible` when the reading the material
-      came from is not in :data:`domain.relation_candidate.ADMISSIBLE_CANDIDATE_STATUSES`. The
-      disposition guard lives here rather than in :func:`build` so a hypothesis that may never be
-      admitted can still be built, validated, quoted and reported - and it is raised as the
-      *existing* type, so the deprecated ``to_claim`` keeps the exception its callers catch.
+      came from is in :data:`domain.relation_candidate.CONTRADICTING_CANDIDATE_STATUSES` -
+      ``contradicted`` or ``rejected``. Those two are honoured because they record a
+      *finding about the reading* (I-3, FR-006: a failure is preserved, never deleted, and
+      never promoted). ``propose`` and ``supported`` are both **admitted**, and that is the
+      substance of feature 019's CD-1: the disposition stopped being the test.
     * :class:`AdmissionBlocked` when the report carries an adverse finding **and** the operator's
       own :attr:`~semantic.operators.DomainRangePolicy` treats such a violation as blocking, which
       is :attr:`~semantic.operators.DomainRangePolicy.EXCLUDE_FROM_VIEW` and nothing else.
+
+    **Why the ``supported`` requirement was removed rather than kept.** It used to be the
+    precondition for committing anything, and excluding ``propose`` from it was said to stop
+    admission being a formality. It did not: a disposition is a string a caller writes on a
+    reading, so the guard tested the caller's belief rather than the evidence, and the way to
+    satisfy it was to set the label. A ``PROPOSE`` reading - which is what extraction actually
+    produces - was therefore excluded from the only path to a claim, and the way to include it
+    was to relabel it. Nothing about the evidence was ever consulted by that check.
+
+    The gate that is left is derived: :func:`validate` runs the layered validator and
+    :func:`semantic.validation.decide_materialisation` applies the operator's own policy to
+    whatever adverse findings came back. That answer is a function of the evidence and cannot
+    be satisfied by writing on a record. A ``PROPOSE`` reading is now admitted on its merits -
+    including being *refused* on its merits, which is the point.
+
+    **The deprecated guard survives in**
+    :meth:`domain.relation_candidate.RelationCandidate.to_claim`.
+    That method's contract promised a non-``SUPPORTED`` reading would raise, and callers catch
+    that exception, so it keeps the check for them. The guard moved; it did not weaken.
 
     **Both halves of that second refusal are load-bearing, and neither alone would be right.**
     Under the default ``WARN`` an adverse finding is recorded and admission proceeds - 017's "a
@@ -869,7 +905,12 @@ def admit(
             f"{material.tenant_id!r}; cross-tenant admission is refused fail-closed "
             "(constitution IV)",
         )
-    if material.candidate_status not in ADMISSIBLE_CANDIDATE_STATUSES:
+    if material.candidate_status in CONTRADICTING_CANDIDATE_STATUSES:
+        # A reading whose own disposition asserts a checked failure is still refused, and
+        # this half of the old guard survives on evidence-like grounds rather than
+        # label-like ones: `contradicted` and `rejected` are *findings about the reading*,
+        # so honouring them is not the same as trusting a caller-asserted `supported`.
+        # `propose` is absent from this check on purpose - see below.
         raise CandidateNotAdmissible(
             material.candidate_id, material.candidate_status, ADMISSIBLE_CANDIDATE_STATUSES
         )

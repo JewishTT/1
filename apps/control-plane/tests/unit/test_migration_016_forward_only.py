@@ -194,6 +194,10 @@ class _OpRecorder:
         self.created_tables: list[str] = []
         self.created_indexes: list[str] = []
         self.added_columns: list[tuple[str, str]] = []
+        #: ``(table, column, resolved type)`` per ``alter_column``. A widening changes a
+        #: column's type without changing its name, so it is the one operation a
+        #: name-only comparison cannot see.
+        self.altered_columns: list[tuple[str, str, object]] = []
 
     def create_table(self, name: str, *columns: sa.Column, **kwargs: object) -> None:
         self.calls.append(("create_table", (name,), dict(kwargs)))
@@ -224,6 +228,32 @@ class _OpRecorder:
 
     def drop_column(self, table_name: str, column_name: str, **kwargs: object) -> None:
         self.calls.append(("drop_column", (table_name, column_name), dict(kwargs)))
+
+    def alter_column(
+        self,
+        table_name: str,
+        column_name: str,
+        *,
+        type_: sa.types.TypeEngine | None = None,
+        **kwargs: object,
+    ) -> None:
+        """Record a type change on an existing column.
+
+        Added when revision 020 became the first revision in this repository to widen a
+        column rather than add or drop one, and this double is a stand-in for
+        ``alembic.op`` - so the method belongs here for the same reason ``add_column`` does.
+        Without it the replay in :func:`_columns_added_by_later_revisions` raises
+        ``AttributeError`` on a perfectly valid migration, which is the worst failure mode
+        a test double can have: it reports a defect in the code under test where there is
+        none.
+
+        The resolved type is recorded rather than discarded, because a widening is the one
+        operation that can make the two install paths disagree about a column's *type*
+        while leaving its name, nullability and count untouched - and that disagreement is
+        invisible to a name-only comparison.
+        """
+        self.calls.append(("alter_column", (table_name, column_name), dict(kwargs)))
+        self.altered_columns.append((table_name, column_name, type_))
 
 
 def _load_migration() -> object:

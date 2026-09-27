@@ -74,49 +74,42 @@ from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from domain.capture import UNBATCHED_INGEST_BATCH, Capture
+from domain.temporal_observation import SourceTemporalObservation, TemporalAxis
 
 
-class TimeAxis(StrEnum):
-    """One of the six temporal axes a data stream may express time on (FR-026).
-
-    The members are the axes the platform already has, and the module deliberately
-    offers no way to extend them: an adapter cannot declare a seventh axis because
-    there is nowhere to put one, and it cannot reinterpret one because
-    :class:`AxisBinding` names the raw field each is read from, so "this stream's
-    ``valid_from`` is actually its publication date" is visible in the registry row
-    rather than buried in a mapping function.
-
-    :attr:`KNOWN_FROM` is the knowledge axis and is a range, not an instant. Its
-    start is when the fact became knowable and its open end is when it stopped
-    being; a binding that has only a start is an open interval, which is the
-    common case and is stated as such rather than padded.
-    """
-
-    FETCHED_AT = "fetched_at"
-    OBSERVED_AT = "observed_at"
-    PUBLISHED_AT = "published_at"
-    VALID_FROM = "valid_from"
-    VALID_TO = "valid_to"
-    KNOWN_FROM = "known_from"
-
+#: The stream registry's historical name for the six temporal axes (FR-026), bound to
+#: :class:`domain.temporal_observation.TemporalAxis` rather than defined beside it.
+#:
+#: The axis vocabulary is a fact about the world - what *kind* of time a value is on -
+#: and :class:`~domain.temporal_observation.SourceTemporalObservation` is where such a
+#: value lives, so that is where the enum belongs. A stream *declaration* is a promise an
+#: adapter makes about those same six axes, and a promise about six strings no record can
+#: be built from is a promise with no consequence.
+#:
+#: **A plain alias, and specifically not a subclass.** Two enums with six matching members
+#: would drift the first time an axis is added, and drift *silently*, because each would
+#: remain internally consistent. A subclass would be worse than a copy: the members would
+#: be distinct objects of distinct classes, so ``TimeAxis.X is TemporalAxis.X`` would be
+#: False and an ``isinstance`` check would pass or fail according to which name the caller
+#: happened to import. One enum, two names, no way to be wrong.
+#:
+#: The module still offers no way to extend the set: an adapter cannot declare a seventh
+#: axis because there is nowhere to put one, and it cannot reinterpret one because
+#: :class:`AxisBinding` names the raw field each is read from, so "this stream's
+#: ``valid_from`` is actually its publication date" is visible in the registry row rather
+#: than buried in a mapping function.
+TimeAxis = TemporalAxis
 
 #: Every temporal axis a stream may supply, in the order FR-007 enumerates them.
 #:
 #: Fixed centrally and referenced by name from the refusal message, so a stream that
-#: omits one is told *which* one rather than being told it was incomplete — the
-#: refusal names the gap because an incomplete answer to "which of the six" is not
-#: an answer at all. The knowledge axis is a range: ``known_until`` is its open end
+#: omits one is told *which* one rather than being told it was incomplete - the
+#: refusal names the gap because an incomplete answer to "which of the six" is not an
+#: answer at all. The knowledge axis is a range: ``known_until`` is its open end
 #: and is carried by :attr:`AxisBinding.range_end_field` rather than being a seventh
 #: axis, because FR-007 counts six and the open end of one of them is not a new kind
 #: of time. Declared after the enum so it can name the members.
-TIME_AXES: tuple[TimeAxis, ...] = (
-    TimeAxis.FETCHED_AT,
-    TimeAxis.OBSERVED_AT,
-    TimeAxis.PUBLISHED_AT,
-    TimeAxis.VALID_FROM,
-    TimeAxis.VALID_TO,
-    TimeAxis.KNOWN_FROM,
-)
+TIME_AXES: tuple[TimeAxis, ...] = tuple(TimeAxis)
 
 
 class StreamKind(StrEnum):
@@ -549,6 +542,53 @@ class StreamRegistry:
         if capture is not None:
             self._refuse_contradiction(stream, capture)
         return capture
+
+    def capture_with_observations(
+        self, stream_id: str, record: object, *, context: CaptureContext
+    ) -> tuple[Capture | None, tuple[SourceTemporalObservation, ...]]:
+        """One record as a capture *and* whatever temporal facts it stated (CD-5).
+
+        The seam a stream states a source time through. ``to_capture`` alone cannot carry
+        one, and that is the point: a capture is a record of an act of retrieval, so a
+        registrar's acceptance instant or a publisher's issue date does not belong on it.
+        An adapter that states temporal facts implements ``to_temporal_observations`` and
+        this method returns them; one that does not, returns an empty tuple rather than
+        being made to implement a method it has no use for.
+
+        **Probed rather than declared, because the adapters are structurally typed.** The
+        protocol is satisfied by shape, so adding a required method would either break
+        every existing adapter or force them to inherit a base class they deliberately do
+        not. A capability that is optional in the way this one genuinely is optional is
+        probed, and the fallback is the honest empty answer rather than a silent skip.
+
+        The observations are linked to ``capture.capture_id``, which is why the capture is
+        built first and passed in: a stated time with no retrieval behind it cannot be
+        checked against what was actually fetched (I-3), so the link is a parameter
+        rather than something an adapter invents.
+        """
+        stream = self.get(stream_id)
+        adapter = self._adapters[stream.stream_id]
+        capture = adapter.to_capture(record, context=context)
+        if capture is None:
+            return None, ()
+        self._refuse_contradiction(stream, capture)
+        produce = getattr(adapter, "to_temporal_observations", None)
+        if produce is None:
+            return capture, ()
+        observations = tuple(
+            produce(record, context=context, capture_ref=capture.capture_id)
+        )
+        for observation in observations:
+            if observation.tenant_id != capture.tenant_id:
+                raise StreamContractError(
+                    "temporal_observation_tenant_mismatch",
+                    f"observation {observation.observation_id} is from tenant "
+                    f"{observation.tenant_id!r} and its capture belongs to "
+                    f"{capture.tenant_id!r}; cross-tenant lineage is refused fail-closed "
+                    "(constitution IV)",
+                    stream_id=stream.stream_id,
+                )
+        return capture, observations
 
     def captures(
         self, stream_id: str, records: Iterable[object], *, context: CaptureContext

@@ -10,6 +10,21 @@ from __future__ import annotations
 import enum
 from datetime import datetime
 
+# The closed vocabularies the 019 tables check, imported rather than written out. This is
+# the opposite stance from ``db/migrations/versions/020_universal_relation_extraction.py``,
+# and the difference is deliberate rather than inconsistent: *application* code should
+# follow the value type, because when the value type gains a member the fresh-install path
+# must gain the CHECK with it or the two install paths diverge. A *migration* must not
+# import it, because a revision that reads a value type changes meaning when somebody edits
+# that type, and a database that already ran the revision cannot be re-run. So the
+# literals live in the migration and the references live here, and
+# `tests/unit/test_migration_020_universal_relation.py` asserts the two agree - which is
+# the only way a deliberate duplication stays honest.
+from domain.predicate_hypothesis import PredicateResolutionState
+from domain.relation_candidate import CandidateStatus
+from domain.relation_identity import RelationArityMode
+from domain.temporal_observation import TemporalAxis
+from extractors.signals.signal import DirectionHypothesis, SignalKind
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -23,9 +38,21 @@ from sqlalchemy import (
     Text,
     desc,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+def _in(column: str, values: object) -> str:
+    """A closed-vocabulary membership test, rendered for a CHECK constraint.
+
+    Takes the enum class rather than a list of strings so the CHECK cannot drift from the
+    vocabulary: adding a member to the enum adds it here, which is the whole reason the
+    import exists.
+    """
+    allowed = ", ".join(f"'{member.value}'" for member in values)  # type: ignore[attr-defined]
+    return f"{column} IN ({allowed})"
 
 
 class Base(DeclarativeBase):
@@ -267,6 +294,12 @@ class Mention(Base):
 class Candidate(Base):
     __tablename__ = "candidates"
 
+    # NOT widened. This is the 008 extraction layer's generic attribute candidate - it
+    # carries `mention_ids`, a `surface_form` and a `type_hypothesis`, none of which
+    # `domain.relation_candidate.RelationCandidate` has - and its ids are not `CAND-` or
+    # `CNDR-`. Feature 019 gives the semantic layer its own `relation_candidate` table
+    # rather than overloading this one, so the two kinds of candidate cannot be confused
+    # by reading a row.
     candidate_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     tenant_id: Mapped[str] = mapped_column(String(36))
     mention_ids: Mapped[list | None] = mapped_column(JSONB)
@@ -375,7 +408,14 @@ class EvidenceLink(Base):
 
     evidence_link_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     assertion_id: Mapped[str | None] = mapped_column(String(36))
-    candidate_id: Mapped[str | None] = mapped_column(String(36))
+    # Widened by feature 019 (CD-3, T020) from String(36). Measured, not assumed: a
+    # `CNDR-` revision id is 37 characters, so the old width would have cut the last hex
+    # digit off every candidate this column could be asked to hold. Nothing writes one here
+    # yet - the generic `candidates` table belongs to the 008 extraction path and holds a
+    # different kind of candidate - and it is widened anyway so the column is *capable* of
+    # the reference when 019 starts making it. A too-wide column costs nothing; a too-narrow
+    # one corrupts an address silently.
+    candidate_id: Mapped[str | None] = mapped_column(String(64))
     tenant_id: Mapped[str] = mapped_column(String(36))
     observation_ids: Mapped[list | None] = mapped_column(JSONB)
     publication_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -396,7 +436,11 @@ class AdmissionDecisionRow(Base):
 
     decision_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     tenant_id: Mapped[str] = mapped_column(String(36))
-    candidate_id: Mapped[str | None] = mapped_column(String(36))
+    # Widened by feature 019 (CD-3, T020) for the same measured reason as
+    # `evidence_links.candidate_id`: a 37-character `CAND-`/`CNDR-` address does not fit
+    # in 36. An admission decision names the candidate it was taken about, and a decision
+    # whose subject cannot be spelled is a decision nobody can trace.
+    candidate_id: Mapped[str | None] = mapped_column(String(64))
     entity_id: Mapped[str | None] = mapped_column(String(36))
     decision: Mapped[AdmissionDecision] = mapped_column(Enum(AdmissionDecision))
     score_vector: Mapped[dict | None] = mapped_column(JSONB)
@@ -2181,4 +2225,299 @@ class SemanticRegimeRow(Base):
             unique=True,
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# Feature 019 — the universal relation extraction substrate.
+#
+# Three tables, and the reason each one exists is a gap rather than a convenience.
+#
+# ``relation_candidate`` is the first durable home for a
+# :class:`domain.relation_candidate.RelationCandidate`. Until now a candidate existed only
+# in memory and reached the database only by becoming a claim, so a hypothesis nobody
+# admitted had nowhere to be recorded — and a platform that cannot store a rejected or an
+# unresolved hypothesis cannot show its work. SC-B is this table: a candidate with no claim
+# survives.
+#
+# ``relation_signal`` is below the candidate rather than beside it. A signal is what a
+# producer *saw*; a candidate is an assembled reading of one or more of them. Storing only
+# the candidate would throw away the observations, and FR-034's independence count is
+# computed over observations — so a claim that three sources corroborate would have to
+# take that on trust from a single row.
+#
+# ``source_temporal_observation`` is a table rather than columns on ``captures`` for the
+# reason CD-5 gives: a registrar's acceptance instant is a fact about the world and a
+# capture is a record of an act of retrieval. One document may state several instants, each
+# at its own precision, and an index observation and a publication are not the same kind of
+# fact.
+#
+# **Every id column here is `String(64)`, and the reason is measured rather than
+# assumed (CD-3).** ``CAND-`` and ``CNDR-`` are each 37 characters with a 128-bit truncated
+# SHA-256, so the platform-wide `VARCHAR(36)` would cut the last hex digit off every
+# candidate id. 64 leaves room for a wider digest or a longer prefix without a second
+# migration, and a column that is too wide costs nothing while one that is too narrow
+# corrupts an address.
+# ---------------------------------------------------------------------------
+
+
+class RelationCandidateRow(Base):
+    """One durable reading of one relation hypothesis (feature 019, T019, SC-B).
+
+    Keyed by ``candidate_id`` - the *revision* address, ``CNDR-`` - not by the logical
+    ``CAND-``, because a row is one reading. The logical id is carried as a column so that
+    "what did we make of this hypothesis?" is one indexed read rather than a full scan
+    over every reading ever taken, which is the question FR-039 makes unavoidable the
+    moment a surface can be resolved later.
+
+    ``relation_ref`` is nullable and ``relation_surface`` is not optional, which is CD-6 at
+    the storage layer: an untyped relation is storable, keeps the words that produced it,
+    and is distinguishable from a row nobody wrote. A CHECK keeps the pair honest in the
+    same way one direction only, matching
+    :class:`domain.temporal_observation.SourceTemporalObservation` - a row may claim a
+    type and no surface, but never a surface and no way to say whether it was resolved.
+    """
+
+    __tablename__ = "relation_candidate"
+
+    candidate_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    logical_candidate_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+
+    subject_mention_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+    object_mention_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+    arity_mode: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    relation_ref: Mapped[str | None] = mapped_column(String(96))
+    relation_type: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    relation_surface: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    predicate_hypothesis: Mapped[str] = mapped_column(String(64), nullable=False)
+    predicate_state: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    context_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+    semantic_regime_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+    candidate_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    extraction_method: Mapped[str] = mapped_column(String(32), nullable=False)
+    extractor_version: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    extraction_rule_id: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    investigation_id: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    recorded_by: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
+
+    observation_refs: Mapped[list | None] = mapped_column(JSONB)
+    evidence_refs: Mapped[list | None] = mapped_column(JSONB)
+    trigger_span: Mapped[dict | None] = mapped_column(JSONB)
+    supporting_spans: Mapped[list | None] = mapped_column(JSONB)
+    temporal_hypothesis: Mapped[dict | None] = mapped_column(JSONB)
+    role_assignments: Mapped[list | None] = mapped_column(JSONB)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_relation_candidate_tenant", "tenant_id"),
+        # The "what did we make of this hypothesis?" read, and the one that grows with
+        # readings rather than with hypotheses.
+        Index("ix_relation_candidate_logical", "tenant_id", "logical_candidate_id"),
+        # Pair lookup: the assembler groups signals by the pair they share, and the
+        # projection asks the same question.
+        Index("ix_relation_candidate_pair", "tenant_id", "subject_mention_ref", "object_mention_ref"),
+        Index("uq_relation_candidate_address", "tenant_id", "candidate_id", unique=True),
+        CheckConstraint("tenant_id <> ''", name="ck_relation_candidate_tenant"),
+        CheckConstraint("logical_candidate_id <> ''", name="ck_relation_candidate_logical"),
+        CheckConstraint(
+            "subject_mention_ref <> object_mention_ref", name="ck_relation_candidate_distinct"
+        ),
+        # CD-6 at the storage layer, in the same one-direction-only shape the temporal
+        # observation uses: a reading may name an operator and no surface, but never a
+        # surface and nothing that says whether it was resolved. The row that must not be
+        # storable is the one that asserts no predicate at all - and that is refused by the
+        # value type, so the database only has to catch a bulk loader that skipped it.
+        CheckConstraint(
+            "relation_surface <> '' OR relation_ref IS NOT NULL",
+            name="ck_relation_candidate_asserts_something",
+        ),
+        # A candidate naming no context or no regime is a reading that cannot say what
+        # frame it was read in or which instruments interpreted it, and both are
+        # references somebody else's decision (FR-015, FR-016).
+        CheckConstraint("context_ref <> ''", name="ck_relation_candidate_context"),
+        CheckConstraint("semantic_regime_ref <> ''", name="ck_relation_candidate_regime"),
+        # Closed vocabularies, checked rather than trusted. A row carrying a fifth
+        # disposition or a fourth resolution state is a corrupt row, and a bulk loader
+        # that never called the value type is exactly how one arrives.
+        CheckConstraint(
+            _in("candidate_status", CandidateStatus), name="ck_relation_candidate_status"
+        ),
+        CheckConstraint(
+            _in("arity_mode", RelationArityMode), name="ck_relation_candidate_arity"
+        ),
+        CheckConstraint(
+            _in("predicate_state", PredicateResolutionState),
+            name="ck_relation_candidate_predicate_state",
+        ),
+    )
+
+
+class RelationSignalRow(Base):
+    """One observation a producer made (feature 019, T019, FR-019, FR-034).
+
+    A signal has no entity, no relation status and no admission verdict, and the absence of
+    those columns is the point: a table that could record them would invite a producer to
+    fill them in, and a producer that writes ``candidate_status`` is a producer that has
+    started deciding.
+
+    ``producer_confidence`` is stored but is **not** part of ``signal_id``'s material -
+    the value type already excludes it, and the column is here so a reader can see how sure
+    the producer was without that certainty being able to manufacture corroboration.
+
+    ``neighbourhood`` is a required JSONB column, not an optional one. FR-041…FR-043 make a
+    producer's extent load-bearing, and a nullable extent is an extent nobody stated.
+    """
+
+    __tablename__ = "relation_signal"
+
+    signal_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+
+    subject_mention_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+    object_mention_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+    signal_kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    direction: Mapped[str] = mapped_column(String(24), nullable=False)
+
+    relation_ref: Mapped[str | None] = mapped_column(String(96))
+    relation_surface: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    predicate_hypothesis: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    predicate_state: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    producer_ref: Mapped[str] = mapped_column(String(96), nullable=False, server_default="")
+    producer_version: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    context_ref: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    semantic_regime_ref: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    capture_ref: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+
+    neighbourhood: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    trigger_span: Mapped[dict | None] = mapped_column(JSONB)
+    supporting_spans: Mapped[list | None] = mapped_column(JSONB)
+    stated_axes: Mapped[list | None] = mapped_column(JSONB)
+    extra: Mapped[dict | None] = mapped_column(JSONB)
+    producer_confidence: Mapped[float] = mapped_column(Float, nullable=False, server_default=text("0"))
+    signal_ordinal: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    notes: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_relation_signal_tenant", "tenant_id"),
+        # The assembler's grouping key, and the index that keeps assembly from degrading
+        # into a scan as producers multiply.
+        Index(
+            "ix_relation_signal_pair",
+            "tenant_id",
+            "subject_mention_ref",
+            "object_mention_ref",
+        ),
+        # Which observations back one candidate, and FR-034's independence count read
+        # without touching the candidates table at all.
+        Index("ix_relation_signal_producer", "tenant_id", "producer_ref"),
+        CheckConstraint("tenant_id <> ''", name="ck_relation_signal_tenant"),
+        CheckConstraint(
+            "relation_surface <> '' OR relation_ref IS NOT NULL",
+            name="ck_relation_signal_asserts_something",
+        ),
+        CheckConstraint(
+            "producer_confidence >= 0 AND producer_confidence <= 1",
+            name="ck_relation_signal_confidence",
+        ),
+        CheckConstraint("subject_mention_ref <> object_mention_ref", name="ck_relation_signal_distinct"),
+        # The kinds are the platform's whole capacity for noticing a relation, so they are
+        # stated in the schema where a reviewer reads them rather than derived from
+        # somewhere they would look incidental. `negation` being here is load-bearing:
+        # without it, "Acme did not acquire Beta" is either dropped - losing an observed
+        # fact - or recorded as an acquisition, which is a lie with a schema.
+        CheckConstraint(_in("signal_kind", SignalKind), name="ck_relation_signal_kind"),
+        # `ambiguous` is a member because a producer that found a marker it could read two
+        # ways must be able to say so here too; a column that could only hold a resolved
+        # direction would push the choice into the producer, which is the fabrication CD-6
+        # exists to prevent.
+        CheckConstraint(_in("direction", DirectionHypothesis), name="ck_relation_signal_direction"),
+        CheckConstraint(
+            _in("predicate_state", PredicateResolutionState),
+            name="ck_relation_signal_predicate_state",
+        ),
+    )
+
+
+class SourceTemporalObservationRow(Base):
+    """One instant a source stated (feature 019, T019, T015, CD-5, FR-018).
+
+    The columns are grouped the way the value type is, and one of them carries more weight
+    than its type suggests. :attr:`stated_value` is a timestamptz, which can hold only one
+    of the two things a stated fact is: *when*, and *how precisely*. The answer to the
+    second is :attr:`precision` plus the verbatim :attr:`raw_value`, and a loader that
+    inserted a day-precision date as a timestamptz without either would leave a reader
+    unable to tell an observed midnight from a stated one. Both are NOT NULL for a row
+    that carries a value, which is what makes the check below possible.
+
+    ``capture_ref`` is NOT NULL and indexed: a stated instant with no retrieval behind it
+    cannot be checked against anything anybody actually fetched, and an unlinked row would
+    be exactly that.
+    """
+
+    __tablename__ = "source_temporal_observation"
+
+    observation_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    capture_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    temporal_axis: Mapped[str] = mapped_column(String(24), nullable=False)
+    stated_value: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    stated_value_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_value: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    precision: Mapped[str] = mapped_column(String(16), nullable=False)
+    basis: Mapped[str] = mapped_column(String(24), nullable=False)
+    evidence_location: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_temporal_observation_tenant", "tenant_id"),
+        # The retrieval a fact was read from. Not a foreign key because `captures` is
+        # written by the same migration chain but a temporal observation can legitimately
+        # outlive a re-ingest of the capture it came from - the *fact* about the filing
+        # does not evaporate because we fetched the index again.
+        Index("ix_temporal_observation_capture", "tenant_id", "capture_ref"),
+        # "What did this source say about when?" - the query that was impossible before
+        # CD-5 and is the reason this table exists.
+        Index("ix_temporal_observation_axis", "tenant_id", "temporal_axis"),
+        CheckConstraint("tenant_id <> ''", name="ck_temporal_observation_tenant"),
+        CheckConstraint("capture_ref <> ''", name="ck_temporal_observation_capture"),
+        CheckConstraint("evidence_location <> ''", name="ck_temporal_observation_location"),
+        # The pair that keeps a stated emptiness a stated emptiness: an absent basis with
+        # a value, or a value with no basis saying so, is a corrupt row.
+        CheckConstraint(
+            "basis = 'absent' OR stated_value IS NOT NULL",
+            name="ck_temporal_observation_value_present",
+        ),
+        CheckConstraint(
+            "stated_value IS NULL OR basis <> 'absent'",
+            name="ck_temporal_observation_absent_basis",
+        ),
+        # A range's open end cannot precede its start, and cannot exist without one.
+        CheckConstraint(
+            "stated_value_end IS NULL OR stated_value IS NOT NULL",
+            name="ck_temporal_observation_range_start",
+        ),
+        CheckConstraint(
+            "stated_value_end IS NULL OR stated_value_end >= stated_value",
+            name="ck_temporal_observation_range_order",
+        ),
+        # The six axes, closed (CD-5). Stated here so a row cannot carry a seventh, and
+        # so the open end of `known_from` is a `stated_value_end` on an existing axis
+        # rather than an invented axis of its own.
+        CheckConstraint(
+            _in("temporal_axis", TemporalAxis), name="ck_temporal_observation_axis"
+        ),
+    )
+
 

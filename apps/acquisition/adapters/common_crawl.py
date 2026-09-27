@@ -55,9 +55,15 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 
 from cc_extract import CaptureObservation, normalize_captures
 from domain.capture import Capture, CaptureTimeBasis
+from domain.temporal_observation import (
+    SourceTemporalObservation,
+    TemporalAxis,
+    TemporalPrecision,
+)
 from stream import (
     AxisBinding,
     CaptureContext,
@@ -191,6 +197,59 @@ class CommonCrawlAdapter:
             ingest_batch_id=context.ingest_batch_id,
             ingest_attempt=context.ingest_attempt,
             recorded_by=context.recorded_by,
+        )
+
+    def to_temporal_observations(
+        self,
+        record: object,
+        *,
+        context: CaptureContext,
+        capture_ref: str,
+    ) -> tuple[SourceTemporalObservation, ...]:
+        """When the index entry was written, which is a fact about the index (CD-5).
+
+        Common Crawl's ``timestamp`` is the one instant this stream states, and the
+        declaration has always bound it to ``observed_at``. The value reached the
+        :class:`~cc_extract.CaptureObservation` and stopped there - ``Capture`` cannot hold
+        it, because it is not a fetch time and putting it in ``fetched_at`` would promote
+        an index entry into a retrieval that never happened here.
+
+        So it is returned as a :class:`SourceTemporalObservation` on the ``observed_at``
+        axis, and the basis is what keeps the three CD-5 distinctions sharp:
+
+        * ``INDEX_OBSERVATION``, **not** ``PUBLICATION``. The crawl archive does not know
+          when the page was published, and this stream says so - :data:`_NO_PUBLICATION`
+          is its declared answer on the ``published_at`` axis. An observer who found a
+          publication date here would be reading a fact the index never stated.
+        * ``INDEX_OBSERVATION``, **not** ``FETCH``. Nothing here was retrieved by us.
+        * precision ``SECOND``, because a CDX timestamp really is second-resolution -
+          unlike EDGAR's ``date filed``, which is a day and which the parallel
+          observation marks as one. Same axis, same shape, different honest precision.
+
+        A row with no parseable timestamp yields no observation. The capture is already
+        refused in that case by :meth:`to_capture`, so in practice this is belt and braces
+        rather than a separate path.
+        """
+        observation = self._as_observation(record)
+        if observation is None or not observation.observed_at.strip():
+            return ()
+        try:
+            stated = datetime.fromisoformat(observation.observed_at.replace("Z", "+00:00"))
+        except ValueError:
+            return ()
+        if stated.tzinfo is None:
+            return ()
+        return (
+            SourceTemporalObservation(
+                temporal_axis=TemporalAxis.OBSERVED_AT,
+                capture_ref=capture_ref,
+                stated_value=stated,
+                raw_value=observation.observed_at,
+                precision=TemporalPrecision.SECOND,
+                basis=CaptureTimeBasis.INDEX_OBSERVATION,
+                evidence_location="timestamp",
+                tenant_id=context.tenant_id,
+            ),
         )
 
     def _as_observation(self, record: object) -> CaptureObservation | None:

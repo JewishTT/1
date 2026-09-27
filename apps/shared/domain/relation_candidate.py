@@ -95,6 +95,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
+from domain.predicate_hypothesis import PredicateHypothesis
 from domain.relation_claim import (
     EvidenceGrade,
     RelationClaim,
@@ -132,6 +133,23 @@ class ExtractionStrategy(StrEnum):
     RULE = "rule"
     WEAK_SUPERVISION = "weak_supervision"
 
+    #: Several producers read the same structure and their readings were assembled into
+    #: one (feature 019, FR-032).
+    #:
+    #: Added because every existing member is a *single-producer* method and none of them
+    #: can describe an assembled reading honestly. Recording ``LEXICAL_PATTERN`` on a
+    #: candidate built from a table header, a hyperlink and a sentence would put a false
+    #: account of how the reading was made into its **identity material** - so the
+    #: falsehood would live in the content address rather than in a description, and a
+    #: replay would reproduce it. ``RULE`` would be no better: no rule fired, and assembly
+    #: is a different kind of thing from a rule.
+    #:
+    #: It names *how the reading was assembled*, not whether the producers agreed; that is
+    #: what ``signal_refs`` and FR-034's independence count are for. A candidate assembled
+    #: from a single producer is also ``ORCHESTRATED``, because it took the same code path -
+    #: and the number of producers is already in the address.
+    ORCHESTRATED = "orchestrated"
+
 #: Prefix of the *logical* candidate key — "which hypothesis this is", shared by every
 #: revision of one hypothesis. Distinct from ``RL-``/``RC-`` so a candidate and a claim are
 #: never confusable by a reader or by a log line.
@@ -161,13 +179,26 @@ class CandidateStatus(StrEnum):
     REJECTED = "rejected"
 
 
-#: The only disposition that may cross into the claim layer.
+#: The disposition set the *old* lifecycle called admissible, kept as a named assessment
+#: rather than a gate (feature 019, CD-1).
 #:
-#: ``PROPOSE`` is excluded on purpose: it is the raw output of extraction, and admission is a
-#: *decision* taken after the hypothesis has been checked. Letting a propose become a claim
-#: makes admission a formality, which is the failure this layer exists to make visible.
-#: ``CONTRADICTED`` and ``REJECTED`` are excluded because both are preserved candidates,
-#: never deleted ones (I-3, FR-006) — they simply never become claims.
+#: This is no longer consulted by admission. It is what
+#: :meth:`RelationCandidateSet.supported` reports, and nothing more: a compatibility
+#: projection for callers that still filter on a label.
+#:
+#: Why the change matters. The gate this replaces made ``SUPPORTED`` the precondition for
+#: crossing into the claim layer, and ``PROPOSE`` was excluded "on purpose" - but the
+#: exclusion only tested what a caller had *written on the reading*, not what the evidence
+#: showed. A label is trivially writable, so the gate could be satisfied by assertion while
+#: a genuinely unvalidated reading passed as checked. The real gate is
+#: :func:`domain.relation_claim_material.validate` followed by
+#: :func:`domain.relation_claim_material.admit`, which read the evidence and can refuse
+#: independently of anything a caller says.
+#:
+#: What is preserved. ``PROPOSE`` readings are still fully first-class - they are what
+#: extraction produces, they are never deleted (I-3, FR-006), and they reach the claim layer
+#: through ``build``/``validate``/``admit`` on their own merits. Nothing that used to be
+#: buildable became unbuildable; what changed is that the label stopped being the test.
 ADMISSIBLE_CANDIDATE_STATUSES: frozenset[CandidateStatus] = frozenset(
     {CandidateStatus.SUPPORTED}
 )
@@ -483,6 +514,7 @@ CANDIDATE_LOGICAL_MATERIAL_FIELDS: frozenset[str] = frozenset(
     {
         "tenant_id",
         "relation_type",
+        "relation_surface",
         "arity_mode",
         "subject_mention_ref",
         "object_mention_ref",
@@ -497,12 +529,14 @@ CANDIDATE_LOGICAL_MATERIAL_FIELDS: frozenset[str] = frozenset(
 CANDIDATE_REVISION_MATERIAL_FIELDS: frozenset[str] = frozenset(
     {
         "schema_version",
+        "predicate_hypothesis",
         "temporal_hypothesis",
         "observed_at",
         "context_ref",
         "semantic_regime_ref",
         "observation_refs",
         "evidence_refs",
+        "signal_refs",
         "extraction_method",
         "extractor_version",
         "extraction_rule_id",
@@ -551,9 +585,30 @@ class RelationCandidate:
 
     subject_mention_ref: str
     object_mention_ref: str
-    relation_ref: RelationRef
+    relation_ref: RelationRef | None = None
     arity_mode: RelationArityMode = RelationArityMode.DIRECTED
     role_assignments: tuple[RelationRoleBinding, ...] = ()
+
+    predicate_hypothesis: PredicateHypothesis | None = None
+    """How far the platform's vocabulary reaches on this relation.
+
+    Optional :attr:`relation_ref` is the whole point (CD-6): a relation observed in the
+    world whose type nobody declares must be representable, with its surface intact,
+    rather than discarded or given an invented type.
+
+    Left ``None`` when :attr:`relation_ref` plus :attr:`relation_surface` already say
+    everything, and derived from them, so existing callers keep working unchanged.
+    """
+
+    relation_surface: str = ""
+    """The words the observation used, kept whatever the platform understands of them.
+
+    This is what makes an unresolved predicate readable rather than merely absent. A
+    relation the platform cannot name still said *something* — "originator of", a table
+    header, a link target — and losing that because the vocabulary had no entry would be
+    losing the observation to the limits of the vocabulary (CD-7). It is also the field a
+    later ``SemanticRegime`` reads to decide the same surface a different way.
+    """
 
     context_ref: str = ""
     semantic_regime_ref: str = ""
@@ -567,6 +622,31 @@ class RelationCandidate:
 
     observation_refs: tuple[str, ...] = ()
     evidence_refs: tuple[str, ...] = ()
+    signal_refs: tuple[str, ...] = ()
+    """The :class:`extractors.signals.signal.RelationSignal` observations this reading was
+    assembled from (FR-032).
+
+    **Revision material, not logical material, and the reason is worth stating.** Whether a
+    relation is *hypothesised at all* is settled by the two mentions and the predicate
+    surface; which observations back it is a separate fact that grows. So a second producer
+    reporting the same relation does not create a second hypothesis - it creates a second
+    *reading* of the first, under one ``logical_candidate_id``. That is the same shape as
+    FR-039's predicate resolution, and it buys the same thing: a relation corroborated by
+    three sources is visibly one hypothesis with three readings, rather than three
+    hypotheses that happen to agree.
+
+    It also makes the address depend on the evidence, which is what makes assembly
+    deterministic under replay: two processes assembling the same set of signals derive the
+    same ``candidate_id``, and a process that saw a different set of signals derives a
+    different one. Neither can quietly produce a candidate that claims backing it does not
+    have.
+
+    Empty is legal and means what it says: a candidate constructed directly, by a caller or
+    a later regime, that was not assembled from signals. The assembler never produces one
+    (T032), but the type does not forbid it, because forbidding it here would make the
+    predicate-resolution path - a regime producing a second reading of a surface it resolved
+    itself - impossible to express.
+    """
 
     temporal_hypothesis: TemporalHypothesis = TemporalHypothesis()
     candidate_status: CandidateStatus = CandidateStatus.PROPOSE
@@ -586,11 +666,49 @@ class RelationCandidate:
             self, "extraction_method", ExtractionStrategy(self.extraction_method)
         )
         object.__setattr__(self, "candidate_status", CandidateStatus(self.candidate_status))
-        if not isinstance(self.relation_ref, RelationRef):
+        if self.relation_ref is not None and not isinstance(self.relation_ref, RelationRef):
             raise CandidateContractError(
                 "invalid_relation_ref",
                 "relation_ref must be a semantic.contracts.RelationRef naming an operator "
-                f"(relation_type, schema_version), got {type(self.relation_ref).__name__}",
+                f"(relation_type, schema_version), or None; got "
+                f"{type(self.relation_ref).__name__}"
+                + (
+                    f" of {self.relation_ref!r}. If that is a relation the vocabulary has no "
+                    "entry for, pass it as relation_surface=... and leave relation_ref None - "
+                    "an untyped relation is representable (CD-6) and keeps its words."
+                    if isinstance(self.relation_ref, str)
+                    else ""
+                ),
+            )
+        object.__setattr__(self, "relation_surface", str(self.relation_surface or ""))
+        if self.predicate_hypothesis is None:
+            object.__setattr__(
+                self,
+                "predicate_hypothesis",
+                PredicateHypothesis(
+                    relation_ref=self.relation_ref,
+                    surface_form=self.relation_surface
+                    or ("" if self.relation_ref is None else str(self.relation_ref.relation_type)),
+                ),
+            )
+        elif not isinstance(self.predicate_hypothesis, PredicateHypothesis):
+            raise CandidateContractError(
+                "invalid_predicate_hypothesis",
+                "predicate_hypothesis must be a PredicateHypothesis, or None to derive one "
+                f"from relation_ref and relation_surface, got "
+                f"{type(self.predicate_hypothesis).__name__}",
+            )
+        elif self.relation_ref is not None and self.predicate_hypothesis.relation_ref is not None:
+            if self.predicate_hypothesis.relation_ref != self.relation_ref:
+                raise CandidateContractError(
+                    "predicate_ref_disagrees_with_candidate",
+                    f"relation_ref names {self.relation_ref}, but predicate_hypothesis names "
+                    f"{self.predicate_hypothesis.relation_ref}; they are the same predicate and "
+                    "must be stated once, consistently",
+                )
+        if not self.relation_surface:
+            object.__setattr__(
+                self, "relation_surface", self.predicate_hypothesis.surface_form
             )
         if not isinstance(self.temporal_hypothesis, TemporalHypothesis):
             raise CandidateContractError(
@@ -620,12 +738,8 @@ class RelationCandidate:
         if self.subject_mention_ref == self.object_mention_ref:
             raise CandidateContractError(
                 "self_loop",
-                f"{self.relation_ref.relation_type or 'relation'} proposes "
+                f"{self.relation_surface or 'relation'} proposes "
                 f"{self.subject_mention_ref!r} in relation to itself",
-            )
-        if not self.relation_ref.relation_type:
-            raise CandidateContractError(
-                "missing_relation_type", "a candidate requires an operator relation_type"
             )
         if not self.context_ref:
             raise CandidateContractError(
@@ -650,6 +764,36 @@ class RelationCandidate:
                 "confidence_out_of_range",
                 f"confidence must be within [0.0, 1.0], got {self.confidence}",
             )
+
+        # A *carried* address is checked against the derived one (feature 019, T037).
+        #
+        # Construction still does not compute ids it was not given - :meth:`with_id` remains
+        # the explicit derivation, so building a candidate stays a plain value operation.
+        # But when a caller does present an id, that id is a claim, and an unverified claim
+        # about an address is the one thing I-1 cannot survive: a record edited after the
+        # fact keeps its id, and every reference to it now points at content nobody recorded.
+        #
+        # This makes the platform uniform rather than novel. :class:`domain.
+        # relation_claim_material.RelationClaimMaterial`, :class:`semantic.regime.
+        # SemanticRegime` and :class:`domain.temporal_observation.
+        # SourceTemporalObservation` all refuse a carried id that disagrees; the candidate
+        # and the signal were the two that did not, and a constitutional property that two
+        # types keep and two do not is not a property. The cost is one digest over a
+        # candidate that arrived addressed, which it was going to pay in ``with_id`` anyway.
+        if self.candidate_id or self.logical_candidate_id:
+            derived_logical, derived_revision = recompute_candidate_identity(self)
+            for carried, derived, label in (
+                (self.logical_candidate_id, derived_logical, "logical_candidate_id"),
+                (self.candidate_id, derived_revision, "candidate_id"),
+            ):
+                if carried and carried != derived:
+                    raise CandidateContractError(
+                        "candidate_id_mismatch",
+                        f"candidate carries {label}={carried!r} but its own content "
+                        f"addresses to {derived!r}; a content address is derived, never "
+                        "trusted. Drop the field to have it computed, or fix the contents "
+                        "that disagree with it",
+                    )
 
         if self.arity_mode is RelationArityMode.DIRECTED and self.role_assignments:
             raise CandidateContractError(
@@ -693,17 +837,40 @@ class RelationCandidate:
 
     @property
     def relation_type(self) -> str:
-        """The operator's relation type, read off the reference rather than restated."""
-        return self.relation_ref.relation_type
+        """The operator's relation type, read off the reference rather than restated.
+
+        Empty for an unresolved predicate, and empty is the honest answer: no operator was
+        named, so there is no type to report. Callers that need to know *why* it is empty
+        should read :attr:`predicate_hypothesis`, which distinguishes a surface nobody has
+        typed from a reading with several defensible types.
+        """
+        return "" if self.relation_ref is None else self.relation_ref.relation_type
 
     @property
     def schema_version(self) -> str:
-        """The operator version in force when the reading was produced (FR-029)."""
-        return self.relation_ref.schema_version
+        """The operator version in force when the reading was produced (FR-029).
+
+        Empty when no operator was named, for the same reason :attr:`relation_type` is.
+        """
+        return "" if self.relation_ref is None else self.relation_ref.schema_version
 
     @property
     def is_admissible(self) -> bool:
-        """Whether this reading is in a disposition that may become a claim."""
+        """Whether this reading carries the ``SUPPORTED`` label. **Not** whether it may
+        become a claim (feature 019, CD-1).
+
+        The name is kept because callers read it, but the question it now answers is
+        narrower and more honest than the one it used to: it reports a *disposition*,
+        and a disposition is something a caller writes on a reading rather than something
+        the evidence establishes. A reading with a ``PROPOSE`` label is not thereby
+        inadmissible - it is simply unlabelled, and it reaches the claim layer through
+        :func:`domain.relation_claim_material.build` / ``validate`` / ``admit`` on its
+        evidence.
+
+        To ask whether a reading can actually become a claim, ask admission:
+        ``admit(build(...), validate(...))``. That answer is derived from evidence and
+        can refuse; this one cannot.
+        """
         return self.candidate_status in ADMISSIBLE_CANDIDATE_STATUSES
 
     @property
@@ -752,7 +919,25 @@ class RelationCandidate:
         return replace(self, logical_candidate_id=logical, candidate_id=revision)
 
     def with_status(self, status: CandidateStatus) -> RelationCandidate:
-        """A reading of the same hypothesis carrying a different disposition.
+        """DEPRECATED (feature 019, CD-1) - retained for legacy callers, never a gate.
+
+        **A disposition is no longer how a reading earns the right to become a claim.**
+        The old contract made ``SUPPORTED`` the precondition: a caller set it, and
+        ``to_claim`` demanded it. That made a *label* load-bearing, and a label is
+        something a caller can simply write - so the gate tested what the caller believed
+        rather than what the evidence showed, and a reading could be promoted by
+        assertion. The real gate is
+        :func:`~domain.relation_claim_material.validate` followed by
+        :func:`~domain.relation_claim_material.admit`, which read the evidence and could
+        refuse.
+
+        So this method survives for callers that still ask for a differently-labelled
+        reading, and :meth:`to_claim` survives for callers that still call it - but
+        nothing in the production path sets a status in order to cross a boundary, and
+        the path in ``semantic_path/execution.py`` no longer does either. Setting
+        ``SUPPORTED`` here no longer buys anything, and calling
+        :meth:`RelationCandidateSet.supported` no longer answers whether a reading is
+        admissible.
 
         Note what this deliberately does *not* preserve: the ``candidate_id`` is dropped so a
         re-addressed reading is produced, because a disposition is a finding about the
@@ -877,8 +1062,32 @@ class RelationCandidate:
         Everything else is transcribed from the candidate: the operator identity, the arity
         mode, the context and regime references, the observation refs, the extraction method
         and version, the rule id, the investigation and the author.
+
+        **The ``SUPPORTED`` guard lives here, not in**
+        :func:`~domain.relation_claim_material.admit`.
+        Feature 019's CD-1 removed the disposition as a lifecycle gate, because a caller who
+        wants into the claim layer can simply write ``SUPPORTED`` on a reading and the check
+        would pass - it tested the caller's belief, not the evidence. ``admit`` now gates on
+        the validation report, which is derived from evidence and can refuse a reading whose
+        label says ``SUPPORTED``.
+
+        This method keeps the guard anyway, and the reason is not that the gate was right. It
+        is that this method's contract promised a non-``SUPPORTED`` reading would raise
+        :class:`CandidateNotAdmissible`, and callers catch that exception and branch on it.
+        A caller mid-migration would otherwise find its ``except CandidateNotAdmissible``
+        silently dead - a real risk with no benefit, since the production path in
+        ``semantic_path/execution.py`` calls ``build``/``validate``/``admit`` directly and
+        never passes through here at all.
+
+        So the guard moved, it did not weaken, and new code should not rely on it: relabelling
+        a reading to get past a refusal is the behaviour this feature is removing.
         """
         from domain.relation_claim_material import admit, build, unvalidated_report
+
+        if self.candidate_status not in ADMISSIBLE_CANDIDATE_STATUSES:
+            raise CandidateNotAdmissible(
+                self.candidate_id, self.candidate_status, ADMISSIBLE_CANDIDATE_STATUSES
+            )
 
         material = build(
             self,
@@ -900,22 +1109,35 @@ class RelationCandidate:
         """The material of *which hypothesis this is*, shared by every revision.
 
         Delegates the arity shape to :func:`domain.relation_identity.logical_material` so the
-        two layers canonicalise participants identically — sorted+deduped for ``UNDIRECTED``,
-        order-preserving for ``DIRECTED``, role pairs for ``NARY`` — and then adds
+        two layers canonicalise participants identically - sorted+deduped for ``UNDIRECTED``,
+        order-preserving for ``DIRECTED``, role pairs for ``NARY`` - and then adds
         ``tenant_id``, which ``RL-`` deliberately omits. The divergence is a considered one
         and costs nothing structurally: a tenant never changes across revisions of one
         hypothesis, so the logical/revision split is unaffected, while omitting it would let
         two tenants' hypotheses bucket under one key, which constitution IV forbids.
+
+        The predicate goes in as :attr:`relation_surface` rather than as the resolved
+        operator type, and that choice is the whole of CD-6 at this level. *Which hypothesis
+        this is* is settled by what the observation said, and not by what the vocabulary
+        could make of it: keying on the resolved type would give "originator of" a different
+        logical id the moment a regime recognised it, splitting one hypothesis into two and
+        losing the record that they were ever the same claim. The resolved type, the
+        resolution state and every alternative are revision material instead, so a
+        recognition shows up as a new reading of the same hypothesis.
+
+        For a candidate that supplies no surface, the surface was derived from the ref, so
+        this is keying on the type as before and no existing identity moves.
         """
         return {
             **logical_material(
                 self.arity_mode,
-                self.relation_type,
+                self.relation_surface,
                 self._participants,
                 self.role_assignments,
             ),
             "tenant_id": self.tenant_id,
         }
+
 
     def _revision_material(self, logical_candidate_id: str) -> dict[str, Any]:
         """The material of *this reading*, keyed by the logical id.
@@ -925,16 +1147,26 @@ class RelationCandidate:
         mint a new ``candidate_id`` while leaving the logical key alone. The logical id is a
         parameter rather than read off the record so that derivation cannot recurse through
         :meth:`with_id` on an unaddressed candidate.
+
+        The predicate enters the same way, and for a sharper reason: it belongs to the
+        revision rather than the logical key because a later ``SemanticRegime`` may resolve the
+        *same* surface form to a different operator. That is a new reading of one hypothesis,
+        not a new hypothesis — and if the predicate sat in the logical material, resolving it
+        would silently mint a second candidate for one relation. The whole surface, the
+        resolution state and every alternative enter here, so an unresolved predicate that
+        later becomes a resolved one is visibly one candidate with two readings.
         """
         return {
             "logical_candidate_id": logical_candidate_id,
             "schema_version": self.schema_version,
+            "predicate_hypothesis": self.predicate_hypothesis.content_key(),
             "temporal_hypothesis": self.temporal_hypothesis.to_dict(),
             "observed_at": _iso(self.observed_at),
             "context_ref": self.context_ref,
             "semantic_regime_ref": self.semantic_regime_ref,
             "observation_refs": list(self.observation_refs),
             "evidence_refs": list(self.evidence_refs),
+            "signal_refs": list(self.signal_refs),
             "extraction_method": str(self.extraction_method),
             "extractor_version": self.extractor_version,
             "extraction_rule_id": self.extraction_rule_id,
@@ -1351,7 +1583,20 @@ class RelationCandidateSet:
 
     @property
     def admissible(self) -> tuple[RelationCandidate, ...]:
-        """The readings :meth:`RelationCandidate.to_claim` would accept."""
+        """The readings carrying the ``SUPPORTED`` label - a **compatibility
+        projection**, not a lifecycle gate (feature 019, CD-1).
+
+        It filters on :attr:`RelationCandidate.is_admissible`, which asks what label a
+        reading bears. It does not ask whether any reading here can become a claim,
+        because that is a question about evidence and this is a question about a string.
+
+        Two consequences worth stating plainly. A ``PROPOSE`` reading is absent from this
+        tuple and is not thereby refused - it reaches the claim layer through
+        :func:`domain.relation_claim_material.build`, ``validate`` and ``admit``. And a
+        reading in this tuple has earned nothing: it is a candidate that someone labelled.
+
+        A caller that wants the real answer should call ``admit`` and handle the refusal.
+        """
         return tuple(c for c in self.candidates if c.is_admissible)
 
     def by_logical_candidate_id(self, logical_candidate_id: str) -> tuple[RelationCandidate, ...]:

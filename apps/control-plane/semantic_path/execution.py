@@ -125,8 +125,6 @@ from domain.evidence_context import (
 )
 from domain.evidence_lineage import EvidenceGraph, EvidenceHop, HopKind, LineageTrace
 from domain.relation_candidate import (
-    CandidateStatus,
-    ExtractionStrategy,
     RelationCandidate,
     SpanRef,
     TemporalHypothesis,
@@ -137,8 +135,12 @@ from domain.relation_claim import (
     RelationRoleBinding,
     RelationStatus,
 )
+from domain.relation_claim_material import admit as admit_material
+from domain.relation_claim_material import build as build_material
+from domain.relation_claim_material import validate as validate_material
 from domain.relation_identity import RelationArityMode, canonical_material, digest128
 from domain.relation_schema import RelationSchema, TemporalSemantics
+from domain.temporal_observation import TemporalAxis
 from domain.temporal_worldline import EntityWorldline, WorldlineEvent, build_worldline
 from extractors.registry import DeterministicExtractorSet, Mention, SemanticHint
 from extractors.relations import (
@@ -146,6 +148,13 @@ from extractors.relations import (
     RelationalReading,
     extract_relational_readings,
     register_relational_extractors,
+)
+from extractors.signals.protocol import ExtractionScope, RelationSignalExtractor, run_producer
+from extractors.signals.signal import (
+    DirectionHypothesis,
+    Neighbourhood,
+    RelationSignal,
+    SignalKind,
 )
 from graph.abstraction import GraphEdge, GraphNode, HyperEdge, InMemoryGraphStore
 from graph.relation_store import GraphProjectionBridge, InMemoryRelationStore
@@ -190,6 +199,8 @@ from semantic.validation import (
     StageOutcome,
 )
 from semantic.vocabularies import Concept, ConceptScheme
+
+from semantic_path.assembly import AssemblyReport, assemble
 
 __all__ = [
     "GOLDEN_SENTENCE",
@@ -288,17 +299,32 @@ class SemanticExecutionError(RuntimeError):
 
 
 class ExecutionStage(StrEnum):
-    """The thirteen steps, in the order they execute.
+    """The fourteen steps, in the order they execute.
 
     The order is the point of the enum: it is what a reader follows, what a caller
     stops at, and what a diff is read against. :data:`STAGE_ORDER` is derived from
     the declaration order so the two cannot drift apart.
+
+    ``SIGNALS`` is feature 019's and it sits **after** ``REGIME``, which is the position the
+    dependencies actually force. A producer needs a frame and a regime before its signals
+    are worth anything - FR-014 and FR-016 both say a reading must say what it was read in
+    and interpreted under, and a signal that named a placeholder regime would satisfy the
+    type and not the requirement. It sits *before* ``RESOLUTION`` because it names mentions:
+    a producer sees surfaces, and reconciliation of those to entities is resolution's job
+    with a ``ResolutionDecisionRecord`` behind it.
+
+    It was originally placed between ``MENTIONS`` and ``REGIME``, on the reasoning that a
+    producer cannot run before there are mentions. That is true and it is not sufficient:
+    the earlier position forced a placeholder regime ref, and a placeholder that satisfies
+    the type is worse than no value at all, because it is indistinguishable from a real one
+    in every downstream read.
     """
 
     OBSERVATION = "observation"
     CONTEXT = "context"
     MENTIONS = "mentions"
     REGIME = "regime"
+    SIGNALS = "signals"
     RESOLUTION = "resolution"
     TYPES = "types"
     CANDIDATE = "candidate"
@@ -599,10 +625,43 @@ class ExecutionRequest:
     media_type: str = "text/html"
     transport: str = "warc-range"
 
+    #: Feature 019. Producers to run over :attr:`sentence` before assembly, in addition to
+    #: the caller's own declaration. Empty by default and that is the *usual* case: a caller
+    #: asserting one relation about one sentence does not need discovery, and running
+    #: producers nobody asked for would put observations in the record that the request did
+    #: not contemplate.
+    producers: tuple[RelationSignalExtractor, ...] = ()
+
+    #: The region between the two mentions, when the caller read one. Carried as a mapping
+    #: on the declared signal rather than as a live :class:`SpanRef`, so the declared signal
+    #: has the same shape as a producer's and the assembler treats them alike.
+    trigger_span: SpanRef | None = None
+
     @property
     def relation_type(self) -> str:
         """The operator identity both the candidate and the claim will carry."""
         return self.schema.relation_type
+
+    @property
+    def declared_by(self) -> str:
+        """Who asserted this relation, when the caller says.
+
+        Empty by default, and the default is meaningful: an unannotated declaration is
+        recorded under ``request/declaration`` rather than under the name of whoever ran the
+        process, because the caller's identity and the runner's identity are different facts
+        and FR-034's independence count is computed over the first.
+        """
+        return ""
+
+    def text_for_producers(self) -> str:
+        """The text a producer is handed.
+
+        The request's ``sentence``, verbatim, and named so the fact that it is *one
+        sentence* rather than a document is visible at the call site. A producer's
+        ``Neighbourhood`` will say it read this much, and a reader comparing two producers'
+        scopes needs to know they were offered the same thing.
+        """
+        return self.sentence
 
     def provenance(self, observation: Observation) -> dict[str, Any]:
         """Store-write provenance for this request (I-12), read off the observation."""
@@ -959,13 +1018,24 @@ class ResolutionStep:
 
 @dataclass(frozen=True)
 class CandidateStep:
-    """Step 7: the extraction hypothesis, its operator contract, and both readings.
+    """Step 7: the extraction hypothesis, its operator contract, and the reading.
 
-    ``proposed`` is the raw ``PROPOSE`` reading extraction produced; ``supported`` is
-    the same hypothesis after the check that admits it. Both are returned because a
-    rejection is a preserved candidate and never a deleted one (I-3, FR-006), and
-    because their distinct ``candidate_id`` values under one ``logical_candidate_id``
-    are the two-level identity working as designed.
+    ``proposed`` is the ``PROPOSE`` reading extraction produced, and it is the *only*
+    reading this step produces (feature 019, CD-1).
+
+    **There used to be a second one.** The step returned both ``proposed`` and
+    ``supported`` - the same hypothesis relabelled ``SUPPORTED`` - because
+    ``to_claim`` demanded that label, and the only way to get an unlabelled reading into
+    the claim layer was to write the label on it. That made the second field a
+    ceremony: it was derived from the first by a string assignment, and its distinct
+    ``candidate_id`` was evidence of nothing except that a string had been written.
+
+    So the field is gone rather than deprecated, because keeping it would keep inviting
+    the use. What replaced it is a gate that reads evidence: :func:`build` then
+    :func:`domain.relation_claim_material.validate` then :func:`admit`, in
+    :func:`_claim_step`. A reading that fails validation is refused there, and a reading
+    that passes is committed on its merits - which is a stronger statement than a label
+    ever was, and one a caller cannot satisfy by writing on a record.
 
     The operator is the one :class:`ResolutionStep` already derived from the same
     schema, handed forward rather than derived a second time: blocking (inside the
@@ -976,7 +1046,59 @@ class CandidateStep:
     schema: RelationSchema
     operator: RelationOperator
     proposed: RelationCandidate
-    supported: RelationCandidate
+
+
+@dataclass(frozen=True)
+class SignalStep:
+    """Step 6b: what producers saw, and what assembly made of it (feature 019, T034).
+
+    Two sources of signals are kept apart on purpose, because conflating them would be the
+    easiest way to make this stage lie:
+
+    * :attr:`declared` is the caller's own statement - "this observation asserts that this
+      subject relates to this object". It arrives as a :attr:`~extractors.signals.signal.
+      SignalKind.SCHEMA` signal over the **real** mention ids, which is what lets the
+      assembled candidate be the one the rest of the path expects without a special case.
+    * :attr:`discovered` is what producers *observed* in the document. These address their
+      endpoints as surfaces, because a producer sits below the mention layer and minting
+      mention ids would put mention identity inside extraction.
+
+    The two are assembled together and :attr:`report` holds the result, so the declared
+    hypothesis and the discovered ones are competing readings of the same evidence rather
+    than two unrelated collections. :attr:`unattributed` is the number that matters: signals
+    that were seen and not attributed to any candidate, which
+    :attr:`AssemblyReport.complete` refuses.
+    """
+
+    declared: RelationSignal
+    discovered: tuple[RelationSignal, ...] = ()
+    report: AssemblyReport | None = None
+
+    @property
+    def all_signals(self) -> tuple[RelationSignal, ...]:
+        return (self.declared, *self.discovered)
+
+    @property
+    def complete(self) -> bool:
+        """Whether every signal reached some candidate."""
+        return self.report is not None and self.report.complete
+
+    @property
+    def unattributed(self) -> tuple[str, ...]:
+        return () if self.report is None else self.report.unattributed_signal_ids
+
+    def candidates_matching(self, relation_ref: RelationRef | None) -> tuple[RelationCandidate, ...]:
+        """Assembled candidates whose predicate is ``relation_ref``.
+
+        A ``None`` ref matches only the unresolved readings, which is deliberate: asking
+        "the candidates with no operator type" is a real question CD-6 makes askable, and
+        answering it with the typed ones would make the question unaskable.
+        """
+        if self.report is None:
+            return ()
+        if relation_ref is None:
+            return tuple(c for c in self.report.candidates if c.relation_ref is None)
+        return tuple(c for c in self.report.candidates if c.relation_ref == relation_ref)
 
 
 @dataclass(frozen=True)
@@ -1169,6 +1291,7 @@ class ExecutionResult:
     observation: ObservationStep | None = None
     context: ContextStep | None = None
     mentions: MentionStep | None = None
+    signals: SignalStep | None = None
     regime: RegimeStep | None = None
     resolution: ResolutionStep | None = None
     types: TypeStep | None = None
@@ -1232,9 +1355,13 @@ class ExecutionResult:
             )
         if self.candidate is not None:
             step = self.candidate
-            pairs.append(("candidate", step.supported.candidate_id))
-            pairs.append(("logical_candidate", step.supported.logical_candidate_id))
-            pairs.append(("proposed_candidate", step.proposed.candidate_id))
+            # One reading, one key. The fingerprint listed both `proposed_candidate` and
+            # `candidate` because step 7 produced two readings under two labels (CD-1);
+            # with the relabelled reading gone they are the same value, and carrying a
+            # duplicate would make the fingerprint imply a distinction that no longer
+            # exists. `candidate` is the historical name and is what a reader expects.
+            pairs.append(("candidate", step.proposed.candidate_id))
+            pairs.append(("logical_candidate", step.proposed.logical_candidate_id))
         if self.claim is not None:
             pairs.append(("relation", self.claim.claim.relation_id))
             pairs.append(("logical_relation", self.claim.claim.logical_relation_id))
@@ -1783,7 +1910,7 @@ def _build_lineage(result: ExecutionResult) -> LineageBundle:
     """
     observation = result.observation.observation
     claim = result.claim.claim
-    candidate = result.candidate.supported
+    candidate = result.candidate.proposed
     mentions = result.mentions.records
     graph = EvidenceGraph()
     tenant = observation.tenant_id
@@ -2633,6 +2760,165 @@ def _reading_extractor_version(result: ExecutionResult, fallback: str) -> str:
     return fallback
 
 
+def _signal_step(result: ExecutionResult) -> ExecutionResult:
+    """Step 6b - turn the request's declaration and the producers' findings into candidates.
+
+    Feature 019, T034. This is where the orchestrator stops constructing candidates by hand.
+
+    **The declaration is a signal, and that is the load-bearing decision.** Before this,
+    :func:`_candidate_step` built a :class:`~domain.relation_candidate.RelationCandidate`
+    field by field from the request, which meant the relation the caller asked about was
+    never *evidence* for anything - it was an instruction. It is now a
+    :attr:`~extractors.signals.signal.SignalKind.SCHEMA` signal over the real mention ids,
+    assembled alongside whatever the producers observed. Two consequences, both of them the
+    point:
+
+    * The caller's declaration and a producer's observation are the same kind of thing, so
+      they aggregate, corroborate or conflict through one code path instead of a declared
+      candidate and a discovered one arriving by different routes.
+    * The declared signal's ``trigger_span`` and temporal hypothesis travel as
+      ``extra``, so the span and the window the caller supplied reach the assembled
+      candidate through the assembler rather than around it. That is also the only reason
+      this can be done without losing them: the assembler builds a candidate from
+      :class:`~domain.relation_candidate.RelationCandidate`'s defaults for anything a signal
+      does not carry.
+
+    **Producers run over the observation's text and their endpoints are NOT remapped to
+    mention ids.** A producer addresses its ends as surfaces, because it sits below the
+    mention layer; remapping them here would be the orchestrator inventing mention identity
+    from a string match, which is resolution with no ``ResolutionDecisionRecord`` behind it.
+    A discovered signal therefore produces a candidate over surface addresses, and it is
+    *not* the candidate this path continues with. It is kept, counted and reported, and the
+    reconciliation of surface addresses to mention ids is a later layer's job with somewhere
+    to record the decision.
+
+    :attr:`SignalStep.declared` is what :func:`_candidate_step` reads. If no producer ran,
+    this stage still produces a candidate, from the declaration alone - which is the
+    behaviour the path had before and the one a caller asserting a relation explicitly
+    should keep getting.
+    """
+    request = result.request
+    mentions = result.mentions
+    # The regime the regime step actually derived, not a placeholder. Before this stage
+    # moved after REGIME it had to name an "uncommitted" regime because the real one did
+    # not exist yet, and a placeholder that satisfies the type is indistinguishable from a
+    # real value in every downstream read - which is the opposite of what FR-014 wants.
+    frame = result.regime.frame
+    regime_ref = result.regime.record.regime_id
+    # The retrieval, when the request supplied one. Empty rather than the observation's
+    # ``source_id`` when it did not: a source is a publisher and a capture is a retrieval,
+    # and a signal's ``capture_ref`` has to be resolvable against something somebody
+    # actually fetched (I-3). A blank says "no retrieval was named", which is the truth for
+    # a request built without one.
+    capture = request.capture
+    document_ref = capture.capture_id if capture is not None else ""
+    scope = ExtractionScope(
+        tenant_id=request.tenant_id,
+        context_ref=frame.context_id,
+        semantic_regime_ref=regime_ref,
+        document_ref=document_ref,
+        investigation_id=request.investigation_id,
+        recorded_by=request.recorded_by,
+    )
+
+    declared = RelationSignal(
+        subject_mention_ref=mentions.subject.mention_id,
+        object_mention_ref=mentions.obj.mention_id,
+        kind=SignalKind.SCHEMA,
+        # The relation's own words as the caller stated them, which for a declared
+        # hypothesis is the operator's name. Unlike a producer's surface, this one *is* a
+        # type the platform holds, so the ref is set - the declaration is a typed claim and
+        # pretending otherwise would lose the only part of it that is unambiguous.
+        relation_surface=request.relation_type,
+        relation_ref=RelationRef(request.relation_type, request.schema.schema_version),
+        neighbourhood=Neighbourhood(
+            characters_scanned=0,
+            pairs_considered=0,
+            scope_read=(
+                "nothing was read: this signal is the caller's declaration that the "
+                "observation asserts this relation, not a producer's reading of a document"
+            ),
+            precision="declared",
+        ),
+        direction=DirectionHypothesis.SUBJECT_TO_OBJECT,
+        producer_ref=request.declared_by or "request/declaration",
+        # The operator's identity from the *request's* schema, not from
+        # ``result.resolution.operator``: this stage runs before resolution, because a
+        # producer needs mentions and a frame but not a resolved participant. Reading the
+        # operator off the resolution step would have made the stage order a lie about its
+        # own dependencies.
+        producer_version=request.schema.relation_type,
+        context_ref=frame.context_id,
+        semantic_regime_ref=regime_ref,
+        capture_ref=document_ref,
+        stated_axes=(TemporalAxis.OBSERVED_AT,),
+        producer_confidence=1.0,
+        tenant_id=request.tenant_id,
+        notes="declared by the caller, not observed by a producer",
+        extra={
+            "declared": True,
+            "arity_mode": str(request.schema.arity_mode),
+            # Plain tuples, not RelationRoleBinding objects, and the reason is
+            # serialisability: a signal's ``extra`` is carried into ``to_dict`` and into the
+            # durable row, and a frozen dataclass does not belong in either. The assembler
+            # rebuilds the typed bindings from these on the way into the candidate, so the
+            # type discipline lands where the field is typed rather than in transit.
+            "role_bindings": (
+                (request.role_names[0], mentions.subject.mention_id,
+                 request.type_refs.get(request.subject_kind, "")),
+                (request.role_names[1], mentions.obj.mention_id,
+                 request.type_refs.get(request.object_kind, "")),
+            ),
+            "trigger_span": _span_to_dict(result),
+            "temporal_semantics": str(request.schema.temporal_semantics),
+        },
+    )
+
+    discovered: tuple[RelationSignal, ...] = ()
+    if request.producers:
+        found: list[RelationSignal] = []
+        for producer in request.producers:
+            found.extend(
+                run_producer(producer, [request.text_for_producers()], scope=scope)
+            )
+        discovered = tuple(found)
+
+    report = assemble(
+        (*discovered, declared),
+        tenant_id=request.tenant_id,
+        context_ref=frame.context_id,
+        semantic_regime_ref=regime_ref,
+        investigation_id=request.investigation_id,
+        recorded_by=request.recorded_by,
+    )
+    return replace(
+        result,
+        signals=SignalStep(declared=declared, discovered=discovered, report=report),
+        reached=ExecutionStage.SIGNALS,
+    )
+
+
+def _span_to_dict(result: ExecutionResult) -> dict[str, object] | None:
+    """The declared trigger span as a mapping the assembler can pass on, or ``None``.
+
+    A span, not a span *ref*: :class:`extractors.signals.signal.RelationSignal` is built
+    from primitives the producer contract can express, and the caller-supplied span is
+    carried as data rather than as a live object so the declared signal is the same shape
+    whether it was built here or by a producer. The assembler reads it back in
+    ``_candidate_for``.
+    """
+    request = result.request
+    if request.trigger_span is None:
+        return None
+    span = request.trigger_span
+    return {
+        "segment_ref": span.segment_ref,
+        "start": span.start,
+        "end": span.end,
+        "mention_ref": span.mention_ref,
+    }
+
+
 def _candidate_step(result: ExecutionResult) -> ExecutionResult:
     """Step 7 - build the extraction hypothesis and its operator contract.
 
@@ -2656,29 +2942,58 @@ def _candidate_step(result: ExecutionResult) -> ExecutionResult:
     observation = result.observation.observation
     mentions = result.mentions
     operator = result.resolution.operator
-    proposed = RelationCandidate(
-        subject_mention_ref=mentions.subject.mention_id,
-        object_mention_ref=mentions.obj.mention_id,
-        relation_ref=RelationRef(request.relation_type, request.schema.schema_version),
-        arity_mode=request.schema.arity_mode,
-        role_assignments=(
-            RelationRoleBinding(
-                request.role_names[0],
-                mentions.subject.mention_id,
-                request.type_refs.get(request.subject_kind, ""),
-            ),
-            RelationRoleBinding(
-                request.role_names[1],
-                mentions.obj.mention_id,
-                request.type_refs.get(request.object_kind, ""),
-            ),
+    signals = result.signals
+    if signals is None or signals.report is None:
+        raise SemanticExecutionError(
+            "signals_step_missing",
+            "the candidate step reads an assembled reading, so the signals step must have "
+            "run; a candidate constructed here instead would be the hand-built reading this "
+            "path stopped doing in feature 019 (T034)",
+        )
+    wanted = RelationRef(request.relation_type, request.schema.schema_version)
+    readings = signals.candidates_matching(wanted)
+    if not readings:
+        raise SemanticExecutionError(
+            "declared_reading_missing",
+            f"no assembled candidate carries {wanted}. The declaration is a signal like any "
+            "other, so it is aggregated and can lose - and if it has, the report says so: "
+            f"unattributed={signals.unattributed}. Reading "
+            f"{len(signals.report.candidates)} candidate(s) and finding none with this "
+            "operator means the request's own declaration did not survive assembly, which "
+            "is a bug in the signal step rather than a fact about the document",
+        )
+    # Exactly one reading should match: the declared signal is the only source that names
+    # this operator over these mentions, and a second would mean something else in the
+    # document also stated it. That is legitimate - a cue phrase and a table header naming
+    # the same relation - and both signals are already in the same reading's signal_refs, so
+    # one candidate is still the right answer. Two *candidates* for one operator over one
+    # pair would mean two readings that the key failed to merge.
+    if len(readings) > 1:
+        raise SemanticExecutionError(
+            "duplicate_declared_reading",
+            f"{len(readings)} assembled candidates carry {wanted} over the same mention "
+            f"pair: {[c.candidate_id for c in readings]}. Assembly groups by pair and by "
+            "reading, so two candidates here means two readings that should have been one - "
+            "a disagreement the assembly key did not catch",
+        )
+    assembled = readings[0]
+    # The fields the caller supplied and the assembler does not model are restored here,
+    # and each one is restored from the *request* rather than from the signal: the span, the
+    # window, the observation and the evidence set are the caller's account of what it read,
+    # and the assembler's job was to derive the identity, not to re-decide those.
+    proposed = replace(
+        assembled,
+        candidate_id="",
+        trigger_span=(
+            SpanRef(
+                segment_ref=str(assembled.trigger_span.get("segment_ref", "")),
+                start=int(assembled.trigger_span.get("start", 0)),
+                end=int(assembled.trigger_span.get("end", 0)),
+                mention_ref=str(assembled.trigger_span.get("mention_ref", "")),
+            )
+            if isinstance(assembled.trigger_span, dict)
+            else _measured_trigger(result, observation.segment_id)
         ),
-        context_ref=result.regime.frame.context_id,
-        semantic_regime_ref=result.regime.record.regime_id,
-        trigger_span=_measured_trigger(result, observation.segment_id),
-        extraction_method=ExtractionStrategy.LEXICAL_PATTERN,
-        extractor_version=_reading_extractor_version(result, observation.extraction_version),
-        extraction_rule_id=RELATION_RULE_ID,
         observation_refs=(observation.observation_id,),
         evidence_refs=(
             observation.observation_id,
@@ -2691,12 +3006,9 @@ def _candidate_step(result: ExecutionResult) -> ExecutionResult:
             valid_to=request.valid_to,
             semantics=request.schema.temporal_semantics,
         ),
-        candidate_status=CandidateStatus.PROPOSE,
         confidence=request.confidence,
-        tenant_id=request.tenant_id,
-        investigation_id=request.investigation_id,
+        extractor_version=_reading_extractor_version(result, observation.extraction_version),
         observed_at=observation.observed_at,
-        recorded_by=request.recorded_by,
     ).with_id()
     return replace(
         result,
@@ -2704,20 +3016,40 @@ def _candidate_step(result: ExecutionResult) -> ExecutionResult:
             schema=request.schema,
             operator=operator,
             proposed=proposed,
-            supported=proposed.with_status(CandidateStatus.SUPPORTED),
         ),
         reached=ExecutionStage.CANDIDATE,
     )
 
 
 def _claim_step(result: ExecutionResult) -> ExecutionResult:
-    """Step 10 - promote the checked reading to a claim, with both ids derived once.
+    """Step 8 - build the material, validate it, and admit it (feature 019, CD-1).
 
-    :meth:`RelationCandidate.to_claim` is the only path across and it raises unless the
-    reading is ``SUPPORTED``, so producing a claim here *is* the admission act. The
-    ``assertion_refs`` it is given are the real typing claims, which is what makes the
-    claim's identity material name the typing its participants rest on and what makes
-    the lineage chain walkable from the claim to a mention.
+    **This is the change CD-1 exists to make.** The step used to call
+    ``step.supported.to_claim(...)``, and that is worth unpacking because every part of
+    it was wrong in the same direction:
+
+    * ``to_claim`` raised unless the reading carried the ``SUPPORTED`` label, so the label
+      was the precondition for committing anything - and a label is a string a caller
+      writes. The gate tested the caller's belief.
+    * ``to_claim`` reached admission through
+      :func:`~domain.relation_claim_material.admit` with
+      :func:`~domain.relation_claim_material.unvalidated_report` - a report saying
+      "nothing was checked". So even the report slot that exists to gate admission carried
+      no findings. The evidence was not consulted, not weakly consulted: not at all.
+    * The relabelled ``supported`` reading was what got committed, so the thing that
+      entered the graph was not the reading extraction produced.
+
+    The order here is the substance. :func:`~domain.relation_claim_material.build` cannot
+    admit, by construction - its return type has no path to a committed claim even in
+    principle. :func:`~domain.relation_claim_material.validate` cannot admit either, and
+    does not need to: ``LayeredValidator`` was widened to read a *material*, so the six
+    stages can run before anything is committed. :func:`~domain.relation_claim_material.admit`
+    is the only producer of a claim, and it now receives a real report. The candidate is
+    never relabelled on the way through.
+
+    That last point is what makes the guard meaningful. A reading with an adverse finding
+    under a blocking operator policy is refused here, and the caller cannot make it pass
+    by writing ``supported`` on the record - because nothing reads that field any more.
 
     **The role bindings are rebuilt against the resolved entities, not transcribed.**
     A candidate's role bindings name *mentions*, because a candidate has resolved
@@ -2734,21 +3066,18 @@ def _claim_step(result: ExecutionResult) -> ExecutionResult:
     resolved to, so a role member is the entity the mention actually resolved to rather
     than a digest of the mention.
 
-    Two interface facts recorded here rather than worked around silently:
-    ``evidence_refs`` is **required** by ``to_claim`` but ``RelationClaim`` has no
-    field for it, so the evidence set a caller passes is dropped at admission; and
-    ``source_independence_groups`` is not a parameter at all, so every claim this
-    path produces has ``independent_source_count == 0`` and the validator's
-    ``cross_source`` stage can only ever answer ``UNKNOWN``.
+    ``source_independence_groups`` is passed from the resolution batch, so the
+    ``cross_source`` stage has real groups to corroborate against rather than an empty
+    set that can only ever answer ``UNKNOWN``.
     """
     request = result.request
     step = result.candidate
     resolution = result.resolution
-    claim = step.supported.to_claim(
+    material = build_material(
+        step.proposed,
         subject_ref=resolution.subject_ref,
         object_ref=resolution.object_ref,
         revision_number=request.revision_number,
-        claim_status=request.claim_status,
         evidence_grade=request.evidence_grade,
         tenant_id=request.tenant_id,
         role_bindings=(
@@ -2757,7 +3086,7 @@ def _claim_step(result: ExecutionResult) -> ExecutionResult:
                 resolution.batch.entity_for(binding.member_ref),
                 binding.member_class,
             )
-            for binding in step.supported.role_assignments
+            for binding in step.proposed.role_assignments
         ),
         assertion_refs=tuple(
             assertion.type_assertion_id for assertion in result.types.assertions
@@ -2768,12 +3097,36 @@ def _claim_step(result: ExecutionResult) -> ExecutionResult:
         ontology_version=request.ontology_version,
         observed_at=result.observation.observation.observed_at,
     )
+    report = validate_material(
+        material,
+        operators={request.relation_type: step.operator},
+        resolution=result.regime.resolution,
+        type_assertions=dict(result.types.by_entity),
+        contexts={
+            result.regime.base_frame.context_id: result.regime.base_frame,
+            result.regime.frame.context_id: result.regime.frame,
+        },
+        # Empty rather than a default guess: there is no committed claim yet at this point
+        # in the lifecycle, and inventing a peer set for the cross_source stage to
+        # corroborate against would be asserting relations nobody admitted. The stage will
+        # answer UNKNOWN, which is the truth - and `_validation_step` re-runs it over the
+        # committed claim with the claim itself in scope.
+        claims=(),
+        regime=result.regime.regime,
+    )
+    claim = admit_material(
+        material,
+        report,
+        operator=step.operator,
+        claim_status=request.claim_status,
+        created_at=result.observation.observation.observed_at,
+    )
     return replace(
         result,
         claim=ClaimStep(
             claim=claim,
-            candidate_id=step.supported.candidate_id,
-            logical_candidate_id=step.supported.logical_candidate_id,
+            candidate_id=step.proposed.candidate_id,
+            logical_candidate_id=step.proposed.logical_candidate_id,
         ),
         reached=ExecutionStage.CLAIM,
     )
@@ -2935,7 +3288,7 @@ def _worldline_step(result: ExecutionResult) -> ExecutionResult:
     request = result.request
     claim = result.store.stored
     observation = result.observation.observation
-    trigger = result.candidate.supported.trigger_span
+    trigger = result.candidate.proposed.trigger_span
     record = StreamRecord(
         entity_id=result.resolution.subject_ref,
         kind=f"relation.{claim.relation_type}",
@@ -2994,6 +3347,7 @@ _STEP_TABLE: tuple[tuple[ExecutionStage, Callable[[ExecutionResult], ExecutionRe
     (ExecutionStage.CONTEXT, _context_step),
     (ExecutionStage.MENTIONS, _mentions_step),
     (ExecutionStage.REGIME, _regime_step),
+    (ExecutionStage.SIGNALS, _signal_step),
     (ExecutionStage.RESOLUTION, _resolution_step),
     (ExecutionStage.TYPES, _types_step),
     (ExecutionStage.CANDIDATE, _candidate_step),

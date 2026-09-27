@@ -448,8 +448,8 @@ def _layer_claims(result: ExecutionResult) -> list[tuple[str, Any]]:
                 "candidate",
                 (
                     result.candidate.proposed.candidate_id,
-                    result.candidate.supported.candidate_id,
-                    result.candidate.supported.logical_candidate_id,
+        result.candidate.proposed.candidate_id,
+        result.candidate.proposed.logical_candidate_id,
                 ),
             )
         )
@@ -1647,7 +1647,7 @@ def record_log(case_run: CaseRun) -> Mapping[str, Any]:
         log["anchor_captures"] = dict(_anchor_captures(result, case_run.capture))
         log["independence_groups"] = [list(group) for group in step.independence_groups()]
     if result.candidate is not None:
-        log["candidate"] = _candidate_payload(result.candidate.supported)
+        log["candidate"] = _candidate_payload(result.candidate.proposed)
         log["proposed_candidate"] = _candidate_payload(result.candidate.proposed)
     if result.claim is not None:
         claim = result.claim.claim
@@ -2658,7 +2658,7 @@ def _relation_chain(case_run: CaseRun) -> AcceptanceChain:
         )
     claim = result.claim.claim
     assertions = result.types.assertions if result.types else ()
-    candidate_id = result.candidate.supported.candidate_id if result.candidate else ""
+    candidate_id = result.candidate.proposed.candidate_id if result.candidate else ""
     on_record = "candidate_id" in {field.name for field in fields(RelationClaim)}
     links = [
         ChainHole(

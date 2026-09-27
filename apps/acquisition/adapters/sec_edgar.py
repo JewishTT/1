@@ -97,8 +97,14 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 
 from domain.capture import Capture, CaptureTimeBasis
+from domain.temporal_observation import (
+    SourceTemporalObservation,
+    TemporalAxis,
+    TemporalPrecision,
+)
 from stream import (
     AxisBinding,
     CaptureContext,
@@ -273,6 +279,63 @@ class EdgarFullIndexAdapter:
             ingest_batch_id=context.ingest_batch_id,
             ingest_attempt=context.ingest_attempt,
             recorded_by=context.recorded_by,
+        )
+
+    def to_temporal_observations(
+        self,
+        record: object,
+        *,
+        context: CaptureContext,
+        capture_ref: str,
+    ) -> tuple[SourceTemporalObservation, ...]:
+        """The registrar's acceptance instant, which used to be discarded (CD-5).
+
+        **This is the value the module docstring kept promising.** The declaration binds
+        ``published_at`` to ``date filed``, :func:`iso_utc_from_filed_date` exists solely to
+        parse it, :attr:`CaptureTimeBasis.PUBLICATION` was set on every capture this
+        adapter produces - and the parsed instant was then thrown away, because ``Capture``
+        had nowhere to put it. The stream declared it could supply an axis and then did
+        not, which is the one thing a declaration exists to prevent.
+
+        So the instant is returned as a :class:`SourceTemporalObservation` beside the
+        capture rather than inside it. Three things travel with it that a bare timestamp
+        could not:
+
+        * :attr:`~SourceTemporalObservation.raw_value` keeps ``"20240315"`` verbatim, so
+          the day-granularity convention is checkable against the register rather than
+          trusted.
+        * :attr:`~SourceTemporalObservation.precision` is ``DAY``, so a consumer reading
+          the parsed instant can see that its midnight was our convention and not
+          something the SEC stated.
+        * :attr:`~SourceTemporalObservation.basis` is ``PUBLICATION``, distinguishing this
+          world fact from a computed one and from an index observation.
+
+        **An unparseable date yields no observation, not a guessed one.** A row whose
+        ``date filed`` is absent or malformed produces an empty tuple: there is no instant
+        to record, and inventing one would put a false filing date on a real filing. The
+        capture is still produced - it exists whether or not the register stated a date -
+        and the absence is visible as the absence of an observation on the ``published_at``
+        axis, which is the honest shape for "this source had no such field here".
+        """
+        if not isinstance(record, Mapping):
+            return ()
+        raw = str(record.get("date_filed", "") or "").strip()
+        if not raw:
+            return ()
+        parsed = iso_utc_from_filed_date(raw)
+        if parsed is None:
+            return ()
+        return (
+            SourceTemporalObservation(
+                temporal_axis=TemporalAxis.PUBLISHED_AT,
+                capture_ref=capture_ref,
+                stated_value=datetime.fromisoformat(parsed.replace("Z", "+00:00")),
+                raw_value=raw,
+                precision=TemporalPrecision.DAY,
+                basis=CaptureTimeBasis.PUBLICATION,
+                evidence_location=PUBLISHED_AT_FIELD,
+                tenant_id=context.tenant_id,
+            ),
         )
 
     def _locator(self, document_path: str, record: Mapping[str, object]) -> str:
