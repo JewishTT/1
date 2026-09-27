@@ -170,13 +170,27 @@ class FrontierItem(Base):
     partition: Mapped[str] = mapped_column(String(64), default="global")
     next_schedule_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # FR-007: a discovered candidate carries the provenance of its discovery
+    # (source, method, query/seed, and for link-graph the originating
+    # observation). Read for audit, never queried -- deliberately unindexed
+    # (see migration 017 and ADR-0026). Written by the discovery bridge, not by
+    # frontier policy, which owns state/retries/lease/schedule only.
+    #
+    # Declared LAST on purpose. An ALTER TABLE ... ADD COLUMN always appends at
+    # the end of the physical table, so a fresh install (create_all, this
+    # order) and an upgraded install (017, appended last) only agree on physical
+    # column order if this attribute is last as well. Declaring it earlier would
+    # make the two install paths differ in a way nothing in the application can
+    # observe but everything that reads the physical table would see.
+    provenance: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
 
     __table_args__ = (
         Index("ix_frontier_tenant", "tenant_id"),
         Index("ix_frontier_host", "host_key"),
         Index("ix_frontier_partition", "partition"),
         # FR-005: Postgres is authoritative; dedup lives here as a unique
-        # schedule key (one live frontier item per tenant+uri).
+        # schedule key (one live frontier item per tenant+uri). FR-006 discovery
+        # idempotency depends on this index, so it must never be rebuilt.
         Index("uq_frontier_schedule", "tenant_id", "uri", unique=True),
     )
 
@@ -949,4 +963,528 @@ class MaterializationCursor(Base):
     __table_args__ = (
         Index("ix_materialization_cursor_scope", "tenant_id", "entity_id", "run_id"),
         Index("uq_materialization_cursor_page", "tenant_id", "entity_id", "run_id", "crawl", "page", unique=True),
+    )
+
+
+class SourceQuerySet(Base):
+    """Persisted multi-route plan for one entity (feature 015, US2).
+
+    Planning is deterministic and pure, but persisting it makes the executed
+    route set inspectable and lets frontier entries reference a stable query
+    identity across runs. Mirrors migration 015 exactly.
+    """
+
+    __tablename__ = "source_query_set"
+
+    query_set_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    entity_id: Mapped[str] = mapped_column(String(64))
+    identity_fingerprint: Mapped[str] = mapped_column(String(64))
+    surface_digest: Mapped[str] = mapped_column(String(64))
+    query_count: Mapped[int] = mapped_column(Integer, default=0)
+    executable_count: Mapped[int] = mapped_column(Integer, default=0)
+    unsupported_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_source_query_set_scope",
+            "tenant_id",
+            "entity_id",
+            "identity_fingerprint",
+            unique=True,
+        ),
+        Index("ix_source_query_set_tenant", "tenant_id"),
+    )
+
+
+class SourceQuery(Base):
+    """One route in a :class:`SourceQuerySet`, executable or declared-unsupported.
+
+    Unsupported rows are persisted rather than omitted so that a partially
+    served search surface is distinguishable from a fully served one (FR-004).
+    """
+
+    __tablename__ = "source_query"
+
+    query_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    query_set_id: Mapped[str] = mapped_column(String(96))
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    entity_id: Mapped[str] = mapped_column(String(64))
+    ordinal: Mapped[int] = mapped_column(Integer)
+    route_kind: Mapped[str] = mapped_column(String(32))
+    query_value: Mapped[str] = mapped_column(String(512))
+    match_type: Mapped[str] = mapped_column(String(16))
+    surt_prefix: Mapped[str | None] = mapped_column(String(255))
+    provider: Mapped[str | None] = mapped_column(String(32))
+    executable: Mapped[bool] = mapped_column(Boolean, default=True)
+    unsupported_reason: Mapped[str | None] = mapped_column(String(64))
+    origin_refs: Mapped[list] = mapped_column(JSONB, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_source_query_identity",
+            "query_set_id",
+            "route_kind",
+            "query_value",
+            unique=True,
+        ),
+        Index("ix_source_query_entity", "tenant_id", "entity_id"),
+        Index("ix_source_query_executable", "tenant_id", "entity_id", "executable"),
+    )
+
+
+class EvidenceContext(Base):
+    """Immutable evidence frame a claim is interpreted inside (feature 016, US3).
+
+    A context is the observation, its source, its document segment and the
+    candidate mentions it grounds, addressed by content: ``context_id`` is a
+    digest of the frame's own fields, so re-registering an identical frame is a
+    no-op rather than a duplicate (I-11). Never substituted with a default frame
+    when resolution fails -- an unresolved context yields an explicit
+    ``context_unresolved`` reason instead. Mirrors migration 016 exactly.
+    """
+
+    __tablename__ = "evidence_context"
+
+    context_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    investigation_id: Mapped[str] = mapped_column(String(36), server_default="")
+    entity_anchor: Mapped[str] = mapped_column(String(64), server_default="")
+    observation_id: Mapped[str] = mapped_column(String(64), server_default="")
+    source_id: Mapped[str] = mapped_column(String(64), server_default="")
+    document_id: Mapped[str] = mapped_column(String(96), server_default="")
+    segment_id: Mapped[str] = mapped_column(String(96), server_default="")
+    subject_candidate_ids: Mapped[list] = mapped_column(JSONB)
+    object_candidate_ids: Mapped[list] = mapped_column(JSONB)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source_family: Mapped[str] = mapped_column(String(64), server_default="")
+    independence_group: Mapped[str] = mapped_column(String(64), server_default="")
+    language: Mapped[str] = mapped_column(String(8), server_default="")
+    location_context: Mapped[str] = mapped_column(String(128), server_default="")
+    extraction_version: Mapped[str] = mapped_column(String(32), server_default="")
+    normalization_version: Mapped[str] = mapped_column(String(32), server_default="")
+    ontology_version: Mapped[str] = mapped_column(String(64), server_default="")
+    completeness: Mapped[str] = mapped_column(String(16), server_default="complete")
+    trust_state: Mapped[str] = mapped_column(String(16), server_default="unverified")
+    policy_snapshot_ref: Mapped[str] = mapped_column(String(96), server_default="")
+    parent_context_id: Mapped[str] = mapped_column(String(64), server_default="")
+    frame_fingerprint: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_evidence_context_tenant", "tenant_id"),
+        Index("ix_evidence_context_observation", "tenant_id", "observation_id"),
+        Index("ix_evidence_context_source", "tenant_id", "source_id"),
+        Index("ix_evidence_context_investigation", "tenant_id", "investigation_id"),
+        Index(
+            "uq_evidence_context_fingerprint",
+            "tenant_id",
+            "frame_fingerprint",
+            unique=True,
+        ),
+    )
+
+
+class RelationClaim(Base):
+    """A single revision of an asserted relation, with its own provenance (016, US2).
+
+    Identity is two-level: ``logical_relation_id`` names the relation and stays
+    constant across revisions, while ``relation_id`` covers this revision's
+    content and changes when the claim is revised. A claim is not truth (I-3) --
+    ``confidence``, ``evidence_grade`` and the source independence groups are
+    stored separately and never collapsed into one number (constitution IV).
+    Mirrors migration 016 exactly.
+    """
+
+    __tablename__ = "relation_claim"
+
+    relation_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    logical_relation_id: Mapped[str] = mapped_column(String(64))
+    revision_number: Mapped[int] = mapped_column(Integer, server_default="1")
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    investigation_id: Mapped[str] = mapped_column(String(36), server_default="")
+    relation_type: Mapped[str] = mapped_column(String(128))
+    arity_mode: Mapped[str] = mapped_column(String(16))
+    subject_ref: Mapped[str] = mapped_column(String(64))
+    object_ref: Mapped[str] = mapped_column(String(64))
+    role_bindings: Mapped[list] = mapped_column(JSONB)
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    known_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    known_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    assertion_refs: Mapped[list] = mapped_column(JSONB)
+    observation_refs: Mapped[list] = mapped_column(JSONB)
+    context_ref: Mapped[str] = mapped_column(String(64))
+    source_independence_groups: Mapped[list] = mapped_column(JSONB)
+    extraction_version: Mapped[str] = mapped_column(String(32), server_default="")
+    normalization_version: Mapped[str] = mapped_column(String(32), server_default="")
+    ontology_version: Mapped[str] = mapped_column(String(64), server_default="")
+    schema_version: Mapped[str] = mapped_column(String(32), server_default="")
+    status: Mapped[str] = mapped_column(String(24), server_default="active")
+    confidence: Mapped[float] = mapped_column(Float, server_default="0.5")
+    evidence_grade: Mapped[str] = mapped_column(String(16), server_default="ungraded")
+    created_by: Mapped[str] = mapped_column(String(128), server_default="")
+    supersedes: Mapped[str] = mapped_column(String(64), server_default="")
+    contradicts: Mapped[list] = mapped_column(JSONB)
+    content_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_relation_claim_tenant", "tenant_id"),
+        Index("ix_relation_claim_logical", "tenant_id", "logical_relation_id"),
+        Index("ix_relation_claim_type", "tenant_id", "relation_type"),
+        Index("ix_relation_claim_subject", "tenant_id", "subject_ref"),
+        Index("ix_relation_claim_object", "tenant_id", "object_ref"),
+        Index("ix_relation_claim_context", "context_ref"),
+        Index("uq_relation_claim_content", "tenant_id", "content_hash", unique=True),
+    )
+
+
+class RelationClaimRevision(Base):
+    """Append-only ledger of a logical relation's revision chain (feature 016, US2).
+
+    A revised claim is written as a new row rather than an update, so the chain
+    that ``revisions_of`` returns can be reconstructed exactly as it was recorded
+    (I-1). Mirrors migration 016 exactly.
+    """
+
+    __tablename__ = "relation_claim_revision"
+
+    revision_row_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    relation_id: Mapped[str] = mapped_column(String(64))
+    logical_relation_id: Mapped[str] = mapped_column(String(64))
+    revision_number: Mapped[int] = mapped_column(Integer)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    context_ref: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(24))
+    evidence_grade: Mapped[str] = mapped_column(String(16))
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_relation_claim_revision_logical",
+            "tenant_id",
+            "logical_relation_id",
+            "revision_number",
+            unique=True,
+        ),
+        Index("ix_relation_claim_revision_relation", "relation_id"),
+    )
+
+
+class RelationSchemaVersion(Base):
+    """One registered version of a relation schema (feature 016, US5).
+
+    Relation semantics are data, not code: arity, allowed participant classes,
+    role bindings, admissible evidence patterns and temporal semantics are all
+    recorded so a verdict rendered against one version stays interpretable after
+    the vocabulary moves on. Mirrors migration 016 exactly.
+    """
+
+    __tablename__ = "relation_schema_version"
+
+    schema_row_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    relation_type: Mapped[str] = mapped_column(String(128))
+    schema_version: Mapped[str] = mapped_column(String(32))
+    arity_mode: Mapped[str] = mapped_column(String(16))
+    temporal_semantics: Mapped[str] = mapped_column(String(24))
+    admission_rule_id: Mapped[str] = mapped_column(String(64))
+    definition: Mapped[dict] = mapped_column(JSONB)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    registered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_relation_schema_version",
+            "tenant_id",
+            "relation_type",
+            "schema_version",
+            unique=True,
+        ),
+        Index("ix_relation_schema_version_type", "tenant_id", "relation_type"),
+    )
+
+
+class ClaimContextLineage(Base):
+    """A persisted lineage trace for one claim in one direction (feature 016, US6).
+
+    Traces stop at the first missing hop and say so: ``complete`` is false and
+    ``first_unresolved_hop`` names where the walk stopped, so an incomplete chain
+    is stored as incomplete rather than reported as an empty one (FR-033).
+    Mirrors migration 016 exactly.
+    """
+
+    __tablename__ = "claim_context_lineage"
+
+    lineage_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    relation_id: Mapped[str] = mapped_column(String(64))
+    direction: Mapped[str] = mapped_column(String(16))
+    hops: Mapped[list] = mapped_column(JSONB)
+    complete: Mapped[bool] = mapped_column(Boolean)
+    first_unresolved_hop: Mapped[str | None] = mapped_column(String(24))
+    unresolved_node_id: Mapped[str] = mapped_column(String(64), server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_claim_context_lineage_relation", "tenant_id", "relation_id", "direction"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Semantic fabric (feature 017: semantic-fabric)
+#
+# Four tenant-scoped tables holding the semantic layer beside the graph rather
+# than inside it: layered typing claims, the profiles that scope them, the
+# recorded cross-vocabulary alignments, and the graded findings validation
+# produces. None of them is an admission gate and none of them may delete: a
+# typing is a claim, a mapping is a correspondence somebody asserted, and a
+# finding is a verdict about a check rather than about the record (FR-012).
+#
+# Every table carries ``tenant_id`` NOT NULL with a check that it is not the
+# empty string. There is deliberately no nullable or global tenant: a semantic
+# term is a reading of one tenant's data, and a row readable by every tenant
+# would leak what instruments that tenant had (constitution IV, fail-closed).
+# ---------------------------------------------------------------------------
+
+
+class TypeAssertionRow(Base):
+    """One rung of the typing ladder for one entity, with its evidence (017, US2).
+
+    Layered typing (FR-003). ``scope`` says which layer a claim belongs to --
+    ``observed``, ``inferred``, ``mapped`` or ``context`` -- and ``status`` says
+    how far up the commitment ladder that layer has been taken. One entity holds
+    all four at once, which is the whole point: this table exists so the single
+    categorical ``Entity.schema_name`` no longer has to be the only typing there
+    is.
+
+    **A promotion is a new row, never an update.** ``assertion_id`` is the digest
+    of the *whole* claim -- status, evidence, ``raw_surface`` and ``hypothesis``
+    included -- so moving a claim from ``observed`` up to ``validated`` yields a
+    different id and both rows survive side by side. That is what makes FR-004
+    structural rather than aspirational: the ladder
+    ``raw -> surface -> hypothesis -> mapped concept`` is reconstructable from
+    these rows alone, with no prior state overwritten to record the newer one.
+
+    ``(tenant_id, entity_ref, type_ref, scope)`` is the *claim's* identity, and it
+    is deliberately left unconstrained: a unique constraint over it would forbid
+    the very second row a promotion needs. Idempotency comes from the primary key
+    instead, which catches "the same claim recorded twice" without catching "the
+    same claim promoted". What is indexed is the read path -- every scope of one
+    entity (US2) and the entity's whole typing history (US9) -- and two processes
+    recording the same claim at the same rung are two pieces of evidence for it,
+    so both are kept.
+
+    ``observed_at`` is when the platform learned the claim; ``valid_from`` and
+    ``valid_to`` are when it was true. Three separate columns, never merged
+    (constitution V). Mirrors migration 018 exactly.
+    """
+
+    __tablename__ = "type_assertions"
+
+    assertion_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    entity_ref: Mapped[str] = mapped_column(String(64))
+    type_ref: Mapped[str] = mapped_column(String(255))
+    type_scheme: Mapped[str] = mapped_column(String(16))
+    scope: Mapped[str] = mapped_column(String(16))
+    status: Mapped[str] = mapped_column(String(24))
+    raw_surface: Mapped[str] = mapped_column(Text, server_default="")
+    hypothesis: Mapped[str] = mapped_column(String(255), server_default="")
+    source_ref: Mapped[str] = mapped_column(String(64), server_default="")
+    extractor_ref: Mapped[str] = mapped_column(String(64), server_default="")
+    context_ref: Mapped[str] = mapped_column(String(64), server_default="")
+    profile_ref: Mapped[str] = mapped_column(String(96), server_default="")
+    mapping_ref: Mapped[str] = mapped_column(String(96), server_default="")
+    evidence_refs: Mapped[list] = mapped_column(JSONB)
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_type_assertion_tenant"),
+        Index("ix_type_assertion_entity", "tenant_id", "entity_ref", "scope"),
+    )
+
+
+class SemanticProfileRow(Base):
+    """One versioned, scoped bundle of semantic instruments (feature 017, US2).
+
+    A profile says "under this regime, these types, relations, vocabularies,
+    constraints and mappings were in play". It says nothing about what may exist:
+    the five ref collections are references to instruments, and no column here can
+    assert that two of them denote one thing (spec scope guard, FR-007).
+    ``parent_profile`` chains inheritance, and ``applies_to`` scopes the bundle to
+    a source, a domain, an extractor or an investigation.
+
+    Two keys, deliberately. ``(tenant_id, profile_id, version)`` is the *address* a
+    caller resolves, and is the unique one -- a versioned key is never rebound.
+    ``content_key`` is the digest of the whole bundle including the parent, so
+    "this key was already registered with a different bundle" is a decidable
+    question rather than a silent overwrite (constitution VII). It is a collision
+    guard, not a lookup key, so it carries no index.
+
+    ``applies_to`` is deliberately unindexed: a profile store is small per tenant
+    and a GIN index over a document read once per resolution would cost write
+    amplification on every profile write for a scan nobody runs (ADR-0026, the
+    same call migration 017 made for provenance). Mirrors migration 018 exactly.
+    """
+
+    __tablename__ = "semantic_profiles"
+
+    profile_row_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    profile_id: Mapped[str] = mapped_column(String(96))
+    version: Mapped[str] = mapped_column(String(32))
+    parent_profile: Mapped[str | None] = mapped_column(String(128))
+    type_refs: Mapped[list] = mapped_column(JSONB)
+    relation_refs: Mapped[list] = mapped_column(JSONB)
+    vocabulary_refs: Mapped[list] = mapped_column(JSONB)
+    constraint_refs: Mapped[list] = mapped_column(JSONB)
+    mapping_refs: Mapped[list] = mapped_column(JSONB)
+    applies_to: Mapped[list] = mapped_column(JSONB)
+    description: Mapped[str] = mapped_column(Text, server_default="")
+    content_key: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_semantic_profile_tenant"),
+        # A bare tenant scan is served by this index's leading column, so there
+        # is no separate tenant index to keep in step with it.
+        Index(
+            "uq_semantic_profile_version",
+            "tenant_id",
+            "profile_id",
+            "version",
+            unique=True,
+        ),
+    )
+
+
+class SemanticMappingRow(Base):
+    """One recorded correspondence between an internal term and an external one (017, US10).
+
+    A mapping is a claim a mapping process made, and it is stored as one (FR-009).
+    ``predicate`` is how that process characterised the relationship -- not how the
+    platform treats the two references, which is the difference between this row
+    and an identity assertion. ``mapping_source``, ``mapping_version`` and
+    ``justification`` say who produced the claim and on what grounds, so the
+    alignment can be audited, re-evaluated and cited as evidence rather than
+    living in a hardcoded dict.
+
+    ``mapping_id`` is the digest of the whole claim, which makes re-recording
+    identical content a no-op at the primary key and makes a *re-evaluation* a new
+    row that names its predecessor in ``supersedes`` (FR-004). Nothing is ever
+    overwritten or withdrawn in place.
+
+    Both directions are indexed because both are real read paths: "what do we
+    align this internal concept to" and "what does this external term align to
+    here" are asked in opposite directions, and a mapping process that aligns a
+    pair in either order is claiming the same correspondence. ``observed_at`` is
+    when the platform learned the mapping, which is not when the mapping became
+    true (constitution V). Mirrors migration 018 exactly.
+    """
+
+    __tablename__ = "semantic_mappings"
+
+    mapping_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    subject_ref: Mapped[str] = mapped_column(String(255))
+    object_ref: Mapped[str] = mapped_column(String(255))
+    subject_scheme: Mapped[str] = mapped_column(String(16))
+    object_scheme: Mapped[str] = mapped_column(String(16))
+    predicate: Mapped[str] = mapped_column(String(32))
+    mapping_set_id: Mapped[str] = mapped_column(String(64))
+    mapping_set_version: Mapped[str] = mapped_column(String(32))
+    mapping_source: Mapped[str] = mapped_column(String(64), server_default="")
+    mapping_version: Mapped[str] = mapped_column(String(32), server_default="")
+    justification: Mapped[str] = mapped_column(String(24))
+    provenance: Mapped[list] = mapped_column(JSONB)
+    supersedes: Mapped[list] = mapped_column(JSONB)
+    # The server default is the domain default: a mapping process that states no
+    # confidence is asserting full correspondence, and the DDL saying anything
+    # weaker would let a mapping be stored at a strength nobody claimed.
+    confidence: Mapped[float] = mapped_column(Float, server_default="1.0")
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_semantic_mapping_tenant"),
+        Index("ix_semantic_mapping_subject", "tenant_id", "subject_ref"),
+        Index("ix_semantic_mapping_object", "tenant_id", "object_ref"),
+    )
+
+
+class ValidationFindingRow(Base):
+    """A graded result attached to an assertion; it has no authority to delete (017, US5).
+
+    Layered validation (FR-011): ``stage`` is where in the fixed order
+    structural -> semantic -> temporal -> provenance -> cross-source -> graph-level
+    the check ran, and ``verdict`` is its grade. The grade is not a boolean and
+    ``unknown``/``unsupported`` are explicitly not failures -- they mean the
+    platform could not evaluate the claim, which is a different fact with a
+    different consequence from being wrong (SC-9).
+
+    Note what is absent. There is no severity column and no fatal flag, because
+    either could be mapped onto a rejection by a later caller, and a finding that
+    can delete is not a finding (FR-012). The assertion a finding names stays in
+    the graph, stays queryable, and keeps its evidence; this row travels with it.
+    Mirrors migration 018 exactly.
+    """
+
+    __tablename__ = "validation_findings"
+
+    finding_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    assertion_ref: Mapped[str] = mapped_column(String(64))
+    stage: Mapped[str] = mapped_column(String(24))
+    verdict: Mapped[str] = mapped_column(String(16))
+    code: Mapped[str] = mapped_column(String(64), server_default="")
+    message: Mapped[str] = mapped_column(Text, server_default="")
+    constraint_ref: Mapped[str] = mapped_column(String(96), server_default="")
+    profile_ref: Mapped[str] = mapped_column(String(96), server_default="")
+    context_ref: Mapped[str] = mapped_column(String(64), server_default="")
+    evidence_refs: Mapped[list] = mapped_column(JSONB)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_validation_finding_tenant"),
+        # "what did validation say about this assertion" and "what is failing in
+        # this tenant" are the two questions an operator actually asks, and they
+        # read the table through completely different columns.
+        Index("ix_validation_finding_assertion", "tenant_id", "assertion_ref"),
+        Index("ix_validation_finding_verdict", "tenant_id", "verdict"),
     )

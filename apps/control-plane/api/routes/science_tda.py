@@ -5,6 +5,11 @@ VR persistence (pure-python Z2 reduction, no gudhi required) -> per-dimension
 barcodes, stats and a content-addressed digest. Results are STRUCTURAL ONLY
 (I-6: never an identity claim) and rebuildable (I-12). ``prev_diagram`` lets a
 caller clamp two windows against each other and get a drift signal for the UI.
+
+``tda`` here is ``apps/science/tda`` (``persistence``/``series``), not
+``apps/projection/tda``: ``api/routes/__init__.py`` applies ``api.path_shim``
+before any route module body runs, which puts ``apps/science`` ahead of
+``apps/projection`` on sys.path.
 """
 
 from __future__ import annotations

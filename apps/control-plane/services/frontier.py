@@ -4,6 +4,13 @@ Postgres is authoritative (hierarchical GLOBAL→TENANT→INVESTIGATION→SOURCE
 HOST→TASK); Redis provides hot lease/cooldown/locking. Kafka is never the
 frontier queue (I-5/R-4). Looks up items by priority, respects cooldown/lease,
 tracks retry and dedup.
+
+This module is the **only** writer of ``frontier_items``. Producers -- the recon
+planner, the API, the feedback loop, the discovery bridge -- all go through
+:class:`PgFrontier.enqueue`, so the one INSERT here decides which columns each
+producer may influence: ``provenance`` is the caller's to state (FR-007) and the
+scheduling columns are this module's to decide (ADR-0016/0017). A second INSERT
+anywhere else would be a second authority (SC-012).
 """
 
 from __future__ import annotations
@@ -11,6 +18,9 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy.exc import IntegrityError
 
 
 @dataclass
@@ -28,6 +38,17 @@ class FrontierItem:
     lease_until: float = 0.0
     next_schedule_at: float = 0.0
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    # FR-007: the caller's account of *how* this item came to be known, when the
+    # answer is "discovery" -- which source, under which method, for which query,
+    # and which other sources had already seen the same URL. Empty for an item
+    # seeded by a recon plan, an API caller or the feedback loop, none of which
+    # name a discovery; `{}` is the false statement about provenance rather than
+    # an unknown one, and the column is NOT NULL for exactly that reason.
+    #
+    # Declared last, with a default, so every existing construction site -- which
+    # is the whole of the codebase's other producers -- keeps working unchanged
+    # and the field is purely additive.
+    provenance: dict[str, Any] = field(default_factory=dict)
 
     def schedule_key(self) -> str:
         return f"{self.tenant_id}:{self.uri}"
@@ -119,6 +140,29 @@ class Frontier:
         )
 
 
+_UNIQUE_VIOLATION = "23505"
+_DEDUP_CONSTRAINT = "uq_frontier_schedule"
+
+
+def _is_dedup_violation(exc: IntegrityError) -> bool:
+    """True only for a unique violation on the frontier's own dedup index.
+
+    A blanket ``except IntegrityError`` would report a NOT NULL violation, a bad
+    foreign key or a length overflow to the caller as "this URL was already
+    known" -- a lie that both hides the bug and quietly breaks the idempotency
+    an enqueue promises. So the driver error has to name the constraint.
+
+    When the driver does not surface a SQLSTATE at all this returns ``False``:
+    re-raising is the recoverable choice, because the alternative is guessing at
+    which integrity rule fired from a message that may not contain one.
+    """
+    orig = exc.orig
+    sqlstate = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
+    if sqlstate != _UNIQUE_VIOLATION:
+        return False
+    return _DEDUP_CONSTRAINT in str(orig)
+
+
 class PgFrontier:
     """Postgres-authoritative frontier (FR-005, R-4).
 
@@ -142,6 +186,12 @@ class PgFrontier:
 
     @staticmethod
     def _from_row(row) -> FrontierItem:
+        # `getattr` rather than `row.provenance`: a row projected by a narrower
+        # SELECT need not carry the column, and a read path that raised for that
+        # would make the audit column into a hard dependency of leasing. Copied,
+        # not aliased, so a caller mutating the item's document cannot write
+        # through to the row the session still has loaded.
+        stored = getattr(row, "provenance", None)
         return FrontierItem(
             frontier_id=row.frontier_id,
             uri=row.uri,
@@ -155,6 +205,7 @@ class PgFrontier:
             retries=row.retries,
             lease_until=row.lease_until.timestamp() if row.lease_until else 0.0,
             next_schedule_at=row.next_schedule_at.timestamp() if row.next_schedule_at else 0.0,
+            provenance=dict(stored) if stored else {},
         )
 
     async def enqueue(self, item: FrontierItem) -> bool:
@@ -162,8 +213,21 @@ class PgFrontier:
 
         Partition is carried on the row (T119) so per-region dispatchers can
         pull only their own shard.
+
+        ``provenance`` (FR-007) is carried through whole -- nested lists and all.
+        Filtering it to a known subset here is the boundary loss the column
+        exists to prevent, and it is unrecoverable afterwards: nothing downstream
+        can know what was discarded.
+
+        The five scheduling columns are **named here and never read from
+        ``item``**. A newly enqueued item is READY, un-leased, un-retried and
+        unscheduled, and that is this method's decision, not the caller's
+        (ADR-0016/0017). Spelling them out rather than trusting a default is what
+        makes the guarantee structural instead of incidental: a producer that
+        does put ``state`` or ``retries`` on its item cannot get its value into
+        the row, so no producer can become a second scheduler whose rules nobody
+        can find.
         """
-        from sqlalchemy import update
         from sqlalchemy.dialects.postgresql import insert as pg_insert
 
         from db.schema import FrontierItem as Row
@@ -177,6 +241,7 @@ class PgFrontier:
             host_key=item.host_key,
             partition=item.partition or "global",
             priority=item.priority,
+            provenance=item.provenance or {},
             state="READY",
             retries=0,
             lease_until=None,
@@ -184,21 +249,57 @@ class PgFrontier:
         )
         insert_stmt = insert_stmt.on_conflict_do_nothing(index_elements=["tenant_id", "uri"])
         async with self._factory() as session:
-            result = await session.execute(insert_stmt)
+            try:
+                result = await session.execute(insert_stmt)
+            except IntegrityError as exc:
+                # `ON CONFLICT (tenant_id, uri) DO NOTHING` absorbs the ordinary
+                # duplicate, so reaching here means a *concurrent* transaction
+                # committed the same (tenant_id, uri) between our snapshot and our
+                # insert, and the driver reported the violation instead. That is
+                # still a duplicate, and still success (FR-006). Anything else is a
+                # bug and re-raises -- see `_is_dedup_violation`.
+                if not _is_dedup_violation(exc):
+                    raise
+                await session.rollback()
+                await self._upgrade_priority(session, item)
+                await session.commit()
+                return False
             if not result.rowcount:
                 # Dedup: upgrade priority if the known item is still actionable.
-                await session.execute(
-                    update(Row)
-                    .where(
-                        Row.tenant_id == item.tenant_id,
-                        Row.uri == item.uri,
-                        Row.priority < item.priority,
-                        Row.state.in_(("READY", "RETRY")),
-                    )
-                    .values(priority=item.priority, state="READY")
-                )
+                await self._upgrade_priority(session, item)
             await session.commit()
             return bool(result.rowcount)
+
+    @staticmethod
+    async def _upgrade_priority(session, item: FrontierItem) -> None:
+        """Raise the priority of an already-known item, and only while actionable.
+
+        A caller offering the same (tenant_id, uri) at a higher priority outranks
+        the row already queued. A row that is LEASED, DONE, COOLDOWN or
+        QUARANTINED is left exactly as it is: re-prioritising work that is
+        mid-flight or finished is a scheduling decision, and the scheduler makes
+        it.
+
+        ``provenance`` is **not** rewritten here. First write wins: overwriting
+        it would let a second producer erase the ``seen_by[]`` and ``sources[]``
+        the first one accumulated, which is the loss FR-007 exists to prevent.
+        Within one discovery pass those lists are already merged by ``coalesce``
+        before the sink is called, so nothing is lost by leaving the row alone.
+        """
+        from sqlalchemy import update
+
+        from db.schema import FrontierItem as Row
+
+        await session.execute(
+            update(Row)
+            .where(
+                Row.tenant_id == item.tenant_id,
+                Row.uri == item.uri,
+                Row.priority < item.priority,
+                Row.state.in_(("READY", "RETRY")),
+            )
+            .values(priority=item.priority, state="READY")
+        )
 
     async def pop_next(
         self,

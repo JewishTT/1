@@ -77,8 +77,8 @@ class TestAggregation:
         assert 0.5 <= cand.confidence <= 1.0
 
 
-class TestOntologyFilter:
-    def test_pack_restricts_types(self):
+class TestOntologyHints:
+    def test_pack_annotates_types_without_dropping_any(self):
         from events.ontology_pack import OntologyPack, OntologyPackRegistry
 
         pack = OntologyPack(entity_types=["EMAIL", "URL"])
@@ -86,14 +86,34 @@ class TestOntologyFilter:
         registry.register(pack)
         registry.activate(pack.pack_version)
         extractors = ExtractorRegistry(ontology_pack=registry.active_for())
-        kinds = {m.kind for m in extractors.extract("a@b.com and 1.2.3.4")}
-        assert "email" in kinds
-        assert "ipv4" not in kinds
+        mentions = extractors.extract("a@b.com and 1.2.3.4")
+        assert {m.kind for m in mentions} == {"email", "domain", "ipv4"}
+        assert {m.kind: m.attrs["semantic_hint"] for m in mentions} == {
+            "email": "recognized",
+            "domain": "unrecognized",
+            "ipv4": "unrecognized",
+        }
+        assert extractors.hint("ipv4").recognized is False
+        assert extractors.hint("email").recognized is True
+        assert extractors.hint("").recognized is False
 
     def test_no_pack_keeps_all_types(self):
         extractors = ExtractorRegistry()
         kinds = {m.kind for m in extractors.extract("a@b.com and 1.2.3.4")}
         assert "email" in kinds and "ipv4" in kinds
+        assert extractors.hint("ipv4") is None
+
+    def test_undeclared_kind_admitted_with_no_semantic_commitment(self):
+        def local(text: str) -> list[Mention]:
+            return [Mention(kind="local:shell_company", value="Umbrella Holdings")]
+
+        extractors = ExtractorRegistry()
+        extractors.register("local_concepts", local)
+        mentions = extractors.extract("Umbrella Holdings")
+        assert [(m.kind, m.value) for m in mentions] == [
+            ("local:shell_company", "Umbrella Holdings")
+        ]
+        assert "semantic_hint" not in mentions[0].attrs
 
 
 class TestPipeline:

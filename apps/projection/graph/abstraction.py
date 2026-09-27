@@ -1,4 +1,4 @@
-"""Graph abstraction impl (T038, I-2, I-11, I-12).
+"""Graph abstraction impl (T038, I-2, I-11, I-12, T026).
 
 No vendor imports here: `GraphStore` is a pure protocol + in-memory store.
 Uri/typed nodes and edges; idempotent writes (I-11); every write must carry
@@ -8,12 +8,52 @@ provenance (I-12) else it is rejected.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Any, Protocol
 
 from domain import enforce_projection_provenance
 from domain.hypergraph import hyperedge_id
 
 import path_shim  # noqa: F401 - ensure apps/shared precedes conflicting dirs
+
+#: Arity modes whose `neighbors` default is directional (outgoing only).
+_DIRECTED_ARITY_MODES = frozenset({"directed", "temporal"})
+
+
+class EdgeDirection(StrEnum):
+    """Traversal direction for `neighbors` (FR-010).
+
+    Plain strings are accepted everywhere these members are, because `StrEnum`
+    members *are* their string values.
+    """
+
+    IN = "in"
+    OUT = "out"
+    BOTH = "both"
+
+
+def _coerce_direction(value: str | EdgeDirection) -> EdgeDirection:
+    try:
+        return EdgeDirection(str(value).strip().lower())
+    except ValueError as exc:
+        raise ValueError(
+            f"direction must be one of "
+            f"{', '.join(sorted(d.value for d in EdgeDirection))}, got {value!r}"
+        ) from exc
+
+
+def _default_direction(edge: GraphEdge) -> EdgeDirection:
+    """Resolve the `neighbors` default from the edge's declared arity mode.
+
+    `out` for DIRECTED/TEMPORAL, `both` for UNDIRECTED/NARY. An edge with no
+    `arity_mode` property predates arity-typed relations; it resolves to `both`,
+    which is the behaviour the two-positional-argument call form always had.
+    """
+    raw = edge.properties.get("arity_mode")
+    if raw is None:
+        return EdgeDirection.BOTH
+    mode = str(raw).strip().lower()
+    return EdgeDirection.OUT if mode in _DIRECTED_ARITY_MODES else EdgeDirection.BOTH
 
 
 @dataclass(frozen=True)
@@ -28,13 +68,27 @@ class GraphNode:
 
 @dataclass(frozen=True)
 class GraphEdge:
+    """Pairwise projection of a relation, carrying a caller-supplied identity.
+
+    `edge_id` is REQUIRED and is never invented by a store: the relation layer
+    computes it (the Neo4j adapter writes it as `rel_id`) so the same relation
+    keeps one identifier across every projection and every rebuild. Identity is
+    `edge_id` alone — two edges with the same `(edge_type, source, target)` but
+    different `edge_id` are distinct relations (two employment intervals), and
+    re-writing one `edge_id` is a no-op (I-11) even when its properties changed.
+    """
+
+    edge_id: str
     edge_type: str
     source: str
     target: str
     properties: dict[str, Any] = field(default_factory=dict)
 
     def __hash__(self) -> int:
-        return hash((self.edge_type, self.source, self.target))
+        return hash((self.edge_id,))
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, GraphEdge) and self.edge_id == other.edge_id
 
 
 @dataclass(frozen=True)
@@ -42,10 +96,12 @@ class HyperEdge:
     """Projection-level hyperedge (feature 009).
 
     N-ary temporal relation over nodes. The native N-ary form is primary;
-    pairwise projections are derived and lossy. Identity is deterministic
-    on (edge_type, members, valid_from); writes are idempotent (I-11) and
-    provenance-enforced (I-12) — mirrors domain.hypergraph.HyperEdge while
-    staying a projection-level contract (no domain imports needed here).
+    pairwise projections are derived and lossy. Identity is deterministic on
+    (edge_type, members, tenant_id) — the same material as the domain
+    `HyperGraph`; `valid_from` is a property, not part of the identity. Writes
+    are idempotent (I-11) and provenance-enforced (I-12) — mirrors
+    domain.hypergraph.HyperEdge while staying a projection-level contract (no
+    domain imports needed here).
     """
 
     edge_type: str
@@ -93,15 +149,29 @@ class HyperEdge:
 
 
 class GraphStore(Protocol):
+    """Structural contract; implementations MUST NOT subclass it (T077)."""
+
     def write_node(self, node: GraphNode, provenance: dict) -> None: ...
     def write_edge(self, edge: GraphEdge, provenance: dict) -> None: ...
     def write_hyperedge(self, edge: HyperEdge, provenance: dict) -> str: ...
-    def neighbors(self, node_id: str, edge_type: str | None = None) -> list[str]: ...
+    def neighbors(
+        self,
+        node_id: str,
+        edge_type: str | None = None,
+        *,
+        direction: str | EdgeDirection | None = None,
+    ) -> list[str]: ...
     def node(self, node_id: str) -> GraphNode | None: ...
 
 
 class InMemoryGraphStore:
-    """In-memory GraphStore honoring I-11 (idempotent) and I-12 (provenance)."""
+    """In-memory GraphStore honoring I-11 (idempotent) and I-12 (provenance).
+
+    Declares conformance to `GraphStore` structurally, not by inheritance:
+    the two implementations of the contract are held to it the same way
+    (T077). `edge_id` and `HyperEdge.edge_id` are supplied by the caller and
+    are never invented here.
+    """
 
     def __init__(self) -> None:
         self._nodes: dict[str, GraphNode] = {}
@@ -126,7 +196,7 @@ class InMemoryGraphStore:
         if edge.source not in self._nodes or edge.target not in self._nodes:
             raise ValueError(f"Edge endpoints must exist: {edge.source} -> {edge.target}")
         if edge in self._edges:
-            return  # idempotent (I-11)
+            return  # idempotent (I-11) — keyed on edge_id, so no duplicate adjacency
         self._edges.add(edge)
         self._adj.setdefault(edge.source, set()).add(edge)
         self._adj.setdefault(edge.target, set()).add(edge)
@@ -142,8 +212,8 @@ class InMemoryGraphStore:
         for member in edge.members:
             if member not in self._nodes:
                 raise ValueError(f"Hyperedge member missing: {member}")
-        if edge in self._hyperedges:
-            return edge.edge_id  # idempotent (I-11)
+        if edge.edge_id in self._hyperedges:
+            return edge.edge_id  # idempotent (I-11) — the store is keyed by id
         self._hyperedges[edge.edge_id] = edge
         for member in edge.members:
             self._hyper_membership.setdefault(member, set()).add(edge.edge_id)
@@ -176,10 +246,33 @@ class InMemoryGraphStore:
             ]
         }
 
-    def neighbors(self, node_id: str, edge_type: str | None = None) -> list[str]:
+    def neighbors(
+        self,
+        node_id: str,
+        edge_type: str | None = None,
+        *,
+        direction: str | EdgeDirection | None = None,
+    ) -> list[str]:
+        """Neighbouring node ids, direction preserved (FR-010).
+
+        `direction` is one of `in`, `out`, `both` and is keyword-only, so the
+        existing two-positional-argument call form is unaffected. Omitting it
+        resolves the default per edge from `properties["arity_mode"]`: `out` for
+        DIRECTED/TEMPORAL, `both` for UNDIRECTED/NARY, and `both` when the edge
+        declares no arity mode.
+        """
         out: set[str] = set()
         for e in self._adj.get(node_id, set()):
-            if edge_type is None or e.edge_type == edge_type:
+            if edge_type is not None and e.edge_type != edge_type:
+                continue
+            wanted = _default_direction(e) if direction is None else _coerce_direction(direction)
+            if wanted == EdgeDirection.OUT:
+                if e.source == node_id:
+                    out.add(e.target)
+            elif wanted == EdgeDirection.IN:
+                if e.target == node_id:
+                    out.add(e.source)
+            else:
                 out.add(e.target if e.source == node_id else e.source)
         return sorted(out)
 
@@ -190,4 +283,4 @@ class InMemoryGraphStore:
         return list(self._nodes.values())
 
     def edges(self) -> list[GraphEdge]:
-        return sorted(self._edges, key=lambda e: (e.source, e.target, e.edge_type))
+        return sorted(self._edges, key=lambda e: (e.edge_id,))

@@ -101,6 +101,18 @@ def build_adjacency(
     )
 
 
+def _node_key(node: object) -> str:
+    """Project a store's node reference down to its identifier.
+
+    ``store.nodes()`` yields ``GraphNode`` objects, so ``str(node)`` would
+    splice the whole dataclass repr into an id that is then used as a lookup
+    key; the repr never matches anything in the adjacency index, which silently
+    produced an empty view against any real store.
+    """
+    node_id = getattr(node, "node_id", None)
+    return str(node if node_id is None else node_id)
+
+
 def adjacency_from_store(
     store: Any,
     *,
@@ -111,22 +123,26 @@ def adjacency_from_store(
     """Read adjacency from a GraphStore-like projection (deterministic).
 
     ``node_ids=None`` enumerates every node the store exposes; otherwise the
-    view is restricted to the given set (bounding analytical workloads).
+    view is restricted to the given set (bounding analytical workloads). Emitted
+    pairs are de-duplicated on ``(source, target, edge_type)`` — an undirected
+    relation legitimately yields one entry per side, but no pair is emitted
+    twice for the same side.
     """
     all_nodes = list(store.nodes()) if hasattr(store, "nodes") else list(node_ids or [])
     selected = (
-        sorted(set(node_ids)) if node_ids is not None else sorted(str(n) for n in all_nodes)
+        sorted({_node_key(n) for n in node_ids})
+        if node_ids is not None
+        else sorted({_node_key(n) for n in all_nodes})
     )
+    emitted: set[tuple[str, str, str]] = set()
     edges: list[AdjacencyEdge] = []
     for node in selected:
-        for neighbor in sorted(store.neighbors(str(node), edge_type)):
-            edges.append(
-                AdjacencyEdge(
-                    source=str(node),
-                    target=str(neighbor),
-                    edge_type=edge_type or "",
-                )
-            )
+        for neighbor in sorted({_node_key(n) for n in store.neighbors(node, edge_type)}):
+            key = (node, neighbor, edge_type or "")
+            if key in emitted:
+                continue
+            emitted.add(key)
+            edges.append(AdjacencyEdge(source=node, target=neighbor, edge_type=edge_type or ""))
     return build_adjacency(edges, provenance=provenance)
 
 

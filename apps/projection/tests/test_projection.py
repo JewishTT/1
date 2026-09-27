@@ -63,7 +63,7 @@ class TestGraph:
         prov = {"event_id": "e", "observation_id": "o"}
         store.write_node(GraphNode("a", "Entity"), prov)
         store.write_node(GraphNode("b", "Entity"), prov)
-        store.write_edge(GraphEdge("resolves_to", "a", "b"), prov)
+        store.write_edge(GraphEdge(edge_id="REL-1", edge_type="resolves_to", source="a", target="b"), prov)
         assert store.neighbors("a") == ["b"]
         assert store.neighbors("a", "resolves_to") == ["b"]
 
@@ -74,7 +74,7 @@ class TestSnapshot:
         prov = {"event_id": "e", "observation_id": "o1"}
         wrapped.write_node(GraphNode("a", "Entity"), prov)
         wrapped.write_node(GraphNode("b", "Entity"), prov)
-        wrapped.write_edge(GraphEdge("resolves_to", "a", "b"), prov)
+        wrapped.write_edge(GraphEdge(edge_id="REL-1", edge_type="resolves_to", source="a", target="b"), prov)
         snap = wrapped.snapshot()
         assert snap.edge_count == 1 and snap.node_count == 2 and snap.last_offset == 3
         fresh = wrapped.rebuild(snap.projection_id)

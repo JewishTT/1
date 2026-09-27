@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api import sse
 from api.routes import (
     connectors,
+    discovery,
     entities,
     fabric,
     findings,
@@ -31,6 +32,7 @@ from api.routes import (
     science_tda,
     science_temporal,
     search,
+    search_rebuild,
     temporal_materializations,
     tools,
 )
@@ -55,6 +57,8 @@ app.add_middleware(
 for _router in (
     investigations.router,
     search.router,
+    search_rebuild.router,
+    discovery.router,
     entities.router,
     findings.router,
     quarantine.router,

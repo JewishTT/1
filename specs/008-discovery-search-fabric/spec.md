@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-19
 
-**Status**: Draft
+**Status**: Draft (validated 2026-09-26)
 
 **Input**: User description: "Event-driven discovery and rebuildable search projection fabric" — Layer A (discovery before crawl: data-driven web indexes + our own link-graph feed the frontier, no manual search) and Layer B (search index as a rebuildable projection, Kafka-native, object-storage-first) integrated with TDA / entity-network analysis.
 
@@ -25,6 +25,13 @@ No new orchestration backbone, no second authority.
 
 **Out of scope**: crawl scheduling policy changes (ADR-0016), recrawl cadence (ADR-0017),
 ML ranking, and any mechanism bypassing source access controls (Constitution VII).
+
+**Traceability note**: component names used below (event backbone, object storage, operational
+state store, search projection, link-graph backend) are constitution-fixed baseline
+(Technology Baseline, Invariants 4/5/9/12, Principles III/IV/V) and are named for traceability to
+existing decisions only. Every requirement below is stated as a capability and an observable
+outcome, never as a component choice; the link-graph projection targets the reference graph
+backend for the pilot while remaining swappable behind its contract.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -57,9 +64,9 @@ into the frontier exactly once (idempotent by canonical URL).
 
 ### User Story 2 - Rebuildable search projection (Priority: P1)
 
-Every accepted observation, mention, candidate, entity, assertion and finding becomes searchable
-through a search projection that is **rebuildable from Kafka events** and stores its index on
-object storage (S3/MinIO), consistent with Constitution III ("projection failure must never
+Every accepted observation, document, mention, candidate, entity, assertion and finding becomes
+searchable through a search projection that is **rebuildable from Kafka events** and stores its
+index on object storage (S3/MinIO), consistent with Constitution III ("projection failure must never
 destroy evidence") and the tech baseline (Kafka + object storage).
 
 **Why this priority**: It completes the read side of the fabric and is the platform's answer to
@@ -78,6 +85,13 @@ per-tenant isolation and provenance on every document.
    is not duplicated (idempotent on `doc_id`).
 3. **Given** a projection store failure, **When** the projector retries, **Then** evidence is
    untouched and the index converges on replay (never the reverse).
+4. **Given** a tenant-scoped query, **When** it is issued, **Then** only documents belonging to that
+   tenant are returned, and any attempt to address another tenant's index scope fails closed.
+5. **Given** an index generation built from a recorded event-log position, **When** the mapping
+   version applied to that generation is inspected, **Then** the exact mapping is identifiable and
+   the generation can be reproduced byte-for-byte from the same position.
+6. **Given** an index generation is discarded, **When** it is rebuilt from event history alone,
+   **Then** the rebuild succeeds without reading the discarded generation.
 
 ---
 
@@ -121,6 +135,9 @@ projection returns per-entity mentions with the same identifiers.
    of provenance.
 2. **Given** an entity, **When** search is queried, **Then** its mentions resolve to the same
    entity/observation identifiers used by the graph (shared keys, no re-derivation).
+3. **Given** a link-graph projection discarded and rebuilt from event history alone, **When** the
+   rebuild completes, **Then** the node and edge sets are identical to the discarded generation
+   (projections are artifacts, never a source of truth).
 
 ---
 
@@ -153,6 +170,12 @@ de-duplicated results each carry a resolvable evidence chain.
 - Tenant-scoped query tries to read another tenant's index alias → fail-closed (no cross-tenant result).
 - Link extraction yields a non-http(s) scheme → excluded from candidates.
 - A candidate exceeds the frontier's per-host budget → deferred, not dropped (frontier policy owns it).
+- A discovery source would require authentication, CAPTCHA solving, or paywall traversal to answer
+  → the source is refused at registration time and the request is never issued (Constitution VII).
+- Two discovery sources and the link-graph source report the same canonical URL within one batch →
+  one frontier item, provenance lists all three origins.
+- The event log is compacted or a projection offset is lost → the affected index generation is
+  rebuilt from the earliest retained position rather than partially patched.
 
 ## Requirements *(mandatory)*
 
@@ -180,26 +203,32 @@ de-duplicated results each carry a resolvable evidence chain.
 
 - **FR-008**: The system MUST implement the existing `SearchIndex` contract with a backend that is
   **Kafka-native for ingestion** and stores its index on **object storage** (S3/MinIO).
-- **FR-009**: The search projection MUST index the six canonical document kinds already defined by
-  the projector (observation/document, mentions, candidates, entities, assertions, findings).
+- **FR-009**: The search projection MUST index the seven canonical document kinds defined by the
+  projector and mapping registry (observations, documents, mentions, candidates, entities,
+  assertions, findings); the kind list MUST be declared in exactly one place and both the projector
+  and the mapping generator MUST read it, so the two cannot drift.
 - **FR-010**: The search projection MUST be **rebuildable from Kafka event history**; replaying the
   same events MUST produce an identical index (idempotent on `doc_id`).
 - **FR-011**: Every indexed document MUST carry projection provenance and MUST be isolated per
   tenant via tenant-scoped index aliases; cross-tenant reads MUST fail closed.
-- **FR-012**: Index mappings/templates MUST be versioned and reproducible (declarative, in-repo).
+- **FR-012**: Index mappings/templates MUST be versioned and reproducible (declarative, in-repo);
+  the mapping version applied to an index generation MUST be recorded with that generation so the
+  same generation can be reproduced from a given event-log position.
 
 **Graph projection & analysis compatibility**
 
-- **FR-013**: The graph projection MUST provide a reader returning an adjacency structure
-  (nodes + edges) sufficient to build TDA / network-analysis inputs, preserving provenance.
+- **FR-013**: The graph projection MUST provide a reader returning stable node identifiers plus
+  typed, provenance-carrying edges in a form that can be materialised directly as a
+  nodes-and-edges input for TDA / network analysis, with no identifier re-derivation.
 - **FR-014**: Search and graph projections MUST share identifiers (entity/observation/mention ids)
   so analytical results can be cross-referenced without re-derivation.
 
 **Query surface**
 
-- **FR-015**: The query planner MUST support a search backend and a graph backend behind one
-  surface, fusing results and attaching evidence links; single-backend failure MUST degrade
-  gracefully.
+- **FR-015**: The query planner MUST accept a search backend and a graph backend within a single
+  query, MUST return fused and de-duplicated results, and MUST attach to every result an evidence
+  link resolvable to the immutable raw object; the failure of one backend MUST NOT prevent the
+  remaining backends from answering, and that failure MUST be surfaced to the caller.
 
 **Cross-cutting**
 
@@ -217,11 +246,40 @@ de-duplicated results each carry a resolvable evidence chain.
   execution class, provenance contract.
 - **Candidate**: a discovered URL with provenance (source, query/seed, originating observation),
   canonical URL, and priority hint. Becomes a frontier item; is not an observation.
-- **SearchDocument**: a projected, searchable document (one of six kinds) with `doc_id`, tenant
+- **SearchDocument**: a projected, searchable document (one of seven kinds) with `doc_id`, tenant
   alias, body, and projection provenance. Rebuildable; never a source of truth.
 - **LinkEdge**: a directed link/co-mention edge in the graph projection (source → target), with
   type and provenance; input to discovery expansion and to TDA/network analysis.
 - **AdjacencyView**: a (nodes, edges) view of the graph projection for analytical consumption.
+
+### Requirement Traceability
+
+| Requirements | Verified by |
+|---|---|
+| FR-001 – FR-004 | US1 scenarios 1–3; US3 scenario 1 |
+| FR-005 – FR-007 | US1 scenarios 1–3; US3 scenarios 1–2; Edge cases (dedup, budget, scheme) |
+| FR-008 – FR-010 | US2 scenarios 1–3, 6; SC-003 |
+| FR-011 | US2 scenario 4; SC-004 |
+| FR-012 | US2 scenario 5 |
+| FR-013 – FR-014 | US4 scenarios 1–3; SC-005 |
+| FR-015 | US5 scenarios 1–2; SC-006 |
+| FR-016 | US2 scenario 3; US4 scenario 3; SC-010 |
+| FR-017 | SC-012; Edge cases (offset loss) |
+| FR-018 | Edge cases (access-control refusal); SC-008 |
+
+### Dependencies
+
+- The durable event/evidence substrate (event backbone, object storage, operational state store)
+  and the existing `SourceRegistration` capability registry, Observation Gate, frontier and graph
+  abstraction must be available and stable before this feature can be validated.
+- A readable, queryable public web index of URLs with capture metadata must be reachable for the
+  discovery layer to produce candidates; without it, discovery is limited to the link-graph source.
+- An existing entity/mention identity model is required so that shared identifiers across the
+  search and graph projections resolve to the same keys.
+- Analytical (TDA) consumers are downstream dependents: they require the adjacency contract, not
+  changes to this feature.
+- The link-graph backend choice for the pilot requires an architectural decision record before
+  implementation begins.
 
 ## Success Criteria *(mandatory)*
 
@@ -240,6 +298,18 @@ de-duplicated results each carry a resolvable evidence chain.
   degradation test passes).
 - **SC-007**: All discovery and projection paths are covered by contract/integration tests that run
   green in CI without network access (transport-injected fixtures).
+- **SC-008**: 0 discovery or projection capabilities are capable of bypassing authentication,
+  CAPTCHA, paywall, or any other access control; a source requiring them is refused at
+  registration (verified by capability review plus a registration-refusal test).
+- **SC-009**: 100% of malformed, oversized or policy-uncertain payloads land in quarantine with an
+  auditable reason, and 0 are silently dropped or auto-deleted.
+- **SC-010**: A full drill in which the search and link-graph index generations are deleted and
+  rebuilt from event history alone reproduces identical document and edge sets, 0 duplicates.
+- **SC-011**: Every functional requirement is covered by at least one automated verification, and
+  the traceability table resolves each requirement to the scenario or criterion that proves it.
+- **SC-012**: 0 new orchestration backends, 0 secondary frontier or candidate stores, and 0 second
+  authorities are introduced; a component inventory taken before and after the feature differs only
+  by discovery sources and projection adapters.
 
 ## Assumptions
 

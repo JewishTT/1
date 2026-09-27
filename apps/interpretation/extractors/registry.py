@@ -8,10 +8,14 @@ tags output with a stable source id.
 Spec 007 (deterministic extraction stack): this module also exposes
 ``DeterministicExtractorSet`` — the deterministic post-processor that runs the
 no-ML extractors (persons, places, orgs, dictionary entities, contacts) over a
-decoded segment, gates every mention against the active OntologyPack
-(``allows_type``, kafSIEM pattern) and returns spec ``TypedMention`` records.
+decoded segment and returns spec ``TypedMention`` records.
 ``register_deterministic_extractors`` additionally mirrors the deterministic
 extractors into the legacy fan-out registry as stable ``Mention`` producers.
+
+Spec 017 (semantic fabric, FR-002): the world is open. A bound ``OntologyPack`` is
+a *hint* surface only — it annotates each mention with what the pack recognizes,
+and it can never drop, filter or reject one. An unknown, unregistered or typeless
+kind is admitted carrying the absence of semantic commitment as a hint.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ import ipaddress
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 from extractors import contacts, dictionary_entities, orgs, persons, places
 from extractors.types import TypedMention
@@ -35,6 +40,43 @@ class Mention:
 
 
 Extractor = Callable[[str], list[Mention]]
+
+
+@dataclass(frozen=True)
+class SemanticHint:
+    """What an ontology pack knows about one kind — a hint, never a verdict.
+
+    ``recognized`` is ranking/expansion input for downstream consumers and the
+    record that semantic commitment was (or was not) made. A pack that does not
+    know a kind yields ``recognized=False``, which is a legitimate state, not a
+    rejection: nothing here can refuse a mention.
+    """
+
+    kind: str = ""
+    recognized: bool = False
+    pack_id: str | None = None
+    pack_version: str | None = None
+
+    @property
+    def flag(self) -> str:
+        return "recognized" if self.recognized else "unrecognized"
+
+
+def semantic_hint(pack: Any, kind: str | None) -> SemanticHint | None:
+    """Ask ``pack`` what it knows about ``kind``; ``None`` when no pack is bound.
+
+    An empty or absent kind is reported as unrecognized rather than raising, so a
+    typeless mention is hinted like any other unknown kind instead of vanishing.
+    """
+    if pack is None:
+        return None
+    name = (kind or "").strip()
+    return SemanticHint(
+        kind=name,
+        recognized=bool(name) and bool(pack.allows_type(name)),
+        pack_id=getattr(pack, "pack_id", None),
+        pack_version=getattr(pack, "pack_version", None),
+    )
 
 
 _PATTERNS: dict[str, re.Pattern[str]] = {
@@ -65,14 +107,19 @@ def _ipv4_valid(m: re.Match[str]) -> bool:
 class ExtractorRegistry:
     """Fan-out a segment to every registered extractor, dedup by kind+value.
 
-    If an OntologyPack is bound, emits only mention types admissible by the
-    pack (FR-012, kafSIEM pattern).
+    A bound OntologyPack is advisory (FR-002): every mention an extractor reports
+    is admitted, annotated with a ``semantic_hint`` attribute when a pack is
+    bound. Kinds the pack does not know are kept, not filtered.
     """
 
     def __init__(self, ontology_pack=None) -> None:
         self._extractors: list[tuple[str, Extractor]] = []
         self._ontology = ontology_pack
         self.register_builtin()
+
+    def hint(self, kind: str) -> SemanticHint | None:
+        """Pack knowledge about ``kind`` for ranking/expansion; never a veto."""
+        return semantic_hint(self._ontology, kind)
 
     def register(self, name: str, extractor: Extractor) -> None:
         if name not in [n for n, _ in self._extractors]:
@@ -98,14 +145,15 @@ class ExtractorRegistry:
         out: list[Mention] = []
         for name, ex in self._extractors:
             for m in ex(text):
-                if self._ontology is not None and not self._ontology.allows_type(m.kind):
-                    continue  # FR-012: only types admissible by the ACTIVE pack
                 key = (m.kind, m.value)
                 if key in seen:
                     continue
                 seen.add(key)
                 m.attrs.setdefault("extractor", name)
                 m.attrs.setdefault("source", source_id or "unknown")
+                hint = self.hint(m.kind)
+                if hint is not None:
+                    m.attrs.setdefault("semantic_hint", hint.flag)
                 out.append(m)
         return out
 
@@ -113,15 +161,22 @@ class ExtractorRegistry:
 class DeterministicExtractorSet:
     """Spec-007 deterministic extractor fan-out over a decoded text segment.
 
-    Runs the no-ML extractors in a fixed name order; every mention is gated by
-    the active OntologyPack (``allows_type``), deduplicated on
-    ``(kind, value, normalized.canonical)`` keeping first-in-order, and tagged
-    with a stable ``segment`` reference. Pure rule + dictionary logic.
+    Runs the no-ML extractors in a fixed name order, deduplicates on
+    ``(kind, value, normalized.canonical)`` keeping first-in-order, and tags
+    output with a stable ``segment`` reference. Pure rule + dictionary logic.
+
+    A bound OntologyPack is advisory (FR-002): it annotates each mention with
+    ``evidence["semantic_hint"]`` and never removes one, so an unknown or typeless
+    kind reaches the caller with no semantic commitment rather than as a gap.
     """
 
     def __init__(self, ontology_pack=None) -> None:
         self._ontology = ontology_pack
         self._extractors: list[tuple[str, Callable[[str], list[TypedMention]]]] = []
+
+    def hint(self, kind: str) -> SemanticHint | None:
+        """Pack knowledge about ``kind`` for ranking/expansion; never a veto."""
+        return semantic_hint(self._ontology, kind)
 
     def register(self, name: str, fn: Callable[[str], list[TypedMention]]) -> None:
         if name not in [n for n, _ in self._extractors]:
@@ -149,8 +204,6 @@ class DeterministicExtractorSet:
         seen: set[tuple] = set()
         for fn in extractors.values():
             for m in fn(text, lang_hint=lang):
-                if self._ontology is not None and not self._ontology.allows_type(m.kind):
-                    continue
                 key = (m.kind, m.value, m.normalized.canonical if m.normalized else None)
                 if key in seen:
                     continue
@@ -159,6 +212,9 @@ class DeterministicExtractorSet:
                     m.lang = lang
                 if segment_ref and not m.evidence.get("segment_ref"):
                     m.evidence["segment_ref"] = segment_ref
+                hint = self.hint(m.kind)
+                if hint is not None:
+                    m.evidence.setdefault("semantic_hint", hint.flag)
                 out.append(m)
         return sorted(out, key=lambda m: (m.offset, m.kind, m.value))
 

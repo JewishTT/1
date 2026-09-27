@@ -57,7 +57,7 @@ async def start_entity_materialization(
 
     from db.session import make_session_factory
     try:
-        await asyncio.wait_for(_enqueue_durable(tenant_id, entity_id, run_id, workflow_id, identity_dict), timeout=0.75)
+        await asyncio.wait_for(_enqueue_durable(tenant_id, entity_id, run_id, workflow_id, identity_dict), timeout=5.0)
     except Exception as exc:  # noqa: BLE001 - DB outage must not lose Temporal request
         _outbox_reason = str(exc)
 

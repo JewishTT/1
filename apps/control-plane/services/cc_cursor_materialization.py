@@ -28,7 +28,14 @@ async def run_cursor_materialization(*, tenant_id: str, entity_id: str, run_id: 
     default_crawl = os.getenv("CC_CRAWL", "CC-MAIN-2025-30")
     client = CommonCrawlClient(timeout=90.0)
     available = await client.list_indexes() if os.getenv("CC_HISTORICAL_PARTITIONS", "0") == "1" else [default_crawl]
-    partitions = sorted({str(x).strip() for x in available if str(x).strip()}, key=lambda x: (crawl_badge(x) or ("", 0, 0), x), reverse=True)[:max(1, int(os.getenv("CC_MAX_CRAWLS", "3")))]
+    if os.getenv("CC_HISTORICAL_PARTITIONS", "0") == "1":
+        # Pin the configured known-good crawl first; CC may advertise a
+        # future index whose CDN shard is not ready yet (504).
+        available = [default_crawl, *available]
+    partitions = list(dict.fromkeys(str(x).strip() for x in available if str(x).strip()))
+    if os.getenv("CC_HISTORICAL_PARTITIONS", "0") == "1":
+        partitions = sorted(partitions, key=lambda x: (x != default_crawl, crawl_badge(x) or ("", 0, 0), x))
+    partitions = partitions[:max(1, int(os.getenv("CC_MAX_CRAWLS", "3")))]
     if not partitions:
         raise ValueError("Common Crawl returned no crawl partitions")
     await create_tables()
@@ -56,10 +63,10 @@ async def run_cursor_materialization(*, tenant_id: str, entity_id: str, run_id: 
                     continue
                 try:
                     hits = await client.discover(plan.url_query, crawl=partition, page=page, limit=max(1, int(os.getenv("CC_PAGE_LIMIT", "50"))), matchType=plan.match_type, filter="status:200")
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 - one unavailable epoch must not abort the backfill
                     await cursors.fail(row, repr(exc))
                     await session.commit()
-                    raise RuntimeError(f"Common Crawl partition {partition} page {page} failed") from exc
+                    continue
                 if not hits:
                     await cursors.complete(row, result_payload={"record": None})
                     await session.commit()
@@ -90,7 +97,8 @@ async def run_cursor_materialization(*, tenant_id: str, entity_id: str, run_id: 
                 await session.commit()
         records = await streams.replay(tenant_id=tenant_id, entity_id=entity_id)
         if not records:
-            raise ValueError("Common Crawl index returned no captures")
+            counts = await cursors.counts(tenant_id=tenant_id, entity_id=entity_id, run_id=run_id)
+            raise RuntimeError(f"Common Crawl partitions produced no captures: {counts}")
         publication_repo = SqlTemporalMaterializationRepository(session)
         previous = await publication_repo.current(tenant_id=tenant_id, entity_id=entity_id)
         generation = int((previous or {}).get("projection_generation", 0)) + 1

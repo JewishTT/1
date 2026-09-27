@@ -21,10 +21,22 @@ import hashlib
 import json
 import math
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from typing import Protocol
 
 import numpy as np
+
+
+class DiagramSource(Protocol):
+    """Per-dimension (birth, death) access, as ``tda.diagram`` provides it.
+
+    ``PersistenceDiagram`` is not a Mapping: it wraps the pairs so it can own the
+    diagram hash, and exposes them through ``points(dim)``. Anything satisfying
+    this protocol can back ``compute_features``.
+    """
+
+    def points(self, dim: int) -> Sequence[tuple[float, float | None]]: ...
 
 
 @dataclass
@@ -399,8 +411,30 @@ def drift(
     }
 
 
+def _dim_pairs(
+    diagrams: Mapping[int, Sequence[tuple[float, float | None]]] | DiagramSource,
+    dim: int,
+) -> Sequence[tuple[float, float | None]]:
+    """(birth, death) pairs of one dimension, from either container shape.
+
+    ``compute_features`` is fed two different containers that carry the same
+    data: a plain ``{dim: pairs}`` mapping (the control-plane bridge hands it the
+    dict it built) and a ``tda.diagram.PersistenceDiagram`` (the
+    ``TopologicalInvariant`` facade, which wraps the pairs to own the diagram
+    hash). The diagram is not a Mapping — it exposes per-dimension data through
+    ``points(dim)``, which like ``mapping.get(dim, [])`` yields an empty list
+    for an absent dimension. Reading through this accessor keeps the lookup
+    semantics identical for both, so the payload (and therefore the digest) is
+    unchanged by which container the caller passed.
+    """
+    points = getattr(diagrams, "points", None)
+    if callable(points):
+        return points(int(dim))
+    return diagrams.get(int(dim), [])
+
+
 def compute_features(
-    diagrams: dict[int, Sequence[tuple[float, float | None]]],
+    diagrams: Mapping[int, Sequence[tuple[float, float | None]]] | DiagramSource,
     *,
     dimensions: Sequence[int] = (0, 1),
     k_max: int = 3,
@@ -408,13 +442,16 @@ def compute_features(
 ) -> dict:
     """Deterministic aggregate feature payload for a full multi-dim diagram set.
 
+    ``diagrams`` is either a ``{dim: pairs}`` mapping or a
+    ``tda.diagram.PersistenceDiagram`` (see ``_dim_pairs``).
+
     Keys per dim: ``bottleneck_amplitude``, ``wasserstein_amplitude``,
     ``entropy``, ``landscapes``, ``betti``. The whole payload is stable under a
     stable input (SC-008) and marked structural-only (I-6).
     """
     out: dict = {"structural_only": True, "dimensions": {int(d): {} for d in dimensions}}
     for dim in dimensions:
-        pairs = diagrams.get(int(dim), [])
+        pairs = _dim_pairs(diagrams, int(dim))
         cell = out["dimensions"][int(dim)]
         cell["bottleneck_amplitude"] = amplitude(pairs, "bottleneck")
         cell["wasserstein_amplitude"] = amplitude(pairs, "wasserstein", q=1.0)
@@ -430,6 +467,7 @@ def features_digest(features: dict) -> str:
 
 
 __all__ = [
+    "DiagramSource",
     "TDAFeatureBuilder",
     "TopologicalFeature",
     "amplitude",
