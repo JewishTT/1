@@ -277,6 +277,7 @@ IDENTITY_MATERIAL_FIELDS: frozenset[str] = frozenset(
         "tenant_id",
         "investigation_id",
         "created_by",
+        "candidate_id",
     }
 )
 
@@ -341,6 +342,7 @@ def revision_material(claim: RelationClaim) -> dict[str, Any]:
         "tenant_id": claim.tenant_id,
         "investigation_id": claim.investigation_id,
         "created_by": claim.created_by,
+        "candidate_id": claim.candidate_id,
         "revision_number": claim.revision_number,
     }
 

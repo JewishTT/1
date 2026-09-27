@@ -252,6 +252,50 @@ def _declarative_metadata() -> sa.MetaData:
     return Base.metadata
 
 
+def _columns_added_by_later_revisions() -> dict[str, set[str]]:
+    """Which columns each table gained from a revision *after* 016, by replay.
+
+    Replayed through a recorder rather than grepped out of the source, so a column
+    added in a loop or through a helper is found the same way one added inline is
+    -- the same discipline :func:`_recorded` follows for 016 itself.
+
+    This exists because a table 016 *created* is not frozen forever. Revision 019
+    appended ``relation_claim.regime_id``, which is a legitimate forward change to
+    a table an earlier revision owns, and an exact-equality column comparison
+    against 016 alone cannot tell that apart from a real divergence. Keying the
+    tolerance on this set is what keeps the relaxation from becoming a loophole: a
+    declared column that no later revision adds still fails.
+    """
+    revision = "016_relation_evidence_graph"
+    edges: dict[str, str | None] = {}
+    for path in sorted(VERSIONS_DIR.glob("*.py")):
+        if path.name == "__init__.py":
+            continue
+        found = _parse(path)
+        edges[found[0]] = found[1]
+    children = {down: rev for rev, down in edges.items() if down is not None}
+    successors: list[str] = []
+    cursor = children.get(revision)
+    while cursor is not None:
+        successors.append(cursor)
+        cursor = children.get(cursor)
+
+    added: dict[str, set[str]] = {}
+    for name in successors:
+        recorder = _OpRecorder()
+        spec = importlib.util.spec_from_file_location(
+            f"migration_{name}_under_test", VERSIONS_DIR / f"{name}.py"
+        )
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.op = recorder  # type: ignore[attr-defined]
+        module.upgrade()
+        for table_name, column_name in recorder.added_columns:
+            added.setdefault(table_name, set()).add(column_name)
+    return added
+
+
 def _type_signature(column: sa.Column) -> tuple[str, object]:
     """Comparable description of a column type, including ``String(n)`` width."""
     type_ = column.type
@@ -460,19 +504,36 @@ def test_migration_columns_match_declarative_schema() -> None:
     makes a fresh install and an upgraded install differ. A column added here
     without being added to ``db/schema.py`` fails the same way, so the two edits
     cannot be made independently.
+
+    The agreement is asserted in the direction 016 is responsible for -- every
+    column 016 declares is declared by the mapped class -- plus one narrow
+    exception in the other direction. A table 016 created is not frozen: revision
+    019 appended ``relation_claim.regime_id``, and a later revision adding a column
+    to a table an earlier revision owns is how this repository evolves, not a
+    divergence. So an extra declared column is tolerated **only** when a later
+    revision adds that same column, which is why the exception is keyed on a
+    replay of the successor revisions rather than waved through. A declared column
+    that no later revision adds is still a failure, and a column 016 declares that
+    the schema lacks is still a failure in both directions.
     """
     recorder = _recorded(_OpRecorder(), "upgrade")
     metadata = _declarative_metadata()
+    added_later = _columns_added_by_later_revisions()
     for name in EXPECTED_TABLES:
         assert name in metadata.tables, (
             f"{name} is created by migration 016 but missing from db/schema.py"
         )
         migrated = {column.name for column in recorder.tables[name]}
         declared = set(metadata.tables[name].columns.keys())
-        assert migrated == declared, (
+        assert not migrated - declared, (
             f"{name} column drift between migration 016 and db/schema.py: "
-            f"only in migration {sorted(migrated - declared)}, "
-            f"only in schema {sorted(declared - migrated)}"
+            f"only in migration {sorted(migrated - declared)}"
+        )
+        unattributed = (declared - migrated) - added_later.get(name, set())
+        assert not unattributed, (
+            f"{name} declares {sorted(unattributed)} in db/schema.py that migration "
+            f"016 does not create and no later revision adds; a column in one install "
+            f"path and not the other is exactly the divergence this test exists for"
         )
 
 

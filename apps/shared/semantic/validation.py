@@ -58,6 +58,36 @@ stages read the claim's own recorded times and a caller-supplied claim set, and 
 are bounded by :data:`MAX_GRAPH_NODES` / :data:`MAX_GRAPH_WALK_STEPS` and refuse to grow without
 limit (constitution VI, VIII).
 
+**What the validator examines: material or claim (FR-011, D5, SC-6).** Every stage takes a
+:class:`ValidatableRelation`, which is :class:`domain.relation_claim_material.RelationClaimMaterial`
+(an unadmitted, self-consistent value carrying its own derived ids) *or* a
+:class:`domain.relation_claim.RelationClaim`. Before 018 the input was a ``RelationClaim`` alone,
+which made admission a precondition of examination: the only value this module could be handed
+was one already in the graph, so a hypothesis could not be graded, quoted or reported, and a
+task-scoped consumer had nothing to look at. Widening the input changes **what may be examined**,
+not **what is checked**, and the three reasons it is not a weakening are structural rather than
+promised:
+
+* The validator is a reader. It reads a fixed, enumerated surface off its subject - the endpoint
+  pair, the arity mode, the role bindings, the validity window, the evidence and context refs,
+  the independence groups, the schema version and the two derived ids. It assigns to none of them
+  and returns no reduced set of subjects, so accepting a second value with the same read surface
+  grants it no capability a claim did not have.
+* Every stage's *logic* is untouched, including the ones that only make sense for an admitted
+  value. A relation with no ``status`` is not a relation the graph has thrown away, because a
+  :class:`~domain.relation_claim_material.RelationClaimMaterial` has no ``status`` field to throw
+  away - the absence is the point, and it is checked at import in
+  :mod:`domain.relation_claim_material`.
+* Nothing that requires a *committed* claim was widened. :func:`decide_materialisation` still
+  receives no claim and therefore still cannot delete one, and
+  :func:`domain.relation_claim_material.require_committed` remains the typed boundary for
+  consumers that can only read the graph.
+
+The one place the input's shape genuinely differs is :func:`_subject_contradicts`, and the
+difference is a fact rather than a fallback: ``contradicts`` links *committed claims*, so an
+unadmitted reading has none - a claim contradicting it cannot exist yet, because nothing about
+it has been admitted.
+
 Dependency reality: this module imports nothing that is not already in the workspace. SHACL is
 somewhere else entirely - see :mod:`semantic.shacl`, an opt-in sidecar that this module neither
 calls nor depends on.
@@ -68,6 +98,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import TYPE_CHECKING, TypeAlias
 
 from domain.evidence_context import EvidenceContext
 from domain.relation_claim import RelationClaim
@@ -83,6 +114,21 @@ from semantic.profiles import ProfileResolution
 from semantic.regime import SemanticRegime
 from semantic.vocabularies import normalize_surface_form
 
+if TYPE_CHECKING:
+    from domain.relation_claim_material import RelationClaimMaterial
+
+#: Everything this module will accept as the subject of a check: unadmitted claim material or a
+#: committed claim. Named rather than repeated inline because it appears on every stage signature
+#: and the name is the documentation - "a validatable relation" says the input is read and graded
+#: without saying anything about whether it is in the graph.
+#:
+#: A string alias on purpose: the material type lives in
+#: :mod:`domain.relation_claim_material`, which imports *this* module to delegate
+#: :func:`~domain.relation_claim_material.validate`, so a runtime import here would close a cycle.
+#: ``from __future__ import annotations`` means no signature is ever evaluated, and the type
+#: checker resolves the alias through the ``TYPE_CHECKING`` import above.
+ValidatableRelation: TypeAlias = "RelationClaimMaterial | RelationClaim"
+
 __all__ = [
     "MAX_GRAPH_NODES",
     "MAX_GRAPH_WALK_STEPS",
@@ -93,6 +139,7 @@ __all__ = [
     "MaterialisationDecision",
     "MaterialisationScope",
     "StageOutcome",
+    "ValidatableRelation",
     "decide_materialisation",
     "worst_verdict",
 ]
@@ -365,14 +412,23 @@ class StageOutcome:
 class LayeredValidator:
     """Runs the six stages in order and returns graded findings. Never removes anything.
 
-    The validator is a **reader**. It is handed what exists - the claim, the operator contract
-    bound to it, the profile regime, the type assertions, the frames, the other claims - and it
-    reports. It holds no mutable state of its own, mutates nothing it is given, and has no method
-    that returns a filtered or reduced set of claims. The name ``LayeredValidator`` means
-    "produces a layered report", not "decides what survives".
+    The validator is a **reader**. It is handed what exists - the material or the claim, the
+    operator contract bound to it, the profile regime, the type assertions, the frames, the other
+    claims - and it reports. It holds no mutable state of its own, mutates nothing it is given,
+    and has no method that returns a filtered or reduced set of claims. The name
+    ``LayeredValidator`` means "produces a layered report", not "decides what survives".
 
-    Every input is optional except the claim, and each omission has one honest consequence rather
-    than a default guess:
+    **Admission is not a precondition of examination (FR-011, SC-6).** The subject is a
+    :data:`ValidatableRelation`: a :class:`domain.relation_claim_material.RelationClaimMaterial`
+    will do, and a material that no admission would ever accept is graded by exactly the same
+    six stages as a committed claim. The report's ``target_ref`` is the subject's own derived id
+    either way, and because those ids are settled before admission, a report written against
+    material is a report written against the claim that will exist. What is *not* widened:
+    :func:`decide_materialisation` still takes no claim, and nothing here creates, deletes or
+    rewrites one (FR-013).
+
+    Every input is optional except the subject, and each omission has one honest consequence
+    rather than a default guess:
 
     * no ``operator`` for the relation type -> ``UNKNOWN``/``operator_not_declared``. An unknown
       relation is admissible (FR-001) and an undeclared one is unconstrained, which is not the
@@ -450,18 +506,20 @@ class LayeredValidator:
             )
         )
 
-    def admission_decision(self, claim: RelationClaim) -> MaterialisationDecision:
+    def admission_decision(self, claim: ValidatableRelation) -> MaterialisationDecision:
         """This relation's operator's admission decision for ``claim``, in its own view.
 
         Runs the semantic stage to obtain the findings that motivate the decision and returns the
         decision carrying them, so a caller has one value to record instead of a boolean to
-        interpret. The claim is read and never rewritten: the same object, with the same evidence
-        and the same identity, is what the caller holds afterwards whether the answer is admission
-        or exclusion (FR-012, SC-4).
+        interpret. The subject is read and never rewritten: the same object, with the same
+        evidence and the same identity, is what the caller holds afterwards whether the answer is
+        admission or exclusion (FR-012, SC-4).
 
         The decision is operator-scoped, so two validators holding two operators with different
-        policies reach two different decisions about the same claim and **both are correct** -
-        there is no global answer to return, and this method does not pretend to give one.
+        policies reach two different decisions about the same subject and **both are correct** -
+        there is no global answer to return, and this method does not pretend to give one. That
+        is also why it is safe to call on unadmitted material: it decides one operator's view and
+        commits nothing, so it is the same call before and after :func:`admit`.
         """
         operator = self.operator_for(claim.relation_type)
         outcome = self._check_semantic(claim)
@@ -469,7 +527,7 @@ class LayeredValidator:
 
     def evaluate(
         self,
-        claim: RelationClaim,
+        claim: ValidatableRelation,
         *,
         stages: Iterable[ValidationStage] = STAGE_ORDER,
     ) -> ValidationReport:
@@ -482,9 +540,9 @@ class LayeredValidator:
         written, so two callers asking for the same subset get byte-identical reports
         (constitution VI).
 
-        The claim is passed through untouched. Nothing in this call, or anywhere else in this
-        module, deletes or rewrites it, and the returned report is a *separate* object that
-        references it (FR-012, SC-4).
+        The subject may be unadmitted material (FR-011), and it is passed through untouched.
+        Nothing in this call, or anywhere else in this module, deletes or rewrites it, and the
+        returned report is a *separate* object that references it (FR-012, SC-4).
         """
         wanted = _ordered_stages(stages)
         findings: list[ValidationFinding] = []
@@ -493,17 +551,17 @@ class LayeredValidator:
         return self.report_for(claim, findings)
 
     def evaluate_stage(
-        self, stage: ValidationStage, claim: RelationClaim
+        self, stage: ValidationStage, claim: ValidatableRelation
     ) -> StageOutcome:
         """Evaluate exactly one stage. Independently callable, for partial validation.
 
         The point of exposing each stage: a caller with no profile can still run structural and
         temporal checks, a caller that has already been told about a domain/range problem need
         not re-derive it, and a stage that cannot be evaluated reports that without the other
-        five being suppressed (FR-011).
+        five being suppressed (FR-011). The subject is material or a claim alike (FR-011, SC-6).
         """
         wanted = ValidationStage(stage)
-        checkers: dict[ValidationStage, Callable[[RelationClaim], StageOutcome]] = {
+        checkers: dict[ValidationStage, Callable[[ValidatableRelation], StageOutcome]] = {
             ValidationStage.STRUCTURAL: self._check_structural,
             ValidationStage.SEMANTIC: self._check_semantic,
             ValidationStage.TEMPORAL: self._check_temporal,
@@ -515,28 +573,32 @@ class LayeredValidator:
 
     def evaluate_all(
         self,
-        claims: Iterable[RelationClaim],
+        claims: Iterable[ValidatableRelation],
         *,
         stages: Iterable[ValidationStage] = STAGE_ORDER,
     ) -> tuple[ValidationReport, ...]:
-        """Validate several claims, in the order supplied, returning every report.
+        """Validate several subjects, in the order supplied, returning every report.
 
-        Returns a report per claim and never fewer, and never a claim that was dropped for having
-        failed. A caller wanting only the clean claims filters the *reports* - and
+        Returns a report per subject and never fewer, and never a subject that was dropped for
+        having failed. A caller wanting only the clean ones filters the *reports* - and
         :meth:`~semantic.contracts.ValidationReport.adverse_findings` is the honest way to ask -
-        but the claims themselves are untouched (FR-012).
+        but the subjects themselves are untouched (FR-012).
         """
         return tuple(self.evaluate(claim, stages=stages) for claim in claims)
 
     def report_for(
-        self, claim: RelationClaim, findings: Iterable[ValidationFinding]
+        self, claim: ValidatableRelation, findings: Iterable[ValidationFinding]
     ) -> ValidationReport:
         """Assemble a report from findings, carrying the regime context onto it.
 
         The report is content-addressed via :meth:`~semantic.contracts.ValidationReport.with_id`,
-        so the same claim validated under the same regime with the same outcome is provably the
+        so the same subject validated under the same regime with the same outcome is provably the
         same report - which is what makes an event-sourced rebuild able to detect a validation
         that changed its mind (constitution VII).
+
+        ``target_ref`` is the subject's own derived id, and for material that id is already the
+        id the claim will carry, so a report built before admission is the report
+        :func:`domain.relation_claim_material.admit` will be asked to decide against.
         """
         return ValidationReport(
             tenant_id=claim.tenant_id,
@@ -549,7 +611,7 @@ class LayeredValidator:
 
     def _finding(
         self,
-        claim: RelationClaim,
+        claim: ValidatableRelation,
         stage: ValidationStage,
         verdict: Verdict,
         code: str,
@@ -581,7 +643,7 @@ class LayeredValidator:
         ).with_id()
 
     def _undeclared_operator(
-        self, claim: RelationClaim, stage: ValidationStage
+        self, claim: ValidatableRelation, stage: ValidationStage
     ) -> ValidationFinding:
         return self._finding(
             claim,
@@ -593,7 +655,7 @@ class LayeredValidator:
             "(FR-013)",
         )
 
-    def _check_structural(self, claim: RelationClaim) -> StageOutcome:
+    def _check_structural(self, claim: ValidatableRelation) -> StageOutcome:
         """Arity, direction and role bindings against the operator's own shape (FR-006).
 
         The only stage that compares structure to structure. A relation type with no declared
@@ -648,7 +710,7 @@ class LayeredValidator:
             )
         return StageOutcome(stage, tuple(findings), "arity, direction and roles")
 
-    def _check_semantic(self, claim: RelationClaim) -> StageOutcome:
+    def _check_semantic(self, claim: ValidatableRelation) -> StageOutcome:
         """Domain and range hints, graded, with the operator's policy attached to the finding.
 
         The ordering of the refusals is the substance of SC-9. Before anything can be called a
@@ -713,7 +775,7 @@ class LayeredValidator:
 
     def _endpoint_findings(
         self,
-        claim: RelationClaim,
+        claim: ValidatableRelation,
         operator: RelationOperator,
         endpoint: Endpoint,
         member_ref: str,
@@ -771,7 +833,7 @@ class LayeredValidator:
             ),
         )
 
-    def _check_temporal(self, claim: RelationClaim) -> StageOutcome:
+    def _check_temporal(self, claim: ValidatableRelation) -> StageOutcome:
         """The claim's validity window against the operator's declared temporal semantics.
 
         Constitution V is why this is checkable at all: ``observed_at`` (when the platform
@@ -865,7 +927,7 @@ class LayeredValidator:
             "validity window",
         )
 
-    def _check_provenance(self, claim: RelationClaim) -> StageOutcome:
+    def _check_provenance(self, claim: ValidatableRelation) -> StageOutcome:
         """Whether the claim carries the evidence its operator demands, and a resolvable frame.
 
         Evidence requirements are checked against a small table of tokens this build understands.
@@ -948,7 +1010,7 @@ class LayeredValidator:
         return StageOutcome(stage, tuple(findings), "evidence and frame")
 
     def _frame_findings(
-        self, claim: RelationClaim, context: EvidenceContext
+        self, claim: ValidatableRelation, context: EvidenceContext
     ) -> tuple[ValidationFinding, ...]:
         """What a resolved frame says about the claim's provenance.
 
@@ -984,7 +1046,7 @@ class LayeredValidator:
             )
         return tuple(findings)
 
-    def _check_cross_source(self, claim: RelationClaim) -> StageOutcome:
+    def _check_cross_source(self, claim: ValidatableRelation) -> StageOutcome:
         """Corroboration across independent sources, and contradictions between claims.
 
         Two counts stay apart here for the reason they are kept apart in the store:
@@ -994,12 +1056,13 @@ class LayeredValidator:
         reporting it as ``VALID`` corroboration would grade evidence on volume (constitution IV).
         """
         stage = ValidationStage.CROSS_SOURCE
+        declared = _subject_contradicts(claim)
         contradicting = tuple(
             sibling.logical_relation_id
             for sibling in self._claims
             if sibling.relation_id != claim.relation_id
             and sibling.logical_relation_id == claim.logical_relation_id
-            and claim.relation_id in sibling.contradicts
+            and claim.relation_id in _subject_contradicts(sibling)
         )
         if contradicting:
             return StageOutcome(
@@ -1013,7 +1076,7 @@ class LayeredValidator:
                         f"{len(contradicting)} claim(s) of the same logical relation contradict "
                         f"this one; disagreement is reported and never resolved by deletion "
                         "(FR-012)",
-                        evidence_refs=claim.contradicts,
+                        evidence_refs=declared,
                     ),
                 ),
                 "independent corroboration",
@@ -1065,7 +1128,7 @@ class LayeredValidator:
             "independent corroboration",
         )
 
-    def _check_graph_level(self, claim: RelationClaim) -> StageOutcome:
+    def _check_graph_level(self, claim: ValidatableRelation) -> StageOutcome:
         """Checks that are only decidable against other claims: versions, inverses, cycles.
 
         A single claim cannot contradict itself, so with no claim set the honest answer is
@@ -1153,7 +1216,7 @@ class LayeredValidator:
 
     def _inverse_findings(
         self,
-        claim: RelationClaim,
+        claim: ValidatableRelation,
         operator: RelationOperator,
         others: Sequence[RelationClaim],
     ) -> tuple[ValidationFinding, ...]:
@@ -1209,7 +1272,26 @@ def _admission_clause(operator: RelationOperator) -> str:
     )
 
 
-def _evidence_satisfied(claim: RelationClaim, requirement: str) -> bool | None:
+def _subject_contradicts(subject: ValidatableRelation) -> tuple[str, ...]:
+    """The committed claim ids a subject declares itself to contradict.
+
+    The one place the widened input is genuinely shaped differently from a claim, and the answer
+    is a fact rather than a fallback. ``contradicts`` links *committed claims*, and it is written
+    when a claim is admitted that disputes this one - so an unadmitted
+    :class:`domain.relation_claim_material.RelationClaimMaterial` holds none, not because a
+    default was supplied but because a claim contradicting it cannot exist yet. Reading
+    ``()`` for material is therefore the correct value, and the empty tuple is the honest answer
+    rather than an unevaluated one: a hypothesis is contradicted by nothing, because it has not
+    entered the graph to be contradicted.
+
+    Read through this one function for the subject *and* for each peer, so the same rule is
+    applied symmetrically and no call site can reintroduce an ``AttributeError`` by reaching for
+    the field directly.
+    """
+    return tuple(str(ref) for ref in getattr(subject, "contradicts", ()) or ())
+
+
+def _evidence_satisfied(claim: ValidatableRelation, requirement: str) -> bool | None:
     """Whether one evidence requirement is met, or ``None`` when this build cannot check it.
 
     ``None`` is the load-bearing return: it is what turns an unrecognised requirement into
@@ -1231,7 +1313,7 @@ def _evidence_satisfied(claim: RelationClaim, requirement: str) -> bool | None:
 
 
 def _transitivity_cycle(
-    claim: RelationClaim, peers: Sequence[RelationClaim]
+    claim: ValidatableRelation, peers: Sequence[RelationClaim]
 ) -> tuple[str, ...]:
     """A path back to ``claim.subject_ref`` through declared-transitive claims, or ``()``.
 

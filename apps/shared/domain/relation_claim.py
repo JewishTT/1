@@ -195,6 +195,21 @@ class RelationClaim:
     evidence_grade: EvidenceGrade = EvidenceGrade.UNGRADED
     tenant_id: str = "default-tenant"
     investigation_id: str = ""
+    candidate_id: str = ""
+    """The hypothesis this claim was admitted from, if it came from one.
+
+    A claim's evidence is what makes it true; this is what makes it *accountable*. A
+    claim that names no candidate is a claim with no extraction behind it, and the
+    standing question "why was this relation accepted" is unanswerable without the
+    hop. It was absent, so :meth:`~domain.evidence_lineage.EvidenceGraph` reported
+    ``RelationClaim -> RelationCandidate`` as ``in_memory_only`` - walkable only from
+    the process that built it, never from a stored record.
+
+    It belongs to the *logical* identity material rather than the revision: it answers
+    which hypothesis produced this relation, and a correction to the claim's window does
+    not change which hypothesis it came from. Empty is a declared absence, not a
+    fabricated one - a claim built without one says so.
+    """
 
     created_by: str = ""
     supersedes: str = ""
@@ -354,6 +369,7 @@ class RelationClaim:
             evidence_grade=EvidenceGrade(data.get("evidence_grade", EvidenceGrade.UNGRADED)),
             tenant_id=str(data.get("tenant_id", "default-tenant")),
             investigation_id=str(data.get("investigation_id", "")),
+            candidate_id=str(data.get("candidate_id", "")),
             created_by=str(data.get("created_by", "")),
             supersedes=str(data.get("supersedes", "")),
             contradicts=tuple(str(ref) for ref in data.get("contradicts") or ()),
@@ -392,6 +408,7 @@ class RelationClaim:
             "evidence_grade": str(self.evidence_grade),
             "tenant_id": self.tenant_id,
             "investigation_id": self.investigation_id,
+            "candidate_id": self.candidate_id,
             "created_by": self.created_by,
             "supersedes": self.supersedes,
             "contradicts": list(self.contradicts),

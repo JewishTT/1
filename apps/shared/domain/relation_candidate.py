@@ -108,7 +108,6 @@ from domain.relation_identity import (
     canonical_material,
     digest128,
     logical_material,
-    recompute_identity,
 )
 from domain.relation_schema import TemporalSemantics
 from domain.temporal_worldline import DEFAULT_CONFIDENCE
@@ -781,22 +780,50 @@ class RelationCandidate:
         ontology_version: str = "",
         observed_at: datetime | None = None,
     ) -> RelationClaim:
-        """Admit this reading as a :class:`domain.relation_claim.RelationClaim`.
+        """DEPRECATED (feature 018, T016, FR-010) - use ``build``, ``validate`` then ``admit``.
 
-        This is the *only* place a candidate becomes a claim and the only place a temporal
-        guess is promoted to an asserted window, so identity is derived exactly once and the
-        material is never transcribed a second time: the claim is built from the candidate's
-        own fields, :func:`domain.relation_identity.recompute_identity` derives both ids
-        from that claim, and the result is returned with them set. A caller cannot reach a
-        claim whose ids disagree with its own contents.
+        .. deprecated::
+           This method fuses the two operations 018 split apart, and calling it means the
+           hypothesis was never examined. It is retained only so the orchestrator and the 016
+           suites keep working, and it will be re-pointed at the three-operation path rather than
+           removed under a caller.
 
-        :raises CandidateNotAdmissible: unless the reading is in
-            :data:`ADMISSIBLE_CANDIDATE_STATUSES`. Raised rather than returning ``None``,
-            because a caller that ignores the return value must not be able to walk on with
-            an unadmitted hypothesis.
+        **Why it is deprecated, precisely.** :func:`domain.relation_claim_material.build` now
+        turns a reading into a
+        :class:`domain.relation_claim_material.RelationClaimMaterial` and consults nothing -
+        not the disposition, not a policy, not a report. :func:`domain.relation_claim_material.
+        validate` then grades that material through
+        :class:`semantic.validation.LayeredValidator`, which accepts unadmitted values
+        (FR-011). Only :func:`domain.relation_claim_material.admit` commits. This method skips
+        the middle step and hands :func:`~domain.relation_claim_material.admit` a report with
+        **zero findings** - so nothing was validated and nothing says otherwise. That report is
+        honest rather than a fabrication: an empty report reports no adverse finding, and
+        :meth:`semantic.contracts.ValidationReport.unevaluated_stages` returns all six stages,
+        which is exactly true. It is still the wrong thing to do, because the one question worth
+        asking before a claim enters the graph is the one this path never asks.
 
-        The keyword arguments are required exactly where the candidate genuinely cannot know
-        the answer, and defaulted to the honest unknown where it can:
+        What did **not** change. The guard is intact: a non-``SUPPORTED`` reading still raises
+        :class:`CandidateNotAdmissible`, because :func:`~domain.relation_claim_material.admit`
+        reads the disposition and refuses - the guard moved, it did not weaken, and a caller that
+        ignores the return value still cannot walk on with an unadmitted hypothesis. Identity is
+        still derived exactly once: the material derives both ids at construction and
+        :func:`~domain.relation_claim_material.admit` asserts they survive admission, so a caller
+        cannot reach a claim whose ids disagree with its own contents. The
+        :class:`domain.relation_claim.RelationContractError` raised for a malformed shape, the
+        :class:`CandidateContractError` with code ``tenant_mismatch`` raised for a cross-tenant
+        admission, and every field written are all unchanged.
+
+        One ordering detail did shift, and only for a caller that is wrong twice at once. The
+        tenant check now happens in :func:`~domain.relation_claim_material.build` and the
+        disposition check in :func:`~domain.relation_claim_material.admit`, so a reading that is
+        both non-``SUPPORTED`` *and* cross-tenant reports the tenant mismatch where it previously
+        reported the disposition. Both refuse; only the label moved, and the tenant is the safer
+        of the two to name first (constitution IV).
+
+        The keyword arguments are unchanged, and each is required exactly where the candidate
+        genuinely cannot know the answer. The parameter-by-parameter reasoning now lives on
+        :func:`domain.relation_claim_material.build`, which is where the transcription happens;
+        it is repeated here because this signature is still the one being called:
 
         * ``subject_ref`` / ``object_ref`` - the *resolved* participants. Required, and the
           single most load-bearing judgement in this module: a candidate names mentions, a
@@ -851,51 +878,23 @@ class RelationCandidate:
         mode, the context and regime references, the observation refs, the extraction method
         and version, the rule id, the investigation and the author.
         """
-        if not self.is_admissible:
-            raise CandidateNotAdmissible(
-                self.candidate_id, self.candidate_status, ADMISSIBLE_CANDIDATE_STATUSES
-            )
-        if str(tenant_id) != self.tenant_id:
-            raise CandidateContractError(
-                "tenant_mismatch",
-                f"candidate {self.candidate_id or '<unaddressed>'} belongs to tenant "
-                f"{self.tenant_id!r} and cannot be admitted as {str(tenant_id)!r} "
-                "(constitution IV)",
-            )
+        from domain.relation_claim_material import admit, build, unvalidated_report
 
-        claim = RelationClaim(
-            relation_id="",
-            logical_relation_id="",
-            revision_number=revision_number,
-            relation_type=self.relation_type,
-            arity_mode=self.arity_mode,
+        material = build(
+            self,
             subject_ref=subject_ref,
             object_ref=object_ref,
-            role_bindings=tuple(role_bindings),
-            valid_from=self.temporal_hypothesis.valid_from,
-            valid_to=self.temporal_hypothesis.valid_to,
-            observed_at=observed_at if observed_at is not None else self.observed_at,
-            assertion_refs=tuple(assertion_refs),
-            observation_refs=tuple(dict.fromkeys((*self.observation_refs, *self.evidence_refs))),
-            context_ref=self.context_ref,
-            extraction_version=self.extractor_version,
+            revision_number=revision_number,
+            evidence_grade=evidence_grade,
+            tenant_id=tenant_id,
+            role_bindings=role_bindings,
+            assertion_refs=assertion_refs,
+            source_independence_groups=source_independence_groups,
             normalization_version=normalization_version,
             ontology_version=ontology_version,
-            schema_version=self.schema_version,
-            status=RelationStatus(claim_status),
-            confidence=self.confidence,
-            evidence_grade=EvidenceGrade(evidence_grade),
-            tenant_id=str(tenant_id),
-            investigation_id=self.investigation_id,
-            source_independence_groups=tuple(
-                tuple(sorted({str(ref) for ref in group if str(ref).strip()}))
-                for group in source_independence_groups
-                if tuple(str(ref) for ref in group)
-            ),
-            created_by=self.recorded_by,
+            observed_at=observed_at,
         )
-        logical, revision = recompute_identity(claim)
-        return replace(claim, logical_relation_id=logical, relation_id=revision)
+        return admit(material, unvalidated_report(material), claim_status=claim_status)
 
     def _logical_material(self) -> dict[str, Any]:
         """The material of *which hypothesis this is*, shared by every revision.

@@ -45,6 +45,27 @@ from db.schema import Base
 #: finding, and a fresh install (``create_all``) building them differently from an
 #: upgraded one (``018_semantic_fabric.py``) is a divergence in the one place where
 #: monotonic history and tenant scoping are supposed to be structural.
+#:
+#: The six world-substrate tables joined it with migration 019, and the reason is
+#: sharper for three of them. ``entity_identity`` carries two UNIQUE constraints
+#: that together are this feature's load-bearing guarantee -- one mention anchors
+#: at most one entity, and one entity has at most one anchor -- and dropping
+#: either is invisible here, so a database that lost the second one would pass
+#: this check while failing FR-001. ``resolution_decision`` and
+#: ``semantic_regime`` are the only record of why an identity and of what a
+#: reading was interpreted under.
+#:
+#: ``candidates`` and ``relation_claim`` are deliberately **not** here, and the
+#: omission is not an oversight. 019 only appends ``regime_id`` to each, and
+#: ``016_relation_evidence_graph`` already created ``relation_claim.created_at``
+#: without ``nullable=False`` while the ORM declares a non-optional
+#: ``Mapped[datetime]`` -- a divergence revision 018's own header documents and
+#: works around by writing the flag out on its own tables. Adding the table would
+#: make this check fail on a drift that has been there since 016 and that 019
+#: neither introduced nor is positioned to fix, and a check that is red for a
+#: known reason is a check nobody reads. Fixing 016's column is its own revision,
+#: because editing a released migration is the thing
+#: ``test_released_revisions_are_not_edited`` exists to prevent.
 OWNED_TABLES = {
     "source_query_set",
     "source_query",
@@ -56,6 +77,12 @@ OWNED_TABLES = {
     "semantic_profiles",
     "semantic_mappings",
     "validation_findings",
+    "captures",
+    "ingest_batches",
+    "data_stream",
+    "entity_identity",
+    "resolution_decision",
+    "semantic_regime",
 }
 
 

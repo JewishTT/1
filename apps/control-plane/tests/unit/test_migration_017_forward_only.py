@@ -367,13 +367,14 @@ def test_revision_graph_is_linear_and_has_a_single_head() -> None:
 
     heads = [rev for rev in graph if rev not in children]
     assert len(heads) == 1, f"expected exactly one head revision, got {heads}"
-    # 018 (semantic fabric) now sits on top of 017. The invariant under test is
-    # "exactly one unambiguous head", not "017 is it" -- pinning the revision id
-    # would make every later migration fail this suite for being added at all.
-    assert heads == ["018_semantic_fabric"], (
-        f"018 must be the head so `alembic upgrade head` reaches the latest schema, got {heads}"
-    )
-    # 017 must still be reachable, and still immediately before the head.
+    # The head is deliberately *not* pinned to a revision id. This suite is about
+    # the shape of the graph -- one root, one head, no branching -- and a pinned
+    # head turns every later migration into a red test here for the crime of
+    # existing, which is the opposite of what a regression suite is for. The
+    # comment this replaced pinned ``018_semantic_fabric`` and was rewritten when
+    # 019 was added for exactly that reason.
+    # 017 must still be reachable, and still immediately before 018, which is
+    # still immediately before whatever is on top.
     assert "017_discovery_provenance" in graph, "017 is no longer in the revision graph"
     assert children["017_discovery_provenance"] == ["018_semantic_fabric"]
 
@@ -817,21 +818,32 @@ def test_017_is_reachable_from_the_migration_directory() -> None:
     migrations_dir = APP_DIR / "db" / "migrations"
     assert (migrations_dir / "env.py").exists(), "migration environment missing"
     config = Config(str(APP_DIR / "alembic.ini"))
-    # Set after loading: the ini's own `script_location` is a path relative to
-    # the process CWD, and pytest runs from the workspace root, not from
+    # Set after loading: the ini's own `script_location` is a path relative to the
+    # process CWD, and pytest runs from the workspace root, not from
     # apps/control-plane, so the ini value would not resolve.
     config.set_main_option("script_location", str(migrations_dir))
     script = ScriptDirectory.from_config(config)
-    assert script.get_current_head() == "018_semantic_fabric", (
-        f"alembic resolves the head as {script.get_current_head()}, so `alembic upgrade "
-        "head` would stop before the semantic fabric tables are applied"
-    )
     # walk_revisions() yields head-first, so this is the chain an operator walks
     # backwards from head to base -- the same one `alembic history` prints.
-    assert [rev.revision for rev in script.walk_revisions()] == [
+    chain = [rev.revision for rev in script.walk_revisions()]
+    assert len(set(chain)) == len(chain), (
+        f"a revision id appears twice in the chain, so `alembic upgrade head` is "
+        f"ambiguous: {chain}"
+    )
+    assert script.get_current_head() == chain[0], (
+        f"alembic resolves the head as {script.get_current_head()} but walks the chain "
+        f"from {chain[0]}; those must be the same revision"
+    )
+    # The tail is pinned rather than the head: the chain below 018 is the part this
+    # suite has an opinion about, and a revision added above it must not disturb it.
+    assert chain[-5:] == [
         "018_semantic_fabric",
         "017_discovery_provenance",
         "016_relation_evidence_graph",
         "015_worldline_reconstruction",
         "014_temporal_materialization",
-    ]
+    ], f"the chain from 018 down to the root changed: {chain}"
+    assert "017_discovery_provenance" in chain, (
+        f"017 is not on the chain an operator's `alembic upgrade head` walks: {chain}"
+    )
+

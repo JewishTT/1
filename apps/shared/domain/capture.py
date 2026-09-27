@@ -51,9 +51,14 @@ What the address covers, and why each part is load-bearing for the properties ab
 - ``content_digest`` / ``content_length`` / ``media_type`` — what came back.
   Required, not optional: a capture that cannot name its own bytes cannot be
   deduplicated, verified, or replayed honestly.
-- ``fetched_at`` — *when* the bytes were obtained. Required, and supplied by the
-  caller; this module reads no clock, and a default of "now" would make replay
-  non-deterministic (constitution VII).
+- ``fetched_at`` / ``time_basis`` — *when* the bytes were obtained, and **where
+  that answer came from**. The pair is what makes a missing fetch time a stated
+  fact rather than a hole: a crawl index honestly has no fetch time, so it
+  records :attr:`CaptureTimeBasis.INDEX_OBSERVATION` with no ``fetched_at``, and
+  a reader can tell that apart from a capture whose fetch time simply has not
+  been written yet. Only :attr:`CaptureTimeBasis.FETCH` may carry a
+  ``fetched_at``, so no stream can substitute the nearest timestamp it holds
+  (FR-006, FR-007, FR-025, D-B).
 - ``ingest_batch_id`` / ``ingest_attempt`` — which ingestion attempt produced the
   record. See :data:`UNBATCHED_INGEST_BATCH` for what happens when no batch concept
   exists yet.
@@ -96,6 +101,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from typing import Any, Protocol
 
 from domain.evidence_lineage import EvidenceHop, HopKind
@@ -115,6 +121,55 @@ CAPTURE_ID_PREFIX = "CAP-"
 #: a real batch reference once one exists; the field is already in the material and
 #: nothing else has to move.
 UNBATCHED_INGEST_BATCH = "unbatched"
+
+
+class CaptureTimeBasis(StrEnum):
+    """Where a capture's answer to "when did you fetch this?" came from (D-B).
+
+    A ``fetched_at`` typed ``datetime | None`` cannot distinguish *we do not know
+    when this was fetched* from *we have not written it yet*, and for a substrate
+    whose whole purpose is telling those apart that is the one distinction a
+    nullable column cannot make. The basis is the typed, closed-vocabulary answer,
+    carried on the record rather than inferred from a null.
+
+    The members are the dispositions a stream may honestly declare, not a ranking:
+
+    - :attr:`FETCH` — the stream performed the retrieval and measured it. The only
+      basis that may carry a ``fetched_at``.
+    - :attr:`INDEX_OBSERVATION` — the stream read a publisher's index of
+      retrievals that happened elsewhere, so its instant is when *the index
+      entry* was written, not when anything was fetched. This is Common Crawl's
+      CDX ``timestamp`` and it is a fact about the index, not about the document.
+    - :attr:`PUBLICATION` — the stream read a public record whose instant is when
+      the record entered the public record (a filing's acceptance datetime, a
+      register's publication date). A world fact; still not a fetch time.
+    - :attr:`DERIVED` — the stream's instant is computed rather than read: a
+      release snapshot's interval, an instant derived from a day-granularity
+      field. A convention, stated so a reader can discount it.
+    - :attr:`ABSENT` — the stream expresses no time of its own. A stated
+      emptiness, which is what a caller must choose rather than inherit.
+
+    Because the vocabulary is closed, a stream cannot answer "unknown" with prose
+    and a stream cannot invent a seventh disposition: the alternatives are all
+    here, and :class:`Capture` refuses any pair outside the invariant
+    ``fetched_at is None`` if and only if ``time_basis is not FETCH`` (FR-007,
+    FR-025).
+    """
+
+    FETCH = "fetch"
+    INDEX_OBSERVATION = "index_observation"
+    PUBLICATION = "publication"
+    DERIVED = "derived"
+    ABSENT = "absent"
+
+
+#: The only basis a capture may hold alongside a populated ``fetched_at``.
+#:
+#: Named so the substitution refusal in :meth:`Capture.__post_init__` reads as a
+#: rule about the model rather than as a string comparison, and so a reader can
+#: grep for the one place where the two are allowed to agree.
+FETCH_TIME_BASIS = CaptureTimeBasis.FETCH
+
 
 
 class CaptureContractError(ValueError):
@@ -164,17 +219,41 @@ def _required(code: str, field: str, value: str, why: str) -> str:
     return text
 
 
+def _time_basis(value: Any) -> CaptureTimeBasis:
+    """Coerce a stored basis back to the enum, or refuse it by name.
+
+    ``from_dict`` receives whatever a row holds, and a row can hold a string, a
+    member, or something a future writer invented. Coercion is total for the
+    members and refusing for everything else is the point: an unrecognised basis
+    is an unstated answer to "when did you fetch this", which is the question
+    :class:`CaptureTimeBasis` exists to make unanswerable silently.
+    """
+    if isinstance(value, CaptureTimeBasis):
+        return value
+    try:
+        return CaptureTimeBasis(str(value))
+    except ValueError as exc:
+        raise CaptureContractError(
+            "capture_time_basis_invalid",
+            f"{value!r} is not a CaptureTimeBasis; a capture's time means one of "
+            f"{[member.value for member in CaptureTimeBasis]}",
+        ) from exc
+
+
 @dataclass(frozen=True)
 class Capture:
     """One fetch/ingest event, frozen and content-addressed.
 
     Field order is the record's own audit surface: who fetched what, from where,
     when, and under which ingestion attempt. Required fields are
-    ``tenant_id``, ``source_id``, ``target_uri`` or ``locator``, ``content_digest``
-    and ``fetched_at``; each is checked in :meth:`__post_init__` rather than
-    defaulted, because a defaulted required field is a fabricated event. The derived
-    ``capture_id`` is verified rather than trusted, and the address is tenant-scoped
-    so one tenant's capture can never be addressed by another's.
+    ``tenant_id``, ``source_id``, ``target_uri`` or ``locator`` and
+    ``content_digest``; each is checked in :meth:`__post_init__` rather than
+    defaulted, because a defaulted required field is a fabricated event. The
+    fourth is ``fetched_at``, which is required *only* under
+    :attr:`CaptureTimeBasis.FETCH` and is a stated absence under every other
+    basis — see :class:`CaptureTimeBasis` and the invariant below. The derived
+    ``capture_id`` is verified rather than trusted, and the address is
+    tenant-scoped so one tenant's capture can never be addressed by another's.
     """
 
     capture_id: str = ""
@@ -187,6 +266,7 @@ class Capture:
     content_length: int | None = None
     media_type: str = ""
     fetched_at: datetime | None = None
+    time_basis: CaptureTimeBasis = CaptureTimeBasis.FETCH
     transport: str = ""
     ingest_batch_id: str = UNBATCHED_INGEST_BATCH
     ingest_attempt: int = 1
@@ -220,12 +300,23 @@ class Capture:
             self.content_digest,
             "bytes that cannot be named cannot be deduplicated, verified or replayed",
         )
+        basis = _time_basis(self.time_basis)
         fetched_at = self.fetched_at
-        if fetched_at is None or _iso(fetched_at) is None:
+        has_fetch = fetched_at is not None and _iso(fetched_at) is not None
+        if basis is FETCH_TIME_BASIS and not has_fetch:
             raise CaptureContractError(
                 "capture_fetch_time_missing",
-                "a capture requires fetched_at: this module reads no clock, and a "
-                "defaulted fetch time would make replay non-deterministic (VII)",
+                "a capture whose time_basis is FETCH requires fetched_at: this module "
+                "reads no clock, and a defaulted fetch time would make replay "
+                "non-deterministic (VII)",
+            )
+        if has_fetch and basis is not FETCH_TIME_BASIS:
+            raise CaptureContractError(
+                "capture_fetch_time_substituted",
+                f"fetched_at is {fetched_at!r} on a capture whose time_basis is "
+                f"{basis.value!r}; only a measured retrieval carries a fetch time, and "
+                "promoting an index, publication or derived timestamp into one is the "
+                "conflation FR-007 and FR-025 forbid",
             )
         if self.content_length is not None and self.content_length < 0:
             raise CaptureContractError(
@@ -244,6 +335,7 @@ class Capture:
         object.__setattr__(self, "target_uri", target)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "content_digest", digest)
+        object.__setattr__(self, "time_basis", basis)
         object.__setattr__(self, "ingest_batch_id", batch)
 
         addressed = CAPTURE_ID_PREFIX + self.capture_fingerprint
@@ -271,10 +363,13 @@ class Capture:
         """The address of *what came back*, independent of when and by which attempt.
 
         Tenant, origin, target and content digest only. ``fetched_at``,
-        ``ingest_batch_id`` and ``ingest_attempt`` are excluded on purpose: two
-        fetches of one target returning identical bytes are one payload and two
-        publications, and deduplicating them is a *query over payload keys*, never a
-        change to either capture's identity (FR-034, constitution IV).
+        ``time_basis``, ``ingest_batch_id`` and ``ingest_attempt`` are excluded on
+        purpose: two fetches of one target returning identical bytes are one payload
+        and two publications, and deduplicating them is a *query over payload keys*,
+        never a change to either capture's identity (FR-034, constitution IV). The
+        basis is excluded for the same reason it is included in ``capture_id``: what
+        a capture *is* depends on how its time was obtained, and what a payload *is*
+        does not.
         """
         return digest128(
             canonical_material(
@@ -294,10 +389,28 @@ class Capture:
         return self.ingest_batch_id != UNBATCHED_INGEST_BATCH
 
     @property
+    def has_fetch_time(self) -> bool:
+        """Whether a retrieval time is actually present, as opposed to declared absent.
+
+        The query ``fetched_at is not None`` already answers this, so the property
+        exists to make the *distinction* greppable: a reader that must not treat an
+        absent fetch time as a fetch time has one name for the condition.
+        """
+        return self.fetched_at is not None and _iso(self.fetched_at) is not None
+
+    @property
     def hop_label(self) -> str:
-        """Default lineage label: when the bytes were obtained, else the target."""
+        """Default lineage label: the fetch time, or the target and the stated gap.
+
+        A capture with no fetch time labels itself with why it has none, so a
+        lineage walk that reaches one shows the absence instead of rendering a
+        bare URL and letting the reader assume a retrieval happened.
+        """
         fetched = _iso(self.fetched_at)
-        return fetched or self.target_uri or self.locator
+        if fetched:
+            return fetched
+        target = self.target_uri or self.locator
+        return f"{target} [no fetch time: {self.time_basis.value}]"
 
     def same_payload(self, other: Capture) -> bool:
         """Whether two captures are two fetches of one identical payload."""
@@ -347,7 +460,10 @@ class Capture:
 
         The stored ``capture_id`` is passed through and therefore verified against the
         recomputed material, so a round-trip of a tampered row raises rather than
-        returning a capture that lies about its content (I-1).
+        returning a capture that lies about its content (I-1). ``time_basis`` is read
+        back through :func:`_time_basis`, so a row whose basis is a string outside
+        the enum raises ``capture_time_basis_invalid`` instead of being coerced into
+        the nearest member.
         """
         data = dict(payload)
         data.pop("capture_fingerprint", None)
@@ -363,6 +479,7 @@ class Capture:
             content_length=None if length is None else int(length),
             media_type=str(data.get("media_type", "")),
             fetched_at=_moment(data.get("fetched_at")),
+            time_basis=_time_basis(data.get("time_basis", CaptureTimeBasis.FETCH)),
             transport=str(data.get("transport", "")),
             ingest_batch_id=str(data.get("ingest_batch_id", UNBATCHED_INGEST_BATCH)),
             ingest_attempt=int(data.get("ingest_attempt", 1)),
@@ -370,7 +487,20 @@ class Capture:
         )
 
     def _material(self) -> dict[str, Any]:
-        """The serialised field set ``capture_id`` and the fingerprint address."""
+        """The serialised field set ``capture_id`` and the fingerprint address.
+
+        ``time_basis`` is in this material and not only on the record because a
+        capture whose time means two different things is a different fact: the
+        same bytes read out of an index entry and the same bytes measured by our
+        own retrieval are two events with two addresses, and collapsing them
+        would put a fetch time and an index observation under one id.
+
+        No wall clock is in this material. ``fetched_at`` belongs here because it
+        is a *fact of the event* — a replay of the same retrieval has the same
+        one, which is what makes a replay reproduce the same id (constitution
+        VII) — and no field that records when the row was *written* ever is, so
+        re-ingesting a record at a different moment yields the same address.
+        """
         return {
             "tenant_id": self.tenant_id,
             "source_id": self.source_id,
@@ -381,6 +511,7 @@ class Capture:
             "content_length": self.content_length,
             "media_type": self.media_type,
             "fetched_at": _iso(self.fetched_at),
+            "time_basis": self.time_basis.value,
             "transport": self.transport,
             "ingest_batch_id": self.ingest_batch_id,
             "ingest_attempt": self.ingest_attempt,
@@ -490,9 +621,11 @@ class InMemoryCaptureRegistry:
 
 __all__ = [
     "CAPTURE_ID_PREFIX",
+    "FETCH_TIME_BASIS",
     "UNBATCHED_INGEST_BATCH",
     "Capture",
     "CaptureContractError",
+    "CaptureTimeBasis",
     "HopLike",
     "InMemoryCaptureRegistry",
     "assert_single_tenant",

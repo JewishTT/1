@@ -21,6 +21,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    desc,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -279,11 +280,25 @@ class Candidate(Base):
         Enum(EpistemicStatus), default=EpistemicStatus.PROVISIONAL
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # FR-014's missing half. `regime_id` was written in memory by the semantic
+    # path and persisted in no table, so every compatibility check against a
+    # candidate's regime returned UNEVALUATED -- on the golden path, on every
+    # run (spec D6). Defaults to `''`, which is the *declared* absence rather
+    # than a substitute: `semantic.regime_store.regime_for` refuses a blank id
+    # and the compatibility layer reports `regime_unevaluated` for an empty
+    # side, so a default here cannot make an absent regime read as a match
+    # (FR-016). It is a default rather than a backfill because a candidate is
+    # extraction's output, not an admitted fact, and a candidate that never
+    # named a regime has always been a storable thing.
+    regime_id: Mapped[str] = mapped_column(String(64), server_default="")
 
     __table_args__ = (
         Index("ix_candidates_tenant", "tenant_id"),
         Index("ix_candidates_state", "state"),
         Index("ix_candidates_epistemic", "epistemic_status"),
+        # The resolution hot path's other half: every candidate read under one
+        # regime, which is the population a re-interpretation has to revisit.
+        Index("ix_candidates_regime", "tenant_id", "regime_id"),
     )
 
 
@@ -1143,6 +1158,21 @@ class RelationClaim(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    # The instruments this claim was interpreted under, copied from the
+    # candidate's `semantic_regime_ref` at admit time (FR-014). A copy, not a new
+    # fact: the regime was already fixed by the candidate the claim was built
+    # from, so this column has nothing to decide and nothing that can drift from
+    # the candidate.
+    #
+    # NOT NULL and with **no** server default, which is the one asymmetry with
+    # `candidates.regime_id` in this revision and is deliberate on both sides.
+    # Every writer of this table holds the candidate, so there is never a moment
+    # at which the value is genuinely unknown; and a default would let a claim
+    # that named no regime be stored as though it had, which is the silent
+    # substitution FR-016 forbids. The declared absence is a *refusal* here, not
+    # a value. Nothing is indexed on it: reconstruction reads a claim's regime
+    # by the claim's own primary key, and no read path groups claims by regime.
+    regime_id: Mapped[str] = mapped_column(String(64))
 
     __table_args__ = (
         Index("ix_relation_claim_tenant", "tenant_id"),
@@ -1499,3 +1529,656 @@ class ValidationFindingRow(Base):
         Index("ix_validation_finding_assertion", "tenant_id", "assertion_ref"),
         Index("ix_validation_finding_verdict", "tenant_id", "verdict"),
     )
+
+
+# ---------------------------------------------------------------------------
+# World substrate (feature 018: world-substrate)
+#
+# Six tables, in three groups, closing the two ends of the evidence chain and
+# the middle that says what was believed when.
+#
+# **Where the bytes came from.** The acquisition event itself (``captures``), the
+# ingestion run that produced it (``ingest_batches``), and the registry of
+# streams that can produce one at all (``data_stream``). The graph's own
+# foundation is untouched by this group; what becomes durable here is where the
+# bytes came from and what it is honest to say about when.
+#
+# **Why an identity is what it is.** The durable statement of the anchor
+# (``entity_identity``) and the append-only log of the reasoning that elected and
+# re-examined it (``resolution_decision``). This is the group the feature's gate
+# requirement is about: before it, ``ENT-`` was deterministic only as long as
+# the caller still held its ``ResolutionScope``.
+#
+# **What was believed when.** The regime a reading was interpreted under
+# (``semantic_regime``), plus the ``regime_id`` column on ``candidates`` and
+# ``relation_claim`` that makes it reachable from the graph.
+#
+# Every table carries ``tenant_id`` NOT NULL with a check that it is not the
+# empty string, for the reason migration 018 gave and this revision repeats: NOT
+# NULL alone still admits ``''``, and ``''`` is not a tenant (constitution IV).
+#
+# Two things are deliberately absent from all six, and both absences are
+# load-bearing rather than omissions:
+#
+# * **No foreign keys.** The three most recent revisions (015, 016, 018) reference
+#   other records by id string and add no FK, so an ``ingest_batches`` row can be
+#   written in the same transaction as the ``captures`` rows it accounts for,
+#   whichever order the writer chooses, and a capture of a batch that has not been
+#   opened is still storable rather than being an unorderable write. Adding an FK
+#   here would be a schema decision this feature has not earned. The identity and
+#   regime groups reference the most, and for the same reason: a resolution
+#   decision and an anchor are recorded by a process that may not hold the
+#   mentions, captures or frames they name in the same transaction.
+# * **No wall clock in any content address.** ``created_at``/``registered_at``/
+#   ``recorded_at`` record when the row was *written*; they are not in
+#   ``capture_fingerprint``, ``identity_fingerprint``, ``record_fingerprint`` or
+#   ``regime_id``, not in a generated column and not in any unique index, so
+#   re-ingesting the same fact at a different moment produces the same id and the
+#   same row (constitution VII, FR-022). ``fetched_at`` *is* in the capture's
+#   address and ``created_at`` is not, and the difference is that one is a fact
+#   of the event and the other is a fact of the writing.
+# ---------------------------------------------------------------------------
+
+
+class CaptureRow(Base):
+    """One acquisition event: bytes were obtained, from somewhere, in a batch (FR-006).
+
+    A capture is a fact of *acquisition*. An ``observations`` row is a fact of
+    *having observed* content, and the two were conflated for the whole life of the
+    platform: the orchestrator had no honest capture to record and derived a
+    ``capture_id`` from ``(source_id, observation_id)`` instead, which is an id
+    computed from the event it is supposed to explain (spec D3).
+
+    ``fetched_at`` is nullable and ``capture_time_basis`` is not, and that pairing
+    is the design (spec D-B, FR-025). A crawl index genuinely has no fetch time,
+    so a Common Crawl row reads ``fetched_at IS NULL`` with
+    ``capture_time_basis = 'index_observation'`` — a *stated* absence, recorded by
+    name, which is what keeps it distinguishable from a row whose fetch time has
+    not been written yet. The two check constraints make the pairing structural in
+    the DDL as well as in :class:`domain.capture.Capture`: a basis of ``fetch``
+    requires the timestamp, and a timestamp is only ever allowed on a basis of
+    ``fetch``. A loader that tried to promote an index or publication timestamp into
+    ``fetched_at`` is refused by the database, not only by the value type.
+
+    ``capture_fingerprint`` is the same discipline as ``evidence_context.frame_fingerprint``
+    and ``relation_claim.content_hash``: an application-computed digest of the
+    record's own address material, stored beside the id so registration is
+    idempotent at the database and not only in memory. It is written by the
+    application and never generated, because a generated column would have to
+    reproduce the Python canonicalisation exactly and a divergence would be
+    invisible until an id failed to verify (I-1, I-11).
+
+    ``captures`` deliberately holds no list of the observations it produced.
+    Identity flows capture -> observation by reference; folding a downstream
+    result into an upstream event's address would make the fetch change identity
+    the moment extraction ran.
+
+    ``content_length``, ``media_type`` and ``fetched_at`` are nullable because a
+    real stream does not always have them — a crawl index row reports no media
+    type, and no stream that is not performing its own retrieval has a fetch time
+    — and a value type is the only thing that can say which of the two a null
+    means. Mirrors migration 019 exactly.
+    """
+
+    __tablename__ = "captures"
+
+    capture_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    source_id: Mapped[str] = mapped_column(String(64))
+    source_family: Mapped[str] = mapped_column(String(64), server_default="")
+    target_uri: Mapped[str] = mapped_column(Text, server_default="")
+    locator: Mapped[str] = mapped_column(Text, server_default="")
+    content_digest: Mapped[str] = mapped_column(String(128))
+    content_length: Mapped[int | None] = mapped_column(Integer)
+    media_type: Mapped[str] = mapped_column(String(128), server_default="")
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    capture_time_basis: Mapped[str] = mapped_column(String(24))
+    transport: Mapped[str] = mapped_column(String(32), server_default="")
+    ingest_batch_id: Mapped[str] = mapped_column(String(64), server_default="unbatched")
+    ingest_attempt: Mapped[int] = mapped_column(Integer, server_default="1")
+    recorded_by: Mapped[str] = mapped_column(String(128), server_default="")
+    capture_fingerprint: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_capture_tenant"),
+        CheckConstraint("content_digest <> ''", name="ck_capture_content_digest"),
+        # A basis of `fetch` is a claim that this platform measured the retrieval,
+        # so the measurement has to be there.
+        CheckConstraint(
+            "capture_time_basis <> 'fetch' OR fetched_at IS NOT NULL",
+            name="ck_capture_fetch_time_present",
+        ),
+        # And the converse, which is the one FR-025 is about: a populated
+        # `fetched_at` is a measured fetch time, and no other basis may carry one.
+        CheckConstraint(
+            "fetched_at IS NULL OR capture_time_basis = 'fetch'",
+            name="ck_capture_fetch_time_basis",
+        ),
+        CheckConstraint("content_length IS NULL OR content_length >= 0", name="ck_capture_length"),
+        CheckConstraint("ingest_attempt >= 1", name="ck_capture_attempt"),
+        # Idempotency at the database, not only in InMemoryCaptureRegistry (I-11).
+        # Tenant leads because the address is tenant-scoped: two tenants fetching
+        # identical bytes must never collide on one id (constitution IV).
+        Index("uq_capture_fingerprint", "tenant_id", "capture_fingerprint", unique=True),
+        # "Every capture of this target" is the entry point to the payload-dedup
+        # query, and the target column is the only part of `payload_key` that is
+        # selective across a whole tenant.
+        Index("ix_capture_target", "tenant_id", "target_uri"),
+        # "What did this ingestion batch fetch", which is FR-009's batch half: the
+        # batch is a run, and a re-ingest of one payload under a new batch is a new
+        # capture of a known payload rather than a new payload.
+        Index("ix_capture_batch", "tenant_id", "ingest_batch_id"),
+        # SC-16's standing question — how many captures in this tenant have no
+        # fetch time, and which streams are they from. Unindexed, the answer is a
+        # full scan of the acquisition table.
+        Index("ix_capture_time_basis", "tenant_id", "capture_time_basis"),
+    )
+
+
+class IngestBatchRow(Base):
+    """One ingestion run: a named window of acquisition over a source (FR-009).
+
+    A batch is what makes FR-009's two questions separable. *Is this the same
+    fetch event?* is the capture id; *have these bytes come back before?* is the
+    payload key. Neither is the batch, and this table is the reason they cannot be
+    conflated — a batch id is in the capture's address material, so the same
+    payload read in two batches is two captures, and a capture written outside any
+    run carries :data:`~domain.capture.UNBATCHED_INGEST_BATCH` rather than an
+    invented batch.
+
+    ``record_count`` is nullable because a batch that is still open has not counted
+    its records. Storing zero instead would make "nothing has arrived yet" and
+    "nothing arrived" the same row, which is the kind of conflation this table
+    exists to prevent; the state column already says which of the two it is.
+
+    ``opened_at`` is a fact of the run and ``closed_at`` is a fact of the run
+    finishing, and neither is a content address — they are not in any index beyond
+    the ones below, and no id is derived from them.
+
+    The state vocabulary is closed by a check rather than by an enum column,
+    matching how the three recent revisions spell their categorical columns: a
+    CHECK renders identically in ``create_all`` and in the migration, and a
+    ``sa.Enum`` would not. Mirrors migration 019 exactly.
+    """
+
+    __tablename__ = "ingest_batches"
+
+    batch_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    source_id: Mapped[str] = mapped_column(String(64))
+    stream_id: Mapped[str] = mapped_column(String(96), server_default="")
+    opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    record_count: Mapped[int | None] = mapped_column(Integer)
+    state: Mapped[str] = mapped_column(String(16), server_default="open")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_ingest_batch_tenant"),
+        CheckConstraint(
+            "state IN ('open', 'closed', 'aborted')",
+            name="ck_ingest_batch_state",
+        ),
+        CheckConstraint(
+            "record_count IS NULL OR record_count >= 0", name="ck_ingest_batch_count"
+        ),
+        # A closed batch has an end; an open one has not got one yet. Stated as a
+        # check so a writer cannot close a batch without recording when, which is
+        # the difference between a run you can reconstruct and a run you can only
+        # date approximately.
+        CheckConstraint("state <> 'closed' OR closed_at IS NOT NULL", name="ck_ingest_batch_close"),
+        # "Every run over this source, in order" — the read that reconstructs how
+        # one source's acquisitions were ordered and batched.
+        Index("ix_ingest_batch_source", "tenant_id", "source_id", "opened_at"),
+        # "What is still running" is asked on every ingest cycle and is a
+        # different column from the one above.
+        Index("ix_ingest_batch_state", "tenant_id", "state"),
+        # "Every run of this stream" is FR-024's per-stream question: given a
+        # registered stream, which acquisition events did it produce.
+        Index("ix_ingest_batch_stream", "tenant_id", "stream_id"),
+    )
+
+
+class DataStreamRow(Base):
+    """The registry of streams that may produce a capture, and what they claim (FR-026).
+
+    This table is the FR-026 refusal made durable. A stream that cannot state
+    which of the six time axes it supplies is not registrable, and the place that
+    decision is recorded is here rather than in each adapter's docstring — so the
+    set of axes a source has, and the set it has said it has, are one indexed read
+    apart from each other.
+
+    ``time_axes_supplied`` is the summary: the axes this stream supplies, as names.
+    It is the column an index and a query read, and it is a summary of
+    ``axis_declarations`` rather than a second independent claim — the writer
+    derives one from the other and the in-memory registrar refuses a pair that
+    disagrees, so the two cannot drift into two different stories about the same
+    stream.
+
+    ``axis_declarations`` is why the summary alone is not enough, and it is an
+    addition to the field list in the spec's Data Requirements. All six axes are
+    recorded, including the ones this stream states it cannot supply, each with the
+    reason and, where supplied, the raw field it is read from. Without it, "which
+    axes does this stream have" is answerable and "why does it not have the other
+    five" is not — and the second question is the one FR-025 is about. A summary
+    holding only the supplied axes would drop the gaps, and a gap that is not
+    recorded is a gap that gets re-litigated per adapter.
+
+    ``adapter_ref`` is a dotted path to the module and class implementing the
+    contract, never an instance, so the row stays serialisable and a deployment can
+    resolve the adapter a stream was registered with (I-1, I-5).
+
+    ``registered_at`` is the row's write clock. It is in no index and in no
+    generated column and derives no id, so re-registering a stream later does not
+    change the row's identity. Mirrors migration 019 exactly.
+    """
+
+    __tablename__ = "data_stream"
+
+    stream_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    kind: Mapped[str] = mapped_column(String(32))
+    temporality: Mapped[str] = mapped_column(String(32))
+    time_axes_supplied: Mapped[list] = mapped_column(JSONB)
+    axis_declarations: Mapped[list] = mapped_column(JSONB)
+    adapter_ref: Mapped[str] = mapped_column(String(255), server_default="")
+    registered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_data_stream_tenant"),
+        CheckConstraint("kind <> ''", name="ck_data_stream_kind"),
+        CheckConstraint("temporality <> ''", name="ck_data_stream_temporality"),
+        CheckConstraint("adapter_ref <> ''", name="ck_data_stream_adapter_ref"),
+        # The registry is a name -> declaration map, and the name is the primary
+        # key. A bare tenant scan is served by this index's leading column, so
+        # there is no separate tenant index to keep in step with it — the same call
+        # migration 018 made for uq_semantic_profile_version.
+        Index("ix_data_stream_temporality", "tenant_id", "temporality"),
+    )
+
+
+class EntityIdentityRow(Base):
+    """One entity's durable identity statement: the mention that introduced it (FR-001).
+
+    The gate requirement of the feature. ``ENT-`` was technically deterministic
+    only as long as the caller still held its ``ResolutionScope``: a caller that
+    dropped the scope had the next batch mint a fresh anchor, and the same entity
+    got a new id (spec D1). This table is what makes the loss a missed
+    optimisation instead of an identity change, and it is a **separate** table
+    rather than columns on ``entities`` for the reason the spec's D-A gives --
+    bolt-on columns admit a partial write leaving an entity with no anchor, and
+    the next layer up reads that as a valid entity. It also leaves
+    ``entities.entity_type`` a projection instead of a second truth.
+
+    **A separate table, shaped for the two read paths above it**, and those two
+    paths are the entire index set. ``anchor_for_mention`` is the resolution hot
+    path ("does this mention already anchor an entity?"); ``identity_for_entity``
+    and ``history`` are the reconstruction hot path ("which mention introduced
+    this entity, and what has been decided about it since?"). Read-path shaping
+    decided the schema here, not entity tidiness (plan D1, SC-17).
+
+    **The write-once anchor needs TWO unique constraints, and this is the one
+    place where the plan's index set and the real invariant differ.** UNIQUE
+    ``(tenant_id, anchor_mention_id)`` covers "one mention anchors one entity"
+    and is what makes the anchor write-once by construction rather than by
+    convention. It does **not** cover "one entity has one anchor": a second
+    anchor for an already-anchored entity is invisible to it, and an anchor that
+    silently moves is precisely the failure FR-001 forbids. So UNIQUE
+    ``(tenant_id, entity_id)`` is the other half, and between them they are the
+    feature's load-bearing guarantee. ``InMemoryEntityIdentityStore.bind``
+    reproduces both in memory and is where the second half gets a *typed*
+    refusal -- ``entity_reanchored`` -- which a bare index cannot give a caller.
+    This is the one gap the agent that wrote ``domain.entity_identity`` named and
+    it is closed here rather than deferred.
+
+    **Two-level identity, and the primary key is the logical one.**
+    ``entity_id`` is the resolver's own ``ENT-``, carried verbatim and never
+    re-derived: a machine that owns an address must be the only thing that mints
+    it, and re-minting it here would mean re-deriving an anchor, which is the
+    defect. ``identity_fingerprint`` is *this row's* content address over every
+    write-once field, and it is stored beside the id so the row can be verified
+    rather than trusted -- the same discipline as ``captures.capture_fingerprint``
+    and ``evidence_context.frame_fingerprint``, and it is written by the
+    application and never generated, because a generated column would have to
+    reproduce the Python canonicalisation exactly and a divergence would surface
+    as an identity that fails to verify (I-1, I-11).
+
+    ``created_at`` is excluded from the fingerprint, and the third unique index
+    is on the fingerprint rather than on any pair of facts, for the reason
+    ``domain.entity_identity.ENTITY_IDENTITY_MUTABLE_PROJECTION_FIELDS`` gives:
+    it is a write clock, so folding it in would make a re-ingest of one anchor at
+    a different moment address to something else and FR-022's replay fixed point
+    would fail (constitution VII).
+
+    ``anchor_observation_id`` and ``anchor_capture_id`` are NOT NULL defaulting
+    to ``''``, which is a **declared absence** and not a hole: they are optional
+    in the value type precisely because resolution never sees an observation or a
+    capture, and a caller that has them supplies them while a caller that does not
+    records a reconstruction hole rather than a fabricated id. ``created_by_
+    resolution`` is NOT NULL because who created an anchor is part of the identity
+    statement, and ``domain.entity_identity.UNATTRIBUTED_RESOLUTION`` is the
+    spelling for "nobody can say" -- a declared absence rather than a null.
+    Mirrors migration 019 exactly.
+    """
+
+    __tablename__ = "entity_identity"
+
+    entity_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    anchor_mention_id: Mapped[str] = mapped_column(String(64))
+    anchor_observation_id: Mapped[str] = mapped_column(String(64), server_default="")
+    anchor_capture_id: Mapped[str] = mapped_column(String(64), server_default="")
+    created_by_resolution: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    identity_fingerprint: Mapped[str] = mapped_column(String(64))
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_entity_identity_tenant"),
+        CheckConstraint("anchor_mention_id <> ''", name="ck_entity_identity_anchor_mention"),
+        CheckConstraint("created_by_resolution <> ''", name="ck_entity_identity_creator"),
+        # A record keyed by anything but an ENT- would never join the decisions
+        # that name it, and that is the one failure a value type catches at
+        # construction but a bulk loader does not go through.
+        CheckConstraint("entity_id LIKE 'ENT-%'", name="ck_entity_identity_entity_prefix"),
+        # The anchor, write-once. Half one: one mention anchors at most one entity.
+        Index(
+            "uq_entity_identity_anchor_mention",
+            "tenant_id",
+            "anchor_mention_id",
+            unique=True,
+        ),
+        # The anchor, write-once. Half two: one entity has at most one anchor.
+        # Absent from the plan's index set and load-bearing anyway -- without it a
+        # second anchor for a known entity is invisible to the database, and an
+        # anchor that moves silently is the failure FR-001 exists to prevent.
+        Index("uq_entity_identity_entity", "tenant_id", "entity_id", unique=True),
+        # Idempotency at the database rather than only in the in-memory store
+        # (I-11): re-binding one anchor is one row however often it happens, and
+        # two records differing on any write-once field are a conflict. Tenant
+        # leads because the address is tenant-scoped (constitution IV).
+        Index(
+            "uq_entity_identity_fingerprint",
+            "tenant_id",
+            "identity_fingerprint",
+            unique=True,
+        ),
+    )
+
+
+class ResolutionDecisionRow(Base):
+    """One resolution's durable record: what was decided, and the whole reasoning (FR-003).
+
+    The platform knew how to *make* a decision and could not say why it had made
+    one. ``RES-`` was a content address of a value that lived in memory for the
+    length of a batch, and ``merged_mentions``, the surviving candidates, the
+    per-candidate compatibility reasons, the corroboration, the collective
+    outcome and the verdict were all unrecorded -- so re-running resolution next
+    week produced a new ``RES-`` with no way to tell whether it had reasoned the
+    same way (spec D2). This table is that record, and it carries every field
+    the value type carries, so the row is a faithful image rather than a summary.
+
+    **Append-only, and the schema says so by having no way to say otherwise.**
+    Growth of knowledge adds a row that supersedes an earlier one; there is no
+    revision column, no status and no state, because a decision is never edited
+    and a schema that could express an edit would eventually be used for one
+    (US3).
+
+    **The primary key is the resolver's own ``RES-``, never a digest of this
+    row.** ``record_fingerprint`` is the second address -- this record's own
+    content digest over every reasoning field, stored so a tampered row cannot
+    load -- but it is *not* the key, and a migration that computed the key from
+    the row would silently fork from the machine's ids: every ``ENT-``/``RES-``
+    pair in the platform would stop joining, and the divergence would be invisible
+    until a reconstruction came back empty. The resolver owns that address and
+    this table carries it verbatim (I-1, I-11).
+
+    **Ambiguous and unresolved decisions are rows too**, which is what makes
+    SC-2 possible. ``entity_ref`` is then empty -- faithfully, because the
+    resolver declined to name an entity and a record that invented one would be
+    the silent coin-flip the architecture forbids -- and what links such a
+    decision to an entity is ``supersedes``, which is the reason the second index
+    exists. ``entity_ref`` is NOT NULL defaulting to ``''`` for that reason: the
+    absence is a *stated* absence, and it is what makes those rows findable in
+    the same index as the ones that did name an entity.
+
+    **The projection columns are JSONB because the projections are already
+    plain values.** ``merged_mentions``, ``considered``, ``surviving``,
+    ``scored``, ``normalization``, ``notes``, ``reasons``, ``blocked_out`` and
+    ``evidence`` are ordered tuples, and the ordering is load-bearing: ``reasons``
+    is the order the compatibility layers produced them in, and a reordering
+    would change the address of a decision whose reasoning did not change. A
+    sequence is the right shape for that; a JSON array preserves it where a
+    normalised join table would have to earn it back. ``blocking``,
+    ``collective`` and ``hypothesis`` are nullable because the machine may have
+    run no collective pass at all, and an empty object would read as "ran and
+    found nothing" (FR-004).
+
+    ``decided_at`` is excluded from ``record_fingerprint`` and from the unique
+    index, for the reason ``RESOLUTION_DECISION_MUTABLE_PROJECTION_FIELDS`` gives:
+    it is a write clock, and folding it in would make an identical decision run
+    next week address to something other than this week's (constitution VII,
+    FR-022). It is a column and it is the tiebreak in the history order, and
+    ``confidence`` is checked into ``0.0..1.0`` because
+    :func:`semantic.resolution.ResolutionDecision` clamps it there and a
+    confidence outside the range is a corrupt row rather than a surprising one.
+    Mirrors migration 019 exactly.
+    """
+
+    __tablename__ = "resolution_decision"
+
+    resolution_decision_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    record_fingerprint: Mapped[str] = mapped_column(String(64))
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    mention_id: Mapped[str] = mapped_column(String(64))
+    surface: Mapped[str] = mapped_column(Text)
+    verdict: Mapped[str] = mapped_column(String(16))
+    entity_ref: Mapped[str] = mapped_column(String(64), server_default="")
+    anchor_mention_id: Mapped[str] = mapped_column(String(64), server_default="")
+    anchor_key: Mapped[str] = mapped_column(Text, server_default="")
+    merged_mentions: Mapped[list] = mapped_column(JSONB)
+    considered: Mapped[list] = mapped_column(JSONB)
+    surviving: Mapped[list] = mapped_column(JSONB)
+    scored: Mapped[list] = mapped_column(JSONB)
+    corroboration: Mapped[int] = mapped_column(Integer)
+    confidence: Mapped[float] = mapped_column(Float)
+    confidence_parts: Mapped[list] = mapped_column(JSONB)
+    normalization: Mapped[list] = mapped_column(JSONB)
+    notes: Mapped[list] = mapped_column(JSONB)
+    resolution_scope_id: Mapped[str] = mapped_column(String(64), server_default="")
+    operator_ref: Mapped[str] = mapped_column(String(64), server_default="")
+    normalization_version: Mapped[str] = mapped_column(String(32), server_default="")
+    ontology_version: Mapped[str] = mapped_column(String(64), server_default="")
+    regime_id: Mapped[str] = mapped_column(String(64), server_default="")
+    reasons: Mapped[list] = mapped_column(JSONB)
+    blocked_out: Mapped[list] = mapped_column(JSONB)
+    evidence: Mapped[list] = mapped_column(JSONB)
+    blocking: Mapped[dict | None] = mapped_column(JSONB)
+    collective: Mapped[dict | None] = mapped_column(JSONB)
+    hypothesis: Mapped[dict | None] = mapped_column(JSONB)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    supersedes: Mapped[list] = mapped_column(JSONB)
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_resolution_decision_tenant"),
+        CheckConstraint("mention_id <> ''", name="ck_resolution_decision_mention"),
+        # The resolver mints this and nothing else may, so the prefix is the whole
+        # of the guarantee at the storage layer: a row keyed by a digest of
+        # itself would be well-formed here and would join to nothing anywhere.
+        CheckConstraint(
+            "resolution_decision_id LIKE 'RES-%'",
+            name="ck_resolution_decision_id_prefix",
+        ),
+        # A closed vocabulary, and a fifth verdict must not be mistakable for one
+        # of four. The value type refuses an unknown one for the same reason.
+        CheckConstraint(
+            "verdict IN ('resolved', 'ambiguous', 'unresolved', 'conflicted')",
+            name="ck_resolution_decision_verdict",
+        ),
+        CheckConstraint(
+            "confidence >= 0.0 AND confidence <= 1.0",
+            name="ck_resolution_decision_confidence",
+        ),
+        # The reconstruction hot path's ordered read: every decision about one
+        # entity, oldest first, with the timestamp in the key so the order is the
+        # index's order rather than a sort. The empty-string rows are in it too,
+        # which is what lets "the passes that named no entity" be found.
+        Index("ix_resolution_decision_entity", "tenant_id", "entity_ref", "decided_at"),
+        # The reverse edge, and the reason SC-2 is reachable at all. A decision
+        # that named no entity cannot be filed under one without a record lying
+        # about what the resolver concluded, so `history_for` walks `supersedes`
+        # in both directions: backwards from a root to what it revised, forwards
+        # to the successors that either name this entity or name none. Without
+        # this index the ambiguous and unresolved passes in an entity's history
+        # are unreachable, which is exactly the requirement they exist to meet.
+        Index("ix_resolution_decision_supersedes", "tenant_id", "supersedes"),
+        # Idempotency at the database, decided on the content address rather than
+        # on row equality: the same reasoning about the same mention is one
+        # decision however often it is replayed, and a *different* record under
+        # one address is a conflict rather than an overwrite (FR-003, I-11).
+        Index(
+            "uq_resolution_decision_fingerprint",
+            "tenant_id",
+            "record_fingerprint",
+            unique=True,
+        ),
+    )
+
+
+class SemanticRegimeRow(Base):
+    """The instruments in play when one assertion was read, as a durable row (FR-014).
+
+    The regime was structurally present and permanently unevaluated: ``regime_id``
+    was written in memory by the semantic path and persisted in **no** table, so
+    every compatibility check against a candidate's regime returned
+    ``UNEVALUATED`` -- on the golden path, on every run (spec D6). The fix the
+    spec names is to *supply the input, not to stop reporting the absence*, and
+    this table is that input. Reporting the absence was correct;
+    :func:`semantic.resolution.analyse_candidate` emits ``regime_unevaluated``
+    exactly when one side of the comparison carries no regime, and that branch is
+    still the honest answer for a record that names none.
+
+    **Two-level identity again, and the direction is the same as everywhere
+    else.** ``regime_id`` is :class:`semantic.regime.SemanticRegime`'s own content
+    address, carried verbatim and never re-derived here.
+    ``record_fingerprint`` is *this row's* address, over every identity field and
+    neither derived one, so a tampered projection cannot load.
+
+    **The primary key is the bare ``regime_id``; the load-bearing uniqueness is
+    UNIQUE ``(tenant_id, regime_id)`` and the two are not the same thing.** The
+    store refuses cross-tenant reads precisely because the *pair* is the key:
+    ``regime_for`` raises :class:`~domain.entity_identity.CrossTenantRefusal` when
+    an id this tenant does not hold is held by another, and that distinction is
+    only possible if one tenant can hold a record at an address another tenant
+    already uses. A bare primary key would forbid that and silently merge two
+    tenants' instruments into one address -- the same reasoning that makes
+    ``entity_identity`` carry UNIQUE ``(tenant_id, entity_id)``, and the same
+    discipline ``captures`` states for ``uq_capture_fingerprint``.
+
+    **Two read paths, and two indexes, and no third.**
+    ``(tenant_id, regime_id)`` is the resolution hot path -- the regime named by
+    the ``regime_id`` on a candidate, which on the golden path is what turns
+    ``regime_unevaluated`` into ``regime_compatible`` (FR-015, D6).
+    ``(tenant_id, context_ref, recorded_at DESC, regime_id)`` is the
+    reconstruction hot path -- "what did we believe when we read this frame?" --
+    with ``recorded_at`` inside the key so the "current" regime is an
+    index-ordered ``LIMIT 1`` rather than a sort, and ``regime_id`` last so the
+    tiebreak is deterministic in every process (constitution VI). The second index
+    is why ``recorded_at`` is here in a *non-unique* key and is absent from the
+    unique one: a plain index orders, a unique index constrains, and a write clock
+    in a unique key would make replay non-deterministic (constitution VII).
+
+    ``instruments`` is a stored projection of
+    :meth:`semantic.regime.SemanticRegime.instruments` -- the single most useful
+    query on a regime, "what was in play here?", which a method answers only for a
+    regime somebody still holds in memory. It is verified against the fields it
+    projects at construction, so it cannot drift into a second opinion, and
+    ``semantic.regime_store.RegimeStore.unresolved_reads`` is the count that keeps
+    FR-015's "MUST be counted" mechanical: a run whose count is zero executed its
+    regime, and there is no code path that produces a substitute regime instead
+    (FR-016).
+
+    ``recorded_at`` is nullable because
+    :attr:`semantic.regime.SemanticRegime.recorded_at` is: an unrecorded time is an
+    absence rather than a minimum, and it sorts last in the recency order rather
+    than displacing a dated regime. Every other field is NOT NULL because the
+    regime's own ``__post_init__`` canonicalises them to text and an empty
+    reference means "no instrument of that kind was bound", which is a real and
+    different situation from having no regime at all. ``commitment`` is checked
+    against its three rungs rather than being an ``Enum`` column, matching how the
+    recent revisions spell their categorical columns: a CHECK renders identically
+    in ``create_all`` and in the migration and a ``sa.Enum`` does not, and the rung
+    is a platform vocabulary the platform must be able to *order* to refuse a
+    downgrade. ``localization``, ``language`` and ``temporal_frame_ref`` are
+    references and not copies of the parent frame's values, because copying them
+    would create two homes for one fact and a second thing to drift.
+    Mirrors migration 019 exactly.
+    """
+
+    __tablename__ = "semantic_regime"
+
+    regime_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    context_ref: Mapped[str] = mapped_column(String(64))
+    profile_ref: Mapped[str] = mapped_column(String(96))
+    profile_version: Mapped[str] = mapped_column(String(32))
+    ontology_version: Mapped[str] = mapped_column(String(64))
+    mapping_set_id: Mapped[str] = mapped_column(String(64))
+    mapping_set_version: Mapped[str] = mapped_column(String(32))
+    validation_profile: Mapped[str] = mapped_column(String(64))
+    policy_snapshot_ref: Mapped[str] = mapped_column(String(96))
+    operator_ref: Mapped[str] = mapped_column(String(64))
+    localization: Mapped[str] = mapped_column(String(128))
+    language: Mapped[str] = mapped_column(String(16))
+    temporal_frame_ref: Mapped[str] = mapped_column(String(64))
+    supersedes: Mapped[str] = mapped_column(String(128), server_default="")
+    commitment: Mapped[str] = mapped_column(String(16))
+    note: Mapped[str] = mapped_column(Text, server_default="")
+    instruments: Mapped[list] = mapped_column(JSONB)
+    recorded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    record_fingerprint: Mapped[str] = mapped_column(String(64))
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_semantic_regime_tenant"),
+        # The three rungs of the platform's own commitment ladder. A fourth must
+        # not be mistakable for one of three, and the rung has to be orderable to
+        # refuse a downgrade -- which is why it is a closed CHECK rather than free
+        # text.
+        CheckConstraint(
+            "commitment IN ('uncommitted', 'typed', 'mapped')",
+            name="ck_semantic_regime_commitment",
+        ),
+        # The resolution hot path's key. UNIQUE rather than the bare primary key,
+        # because the pair is the store's key: the cross-tenant refusal exists
+        # only if two tenants may hold different records at the same address
+        # (constitution IV, FR-005).
+        Index("uq_semantic_regime_tenant_address", "tenant_id", "regime_id", unique=True),
+        # The reconstruction hot path: the regime in force for this frame, as an
+        # index-ordered maximum. `recorded_at` is in the key so the latest is
+        # readable without a sort, and `regime_id` last as the deterministic
+        # tiebreak two processes must agree on (constitution VI).
+        Index(
+            "ix_semantic_regime_current",
+            "tenant_id",
+            "context_ref",
+            desc("recorded_at"),
+            "regime_id",
+        ),
+        # Idempotency at the database rather than only in the in-memory store
+        # (I-11). `recorded_at` is deliberately absent from this key: a re-ingest
+        # of one regime at a different moment is the same write, and a write clock
+        # in a unique key would make it a different one (constitution VII, FR-022).
+        Index(
+            "uq_semantic_regime_fingerprint",
+            "tenant_id",
+            "record_fingerprint",
+            unique=True,
+        ),
+    )
+

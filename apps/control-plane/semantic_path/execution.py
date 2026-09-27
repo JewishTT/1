@@ -70,6 +70,27 @@ reason: the resolver's context layer compares the mention's ``regime_id`` agains
 the candidate's, and an unbuilt regime would make every such comparison
 ``UNEVALUATED``. Hence ``MENTIONS -> REGIME -> RESOLUTION -> TYPES``.
 
+**The regime is now executed, not merely reported absent (018, D6 / FR-014...FR-016).**
+The stage order above was forced by a defect: ``regime_id`` was written in memory
+and persisted nowhere, so the compatibility layer's regime comparison returned
+``UNEVALUATED`` on the golden path on every run - which the spec correctly called
+"structurally present but not actually executed". The fix was to supply the input,
+not to mute the report, and this module now does three things it did not:
+
+* step 4 **writes** the regime it built through a
+  :class:`semantic.regime_store.RegimeStore` and then **reads it back** before
+  anything downstream sees it, so the value the path carries is the one that
+  survived storage and not the one a local variable happened to hold;
+* step 5 **reads it back again**, independently, and binds that stored address to
+  both the mentions and the candidate universe, so the comparison the resolver
+  performs has a real regime on both sides and answers
+  ``regime_compatible`` rather than ``regime_unevaluated``;
+* a regime that genuinely cannot be resolved is a **stated** ``UNRESOLVED`` with a
+  reason and a count on the store, raised as ``regime_unresolved`` before any
+  comparison runs. There is no ``regime_id=""`` fallback anywhere on this path, and
+  no default regime is ever substituted: FR-016 is enforced by the absence of the
+  code path rather than by a check.
+
 **Where it lives, and why.** ``apps/shared/semantic/`` - not ``domain/``, which
 FR-005 keeps free of semantic vocabulary and which holds base values rather than a
 process, and not a new app. ``semantic/`` is already the 016/017 seam: it is where
@@ -87,7 +108,6 @@ deserves to find it already explained.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
@@ -95,6 +115,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
+from domain.capture import Capture, CaptureTimeBasis
 from domain.dynamics import StreamRecord
 from domain.evidence_context import (
     ContextCompleteness,
@@ -120,8 +141,12 @@ from domain.relation_identity import RelationArityMode, canonical_material, dige
 from domain.relation_schema import RelationSchema, TemporalSemantics
 from domain.temporal_worldline import EntityWorldline, WorldlineEvent, build_worldline
 from extractors.registry import DeterministicExtractorSet, Mention, SemanticHint
-from extractors.types import TypedMention
-from extractors.util import byte_offset, end_byte_offset
+from extractors.relations import (
+    RELATION_RULE_ID,
+    RelationalReading,
+    extract_relational_readings,
+    register_relational_extractors,
+)
 from graph.abstraction import GraphEdge, GraphNode, HyperEdge, InMemoryGraphStore
 from graph.relation_store import GraphProjectionBridge, InMemoryRelationStore
 from semantic.blocking import (
@@ -144,6 +169,7 @@ from semantic.regime import (
     SemanticRegime,
     extend_context,
 )
+from semantic.regime_store import InMemoryRegimeStore, RegimeRecord, RegimeStore
 from semantic.registry import ConceptSchemeBackend, SemanticRegistry
 from semantic.resolution import (
     MentionResolver,
@@ -167,6 +193,11 @@ from semantic.vocabularies import Concept, ConceptScheme
 
 __all__ = [
     "GOLDEN_SENTENCE",
+    "REGIME_COMPATIBLE",
+    "REGIME_MISMATCH",
+    "REGIME_REASON_CODES",
+    "REGIME_UNEVALUATED",
+    "RELATION_RULE_ID",
     "STAGE_ORDER",
     "UNSET",
     "AdmissionStep",
@@ -182,7 +213,10 @@ __all__ = [
     "MentionStep",
     "Observation",
     "ObservationStep",
+    "RegimeResolution",
     "RegimeStep",
+    "RegimeVerdict",
+    "RelationalReading",
     "ResolutionStep",
     "SemanticExecutionError",
     "StoreStep",
@@ -201,8 +235,9 @@ __all__ = [
     "golden_request",
     "golden_vocabulary",
     "mention_id_for",
+    "regime_verdicts_for",
+    "register_relational_extractors",
     "resolution_candidate_for",
-    "role_target_org_extractor",
     "run_golden_path",
     "run_until",
     "works_for_schema",
@@ -218,6 +253,22 @@ _MENTION_ID_PREFIX = "MN-"
 _ENTITY_ID_PREFIX = "ENT-"
 
 EXTRACTION_SET_VERSION_PREFIX = "det-set-"
+
+#: The three codes the resolver's context layer can record for a regime comparison, and
+#: the only three this module treats as a regime verdict (FR-015).
+#:
+#: Re-declared rather than imported, for the reason the verdict strings in
+#: :mod:`domain.entity_identity` are: the *codes* are what a durable record and a smoke
+#: run key on, and they must be nameable without importing the machine. Nothing here
+#: decides what a code means - the meaning is
+#: :func:`semantic.resolution.analyse_candidate`'s, and it is unchanged by this module.
+REGIME_COMPATIBLE = "regime_compatible"
+REGIME_MISMATCH = "regime_mismatch"
+REGIME_UNEVALUATED = "regime_unevaluated"
+
+REGIME_REASON_CODES: frozenset[str] = frozenset(
+    {REGIME_COMPATIBLE, REGIME_MISMATCH, REGIME_UNEVALUATED}
+)
 
 
 class SemanticExecutionError(RuntimeError):
@@ -330,12 +381,15 @@ def mention_id_for(
 
 
 def capture_id_for(source_id: str, observation_id: str) -> str:
-    """``CAP-`` + 128-bit digest: the capture that produced one observation.
+    """``CAP-`` + 128-bit digest: a *placeholder* address for a capture that was never fetched.
 
-    The evidence chain is ``Source -> Capture -> Observation -> ...`` and the capture
-    hop is the one link with no value type of its own anywhere in the platform. It
-    is derived here so the chain is complete rather than silently skipping a hop,
-    and derived rather than generated so a replay reproduces it.
+    Kept only so a caller with no acquisition record still gets a chain, and every use
+    of it is a chain with a hole in it. Nothing in this module calls it any more: the
+    observation carries a real :class:`domain.capture.Capture` or admits it has none, and
+    the lineage reports a missing capture hop instead of a fabricated address.
+
+    A derived id is not a weaker fact about a fetch that happened - it is a statement
+    about no fetch at all, wearing a fetch's shape.
     """
     return _CAPTURE_ID_PREFIX + digest128(
         canonical_material({"source": source_id, "observation": observation_id})
@@ -380,6 +434,17 @@ class Observation:
     extraction_version: str = ""
     normalization_version: str = ""
     ontology_version: str = ""
+    capture: Capture | None = None
+    """The acquisition fact that fetched the bytes this observation was read from.
+
+    ``None`` means the caller did not supply one, and the lineage then says the capture
+    hop is absent rather than inventing an address. That distinction is the whole point
+    of feature 018: the previous arrangement derived a ``CAP-`` id from
+    ``(source_id, observation_id)``, which produced a *looking* capture that existed in
+    no store and joined to no fetch, so ``Source -> Capture -> Observation`` was a chain
+    of shapes rather than of facts. A real capture has a real fetch basis, a real
+    content digest and a real time, and its absence is now reportable.
+    """
 
     def __post_init__(self) -> None:
         if not self.segment_id:
@@ -467,6 +532,15 @@ class ExecutionRequest:
     declares, and ``type_refs`` is the observed-layer mapping from mention kind to
     type reference. Supplying different instruments is how the same path is driven
     over an unknown type or a wrong range with not one line of this module changed.
+
+    ``regime_store`` is the one field that is a *substrate* rather than an
+    instrument, and it is optional for a reason worth stating: ``None`` means the
+    path builds its own :class:`~semantic.regime_store.InMemoryRegimeStore` and
+    exposes it on :attr:`RegimeStep.store`, which is correct for one run and wrong
+    for two - a caller who wants the regime of a previous run to be the regime of
+    this one supplies the store. Nothing is lost by the default, because the regime
+    is still written and still read back within the run; what a shared store adds is
+    the regime *surviving* the run, which is FR-014's actual subject.
     """
 
     sentence: str
@@ -509,6 +583,21 @@ class ExecutionRequest:
     recorded_by: str = "semantic-execution"
     relation_store: InMemoryRelationStore | None = None
     graph_store: InMemoryGraphStore | None = None
+    regime_store: RegimeStore | None = None
+    capture: Capture | None = None
+    """The acquisition record that fetched these bytes, when the caller has one.
+
+    Preferred over the loose fields below: a supplied ``Capture`` is already
+    content-addressed and already states its fetch basis. When this is ``None`` and
+    ``content_digest``/``target_uri`` are given, the path builds one with
+    :attr:`CaptureTimeBasis.INDEX_OBSERVATION` and **no** fetch time, because that is
+    what a crawl index can honestly say. When neither is given the capture hop is
+    reported absent rather than filled in.
+    """
+    content_digest: str | None = None
+    target_uri: str = ""
+    media_type: str = "text/html"
+    transport: str = "warc-range"
 
     @property
     def relation_type(self) -> str:
@@ -569,6 +658,15 @@ class MentionStep:
     subject: MentionRecord
     obj: MentionRecord
     hints: tuple[SemanticHint | None, ...]
+    reading: RelationalReading | None = None
+    """The relational reading the extraction layer measured, when it found one.
+
+    The same text has two readings: the mentions it contains, and the relation those
+    mentions stand in. Only the first existed before feature 018, which is why the
+    candidate used to *guess* its trigger span. When this is ``None`` the sentence
+    carried no cue, and the candidate falls back to the between-mentions guess and says
+    so. It is never synthesised here: extraction reports, this step consumes.
+    """
 
 
 @dataclass(frozen=True)
@@ -597,9 +695,87 @@ class TypeStep:
         return self.by_entity.get(entity_ref, ())
 
 
+class RegimeVerdict(StrEnum):
+    """Whether the regime in force could be resolved from durable storage (FR-015).
+
+    Two answers and no third, mirroring
+    :class:`~semantic.resolution.ResolutionVerdict` for the same reason: a check that
+    could not be evaluated must be able to say so instead of collapsing into pass or
+    fail. ``RESOLVED`` means the store returned the record and the path rehydrated it
+    into the regime the comparison will use. ``UNRESOLVED`` means it did not, and
+    :attr:`RegimeResolution.reason` says why in words.
+
+    There is deliberately no ``UNEVALUATED`` member here. The compatibility layer's
+    ``regime_unevaluated`` verdict is a *different* fact - one side of a comparison
+    names no regime - and keeping the two vocabularies distinct is the point: a regime
+    that resolved and was compared, a regime that did not resolve, and a candidate
+    that names no regime are three conditions, and this enum refuses to be the answer
+    to the third.
+    """
+
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+
+    @property
+    def is_resolved(self) -> bool:
+        """Whether a real regime was recovered. Only ``RESOLVED`` did."""
+        return self is RegimeVerdict.RESOLVED
+
+
+@dataclass(frozen=True)
+class RegimeResolution:
+    """What storage said about the regime this run needs, and what it said in words.
+
+    The first half of FR-015's requirement, as a value rather than a log line: an
+    unresolvable regime is a **stated** ``UNRESOLVED`` carrying
+    :attr:`reason`, never a silent absence and never a substituted default. The second
+    half - "and MUST be counted" - is the store's
+    :meth:`~semantic.regime_store.RegimeStore.unresolved_reads`, because the read is
+    what was counted and the counting belongs where the read happens.
+
+    :attr:`record` is ``None`` exactly when :attr:`verdict` is ``UNRESOLVED``, and it is
+    never an empty or default record: there is no constructor path in this module that
+    produces a :class:`~semantic.regime_store.RegimeRecord` with an empty ``regime_id``,
+    because FR-016 forbids substituting an empty regime and proceeding as though it
+    matched.
+    """
+
+    regime_id: str
+    tenant_id: str
+    context_ref: str
+    verdict: RegimeVerdict
+    record: RegimeRecord | None = None
+    reason: str = ""
+
+    @property
+    def is_resolved(self) -> bool:
+        """Whether a stored regime was recovered for this run."""
+        return self.verdict.is_resolved
+
+    def as_record(self) -> RegimeRecord:
+        """The stored record, or a refusal naming this resolution's own reason.
+
+        The one place the "no substitution" rule is mechanically enforced on this path:
+        there is no default to fall back to, so an unresolved regime can only be a
+        refusal. A caller that must not proceed on an unresolved regime gets an
+        exception carrying the id, the tenant, the frame and the reason, rather than a
+        regime that was never read from anywhere.
+        """
+        if self.record is None:
+            raise SemanticExecutionError(
+                "regime_unresolved",
+                f"semantic regime {self.regime_id!r} for tenant {self.tenant_id!r} over frame "
+                f"{self.context_ref!r} could not be resolved from storage: {self.reason}. "
+                "No substitute regime is used and no comparison is run, because proceeding "
+                "under a regime nobody wrote down is the silent substitution FR-016 "
+                "forbids. Persist the regime through RegimeStore.ingest_regime and re-run.",
+            )
+        return self.record
+
+
 @dataclass(frozen=True)
 class RegimeStep:
-    """Step 4: the instruments that interpreted it, and the frame they extend.
+    """Step 4: the instruments that interpreted it, the frame they extend, and the record.
 
     The regime *points at* the frame and the frame never points back, so
     :func:`semantic.regime.extend_context` returns a **new** content-addressed frame
@@ -609,14 +785,34 @@ class RegimeStep:
     at the base one stops resolving (FR-014, FR-018).
 
     It runs before resolution because the resolver's context layer compares the
-    mention's ``regime_id`` against each candidate's; binding the regime first is what
-    turns that comparison from ``UNEVALUATED`` into a real answer.
+    mention's ``regime_id`` against each candidate's, and persisting the regime first
+    is what turns that comparison from ``UNEVALUATED`` into a real answer (D6).
+
+    **The regime is written, and then read back.** :attr:`record` is what the store
+    holds - a :class:`~semantic.regime_store.RegimeRecord` with its own second address -
+    and :attr:`regime` is that record rehydrated, *not* the value this step built. The
+    distinction is the whole of FR-015: the path proves its regime survives a round
+    trip through storage before it is allowed to compare anything under it, and a
+    regime that failed to round trip would raise at construction rather than be used.
+    :attr:`store` is exposed so a caller can read the regime back independently, and so
+    a second run can be handed the same store.
     """
 
     resolution: ProfileResolution
     regime: SemanticRegime
     base_frame: EvidenceContext
     frame: EvidenceContext
+    record: RegimeRecord
+    store: RegimeStore
+
+    def instrument_refs(self) -> tuple[str, ...]:
+        """Every instrument the stored regime records as bound, canonically ordered.
+
+        Read off :attr:`record` rather than recomputed from :attr:`regime`, so this is a
+        statement about what is *durable* - which is the question "what did we believe
+        when we read this?" and not the question "what did this local variable hold".
+        """
+        return self.record.instrument_refs()
 
 
 @dataclass(frozen=True)
@@ -635,6 +831,15 @@ class ResolutionStep:
     resolve. There is no fallback to a mention-derived ref anywhere in this path: a
     participant that was not identified is named by nothing, and the steps that need a
     real participant refuse with a code rather than inventing one.
+
+    :attr:`regime` is the :class:`~semantic.regime_store.RegimeRecord` this stage **read
+    back from storage**, not the one step 4 held in memory, and both the mentions and the
+    candidate universe were handed *that* address. So the regime comparison the resolver
+    performed was a comparison of two durable addresses, and
+    :attr:`regime_verdicts` reports what it concluded per candidate. On the golden path
+    every entry is ``regime_compatible`` and :attr:`unevaluated_regimes` is empty; a
+    non-empty tuple is the D6 defect returning, and it is a value a caller can assert on
+    rather than a thing to be inferred from reading reason codes.
     """
 
     resolver: MentionResolver
@@ -643,6 +848,8 @@ class ResolutionStep:
     operator: RelationOperator
     subject_decision: ResolutionDecision
     object_decision: ResolutionDecision
+    regime: RegimeRecord
+    store: RegimeStore
 
     @property
     def decisions(self) -> tuple[ResolutionDecision, ...]:
@@ -704,6 +911,50 @@ class ResolutionStep:
         """The recorded compatibility reason codes for one mention."""
         decision = self.batch.decision_for(mention_id)
         return () if decision is None else decision.reason_codes()
+
+    @property
+    def regime_verdicts(self) -> Mapping[str, str]:
+        """Every candidate's regime-comparison verdict, keyed by candidate ref (FR-015).
+
+        Read straight off the machine's own recorded
+        :class:`~semantic.resolution.CompatibilityReason` values - surviving and
+        blocked-out alike, so a candidate pruned by another layer still has its regime
+        verdict reported rather than vanishing from the picture. Nothing is recomputed
+        here: the point of the property is that a caller can read what the resolver
+        concluded, and a recomputation would answer a slightly different question.
+
+        Three codes are possible and they mean three different things:
+        ``regime_compatible`` (both sides name the same stored regime),
+        ``regime_mismatch`` (both name one, and they differ - a real graded answer,
+        not a failure), and ``regime_unevaluated`` (one side names none, which is D6
+        returning and must be zero on the ordinary path).
+        """
+        return regime_verdicts_for(self.batch)
+
+    @property
+    def unevaluated_regimes(self) -> tuple[str, ...]:
+        """Candidates whose regime comparison had nothing to compare - empty on a real run.
+
+        The direct, assertable form of FR-015: a non-empty tuple means some candidate
+        reached the context layer without a stored regime on one side, which is the
+        defect the spec describes. It is a property rather than a log line so a caller
+        can fail on it.
+        """
+        return tuple(
+            ref
+            for ref, code in self.regime_verdicts.items()
+            if code == REGIME_UNEVALUATED
+        )
+
+    @property
+    def unresolved_regime_reads(self) -> int:
+        """How many regime reads have come back empty on this store (FR-015's count).
+
+        Zero on any run that resolved its regime, and the number to watch: a count that
+        is not zero is the platform saying out loud that a regime it needed was not
+        where it looked for it.
+        """
+        return self.store.unresolved_reads()
 
 
 @dataclass(frozen=True)
@@ -955,10 +1206,12 @@ class ExecutionResult:
             pairs.extend(("mention", record.mention_id) for record in self.mentions.records)
         if self.regime is not None:
             pairs.append(("regime", self.regime.regime.regime_id))
+            pairs.append(("regime_record", self.regime.record.record_fingerprint))
             pairs.append(("interpreted_context", self.regime.frame.context_id))
         if self.resolution is not None:
             step = self.resolution
             pairs.append(("resolution_scope", step.scope.scope_id))
+            pairs.append(("resolution_regime", step.regime.regime_id))
             for label, decision in (
                 ("subject", step.subject_decision),
                 ("object", step.object_decision),
@@ -1007,18 +1260,21 @@ def deterministic_extractors(
     role_target_orgs: bool = True,
     ontology_pack: object | None = None,
 ) -> DeterministicExtractorSet:
-    """A fresh deterministic extractor set: the five built-ins, optionally plus one.
+    """A fresh deterministic extractor set: the built-ins plus the relational reader.
 
-    ``role_target_orgs`` adds :func:`role_target_org_extractor`, and the reason it is
-    not one of the five is a real gap worth naming. The built-in English organisation
-    grammar in ``extractors.orgs`` keys on a **legal-form suffix**
-    (``Inc``/``Corp``/``Ltd``/``University``/...) or a Russian legal form, so ``"Acme"``
-    alone in ``"John Smith became CEO of Acme in 2020."`` yields no organisation
-    mention at all, and ``"CEO of Acme Corporation"`` yields a mention whose surface
-    swallows the role cue. The rule below keys on the *role cue* instead - a
-    different rule rather than a copy of the first - and lives here as caller-supplied
-    configuration, so the gap is visible in the caller rather than papered over inside
-    the extraction package.
+    ``role_target_orgs`` registers ``extractors.relations``' relation-aware reader
+    under its own name. That rule used to live *here*, and moving it out is the whole
+    point of feature 018 FR-018: an orchestrator holding extraction rules is an
+    orchestrator that cannot be reasoned about as an orchestrator, and the gap it was
+    patching is a gap in the extraction layer.
+
+    The gap was real, and it was not about a missing suffix. ``extractors.orgs`` keys
+    on a legal-form suffix (``Inc``/``Corp``/``Ltd``/...), so ``"Acme"`` alone in
+    ``"John Smith became CEO of Acme in 2020."`` yields no organisation mention at all.
+    The rule that finds it keys on the *relational cue* instead and reads the object
+    **through** the relation, which is why it is a projection of the cue machinery
+    (``extractors.relations``) rather than another suffix grammar. Adding a third
+    relation is a third row in ``RELATION_CUES``, not a third function here.
 
     ``ontology_pack`` is forwarded untouched and is advisory: it annotates mentions
     with what a pack recognises and can never filter one (FR-002).
@@ -1026,51 +1282,10 @@ def deterministic_extractors(
     extractors = DeterministicExtractorSet(ontology_pack=ontology_pack)
     extractors.register_builtin()
     if role_target_orgs:
-        extractors.register("role_target_orgs", role_target_org_extractor)
+        register_relational_extractors(extractors)
     return extractors
 
 
-_ROLE_CUE = re.compile(
-    r"\b(?:CEO|chief\s+[A-Za-z]+|director|head|president|chair(?:man|woman|person)"
-    r"|founder|manager|partner|owner)\s+of\s+"
-    r"([A-Z][A-Za-z0-9&.'-]*(?:\s+[A-Z][A-Za-z0-9&.'-]*){0,3})"
-)
-
-
-def role_target_org_extractor(text: str, lang_hint: str | None = None) -> list[TypedMention]:
-    """A role-cue organisation reader: the proper-noun run after ``<ROLE> of``.
-
-    Deterministic, rule-only, no model - the same honesty contract as the built-in
-    extractors, and the same reduced confidence for a pattern-only match. It reads the
-    *cue* rather than the corporate form, which is the complementary half of
-    ``extractors.orgs``'s grammar rather than a second implementation of it: a
-    document writing "Acme Corp" and a document writing "CEO of Acme" are both
-    common, and only one of them is reachable from a suffix list.
-
-    Offsets are UTF-8 byte offsets, matching ``extractors.orgs`` and
-    ``extractors.persons``, which both go through ``extractors.util.byte_offset``.
-    """
-    found: list[TypedMention] = []
-    for match in _ROLE_CUE.finditer(text):
-        surface = match.group(1).strip(" .,;")
-        if not surface:
-            continue
-        start = match.start(1)
-        cue = match.group(0)[: match.start(1) - match.start(0)].strip()
-        found.append(
-            TypedMention(
-                kind="org",
-                value=surface,
-                offset=byte_offset(text, start),
-                end_offset=end_byte_offset(text, start + len(surface)),
-                extractor="role_target_orgs",
-                lang=lang_hint,
-                source="pattern",
-                confidence=0.5,
-                evidence={"cue": cue},
-            )
-        )
-    return found
 
 
 def works_for_schema(schema_version: str = "1") -> RelationSchema:
@@ -1320,6 +1535,7 @@ def golden_request(
     type_refs: Mapping[str, str] | None = None,
     profile_type_refs: Iterable[str] = ("schema:Person", "schema:Organization"),
     valid_from: datetime = datetime(2020, 1, 1, tzinfo=UTC),
+    valid_to: datetime | None = None,
     observed_at: datetime = datetime(2020, 6, 1, tzinfo=UTC),
     published_at: datetime | None = None,
     tenant_id: str = "default-tenant",
@@ -1374,14 +1590,22 @@ def golden_request(
         observed_at=observed_at,
         published_at=published_at,
         valid_from=valid_from,
-        valid_to=valid_from,
+        valid_to=valid_from if valid_to is None else valid_to,
         tenant_id=tenant_id,
         investigation_id=investigation_id,
         type_refs=type_refs if type_refs is not None else _default_type_refs(),
         extra_candidates=decoys,
         resolution_candidates=table,
         vocabulary=scheme,
-        **overrides,
+        **{
+            **(
+                {"content_digest": digest128(canonical_material(sentence))}
+                if overrides.get("capture") is None
+                else {}
+            ),
+            "target_uri": f"urn:cognitive:golden:{digest128(canonical_material(sentence))}",
+            **overrides,
+        },
     )
 
 
@@ -1563,7 +1787,36 @@ def _build_lineage(result: ExecutionResult) -> LineageBundle:
     mentions = result.mentions.records
     graph = EvidenceGraph()
     tenant = observation.tenant_id
-    capture_id = capture_id_for(observation.source_id, observation.observation_id)
+    capture = observation.capture
+    if capture is not None:
+        _link_node(
+            graph,
+            EvidenceHop(
+                HopKind.SOURCE, observation.source_id, observation.source_family, tenant_id=tenant
+            ),
+            derived_from=("",),
+            derives=(capture.capture_id,),
+        )
+        _link_node(
+            graph,
+            EvidenceHop(
+                HopKind.CAPTURE,
+                capture.capture_id,
+                capture.hop_label,
+                tenant_id=tenant,
+            ),
+            derived_from=(observation.source_id,),
+            derives=(observation.observation_id,),
+        )
+    else:
+        _link_node(
+            graph,
+            EvidenceHop(
+                HopKind.SOURCE, observation.source_id, observation.source_family, tenant_id=tenant
+            ),
+            derived_from=("",),
+            derives=(observation.observation_id,),
+        )
     assertion_ids = tuple(assertion.type_assertion_id for assertion in result.types.assertions)
     mention_of = {
         assertion.type_assertion_id: _mention_citing(assertion, mentions)
@@ -1573,27 +1826,13 @@ def _build_lineage(result: ExecutionResult) -> LineageBundle:
     _link_node(
         graph,
         EvidenceHop(
-            HopKind.SOURCE, observation.source_id, observation.source_family, tenant_id=tenant
-        ),
-        derived_from=("",),
-        derives=(capture_id,),
-    )
-    _link_node(
-        graph,
-        EvidenceHop(HopKind.CAPTURE, capture_id, "capture", tenant_id=tenant),
-        derived_from=(observation.source_id,),
-        derives=(observation.observation_id,),
-    )
-    _link_node(
-        graph,
-        EvidenceHop(
             HopKind.OBSERVATION,
             observation.observation_id,
             observation.document_id,
             relation_id=claim.relation_id,
             tenant_id=tenant,
         ),
-        derived_from=(capture_id,),
+        derived_from=(capture.capture_id,) if capture is not None else (observation.source_id,),
         derives=(observation.segment_id,),
     )
     _link_node(
@@ -1668,7 +1907,7 @@ def _build_lineage(result: ExecutionResult) -> LineageBundle:
         type_assertions=result.types.assertions,
         mentions=mentions,
         segment_id=observation.segment_id,
-        capture_id=capture_id,
+        capture_id=capture.capture_id if capture is not None else "",
         source_id=observation.source_id,
         observation=observation,
         backward=backward,
@@ -1701,6 +1940,29 @@ def _link_node(
             graph.add_hop(hop, forward=parent, backward=child)
 
 
+def regime_verdicts_for(batch: ResolutionBatch) -> Mapping[str, str]:
+    """Every candidate's regime-comparison verdict in ``batch``, keyed by candidate ref.
+
+    Read off the machine's own recorded
+    :class:`~semantic.resolution.CompatibilityReason` values rather than recomputed, over
+    ``reasons`` and ``blocked_out`` alike so a candidate another layer pruned still has its
+    regime verdict reported. Where one candidate was compared against more than one mention
+    the codes agree by construction - they are the same candidate under the same regime -
+    and the address is the tiebreak that makes the mapping deterministic if they ever did
+    not (constitution VI).
+
+    Module-level rather than only a property because a caller holding a
+    :class:`~semantic.resolution.ResolutionBatch` from somewhere other than this path
+    should be able to ask the same question without importing the orchestrator.
+    """
+    verdicts: dict[str, str] = {}
+    for decision in batch.decisions:
+        for reason in (*decision.reasons, *decision.blocked_out):
+            if reason.code in REGIME_REASON_CODES and reason.candidate_ref:
+                verdicts[reason.candidate_ref] = reason.code
+    return MappingProxyType(dict(sorted(verdicts.items())))
+
+
 def _observation_step(result: ExecutionResult) -> ExecutionResult:
     """Step 1 - build the raw record and address it by its own content."""
     request = result.request
@@ -1719,9 +1981,43 @@ def _observation_step(result: ExecutionResult) -> ExecutionResult:
         extraction_version=request.extraction_version(),
         normalization_version=request.normalization_version,
         ontology_version="",
+        capture=_acquisition_capture(result),
     )
     return replace(
         result, observation=ObservationStep(observation), reached=ExecutionStage.OBSERVATION
+    )
+
+
+def _acquisition_capture(result: ExecutionResult) -> Capture | None:
+    """The real acquisition record for this observation, or ``None`` when none was fetched.
+
+    Built through the shared stream seam rather than from a derived address, so the
+    ``Capture`` in the lineage is the same object a store would hold: it carries a
+    content digest, a target, a fetch basis and a fetch time that may be *absent* on
+    purpose. A crawl index cannot tell us when it fetched a document, only when it
+    indexed it, and saying so with :attr:`CaptureTimeBasis.INDEX_OBSERVATION` is a fact;
+    the address this function replaces pretended otherwise.
+
+    ``None`` is returned when the request carries no acquisition record, and the lineage
+    then reports the capture hop as missing. That is the honest outcome and it is
+    visible.
+    """
+    request = result.request
+    if request.capture is not None:
+        return request.capture
+    if request.content_digest is None or not request.target_uri:
+        return None
+    return Capture(
+        tenant_id=request.tenant_id,
+        source_id=request.source_id,
+        source_family=request.source_family,
+        target_uri=request.target_uri,
+        content_digest=request.content_digest,
+        media_type=request.media_type,
+        fetched_at=None,
+        time_basis=CaptureTimeBasis.INDEX_OBSERVATION,
+        transport=request.transport,
+        recorded_by=request.recorded_by,
     )
 
 
@@ -1769,6 +2065,11 @@ def _mentions_step(result: ExecutionResult) -> ExecutionResult:
     found = request.extractors.extract(
         request.sentence, segment_ref=observation.segment_id, lang=observation.language
     )
+    readings = extract_relational_readings(
+        request.sentence,
+        lang_hint=observation.language,
+        observation_refs=(observation.observation_id,),
+    )
     mentions: list[Mention] = []
     records: list[MentionRecord] = []
     hints: list[SemanticHint | None] = []
@@ -1815,6 +2116,7 @@ def _mentions_step(result: ExecutionResult) -> ExecutionResult:
             subject=_select(records, request.subject_kind, "subject"),
             obj=_select(records, request.object_kind, "object"),
             hints=tuple(hints),
+            reading=readings[0] if readings else None,
         ),
         reached=ExecutionStage.MENTIONS,
     )
@@ -1839,7 +2141,7 @@ def _select(records: Sequence[MentionRecord], kind: str, role: str) -> MentionRe
 
 
 def _regime_step(result: ExecutionResult) -> ExecutionResult:
-    """Step 4 - resolve the profile, bind the regime, extend the frame.
+    """Step 4 - resolve the profile, bind the regime, **persist it, read it back**, extend.
 
     ``ProfileRegistry.resolve`` performs the inheritance walk (memoised, cycle-safe)
     and ``SemanticRegime.from_profile`` binds the result as a separate
@@ -1851,6 +2153,24 @@ def _regime_step(result: ExecutionResult) -> ExecutionResult:
     It runs before resolution so the mention can carry a real ``regime_id`` into the
     resolver's context layer, which would otherwise have to record ``UNEVALUATED`` for
     every candidate and never make the comparison SC-9 asks it to make.
+
+    **The regime is now written down, and then read back (D6, FR-014).** This is the
+    single change that removes a permanent ``regime_unevaluated`` from the golden path,
+    and it is deliberately two operations rather than one. The regime is serialised to a
+    :class:`~semantic.regime_store.RegimeRecord`, written through the store, and
+    *rehydrated from what the store returned*; every value the rest of the path uses -
+    the regime itself and the frame extended by it - is derived from the read-back value
+    rather than from the local one. So the path proves its regime survives storage
+    before it is allowed to compare anything under it, and :meth:`RegimeRecord.to_regime`
+    makes the machine re-verify the address on the way back. A regime that failed to
+    round trip raises here, where the cause is obvious, instead of producing a decision
+    that claims an interpretation nobody can read (FR-004, FR-014).
+
+    The store is the caller's if one was supplied and a fresh
+    :class:`~semantic.regime_store.InMemoryRegimeStore` otherwise, and it is exposed on
+    :attr:`RegimeStep.store` so a second run can be handed the same one. Ingestion is
+    idempotent on the regime's content address, so running this path twice against one
+    store writes one record - which is what keeps a re-run byte-identical (I-11, FR-022).
     """
     request = result.request
     observation = result.observation.observation
@@ -1858,7 +2178,7 @@ def _regime_step(result: ExecutionResult) -> ExecutionResult:
     registry = ProfileRegistry(tenant_id=request.tenant_id)
     registry.register(request.profile)
     resolution = registry.resolve(request.profile.profile_id, request.profile.version)
-    regime = SemanticRegime.from_profile(
+    bound = SemanticRegime.from_profile(
         resolution,
         context_ref=base_frame.context_id,
         ontology_version=request.ontology_version,
@@ -1867,6 +2187,17 @@ def _regime_step(result: ExecutionResult) -> ExecutionResult:
         note=f"golden path over {observation.segment_id}",
         recorded_at=observation.observed_at,
     ).promoted(SemanticCommitment.TYPED)
+    store = request.regime_store if request.regime_store is not None else InMemoryRegimeStore()
+    store.ingest_regime(bound)
+    stored = store.regime_for(request.tenant_id, bound.regime_id)
+    if stored is None:
+        raise SemanticExecutionError(
+            "regime_unresolved",
+            f"the regime {bound.regime_id!r} was written to storage and read back as absent; "
+            "a store that does not return what it was just given is a broken store, and no "
+            "substitute regime is used in its place (FR-016)",
+        )
+    regime = stored.to_regime()
     frame = extend_context(base_frame, regime)
     result.context.resolver.register(frame)
     return replace(
@@ -1876,9 +2207,60 @@ def _regime_step(result: ExecutionResult) -> ExecutionResult:
             regime=regime,
             base_frame=base_frame,
             frame=frame,
+            record=stored,
+            store=store,
         ),
         reached=ExecutionStage.REGIME,
     )
+
+
+def _stored_regime(result: ExecutionResult) -> RegimeResolution:
+    """The regime for this run, **read back from storage**, or a stated reason it is not there.
+
+    This is the read that makes FR-015 an execution rather than a report, and it is a
+    *second* read rather than a reuse of what step 4 held: step 4 wrote a regime and
+    proved it round-tripped, and this step asks the store again as a separate consumer
+    would. A path that compared under the value it had just built would satisfy the
+    letter of "the regime exists" while never consulting the store, which is the shape of
+    the defect D6 describes.
+
+    Three outcomes, and only three:
+
+    * the store returns the record - ``RESOLVED``, carrying it;
+    * the store raises a cross-tenant refusal - that travels **unchanged**, as a
+      component's own refusal always does, because "you may not read that" is a fact
+      about the boundary and not this module's inference (constitution IV);
+    * the store returns nothing for a real address - ``UNRESOLVED``, carrying the reason
+      and *nothing else*. :meth:`RegimeResolution.as_record` turns that into the
+      ``regime_unresolved`` refusal, so the exceptional path is a stated error with a
+      count on the store rather than a comparison run under a regime nobody wrote down
+      (FR-015, FR-016).
+    """
+    step = result.regime
+    if step is None:
+        raise SemanticExecutionError(
+            "regime_unavailable",
+            f"resolution needs the REGIME stage to have stored a regime; reached "
+            f"{result.reached or 'nothing'}",
+        )
+    record = step.store.regime_for(result.request.tenant_id, step.record.regime_id)
+    resolution = RegimeResolution(
+        regime_id=step.record.regime_id,
+        tenant_id=result.request.tenant_id,
+        context_ref=step.regime.context_ref,
+        verdict=RegimeVerdict.RESOLVED if record is not None else RegimeVerdict.UNRESOLVED,
+        record=record,
+        reason=(
+            ""
+            if record is not None
+            else (
+                f"the store holds no record under this address for tenant "
+                f"{result.request.tenant_id!r} after {step.store.unresolved_reads()} "
+                f"unresolved read(s); the regime was written at step 4 and is not there now"
+            )
+        ),
+    )
+    return resolution
 
 
 def _resolution_step(result: ExecutionResult) -> ExecutionResult:
@@ -1905,6 +2287,16 @@ def _resolution_step(result: ExecutionResult) -> ExecutionResult:
     carried on the step. Nothing here picks between ambiguous candidates, and nothing here
     invents an entity for a mention that matched nothing: :func:`_require_resolved` is
     where that refusal lives, and it names the mention and the reasons.
+
+    **The regime is read back here, and bound to both sides of the comparison (FR-015,
+    FR-016).** :func:`_stored_regime` asks the store for the regime this run depends on and
+    refuses with ``regime_unresolved`` if it is not there; the address it returns is then
+    handed to *both* :func:`_resolution_mentions` and :func:`_resolution_universe`. That
+    both-sides part is what removes the permanent ``regime_unevaluated``: the resolver's
+    context layer compares the mention's regime against the candidate's, so a regime on one
+    side alone is an unevaluated comparison no matter how durable the regime itself is.
+    :attr:`ResolutionStep.regime_verdicts` then reports what the comparison concluded, per
+    candidate, so the fix is observable rather than asserted.
     """
     request = result.request
     operator = default_operator_for_schema(request.schema)
@@ -1917,9 +2309,11 @@ def _resolution_step(result: ExecutionResult) -> ExecutionResult:
     scope = request.resolution_scope or resolution_scope_for(
         request.tenant_id, request.investigation_id
     )
+    regime = _stored_regime(result)
+    regime_record = regime.as_record()
     batch = resolver.resolve(
-        _resolution_mentions(result),
-        _resolution_universe(result),
+        _resolution_mentions(result, regime_record.regime_id),
+        _resolution_universe(result, regime_record.regime_id),
         scope,
     )
     subject = batch.decision_for(result.mentions.subject.mention_id)
@@ -1940,6 +2334,8 @@ def _resolution_step(result: ExecutionResult) -> ExecutionResult:
             operator=operator,
             subject_decision=subject,
             object_decision=obj,
+            regime=regime_record,
+            store=result.regime.store,
         ),
         reached=ExecutionStage.RESOLUTION,
     )
@@ -1966,16 +2362,22 @@ def _registry_for(request: ExecutionRequest) -> SemanticRegistry | None:
     )
 
 
-def _resolution_mentions(result: ExecutionResult) -> tuple[ResolutionMention, ...]:
+def _resolution_mentions(
+    result: ExecutionResult, regime_id: str
+) -> tuple[ResolutionMention, ...]:
     """Every mention of the segment, as the resolver's own mention shape.
 
     All of them, not just the two ends this relation uses: resolution is a property of
     the segment, and narrowing the batch to the relation's own needs is exactly the
     pre-filtering that would let a third mention's evidence go unseen (FR-001).
+
+    ``regime_id`` is a parameter and is not read off ``result.regime`` on purpose. The
+    caller has already fetched that address back from storage and is passing the address
+    it actually compared under, so a mention cannot quietly end up carrying the in-memory
+    regime while the candidate universe carries the stored one (FR-015).
     """
     request = result.request
     observation = result.observation.observation
-    regime = result.regime.regime
     roles = {request.subject_kind: RelationRole.SUBJECT, request.object_kind: RelationRole.OBJECT}
     return tuple(
         ResolutionMention(
@@ -1995,7 +2397,7 @@ def _resolution_mentions(result: ExecutionResult) -> tuple[ResolutionMention, ..
             profile_version=request.profile.version,
             ontology_version=request.ontology_version,
             normalization_version=request.normalization_version,
-            regime_id=regime.regime_id,
+            regime_id=regime_id,
             declared_type_refs=(request.type_refs[record.kind],)
             if record.kind in request.type_refs
             else (),
@@ -2004,13 +2406,51 @@ def _resolution_mentions(result: ExecutionResult) -> tuple[ResolutionMention, ..
     )
 
 
-def _resolution_universe(result: ExecutionResult) -> tuple[ResolutionCandidate, ...]:
+def _universe_under_regime(
+    universe: tuple[ResolutionCandidate, ...], regime_id: str
+) -> tuple[ResolutionCandidate, ...]:
+    """The entity table as this run reads it: every record bound to the stored regime.
+
+    **This is the other half of the fix, and the half that is easy to get wrong.** A regime
+    is a property of a *reading*, not of a record -
+    :class:`~semantic.regime.SemanticRegime` answers "what did we believe when we read
+    that?" and never "what may exist". So binding the active regime to a record that names
+    none states the truth about this run: the platform read that record now, under these
+    instruments, and the decision it produces carries the address so the claim is
+    reconstructable. It is a projection, not an invention - every other field of the
+    candidate is carried across untouched.
+
+    The asymmetry with a record that *does* name a regime is the load-bearing part. Such a
+    record keeps its own, so a record read earlier under different instruments produces
+    ``regime_mismatch`` - a graded ``WEAKENED`` with a stated detail - rather than being
+    flattened into a pass by having its regime overwritten. Overwriting would make the
+    comparison agree by construction, which is precisely the "proceed as though it matched"
+    that FR-016 forbids, arrived at by a different road.
+
+    Nothing here invents a regime: ``regime_id`` arrives as an argument from storage, and a
+    caller with no stored regime never reaches this function (see :func:`_stored_regime`).
+    """
+    return tuple(
+        candidate if candidate.regime_id else replace(candidate, regime_id=regime_id)
+        for candidate in universe
+    )
+
+
+def _resolution_universe(
+    result: ExecutionResult, regime_id: str
+) -> tuple[ResolutionCandidate, ...]:
     """The candidate universe: the entity table plus anything the caller appended.
 
     The caller's ``extra_candidates`` arrive in the older :class:`semantic.blocking.Candidate`
     shape and are projected rather than reinterpreted, so a caller who already has a universe
     does not have to learn a second one. De-duplication is the resolver's job, not this
     function's, and it is deterministic there.
+
+    Every record in the result is then read under the stored regime, by
+    :func:`_universe_under_regime`. That last step is what makes the resolver's regime
+    comparison resolvable rather than ``UNEVALUATED`` on every run: the context layer
+    compares the mention's ``regime_id`` with the candidate's, so a durable regime on one
+    side alone still yields no comparison (FR-015, D6).
     """
     request = result.request
     projected = tuple(
@@ -2023,7 +2463,9 @@ def _resolution_universe(result: ExecutionResult) -> tuple[ResolutionCandidate, 
         )
         for candidate in request.extra_candidates
     )
-    return (*request.resolution_candidates, *projected)
+    return _universe_under_regime(
+        (*request.resolution_candidates, *projected), regime_id
+    )
 
 
 def _types_step(result: ExecutionResult) -> ExecutionResult:
@@ -2151,6 +2593,46 @@ def _require_resolved(
     )
 
 
+def _measured_trigger(result: ExecutionResult, segment_ref: str) -> SpanRef:
+    """The cue span the extractor actually measured, or the honest fallback.
+
+    This used to be ``min(subject.end, object.start) … max(...)`` — the region
+    *between* the two mentions, which is a guess dressed as a measurement. For
+    ``John Smith became CEO of Acme`` it yields ``[10, 25)``, and that span swallows
+    ``"became "``. The relational reader measures the cue instead: ``[18, 24)`` is
+    exactly ``"CEO of"``.
+
+    The fallback is the old guess, and it is reached only when the extraction layer
+    reported no reading at all. It is kept because a sentence with no cue still has to
+    produce a candidate, but the two are no longer silently the same thing: one is what
+    was found, the other is what was assumed, and only the first is used when both
+    exist.
+    """
+    reading = result.mentions.reading
+    if reading is not None and reading.trigger_span is not None:
+        return reading.trigger_span.into(segment_ref)
+    mentions = result.mentions
+    return SpanRef(
+        segment_ref=segment_ref,
+        start=min(mentions.subject.end, mentions.obj.start),
+        end=max(mentions.subject.end, mentions.obj.start),
+    )
+
+
+def _reading_extractor_version(result: ExecutionResult, fallback: str) -> str:
+    """The version of whichever extractor actually produced the reading.
+
+    The reading names its own extractor, and a candidate that attributed itself to the
+    observation's extraction version while being produced by a different extractor would
+    make the version field a decoration rather than provenance. The fallback is the
+    honest answer when no reading exists.
+    """
+    reading = result.mentions.reading
+    if reading is not None and reading.extractor_version:
+        return reading.extractor_version
+    return fallback
+
+
 def _candidate_step(result: ExecutionResult) -> ExecutionResult:
     """Step 7 - build the extraction hypothesis and its operator contract.
 
@@ -2192,15 +2674,11 @@ def _candidate_step(result: ExecutionResult) -> ExecutionResult:
             ),
         ),
         context_ref=result.regime.frame.context_id,
-        semantic_regime_ref=result.regime.regime.regime_id,
-        trigger_span=SpanRef(
-            segment_ref=observation.segment_id,
-            start=min(mentions.subject.end, mentions.obj.start),
-            end=max(mentions.subject.end, mentions.obj.start),
-        ),
+        semantic_regime_ref=result.regime.record.regime_id,
+        trigger_span=_measured_trigger(result, observation.segment_id),
         extraction_method=ExtractionStrategy.LEXICAL_PATTERN,
-        extractor_version=observation.extraction_version,
-        extraction_rule_id="mention_cue",
+        extractor_version=_reading_extractor_version(result, observation.extraction_version),
+        extraction_rule_id=RELATION_RULE_ID,
         observation_refs=(observation.observation_id,),
         evidence_refs=(
             observation.observation_id,
