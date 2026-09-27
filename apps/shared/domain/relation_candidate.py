@@ -776,6 +776,7 @@ class RelationCandidate:
         tenant_id: str,
         role_bindings: Sequence[RelationRoleBinding] = (),
         assertion_refs: Sequence[str] = (),
+        source_independence_groups: Sequence[Sequence[str]] = (),
         normalization_version: str = "",
         ontology_version: str = "",
         observed_at: datetime | None = None,
@@ -835,11 +836,20 @@ class RelationCandidate:
           of a caller-supplied value rather than an invention. Pass a value to record when
           admission happened rather than extraction.
 
+        * ``source_independence_groups`` - defaulted empty, and that default is a truthful
+          "nothing independent backs this yet" rather than a gap. Independence is computed
+          across a claim set (FR-034) and cannot be derived from one candidate alone, so it
+          has to be supplied by whoever did the resolution. It was previously absent from
+          this signature altogether, which meant every claim admitted this way carried
+          ``independent_source_count == 0`` and the ``cross_source`` validation stage could
+          only ever answer ``UNKNOWN`` -- the corroboration the resolver computes was
+          computed and then discarded. Empty is the honest absence; a real group list is
+          identity material, so two claims differing in what independently backs them are
+          two claims.
+
         Everything else is transcribed from the candidate: the operator identity, the arity
         mode, the context and regime references, the observation refs, the extraction method
-        and version, the rule id, the investigation and the author. ``source_independence_groups``
-        is not among them: independence is computed across a claim set (FR-034) and is not
-        knowable by one candidate in isolation.
+        and version, the rule id, the investigation and the author.
         """
         if not self.is_admissible:
             raise CandidateNotAdmissible(
@@ -877,6 +887,11 @@ class RelationCandidate:
             evidence_grade=EvidenceGrade(evidence_grade),
             tenant_id=str(tenant_id),
             investigation_id=self.investigation_id,
+            source_independence_groups=tuple(
+                tuple(sorted({str(ref) for ref in group if str(ref).strip()}))
+                for group in source_independence_groups
+                if tuple(str(ref) for ref in group)
+            ),
             created_by=self.recorded_by,
         )
         logical, revision = recompute_identity(claim)

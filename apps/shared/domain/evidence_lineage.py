@@ -12,6 +12,15 @@ hops it did resolve, ``complete=False``, and the name of the gap (FR-033). An
 empty hop list would read as "no evidence at all", which is a different and
 false claim, so incompleteness is a result and never a silent truncation.
 
+Both directions are entry-point-agnostic. :meth:`EvidenceGraph.backward` walks up
+from wherever it is asked, and :meth:`EvidenceGraph.forward` walks down from
+*wherever it is asked*: a source, a capture, an observation, a segment, a mention,
+a candidate, an assertion, a relation or an entity. The forward step sequence is
+derived from the kind of the node the walk starts at (see
+:data:`FORWARD_CHAIN`) rather than from a fixed tuple that assumes a source root,
+because an observation sits *mid-chain* and asking to walk forward from one is a
+question about direction, not a report of a defect.
+
 Independence is by source *family*, not by document: two captures of one wire
 story are two publications and one source, and those two counts are never fused
 into a single number (FR-034, constitution IV).
@@ -26,6 +35,7 @@ from typing import Any, Literal
 
 __all__ = [
     "BACKWARD_CHAIN",
+    "FORWARD_CHAIN",
     "EvidenceGraph",
     "EvidenceHop",
     "HopKind",
@@ -62,18 +72,79 @@ BACKWARD_CHAIN: tuple[HopKind, ...] = (
     HopKind.SOURCE,
 )
 
+#: The whole evidence chain, origin to apex. The forward counterpart of
+#: :data:`BACKWARD_CHAIN`, and the single source of truth for the forward step
+#: sequence: a walk that starts at kind ``K`` traverses exactly the entries that
+#: come *after* ``K`` here, which is what makes a walk startable at any node
+#: instead of only at a source.
+FORWARD_CHAIN: tuple[HopKind, ...] = (
+    HopKind.SOURCE,
+    HopKind.CAPTURE,
+    HopKind.OBSERVATION,
+    HopKind.SEGMENT,
+    HopKind.MENTION,
+    HopKind.CANDIDATE,
+    HopKind.ASSERTION,
+    HopKind.RELATION,
+    HopKind.ENTITY,
+)
+
 # (kind, required): an absent required hop ends the trace and names the gap, an
 # absent optional hop is skipped so a chain that never had one still completes.
-_FORWARD_STEPS: tuple[tuple[HopKind, bool], ...] = (
-    (HopKind.CAPTURE, True),
-    (HopKind.OBSERVATION, True),
-    (HopKind.SEGMENT, True),
-    (HopKind.MENTION, True),
-    (HopKind.CANDIDATE, False),
-    (HopKind.ASSERTION, True),
-    (HopKind.RELATION, True),
-    (HopKind.ENTITY, False),
+#
+# Requiredness is a property of the *ladder*, not of the walk's origin, and that is
+# the whole answer to what a mid-chain start does to these flags: a required step
+# means "the chain does not skip this kind", which is a statement about the ladder
+# that is equally true whether the walk arrived from below or began here. Starting at
+# an OBSERVATION, a missing SEGMENT is still a gap — the observation reached a
+# mention without the segment that must sit between them — so SEGMENT stays
+# required. What the origin changes is only *where the walk enters the ladder*: the
+# start node's own kind is consumed by being the subject, never looked up as a step.
+# That is the one flag that would have been wrong, and it is wrong only in a
+# source-rooted ladder, which is why the source-relative tuple below is derived
+# rather than written out.
+#
+# Only CANDIDATE and ENTITY are optional, for the ladder's own reasons: a mention may
+# be promoted straight to an assertion, and a relation need not have a resolved
+# entity in this vocabulary. The spine is otherwise mandatory, and that is what
+# makes an unresolved hop a defect report rather than a stylistic gap.
+_OPTIONAL_HOP_KINDS: frozenset[HopKind] = frozenset({HopKind.CANDIDATE, HopKind.ENTITY})
+
+_CHAIN_STEPS: tuple[tuple[HopKind, bool], ...] = tuple(
+    (kind, kind not in _OPTIONAL_HOP_KINDS) for kind in FORWARD_CHAIN
 )
+
+#: The forward ladder as seen from a source: every step after SOURCE. Kept as a
+#: named module constant because it is the shape ``forward`` is contractually
+#: specified against, and it is defined *from* :data:`FORWARD_CHAIN` so a source
+#: walk and a mid-chain walk cannot drift apart.
+_FORWARD_STEPS: tuple[tuple[HopKind, bool], ...] = _CHAIN_STEPS[1:]
+
+
+def _forward_steps_from(start: HopKind | None) -> tuple[tuple[HopKind, bool], ...]:
+    """The ladder strictly after ``start``; the source-relative ladder for ``None``.
+
+    Deriving the sequence from the start kind is the whole fix: an observation is
+    mid-chain, so its walk begins at SEGMENT and a capture hop is never requested of
+    it. A start of ``HopKind.ENTITY`` yields an empty sequence, which walks to a
+    complete empty trace — an entity is the apex of the vocabulary, so nothing is
+    derived from it and the ladder above it is genuinely exhausted rather than
+    missing.
+
+    ``None`` is the start kind of a node the graph never registered a hop for, and
+    the source-relative ladder is the answer that cannot be wrong: it asks for the
+    first thing a forward walk from the origin needs, finds nothing, and returns
+    ``complete=False`` naming ``capture`` as the gap. The result is marked, not
+    silent, and it is what an unregistered node has always reported.
+    """
+    if start is None:
+        return _FORWARD_STEPS
+    if start not in FORWARD_CHAIN:
+        raise ValueError(
+            f"hop kind {start!r} is not part of FORWARD_CHAIN; a forward walk cannot "
+            f"start there, and answering anyway would be a silent wrong answer"
+        )
+    return _CHAIN_STEPS[FORWARD_CHAIN.index(start) + 1 :]
 
 
 @dataclass(frozen=True)
@@ -208,6 +279,10 @@ class EvidenceGraph:
     derived from, ``backward`` the id it derives. A lineage question is
     therefore answered from injected data alone, with no store or database
     behind it.
+
+    Both traversals accept any node as their subject, and the kind of the subject
+    is what the walk derives its remaining steps from — see
+    :meth:`EvidenceGraph.forward` and :data:`FORWARD_CHAIN`.
     """
 
     def __init__(self) -> None:
@@ -215,25 +290,27 @@ class EvidenceGraph:
         self._seen: set[_Link] = set()
         self._derives: dict[str, list[_Link]] = {}
         self._derived_from: dict[str, list[_Link]] = {}
+        self._node_kinds: dict[str, set[HopKind]] = {}
 
     def add_hop(self, hop: EvidenceHop, *, forward: str, backward: str) -> None:
         """Register one hop between the node it derives from and the one it derives.
 
         ``forward`` is ``""`` at the source end of the chain and ``backward`` is
-        ``""`` at the relation end, which is what makes the two ends of the
-        spine honest rather than dangling. Registering the same hop between the
-        same two nodes again is a no-op, so a replayed build does not double a
-        trace (I-11).
+        ``""`` at the relation end, which is what makes the two ends of the spine
+        honest rather than dangling. Registering the same hop between the same two
+        nodes again is a no-op, so a replayed build does not double a trace (I-11).
         """
         link = _Link(hop=hop, derived_from=str(forward), derives=str(backward))
         if link in self._seen:
             return
         self._seen.add(link)
         self._links.append(link)
+        self._node_kinds.setdefault(hop.node_id, set()).add(hop.kind)
         if link.derived_from:
             self._derived_from.setdefault(link.derived_from, []).append(link)
         if link.derives:
             self._derives.setdefault(link.derives, []).append(link)
+
 
     def backward(self, node_id: str) -> LineageTrace:
         """``relation → source``: the chain behind one node, in canonical order.
@@ -249,19 +326,56 @@ class EvidenceGraph:
             index=self._derives,
         )
 
-    def forward(self, node_id: str) -> LineageTrace:
-        """``source → relation``: every node this node produced, in chain order.
+    def forward(self, node_id: str, *, kind: HopKind | None = None) -> LineageTrace:
+        """``source → relation``, or any node → whatever it produced (FR-032).
 
-        One source captured twice yields two paths, both returned; each hop is
-        stamped with the relation its own path derives, so every derived
-        relation comes back with the assertion that grounds it (FR-032).
+        The step sequence is derived from the kind of ``node_id`` rather than fixed
+        to a source root, so the walk starts wherever the caller is standing:
+        ``forward(source)``, ``forward(capture)``, ``forward(observation)``,
+        ``forward(segment)``, ``forward(mention)``, ``forward(candidate)``,
+        ``forward(assertion)``, ``forward(relation)`` and ``forward(entity)`` are all
+        legal and all correct. The subject's own kind is consumed by being the
+        subject, so a walk from an observation never asks for a capture hop of it and
+        never reports one unresolved.
+
+        One source captured twice yields two paths, both returned; each hop is stamped
+        with the relation its own path derives, so every derived relation comes back
+        with the assertion that grounds it (FR-032). ``forward(source)`` is
+        unchanged by this and is asserted byte-identical against the pre-change
+        behaviour, because ``_FORWARD_STEPS`` is derived from :data:`FORWARD_CHAIN`
+        rather than written out beside it.
+
+        ``kind`` declares the start kind for a node the graph holds no registered hop
+        for, and is coerced through :class:`HopKind` so an unknown value raises
+        instead of being treated as some kind. Omitted, the start kind is read from
+        the kinds the node was registered under, lowest in the chain first so a
+        malformed node registered twice is walked conservatively and reports the gap
+        rather than silently skipping hops. A node registered under no kind at all is
+        answered with the source-relative ladder and a ``complete=False`` trace naming
+        the first hop it could not resolve — marked, not silent, and unchanged.
         """
         return self._walk(
             subject_id=node_id,
             direction="forward",
-            steps=_FORWARD_STEPS,
+            steps=_forward_steps_from(self._start_kind(node_id, kind)),
             index=self._derived_from,
         )
+
+    def _start_kind(self, node_id: str, declared: HopKind | None) -> HopKind | None:
+        """The kind a forward walk starts at, or ``None`` when it cannot be known.
+
+        A declared kind wins over the registry: the caller asserting the kind is
+        claiming to know more about the node than the graph does. Otherwise the
+        lowest registered kind is chosen, because the lower a walk enters the ladder
+        the more steps it must traverse, and a walk that is forced to traverse more
+        steps can only ever report a gap — never skip one.
+        """
+        if declared is not None:
+            return HopKind(declared)
+        registered = self._node_kinds.get(node_id)
+        if not registered:
+            return None
+        return min(registered, key=FORWARD_CHAIN.index)
 
     def independence_groups(
         self,

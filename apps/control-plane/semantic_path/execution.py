@@ -16,12 +16,25 @@ can follow top to bottom and see which component did what.
 **Staged and inspectable.** :data:`STAGE_ORDER` names thirteen steps and
 :func:`run_until` executes a prefix, returning an :class:`ExecutionResult` that
 carries the *real* intermediate objects reached so far: the
-:class:`extractors.registry.Mention` values, the ``TypeAssertion`` values, the
-``SemanticRegime``, the ``RelationCandidate``, the ``BlockingResult``, the
-``ValidationReport``, the ``RelationClaim``, the ``GraphEdge``, the
-``WorldlineEvent``. Nothing is flattened into a summary of strings, because a
-summary is not inspectable. A stage that was not reached is ``None``, so "not run
-yet" and "ran and produced nothing" stay distinguishable.
+:class:`extractors.registry.Mention` values, the ``SemanticRegime``, the
+:class:`ResolutionBatch` and its ``ResolutionDecision`` values, the ``TypeAssertion``
+values, the ``RelationCandidate``, the ``ValidationReport``, the ``RelationClaim``,
+the ``GraphEdge``, the ``WorldlineEvent``. Nothing is flattened into a summary of
+strings, because a summary is not inspectable. A stage that was not reached is
+``None``, so "not run yet" and "ran and produced nothing" stay distinguishable.
+
+**Resolution is real here, and the previous shape of this module was wrong.**
+There used to be a ``BLOCKING`` stage whose ``subject_ref``/``object_ref`` were the
+canonically-first survivors, and an ``entity_ref_for(tenant, mention)`` that minted
+``ENT-`` from the *mention*. That made the mention the entity: one mention became
+one entity by construction and a second mention could never join it. It is gone.
+Stage 5 is now :class:`ResolutionStep`, which runs
+:class:`semantic.resolution.MentionResolver` - normalization through the vocabulary
+facade's alias expansion, blocking delegated to :mod:`semantic.blocking`, the four
+compatibility layers with recorded reasons, the collective pass, and a two-level
+decision. The only thing the orchestrator contributes is **honesty about the
+verdict**: it refuses to build a claim about a participant it could not identify, and
+says which mention and why, rather than substituting a synthetic entity ref.
 
 **Determinism is structural.** No clock, no randomness, no network, no database,
 no model. Every timestamp enters through :class:`ExecutionRequest` from the caller
@@ -45,10 +58,17 @@ and defaults to ``warn``. The path never refuses content.
 ``CandidateNotAdmissible`` unless the reading is ``SUPPORTED``. There is therefore
 no moment at which a candidate can be validated but not yet admitted, and no way to
 validate one without first building a claim. The order here is therefore
-``BLOCKING -> CLAIM -> VALIDATION -> ADMISSION -> STORE -> EDGE -> WORLDLINE``,
+``RESOLUTION -> CLAIM -> VALIDATION -> ADMISSION -> STORE -> EDGE -> WORLDLINE``,
 and the resulting finding is a design question for the next round: validation
 should be able to run against a *candidate* shape, or ``to_claim`` should be split
 into "build" and "admit" so a claim can exist, be validated, and still be refused.
+
+**A second reordering, and why it is also forced.** ``TypeAssertion`` carries an
+``entity_ref``, and the real resolver produces that ref - so the types cannot be
+asserted before the entity exists. The regime moved ahead of them for a second
+reason: the resolver's context layer compares the mention's ``regime_id`` against
+the candidate's, and an unbuilt regime would make every such comparison
+``UNEVALUATED``. Hence ``MENTIONS -> REGIME -> RESOLUTION -> TYPES``.
 
 **Where it lives, and why.** ``apps/shared/semantic/`` - not ``domain/``, which
 FR-005 keeps free of semantic vocabulary and which holds base values rather than a
@@ -105,14 +125,9 @@ from extractors.util import byte_offset, end_byte_offset
 from graph.abstraction import GraphEdge, GraphNode, HyperEdge, InMemoryGraphStore
 from graph.relation_store import GraphProjectionBridge, InMemoryRelationStore
 from semantic.blocking import (
-    BlockingResult,
-    RelationRole,
-    TypeHypothesis,
-    block_for_relation,
-)
-from semantic.blocking import (
     Candidate as BlockingCandidate,
 )
+from semantic.blocking import RelationRole
 from semantic.contracts import (
     RelationRef,
     SemanticRef,
@@ -129,6 +144,17 @@ from semantic.regime import (
     SemanticRegime,
     extend_context,
 )
+from semantic.registry import ConceptSchemeBackend, SemanticRegistry
+from semantic.resolution import (
+    MentionResolver,
+    ResolutionBatch,
+    ResolutionCandidate,
+    ResolutionDecision,
+    ResolutionMention,
+    ResolutionScope,
+    ResolutionVerdict,
+    resolution_scope_for,
+)
 from semantic.validation import (
     STAGE_ORDER as VALIDATION_STAGE_ORDER,
 )
@@ -137,12 +163,13 @@ from semantic.validation import (
     MaterialisationDecision,
     StageOutcome,
 )
+from semantic.vocabularies import Concept, ConceptScheme
 
 __all__ = [
     "GOLDEN_SENTENCE",
     "STAGE_ORDER",
+    "UNSET",
     "AdmissionStep",
-    "BlockingStep",
     "CandidateStep",
     "ClaimStep",
     "ContextStep",
@@ -156,6 +183,7 @@ __all__ = [
     "Observation",
     "ObservationStep",
     "RegimeStep",
+    "ResolutionStep",
     "SemanticExecutionError",
     "StoreStep",
     "TypeStep",
@@ -168,10 +196,12 @@ __all__ = [
     "decoy_universe",
     "derived_from_observation",
     "deterministic_extractors",
-    "entity_ref_for",
     "forward_lineage",
+    "golden_candidates",
     "golden_request",
+    "golden_vocabulary",
     "mention_id_for",
+    "resolution_candidate_for",
     "role_target_org_extractor",
     "run_golden_path",
     "run_until",
@@ -217,10 +247,10 @@ class ExecutionStage(StrEnum):
     OBSERVATION = "observation"
     CONTEXT = "context"
     MENTIONS = "mentions"
-    TYPES = "types"
     REGIME = "regime"
+    RESOLUTION = "resolution"
+    TYPES = "types"
     CANDIDATE = "candidate"
-    BLOCKING = "blocking"
     CLAIM = "claim"
     VALIDATION = "validation"
     ADMISSION = "admission"
@@ -296,23 +326,6 @@ def mention_id_for(
                 "extractor": extractor,
             }
         )
-    )
-
-
-def entity_ref_for(tenant_id: str, mention_id: str) -> str:
-    """``ENT-`` + 128-bit digest: the entity one mention resolved to.
-
-    The *only* resolution this module performs, and deliberately the weakest
-    honest one: one mention, one candidate entity, no corroboration. That is not a
-    claim that the mention and the entity are the same thing in the world; it is a
-    deterministic stand-in that lets the rest of the path address a stable
-    participant. A real resolution engine would substitute its own ids here and
-    nothing downstream would change, because every id is a content address and the
-    chain is reference-based. Blocking narrows the universe and is not consulted
-    here; nothing in this function looks at a type.
-    """
-    return _ENTITY_ID_PREFIX + digest128(
-        canonical_material({"tenant": tenant_id, "mention": mention_id})
     )
 
 
@@ -482,6 +495,11 @@ class ExecutionRequest:
     subject_role: str = "subject"
     object_role: str = "object"
     extra_candidates: tuple[BlockingCandidate, ...] = ()
+    resolution_candidates: tuple[ResolutionCandidate, ...] = ()
+    vocabulary: ConceptScheme | None = None
+    registry: SemanticRegistry | None = None
+    resolution_scope: ResolutionScope | None = None
+    collective_max_iterations: int = 16
     revision_number: int = 1
     claim_status: RelationStatus = RelationStatus.ACTIVE
     evidence_grade: EvidenceGrade = EvidenceGrade.MODERATE
@@ -555,12 +573,18 @@ class MentionStep:
 
 @dataclass(frozen=True)
 class TypeStep:
-    """Step 4: the observed typing layer, one assertion per relation end (FR-003).
+    """Step 6: the observed typing layer, one assertion per relation end (FR-003).
 
     ``scope=OBSERVED`` and ``status=OBSERVED`` unconditionally: this layer is what
     the extractor said, and it consults no profile, no pack and no ontology. An
     unknown type reference is recorded verbatim and is a first-class value, so no
     input to this step can fail on unfamiliar content (FR-001).
+
+    ``entity_ref`` on each assertion is the **resolved** entity from step 5, not a
+    digest of the mention. That is the visible consequence of running resolution first:
+    the type is asserted about the entity the mention actually resolved to, so the
+    validator's domain/range stage and the claim's participants agree by construction
+    rather than by coincidence.
     """
 
     assertions: tuple[TypeAssertion, ...]
@@ -575,7 +599,7 @@ class TypeStep:
 
 @dataclass(frozen=True)
 class RegimeStep:
-    """Step 5: the instruments that interpreted it, and the frame they extend.
+    """Step 4: the instruments that interpreted it, and the frame they extend.
 
     The regime *points at* the frame and the frame never points back, so
     :func:`semantic.regime.extend_context` returns a **new** content-addressed frame
@@ -583,6 +607,10 @@ class RegimeStep:
     extended frame - that is the one carrying ``ontology_version`` and ``language``
     as the regime pinned them - and both stay registered, so nothing already pointing
     at the base one stops resolving (FR-014, FR-018).
+
+    It runs before resolution because the resolver's context layer compares the
+    mention's ``regime_id`` against each candidate's; binding the regime first is what
+    turns that comparison from ``UNEVALUATED`` into a real answer.
     """
 
     resolution: ProfileResolution
@@ -592,14 +620,106 @@ class RegimeStep:
 
 
 @dataclass(frozen=True)
+class ResolutionStep:
+    """Step 5: the real resolution machine, its decisions, and its measured blocking outcome.
+
+    The whole of :mod:`semantic.resolution` is here, unflattened: the
+    :class:`~semantic.resolution.MentionResolver` that ran, the
+    :class:`~semantic.resolution.ResolutionBatch` it returned, the
+    :class:`~semantic.resolution.BlockingOutcome` with the reported
+    ``before_count``/``after_count``/``reduction_ratio`` (SC-10), the collective
+    outcome, and the two decisions for this sentence's two ends.
+
+    ``subject_ref``/``object_ref`` are read off the *decisions* - the resolved
+    ``logical_entity_ref`` of each end - and are empty strings when that end did not
+    resolve. There is no fallback to a mention-derived ref anywhere in this path: a
+    participant that was not identified is named by nothing, and the steps that need a
+    real participant refuse with a code rather than inventing one.
+    """
+
+    resolver: MentionResolver
+    batch: ResolutionBatch
+    scope: ResolutionScope
+    operator: RelationOperator
+    subject_decision: ResolutionDecision
+    object_decision: ResolutionDecision
+
+    @property
+    def decisions(self) -> tuple[ResolutionDecision, ...]:
+        return self.batch.decisions
+
+    @property
+    def subject_ref(self) -> str:
+        """The resolved entity for the subject end, or ``""`` when it did not resolve."""
+        return self.subject_decision.logical_entity_ref
+
+    @property
+    def object_ref(self) -> str:
+        """The resolved entity for the object end, or ``""`` when it did not resolve."""
+        return self.object_decision.logical_entity_ref
+
+    @property
+    def verdicts(self) -> Mapping[str, ResolutionVerdict]:
+        """Every mention's verdict, so a caller can see an ambiguity without reading a decision."""
+        return self.batch.verdicts()
+
+    def independence_groups(self) -> tuple[tuple[str, ...], ...]:
+        """Independence groups backing the two resolved ends, for the admitted claim.
+
+        Forwarded rather than recomputed, so the corroboration the resolver actually found
+        reaches ``RelationClaim.source_independence_groups`` and the ``cross_source``
+        validation stage has something to evaluate. Without this the resolver computed
+        corroboration, the claim reported ``independent_source_count == 0``, and FR-034 was
+        untestable through this path.
+
+        One group per resolved end, and an end that did not resolve contributes no group at
+        all. An ambiguous end is *not* credited with the groups of its surviving candidates:
+        choosing between them is exactly what has not happened, so attributing one candidate's
+        backing to the claim would assert corroboration for a decision nobody made.
+        """
+        groups: list[tuple[str, ...]] = []
+        for decision in (self.subject_decision, self.object_decision):
+            if decision.verdict is not ResolutionVerdict.RESOLVED:
+                continue
+            supporting = self.batch.supporting_groups_for(decision.logical_entity_ref)
+            if supporting:
+                groups.append(supporting)
+        return tuple(groups)
+
+    @property
+    def blocking_reductions(self) -> Mapping[str, float]:
+        """The reported blocking reduction per mention (SC-10, FR-016)."""
+        return self.batch.blocking_reductions()
+
+    @property
+    def unresolved(self) -> tuple[ResolutionDecision, ...]:
+        """The decisions that named no entity, canonically ordered."""
+        return tuple(
+            decision
+            for decision in self.batch.decisions
+            if not decision.logical_entity_ref
+        )
+
+    def reason_codes(self, mention_id: str) -> tuple[str, ...]:
+        """The recorded compatibility reason codes for one mention."""
+        decision = self.batch.decision_for(mention_id)
+        return () if decision is None else decision.reason_codes()
+
+
+@dataclass(frozen=True)
 class CandidateStep:
-    """Step 6: the extraction hypothesis, its operator contract, and both readings.
+    """Step 7: the extraction hypothesis, its operator contract, and both readings.
 
     ``proposed`` is the raw ``PROPOSE`` reading extraction produced; ``supported`` is
     the same hypothesis after the check that admits it. Both are returned because a
     rejection is a preserved candidate and never a deleted one (I-3, FR-006), and
     because their distinct ``candidate_id`` values under one ``logical_candidate_id``
     are the two-level identity working as designed.
+
+    The operator is the one :class:`ResolutionStep` already derived from the same
+    schema, handed forward rather than derived a second time: blocking (inside the
+    resolver) and the extraction contract must be the *same* operator, and two
+    derivations of one value is how they stop being the same.
     """
 
     schema: RelationSchema
@@ -609,29 +729,8 @@ class CandidateStep:
 
 
 @dataclass(frozen=True)
-class BlockingStep:
-    """Step 7: the candidate universe, the type hypotheses, and what they removed.
-
-    Two calls, one per relation end, both through
-    :func:`semantic.blocking.block_for_relation` so the affordance kinds come from the
-    operator via ``affordance_kinds`` rather than from a re-derivation here (US7,
-    FR-016). ``subject_ref``/``object_ref`` are the canonically-first survivors, which
-    is a *deterministic* choice and not a resolution decision - see
-    :func:`entity_ref_for`. Pruning asserts nothing: the pruned candidates come back
-    in ``pruned_candidates`` as the original frozen objects, unaltered.
-    """
-
-    universe: tuple[BlockingCandidate, ...]
-    hypotheses: tuple[TypeHypothesis, ...]
-    subject_block: BlockingResult
-    object_block: BlockingResult
-    subject_ref: str
-    object_ref: str
-
-
-@dataclass(frozen=True)
 class ValidationStep:
-    """Step 8: the layered, graded report, and the validator that produced it.
+    """Step 9: the layered, graded report, and the validator that produced it.
 
     Findings only, and nothing removed. ``report`` carries one finding per stage that
     ran; ``unevaluated`` names the stages that did not, so "nothing wrong" and
@@ -660,7 +759,7 @@ class ValidationStep:
 
 @dataclass(frozen=True)
 class AdmissionStep:
-    """Step 9: the admission decision, as a named, operator-scoped value.
+    """Step 10: the admission decision, as a named, operator-scoped value.
 
     Never a boolean. Under the default ``warn`` policy ``decision.materialisable`` is
     ``True`` however adverse the findings were, and ``decision.scope`` records that
@@ -674,7 +773,7 @@ class AdmissionStep:
 
 @dataclass(frozen=True)
 class ClaimStep:
-    """Step 10: the checked reading promoted to a claim, with identity derived once.
+    """Step 8: the checked reading promoted to a claim, with identity derived once.
 
     :meth:`RelationCandidate.to_claim` is the only path across and it raises rather
     than returning ``None`` for a non-admissible reading, so reaching a claim *is*
@@ -819,10 +918,10 @@ class ExecutionResult:
     observation: ObservationStep | None = None
     context: ContextStep | None = None
     mentions: MentionStep | None = None
-    types: TypeStep | None = None
     regime: RegimeStep | None = None
+    resolution: ResolutionStep | None = None
+    types: TypeStep | None = None
     candidate: CandidateStep | None = None
-    blocking: BlockingStep | None = None
     claim: ClaimStep | None = None
     validation: ValidationStep | None = None
     admission: AdmissionStep | None = None
@@ -854,6 +953,22 @@ class ExecutionResult:
             pairs.append(("context", self.context.frame.context_id))
         if self.mentions is not None:
             pairs.extend(("mention", record.mention_id) for record in self.mentions.records)
+        if self.regime is not None:
+            pairs.append(("regime", self.regime.regime.regime_id))
+            pairs.append(("interpreted_context", self.regime.frame.context_id))
+        if self.resolution is not None:
+            step = self.resolution
+            pairs.append(("resolution_scope", step.scope.scope_id))
+            for label, decision in (
+                ("subject", step.subject_decision),
+                ("object", step.object_decision),
+            ):
+                pairs.append((f"entity_{label}", decision.logical_entity_ref or "-"))
+                pairs.append((f"resolution_{label}", decision.resolution_decision_id))
+                pairs.append((f"resolution_verdict_{label}", str(decision.verdict)))
+                blocking = decision.blocking
+                if blocking is not None:
+                    pairs.append((f"block_{label}", blocking.content_key()))
         if self.types is not None:
             pairs.extend(
                 ("type_assertion", item.type_assertion_id) for item in self.types.assertions
@@ -862,17 +977,11 @@ class ExecutionResult:
                 ("logical_type_assertion", item.logical_type_assertion_id)
                 for item in self.types.assertions
             )
-        if self.regime is not None:
-            pairs.append(("regime", self.regime.regime.regime_id))
-            pairs.append(("interpreted_context", self.regime.frame.context_id))
         if self.candidate is not None:
             step = self.candidate
             pairs.append(("candidate", step.supported.candidate_id))
             pairs.append(("logical_candidate", step.supported.logical_candidate_id))
             pairs.append(("proposed_candidate", step.proposed.candidate_id))
-        if self.blocking is not None:
-            pairs.append(("subject_block", self.blocking.subject_block.content_key()))
-            pairs.append(("object_block", self.blocking.object_block.content_key()))
         if self.claim is not None:
             pairs.append(("relation", self.claim.claim.relation_id))
             pairs.append(("logical_relation", self.claim.claim.logical_relation_id))
@@ -1032,6 +1141,10 @@ def decoy_universe() -> tuple[BlockingCandidate, ...]:
     all and is therefore *retained* through the kind stage by the default ``retain``
     policy - pruning on an absent fact is an assertion by omission - before the name
     stage removes it too.
+
+    They are returned as :class:`semantic.blocking.Candidate` because that is what
+    ``extra_candidates`` has always been; :func:`resolution_candidate_for` projects them
+    into the shape the resolver compares, adding the tenant and no invented content.
     """
     return (
         BlockingCandidate(
@@ -1053,6 +1166,154 @@ def decoy_universe() -> tuple[BlockingCandidate, ...]:
     )
 
 
+def resolution_candidate_for(
+    candidate: BlockingCandidate,
+    *,
+    tenant_id: str = "default-tenant",
+    investigation_id: str = "",
+    ontology_version: str = "",
+    normalization_version: str = "",
+) -> ResolutionCandidate:
+    """Project one universe record into the shape the resolver compares.
+
+    A projection, not a conversion: the name, kind, types and - importantly - the
+    **established** ``entity_ref`` are carried across unchanged, and everything the
+    ``BlockingCandidate`` never had is left at its default rather than invented. So a
+    universe entry that already names an entity keeps naming it, and one that does not
+    is honestly un-identified until the resolver anchors it to a mention.
+    """
+    return ResolutionCandidate(
+        entity_ref=candidate.entity_ref,
+        name=candidate.name,
+        kind=candidate.kind,
+        type_refs=tuple(candidate.type_refs),
+        tenant_id=tenant_id,
+        investigation_id=investigation_id,
+        ontology_version=ontology_version,
+        normalization_version=normalization_version,
+    )
+
+
+def golden_vocabulary() -> ConceptScheme:
+    """The one local SKOS scheme the golden path resolves names through.
+
+    The reason it exists is specific and is the point of the whole exercise: the golden
+    sentence says ``"Acme"`` and the entity table says ``"Acme Corporation"``. Those are
+    two surface forms, and without a vocabulary the resolver has no standing to call them
+    one thing - it would be doing string surgery in the identity layer. So the scheme
+    records ``acme:AcmeCorporation`` with ``"Acme"`` and ``"Acme Corp"`` as alternative
+    labels, and :class:`semantic.resolution.MentionResolver` asks the registry for the
+    labels rather than guessing at them (FR-015, US8).
+
+    The concept carries a ``closeMatch`` to ``schema:Organization`` rather than an
+    equality, because SKOS records correspondence and never identity, and resolution must
+    not read a correspondence as one (FR-008).
+    """
+    return ConceptScheme.from_concepts(
+        "golden-path",
+        (
+            Concept(
+                concept_id="acme:AcmeCorporation",
+                pref_label="Acme Corporation",
+                alt_labels=("Acme", "Acme Corp"),
+                close_match=("schema:Organization",),
+            ),
+            Concept(
+                concept_id="globex:GlobexCorporation",
+                pref_label="Globex Ltd",
+                alt_labels=("Globex Limited",),
+                close_match=("schema:Organization",),
+            ),
+            Concept(concept_id="schema:Organization", pref_label="Organization"),
+            Concept(concept_id="schema:Person", pref_label="Person"),
+        ),
+        version="1",
+    )
+
+
+def golden_candidates(
+    *,
+    tenant_id: str = "default-tenant",
+    investigation_id: str = "inv-golden-path",
+    ontology_version: str = "ontology-1",
+    normalization_version: str = "norm-1",
+    with_decoys: bool = True,
+) -> tuple[ResolutionCandidate, ...]:
+    """The entity table the golden path resolves its mentions against.
+
+    This is the fixture that replaces the old lie. Previously the "universe" was built out
+    of the mentions themselves, so the platform was resolving a mention against a copy of
+    itself and the resulting identity was circular. Now it is an ordinary table of
+    pre-existing records, each with an established ``ENT-`` ref, a validity window that
+    reaches back before the sentence, and its own support:
+
+    * ``Acme Corporation`` and ``John Smith`` are the two records the sentence is about;
+    * each already carries one mention from an **independent** group, so corroboration is
+      real rather than the mention corroborating itself;
+    * ``with_decoys`` appends the three records from :func:`decoy_universe` so blocking has
+      something to reduce. :func:`golden_request` passes ``with_decoys=False`` here and
+      supplies those three through ``extra_candidates`` instead, because they are the same
+      records and the universe should hold each exactly once.
+
+    The refs are content addresses over fixed material, so the table is the same in every
+    process and a diff between two runs means something changed.
+    """
+    records = (
+        ("acme-corporation", "Acme Corporation", "schema:Organization"),
+        ("john-smith", "John Smith", "schema:Person"),
+    )
+    table = [
+        ResolutionCandidate(
+            entity_ref=_ENTITY_ID_PREFIX + digest128(f"golden-entity:{key}"),
+            name=name,
+            kind=kind,
+            type_refs=(kind,),
+            tenant_id=tenant_id,
+            investigation_id=investigation_id,
+            ontology_version=ontology_version,
+            normalization_version=normalization_version,
+            source_family="src-registry",
+            independence_group="grp-registry",
+            valid_from=datetime(2010, 1, 1, tzinfo=UTC),
+            valid_to=None,
+            observed_at=datetime(2019, 11, 1, tzinfo=UTC),
+            support_mention_ids=(_MENTION_ID_PREFIX + digest128(f"golden-support:{key}"),),
+            supporting_groups=("grp-registry",),
+        )
+        for key, name, kind in records
+    ]
+    if with_decoys:
+        table.extend(
+            resolution_candidate_for(
+                decoy,
+                tenant_id=tenant_id,
+                investigation_id=investigation_id,
+                ontology_version=ontology_version,
+                normalization_version=normalization_version,
+            )
+            for decoy in decoy_universe()
+        )
+    return tuple(table)
+
+
+@dataclass(frozen=True)
+class _Unset:
+    """The type of :data:`UNSET`, so a request field can be *emptied*, not only defaulted.
+
+    :func:`golden_request` needs to tell "the caller did not mention this" from "the caller
+    asked for none of these", because the second is a real case: an empty candidate universe
+    is how a caller asks what the path does with nothing to resolve against, and no
+    vocabulary is how a caller asks what it does without the semantic layer. A default of
+    ``None`` cannot express both, and an empty tuple cannot express "use the golden table".
+    """
+
+    label: str = "unset"
+
+
+#: The "not specified" marker for :func:`golden_request`'s resolution fields.
+UNSET = _Unset()
+
+
 def golden_request(
     sentence: str = GOLDEN_SENTENCE,
     *,
@@ -1067,6 +1328,9 @@ def golden_request(
     profile: SemanticProfile | None = None,
     extractors: DeterministicExtractorSet | None = None,
     with_decoys: bool = True,
+    resolution_candidates: tuple[ResolutionCandidate, ...] | _Unset = UNSET,
+    extra_candidates: tuple[BlockingCandidate, ...] | _Unset = UNSET,
+    vocabulary: ConceptScheme | None | _Unset = UNSET,
     **overrides: Any,
 ) -> ExecutionRequest:
     """A fully specified request over the golden sentence, with every id stable.
@@ -1076,11 +1340,32 @@ def golden_request(
     gets the same ids on every run and in every process. ``**overrides`` passes
     straight through to :class:`ExecutionRequest`, so a variant is a keyword argument
     and never an edit of this function.
+
+    The three resolution fields accept :data:`UNSET` so a caller can pass ``()`` or ``None``
+    to ask for a genuinely empty universe or a genuinely absent vocabulary - which is how the
+    smoke run demonstrates that an unresolvable mention is refused rather than guessed.
     """
     declared = schema if schema is not None else works_for_schema()
     instruments = (
         profile if profile is not None else base_profile(*profile_type_refs, tenant_id=tenant_id)
     )
+    table = (
+        golden_candidates(
+            tenant_id=tenant_id,
+            investigation_id=investigation_id,
+            ontology_version="ontology-1",
+            normalization_version="norm-1",
+            with_decoys=False,
+        )
+        if isinstance(resolution_candidates, _Unset)
+        else tuple(resolution_candidates)
+    )
+    decoys = (
+        (decoy_universe() if with_decoys else ())
+        if isinstance(extra_candidates, _Unset)
+        else tuple(extra_candidates)
+    )
+    scheme = golden_vocabulary() if isinstance(vocabulary, _Unset) else vocabulary
     return ExecutionRequest(
         sentence=sentence,
         schema=declared,
@@ -1093,7 +1378,9 @@ def golden_request(
         tenant_id=tenant_id,
         investigation_id=investigation_id,
         type_refs=type_refs if type_refs is not None else _default_type_refs(),
-        extra_candidates=decoy_universe() if with_decoys else (),
+        extra_candidates=decoys,
+        resolution_candidates=table,
+        vocabulary=scheme,
         **overrides,
     )
 
@@ -1249,7 +1536,7 @@ def _finalise(result: ExecutionResult) -> ExecutionResult:
         return result
     if result.observation is None or result.regime is None or result.types is None:
         return result
-    if result.mentions is None or result.candidate is None or result.blocking is None:
+    if result.mentions is None or result.candidate is None or result.resolution is None:
         return result
     return replace(result, lineage=_build_lineage(result))
 
@@ -1362,7 +1649,7 @@ def _build_lineage(result: ExecutionResult) -> LineageBundle:
         derived_from=assertion_ids,
         derives=("",),
     )
-    for ref in (result.blocking.subject_ref, result.blocking.object_ref):
+    for ref in (result.resolution.subject_ref, result.resolution.object_ref):
         _link_node(
             graph,
             EvidenceHop(HopKind.ENTITY, ref, "resolved", tenant_id=tenant),
@@ -1551,63 +1838,8 @@ def _select(records: Sequence[MentionRecord], kind: str, role: str) -> MentionRe
     return matching[0]
 
 
-def _types_step(result: ExecutionResult) -> ExecutionResult:
-    """Step 4 - assert the observed typing of each relation end, with no gate.
-
-    One :class:`semantic.contracts.TypeAssertion` per end at ``TypeScope.OBSERVED`` /
-    ``SemanticStatus.OBSERVED``, carrying the surface it was read from, the extractor
-    that read it, the frame it was read under, and the observation, segment and
-    mention as evidence. The type reference comes from the request and is recorded
-    verbatim: nothing here checks it against a profile, a pack or a vocabulary,
-    because an unknown type is a first-class value (FR-001, FR-003).
-    """
-    request = result.request
-    observation = result.observation.observation
-    mentions = result.mentions
-    frame = result.context.frame
-    by_entity: dict[str, list[TypeAssertion]] = {}
-
-    def build(record: MentionRecord, kind: str) -> TypeAssertion:
-        type_ref = request.type_refs.get(kind, "")
-        assertion = TypeAssertion(
-            tenant_id=request.tenant_id,
-            entity_ref=entity_ref_for(request.tenant_id, record.mention_id),
-            type_ref=type_ref,
-            type_scheme=_scheme_for(type_ref),
-            scope=TypeScope.OBSERVED,
-            status=SemanticStatus.OBSERVED,
-            raw_surface=record.value,
-            source_ref=observation.observation_id,
-            extractor_ref=record.mention.attrs.get("extractor", ""),
-            context_ref=frame.context_id,
-            evidence_refs=(
-                observation.observation_id,
-                observation.segment_id,
-                record.mention_id,
-            ),
-            observed_at=observation.observed_at,
-        ).with_id()
-        by_entity.setdefault(assertion.entity_ref, []).append(assertion)
-        return assertion
-
-    subject = build(mentions.subject, request.subject_kind)
-    obj = build(mentions.obj, request.object_kind)
-    return replace(
-        result,
-        types=TypeStep(
-            assertions=(subject, obj),
-            subject=subject,
-            obj=obj,
-            by_entity=MappingProxyType(
-                {ref: tuple(items) for ref, items in sorted(by_entity.items())}
-            ),
-        ),
-        reached=ExecutionStage.TYPES,
-    )
-
-
 def _regime_step(result: ExecutionResult) -> ExecutionResult:
-    """Step 5 - resolve the profile, bind the regime, extend the frame.
+    """Step 4 - resolve the profile, bind the regime, extend the frame.
 
     ``ProfileRegistry.resolve`` performs the inheritance walk (memoised, cycle-safe)
     and ``SemanticRegime.from_profile`` binds the result as a separate
@@ -1615,6 +1847,10 @@ def _regime_step(result: ExecutionResult) -> ExecutionResult:
     a **new** frame carrying the regime's pinned ``ontology_version`` and language; the
     base frame is untouched and keeps its id, so nothing already referring to it stops
     resolving (FR-014, FR-018).
+
+    It runs before resolution so the mention can carry a real ``regime_id`` into the
+    resolver's context layer, which would otherwise have to record ``UNEVALUATED`` for
+    every candidate and never make the comparison SC-9 asks it to make.
     """
     request = result.request
     observation = result.observation.observation
@@ -1645,16 +1881,288 @@ def _regime_step(result: ExecutionResult) -> ExecutionResult:
     )
 
 
-def _candidate_step(result: ExecutionResult) -> ExecutionResult:
-    """Step 6 - build the extraction hypothesis and its operator contract.
+def _resolution_step(result: ExecutionResult) -> ExecutionResult:
+    """Step 5 - run the real mention-to-entity machine over this segment's mentions.
 
-    The operator is derived from the request's ``RelationSchema`` by
-    :func:`semantic.operators.default_operator_for_schema`, so the schema stays the
-    single declaration of what the relation means and the operator only adds
-    behaviour (FR-006). The candidate takes the ``role_assignment`` shape - ``NARY``
-    with two named role bindings - because that is the shape ``works_for`` has in this
-    slice, and because a ``DIRECTED`` candidate carrying role assignments is refused
-    by construction, so a role-shaped hypothesis is ``NARY`` or it is not admissible.
+    This is the step that replaced ``entity_ref_for``. Everything the resolver needs is a
+    request field or an already-reached object:
+
+    * the mentions come from step 3, each projected into a
+      :class:`semantic.resolution.ResolutionMention` carrying the frame, the window, the
+      provenance and the regime id;
+    * the candidate universe is ``resolution_candidates`` plus any ``extra_candidates``
+      the caller added, so the platform resolves against a *table* rather than against a
+      copy of itself;
+    * the vocabulary, when supplied, is wrapped in a real
+      :class:`semantic.registry.SemanticRegistry` so alias expansion goes through the
+      facade and swapping the backend stays free (FR-015);
+    * the operator is derived from the same ``RelationSchema`` by
+      :func:`semantic.operators.default_operator_for_schema`, and handed forward to step 7
+      so blocking and extraction share one contract rather than two derivations of it.
+
+    **The orchestrator's own contribution is honesty, not a fallback.** Every mention in
+    the segment is resolved - not only the two this relation needs - and the verdicts are
+    carried on the step. Nothing here picks between ambiguous candidates, and nothing here
+    invents an entity for a mention that matched nothing: :func:`_require_resolved` is
+    where that refusal lives, and it names the mention and the reasons.
+    """
+    request = result.request
+    operator = default_operator_for_schema(request.schema)
+    registry = _registry_for(request)
+    resolver = MentionResolver(
+        registry=registry,
+        operator=operator,
+        collective_max_iterations=request.collective_max_iterations,
+    )
+    scope = request.resolution_scope or resolution_scope_for(
+        request.tenant_id, request.investigation_id
+    )
+    batch = resolver.resolve(
+        _resolution_mentions(result),
+        _resolution_universe(result),
+        scope,
+    )
+    subject = batch.decision_for(result.mentions.subject.mention_id)
+    obj = batch.decision_for(result.mentions.obj.mention_id)
+    if subject is None or obj is None:
+        raise SemanticExecutionError(
+            "resolution_missing_decision",
+            "the resolver returned no decision for "
+            f"{result.mentions.subject.mention_id!r} or {result.mentions.obj.mention_id!r}; "
+            "a decision per mention is the resolver's contract",
+        )
+    return replace(
+        result,
+        resolution=ResolutionStep(
+            resolver=resolver,
+            batch=batch,
+            scope=batch.scope,
+            operator=operator,
+            subject_decision=subject,
+            object_decision=obj,
+        ),
+        reached=ExecutionStage.RESOLUTION,
+    )
+
+
+def _registry_for(request: ExecutionRequest) -> SemanticRegistry | None:
+    """The vocabulary facade the resolver widens names through, or ``None`` for no vocabulary.
+
+    A request that supplies ``registry`` gets exactly that one - so a caller can wire a
+    different backend, or two, and no calling code changes (FR-015, SC-7). Otherwise a supplied
+    ``vocabulary`` scheme is wrapped in a real :class:`semantic.registry.SemanticRegistry` here,
+    which is the one-call case. A caller supplies a *scheme* by default because a scheme is a
+    value and a registry is *wiring*, and a request should not have to know which it is.
+    """
+    if request.registry is not None:
+        return request.registry
+    if request.vocabulary is None:
+        return None
+    return SemanticRegistry(
+        tenant_id=request.tenant_id,
+        backends=(
+            ConceptSchemeBackend(request.vocabulary, tenant_id=request.tenant_id),
+        ),
+    )
+
+
+def _resolution_mentions(result: ExecutionResult) -> tuple[ResolutionMention, ...]:
+    """Every mention of the segment, as the resolver's own mention shape.
+
+    All of them, not just the two ends this relation uses: resolution is a property of
+    the segment, and narrowing the batch to the relation's own needs is exactly the
+    pre-filtering that would let a third mention's evidence go unseen (FR-001).
+    """
+    request = result.request
+    observation = result.observation.observation
+    regime = result.regime.regime
+    roles = {request.subject_kind: RelationRole.SUBJECT, request.object_kind: RelationRole.OBJECT}
+    return tuple(
+        ResolutionMention(
+            mention_id=record.mention_id,
+            surface=record.value,
+            kind=record.kind,
+            role=roles.get(record.kind, RelationRole.OBJECT),
+            tenant_id=request.tenant_id,
+            investigation_id=request.investigation_id,
+            source_id=request.source_id,
+            source_family=request.source_family,
+            independence_group=request.independence_group,
+            valid_from=request.valid_from,
+            valid_to=request.valid_to,
+            observed_at=observation.observed_at,
+            profile_id=request.profile.profile_id,
+            profile_version=request.profile.version,
+            ontology_version=request.ontology_version,
+            normalization_version=request.normalization_version,
+            regime_id=regime.regime_id,
+            declared_type_refs=(request.type_refs[record.kind],)
+            if record.kind in request.type_refs
+            else (),
+        )
+        for record in sorted(result.mentions.records, key=lambda item: item.mention_id)
+    )
+
+
+def _resolution_universe(result: ExecutionResult) -> tuple[ResolutionCandidate, ...]:
+    """The candidate universe: the entity table plus anything the caller appended.
+
+    The caller's ``extra_candidates`` arrive in the older :class:`semantic.blocking.Candidate`
+    shape and are projected rather than reinterpreted, so a caller who already has a universe
+    does not have to learn a second one. De-duplication is the resolver's job, not this
+    function's, and it is deterministic there.
+    """
+    request = result.request
+    projected = tuple(
+        resolution_candidate_for(
+            candidate,
+            tenant_id=request.tenant_id,
+            investigation_id=request.investigation_id,
+            ontology_version=request.ontology_version,
+            normalization_version=request.normalization_version,
+        )
+        for candidate in request.extra_candidates
+    )
+    return (*request.resolution_candidates, *projected)
+
+
+def _types_step(result: ExecutionResult) -> ExecutionResult:
+    """Step 6 - assert the observed typing of each relation end, with no gate.
+
+    One :class:`semantic.contracts.TypeAssertion` per end at ``TypeScope.OBSERVED`` /
+    ``SemanticStatus.OBSERVED``, carrying the surface it was read from, the extractor
+    that read it, the frame it was read under, and the observation, segment and mention as
+    evidence. The type reference comes from the request and is recorded verbatim: nothing
+    here checks it against a profile, a pack or a vocabulary, because an unknown type is a
+    first-class value (FR-001, FR-003).
+
+    ``entity_ref`` is the **resolved** entity from step 5, read off that end's
+    :class:`semantic.resolution.ResolutionDecision`. That is the whole reason resolution
+    runs before typing: a type asserted about a mention-derived identifier is a type
+    about nothing, and the validator keys its domain/range check by entity - so the two
+    would have had to agree by coincidence.
+    """
+    request = result.request
+    observation = result.observation.observation
+    mentions = result.mentions
+    frame = result.context.frame
+    by_entity: dict[str, list[TypeAssertion]] = {}
+
+    def build(record: MentionRecord, kind: str, entity_ref: str) -> TypeAssertion:
+        type_ref = request.type_refs.get(kind, "")
+        assertion = TypeAssertion(
+            tenant_id=request.tenant_id,
+            entity_ref=entity_ref,
+            type_ref=type_ref,
+            type_scheme=_scheme_for(type_ref),
+            scope=TypeScope.OBSERVED,
+            status=SemanticStatus.OBSERVED,
+            raw_surface=record.value,
+            source_ref=observation.observation_id,
+            extractor_ref=record.mention.attrs.get("extractor", ""),
+            context_ref=frame.context_id,
+            evidence_refs=(
+                observation.observation_id,
+                observation.segment_id,
+                record.mention_id,
+            ),
+            observed_at=observation.observed_at,
+        ).with_id()
+        by_entity.setdefault(assertion.entity_ref, []).append(assertion)
+        return assertion
+
+    subject_ref = _require_resolved(result, mentions.subject, "subject")
+    object_ref = _require_resolved(result, mentions.obj, "object")
+    subject = build(mentions.subject, request.subject_kind, subject_ref)
+    obj = build(mentions.obj, request.object_kind, object_ref)
+    return replace(
+        result,
+        types=TypeStep(
+            assertions=(subject, obj),
+            subject=subject,
+            obj=obj,
+            by_entity=MappingProxyType(
+                {ref: tuple(items) for ref, items in sorted(by_entity.items())}
+            ),
+        ),
+        reached=ExecutionStage.TYPES,
+    )
+
+
+def _require_resolved(
+    result: ExecutionResult, record: MentionRecord, role: str
+) -> str:
+    """The entity this end resolved to, or a typed refusal that says exactly why not.
+
+    This is the honest handling of ``AMBIGUOUS`` and ``UNRESOLVED`` that the previous
+    shape of this module could not express. The old path minted an ``ENT-`` from the
+    mention and carried on, which is not a weaker answer - it is a *false* one, because it
+    asserted an identity no evidence supported and then let a claim, an edge and a worldline
+    event be built on it. Here the path stops, and the refusal carries:
+
+    * the mention and the surface, so the reader knows which reading failed;
+    * the verdict, so ``ambiguous`` is distinguishable from ``unresolved``;
+    * both surviving candidates for an ambiguity, because a refusal that hid the two
+      candidates would be no more useful than a guess;
+    * the recorded compatibility reason codes, so the cause is one attribute access away;
+    * the decision's own id, so the failed resolution is still a durable, citable fact.
+
+    Everything up to this point is already on the result, so
+    ``run_until(request, ExecutionStage.RESOLUTION)`` succeeds and the decision is
+    inspectable without ever reaching the claim.
+    """
+    step = result.resolution
+    if step is None:
+        raise SemanticExecutionError(
+            "resolution_unavailable",
+            f"the {role!r} end needs the RESOLUTION stage; reached {result.reached or 'nothing'}",
+        )
+    decision = step.batch.decision_for(record.mention_id)
+    if decision is None:
+        raise SemanticExecutionError(
+            "resolution_missing_decision",
+            f"the resolver returned no decision for the {role!r} mention {record.mention_id!r}",
+        )
+    if decision.logical_entity_ref:
+        return decision.logical_entity_ref
+    detail = (
+        f"the {role!r} end is a participant of a claim, and a participant must be identified. "
+        f"Mention {record.mention_id!r} (surface {record.value!r}) resolved "
+        f"{str(decision.verdict)!r}"
+    )
+    if decision.verdict is ResolutionVerdict.AMBIGUOUS:
+        detail += (
+            f" between {len(decision.ambiguous_candidates())} equally supported candidates "
+            f"{list(decision.ambiguous_candidates())}; the path will not pick one"
+        )
+    elif decision.verdict is ResolutionVerdict.CONFLICTED:
+        detail += f"; the winning candidate is contested by {list(decision.collective.contested)}"
+    else:
+        detail += "; nothing in the candidate universe matched it"
+    detail += (
+        f". Reasons: {list(decision.reason_codes())}. Decision "
+        f"{decision.resolution_decision_id}. Admit the entity separately, widen the "
+        "universe, or supply more evidence - this path does not substitute a synthetic "
+        "entity reference."
+    )
+    raise SemanticExecutionError(
+        f"{role}_end_{decision.verdict!s}",
+        detail,
+    )
+
+
+def _candidate_step(result: ExecutionResult) -> ExecutionResult:
+    """Step 7 - build the extraction hypothesis and its operator contract.
+
+    The operator is the one step 5 already derived from the same ``RelationSchema`` by
+    :func:`semantic.operators.default_operator_for_schema` and handed forward, so the
+    schema stays the single declaration of what the relation means, the affordances that
+    pruned the candidate set and the contract the claim is admitted under are *the same
+    object*, and blocking cannot have run against a different one (FR-006, US7). The
+    candidate takes the ``role_assignment`` shape - ``NARY`` with two named role bindings -
+    because that is the shape ``works_for`` has in this slice, and because a ``DIRECTED``
+    candidate carrying role assignments is refused by construction, so a role-shaped
+    hypothesis is ``NARY`` or it is not admissible.
 
     The trigger span is the region *between* the two mentions, which is what a lexical
     cue is: a ``SpanRef`` with no ``mention_ref`` is exactly that shape. The temporal
@@ -1665,7 +2173,7 @@ def _candidate_step(result: ExecutionResult) -> ExecutionResult:
     request = result.request
     observation = result.observation.observation
     mentions = result.mentions
-    operator = default_operator_for_schema(request.schema)
+    operator = result.resolution.operator
     proposed = RelationCandidate(
         subject_mention_ref=mentions.subject.mention_id,
         object_mention_ref=mentions.obj.mention_id,
@@ -1724,113 +2232,6 @@ def _candidate_step(result: ExecutionResult) -> ExecutionResult:
     )
 
 
-def _blocking_step(result: ExecutionResult) -> ExecutionResult:
-    """Step 7 - narrow the candidate universe with the operator's own affordances.
-
-    One :func:`semantic.blocking.block_for_relation` call per end, so the kind filter
-    comes from ``affordance_kinds`` reading the operator rather than from a
-    re-derivation here (US7, FR-016). The hypotheses are built from the *observed type
-    assertions*, which is the point: blocking narrows on recorded types and records
-    nothing, so the module cannot type a pruned candidate even by accident.
-
-    The surviving candidate's ``entity_ref`` becomes the participant ref the claim
-    carries. Taking the canonically-first survivor is deterministic and deliberately
-    the weakest honest choice: blocking is a cost optimisation, not a resolution, so
-    nothing here asserts identity.
-    """
-    request = result.request
-    operator = result.candidate.operator
-    types = result.types
-    mentions = result.mentions
-    known = {record.mention_id: record for record in mentions.records}
-    universe = (
-        _universe_entry(types.subject, operator.subject_kinds, known),
-        _universe_entry(types.obj, operator.object_kinds, known),
-        *request.extra_candidates,
-    )
-    ordered = tuple(
-        sorted(universe, key=lambda candidate: (candidate.entity_ref, candidate.name))
-    )
-    subject_hypothesis = _hypotheses(types.subject)
-    object_hypothesis = _hypotheses(types.obj)
-    subject_block = block_for_relation(
-        ordered,
-        subject_hypothesis,
-        operator,
-        RelationRole.SUBJECT,
-        query_name=mentions.subject.value,
-    )
-    object_block = block_for_relation(
-        ordered,
-        object_hypothesis,
-        operator,
-        RelationRole.OBJECT,
-        query_name=mentions.obj.value,
-    )
-    return replace(
-        result,
-        blocking=BlockingStep(
-            universe=ordered,
-            hypotheses=subject_hypothesis + object_hypothesis,
-            subject_block=subject_block,
-            object_block=object_block,
-            subject_ref=_survivor(subject_block, mentions.subject.value),
-            object_ref=_survivor(object_block, mentions.obj.value),
-        ),
-        reached=ExecutionStage.BLOCKING,
-    )
-
-
-def _universe_entry(
-    assertion: TypeAssertion,
-    declared_kinds: tuple[str, ...],
-    known: Mapping[str, MentionRecord],
-) -> BlockingCandidate:
-    """One record of the candidate universe, as blocking sees it.
-
-    ``kind`` is the operator's declared affordance class when it declares one - which
-    is what the kind stage filters against - and the entity's own observed type
-    otherwise, so a relation with no declared hints still narrows by type without
-    being read as restricted. ``name`` is the mention surface, read off the mention
-    the assertion cites rather than remembered.
-    """
-    record = _mention_citing(assertion, tuple(known.values()))
-    return BlockingCandidate(
-        entity_ref=assertion.entity_ref,
-        name=record.value,
-        kind=declared_kinds[0] if declared_kinds else assertion.type_ref,
-        type_refs=(assertion.type_ref,) if assertion.type_ref else (),
-    )
-
-
-def _hypotheses(assertion: TypeAssertion) -> tuple[TypeHypothesis, ...]:
-    """The type hypotheses one member carries, as :class:`semantic.blocking.TypeHypothesis`.
-
-    Deliberately not a ``TypeAssertion``: a hypothesis has no evidence, no scope and
-    no status ladder, and it has no effect on any record. The scheme travels with the
-    reference so ``internal:Company`` and ``skos:Company`` cannot meet by spelling.
-    """
-    if not assertion.type_ref:
-        return ()
-    return (TypeHypothesis(type_ref=assertion.type_ref, scheme=assertion.type_scheme),)
-
-
-def _survivor(block: BlockingResult, surface: str) -> str:
-    """The canonically-first surviving candidate, or a typed refusal.
-
-    The refusal names the query that resolved to nothing rather than substituting the
-    mention ref, because a mention in a claim's identity material is exactly the
-    substitution ``to_claim``'s own docstring warns against (I-2).
-    """
-    if not block.candidates:
-        raise SemanticExecutionError(
-            "blocking_resolved_nothing",
-            f"no candidate survived blocking for surface {surface!r}; "
-            f"{block.pruned_count} of {block.before_count} were pruned",
-        )
-    return block.candidates[0].entity_ref
-
-
 def _claim_step(result: ExecutionResult) -> ExecutionResult:
     """Step 10 - promote the checked reading to a claim, with both ids derived once.
 
@@ -1851,8 +2252,9 @@ def _claim_step(result: ExecutionResult) -> ExecutionResult:
     ``GraphProjectionBridge.to_nodes`` emits a node for every participant including
     every role member, so the graph grows four nodes for two entities and the N-ary
     hyperedge's members are mentions rather than the entities the relation is about.
-    The mapping is rebuilt here, from the same deterministic
-    :func:`entity_ref_for` the type assertions used.
+    The mapping is rebuilt here by asking the resolution batch what each **mention**
+    resolved to, so a role member is the entity the mention actually resolved to rather
+    than a digest of the mention.
 
     Two interface facts recorded here rather than worked around silently:
     ``evidence_refs`` is **required** by ``to_claim`` but ``RelationClaim`` has no
@@ -1863,17 +2265,18 @@ def _claim_step(result: ExecutionResult) -> ExecutionResult:
     """
     request = result.request
     step = result.candidate
+    resolution = result.resolution
     claim = step.supported.to_claim(
-        subject_ref=result.blocking.subject_ref,
-        object_ref=result.blocking.object_ref,
+        subject_ref=resolution.subject_ref,
+        object_ref=resolution.object_ref,
         revision_number=request.revision_number,
         claim_status=request.claim_status,
-            evidence_grade=request.evidence_grade,
-            tenant_id=request.tenant_id,
+        evidence_grade=request.evidence_grade,
+        tenant_id=request.tenant_id,
         role_bindings=(
             RelationRoleBinding(
                 binding.role,
-                entity_ref_for(request.tenant_id, binding.member_ref),
+                resolution.batch.entity_for(binding.member_ref),
                 binding.member_class,
             )
             for binding in step.supported.role_assignments
@@ -1882,6 +2285,7 @@ def _claim_step(result: ExecutionResult) -> ExecutionResult:
             assertion.type_assertion_id for assertion in result.types.assertions
         )
         + request.assertion_refs,
+        source_independence_groups=resolution.independence_groups(),
         normalization_version=request.normalization_version,
         ontology_version=request.ontology_version,
         observed_at=result.observation.observation.observed_at,
@@ -1898,7 +2302,7 @@ def _claim_step(result: ExecutionResult) -> ExecutionResult:
 
 
 def _validation_step(result: ExecutionResult) -> ExecutionResult:
-    """Step 8 - run the six validation stages over the claim that now exists.
+    """Step 9 - run the six validation stages over the claim that now exists.
 
     The claim is built before it is validated, and that ordering is forced rather than
     chosen: ``LayeredValidator.evaluate`` takes a ``RelationClaim``, and
@@ -2055,7 +2459,7 @@ def _worldline_step(result: ExecutionResult) -> ExecutionResult:
     observation = result.observation.observation
     trigger = result.candidate.supported.trigger_span
     record = StreamRecord(
-        entity_id=result.blocking.subject_ref,
+        entity_id=result.resolution.subject_ref,
         kind=f"relation.{claim.relation_type}",
         ts=observation.observed_at,
         tenant_id=request.tenant_id,
@@ -2092,7 +2496,7 @@ def _worldline_step(result: ExecutionResult) -> ExecutionResult:
     worldline = build_worldline(
         [record],
         tenant_id=request.tenant_id,
-        entity_id=result.blocking.subject_ref,
+        entity_id=result.resolution.subject_ref,
         require_evidence=True,
     )
     return replace(
@@ -2111,10 +2515,10 @@ _STEP_TABLE: tuple[tuple[ExecutionStage, Callable[[ExecutionResult], ExecutionRe
     (ExecutionStage.OBSERVATION, _observation_step),
     (ExecutionStage.CONTEXT, _context_step),
     (ExecutionStage.MENTIONS, _mentions_step),
-    (ExecutionStage.TYPES, _types_step),
     (ExecutionStage.REGIME, _regime_step),
+    (ExecutionStage.RESOLUTION, _resolution_step),
+    (ExecutionStage.TYPES, _types_step),
     (ExecutionStage.CANDIDATE, _candidate_step),
-    (ExecutionStage.BLOCKING, _blocking_step),
     (ExecutionStage.CLAIM, _claim_step),
     (ExecutionStage.VALIDATION, _validation_step),
     (ExecutionStage.ADMISSION, _admission_step),
