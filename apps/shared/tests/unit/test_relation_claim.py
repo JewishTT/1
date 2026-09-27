@@ -251,20 +251,21 @@ def test_t012_round_trip_survives_iso_strings_and_enums() -> None:
     claim = _claim(
         status=RelationStatus.CONTRADICTED,
         evidence_grade=EvidenceGrade.MODERATE,
-        arity_mode=RelationArityMode.TEMPORAL,
+        arity_mode=RelationArityMode.DIRECTED,
+        role_bindings=(),
         confidence=0.9,
         valid_to=_TO,
     )
     payload = claim.to_dict()
     assert payload["status"] == "contradicted"
     assert payload["evidence_grade"] == "moderate"
-    assert payload["arity_mode"] == "temporal"
+    assert payload["arity_mode"] == "directed"
     assert payload["valid_to"] == "2022-06-01T00:00:00+00:00"
     restored = RelationClaim.from_dict(payload)
     assert restored == claim
     assert restored.status is RelationStatus.CONTRADICTED
     assert restored.evidence_grade is EvidenceGrade.MODERATE
-    assert restored.arity_mode is RelationArityMode.TEMPORAL
+    assert restored.arity_mode is RelationArityMode.DIRECTED
 
 
 def test_t012_a_changed_field_changes_the_content_hash() -> None:

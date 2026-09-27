@@ -14,7 +14,7 @@ either kept or quietly broken:
   ``allows_*``/``permits``/``valid`` field, and no unique constraint that could
   make a second claim a duplicate. An entity typed by a term no profile, pack or
   ontology declares is stored here with no error at all (FR-001, US1).
-* **A promotion is a new row.** ``assertion_id`` is the digest of the whole
+ * **A promotion is a new row.** ``type_assertion_id`` is the digest of the whole
   ``TypeAssertion`` claim, so re-asserting a typing at a higher status produces a
   different id and both rows survive. This is why the identity of a claim --
   ``(tenant_id, entity_ref, type_ref, scope)`` -- is deliberately *not* a unique
@@ -118,7 +118,8 @@ def upgrade() -> None:
     # ------------------------------------------------------------------
     op.create_table(
         "type_assertions",
-        sa.Column("assertion_id", sa.String(64), primary_key=True),
+        sa.Column("type_assertion_id", sa.String(64), primary_key=True),
+        sa.Column("logical_type_assertion_id", sa.String(64), nullable=False),
         sa.Column("tenant_id", sa.String(36), nullable=False),
         sa.Column("entity_ref", sa.String(64), nullable=False),
         sa.Column("type_ref", sa.String(255), nullable=False),
@@ -223,6 +224,15 @@ def upgrade() -> None:
         "ix_type_assertion_entity",
         "type_assertions",
         ["tenant_id", "entity_ref", "scope"],
+    )
+    # The revisions of one typing claim, weakest commitment first (FR-018). This
+    # mirrors the logical/revision split on `relation_claims`: a promotion keeps the
+    # logical id and mints a new revision id, so answering "what did we believe
+    # about this entity at time T" is one indexed lookup.
+    op.create_index(
+        "ix_type_assertion_revisions",
+        "type_assertions",
+        ["tenant_id", "logical_type_assertion_id"],
     )
     # The addressable key of a profile. A bare tenant scan is served by its leading
     # column, so there is no separate tenant index to keep in step with this one.

@@ -9,8 +9,11 @@ projection policy. The world is closed for operations but open for content: an
 operator's contract is fixed, but an unknown relation type can still be admitted
 and represented as an operator definition if necessary (FR-013).
 
-Default domain-range policy is ``warn`` (D1) because a rejection would mean
-validation produces deletion instead of findings, which would violate FR-012.
+Default domain-range policy is ``warn`` (D1), which admits the claim and raises
+a finding. No policy here deletes, filters or deprojects a claim, and no policy
+here asserts anything about whether a relation exists: every member of
+:class:`DomainRangePolicy` is a statement about **this operator's own
+materialised view** and about nothing else (FR-012).
 """
 
 from __future__ import annotations
@@ -18,6 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+from domain.relation_candidate import ExtractionStrategy
 from domain.relation_schema import RelationArityMode, RelationSchema, TemporalSemantics
 
 __all__ = [
@@ -31,27 +35,53 @@ __all__ = [
 ]
 
 
-class ExtractionStrategy(StrEnum):
-    """How a candidate relation is extracted from mentions/surface."""
-
-    DEPENDENCY_PATTERN = "dependency_pattern"
-    LEXICAL_PATTERN = "lexical_pattern"
-    PROFILE_CONTEXT = "profile_context"
-    DISTANT_SUPERVISION = "distant_supervision"
-    RULE = "rule"
-    WEAK_SUPERVISION = "weak_supervision"
-
-
 class DomainRangePolicy(StrEnum):
-    """What to do when a role's type is not within hints.
+    """What this operator does when a role's type falls outside its declared hints.
 
-    ``WARN`` means the assertion is still materialised and a finding is raised;
-    ``DENY`` would prevent materialisation, which violates FR-012.
+    Every member is a statement about **one operator's own materialised view**. None of them is a
+    statement about whether the relation exists, whether the claim is true, or whether anything
+    should be deleted. The names are chosen so that reading one in isolation cannot be mistaken for
+    a global veto:
+
+    * ``WARN`` - the default (D1). A finding is raised and the claim is admitted into this
+      operator's view. Nothing is withheld and nothing is removed (FR-012, SC-8).
+    * ``EXCLUDE_FROM_VIEW`` - this operator declines to admit the claim into **its own**
+      materialised view. The claim, its evidence and the findings that motivated the decision are
+      untouched, still queryable and still resolvable (FR-012, SC-4), and another operator with a
+      different policy may admit the very same claim into its own view.
+    * ``IGNORE`` - the check is not run. Nothing is judged, so nothing can be withheld.
+
+    The legacy input spelling ``"deny"`` is accepted by :meth:`_missing_` and canonicalised to
+    ``EXCLUDE_FROM_VIEW`` on construction, so existing stored configuration keeps loading. It is
+    deliberately **not** a member: a member named ``DENY`` reads as a global refusal, which is the
+    exact misreading this enum exists to rule out. Ask :attr:`excludes_from_view` rather than
+    comparing members, so a future member cannot silently acquire veto semantics.
     """
 
     WARN = "warn"
-    DENY = "deny"
+    EXCLUDE_FROM_VIEW = "exclude_from_view"
     IGNORE = "ignore"
+
+    @classmethod
+    def _missing_(cls, value: object) -> DomainRangePolicy | None:
+        """Resolve the retired ``"deny"`` spelling to the scoped member, refusing everything else.
+
+        Returns ``None`` for an unrecognised value so ``DomainRangePolicy`` still raises
+        ``ValueError``: an unrecognised policy must not become a silent admission or a silent veto.
+        """
+        if isinstance(value, str) and value.strip().casefold().replace("-", "_") == "deny":
+            return cls.EXCLUDE_FROM_VIEW
+        return None
+
+    @property
+    def excludes_from_view(self) -> bool:
+        """Whether this policy withholds a claim from *this operator's* view. Never a deletion.
+
+        The only supported way to ask the question. Comparing against
+        ``EXCLUDE_FROM_VIEW`` at a call site is how a second, future member ends up being treated
+        as a veto it was never scoped to be.
+        """
+        return self is DomainRangePolicy.EXCLUDE_FROM_VIEW
 
 
 class AdmissionPolicy(StrEnum):
@@ -84,6 +114,25 @@ class RelationOperator:
     No fields duplicate the schema's core shape unnecessarily: this object only
     adds the *behaviour* (how to extract, admit, validate, project). The schema
     remains the single declaration of semantics (FR-006).
+
+    ``ExtractionStrategy`` is deliberately defined in :mod:`domain.relation_candidate`
+    and imported here rather than declared locally. Which strategies an operator
+    admits is a question about extraction, and the extraction layer has to be able
+    to record the strategy it used without importing this module -- importing
+    ``semantic`` from ``domain`` would invert the dependency and drag the whole
+    semantic layer into the foundation.
+
+    **``domain_range_policy`` is scoped to this operator's own materialised view.**
+    It decides whether *this* operator's projection of *this* relation type carries a
+    claim, and it is the only field here that can withhold one. It is not a global veto, it
+    is not a judgement that the relation does not exist, and it is never a deletion: a claim
+    excluded by ``EXCLUDE_FROM_VIEW`` keeps its object, its evidence and its findings, stays
+    queryable and resolvable (FR-012, SC-4), and a second operator holding the same claim
+    under a different policy reaches a different - equally correct - decision about its own
+    view. The default is :attr:`DomainRangePolicy.WARN`, which admits and records a finding,
+    so a default-constructed operator cannot withhold anything (D1). The admission decision
+    itself is a :class:`semantic.validation.MaterialisationDecision`, which states that scope
+    explicitly rather than returning a bare boolean.
     """
 
     relation_type: str
@@ -160,9 +209,10 @@ def default_operator_for_schema(schema: RelationSchema) -> RelationOperator:
     """Derive a conservative, production-safe operator from an existing schema.
 
     This is not opinionated about content: it mirrors the schema's shape and
-    applies the global defaults (``domain_range_policy = WARN``), so new relation
-    types that appear with no profile or ontology still get a usable, closed
-    operator contract (FR-013).
+    applies the global defaults (``domain_range_policy = WARN``, which admits
+    and records a finding rather than withholding), so new relation types that
+    appear with no profile or ontology still get a usable, closed operator
+    contract that cannot exclude anything (FR-013, D1).
     """
     return RelationOperator(
         relation_type=schema.relation_type,

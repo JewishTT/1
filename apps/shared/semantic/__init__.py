@@ -18,6 +18,7 @@ from semantic.contracts import (
     SemanticRef,
     SemanticStatus,
     TypeAssertion,
+    TypeAssertionRevision,
     TypeScope,
     ValidationFinding,
     ValidationReport,
@@ -25,6 +26,7 @@ from semantic.contracts import (
     Verdict,
     content_key,
     is_adverse,
+    type_assertion_revisions,
 )
 
 __all__ = [
@@ -32,6 +34,7 @@ __all__ = [
     "SemanticRef",
     "SemanticStatus",
     "TypeAssertion",
+    "TypeAssertionRevision",
     "TypeScope",
     "ValidationFinding",
     "ValidationReport",
@@ -39,4 +42,5 @@ __all__ = [
     "Verdict",
     "content_key",
     "is_adverse",
+    "type_assertion_revisions",
 ]

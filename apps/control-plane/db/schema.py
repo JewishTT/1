@@ -1281,22 +1281,27 @@ class TypeAssertionRow(Base):
     categorical ``Entity.schema_name`` no longer has to be the only typing there
     is.
 
-    **A promotion is a new row, never an update.** ``assertion_id`` is the digest
-    of the *whole* claim -- status, evidence, ``raw_surface`` and ``hypothesis``
-    included -- so moving a claim from ``observed`` up to ``validated`` yields a
-    different id and both rows survive side by side. That is what makes FR-004
-    structural rather than aspirational: the ladder
+    **A promotion is a new row, never an update.** ``type_assertion_id`` is the
+    digest of the *whole* claim -- status, evidence, ``raw_surface`` and
+    ``hypothesis`` included -- so moving a claim from ``observed`` up to
+    ``validated`` yields a different id and both rows survive side by side. That is
+    what makes FR-004 structural rather than aspirational: the ladder
     ``raw -> surface -> hypothesis -> mapped concept`` is reconstructable from
     these rows alone, with no prior state overwritten to record the newer one.
 
-    ``(tenant_id, entity_ref, type_ref, scope)`` is the *claim's* identity, and it
-    is deliberately left unconstrained: a unique constraint over it would forbid
-    the very second row a promotion needs. Idempotency comes from the primary key
-    instead, which catches "the same claim recorded twice" without catching "the
-    same claim promoted". What is indexed is the read path -- every scope of one
-    entity (US2) and the entity's whole typing history (US9) -- and two processes
-    recording the same claim at the same rung are two pieces of evidence for it,
-    so both are kept.
+    ``logical_type_assertion_id`` is the claim's own identity -- the digest of
+    (tenant, entity, type, scope) -- and every revision of that claim shares it, so
+    "all states of this typing" is one indexed lookup rather than a scan. The pair
+    mirrors ``logical_relation_id`` / ``relation_id`` on ``relation_claims`` and
+    ``logical_candidate_id`` on candidates: the semantic layer and the relation
+    layer share one versioning philosophy rather than each inventing one. Grouping
+    the revisions is therefore a plain equality filter, and it is left
+    unconstrained -- a unique constraint over the claim identity would forbid the
+    very second row a promotion needs. Idempotency comes from the revision primary
+    key instead, which catches "the same revision recorded twice" without catching
+    "the same claim promoted". What is indexed is the read path: every scope of one
+    entity (US2) and the revisions of one claim (FR-018).
+
 
     ``observed_at`` is when the platform learned the claim; ``valid_from`` and
     ``valid_to`` are when it was true. Three separate columns, never merged
@@ -1305,7 +1310,8 @@ class TypeAssertionRow(Base):
 
     __tablename__ = "type_assertions"
 
-    assertion_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    type_assertion_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    logical_type_assertion_id: Mapped[str] = mapped_column(String(64))
     tenant_id: Mapped[str] = mapped_column(String(36))
     entity_ref: Mapped[str] = mapped_column(String(64))
     type_ref: Mapped[str] = mapped_column(String(255))
@@ -1330,6 +1336,11 @@ class TypeAssertionRow(Base):
     __table_args__ = (
         CheckConstraint("tenant_id <> ''", name="ck_type_assertion_tenant"),
         Index("ix_type_assertion_entity", "tenant_id", "entity_ref", "scope"),
+        Index(
+            "ix_type_assertion_revisions",
+            "tenant_id",
+            "logical_type_assertion_id",
+        ),
     )
 
 

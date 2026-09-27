@@ -34,7 +34,11 @@ CLAIM_JSONB_COLUMNS = frozenset(
     }
 )
 
-DIRECTED_MODES = frozenset({"directed", "temporal"})
+#: Arity modes whose reverse is a different relation, so a participant lookup may
+#: only match the subject. Spelled as wire values to mirror
+#: ``domain.relation_identity.RelationArityMode``; temporality is not an arity
+#: mode, so a windowed directed claim is directional like any other.
+DIRECTED_MODES = frozenset({"directed"})
 
 _VALID = "valid"
 
@@ -113,9 +117,9 @@ def _revision_row_id(logical_relation_id: str, revision_number: int) -> str:
 def _participates(claim: Any, ref: str) -> bool:
     """Directional participant match, identical to the in-memory oracle.
 
-    A ``DIRECTED`` or ``TEMPORAL`` claim only matches on its subject, so its
-    object is not reported as a participant; an ``UNDIRECTED`` or ``NARY`` claim
-    matches either endpoint and any role-binding member.
+    A ``DIRECTED`` claim only matches on its subject, so its object is not
+    reported as a participant; an ``UNDIRECTED`` or ``NARY`` claim matches either
+    endpoint and any role-binding member.
     """
     if _scalar(claim.arity_mode) in DIRECTED_MODES:
         return claim.subject_ref == ref
@@ -420,8 +424,8 @@ class SqlRelationClaimStore:
     async def by_participant(self, ref: str, *, tenant_id: str) -> list[Any]:
         """Return every claim ``ref`` participates in, directionally.
 
-        ``DIRECTED``/``TEMPORAL`` claims match on the subject only; ``UNDIRECTED``
-        and ``NARY`` claims match either endpoint or any role-binding member.
+        ``DIRECTED`` claims match on the subject only; ``UNDIRECTED`` and
+        ``NARY`` claims match either endpoint or any role-binding member.
         ``role_bindings`` is JSONB, so the rule is applied to the reconstructed
         claims rather than pushed into the query.
         """

@@ -224,11 +224,14 @@ def test_participants_matches_every_role_binding_member_when_nary() -> None:
     assert store.participants("X1") == []
 
 
-def test_participants_is_directional_for_a_temporal_claim() -> None:
+def test_participants_is_directional_for_a_windowed_directed_claim() -> None:
+    # A validity window does not make a claim symmetric: temporality is
+    # ``TemporalSemantics``, so a windowed DIRECTED claim is still reachable
+    # from its subject only (FR-010).
     store = InMemoryRelationStore()
     claim = _service().build(
         relation_type="active_during",
-        arity_mode=RelationArityMode.TEMPORAL,
+        arity_mode=RelationArityMode.DIRECTED,
         subject_ref="P1",
         object_ref="O1",
         context_ref=CTX,

@@ -21,8 +21,20 @@ Arity mode is part of the material: ``Employment{person=P1, org=O1}`` declared
 ``NARY`` and the pair ``P1 employed_by O1`` declared ``DIRECTED`` are different
 relations, so an arity change is never silent. Per mode the participants are
 canonicalised once, here: sorted+deduped for ``UNDIRECTED``, order-preserved
-``(subject, object)`` for ``DIRECTED``, sorted ``(role, member)`` pairs for
-``NARY``, and ordered members with the window for ``TEMPORAL``.
+``(subject, object)`` for ``DIRECTED`` and sorted ``(role, member)`` pairs for
+``NARY``.
+
+Arity answers *how many participants and in what shape*. It deliberately does
+not answer *when*: temporality is an orthogonal dimension carried by
+``TemporalSemantics`` (``POINT``, ``OPTIONAL_INTERVAL``, ``REQUIRED_INTERVAL``,
+``OPEN_ENDED``) on ``RelationSchema``/``RelationClaim``. An earlier
+``RelationArityMode.TEMPORAL`` conflated the two and has been removed: a directed
+relation may equally be temporal, and an n-ary one may too, so a temporal mode
+under arity could only ever have been right for a subset and silently wrong for
+the rest. With it goes the window-folding branch of :func:`logical_material` —
+the window is revision material, and folding it into identity would have made
+every directed relation revision-addressed and destroyed the identity/revision
+split this module exists to keep.
 
 A collision is surfaced, never merged (FR-011): ``detect_identity_collisions``
 returns every bucket holding more than one *distinct* claim together with the
@@ -64,8 +76,8 @@ def _normalise(value: object) -> object:
     never serialise to the same material, and a ``set``/``frozenset`` becomes a
     sorted list so an unordered container cannot leak its hash order. Sequence
     types keep their order: it is load-bearing identity (``DIRECTED`` preserves
-    ``(subject, object)``, ``TEMPORAL`` preserves its ordered members), so
-    sorting a tuple would be the one thing that must never happen here.
+    ``(subject, object)``), so sorting a tuple would be the one thing that must
+    never happen here.
     """
     if value.__class__ in _JSON_NATIVE:
         return value
@@ -106,12 +118,17 @@ def digest128(material: str) -> str:
 
 
 class RelationArityMode(StrEnum):
-    """Arity vocabulary; the mode is part of the identity material (ADR-0023)."""
+    """How many participants a relation has and in what shape (participant count only).
+
+    Temporality is *not* an arity mode. ``works_for`` directed may carry a
+    required interval, ``co_occurs_with`` undirected may be a point in time, and
+    an n-ary ``Employment`` may span years -- three arities, three independent
+    temporal answers. See ``TemporalSemantics`` on ``RelationSchema``.
+    """
 
     UNDIRECTED = "undirected"
     DIRECTED = "directed"
     NARY = "nary"
-    TEMPORAL = "temporal"
 
     @property
     def default_neighbor_direction(self) -> str:
@@ -151,9 +168,11 @@ def logical_material(
 ) -> dict[str, Any]:
     """Identity material of the *logical* relation, one shape per arity mode.
 
-    ``TEMPORAL`` folds the window in; every other mode excludes it, so folding a
-    window into a directed relation would make all directed relations
-    revision-addressed and destroy the identity/revision split.
+    The validity window is excluded for every mode. It is revision material
+    (see :func:`revision_material`): a relation is "the same relation" across a
+    correction to its window, and one logical relation may carry many revisions.
+    Folding the window in here would make every relation revision-addressed and
+    collapse the identity/revision split.
     """
     mode = RelationArityMode(arity_mode)
     if mode is RelationArityMode.UNDIRECTED:
@@ -174,22 +193,12 @@ def logical_material(
             "subject": members[0],
             "object": members[1],
         }
-    if mode is RelationArityMode.NARY:
-        if not role_bindings:
-            raise ValueError("nary identity needs role bindings; participants carry no role")
-        return {
-            "mode": str(mode),
-            "type": relation_type,
-            "roles": sorted(
-                [str(binding.role), str(binding.member_ref)] for binding in role_bindings
-            ),
-        }
+    if not role_bindings:
+        raise ValueError("nary identity needs role bindings; participants carry no role")
     return {
         "mode": str(mode),
         "type": relation_type,
-        "members": [str(participant) for participant in participants],
-        "valid_from": _window(valid_from),
-        "valid_to": _window(valid_to),
+        "roles": sorted([str(binding.role), str(binding.member_ref)] for binding in role_bindings),
     }
 
 
@@ -231,8 +240,89 @@ def relation_id(logical_id: str, revision_material: Mapping[str, Any]) -> str:
     return REVISION_ID_PREFIX + digest128(canonical_material(material))
 
 
+#: Fields that decide *which relation this is*. They are covered by
+#: :func:`logical_material` and enter ``logical_relation_id``, so every revision
+#: of one relation shares them. Listed explicitly because the partition below has
+#: to be total, and "covered upstream" is exactly the kind of exemption that lets
+#: a field go unclassified.
+LOGICAL_IDENTITY_MATERIAL_FIELDS: frozenset[str] = frozenset(
+    {
+        "relation_type",
+        "arity_mode",
+        "subject_ref",
+        "object_ref",
+        "role_bindings",
+    }
+)
+
+#: Fields that make a revision *itself* rather than a view of it. A change here
+#: produces a different ``relation_id`` because the claim's semantic content
+#: changed: a different extractor or ontology version produced a different claim,
+#: and two tenants must never address one id (constitution IV).
+IDENTITY_MATERIAL_FIELDS: frozenset[str] = frozenset(
+    {
+        "revision_number",
+        "valid_from",
+        "valid_to",
+        "observed_at",
+        "published_at",
+        "context_ref",
+        "observation_refs",
+        "assertion_refs",
+        "source_independence_groups",
+        "extraction_version",
+        "normalization_version",
+        "ontology_version",
+        "schema_version",
+        "tenant_id",
+        "investigation_id",
+        "created_by",
+    }
+)
+
+#: Fields a claim's *projection* may legitimately restate without that being a new
+#: claim. Excluded from identity on purpose, and each for a stated reason:
+#:
+#: - ``status`` / ``known_from`` / ``known_until`` - lifecycle. A claim that has
+#:   been superseded keeps the id of the revision that was superseded; changing
+#:   identity on a state transition would break the revision chain.
+#: - ``confidence`` / ``evidence_grade`` - re-derived by scoring. A rescoring pass
+#:   must not mint a new relation, or every ranking change forks the graph.
+#: - ``supersedes`` / ``contradicts`` - links to claims that may not exist yet, so
+#:   they are filled in after the fact.
+#: - ``created_at`` - wall clock. Including it would make an event replayed at a
+#:   different moment mint a different id, which is exactly the
+#:   determinism the constitution requires of a rebuild (VII). Replay must be a
+#:   fixed point.
+#:
+#: Because these are mutable, two claims sharing a ``relation_id`` may legitimately
+#: differ here. That residual is bounded and checked:
+#: :func:`detect_content_divergence` reports any such pair, so an in-place edit
+#: that was never meant as a projection update is still surfaced rather than
+#: silently retained.
+MUTABLE_PROJECTION_FIELDS: frozenset[str] = frozenset(
+    {
+        "status",
+        "confidence",
+        "evidence_grade",
+        "known_from",
+        "known_until",
+        "supersedes",
+        "contradicts",
+        "created_at",
+    }
+)
+
+
 def revision_material(claim: RelationClaim) -> dict[str, Any]:
-    """The documented revision material of one claim (I-11: pure function)."""
+    """The documented revision material of one claim (I-11: pure function).
+
+    Covers :data:`IDENTITY_MATERIAL_FIELDS` in full, so every semantic field that
+    can change the meaning of a claim changes its id. The derived id fields
+    themselves (``relation_id``, ``logical_relation_id``) and the participant shape
+    are excluded: the former are outputs, the latter is the logical id this
+    material is keyed by.
+    """
     return {
         "valid_from": _window(claim.valid_from),
         "valid_to": _window(claim.valid_to),
@@ -241,8 +331,60 @@ def revision_material(claim: RelationClaim) -> dict[str, Any]:
         "context_ref": claim.context_ref,
         "observation_refs": sorted(claim.observation_refs),
         "assertion_refs": sorted(claim.assertion_refs),
+        "source_independence_groups": sorted(
+            [sorted(str(ref) for ref in group) for group in claim.source_independence_groups]
+        ),
+        "extraction_version": claim.extraction_version,
+        "normalization_version": claim.normalization_version,
+        "ontology_version": claim.ontology_version,
+        "schema_version": claim.schema_version,
+        "tenant_id": claim.tenant_id,
+        "investigation_id": claim.investigation_id,
+        "created_by": claim.created_by,
         "revision_number": claim.revision_number,
     }
+
+
+def verify_material_partition(claim: RelationClaim) -> None:
+    """Fail if any claim field is unclassified, or classified twice.
+
+    Without this the partition decays silently: someone adds a field to the
+    claim, it lands in no set, and it is quietly excluded from identity --
+    reproducing exactly the bug this module was corrected for, one new field at a
+    time. The three classes are exhaustive and mutually exclusive:
+
+    * ``LOGICAL_IDENTITY_MATERIAL_FIELDS`` - which relation this is;
+    * ``IDENTITY_MATERIAL_FIELDS`` - which revision of it;
+    * ``MUTABLE_PROJECTION_FIELDS`` - restatable without a new claim;
+    * the two derived id fields, which are outputs rather than inputs.
+    """
+    material = claim._material()  # noqa: SLF001 - same package, and the point is to read it all
+    derived = {"relation_id", "logical_relation_id"}
+    identity = LOGICAL_IDENTITY_MATERIAL_FIELDS | IDENTITY_MATERIAL_FIELDS
+    classified = identity | MUTABLE_PROJECTION_FIELDS | derived
+    unclassified = sorted(set(material) - classified)
+    if unclassified:
+        raise ValueError(
+            "RelationClaim fields are neither identity material nor declared "
+            f"mutable projection metadata: {unclassified}. Add each to "
+            "LOGICAL_IDENTITY_MATERIAL_FIELDS, IDENTITY_MATERIAL_FIELDS or "
+            "MUTABLE_PROJECTION_FIELDS in domain.relation_identity so the "
+            "partition stays total."
+        )
+    for left, right, label in (
+        (LOGICAL_IDENTITY_MATERIAL_FIELDS, IDENTITY_MATERIAL_FIELDS, "logical and revision"),
+        (identity, MUTABLE_PROJECTION_FIELDS, "identity and mutable"),
+    ):
+        overlap = sorted(left & right)
+        if overlap:
+            raise ValueError(f"fields classified as both {label} material: {overlap}")
+    if derived & classified - derived:  # pragma: no cover - derived is disjoint by construction
+        raise ValueError("a derived id field was also classified as material")
+    missing = sorted(IDENTITY_MATERIAL_FIELDS - set(revision_material(claim)))
+    if missing:
+        raise ValueError(
+            f"IDENTITY_MATERIAL_FIELDS declares fields revision_material does not emit: {missing}"
+        )
 
 
 def recompute_identity(claim: RelationClaim) -> tuple[str, str]:
@@ -315,15 +457,115 @@ def identity_collision_count(claims: Iterable[RelationClaim]) -> int:
     return len(detect_identity_collisions(claims))
 
 
+@dataclass(frozen=True)
+class ContentDivergence:
+    """One ``relation_id`` whose claims disagree only on mutable projection fields.
+
+    Not an integrity break: ``status``, ``confidence`` and the rest are declared
+    mutable precisely so a re-scoring pass can restate them without minting a new
+    relation. It is reported rather than ignored because two of these is usually
+    a lost update -- the second write silently overwrote the first -- and that is
+    worth seeing. ``fields`` names exactly what disagreed, so the distinction
+    between "rescored" and "a semantic field changed" needs no guesswork.
+    """
+
+    relation_id: str
+    fields: tuple[str, ...]
+    content_hashes: tuple[str, ...]
+
+
+def detect_content_divergence(claims: Iterable[RelationClaim]) -> tuple[ContentDivergence, ...]:
+    """Buckets where one ``relation_id`` carries differing ``content_hash`` (FR-011).
+
+    The complementary question to :func:`detect_identity_collisions`. Collision
+    detection says "one id, many claims"; this says *which* fields disagreed,
+    which is what separates a benign re-score from a claim whose identity material
+    moved without a new id being minted for it.
+    """
+    buckets: dict[str, list[RelationClaim]] = {}
+    for claim in claims:
+        buckets.setdefault(claim.relation_id, []).append(claim)
+
+    divergences: list[ContentDivergence] = []
+    for bucket_id, bucket in buckets.items():
+        hashes = {claim.content_hash for claim in bucket}
+        if len(bucket) < 2 or len(hashes) < 2:
+            continue
+        materials = [claim._material() for claim in bucket]  # noqa: SLF001 - see verify_material_partition
+        differing = tuple(
+            sorted(
+                key
+                for key in materials[0]
+                if len({canonical_material(material.get(key)) for material in materials}) > 1
+            )
+        )
+        divergences.append(
+            ContentDivergence(
+                relation_id=bucket_id,
+                fields=differing,
+                content_hashes=tuple(sorted(hashes)),
+            )
+        )
+    return tuple(sorted(divergences, key=lambda divergence: divergence.relation_id))
+
+
+@dataclass(frozen=True)
+class IdentityForgery:
+    """A claim whose ``relation_id`` does not follow from its own identity material.
+
+    The strongest statement this module can make, and the one that cannot be
+    reached by divergence: not "two claims disagree" but "this single claim is not
+    addressed by its own contents". A tampered ``extraction_version`` or
+    ``tenant_id`` reaches here, and it means the id was written rather than
+    derived -- which is precisely the property the whole module exists to make
+    verifiable.
+
+    There is deliberately no field naming the discrepancy. Recomputing from the
+    claim cannot say *which* field was edited, only that the id no longer follows;
+    naming one would be a guess dressed as a diagnosis. Diff the claim against its
+    source of truth for that, or use :func:`detect_content_divergence` to compare
+    two claims under one id.
+    """
+
+    relation_id: str
+    expected_relation_id: str
+
+
+def detect_identity_forgery(claims: Iterable[RelationClaim]) -> tuple[IdentityForgery, ...]:
+    """Claims whose carried id does not match a re-derivation from their own fields.
+
+    Recomputes identity from the record and compares. Also serves as the
+    self-check that identity derivation stayed total after the material changed.
+    """
+    forgeries: list[IdentityForgery] = []
+    for claim in claims:
+        _, expected = recompute_identity(claim)
+        if expected != claim.relation_id:
+            forgeries.append(
+                IdentityForgery(
+                    relation_id=claim.relation_id,
+                    expected_relation_id=expected,
+                )
+            )
+    return tuple(sorted(forgeries, key=lambda forgery: forgery.relation_id))
+
+
 __all__ = [
     "DIGEST_BITS",
+    "IDENTITY_MATERIAL_FIELDS",
+    "LOGICAL_IDENTITY_MATERIAL_FIELDS",
     "LOGICAL_ID_PREFIX",
+    "MUTABLE_PROJECTION_FIELDS",
     "REVISION_ID_PREFIX",
+    "ContentDivergence",
     "IdentityCollision",
+    "IdentityForgery",
     "RelationArityMode",
     "RoleBindingLike",
     "canonical_material",
+    "detect_content_divergence",
     "detect_identity_collisions",
+    "detect_identity_forgery",
     "digest128",
     "identity_collision_count",
     "logical_material",
@@ -331,4 +573,5 @@ __all__ = [
     "recompute_identity",
     "relation_id",
     "revision_material",
+    "verify_material_partition",
 ]

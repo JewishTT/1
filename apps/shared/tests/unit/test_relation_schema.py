@@ -95,7 +95,7 @@ _VOCABULARY: tuple[RelationSchema, ...] = (
     ),
     RelationSchema(
         relation_type="located_in",
-        arity_mode=RelationArityMode.TEMPORAL,
+        arity_mode=RelationArityMode.DIRECTED,
         allowed_subject_classes=frozenset({"PLACE"}),
         allowed_object_classes=frozenset({"PLACE"}),
         admissible_evidence_patterns=("geocoded-address", "gazetteer-entry"),
@@ -298,7 +298,7 @@ def test_t053_an_empty_registry_enumerates_nothing() -> None:
         pytest.param(
             "located_in",
             "2",
-            RelationArityMode.TEMPORAL,
+            RelationArityMode.DIRECTED,
             ("PLACE",),
             ("PLACE",),
             ("gazetteer-entry", "geocoded-address"),
@@ -404,7 +404,7 @@ def test_t054_nary_schema_with_fewer_than_two_role_bindings_is_rejected(
     [
         pytest.param({"admission_rule_id": "other-rule"}, id="admission_rule_id"),
         pytest.param(
-            {"temporal_semantics": TemporalSemantics.OPEN_ENDED},
+            {"temporal_semantics": TemporalSemantics.POINT},
             id="temporal_semantics",
         ),
         pytest.param({"allowed_subject_classes": frozenset({"ENTITY"})}, id="subject_classes"),
@@ -425,7 +425,7 @@ def test_t054_nary_schema_with_fewer_than_two_role_bindings_is_rejected(
         pytest.param(
             {
                 "allowed_role_bindings": (
-                    RelationRoleBinding("person", "", "PERSON"),
+                    RelationRoleBinding("person", "", "AGENT"),
                     RelationRoleBinding("organization", "", "ORGANIZATION"),
                 )
             },
@@ -524,8 +524,15 @@ def test_t055_the_active_version_is_the_highest_not_the_last_registered() -> Non
     assert registry.get("mentions").schema_version == "10"
 
     registry.register(_versioned("3"))
-    assert [schema.schema_version for schema in registry.versions("mentions")] == ["1", "2", "3"]
-    assert registry.get("mentions").schema_version == "3"
+    # "3" is the last registered but not the highest: "10" stays active, which is
+    # the whole point of the test. Every version remains retrievable, in order.
+    assert [schema.schema_version for schema in registry.versions("mentions")] == [
+        "1",
+        "2",
+        "3",
+        "10",
+    ]
+    assert registry.get("mentions").schema_version == "10"
     assert len(registry) == 4
 
 
@@ -618,9 +625,11 @@ def test_temporal_semantics_is_exactly_the_documented_four() -> None:
 def test_t063_every_temporal_semantics_round_trips_through_to_dict(
     semantics: TemporalSemantics,
 ) -> None:
+    # DIRECTED, deliberately: temporal semantics is an orthogonal dimension, so
+    # all four of its values must survive on a relation that is not "temporal".
     schema = RelationSchema(
         relation_type="located_in",
-        arity_mode=RelationArityMode.TEMPORAL,
+        arity_mode=RelationArityMode.DIRECTED,
         admissible_evidence_patterns=("geocoded-address",),
         temporal_semantics=semantics,
         schema_version="3",

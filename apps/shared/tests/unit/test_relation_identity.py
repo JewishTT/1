@@ -106,28 +106,34 @@ def test_t008_undirected_deduplicates_repeated_participants() -> None:
     assert once == repeated
 
 
-def test_t008_temporal_window_participates_in_identity() -> None:
+def test_t008_window_is_revision_material_not_logical_identity() -> None:
     participants = ("ENT-A", "ENT-B")
-    first = logical_relation_id(
-        RelationArityMode.TEMPORAL, "employment", participants, valid_from="2017", valid_to="2020"
+    first_window = logical_relation_id(
+        RelationArityMode.DIRECTED, "employment", participants, valid_from="2017", valid_to="2020"
     )
-    second = logical_relation_id(
-        RelationArityMode.TEMPORAL, "employment", participants, valid_from="2017", valid_to="2022"
+    second_window = logical_relation_id(
+        RelationArityMode.DIRECTED, "employment", participants, valid_from="2017", valid_to="2022"
     )
-    assert first != second
+    # One relation across a corrected window: the window is revision material, so
+    # it must not enter the material that answers "which relation is this?".
+    assert first_window == second_window
     assert logical_material(
-        RelationArityMode.TEMPORAL,
+        RelationArityMode.DIRECTED,
         "employment",
         participants,
         valid_from="2017",
         valid_to="2020",
     ) == {
-        "mode": "temporal",
+        "mode": "directed",
         "type": "employment",
-        "members": ["ENT-A", "ENT-B"],
-        "valid_from": "2017",
-        "valid_to": "2020",
+        "subject": "ENT-A",
+        "object": "ENT-B",
     }
+    # ...and it must enter the material that answers "which revision is this?":
+    # two windows over one relation are two claims, never one overwritten row.
+    assert relation_id(first_window, {"valid_to": "2020"}) != relation_id(
+        first_window, {"valid_to": "2022"}
+    )
 
 
 def test_t008_arity_mode_is_part_of_the_identity_material() -> None:
@@ -142,14 +148,13 @@ def test_t008_arity_mode_is_part_of_the_identity_material() -> None:
     assert directed != nary
 
 
-def test_t008_temporal_preserves_participant_order() -> None:
+def test_t008_directed_preserves_participant_order() -> None:
     assert RelationArityMode.UNDIRECTED.default_neighbor_direction == "both"
     assert RelationArityMode.NARY.default_neighbor_direction == "both"
     assert RelationArityMode.DIRECTED.default_neighbor_direction == "out"
-    assert RelationArityMode.TEMPORAL.default_neighbor_direction == "out"
     assert logical_relation_id(
-        RelationArityMode.TEMPORAL, "employment", ("ENT-A", "ENT-B")
-    ) != logical_relation_id(RelationArityMode.TEMPORAL, "employment", ("ENT-B", "ENT-A"))
+        RelationArityMode.DIRECTED, "employment", ("ENT-A", "ENT-B")
+    ) != logical_relation_id(RelationArityMode.DIRECTED, "employment", ("ENT-B", "ENT-A"))
 
 
 # --------------------------------------------------------------------------
@@ -464,7 +469,7 @@ def test_t016_recomputation_reproduces_the_ids_a_claim_carries() -> None:
         ("observation_refs", ("OB-1",)),
         ("assertion_refs", ()),
         ("revision_number", 2),
-        ("arity_mode", RelationArityMode.TEMPORAL),
+        ("arity_mode", RelationArityMode.UNDIRECTED),
     ],
 )
 def test_t016_tampering_with_a_directed_field_is_caught_by_re_derivation(

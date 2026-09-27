@@ -227,7 +227,9 @@ class EvidenceContext:
             extraction_version=str(data.get("extraction_version", "")),
             normalization_version=str(data.get("normalization_version", "")),
             ontology_version=str(data.get("ontology_version", "")),
-            completeness=ContextCompleteness(data.get("completeness", ContextCompleteness.COMPLETE)),
+            completeness=ContextCompleteness(
+                data.get("completeness", ContextCompleteness.COMPLETE)
+            ),
             trust_state=ContextTrustState(data.get("trust_state", ContextTrustState.UNVERIFIED)),
             policy_snapshot_ref=str(data.get("policy_snapshot_ref", "")),
             parent_context_id=str(data.get("parent_context_id", "")),

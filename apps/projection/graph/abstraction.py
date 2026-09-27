@@ -17,7 +17,10 @@ from domain.hypergraph import hyperedge_id
 import path_shim  # noqa: F401 - ensure apps/shared precedes conflicting dirs
 
 #: Arity modes whose `neighbors` default is directional (outgoing only).
-_DIRECTED_ARITY_MODES = frozenset({"directed", "temporal"})
+#: Mirrors `RelationArityMode`: the graph layer cannot import the domain enum
+#: without inverting the dependency, so the wire values are spelled out — and
+#: must be kept exactly in step with it.
+_DIRECTED_ARITY_MODES = frozenset({"directed"})
 
 
 class EdgeDirection(StrEnum):
@@ -45,7 +48,7 @@ def _coerce_direction(value: str | EdgeDirection) -> EdgeDirection:
 def _default_direction(edge: GraphEdge) -> EdgeDirection:
     """Resolve the `neighbors` default from the edge's declared arity mode.
 
-    `out` for DIRECTED/TEMPORAL, `both` for UNDIRECTED/NARY. An edge with no
+    `out` for DIRECTED, `both` for UNDIRECTED/NARY. An edge with no
     `arity_mode` property predates arity-typed relations; it resolves to `both`,
     which is the behaviour the two-positional-argument call form always had.
     """
@@ -258,7 +261,7 @@ class InMemoryGraphStore:
         `direction` is one of `in`, `out`, `both` and is keyword-only, so the
         existing two-positional-argument call form is unaffected. Omitting it
         resolves the default per edge from `properties["arity_mode"]`: `out` for
-        DIRECTED/TEMPORAL, `both` for UNDIRECTED/NARY, and `both` when the edge
+        DIRECTED, `both` for UNDIRECTED/NARY, and `both` when the edge
         declares no arity mode.
         """
         out: set[str] = set()

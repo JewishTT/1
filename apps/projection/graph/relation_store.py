@@ -21,7 +21,7 @@ and nothing flows back, so dropping the whole graph loses no knowledge.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
@@ -34,13 +34,13 @@ from domain.relation_claim import (
     RelationStatus,
 )
 from domain.relation_identity import (
+    LOGICAL_ID_PREFIX,
+    REVISION_ID_PREFIX,
     IdentityCollision,
     RelationArityMode,
     detect_identity_collisions,
     digest128,
-    logical_relation_id,
     recompute_identity,
-    relation_id,
 )
 
 import path_shim  # noqa: F401 - ensure apps/shared precedes conflicting dirs
@@ -48,10 +48,18 @@ import path_shim  # noqa: F401 - ensure apps/shared precedes conflicting dirs
 if TYPE_CHECKING:
     from graph.abstraction import GraphEdge, GraphNode, HyperEdge
 
+#: Stand-in ids a claim carries for the one construction step before its identity
+#: is derived. Prefixed like a real id so a leaked intermediate is recognisable,
+#: and never a valid digest, so it cannot collide with a minted one.
+_PENDING_LOGICAL = f"{LOGICAL_ID_PREFIX}pending"
+_PENDING_REVISION = f"{REVISION_ID_PREFIX}pending"
+
 #: Modes whose reverse is a *different* relation, so a lookup may only match the
 #: subject: matching the object would answer "who is this person?" with the
-#: inverse edge (FR-010).
-_DIRECTIONAL_MODES = (RelationArityMode.DIRECTED, RelationArityMode.TEMPORAL)
+#: inverse edge (FR-010). Only ``DIRECTED`` — a directed relation is directional
+#: whether or not it also carries a validity window, because temporality is
+#: ``TemporalSemantics``, not arity.
+_DIRECTIONAL_MODES = (RelationArityMode.DIRECTED,)
 
 
 def _all_participants(claim: RelationClaim) -> tuple[str, ...]:
@@ -64,9 +72,9 @@ def _all_participants(claim: RelationClaim) -> tuple[str, ...]:
 def _lookup_refs(claim: RelationClaim) -> tuple[str, ...]:
     """Refs from which ``claim`` is reachable through ``participants(ref)``.
 
-    Directional: a ``DIRECTED``/``TEMPORAL`` claim is reachable from its subject
-    only. An ``UNDIRECTED``/``NARY`` claim is symmetric, so either endpoint and
-    every role member match.
+    Directional: a ``DIRECTED`` claim is reachable from its subject only. An
+    ``UNDIRECTED``/``NARY`` claim is symmetric, so either endpoint and every
+    role member match.
     """
     if claim.arity_mode in _DIRECTIONAL_MODES:
         return (claim.subject_ref,)
@@ -165,8 +173,8 @@ class InMemoryRelationStore:
     def participants(self, ref: str) -> list[RelationClaim]:
         """Claims reachable from ``ref``, ordered by ``relation_id``.
 
-        Directional, so a ``DIRECTED``/``TEMPORAL`` lookup from the object does
-        not return the inverse relation (FR-010).
+        Directional, so a ``DIRECTED`` lookup from the object does not return
+        the inverse relation (FR-010).
         """
         return sorted(
             (self._claims[rid] for rid in self._by_participant.get(ref, set())),
@@ -266,35 +274,9 @@ class RelationClaimService:
             )
         mode = RelationArityMode(arity_mode)
         bindings = tuple(role_bindings)
-        participants = (
-            tuple(binding.member_ref for binding in bindings)
-            if mode is RelationArityMode.NARY
-            else (subject_ref, object_ref)
-        )
-        logical = logical_relation_id(
-            mode,
-            relation_type,
-            participants,
-            bindings,
-            valid_from=valid_from,
-            valid_to=valid_to,
-        )
-        revision = relation_id(
-            logical,
-            {
-                "valid_from": valid_from,
-                "valid_to": valid_to,
-                "observed_at": observed_at,
-                "published_at": published_at,
-                "context_ref": context_ref,
-                "observation_refs": tuple(observation_refs),
-                "assertion_refs": tuple(assertion_refs),
-                "revision_number": revision_number,
-            },
-        )
         claim = RelationClaim(
-            relation_id=revision,
-            logical_relation_id=logical,
+            relation_id=_PENDING_REVISION,
+            logical_relation_id=_PENDING_LOGICAL,
             revision_number=revision_number,
             relation_type=relation_type,
             arity_mode=mode,
@@ -323,6 +305,12 @@ class RelationClaimService:
             supersedes=supersedes,
             contradicts=tuple(contradicts),
         )
+        # Derived from the claim, not from a hand-kept copy of the material: the
+        # revision material is defined once, in ``domain.relation_identity``, and
+        # a second transcription of it here is exactly how a field would come to
+        # be silently missing from every minted id.
+        logical, revision = recompute_identity(claim)
+        claim = replace(claim, logical_relation_id=logical, relation_id=revision)
         if recompute_identity(claim) != (logical, revision):
             raise RelationContractError(
                 "identity_mismatch",
@@ -402,8 +390,8 @@ class GraphProjectionBridge:
     def to_edge(self, claim: RelationClaim) -> GraphEdge:
         """The claim as a plain edge, direction preserved.
 
-        Direction MUST survive the projection: a ``DIRECTED``/``TEMPORAL`` claim
-        keeps ``subject -> object`` and is read back with ``direction="out"``,
+        Direction MUST survive the projection: a ``DIRECTED`` claim keeps
+        ``subject -> object`` and is read back with ``direction="out"``,
         because symmetric adjacency is fixed on read (FR-010), never by flipping
         the endpoints here. The N-ary form stays authoritative; any pairwise
         expansion is an explicitly derived, lossy view (FR-045).

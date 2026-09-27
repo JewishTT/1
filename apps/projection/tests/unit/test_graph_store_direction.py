@@ -9,7 +9,9 @@ identifier, and an adjacency view built from ``str(GraphNode)``.
 from __future__ import annotations
 
 import sys
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -38,9 +40,11 @@ def _store(node_ids: tuple[str, ...], edges: tuple[GraphEdge, ...]) -> InMemoryG
     return store
 
 
-def _bidirectional_pair(arity_mode: str) -> InMemoryGraphStore:
+def _bidirectional_pair(
+    arity_mode: str, extra: Mapping[str, Any] | None = None
+) -> InMemoryGraphStore:
     """A -> B and C -> A, both typed ``reports_to`` with the given arity mode."""
-    props = {"arity_mode": arity_mode}
+    props = {"arity_mode": arity_mode, **(extra or {})}
     return _store(
         ("a", "b", "c"),
         (
@@ -93,8 +97,13 @@ class TestNeighborsDirection:
         store = _bidirectional_pair("directed")
         assert store.neighbors("a", "reports_to") == ["b"]
 
-    def test_default_for_temporal_is_out(self) -> None:
-        store = _bidirectional_pair("temporal")
+    def test_a_windowed_directed_edge_still_defaults_to_out(self) -> None:
+        # Temporality is ``TemporalSemantics``, not arity: a validity window on
+        # the edge must not move the default off ``out`` and back to ``both``.
+        store = _bidirectional_pair(
+            "directed",
+            {"valid_from": "2017-01-01T00:00:00+00:00", "valid_to": "2020-01-01T00:00:00+00:00"},
+        )
         assert store.neighbors("a", "reports_to") == ["b"]
 
     def test_default_for_undirected_is_both(self) -> None:

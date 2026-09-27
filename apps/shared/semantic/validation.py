@@ -20,16 +20,20 @@ re-creating the admission gate this feature was written to remove.
 
 **Two. A finding is data, and the assertion survives it (FR-012).** This module has no method
 that filters, rejects, deprojects or drops a claim, and the absence is deliberate: the only
-outward-facing result is a :class:`~semantic.contracts.ValidationReport`, which is a record of
-checks. :func:`still_materialisable` is the single boolean, and it answers a *policy* question -
-"did this operator opt into ``deny``?" - not a judgement about whether the claim is true. Under the
-default :attr:`~semantic.operators.DomainRangePolicy.WARN` a ``works_for`` whose object is a
-``Document`` produces a finding and the claim is still materialised and still projected, which is
-SC-8 and US4 exactly. ``DENY`` exists at all because an operator author sometimes needs a derived,
-curated dataset where a domain/range violation means the extractor is broken rather than the world
-is; it is opt-in per operator, it is never the default (D1), and even then it is a projection
-decision the operator's own ``projection_policy`` makes - it does not delete the claim, and no
-finding produced anywhere in this file carries the authority to.
+outward-facing results are a :class:`~semantic.contracts.ValidationReport` and a
+:class:`MaterialisationDecision`, both of which are *records*. The decision is the answer to the
+one question an operator may legitimately ask - "does this claim belong in **my** view?" - and it
+returns a named, scoped value rather than a boolean precisely because a bare ``False`` is read as
+"no". Reading a refused :class:`MaterialisationDecision` means one thing only: *this operator does
+not admit this claim into this operator's materialised view.* It is not a claim that the relation
+does not exist, and it is never a deletion (see :attr:`MaterialisationDecision.scope_statement`).
+Under the default :attr:`~semantic.operators.DomainRangePolicy.WARN` a ``works_for`` whose object
+is a ``Document`` produces a finding and the claim is still materialised and still projected, which
+is SC-8 and US4 exactly. :attr:`~semantic.operators.DomainRangePolicy.EXCLUDE_FROM_VIEW` exists at
+all because an operator author sometimes needs a derived, curated dataset where a domain/range
+violation means the extractor is broken rather than the world is; it is opt-in per operator, it is
+never the default (D1), and even then it decides one projection and nothing else - it does not
+delete the claim, and no finding produced anywhere in this file carries the authority to.
 
 **Three. Stages are independent.** :meth:`LayeredValidator.evaluate_stage` evaluates exactly one
 stage, so a caller that has no profile to check against can still run structural and temporal
@@ -42,9 +46,12 @@ explicitly with a ``VALID`` finding.
 **What a verdict is and is not.** The verdict grades the *check*, never the claim's fate. A
 domain/range hint is a declaration the platform made about its own operator (FR-006, FR-013), so a
 member outside it is a genuine contradiction of that contract and is reported ``INVALID`` with the
-policy named in the message. What happens to the claim is
-:func:`still_materialisable`'s business. Keeping those two separate is the whole reason a failure
-can be a finding and not a deletion.
+policy named in the message. What that policy does to one particular view is
+:func:`decide_materialisation`'s business, and it answers with a named, operator-scoped decision
+rather than a boolean. Keeping those two separate - a contract contradiction is a finding, an
+admission outcome is a projection decision - is the whole reason a failure can be a finding and
+not a deletion, and it is why a refusal is never itself an adverse verdict
+(:attr:`MaterialisationDecision.is_adverse`).
 
 **Bounded and deterministic.** No I/O, no network, no LLM, no clock: the temporal and graph
 stages read the claim's own recorded times and a caller-supplied claim set, and the graph walks
@@ -82,8 +89,11 @@ __all__ = [
     "STAGE_ORDER",
     "Endpoint",
     "LayeredValidator",
+    "MaterialisationCode",
+    "MaterialisationDecision",
+    "MaterialisationScope",
     "StageOutcome",
-    "still_materialisable",
+    "decide_materialisation",
     "worst_verdict",
 ]
 
@@ -147,35 +157,172 @@ def worst_verdict(findings: Iterable[ValidationFinding]) -> Verdict:
     return Verdict.VALID
 
 
-def still_materialisable(
-    operator: RelationOperator | DomainRangePolicy | None,
-) -> bool:
-    """Whether a claim bound to this operator may still be materialised and projected (FR-012).
+class MaterialisationCode(StrEnum):
+    """The stable identity of one materialisation decision.
 
-    ``True`` for ``WARN``, ``True`` for ``IGNORE``, and ``True`` when there is no operator at all
-    - the answer is ``False`` for exactly one value, an explicit
-    :attr:`~semantic.operators.DomainRangePolicy.DENY`, and for nothing else.
-
-    **Why ``DENY`` exists at all.** An operator author occasionally needs a derived, curated
-    dataset in which a domain/range violation means the *extractor* is broken rather than the world
-    is surprising, and wants the bad rows kept out of that projection so a downstream consumer
-    can trust it. That is a real need and pretending otherwise would just push the check somewhere
-    worse. **Why it is not the default (D1).** A ``deny`` default would make FR-012
-    self-contradictory: validation would produce deletion, findings would be raised on records
-    nobody can see, and the default behaviour of a new operator would be to destroy evidence.
-    Defaulting to ``warn`` makes the safe outcome the default outcome, and a stricter operator is
-    one explicit field away.
-
-    Even ``DENY`` does not delete: it changes whether *this operator's* claim is materialised
-    through *its* ``projection_policy``, the finding is still recorded with its evidence, and the
-    claim stays queryable and resolvable (FR-012, SC-4).
+    Written out in full because these values are the contract with anything that reads a decision
+    back - a log line, a stored record, a test - and an abbreviation would be free to drift. Each
+    names an *admission* outcome for one operator and view; none of them describes the claim's
+    fate, and none is reachable from a default-constructed
+    :class:`~semantic.operators.RelationOperator` (D1).
     """
+
+    ADMITTED_BY_VIEW = "operator_view_admits_claim"
+    EXCLUDED_BY_VIEW = "operator_view_excludes_claim"
+    UNCONSTRAINED = "operator_view_unconstrained_admits_claim"
+
+
+class MaterialisationScope(StrEnum):
+    """What a materialisation decision is *about*, so it cannot be read as being about more.
+
+    The only two answers are "this operator's view" and "no operator's view", because the only
+    thing an operator can decide about a claim is whether its own projection of that relation
+    type carries it. Neither value is a claim about the world: not that the relation does not
+    exist, not that the claim is false, and never a deletion. The scope is a *recorded field* of
+    :class:`MaterialisationDecision` rather than a convention, so a decision that is read back
+    months later still states its own reach.
+    """
+
+    THIS_OPERATOR_VIEW = "this_operator_view"
+    NO_OPERATOR_VIEW = "no_operator_view"
+
+    @property
+    def statement(self) -> str:
+        """The scope spelled out in full, for a message, a log line or a stored record."""
+        return _SCOPE_STATEMENTS[self]
+
+
+_SCOPE_STATEMENTS: dict[MaterialisationScope, str] = {
+    MaterialisationScope.THIS_OPERATOR_VIEW: (
+        "scoped to this operator's materialised view: this operator does not admit this claim "
+        "into this view, the claim object and its evidence are unchanged, this is not a claim "
+        "that the relation does not exist, and nothing was deleted"
+    ),
+    MaterialisationScope.NO_OPERATOR_VIEW: (
+        "scoped to no operator's view: no operator is declared for this relation type, so no "
+        "operator withholds the claim, the claim object and its evidence are unchanged, and "
+        "nothing was deleted"
+    ),
+}
+
+
+@dataclass(frozen=True)
+class MaterialisationDecision:
+    """One operator's admission decision about one claim, scoped to one materialised view.
+
+    This exists because a bare boolean could not say *what* was refused, and ``False`` is read as
+    "no" - as "the relation is not real", as "the claim was rejected", as "something was dropped".
+    Reading :attr:`refused` here means exactly one thing:
+
+    **this operator does not admit this claim into this operator's materialised view.**
+
+    It is not a statement that the relation does not exist, it is not a verdict that the claim is
+    false, and it is not a deletion. The claim, its evidence and the :attr:`findings` that
+    motivated the decision are all still present, still queryable and still resolvable (FR-012,
+    SC-4). A second operator with a different policy reaches a different - equally correct -
+    decision about the same claim, and both decisions are representable at once, because
+    :attr:`scope` is part of the value rather than an assumption made by the reader.
+
+    **A refusal is an operator decision, not a failing check.** :attr:`is_adverse` is a hard-wired
+    ``False``: it is not a field and not derived, so no caller can make an admission decision
+    reportable as a validation failure. If a refusal could be counted as adverse it would be read
+    as "the claim is bad", which is a different claim - about the world - that an operator is not
+    entitled to make. The :attr:`findings` carried here may individually be adverse, and correctly
+    so: a domain/range hint is a contract the platform declared about its own operator (FR-006),
+    and a member outside it genuinely contradicts that contract. The decision those findings
+    motivated is not itself a verdict about the claim (FR-011, FR-012).
+
+    Deliberately has no ``__bool__``. Truthiness would collapse this back into the bare boolean
+    this type exists to replace, and the default truthiness would read an exclusion as an
+    admission - the one failure mode worth engineering against.
+    """
+
+    materialisable: bool
+    code: MaterialisationCode
+    scope: MaterialisationScope
+    policy: DomainRangePolicy
+    operator_ref: str = ""
+    findings: tuple[ValidationFinding, ...] = ()
+
+    @property
+    def refused(self) -> bool:
+        """Whether this operator withheld the claim from its own view.
+
+        The inverse of :attr:`materialisable`, under a name that says the subject is the operator's
+        admission rather than the claim's standing.
+        """
+        return not self.materialisable
+
+    @property
+    def is_adverse(self) -> bool:
+        """Always ``False``: a refusal is an operator decision, not a verdict on the claim.
+
+        Invariant rather than a field so that no value a caller can supply turns a projection
+        decision into a failing validation finding.
+        """
+        return False
+
+    @property
+    def scope_statement(self) -> str:
+        """The recorded scope in words, including the three things it is not."""
+        return self.scope.statement
+
+
+def decide_materialisation(
+    operator: RelationOperator | DomainRangePolicy | None,
+    *,
+    findings: Iterable[ValidationFinding] = (),
+) -> MaterialisationDecision:
+    """The admission decision one operator makes about a claim for its own view.
+
+    Three inputs, three answers, and no path to a refusal that a default operator can take:
+
+    * no operator at all -> :attr:`MaterialisationCode.UNCONSTRAINED` and materialisable. An
+      undeclared relation is unconstrained, not vetoed (FR-001, FR-013).
+    * an operator declaring :attr:`~semantic.operators.DomainRangePolicy.WARN` or
+      :attr:`~semantic.operators.DomainRangePolicy.IGNORE` ->
+      :attr:`MaterialisationCode.ADMITTED_BY_VIEW` and materialisable. This is the only path a
+      default-constructed :class:`~semantic.operators.RelationOperator` can take, because
+      ``WARN`` is its default (D1).
+    * an operator that explicitly opted into
+      :attr:`~semantic.operators.DomainRangePolicy.EXCLUDE_FROM_VIEW` ->
+      :attr:`MaterialisationCode.EXCLUDED_BY_VIEW` and **not materialisable in that operator's
+      view**, with :attr:`MaterialisationScope.THIS_OPERATOR_VIEW` recorded on the decision.
+
+    **Why the claim is not a parameter.** The function never receives the claim, so no branch
+    inside it can delete, filter, mutate or withhold one. ``findings`` are recorded and never
+    consumed - they travel with the decision so a reader can see what the operator reacted to, and
+    passing them changes nothing about the outcome. The claim is not consulted, copied away or
+    marked; the caller keeps the object it already had, evidence and all (FR-012).
+    """
+    reasons = tuple(findings)
     if operator is None:
-        return True
-    policy = (
-        operator if isinstance(operator, DomainRangePolicy) else operator.domain_range_policy
+        return MaterialisationDecision(
+            materialisable=True,
+            code=MaterialisationCode.UNCONSTRAINED,
+            scope=MaterialisationScope.NO_OPERATOR_VIEW,
+            policy=DomainRangePolicy.WARN,
+            findings=reasons,
+        )
+    if isinstance(operator, DomainRangePolicy):
+        policy = DomainRangePolicy(operator)
+        operator_ref = ""
+    else:
+        policy = DomainRangePolicy(operator.domain_range_policy)
+        operator_ref = f"{operator.relation_type}@{operator.schema_version}"
+    refused = policy.excludes_from_view
+    return MaterialisationDecision(
+        materialisable=not refused,
+        code=(
+            MaterialisationCode.EXCLUDED_BY_VIEW
+            if refused
+            else MaterialisationCode.ADMITTED_BY_VIEW
+        ),
+        scope=MaterialisationScope.THIS_OPERATOR_VIEW,
+        policy=policy,
+        operator_ref=operator_ref,
+        findings=reasons,
     )
-    return DomainRangePolicy(policy) is not DomainRangePolicy.DENY
 
 
 class Endpoint(StrEnum):
@@ -303,9 +450,22 @@ class LayeredValidator:
             )
         )
 
-    def still_materialisable(self, operator: RelationOperator | None) -> bool:
-        """Instance form of :func:`still_materialisable`, for callers holding a validator."""
-        return still_materialisable(operator)
+    def admission_decision(self, claim: RelationClaim) -> MaterialisationDecision:
+        """This relation's operator's admission decision for ``claim``, in its own view.
+
+        Runs the semantic stage to obtain the findings that motivate the decision and returns the
+        decision carrying them, so a caller has one value to record instead of a boolean to
+        interpret. The claim is read and never rewritten: the same object, with the same evidence
+        and the same identity, is what the caller holds afterwards whether the answer is admission
+        or exclusion (FR-012, SC-4).
+
+        The decision is operator-scoped, so two validators holding two operators with different
+        policies reach two different decisions about the same claim and **both are correct** -
+        there is no global answer to return, and this method does not pretend to give one.
+        """
+        operator = self.operator_for(claim.relation_type)
+        outcome = self._check_semantic(claim)
+        return decide_materialisation(operator, findings=outcome.findings)
 
     def evaluate(
         self,
@@ -605,9 +765,8 @@ class LayeredValidator:
                 Verdict.INVALID,
                 "domain_range_not_satisfied",
                 f"{endpoint} {member_ref!r} is typed {list(asserted)}, outside the operator's "
-                f"declared {endpoint}_kinds {list(declared_kinds)}; the finding is recorded and "
-                f"under domain_range={operator.domain_range_policy} the claim "
-                f"{_materiality(operator)}",
+                f"declared {endpoint}_kinds {list(declared_kinds)}; the finding is recorded, "
+                f"and {_admission_clause(operator)}",
                 constraint_ref=f"{operator.relation_type}.{endpoint}_kinds",
             ),
         )
@@ -1034,15 +1193,20 @@ def _ordered_stages(stages: Iterable[ValidationStage]) -> tuple[ValidationStage,
     return tuple(stage for stage in STAGE_ORDER if stage in wanted)
 
 
-def _materiality(operator: RelationOperator) -> str:
-    """The consequence the operator's policy has, as a clause for a finding's message.
+def _admission_clause(operator: RelationOperator) -> str:
+    """What this operator's policy does, as a clause for a finding's message.
 
-    Rendered here rather than inlined into an f-string so the message states the outcome the
-    policy actually produces instead of restating the policy, and so the reader of a finding sees
-    the consequence next to the contradiction (FR-012, D1).
+    Rendered from the decision rather than from the policy name so a finding's text carries the
+    *scope* of the consequence next to the contradiction that produced it: this operator's view,
+    not the world (FR-012, D1). The clause therefore also carries the negative space - the claim
+    is unchanged, the relation is not denied to exist, nothing was deleted - so a reader of the
+    finding alone cannot come away thinking the claim was rejected.
     """
-    return "stays materialisable" if still_materialisable(operator) else "is not projected"
-
+    decision = decide_materialisation(operator)
+    return (
+        f"under domain_range={operator.domain_range_policy} the admission decision is "
+        f"{decision.scope_statement}"
+    )
 
 
 def _evidence_satisfied(claim: RelationClaim, requirement: str) -> bool | None:

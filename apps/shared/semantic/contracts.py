@@ -35,10 +35,13 @@ from typing import Any
 from domain.relation_identity import digest128
 
 __all__ = [
+    "LOGICAL_ASSERTION_ID_PREFIX",
+    "REVISION_ASSERTION_ID_PREFIX",
     "RelationRef",
     "SemanticRef",
     "SemanticStatus",
     "TypeAssertion",
+    "TypeAssertionRevision",
     "TypeScope",
     "ValidationFinding",
     "ValidationReport",
@@ -46,7 +49,16 @@ __all__ = [
     "Verdict",
     "content_key",
     "is_adverse",
+    "type_assertion_revisions",
 ]
+
+#: Prefix of "which typing claim this is" - shared by every revision of one
+#: claim, mirroring ``RL-``/``RC-`` in :mod:`domain.relation_identity`. Distinct so a
+#: typing claim is never confusable with a relation claim in a log line or a store.
+LOGICAL_ASSERTION_ID_PREFIX = "TA-"
+
+#: Prefix of "which revision of that typing claim this is".
+REVISION_ASSERTION_ID_PREFIX = "TAR-"
 
 
 def _canonical(value: Any) -> str:
@@ -193,12 +205,28 @@ _STAGE_RANK: dict[ValidationStage, int] = {
 
 @dataclass(frozen=True)
 class TypeAssertion:
-    """One immutable, evidence-bearing typing or mapping claim about an entity.
+    """One immutable, evidence-bearing typing claim about an entity, in two levels.
 
     This is the replacement for a single categorical ``Entity.schema_name``
     (FR-003). It is a *claim* about a type, carrying its own scope, status,
     context and evidence, so the same entity can hold several at once and each
     can be audited independently.
+
+    Identity is deliberately two-level, mirroring :class:`domain.relation_claim.RelationClaim`
+    rather than inventing a second versioning philosophy for the semantic layer:
+
+    * ``logical_type_assertion_id`` answers *which typing claim this is* --
+      (tenant, entity, type, scope). Every revision of that claim shares it, so
+      "all states of this typing" is one lookup rather than a scan.
+    * ``type_assertion_id`` answers *which revision* -- a content address over the
+      whole claim including status, evidence, context, source and hypothesis.
+
+    The earlier version of this class documented two things that contradicted each
+    other: that it was "immutable and content-addressed", and that a higher-status
+    assertion "updates rather than duplicates". Those are only consistent under a
+    two-level id, which is why it has one. A promotion is now a new revision under
+    the same logical claim, so the weaker earlier state is still on record
+    (FR-004) and "immutable" and "no duplicates" both hold.
 
     ``raw_surface`` and ``hypothesis`` are what make FR-004 real rather than
     aspirational: the ladder from raw text to a mapped concept is reconstructable
@@ -206,7 +234,8 @@ class TypeAssertion:
     be recorded.
     """
 
-    assertion_id: str = ""
+    type_assertion_id: str = ""
+    logical_type_assertion_id: str = ""
     tenant_id: str = "default-tenant"
 
     entity_ref: str = ""
@@ -239,17 +268,22 @@ class TypeAssertion:
         object.__setattr__(self, "evidence_refs", tuple(sorted(refs)))
 
     @property
-    def identity(self) -> tuple[str, str, str, str]:
-        """(tenant, entity, type, scope) - identity is deliberately *not* status.
+    def logical_identity(self) -> tuple[str, str, str, str]:
+        """(tenant, entity, type, scope) - which typing claim this is.
 
-        Re-asserting the same type at a higher status is a new fact about the same
-        claim, not a new claim, so it updates rather than duplicates. Different
-        scopes are different claims and both survive.
+        Status is excluded on purpose: a promotion is a new *revision* of the same
+        claim, not a new claim. Different scopes are different claims and both
+        survive, which is what lets one entity be observed, inferred, mapped and
+        context-typed at the same time (FR-003).
         """
         return (self.tenant_id, self.entity_ref, self.type_ref, str(self.scope))
 
+    def logical_key(self) -> str:
+        """Content address of :attr:`logical_identity`, shared by every revision."""
+        return LOGICAL_ASSERTION_ID_PREFIX + content_key(list(self.logical_identity))
+
     def content_key(self) -> str:
-        """Order-insensitive digest of the full claim, including its evidence."""
+        """Order-insensitive digest of the full revision, including its evidence."""
         return content_key(
             {
                 "tenant": self.tenant_id,
@@ -273,15 +307,22 @@ class TypeAssertion:
         )
 
     def with_id(self) -> TypeAssertion:
-        """A copy carrying its own content-addressed ``assertion_id``.
+        """A copy carrying both content-addressed ids.
 
         Derivation is explicit rather than automatic in ``__post_init__`` so that
-        construction stays a plain value operation. It matters because identity
-        here covers the *whole* claim - a promotion produces a different digest
-        and therefore a different id, and a caller can see that happen instead of
-        discovering two rows that differ in a way they did not intend.
+        construction stays a plain value operation. It matters because the two
+        levels answer different questions: a promotion keeps the logical id and
+        mints a new revision id, and a caller can see that happen rather than
+        discovering rows that differ in a way they did not intend.
         """
-        return replace(self, assertion_id=self.content_key()) if not self.assertion_id else self
+        if self.type_assertion_id and self.logical_type_assertion_id:
+            return self
+        return replace(
+            self,
+            type_assertion_id=self.type_assertion_id or REVISION_ASSERTION_ID_PREFIX
+            + self.content_key(),
+            logical_type_assertion_id=self.logical_type_assertion_id or self.logical_key(),
+        )
 
     def promoted(self, status: SemanticStatus) -> TypeAssertion:
         """A stronger version of this same claim, or the same object if not stronger.
@@ -293,7 +334,12 @@ class TypeAssertion:
         stronger = self.status.promoted_to(status)
         if stronger is None:
             return self
-        return replace(self, status=stronger, assertion_id="")
+        return replace(
+            self,
+            status=stronger,
+            type_assertion_id="",
+            logical_type_assertion_id="",
+        )
 
     def carries_semantic_commitment(self) -> bool:
         """False for a mention recorded with no semantic interpretation yet.
@@ -304,6 +350,54 @@ class TypeAssertion:
         recordable fact.
         """
         return bool(self.type_ref)
+
+
+@dataclass(frozen=True)
+class TypeAssertionRevision:
+    """The revision chain of one typing claim, ordered by commitment strength.
+
+    The semantic-layer counterpart of ``domain.relation_claim.RelationRevision``,
+    and deliberately the same shape: one logical id, many revisions, the strongest
+    last. A claim that was first observed and later mapped to an external concept
+    has two revisions here, and both remain readable, which is the only way to
+    answer "what did we believe about this entity at time T" (FR-018).
+    """
+
+    logical_type_assertion_id: str
+    revisions: tuple[TypeAssertion, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "revisions",
+            tuple(sorted(self.revisions, key=lambda rev: rev.status.rank())),
+        )
+
+    @property
+    def current(self) -> TypeAssertion | None:
+        """The strongest revision, or ``None`` for an empty chain (honest, not guessed)."""
+        return self.revisions[-1] if self.revisions else None
+
+    def ladder(self) -> tuple[SemanticStatus, ...]:
+        """The commitment statuses present, weakest first."""
+        return tuple(sorted({rev.status for rev in self.revisions}, key=lambda s: s.rank()))
+
+
+def type_assertion_revisions(
+    assertions: tuple[TypeAssertion, ...] | list[TypeAssertion],
+    logical_type_assertion_id: str,
+) -> TypeAssertionRevision:
+    """Every revision of one typing claim, weakest commitment first."""
+    matching = [
+        assertion
+        for assertion in assertions
+        if assertion.logical_type_assertion_id == logical_type_assertion_id
+        or assertion.logical_key() == logical_type_assertion_id
+    ]
+    return TypeAssertionRevision(
+        logical_type_assertion_id=logical_type_assertion_id,
+        revisions=tuple(matching),
+    )
 
 
 @dataclass(frozen=True)
