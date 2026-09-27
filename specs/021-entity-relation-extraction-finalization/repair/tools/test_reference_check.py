@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -187,6 +188,104 @@ def build_feature_dir(root: Path, **overrides: str) -> Path:
     return root
 
 
+REAL_ARTEFACTS = (
+    "input.md",
+    "spec.md",
+    "tasks.md",
+    "plan.md",
+    "research.md",
+    "data-model.md",
+    "checklists/requirements.md",
+)
+
+
+def clone_real_feature(root: Path, **overrides: str) -> Path:
+    """Copy the *real* feature artefacts into a scratch directory, optionally rewriting one.
+
+    Used to prove a claim about the real documents ("data-model.md passes with its two
+    fences merged") on a copy, so the shipped artefact is never edited by a test.
+    """
+    for name in REAL_ARTEFACTS:
+        text = (SPEC_DIR / name).read_text(encoding="utf-8")
+        write(root / name, overrides.get(name, text))
+    return root
+
+
+def fence_spans(text: str) -> list[tuple[int, int]]:
+    """(open, close) line indices, 0-based, of every fenced code block."""
+    lines = text.splitlines()
+    marks = [i for i, line in enumerate(lines) if line.lstrip().startswith("```")]
+    return [(marks[i], marks[i + 1]) for i in range(0, len(marks) - 1, 2)]
+
+
+def fence_containing(text: str, needle: str) -> str:
+    """The body of the fenced block that contains `needle` (fails loudly if absent)."""
+    lines = text.splitlines()
+    for start, end in fence_spans(text):
+        body = "\n".join(lines[start + 1:end])
+        if needle in body:
+            return body
+    raise AssertionError(f"no fenced block contains {needle!r}")
+
+
+_PY_STATEMENT_RE = re.compile(r"^\s*(?:class|def|@|import|from|>>>)\b")
+
+
+def merge_split_class_fences(text: str) -> tuple[str, int]:
+    """Undo the two-fence split a frozen dataclass body was divided into.
+
+    A spec integrator once split `TypeHypothesis` across two ```python fences so that a
+    checker whose regex matched the field *name* `hypothesis_state` would not see it. The
+    split is independently correct Python-ordering hygiene and independently wrong document
+    design, and it exists only because of that checker. This reconstructs the one-fence
+    form so a test can assert the checker no longer requires the split.
+
+    A pair is merged only when the two blocks are adjacent in the same code language, the
+    first block declares a class, and the second block is *entirely* a class-body
+    continuation (every non-blank line indented) - so a fresh top-level statement is never
+    swallowed. The prose that introduced the second block is re-emitted after the merged
+    block rather than deleted, so the transformation is reversible by eye.
+    """
+    lines = text.splitlines()
+    regions = fence_spans(text)
+    bodies: dict[int, list[str]] = {}
+    absorbed: set[int] = set()
+    for index, ((s1, e1), (s2, e2)) in enumerate(
+        zip(regions, regions[1:], strict=False)
+    ):
+        gap = lines[e1 + 1:s2]
+        if any(_PY_STATEMENT_RE.match(g) or g.lstrip().startswith(("|", "#")) for g in gap):
+            continue
+        first = lines[s1 + 1:e1]
+        second = lines[s2 + 1:e2]
+        if not any(re.match(r"^class\s", g) for g in first):
+            continue
+        if not second or not all(g.strip() == "" or g[:1].isspace() for g in second):
+            continue
+        bodies[index] = first + second
+        absorbed.add(index + 1)
+
+    out: list[str] = []
+    cursor = 0
+    for index, (start, end) in enumerate(regions):
+        if index in absorbed:
+            cursor = end + 1
+            continue
+        out.extend(lines[cursor:start])
+        out.append(lines[start])
+        out.extend(bodies.get(index, lines[start + 1:end]))
+        out.append(lines[end])
+        cursor = end + 1
+        if index in bodies:
+            # the prose that introduced the absorbed block moves *after* the merged block,
+            # so the transformation is reversible by eye
+            following = regions[index + 1][0]
+            out.extend(lines[cursor:following])
+            cursor = following
+    out.extend(lines[cursor:])
+    return "\n".join(out) + "\n", len(bodies)
+
+
 # --------------------------------------------------------------------------------------
 # 1. the checker must FAIL on broken input
 # --------------------------------------------------------------------------------------
@@ -278,6 +377,145 @@ def test_section_range_and_phase_qualifier_are_not_phantoms(tmp_path: Path) -> N
     assert fails_for(spec_dir, ["RI-08-SEC-CITE"]) == []
 
 
+# --------------------------------------------------------------------------------------
+# 3c. FP-2: `§N` has two namespaces, and only input.md's is a phantom input.md section
+#
+# `data-model.md` renumbered its own cross-references as "part N" because a bare `§1.5`
+# was reported as a phantom section of input.md. That put ~180 phantoms into the file at
+# once and forced a convention nobody chose. The tests below are the fixed rule, the
+# blind-spot controls that keep the phantom power, and the proof that the workaround is
+# no longer needed.
+# --------------------------------------------------------------------------------------
+
+_NUMBERED_DATA_MODEL = """\
+# Phase 1 Data Model: synthetic
+
+## 1. Identity carrier
+
+`PredicateSignature` carries the normalised predicate, the arity and the role names. The
+candidate id is a digest over that structure.
+
+### 1.5 The generated-table discipline
+
+See \u00a71.5 before reading the exclusion table. input.md \u00a71 is the brief.
+"""
+
+
+def test_intra_document_decimal_section_reference_is_not_an_input_md_phantom(
+    tmp_path: Path,
+) -> None:
+    """FP-2: `§1.5` against `### 1.5` in the same file is that file's own cross-reference."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f", **{"data-model.md": _NUMBERED_DATA_MODEL}
+    )
+    assert fails_for(spec_dir, ["RI-08-SEC-CITE"]) == []
+
+
+def test_a_decimal_that_resolves_nowhere_is_still_a_phantom(tmp_path: Path) -> None:
+    """The fix is not "decimals are always fine": a dangling sub-section is still a FAIL."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{"data-model.md": _NUMBERED_DATA_MODEL.replace(
+            "See \u00a71.5 before", "See \u00a71.9 before")}
+    )
+    fails = fails_for(spec_dir, ["RI-08-SEC-CITE"])
+    assert [f.data["section"] for f in fails] == ["1.9"]
+
+
+def test_genuinely_nonexistent_integer_section_still_fails(tmp_path: Path) -> None:
+    """The blind-spot control for FP-2: an integer in no file at all is still a FAIL."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "data-model.md": _NUMBERED_DATA_MODEL
+            + "\nThe brief's \u00a7114 appendix decides the ordering.\n"
+        },
+    )
+    fails = fails_for(spec_dir, ["RI-08-SEC-CITE"])
+    assert [f.data["section"] for f in fails] == ["114"]
+    assert "input.md" in fails[0].message
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-08-SEC-CITE"]) == 1
+
+
+def test_a_section_reference_naming_its_own_file_resolves_against_that_file(
+    tmp_path: Path,
+) -> None:
+    """`repair/notes.md` \u00a77.1 is a claim about notes.md, not about input.md."""
+    spec_dir = build_repair_dir(
+        build_feature_dir(
+            tmp_path / "f",
+            **{
+                "data-model.md": _NUMBERED_DATA_MODEL
+                + "\nThe mapping rules are in `repair/notes.md` \u00a77.1.\n"
+            },
+        ),
+        **{"notes": "# notes\n\n## 0. Conventions\n\n### 7.1 Mapping rules\n\nText.\n"},
+    )
+    assert fails_for(spec_dir, ["RI-08-SEC-CITE"]) == []
+
+
+def test_a_section_the_named_file_does_not_have_still_fails(tmp_path: Path) -> None:
+    """Naming a file is not a free pass: the section has to exist in it."""
+    spec_dir = build_repair_dir(
+        build_feature_dir(
+            tmp_path / "f",
+            **{
+                "data-model.md": _NUMBERED_DATA_MODEL
+                + "\nThe mapping rules are in `repair/notes.md` \u00a79.4.\n"
+            },
+        ),
+        **{"notes": "# notes\n\n## 0. Conventions\n\n### 7.1 Mapping rules\n\nText.\n"},
+    )
+    fails = fails_for(spec_dir, ["RI-08-SEC-CITE"])
+    assert [f.data["section"] for f in fails] == ["9.4"]
+    assert "repair/notes.md has no heading \u00a79.4" in fails[0].message
+
+
+def test_integer_that_resolves_only_inside_the_citing_artefact_is_info_not_silent(
+    tmp_path: Path,
+) -> None:
+    """An integer belongs to input.md's namespace, so the ambiguity is reported, not hidden."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{"data-model.md": "# Data Model\n\n## 8. Type layer\n\nSee \u00a78 for the "
+                             "extractor contract.\n"},
+    )
+    found = findings_for(spec_dir, ["RI-08-SEC-CITE"])
+    assert [f.code for f in found] == ["sec-cite-intra-doc-integer"]
+    assert found[0].severity == rc.INFO
+    assert found[0].data == {"artefact": "data-model.md", "section": "8"}
+
+
+_PART_REF_RE = re.compile(r"\bpart\s+(\d+(?:\.\d+)?)", re.IGNORECASE)
+
+
+def test_real_data_model_needs_no_part_n_convention_to_pass(tmp_path: Path) -> None:
+    """FP-2, on the real document: writing `part N` as `\u00a7N` must stay clean.
+
+    `data-model.md` currently writes its own cross-references as "part 2.5" because
+    `\u00a72.5` used to be reported as a phantom input.md section. This test rewrites that
+    workaround back to `\u00a7N` on a *copy* and asserts the checker accepts it - then adds
+    one reference that exists in no file and asserts it is still reported.
+    """
+    original = (SPEC_DIR / "data-model.md").read_text(encoding="utf-8")
+    rewritten, count = _PART_REF_RE.subn(lambda m: "\u00a7" + m.group(1), original)
+    assert count >= 50, f"expected the 'part N' workaround to be widespread, rewrote {count}"
+
+    clean = clone_real_feature(tmp_path / "sections", **{"data-model.md": rewritten})
+    phantoms = [f for f in fails_for(clean, ["RI-08-SEC-CITE"])
+                if any(loc.startswith("data-model.md:") for loc in f.locations)]
+    assert phantoms == [], [(f.data, f.message) for f in phantoms]
+
+    # blind-spot control: the same document, plus one section that exists nowhere
+    broken = clone_real_feature(
+        tmp_path / "sections-broken",
+        **{"data-model.md": rewritten + "\nSee \u00a7430 for the appendix.\n"},
+    )
+    fails = fails_for(broken, ["RI-08-SEC-CITE"])
+    assert [f.data["section"] for f in fails
+            if any(loc.startswith("data-model.md:") for loc in f.locations)] == ["430"]
+
+
 def test_letter_suffixed_task_id_fails_ordering(tmp_path: Path) -> None:
     spec_dir = build_feature_dir(
         tmp_path / "f", tasks=GOOD_TASKS + "- [ ] T003b [US3] A suffixed sub-task. (FR-003)\n"
@@ -340,6 +578,176 @@ def test_mutation_range_with_a_non_mutation_endpoint_fails(tmp_path: Path) -> No
     assert counted[0].data["actual"] == 0
 
 
+# --------------------------------------------------------------------------------------
+# 3d. FP-3: a section RANGE is a locator, not a count
+#
+# `FR-078` says "The six \u00a794-\u00a799 mutations are manifest entries 7-12" and the checker
+# read the range's upper bound as a claim of "99 mutations". A range endpoint is a section
+# label. The tests below are the fixed rule plus three blind-spot controls, because the
+# repairs this check exists to catch (a false *number word*, a false *minimum*, a false
+# count sitting next to a range) all live in the same code path.
+# --------------------------------------------------------------------------------------
+
+MUTATION_INPUT = """\
+# 1. MISSION
+
+### A. Entity interpretation
+
+### B. Relation interpretation
+
+# 2. MUTATION ALPHA
+
+# 3. MUTATION BETA
+
+# 4. MUTATION GAMMA
+
+# 5. MUTATION DELTA
+
+# 6. MUTATION EPSILON
+
+# 7. MUTATION ZETA
+"""
+
+_SIX_CITED = "\u00a72, \u00a73, \u00a74, \u00a75, \u00a76, \u00a77"
+
+
+def mutation_spec(fr_003: str) -> str:
+    return GOOD_SPEC.replace(
+        "- **FR-003**: A producer MUST emit `mention_ref` values resolved in the mention index.\n"
+        "  (\u00a72)\n",
+        fr_003 + "\n",
+    ).replace("(2 sections)", "(7 sections)")
+
+
+def test_section_range_endpoint_is_not_read_as_a_count_claim(tmp_path: Path) -> None:
+    """FP-3: "the six \u00a72-\u00a77 mutations" must not be reported as a claim of 7."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "input.md": MUTATION_INPUT,
+            "spec.md": mutation_spec(
+                "- **FR-003**: The six \u00a72-\u00a77 mutations are manifest entries 3-8, each\n"
+                "  with a named test. (\u00a71)"
+            ),
+        },
+    )
+    found = findings_for(spec_dir, ["RI-09-COUNT"])
+    assert [f.code for f in found if f.severity == rc.FAIL] == [], [
+        (f.code, f.message) for f in found
+    ]
+    notices = [f for f in found if f.code == "count-range-endpoint"]
+    assert len(notices) == 1
+    assert notices[0].severity == rc.INFO
+    assert "7 mutations" in notices[0].message
+    # and the range itself is still verified by the mutation-range rule
+    assert [f.code for f in found if f.code == "mutation-range-not-mutation"] == []
+
+
+def test_a_count_claim_beside_a_section_range_still_fails(tmp_path: Path) -> None:
+    """The blind-spot control for FP-3: "17 mutations from \u00a72-\u00a77" is a real claim.
+
+    17 is not a range endpoint, so the fix must not swallow it - this is the shape the
+    real `checklists/requirements.md` and `tasks.md` defects have.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "input.md": MUTATION_INPUT,
+            "spec.md": mutation_spec(
+                "- **FR-003**: 17 mutations from \u00a72-\u00a77 MUST each fail. (\u00a71)"
+            ),
+        },
+    )
+    fails = fails_for(spec_dir, ["RI-09-COUNT"])
+    counted = [f for f in fails if f.code == "count-mismatch" and f.data["noun"] == "mutations"]
+    assert len(counted) == 1
+    assert counted[0].data["claimed"] == 17
+    assert counted[0].data["actual"] == 6
+
+
+def test_number_word_count_claim_still_fails(tmp_path: Path) -> None:
+    """The "Four named mutations" / six-listed-items defect must keep firing."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "input.md": MUTATION_INPUT,
+            "spec.md": mutation_spec(
+                f"- **FR-003**: Four named mutations ({_SIX_CITED}) MUST each fail. (\u00a71)"
+            ),
+        },
+    )
+    fails = fails_for(spec_dir, ["RI-09-COUNT"])
+    counted = [f for f in fails if f.code == "count-mismatch" and f.data["noun"] == "mutations"]
+    assert len(counted) == 1
+    assert counted[0].data["claimed"] == 4
+    assert counted[0].data["actual"] == 6
+
+
+def test_minimum_count_claim_still_fails(tmp_path: Path) -> None:
+    """The "\u2265 20 invariants" against 18 enumerated harness fields must keep firing."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "input.md": MUTATION_INPUT,
+            "spec.md": mutation_spec(
+                "- **FR-003**: The constitutional mutation harness MUST break\n"
+                "  (`predicate_signature`, `polarity`, `mention_ref`): the replay pair\n"
+                "  (`signal_id`, `candidate_id`) is the manifest. (\u00a71)"
+            ).replace(
+                "## Success Criteria",
+                "- **SC-002**: The constitutional mutation harness breaks \u2265 20 invariants:\n"
+                "  every manifest entry has a named test that fails when it is broken.\n\n"
+                "## Success Criteria",
+            ),
+        },
+    )
+    fails = fails_for(spec_dir, ["RI-09-COUNT"])
+    counted = [f for f in fails if f.code == "count-mismatch" and f.data["noun"] == "invariants"]
+    assert len(counted) == 1
+    assert counted[0].data["claimed"] == 20
+    assert counted[0].data["actual"] == 5
+    assert "FR-003=5" in counted[0].data["basis"]
+
+
+def test_section_range_without_a_second_section_mark_is_still_a_range(tmp_path: Path) -> None:
+    """`\u00a794-99` is a range too: the second `§` is optional."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "input.md": MUTATION_INPUT,
+            "spec.md": mutation_spec(
+                "- **FR-003**: The six \u00a72-7 mutations are manifest entries 3-8. (\u00a71)"
+            ),
+        },
+    )
+    found = findings_for(spec_dir, ["RI-09-COUNT"])
+    assert [f.code for f in found if f.severity == rc.FAIL] == []
+    assert [f.code for f in found if f.code == "count-range-endpoint"]
+
+
+def test_a_plain_number_next_to_a_section_range_is_still_a_count_claim(tmp_path: Path) -> None:
+    """Suppression is per *integer inside a range span*, never per line.
+
+    The sentence carries a range and a false count side by side; only the range's endpoints
+    are excused.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "input.md": MUTATION_INPUT,
+            "spec.md": mutation_spec(
+                "- **FR-003**: 8 mutations from \u00a72-\u00a77 MUST each fail; the pack has\n"
+                "  3 members. (\u00a71)"
+            ),
+        },
+    )
+    fails = fails_for(spec_dir, ["RI-09-COUNT"])
+    counted = [f for f in fails if f.code == "count-mismatch" and f.data["noun"] == "mutations"]
+    assert len(counted) == 1
+    assert counted[0].data["claimed"] == 8
+    assert counted[0].data["actual"] == 6
+
+
 def test_stale_not_yet_created_claim_fails(tmp_path: Path) -> None:
     spec_dir = build_feature_dir(tmp_path / "f", plan="1 FR. tasks.md is NOT yet created.\n")
     assert [f.code for f in fails_for(spec_dir, ["RI-12-STALE"])] == ["stale-not-created"]
@@ -398,6 +806,168 @@ def test_nested_hypothesis_absent_is_clean(tmp_path: Path) -> None:
         },
     )
     assert fails_for(spec_dir, ["RI-10-FORBIDDEN"]) == []
+
+
+# --------------------------------------------------------------------------------------
+# 3b. FP-1: the nested-hypothesis rule decides on the field's TYPE SHAPE
+#
+# The rule's intent is an epistemic-level violation: a hypothesis that contains a *set* of
+# hypotheses. An earlier regex fired on the field *name*, so it flagged
+# `TypeHypothesis.hypothesis_state` - a field brief §6 (input.md:465-492) *requires* - and
+# a spec integrator answered by splitting the dataclass across two ```python fences. The
+# three tests below are the fixed rule, the blind-spot control, and the proof that the
+# split is no longer needed.
+# --------------------------------------------------------------------------------------
+
+
+TYPE_HYPOTHESIS_WITH_STATE = """\
+```python
+class HypothesisState(StrEnum):
+    UNKNOWN = "unknown"
+    CONFLICTING = "conflicting"
+
+@dataclass(frozen=True)
+class TypeHypothesis:                   # = interpretation candidate; never a set
+    type_surface: str
+    normalized_surface: str
+    type_ref: str
+    scheme: SemanticRef
+    hypothesis_state: HypothesisState = HypothesisState.UNKNOWN
+    confidence: float = 0.0
+    evidence_refs: tuple[str, ...] = ()
+    mapping_candidates: tuple[TypeMappingCandidate, ...] = ()
+```
+"""
+
+
+def test_hypothesis_state_field_is_legal_and_does_not_fail_the_gate(tmp_path: Path) -> None:
+    """FP-1: the required `hypothesis_state: HypothesisState` scalar is not nesting."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f", **{"data-model.md": GOOD_DATA_MODEL + "\n" + TYPE_HYPOTHESIS_WITH_STATE}
+    )
+    fails = fails_for(spec_dir, ["RI-10-FORBIDDEN"])
+    assert [f.code for f in fails] == [], [(f.code, f.message) for f in fails]
+    # the exemption is not "the file happens to be quiet": the field is present and parsed
+    assert "hypothesis_state: HypothesisState" in TYPE_HYPOTHESIS_WITH_STATE
+    assert not rc.field_nests_hypotheses("hypothesis_state", "HypothesisState")
+
+
+@pytest.mark.parametrize(
+    ("field", "expected"),
+    [
+        # (a) a collection whose element type is a *Hypothesis - the violation itself
+        ("hypotheses: tuple[TypeHypothesis, ...]", True),
+        ("alternatives: Sequence[DirectionHypothesis]", True),
+        ("peers: frozenset[PredicateHypothesis]", True),
+        ("self_ref: TypeHypothesis | None", False),
+        # (b) any collection under a field name that says "hypotheses"
+        ("hypotheses: tuple[str, ...]", True),
+        ("nested_hypotheses: list[HypothesisRef]", True),
+        ("hypothesis_set: HypothesisSet", True),
+        # (c) legal scalars and legal non-hypothesis collections
+        ("hypothesis_state: HypothesisState", False),
+        ("hypothesis_state: HypothesisStates = HypothesisStates.UNKNOWN", False),
+        ("hypothesis_kind: HypothesisKind", False),
+        ("type_ref: str", False),
+        ("evidence_refs: tuple[str, ...]", False),
+        ("mapping_candidates: tuple[TypeMappingCandidate, ...]", False),
+        ("relation_ref: RelationRef | None", False),
+        ("predicate_signature: PredicateSignature", False),
+        # a container that is emphatically not of hypotheses
+        ("evidence_refs: tuple[str, ...] | None", False),
+    ],
+)
+def test_field_nests_hypotheses_is_decided_on_type_shape(field: str, expected: bool) -> None:
+    """The whole FP-1 fix, as one truth table on the predicate the check now uses."""
+    name, _, annotation = field.partition(":")
+    assert rc.field_nests_hypotheses(name.strip(), annotation.strip()) is expected, field
+
+
+def test_a_real_container_of_hypotheses_still_fails_the_gate(tmp_path: Path) -> None:
+    """The blind-spot control for FP-1: four genuine containers, four FAILs.
+
+    If the fix had degenerated into "never fire", this test is what would catch it.
+    """
+    containers = (
+        "    hypotheses: tuple[TypeHypothesis, ...]",
+        "    alternatives: Sequence[DirectionHypothesis]",
+        "    peers: frozenset[PredicateHypothesis]",
+        "    hypothesis_set: HypothesisSet",
+    )
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "data-model.md": GOOD_DATA_MODEL
+            + "\n## 11. Nesting shapes\n\n```python\n@dataclass(frozen=True)\n"
+            "class TypeHypothesis:\n"
+            + "\n".join(containers)
+            + "\n```\n"
+        },
+    )
+    fails = fails_for(spec_dir, ["RI-10-FORBIDDEN"])
+    nested = [f for f in fails if f.code == "nested-hypothesis"]
+    assert [f.data["field"] for f in nested] == [
+        "hypotheses", "alternatives", "peers", "hypothesis_set"
+    ], [(f.data, f.message) for f in nested]
+    assert all(f.data["container"] == "TypeHypothesis" for f in nested)
+    assert all(f.severity == rc.FAIL for f in nested)
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-10-FORBIDDEN"]) == 1
+
+
+def test_a_container_of_hypotheses_on_a_non_hypothesis_class_is_not_nesting(
+    tmp_path: Path,
+) -> None:
+    """`TypedMention.type_hypotheses: tuple[TypeHypothesis, ...]` is aggregation, not nesting.
+
+    The real data-model carries exactly this shape (`extractors/types.py::TypedMention`).
+    Only a *hypothesis* holding a set of hypotheses is a new epistemic level; a mention
+    holding many is the ordinary shape of the design.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        **{
+            "data-model.md": GOOD_DATA_MODEL
+            + "\n```python\n@dataclass(frozen=True)\nclass TypedMention:\n"
+            "    mention_ref: str\n"
+            "    type_hypotheses: tuple[TypeHypothesis, ...] = ()\n\n"
+            "@dataclass(frozen=True)\nclass ResolutionMention:\n"
+            "    type_hypotheses: tuple[TypeHypothesis, ...] = ()\n```\n"
+        },
+    )
+    assert fails_for(spec_dir, ["RI-10-FORBIDDEN"]) == []
+
+
+def test_real_data_model_needs_no_two_fence_split_to_pass(tmp_path: Path) -> None:
+    """FP-1, on the real document: the split dataclass must be legal again.
+
+    `data-model.md` currently shows `TypeHypothesis` in two ```python fences. The split
+    exists only because the old rule matched the field name `hypothesis_state`. This test
+    reconstructs the single-fence form, asserts it is the same class, and asserts the
+    checker no longer objects - without editing the shipped artefact.
+    """
+    original = (SPEC_DIR / "data-model.md").read_text(encoding="utf-8")
+    merged, merges = merge_split_class_fences(original)
+    assert merges >= 1, "no split dataclass fence found in data-model.md"
+    assert merged.count("```") == original.count("```") - 2 * merges
+
+    body = fence_containing(merged, "class TypeHypothesis:")
+    # the same class, in one fence, with the brief §6 field inside it
+    assert "hypothesis_state: HypothesisState" in body
+    assert "type_surface: str" in body
+    assert "mapping_candidates: tuple[TypeMappingCandidate, ...]" in body
+
+    # the shape the old rule matched, spelled out, so this test cannot pass vacuously
+    pre_fix_would_fire = re.search(
+        r"^\s*(\w*hypothes\w*)\s*:", body, re.IGNORECASE | re.MULTILINE
+    )
+    assert pre_fix_would_fire is not None
+    assert pre_fix_would_fire.group(1) == "hypothesis_state"
+
+    spec_dir = clone_real_feature(tmp_path / "merged-fences", **{"data-model.md": merged})
+    fails = fails_for(spec_dir, ["RI-10-FORBIDDEN"])
+    assert [f.code for f in fails if f.code == "nested-hypothesis"] == [], [
+        (f.code, f.message) for f in fails
+    ]
 
 
 def test_inverse_citation_is_warn_and_does_not_fail_the_gate(tmp_path: Path) -> None:
@@ -895,3 +1465,461 @@ def test_stdout_survives_a_legacy_console_codepage(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(rc.sys, "stderr", _Stream())
     rc._force_utf8_stdout()
     assert calls == [("utf-8", "replace"), ("utf-8", "replace")]
+
+
+# --------------------------------------------------------------------------------------
+# 7. the governance checks: tombstones, FR namespace, epistemic axes, count precision, ghosts
+# --------------------------------------------------------------------------------------
+
+NEW_CHECKS: list[str] = [
+    "TOMBSTONED-FR-REF",
+    "FR-NAMESPACE-COLLISION",
+    "EPISTEMIC-AXIS-CONFLATION",
+    "COUNT-PRECISION",
+    "GHOST-SUFFIX",
+]
+
+
+def build_repair_dir(root: Path, **docs: str) -> Path:
+    """Add `repair/<name>.md` documents to a synthetic feature directory."""
+    for name, text in docs.items():
+        write(root / "repair" / f"{name}.md", text)
+    return root
+
+
+def blocking(spec_dir: Path, check_id: str) -> list[rc.Finding]:
+    """FAIL and WARN findings of one check: the ones that must be zero on clean input."""
+    return [f for f in findings_for(spec_dir, [check_id]) if f.severity in (rc.FAIL, rc.WARN)]
+
+
+# --- TOMBSTONED-FR-REF ---------------------------------------------------------------------
+
+
+def test_tombstone_set_is_the_arbitration_records() -> None:
+    assert rc.TOMBSTONED_FRS == {
+        "FR-034a": "INV-002",
+        "FR-058": "INV-004",
+        "FR-070": "design note",
+        "FR-079": "FR-078",
+        "FR-080": "FR-072",
+    }
+
+
+def test_tombstoned_fr_citation_fails_and_names_the_replacement(tmp_path: Path) -> None:
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] Resolve every `mention_ref` in the index. (FR-003, FR-058, §2)",
+        ),
+    )
+    fails = fails_for(spec_dir, ["TOMBSTONED-FR-REF"])
+    assert [f.code for f in fails] == ["tombstoned-fr-cited-normative"]
+    assert fails[0].locations == ["tasks.md:5"]
+    assert fails[0].data["fr"] == "FR-058"
+    assert fails[0].data["replacement"] == "INV-004"
+    assert "INV-004" in fails[0].message
+
+
+def test_tombstoned_fr_still_defined_normatively_fails(tmp_path: Path) -> None:
+    """A tombstone with a live `- **FR-nnn**:` definition is the worst form of the defect."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace(
+            "## Success Criteria",
+            "- **FR-079**: Four named mutations MUST exist. (§2)\n\n## Success Criteria",
+        ),
+    )
+    fails = fails_for(spec_dir, ["TOMBSTONED-FR-REF"])
+    assert [f.code for f in fails] == ["tombstoned-fr-defined-normative"]
+    assert fails[0].data["is_definition"] is True
+    assert fails[0].data["replacement"] == "FR-078"
+
+
+def test_tombstoned_fr_cited_inside_a_deprecation_note_is_history_not_a_violation(
+    tmp_path: Path,
+) -> None:
+    """ARBITRATION §2: a tombstone exists for historical traceability only."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        plan="FR-058 is **absorbed into** `INV-004` and tombstoned; it is history.\n",
+    )
+    found = findings_for(spec_dir, ["TOMBSTONED-FR-REF"])
+    assert blocking(spec_dir, "TOMBSTONED-FR-REF") == []
+    summary = next(f for f in found if f.code == "tombstone-summary")
+    assert summary.data["exempted"] == 1
+    assert summary.data["live_references"] == 0
+
+
+def test_clean_feature_dir_has_no_tombstoned_reference(tmp_path: Path) -> None:
+    assert blocking(build_feature_dir(tmp_path / "f"), "TOMBSTONED-FR-REF") == []
+
+
+# --- FR-NAMESPACE-COLLISION ------------------------------------------------------------------
+
+
+_A2_STYLE = """\
+# A2 - identity
+
+**FR-101 - the `PredicateSignature` field set.**
+
+`PredicateSignature` MUST carry exactly `language` and `predicate_lemma`, and no other field.
+"""
+
+_A6_STYLE = """\
+# A6 - triage
+
+**FR-101 (NEW) - the §8 entity extractor expansion**
+
+> The entity extraction layer MUST provide producers/readers for all seven families of §8.
+"""
+
+
+def test_fr_defined_twice_in_two_repair_documents_fails(tmp_path: Path) -> None:
+    """The real defect: A2 and A6 each invented FR-101 with a different requirement."""
+    spec_dir = build_repair_dir(build_feature_dir(tmp_path / "f"),
+                               **{"A2-identity": _A2_STYLE, "A6-triage": _A6_STYLE})
+    fails = fails_for(spec_dir, ["FR-NAMESPACE-COLLISION"])
+    assert [f.code for f in fails] == ["fr-namespace-collision"]
+    assert fails[0].data["fr"] == "FR-101"
+    assert fails[0].data["shape"] == "repair-vs-repair"
+    assert fails[0].data["kinds"] == ["new-requirement", "redefinition"]
+    assert fails[0].locations == ["repair/A2-identity.md:3", "repair/A6-triage.md:3"]
+    # both texts are quoted, so a reader can adjudicate without opening either file
+    texts = {s["artefact"]: s["text"] for s in fails[0].data["sites"]}
+    assert "PredicateSignature" in texts["repair/A2-identity.md"]
+    assert "entity extraction layer" in texts["repair/A6-triage.md"]
+
+
+def test_repair_document_redefining_a_spec_fr_fails(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(
+        build_feature_dir(
+            tmp_path / "f",
+            spec=GOOD_SPEC.replace(
+                "## Success Criteria",
+                "- **FR-004**: A producer MUST report `producer_version`. (§2)\n\n"
+                "## Success Criteria",
+            ),
+        ),
+        **{"A6-triage": "**FR-004 (REWRITE)**\n\nA producer MUST report nothing at all.\n"},
+    )
+    fails = fails_for(spec_dir, ["FR-NAMESPACE-COLLISION"])
+    assert [f.data["fr"] for f in fails] == ["FR-004"]
+    assert fails[0].data["shape"] == "spec-vs-repair"
+    assert fails[0].data["kinds"] == ["canonical-definition", "rewrite-proposal"]
+    assert fails[0].locations == ["spec.md:20", "repair/A6-triage.md:1"]
+
+
+def test_identical_redefinition_is_info_not_a_collision(tmp_path: Path) -> None:
+    """A quotation that changes nothing is a restatement, not a second owner."""
+    text = ("# report\n\n**FR-101 - the field set.**\n\n`PredicateSignature` MUST carry exactly "
+            "`language`.\n")
+    spec_dir = build_repair_dir(build_feature_dir(tmp_path / "f"),
+                               **{"A2-identity": text, "A6-triage": text})
+    assert blocking(spec_dir, "FR-NAMESPACE-COLLISION") == []
+    found = findings_for(spec_dir, ["FR-NAMESPACE-COLLISION"])
+    assert sorted(f.code for f in found if f.severity == rc.INFO) == [
+        "fr-namespace-summary", "fr-redefined-identically"]
+
+
+def test_a_quoted_old_fr_in_a_fence_is_not_a_second_owner(tmp_path: Path) -> None:
+    """`repair/A7-*.md` quotes old requirement text verbatim inside a fence: a citation."""
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A7-migration": (
+            "# migration\n\n**FR-003, old, verbatim:**\n\n```markdown\n"
+            "- **FR-003**: `PredicateSignature` MUST carry at least `predicate_lemma`.\n```\n"
+        )},
+    )
+    assert blocking(spec_dir, "FR-NAMESPACE-COLLISION") == []
+
+
+def test_a_bold_fr_range_is_not_a_definition(tmp_path: Path) -> None:
+    """`FR-001–FR-100 are NOT renumbered` is a range claim, not a second FR-001."""
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"ARBITRATION": "# arbitration\n\n**FR-001–FR-100 are NOT renumbered.**\n"},
+    )
+    assert blocking(spec_dir, "FR-NAMESPACE-COLLISION") == []
+
+
+def test_clean_feature_dir_has_no_fr_namespace_collision(tmp_path: Path) -> None:
+    assert blocking(build_feature_dir(tmp_path / "f"), "FR-NAMESPACE-COLLISION") == []
+
+
+# --- EPISTEMIC-AXIS-CONFLATION ---------------------------------------------------------------
+
+
+def test_structural_conflict_written_into_contradicted_fails(tmp_path: Path) -> None:
+    """The exact shape `repair/ARBITRATION.md` §3 forbids: arity/direction/polarity/roles."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] A conflict over arity, direction, polarity or roles MUST yield "
+            "`CandidateStatus.CONTRADICTED` with both readings preserved. (FR-003, §2)",
+        ),
+    )
+    fails = fails_for(spec_dir, ["EPISTEMIC-AXIS-CONFLATION"])
+    assert [f.code for f in fails] == ["structural-conflict-as-denied"]
+    assert fails[0].locations == ["tasks.md:5"]
+    assert set(fails[0].data["structural_terms"]) >= {"arity", "direction", "polarity"}
+    assert "assembly_state = CONFLICTING" in fails[0].message
+
+
+def test_prohibiting_the_conflation_is_not_a_finding(tmp_path: Path) -> None:
+    """The arbitration record states the rule; a checker that flags the rule is noise."""
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"ARBITRATION": (
+            "# arbitration\n\n## 3 - CONFLICTING vs CONTRADICTED\n\n"
+            "**A6 is forbidden from turning structural disagreement into `CONTRADICTED`.**\n\n"
+            "A structural conflict that is not a denial yields `assembly_state = CONFLICTING`, "
+            "never `candidate_status = CONTRADICTED`.\n"
+        )},
+    )
+    found = findings_for(spec_dir, ["EPISTEMIC-AXIS-CONFLATION"])
+    assert blocking(spec_dir, "EPISTEMIC-AXIS-CONFLATION") == []
+    summary = next(f for f in found if f.code == "epistemic-summary")
+    assert summary.data["conflations"] == 0
+    assert summary.data["prohibition_restatements"] == 2
+
+
+def test_a_semantic_conflict_alone_is_not_a_finding(tmp_path: Path) -> None:
+    """`CONFLICTING` on the hypothesis is the correct home for a semantic disagreement."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace(
+            "## Success Criteria",
+            "- **FR-005**: Two regimes mapping one signature incompatibly MUST carry "
+            "`resolution_state=CONFLICTING`. (§2)\n\n## Success Criteria",
+        ),
+    )
+    assert blocking(spec_dir, "EPISTEMIC-AXIS-CONFLATION") == []
+
+
+def test_a_denial_without_a_structural_term_is_not_a_finding(tmp_path: Path) -> None:
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace(
+            "## Success Criteria",
+            "- **FR-006**: A positive reading versus an explicit denial MUST yield "
+            "`CandidateStatus.CONTRADICTED`. (§2)\n\n## Success Criteria",
+        ),
+    )
+    assert blocking(spec_dir, "EPISTEMIC-AXIS-CONFLATION") == []
+
+
+def test_clean_feature_dir_has_no_epistemic_conflation(tmp_path: Path) -> None:
+    assert blocking(build_feature_dir(tmp_path / "f"), "EPISTEMIC-AXIS-CONFLATION") == []
+
+
+# --- COUNT-PRECISION --------------------------------------------------------------------------
+
+
+def test_count_precision_flags_32_entity_types(tmp_path: Path) -> None:
+    spec_dir = build_feature_dir(tmp_path / "f", plan="FR-001 MUST cover 32 entity types. (§1)\n")
+    warns = [f for f in findings_for(spec_dir, ["COUNT-PRECISION"]) if f.severity == rc.WARN]
+    assert [f.code for f in warns] == ["count-32-as-entity-types"]
+    assert warns[0].locations == ["plan.md:1"]
+    assert warns[0].data["phrase"] == "32 entity types"
+    assert warns[0].severity == rc.WARN
+
+
+def test_count_precision_flags_seven_classes_in_a_section_8_context(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A6-triage": "> producers/readers for all seven classes of §8:\n"},
+    )
+    warns = [f for f in findings_for(spec_dir, ["COUNT-PRECISION"]) if f.severity == rc.WARN]
+    assert [f.code for f in warns] == ["count-seven-classes"]
+    assert warns[0].data["phrase"] == "all seven classes"
+    assert warns[0].locations == ["repair/A6-triage.md:1"]
+
+
+def test_count_precision_flags_seven_classes_in_a_test_name(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A6-triage": ("| T114 | entity extractor expansion | "
+                         "`test_entity_extractor_covers_all_seven_classes` |\n")},
+    )
+    warns = [f for f in findings_for(spec_dir, ["COUNT-PRECISION"]) if f.severity == rc.WARN]
+    assert [f.code for f in warns] == ["count-seven-classes"]
+
+
+def test_count_precision_accepts_the_four_authority_numbers(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A5-type": ("# types\n\n31 foundational entity types, 13 value types, seven extraction "
+                       "families of §8, ~4 new instrument modules.\n")},
+    )
+    found = findings_for(spec_dir, ["COUNT-PRECISION"])
+    assert blocking(spec_dir, "COUNT-PRECISION") == []
+    summary = next(f for f in found if f.code == "count-precision-summary")
+    assert summary.data["conflations"] == 0
+    assert summary.data["authority_numbers"] == rc.AUTHORITY_NUMBERS
+
+
+def test_count_precision_treats_a_correction_as_info_not_warn(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"ARBITRATION": ('# arbitration\n\n11. "32 types" corrected to **31**; the "seven '
+                           'classes" of §8 renamed to "seven extraction families".\n')},
+    )
+    found = findings_for(spec_dir, ["COUNT-PRECISION"])
+    assert blocking(spec_dir, "COUNT-PRECISION") == []
+    assert sorted(f.code for f in found if f.severity == rc.INFO) == [
+        "count-precision-summary", "count-refutation", "count-refutation"]
+    summary = next(f for f in found if f.code == "count-precision-summary")
+    assert summary.data["conflations"] == 0
+    assert summary.data["refutation_mentions"] == 2
+
+
+def test_clean_feature_dir_has_no_count_conflation(tmp_path: Path) -> None:
+    assert blocking(build_feature_dir(tmp_path / "f"), "COUNT-PRECISION") == []
+
+
+# --- GHOST-SUFFIX ----------------------------------------------------------------------------
+
+
+def test_ghost_suffix_flags_a_live_normative_citation(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(
+        build_feature_dir(
+            tmp_path / "f",
+            spec=GOOD_SPEC.replace(
+                "## Success Criteria",
+                "- **FR-034a**: Type and relation policy MUST be the one stated. (§1)\n\n"
+                "## Success Criteria",
+            ),
+        ),
+        **{"A8prep": "| 369 | Sub-numbered ids | `FR-034a` and `FR-039a` |\n"},
+    )
+    warns = [f for f in findings_for(spec_dir, ["GHOST-SUFFIX"]) if f.severity == rc.WARN]
+    assert [f.code for f in warns] == ["suffixed-fr-citation", "suffixed-fr-citation"]
+    assert {f.data["fr"] for f in warns} == {"FR-034a", "FR-039a"}
+    assert warns[0].data["by_file"] == {"repair/A8prep.md": 1}
+    assert warns[0].data["citation_count"] == 1
+
+
+def test_ghost_suffix_on_a_deprecation_marked_line_is_history(tmp_path: Path) -> None:
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        plan="FR-034a is **absorbed into** `INV-002` and tombstoned.\n",
+    )
+    found = findings_for(spec_dir, ["GHOST-SUFFIX"])
+    assert blocking(spec_dir, "GHOST-SUFFIX") == []
+    assert next(f for f in found if f.code == "ghost-suffix-summary").data["citations"] == 0
+
+
+def test_unsuffixed_ids_are_not_ghosts(tmp_path: Path) -> None:
+    spec_dir = build_feature_dir(tmp_path / "f", plan="FR-001 and FR-002 are unaffected. (§1)\n")
+    assert blocking(spec_dir, "GHOST-SUFFIX") == []
+
+
+def test_clean_feature_dir_has_no_ghost_suffix(tmp_path: Path) -> None:
+    assert blocking(build_feature_dir(tmp_path / "f"), "GHOST-SUFFIX") == []
+
+
+# --- the five checks together ------------------------------------------------------------------
+
+
+def test_every_new_check_is_silent_on_a_clean_feature_dir_with_repair_docs(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A2-identity": _A2_STYLE.replace("FR-101", "FR-004").replace(
+            "`PredicateSignature`", "`logical_candidate_id`"),
+           "ARBITRATION": "# arbitration\n\nNothing is tombstoned; 31 entity types stand.\n"},
+    )
+    for cid in NEW_CHECKS:
+        assert blocking(spec_dir, cid) == [], (cid, blocking(spec_dir, cid))
+
+
+def test_every_new_check_id_appears_in_the_summary_of_a_clean_run(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(build_feature_dir(tmp_path / "f"), **{"A6-triage": _A6_STYLE})
+    ctx = rc.build_context(spec_dir)
+    found, ran = rc.run_checks(ctx)
+    rows = rc.summarize(found, ran)
+    assert {r["check_id"] for r in rows} == set(rc.CHECK_BY_ID)
+    for cid in NEW_CHECKS:
+        row = next(r for r in rows if r["check_id"] == cid)
+        assert row["default_severity"] in rc.SEVERITIES
+        assert row["fail"] + row["warn"] + row["info"] == row["total"]
+
+
+def test_malformed_repair_documents_are_findings_not_exceptions(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(
+        build_feature_dir(
+            tmp_path / "f",
+            **{
+                "spec.md": "# broken\n\n- **FR-058** no colon\n| a | b\n|---\n| 1 | 2 | 3 |\n",
+                "tasks.md": "- [ ] T001 x (FR-034a)\n- [ ] T1 y\n",
+                "checklists/requirements.md": "|||||\n",
+            },
+        ),
+        **{
+            "A2-broken": ("# broken\n\n| a | b |\n|---\n"
+                          "**FR-101\n**FR-101 (NEW)\n> \n```\nunclosed fence\n"),
+            "A6-empty": "",
+        },
+    )
+    found = findings_for(spec_dir)
+    assert not [f for f in found if f.code == "check-crashed"]
+    assert "TOMBSTONED-FR-REF" in {f.check_id for f in found}
+    assert rc.main(["--spec-dir", str(spec_dir)]) == 1
+
+
+def test_new_checks_survive_a_non_utf8_repair_document(tmp_path: Path) -> None:
+    spec_dir = build_repair_dir(build_feature_dir(tmp_path / "f"), **{"placeholder": "x\n"})
+    (spec_dir / "repair" / "A2-latin.md").write_bytes(b"# latin-1: \xe9\xe8\xea\nFR-101\n")
+    found = findings_for(spec_dir, NEW_CHECKS)
+    assert not [f for f in found if f.code == "check-crashed"]
+
+
+# --- real-artefact tripwires for the new checks ------------------------------------------------
+
+
+def test_tripwire_tombstone_gate_is_red_today() -> None:
+    fails = fails_for(SPEC_DIR, ["TOMBSTONED-FR-REF"])
+    if not fails:
+        pytest.skip("the tombstone set has no normative reference left")
+    cited = {(f.data["fr"], f.locations[0]) for f in fails}
+    assert ("FR-058", "tasks.md:143") in cited
+    assert ("FR-034a", "spec.md:514") in cited
+    assert next(f for f in fails if f.data["fr"] == "FR-079").data["replacement"] == "FR-078"
+
+
+def test_tripwire_fr_101_and_fr_102_are_defined_twice() -> None:
+    fails = fails_for(SPEC_DIR, ["FR-NAMESPACE-COLLISION"])
+    if not fails:
+        pytest.skip("the FR namespace has no collision left")
+    same_id = {f.data["fr"]: f for f in fails if f.data["shape"] == "repair-vs-repair"}
+    assert set(same_id) == {"FR-101", "FR-102"}, sorted(same_id)
+    for fr, f in same_id.items():
+        assert {loc.rpartition(":")[0] for loc in f.locations} == {
+            "repair/A2-identity-subsystem.md", "repair/A6-fr-triage.md"}
+        assert f.data["fr"] == fr
+
+
+def test_tripwire_a6_routes_structural_conflict_into_contradicted() -> None:
+    fails = fails_for(SPEC_DIR, ["EPISTEMIC-AXIS-CONFLATION"])
+    if not fails:
+        pytest.skip("no epistemic-axis conflation remains")
+    locs = {loc for f in fails for loc in f.locations}
+    assert {"repair/A6-fr-triage.md:187", "spec.md:737", "tasks.md:128"} <= locs
+
+
+def test_tripwire_d7_miscount_and_the_seven_classes_phrase() -> None:
+    warns = [f for f in findings_for(SPEC_DIR, ["COUNT-PRECISION"]) if f.severity == rc.WARN]
+    if not warns:
+        pytest.skip("the four authority numbers are no longer conflated")
+    phrases = {f.data["phrase"] for f in warns}
+    assert "32 type classes" in phrases
+    assert "all seven classes" in phrases
+
+
+def test_tripwire_ghost_suffixes_are_still_cited() -> None:
+    warns = [f for f in findings_for(SPEC_DIR, ["GHOST-SUFFIX"]) if f.severity == rc.WARN]
+    if not warns:
+        pytest.skip("every letter-suffixed FR has been folded")
+    assert {f.data["fr"] for f in warns} == {"FR-034a", "FR-039a"}
+    assert all(f.locations for f in warns)

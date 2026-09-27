@@ -36,7 +36,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-TOOL_VERSION = "1.0.0"
+TOOL_VERSION = "1.2.0"
 
 # --------------------------------------------------------------------------------------
 # Severity
@@ -225,12 +225,19 @@ CHECKS: tuple[CheckSpec, ...] = (
     ),
     CheckSpec(
         "RI-08-SEC-CITE",
-        "Every cited section exists as a heading in input.md",
+        "Every cited section exists as a heading in input.md or in the citing artefact",
         FAIL,
-        "Every `§N` cited in spec.md/plan.md/tasks.md/research.md/data-model.md/"
-        "checklists/requirements.md must resolve to a numbered heading in input.md. Ranges "
-        "(`§94-§101`) are checked at both endpoints. A `§N-k` phase qualifier is checked at "
-        "its base section only.",
+        "A `§N` citation is resolved against two namespaces, because the feature artefacts "
+        "number themselves as well as citing the brief. `§0`…`§114` with an integer label is "
+        "input.md's namespace and must resolve to a numbered heading there. A token that "
+        "instead names a heading *inside the artefact it appears in* (`§1.5` against `### 1.5` "
+        "in the same file) is that document's own cross-reference and is not a claim about "
+        "input.md, so it is not a phantom. A token that resolves in neither namespace is "
+        "FAIL - including a fabricated sub-section label such as `§1B` (input.md's §1 has "
+        "unnumbered subsections A and B, so `§1B` is not a section) and an integer that exists "
+        "nowhere. When an integer resolves only against the citing artefact, the ambiguity is "
+        "reported INFO rather than hidden. Ranges (`§94-§101`) are checked at both endpoints; "
+        "a `§N-k` phase qualifier at its base section only.",
     ),
     CheckSpec(
         "RI-08b-SEC-UNCITED",
@@ -255,8 +262,14 @@ CHECKS: tuple[CheckSpec, ...] = (
         "Known-forbidden claims are absent",
         FAIL,
         "Three shapes that a previous repair pass is forbidden to reintroduce: (a) a synonym "
-        "/equivalence table inside the identity path, (b) hypotheses nested inside a "
-        "hypothesis, (c) a vocabulary list with no producer obligation. All three are FAIL.",
+        "/equivalence table inside the identity path, (b) a hypothesis that contains a "
+        "*collection of hypotheses*, (c) a vocabulary list with no producer obligation. All "
+        "three are FAIL. (b) is decided on the field's *type shape*, not its name: a scalar "
+        "`hypothesis_state: HypothesisState` is brief §6's required field and is legal, while "
+        "`hypotheses: tuple[TypeHypothesis, ...]` - any collection-typed field whose element is "
+        "a `*Hypothesis`, or a `hypotheses`-named field typed as any collection - is a new "
+        "epistemic level. A field typed as a plain hypothesis and *not* a collection is out of "
+        "scope for this rule by design.",
     ),
     CheckSpec(
         "RI-11-CONST",
@@ -281,6 +294,68 @@ CHECKS: tuple[CheckSpec, ...] = (
         "A line claiming a file or directory is `NOT yet created` / `NOT yet generated` while "
         "that path exists is FAIL. The artefact set lies about itself and a reader sizing the "
         "remaining work from it is wrong.",
+    ),
+    CheckSpec(
+        "TOMBSTONED-FR-REF",
+        "No artefact cites a tombstoned FR as a live normative target",
+        FAIL,
+        "`repair/ARBITRATION.md` §2 tombstoned `FR-034a`, `FR-058`, `FR-070`, `FR-079` and "
+        "`FR-080`: a tombstone exists for historical traceability only. Every citation of a "
+        "tombstoned id in spec.md / plan.md / tasks.md / data-model.md / "
+        "checklists/requirements.md / research.md is FAIL - as a citation and as a normative "
+        "definition - unless the citing line itself carries a deprecation marker (tombstone, "
+        "deprecated, absorbed into, merged into, see ADR, ...). Each violation names the "
+        "replacement target the arbitration record assigns.",
+    ),
+    CheckSpec(
+        "FR-NAMESPACE-COLLISION",
+        "No FR number is claimed by two owners",
+        FAIL,
+        "`spec.md` and every `repair/*.md` are scanned for FR *definition* sites. An id defined "
+        "at two sites with different requirement text is a namespace collision and is FAIL, "
+        "whether both sites are repair documents (the same id invented twice) or one is "
+        "`spec.md` and one is a repair document (an FR number claimed by a second owner). Both "
+        "texts and both file:line locations are quoted. A fenced code block is quoted material, "
+        "never a definition. Two sites whose text is byte-identical after normalisation are "
+        "reported INFO, not FAIL.",
+    ),
+    CheckSpec(
+        "EPISTEMIC-AXIS-CONFLATION",
+        "The three epistemic axes are not conflated",
+        FAIL,
+        "`repair/ARBITRATION.md` §3 fixes three distinct states: "
+        "`PredicateHypothesis.resolution_state = CONFLICTING` (semantic readings), "
+        "`RelationCandidate.assembly_state` (structural readings - arity, direction, polarity, "
+        "role slots), and `CandidateStatus.CONTRADICTED` (the assertion itself is denied). Any "
+        "prose unit in spec.md, tasks.md or a repair document that associates a structural "
+        "disagreement term with `CONTRADICTED` is FAIL, because it instructs writing a "
+        "structural disagreement into the denial state; the correct target is "
+        "`assembly_state = CONFLICTING`. A sentence that carries a prohibition marker "
+        "(forbidden, never, must not, rather than) is stating the rule, not breaking it.",
+    ),
+    CheckSpec(
+        "COUNT-PRECISION",
+        "The four authority numbers are never conflated",
+        WARN,
+        "Four numbers each count one thing and are not interchangeable: 31 foundational entity "
+        "types, 13 value types, 7 §8 extraction families, ~4 new instrument modules. WARN on "
+        "(a) `32` qualifying an atomic/entity/type/class/extractor/item noun, and (b) "
+        "`seven classes` / `all seven classes` / `seven_classes` in a §8 or entity-extractor "
+        "context - the correct phrase is `extraction families` or `§8 subsections`. A unit that "
+        "carries a refutation marker (corrected, miscount, misreading, renamed, `not 32`) is "
+        "stating the correction and is reported INFO, not WARN.",
+    ),
+    CheckSpec(
+        "GHOST-SUFFIX",
+        "No live normative citation to a letter-suffixed FR",
+        WARN,
+        "`FR-034a` and `FR-039a` are a transitional device: they force every id regex to accept "
+        "a lowercase suffix and leave the namespace speaking two styles at once. WARN on every "
+        "live citation of a `FR-nnn<letter>` id outside a fenced code block and outside a "
+        "deprecation-marked line, so the ids can be folded into their allocated slot rather than "
+        "left as ghosts. A fence is quotation, on the same rule "
+        "`FR-NAMESPACE-COLLISION` uses. WARN, not FAIL: each suffixed id is currently defined "
+        "exactly once, so nothing dangles yet.",
     ),
 )
 
@@ -308,6 +383,11 @@ OPTIONAL_ARTEFACTS: tuple[str, ...] = ("phase0-results.md",)
 AUTHORITY_ARTEFACTS: tuple[str, ...] = ("input.md",)
 
 CONSTITUTION_RELPATH = Path(".specify/memory/constitution.md")
+
+# `repair/*.md` is the *governance* corpus: the agent reports and the arbitration record.
+# It is deliberately NOT part of SCANNED_ARTEFACTS, so no RI-* check changes scope; the
+# checks that need it read it through `Context.repair` / `Context.governance`.
+REPAIR_DIR_RELPATH = "repair"
 
 
 @dataclass
@@ -358,6 +438,23 @@ def find_constitution(spec_dir: Path) -> Path | None:
     return None
 
 
+def read_repair_docs(spec_dir: Path) -> list[Artefact]:
+    """Every `repair/*.md`, sorted by name, as readable artefacts.
+
+    Missing directory or unreadable file is not an exception: an unreadable artefact simply
+    contributes no lines, and a missing `repair/` contributes nothing at all.
+    """
+    out: list[Artefact] = []
+    repair_dir = spec_dir / REPAIR_DIR_RELPATH
+    try:
+        paths = sorted(repair_dir.glob("*.md")) if repair_dir.is_dir() else []
+    except OSError:
+        return out
+    for p in paths:
+        out.append(read_artefact(f"{REPAIR_DIR_RELPATH}/{p.name}", p))
+    return out
+
+
 # --------------------------------------------------------------------------------------
 # Parsing
 # --------------------------------------------------------------------------------------
@@ -395,6 +492,12 @@ COUNT_CLAUSE_RE = re.compile(r"\b(\d[\d,]*)\s+(?P<noun>lines)\b")
 SECTIONS_CLAUSE_RE = re.compile(r"\b(\d[\d,]*)\s+(?P<noun>sections)\b")
 MUTATION_RANGE_RE = re.compile(
     r"§\s*(?P<lo>\d+)\s*[" + DASHES + r"]\s*§?\s*(?P<hi>\d+)"
+)
+# A `§A-§B` / `§A-B` *range* is a locator, not a count. Its endpoints are section numbers,
+# so "The six §94-§99 mutations" claims six, not ninety-nine. Any integer inside such a span
+# is a section label and must never be read as a claimed population.
+SECTION_RANGE_SPAN_RE = re.compile(
+    r"§{1,2}\s*\d+(?:\.\d+)?\s*[" + DASHES + r"]\s*§?\s*\d+(?:\.\d+)?"
 )
 FILE_REF_RE = re.compile(
     r"(?P<path>(?:[A-Za-z0-9_.\-]+[\\/])*[A-Za-z0-9_.\-]+\.(?:md|py|json|ya?ml|txt|toml))"
@@ -669,7 +772,7 @@ def collect_sections(art: Artefact) -> list[dict[str, Any]]:
             a = m.group("a")
             b = m.group("b")
             entry: dict[str, Any] = {"raw": m.group(0), "line": i, "endpoints": [a],
-                                     "kind": "single"}
+                                     "kind": "single", "offset": m.start()}
             if b is not None:
                 entry["raw_pair"] = (a, b)
                 if a.isdigit() and b.isdigit() and int(b) < int(a):
@@ -681,8 +784,20 @@ def collect_sections(art: Artefact) -> list[dict[str, Any]]:
     return out
 
 
-def parse_input_sections(art: Artefact) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
-    """Return (top_level_sections, subsection_hints) for input.md."""
+_HEADING_NUM_PREFIX_RE = re.compile(r"^§{1,2}\s*")
+
+
+def parse_numbered_headings(
+    art: Artefact,
+) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    """Return (numbered_headings, unnumbered_subsection_hints) for any markdown artefact.
+
+    One parser for both namespaces, because the only honest way to tell an input.md
+    `§7` from a `data-model.md` `§7` is to read the two files with the same rule.
+    `subsection_hints` records a heading like `### B. Relation interpretation` as the
+    *unnumbered* subsection `7B` of §7, so a citation of `§7B` can be reported against the
+    real name instead of being a bare "no such section".
+    """
     sections: dict[str, dict[str, Any]] = {}
     hints: dict[str, str] = {}
     current = "?"
@@ -699,7 +814,7 @@ def parse_input_sections(art: Artefact) -> tuple[dict[str, dict[str, Any]], dict
         if not m:
             continue
         rest = m.group("rest")
-        num = INPUT_SECTION_RE.match(rest)
+        num = INPUT_SECTION_RE.match(_HEADING_NUM_PREFIX_RE.sub("", rest))
         if num:
             key = num.group("num")
             sections.setdefault(key, {"line": i, "title": rest})
@@ -710,6 +825,11 @@ def parse_input_sections(art: Artefact) -> tuple[dict[str, dict[str, Any]], dict
         if sub and current != "?":
             hints.setdefault(f"{current}{sub.group(1)}", rest)
     return sections, hints
+
+
+def parse_input_sections(art: Artefact) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    """Return (top_level_sections, subsection_hints) for input.md."""
+    return parse_numbered_headings(art)
 
 
 # --------------------------------------------------------------------------------------
@@ -799,10 +919,12 @@ class Context:
     research_defs: set[str] = field(default_factory=set)
     sections: dict[str, dict[str, Any]] = field(default_factory=dict)
     subsection_hints: dict[str, str] = field(default_factory=dict)
+    own_sections: dict[str, set[str]] = field(default_factory=dict)
     principles: dict[str, str] = field(default_factory=dict)
     stories: list[int] = field(default_factory=list)
     refs: dict[str, dict[str, list[str]]] = field(default_factory=dict)
     section_cites: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    repair: list[Artefact] = field(default_factory=list)
 
     def by_name(self, name: str) -> Artefact | None:
         for art in [*self.scanned, *self.authority]:
@@ -815,6 +937,28 @@ class Context:
 
     def task_index(self) -> dict[str, TaskDef]:
         return {t.ident: t for t in self.tasks}
+
+    def readable(self, names: Iterable[str]) -> list[Artefact]:
+        """The named artefacts, when they exist and decoded. Never raises."""
+        out: list[Artefact] = []
+        for name in names:
+            art = self.by_name(name)
+            if art is not None and art.read_ok:
+                out.append(art)
+        return out
+
+    def governance(self) -> list[Artefact]:
+        """Scanned artefacts + the optional review reports + every `repair/*.md`.
+
+        The widest honest corpus: everything the feature says about itself, including
+        `phase0-results.md` even when the run did not ask to scan it, because a review report
+        that the spec artefacts contradict is still live text. Used only by the new governance
+        checks, never by an RI-* check, so no existing finding changes.
+        """
+        have = {art.name for art in self.scanned}
+        extra = [read_artefact(n, self.spec_dir / n) for n in OPTIONAL_ARTEFACTS
+                 if n not in have and (self.spec_dir / n).is_file()]
+        return [*self.scanned, *extra, *self.repair]
 
 
 def build_context(spec_dir: Path, extra_artefacts: Sequence[str] = (),
@@ -851,6 +995,14 @@ def build_context(spec_dir: Path, extra_artefacts: Sequence[str] = (),
     inp = ctx.by_name("input.md")
     if inp and inp.read_ok:
         ctx.sections, ctx.subsection_hints = parse_input_sections(inp)
+    # Every scanned artefact numbers itself too, so each one gets its own section
+    # namespace under the same parser. Without this, a document's own `§1.5` is
+    # indistinguishable from a citation of input.md's §1.5, which does not exist.
+    for art in ctx.scanned:
+        if not art.read_ok or art.name == "input.md":
+            continue
+        numbered, hints = parse_numbered_headings(art)
+        ctx.own_sections[art.name] = set(numbered) | set(hints)
     if constitution and constitution.read_ok:
         ctx.principles = {
             m.group("num"): m.group("title")
@@ -861,6 +1013,7 @@ def build_context(spec_dir: Path, extra_artefacts: Sequence[str] = (),
 
     ctx.refs = collect_references(ctx.scanned)
     ctx.section_cites = {art.name: collect_sections(art) for art in ctx.scanned}
+    ctx.repair = read_repair_docs(spec_dir)
     return ctx
 
 
@@ -1460,35 +1613,122 @@ def check_id_shape(ctx: Context) -> Iterable[Finding]:
 
 # --- RI-08 section citations ------------------------------------------------------------------
 
+# A clause break between a file reference and a `§N` reference means the two are unrelated:
+# inside a table cell or after a semicolon, the file named to the left is not the file the
+# section number belongs to.
+_CLAUSE_BREAK_RE = re.compile(r"[;|]|(?<=[a-z0-9`\"])\.(?:\s|$)")
+
+
+def _governing_file(ctx: Context, line: str, offset: int) -> str | None:
+    """The file a `§N` at `offset` on `line` is attributed to, if the line names one.
+
+    "`repair/A6-fr-triage.md` §2.5" attributes §2.5 to that document, not to input.md. The
+    nearest file reference to the left on the same line wins, and only if no clause break
+    separates it - otherwise a table row or a semicolon would misattribute the reference.
+    """
+    left = line[:offset]
+    best: tuple[int, str] | None = None
+    for m in FILE_REF_RE.finditer(left):
+        if _CLAUSE_BREAK_RE.search(left[m.end():]):
+            continue
+        resolved = _resolve_in_spec_dir(ctx, m.group("path"))
+        if resolved:
+            best = (m.end(), resolved)
+    return best[1] if best else None
+
+
+class _SectionIndex:
+    """Numbered headings of any file a reference names, read on demand and cached.
+
+    This does not widen what RI-08 scans: a file is read only when a citation attributes a
+    section to it by name, which is the reference's own declared target.
+    """
+
+    def __init__(self, ctx: Context) -> None:
+        self._ctx = ctx
+        self._cache: dict[str, set[str] | None] = {}
+
+    def headings(self, relpath: str) -> set[str] | None:
+        if relpath in self._cache:
+            return self._cache[relpath]
+        art = read_artefact(relpath, self._ctx.spec_dir / relpath)
+        result: set[str] | None = None
+        if art.read_ok:
+            numbered, hints = parse_numbered_headings(art)
+            result = set(numbered) | set(hints)
+        self._cache[relpath] = result
+        return result
+
 
 def check_section_citations(ctx: Context) -> Iterable[Finding]:
+    """Resolve every `§N` against input.md, the citing artefact, and any file it names.
+
+    Three namespaces, one citation mark. input.md's is `§0`…`§114` plus its one dotted
+    sub-heading; every feature artefact numbers its own sections the same way, so `§1.5`
+    inside data-model.md is that document's cross-reference to its own `### 1.5`, not a
+    claim about a brief section that does not exist; and a reference that names its target
+    ("`repair/A6-fr-triage.md` §2.5") is a claim about that file. A reference that resolves
+    in none of them is a phantom - which is still true of a fabricated sub-section label
+    like `§1B` (input.md's §1 carries unnumbered subsections A and B, so `§1B` is not a
+    section) and of an integer that exists in no file.
+    """
     if not ctx.sections:
         yield _f(ctx, "RI-08-SEC-CITE", "no-section-authority",
                  "input.md has no numbered headings; no § citation can be verified", [])
         return
     known = set(ctx.sections)
     seen: set[tuple[str, str, int]] = set()
+    intra_doc: set[tuple[str, str]] = set()
+    index = _SectionIndex(ctx)
     for art_name, cites in ctx.section_cites.items():
         if art_name == "input.md":
             continue
         art = ctx.by_name(art_name)
+        own = ctx.own_sections.get(art_name, set())
         for cite in cites:
+            line = art.lines[cite["line"] - 1]
             for ep in cite["endpoints"]:
                 key = (art_name, ep, cite["line"])
                 if key in seen:
                     continue
                 seen.add(key)
-                if ep not in known:
-                    hint = ""
-                    if ep in ctx.subsection_hints:
-                        hint = (f" (input.md has unnumbered subsection "
-                                f"'{ctx.subsection_hints[ep]}' under §{ep[:-1]}; the citation "
-                                f"should be §{ep[:-1]} or the subsection should be numbered)")
-                    yield _f(ctx, "RI-08-SEC-CITE", "section-phantom",
-                             f"{art_name}:{cite['line']} cites §{ep}, which is not a numbered "
-                             f"heading in input.md{hint}",
-                             [art.loc(cite["line"])], section=ep, kind=cite["kind"],
-                             raw=cite["raw"])
+                if ep in known:
+                    continue
+                if ep in own:
+                    # An *integer* is inside input.md's namespace, so an integer that only
+                    # the citing artefact defines is genuinely ambiguous. The power the
+                    # check gives up here is reported, not hidden.
+                    if ep.isdigit() and (art_name, ep) not in intra_doc:
+                        intra_doc.add((art_name, ep))
+                        yield _ok(
+                            ctx, "RI-08-SEC-CITE", "sec-cite-intra-doc-integer",
+                            f"{art_name} cites §{ep}, which is a numbered heading inside "
+                            f"{art_name} but not a section of input.md: read as "
+                            f"{art_name}'s own §{ep}, not as a phantom brief section",
+                            artefact=art_name, section=ep,
+                        )
+                    continue
+                named = _governing_file(ctx, line, cite["offset"])
+                if named:
+                    target = index.headings(named)
+                    if target is not None and ep in target:
+                        continue
+                hint = ""
+                if ep in ctx.subsection_hints:
+                    hint = (f" (input.md has unnumbered subsection "
+                            f"'{ctx.subsection_hints[ep]}' under §{ep[:-1]}; the citation "
+                            f"should be §{ep[:-1]} or the subsection should be numbered)")
+                else:
+                    others = [f"{art_name} has no heading §{ep}"]
+                    if named:
+                        others.append(f"{named} has no heading §{ep}")
+                    hint = f", and {' and '.join(others)}"
+                yield _f(ctx, "RI-08-SEC-CITE", "section-phantom",
+                         f"{art_name}:{cite['line']} cites §{ep}, which is not a numbered "
+                         f"heading in input.md{hint}",
+                         [art.loc(cite["line"])], section=ep, kind=cite["kind"],
+                         raw=cite["raw"])
+
 
 
 def check_uncited_sections(ctx: Context) -> Iterable[Finding]:
@@ -1748,14 +1988,33 @@ def check_count_claims(ctx: Context) -> Iterable[Finding]:
     )
 
     for art in ctx.scanned:
+        ranges = [(m.start(), m.end()) for m in SECTION_RANGE_SPAN_RE.finditer(art.text)]
         for m in COUNT_CLAUSE_RE.finditer(art.text):
-            yield from _check_line_count(ctx, cc, art, m.start(), m)
+            yield from _check_line_count(ctx, cc, art, m.start(), m, ranges)
         for m in SECTIONS_CLAUSE_RE.finditer(art.text):
-            yield from _check_section_count(ctx, cc, art, m.start(), m)
+            yield from _check_section_count(ctx, cc, art, m.start(), m, ranges)
         for m in _COUNT_NOUN_RE.finditer(art.text):
-            yield from _check_noun_count(ctx, cc, art, m.start(), m)
+            yield from _check_noun_count(ctx, cc, art, m.start(), m, ranges)
         for m in MUTATION_RANGE_RE.finditer(art.text):
             yield from _check_mutation_range(ctx, cc, art, m)
+
+
+def _in_section_range(ranges: Sequence[tuple[int, int]], m: re.Match[str]) -> bool:
+    """True when the matched *number* is one endpoint of a `§A-§B` section range."""
+    start, end = m.start(), m.end()
+    return any(start < r_end and r_start < end for r_start, r_end in ranges)
+
+
+def _range_endpoint_notice(ctx: Context, art: Artefact, m: re.Match[str],
+                           offset: int) -> Finding:
+    line_no, _ = _own_line(art, offset)
+    return _ok(
+        ctx, "RI-09-COUNT", "count-range-endpoint",
+        f"{art.loc(line_no)} does not claim a count: {m.group(0).strip()!r} reads its number "
+        f"off a § section range, and a range endpoint is a section label rather than a "
+        f"population. The range itself is still verified by the mutation-range rule.",
+        file=art.name, line=line_no, claim=m.group(0).strip(),
+    )
 
 
 def _own_line(art: Artefact, offset: int) -> tuple[int, str]:
@@ -1764,7 +2023,11 @@ def _own_line(art: Artefact, offset: int) -> tuple[int, str]:
 
 
 def _check_line_count(ctx: Context, cc: CountContext, art: Artefact, offset: int,
-                      m: re.Match[str]) -> Iterable[Finding]:
+                      m: re.Match[str],
+                      ranges: Sequence[tuple[int, int]] = ()) -> Iterable[Finding]:
+    if _in_section_range(ranges, m):
+        yield _range_endpoint_notice(ctx, art, m, offset)
+        return
     claimed = int(m.group(1).replace(",", ""))
     line_no, line = _own_line(art, offset)
     ref = _nearest_file_ref(ctx, art, line_no, offset)
@@ -1826,7 +2089,11 @@ def _section_in_line(line: str) -> str | None:
 
 
 def _check_section_count(ctx: Context, cc: CountContext, art: Artefact, offset: int,
-                         m: re.Match[str]) -> Iterable[Finding]:
+                         m: re.Match[str],
+                         ranges: Sequence[tuple[int, int]] = ()) -> Iterable[Finding]:
+    if _in_section_range(ranges, m):
+        yield _range_endpoint_notice(ctx, art, m, offset)
+        return
     claimed = int(m.group(1).replace(",", ""))
     line_no, _ = _own_line(art, offset)
     ref = _nearest_file_ref(ctx, art, line_no, offset)
@@ -1844,7 +2111,11 @@ def _check_section_count(ctx: Context, cc: CountContext, art: Artefact, offset: 
 
 
 def _check_noun_count(ctx: Context, cc: CountContext, art: Artefact, offset: int,
-                      m: re.Match[str]) -> Iterable[Finding]:
+                      m: re.Match[str],
+                      ranges: Sequence[tuple[int, int]] = ()) -> Iterable[Finding]:
+    if _in_section_range(ranges, m):
+        yield _range_endpoint_notice(ctx, art, m, offset)
+        return
     claimed = _as_int(m.group("num"))
     if claimed is None:
         return
@@ -2000,6 +2271,65 @@ def _forbidden_synonym_in_identity(ctx: Context, dm: Artefact) -> Iterable[Findi
                      [dm.loc(i)], section=section.strip(), line=line.strip()[:200])
 
 
+# `hypothesis_state` is brief §6's *required* field on `TypeHypothesis`
+# (input.md:465-492): a scalar verdict, not a nested hypothesis. Exempt by name, and
+# independently by type shape, so one layer of the exemption cannot be lost.
+HYPOTHESIS_STATE_FIELDS: frozenset[str] = frozenset({"hypothesis_state"})
+
+# `HypothesisState` / `HypothesisStatus` / ... are scalar enums. A type whose *name* is
+# one of these states a verdict, whatever container word appears in the annotation.
+_HYPOTHESIS_SCALAR_TYPE_RE = re.compile(
+    r"\b\w*Hypothesis(?:State|Status|Mode|Kind|Verdict|Phase)\b"
+)
+# A collection type in an annotation, including the `...Hypotheses` / `HypothesisSet`
+# spellings, which are containers by name.
+_COLLECTION_TYPE_RE = re.compile(
+    r"\b(?:tuple|list|set|frozenset|Sequence|MutableSequence|Iterable|Iterator"
+    r"|Collection|MutableSet|Mapping|dict|deque|Deque|array|Array|Vector|Generator"
+    r"|Hypotheses|HypothesisSet|HypothesisList|HypothesisCollection|HypothesisBundle"
+    r"|HypothesisGroup|HypothesisBatch)\b"
+)
+# Any type whose name says "hypothesis": the element type of a real container.
+_HYPOTHESIS_TYPE_RE = re.compile(r"\b\w*Hypothes\w*\b")
+_HYPOTHESIS_CONTAINER_NAME_RE = re.compile(r"hypothes", re.IGNORECASE)
+_ANY_CLASS_RE = re.compile(r"^[ \t]*class[ \t]+(?P<name>\w+)\s*[:(\[]")
+# `    name: Annotation = default   # comment`
+_DATACLASS_FIELD_RE = re.compile(r"^[ \t]{1,12}(?P<name>\w+)[ \t]*:[ \t]*(?P<type>[^#=\n]+)")
+
+
+def _annotation_of(type_text: str) -> str:
+    return type_text.split("#")[0].split("=")[0].strip()
+
+
+def field_nests_hypotheses(name: str, type_text: str) -> bool:
+    """Does this field make its enclosing hypothesis a *container of hypotheses*?
+
+    The violation is epistemic, so it is decided on the field's type shape and only then
+    on its name. Two ways to earn a FAIL:
+
+    * the annotation is a collection whose element type is a `*Hypothesis`
+      (`hypotheses: tuple[TypeHypothesis, ...]`, `alternatives: Sequence[DirectionHypothesis]`);
+    * the annotation is any collection and the *field name* says it holds hypotheses
+      (`hypotheses: tuple[str, ...]` - the element type may be a ref, the container is
+      still a set of hypotheses).
+
+    A scalar hypothesis-adjacent field is legal, so `hypothesis_state: HypothesisState`
+    (brief §6, required) and any `*HypothesisState`-typed field do not fire. A scalar
+    field typed as a plain `*Hypothesis` and not a collection is out of this rule's scope
+    by design; the rule text says so, so the gap is stated rather than silent.
+    """
+    annotation = _annotation_of(type_text)
+    if not annotation or name in HYPOTHESIS_STATE_FIELDS:
+        return False
+    if _HYPOTHESIS_SCALAR_TYPE_RE.search(annotation):
+        return False
+    if not _COLLECTION_TYPE_RE.search(annotation):
+        return False
+    if _HYPOTHESIS_TYPE_RE.search(annotation):
+        return True
+    return bool(_HYPOTHESIS_CONTAINER_NAME_RE.search(name))
+
+
 def _forbidden_nested_hypothesis(ctx: Context, dm: Artefact) -> Iterable[Finding]:
     in_code = False
     current = ""
@@ -2009,18 +2339,27 @@ def _forbidden_nested_hypothesis(ctx: Context, dm: Artefact) -> Iterable[Finding
                 current = ""
             in_code = not in_code
             continue
-        cls = re.match(r"\s*class\s+(\w*Hypothesis\w*)\s*[:(]", line)
+        cls = _ANY_CLASS_RE.match(line)
         if cls:
-            current = cls.group(1)
-        if not in_code or not current.endswith("Hypothesis"):
+            # *Any* `class` line re-anchors the container. A field that follows a
+            # non-hypothesis class in the same fence belongs to that class, not to the
+            # hypothesis class declared earlier in the fence.
+            name = cls.group("name")
+            current = name if name.endswith("Hypothesis") else ""
+        if not in_code or not current:
             continue
-        m = re.match(r"\s*(\w*hypothes\w*)\s*:", line, re.I)
-        if m:
-            yield _f(ctx, "RI-10-FORBIDDEN", "nested-hypothesis",
-                     f"data-model.md:{i} nests a hypothesis inside `{current}` "
-                     f"(field `{m.group(1)}`): a container of hypotheses is a new epistemic "
-                     f"level, not a hypothesis",
-                     [dm.loc(i)], container=current, field=m.group(1))
+        m = _DATACLASS_FIELD_RE.match(line)
+        if not m:
+            continue
+        name, type_text = m.group("name"), m.group("type")
+        if not field_nests_hypotheses(name, type_text):
+            continue
+        yield _f(ctx, "RI-10-FORBIDDEN", "nested-hypothesis",
+                 f"data-model.md:{i} makes `{current}` a container of hypotheses "
+                 f"(field `{name}: {type_text.strip()}`): a set of hypotheses is a new "
+                 f"epistemic level, not a hypothesis",
+                 [dm.loc(i)], container=current, field=name,
+                 annotation=type_text.strip())
 
 
 def _forbidden_vocabulary_without_producer(ctx: Context) -> Iterable[Finding]:
@@ -2210,6 +2549,550 @@ def check_stale_claims(ctx: Context) -> Iterable[Finding]:
 
 
 # ------------------------------------------------------------------------------------------
+# Governance checks: tombstones, FR namespace, epistemic axes, count precision, ghost suffixes
+# ------------------------------------------------------------------------------------------
+#
+# These five read the `repair/` governance corpus in addition to the spec artefacts. They are
+# additive: nothing here is reachable from an RI-* check, and no existing parsing path changed.
+
+# --- TOMBSTONED-FR-REF -----------------------------------------------------------------------
+
+# `repair/ARBITRATION.md` §2. Edit this mapping when the arbitration record moves a tombstone's
+# replacement target; the check reads nothing else to learn the set.
+TOMBSTONED_FRS: dict[str, str] = {
+    "FR-034a": "INV-002",
+    "FR-058": "INV-004",
+    "FR-070": "design note",
+    "FR-079": "FR-078",
+    "FR-080": "FR-072",
+}
+
+# A citation that carries one of these is *history*, which the rule allows. Kept small and
+# literal on purpose: a broad marker would silently un-break the check.
+DEPRECATION_MARKERS: tuple[str, ...] = (
+    "tombstone", "tombstoned", "tombstoning",
+    "deprecated", "deprecation",
+    "absorb", "merged into", "merge target", "merged away",
+    "see adr", "see the adr",
+    "superseded", "folded into", "fold into",
+    "no longer normative", "not normative",
+)
+DEPRECATION_RE = re.compile("|".join(re.escape(p) for p in DEPRECATION_MARKERS), re.IGNORECASE)
+
+
+def check_tombstoned_fr_refs(ctx: Context) -> Iterable[Finding]:
+    """Gate `TOMBSTONED_FR_MUST_HAVE_ZERO_NORMATIVE_REFERENCES` (ARBITRATION §2)."""
+    live = 0
+    exempted = 0
+    for fr in sorted(TOMBSTONED_FRS):
+        replacement = TOMBSTONED_FRS[fr]
+        token = re.compile(rf"\b{re.escape(fr)}\b")
+        for art in ctx.scanned:
+            for i, line in enumerate(art.lines, start=1):
+                if fr not in line:
+                    continue
+                if DEPRECATION_RE.search(line):
+                    exempted += len(token.findall(line))
+                    continue
+                is_definition = bool(
+                    DEF_RE.match(line) and DEF_RE.match(line).group("ident") == fr
+                )
+                live += 1
+                yield Finding(
+                    check_id="TOMBSTONED-FR-REF", severity=FAIL,
+                    code=("tombstoned-fr-defined-normative" if is_definition
+                          else "tombstoned-fr-cited-normative"),
+                    message=(
+                        f"{art.loc(i)} "
+                        + ("defines" if is_definition else "cites")
+                        + f" {fr}, which `repair/ARBITRATION.md` §2 tombstoned: a tombstone is "
+                        f"historical traceability only, and this line points at it as a live "
+                        f"normative target. Replacement target: {replacement}."
+                    ),
+                    locations=[art.loc(i)],
+                    data={"fr": fr, "replacement": replacement, "artefact": art.name,
+                          "is_definition": is_definition, "quoted": line.strip()[:220]},
+                )
+    yield _ok(
+        ctx, "TOMBSTONED-FR-REF", "tombstone-summary",
+        f"{len(TOMBSTONED_FRS)} tombstoned ids ({', '.join(sorted(TOMBSTONED_FRS))}): "
+        f"{live} live normative reference(s), {exempted} citation(s) carrying a deprecation "
+        f"marker and therefore read as history",
+        tombstoned=sorted(TOMBSTONED_FRS), live_references=live, exempted=exempted,
+        replacements=dict(sorted(TOMBSTONED_FRS.items())),
+    )
+
+
+# --- FR-NAMESPACE-COLLISION --------------------------------------------------------------------
+
+# A repair document owns a requirement with a *bold title line*: the line opens a bold span with
+# the FR id, the span closes on the same line, and nothing but a dash-separated gloss may follow.
+# The negative lookahead rejects an id that continues into a range (`FR-001–FR-100`).
+REPAIR_FR_DEF_RE = re.compile(
+    r"^[ \t>]*(?P<title>\*\*(?P<ident>FR-\d{3}[A-Za-z]?)(?![-\u2010-\u2015\d])[^*]{0,200}\*\*)"
+    r"(?P<gloss>[ \t]*(?:[-\u2013\u2014][ \t]*[*_]?[^*\n]{0,140}\*?)?)[ \t]*$"
+)
+
+
+@dataclass
+class RepairDefinition:
+    ident: str
+    line: int
+    title: str
+    body: str
+    artefact: str
+    kind: str
+
+
+def _strip_quote(line: str) -> str:
+    return re.sub(r"^[ \t]*(?:>[ \t]?)+", "", line)
+
+
+def prose_line_flags(art: Artefact) -> list[bool]:
+    """Per line: is this prose, or is it inside/adjacent to a fenced code block?
+
+    A fenced block is quoted material, everywhere in this tool. `A7-migration-021.md`
+    quotes old requirement text under a "verbatim" heading; a review report quotes the
+    defect it is describing; a repair report quotes the FR it proposes. None of those is a
+    second claim on the requirement, so none of them counts as one.
+    """
+    flags: list[bool] = []
+    fence: str | None = None
+    for line in art.lines:
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            token = stripped[:3]
+            fence = None if fence == token else (token if fence is None else fence)
+            flags.append(False)
+            continue
+        flags.append(fence is None)
+    return flags
+
+
+def _definition_kind(title: str) -> str:
+    if re.search(r"\(\s*NEW\s*\)", title, re.IGNORECASE):
+        return "new-requirement"
+    if re.search(r"\(\s*REWRITE\s*\)", title, re.IGNORECASE):
+        return "rewrite-proposal"
+    return "redefinition"
+
+
+def parse_repair_definitions(art: Artefact) -> list[RepairDefinition]:
+    """Every bold-titled FR definition in a repair document, outside code fences.
+
+    A fenced block is quoted material (a "old text, verbatim" block is a citation of the
+    past, not a second claim on the number), so it never yields a definition site. So does a
+    title whose body is a fence, a table or a heading: there is no requirement text there.
+    """
+    out: list[RepairDefinition] = []
+    lines = art.lines
+    prose = prose_line_flags(art)
+    for i, line in enumerate(lines):
+        if not prose[i]:
+            continue
+        m = REPAIR_FR_DEF_RE.match(line)
+        if not m:
+            continue
+        j = i + 1
+        while j < len(lines) and not lines[j].strip():
+            j += 1
+        if j >= len(lines):
+            continue
+        head = lines[j].lstrip()
+        if (head.startswith("```") or head.startswith("~~~") or head.startswith("|")
+                or HEADING_RE.match(lines[j])):
+            continue
+        body_lines: list[str] = []
+        k = j
+        while k < len(lines) and lines[k].strip():
+            if REPAIR_FR_DEF_RE.match(lines[k]):
+                break
+            body_lines.append(lines[k])
+            k += 1
+        body = "\n".join(_strip_quote(b) for b in body_lines).strip()
+        if not body:
+            continue
+        title = m.group("title")
+        out.append(RepairDefinition(
+            ident=m.group("ident"), line=i + 1, title=title, body=body,
+            artefact=art.name, kind=_definition_kind(title),
+        ))
+    return out
+
+
+def _normalise_requirement(text: str) -> str:
+    """Two texts are 'the same requirement' when they differ only in markdown decoration."""
+    cleaned = CODE_SPAN_RE.sub(lambda m: m.group("body"), text)
+    cleaned = re.sub(r"[*_>`]+", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return re.sub(r"[^\w\s]", "", cleaned).strip().lower()
+
+
+@dataclass
+class _DefinitionSite:
+    ident: str
+    artefact: str
+    line: int
+    text: str
+    kind: str
+
+
+def collect_fr_definition_sites(ctx: Context) -> dict[str, list[_DefinitionSite]]:
+    sites: dict[str, list[_DefinitionSite]] = defaultdict(list)
+    spec = ctx.by_name("spec.md")
+    if spec is not None and spec.read_ok:
+        for d in ctx.def_occurrences:
+            if not d.ident.startswith("FR-"):
+                continue
+            sites[d.ident].append(_DefinitionSite(
+                ident=d.ident, artefact=spec.name, line=d.line, text=d.body,
+                kind="canonical-definition",
+            ))
+    for art in ctx.repair:
+        for d in parse_repair_definitions(art):
+            sites[d.ident].append(_DefinitionSite(
+                ident=d.ident, artefact=art.name, line=d.line, text=d.body, kind=d.kind,
+            ))
+    return sites
+
+
+def check_fr_namespace_collisions(ctx: Context) -> Iterable[Finding]:
+    sites = collect_fr_definition_sites(ctx)
+    collisions = 0
+    identical = 0
+    for ident in sorted(sites):
+        group = sites[ident]
+        if len(group) < 2:
+            continue
+        for a_i in range(len(group)):
+            for b_i in range(a_i + 1, len(group)):
+                first, second = group[a_i], group[b_i]
+                if _normalise_requirement(first.text) == _normalise_requirement(second.text):
+                    identical += 1
+                    yield _ok(
+                        ctx, "FR-NAMESPACE-COLLISION", "fr-redefined-identically",
+                        f"{ident} is defined at {len(group)} sites "
+                        f"({', '.join(f'{s.artefact}:{s.line}' for s in group)}) with "
+                        f"byte-identical requirement text after normalisation: a restatement, "
+                        f"not a second owner",
+                        fr=ident, sites=[f"{s.artefact}:{s.line}" for s in group],
+                    )
+                    continue
+                collisions += 1
+                owners = {first.kind, second.kind}
+                shape = ("spec-vs-repair" if "canonical-definition" in owners
+                         else "repair-vs-repair")
+                yield Finding(
+                    check_id="FR-NAMESPACE-COLLISION", severity=FAIL,
+                    code="fr-namespace-collision",
+                    message=(
+                        f"{ident} is defined twice with different requirement text "
+                        f"({shape}): {first.artefact}:{first.line} says "
+                        f"\"{_excerpt(first.text)}\" ({first.kind}) while "
+                        f"{second.artefact}:{second.line} says "
+                        f"\"{_excerpt(second.text)}\" ({second.kind}). One FR number, two "
+                        f"requirement texts, two owners."
+                    ),
+                    locations=[f"{first.artefact}:{first.line}",
+                               f"{second.artefact}:{second.line}"],
+                    data={"fr": ident, "shape": shape, "kinds": sorted(owners),
+                          "sites": [{"artefact": s.artefact, "line": s.line, "kind": s.kind,
+                                     "text": _excerpt(s.text, 320)} for s in (first, second)]},
+                )
+    yield _ok(
+        ctx, "FR-NAMESPACE-COLLISION", "fr-namespace-summary",
+        f"{len(sites)} FR ids have a definition site in spec.md or a repair document; "
+        f"{collisions} id(s) are defined twice with different text, {identical} site pair(s) "
+        f"restate a definition without changing it",
+        ids=len(sites), collisions=collisions, identical_restatements=identical,
+    )
+
+
+def _excerpt(text: str, width: int = 150) -> str:
+    flat = " ".join(text.split())
+    return flat if len(flat) <= width else flat[: width - 1] + "\u2026"
+
+
+# --- EPISTEMIC-AXIS-CONFLATION -----------------------------------------------------------------
+
+# Structural disagreement vocabulary (ARBITRATION §3, `RelationCandidate.assembly_state`).
+STRUCTURAL_TERMS: tuple[str, ...] = (
+    "arity", "direction", "polarity", "role slot", "role-slot", "role slots",
+    "role binding", "role bindings", "participant configuration", "participant structure",
+    "subject_to_object", "object_to_subject", "incompatible participant",
+    "structural disagreement", "structural conflict", "different slots", "two different slots",
+)
+STRUCTURAL_RE = re.compile(
+    "|".join(re.escape(t) for t in STRUCTURAL_TERMS), re.IGNORECASE
+)
+CONTRADICTED_RE = re.compile(r"\bCONTRADICTED\b")
+# A sentence carrying one of these is stating the prohibition, not committing the conflation.
+EPISTEMIC_PROHIBITION_MARKERS: tuple[str, ...] = (
+    "forbidden", "forbids", "forbid", "never", "must not", "must never", "may not",
+    "no artefact may", "rather than", "instead of", "prohibited", "banned", "out of bounds",
+    "must not become", "does not",
+)
+EPISTEMIC_PROHIBITION_RE = re.compile(
+    "|".join(re.escape(m) for m in EPISTEMIC_PROHIBITION_MARKERS), re.IGNORECASE
+)
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.;!?])\s+")
+LIST_ITEM_RE = re.compile(r"^[ \t]{0,10}(?:[-*+]\s+|\d+[.)]\s+)")
+
+
+def prose_units(art: Artefact) -> list[tuple[int, int, str]]:
+    """(first_line, last_line, text) per prose unit, skipping fenced code.
+
+    A unit is one table row, one list item, or one paragraph - the smallest block a reader
+    would call "a statement". Fenced code is quoted material and is not a statement.
+    """
+    lines = art.lines
+    units: list[tuple[int, int, str]] = []
+    fence: str | None = None
+    i = 0
+
+    def _opens_block(line: str) -> bool:
+        s = line.lstrip()
+        return (s.startswith("```") or s.startswith("~~~") or s.startswith("|")
+                or bool(HEADING_RE.match(line)) or bool(LIST_ITEM_RE.match(line)))
+
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            token = stripped[:3]
+            fence = None if fence == token else (token if fence is None else fence)
+            i += 1
+            continue
+        if fence is not None or not line.strip():
+            i += 1
+            continue
+        if line.strip().startswith("|"):
+            units.append((i + 1, i + 1, line))
+            i += 1
+            continue
+        j = i + 1
+        while j < len(lines) and lines[j].strip() and not _opens_block(lines[j]):
+            j += 1
+        units.append((i + 1, j, "\n".join(lines[i:j])))
+        i = j
+    return units
+
+
+def _sentence_of(text: str, offset: int) -> tuple[str, int]:
+    """(sentence, offset of its first character) for the sentence holding `offset`."""
+    start = 0
+    for m in SENTENCE_SPLIT_RE.finditer(text):
+        if m.start() > offset:
+            break
+        start = m.start()
+    return SENTENCE_SPLIT_RE.split(text[start:])[0].strip(), start
+
+
+def check_epistemic_axis_conflation(ctx: Context) -> Iterable[Finding]:
+    """Gate the ARBITRATION §3 three-axis rule on spec.md, tasks.md and `repair/*.md`."""
+    corpus = ctx.readable(("spec.md", "tasks.md")) + ctx.repair
+    conflations = 0
+    restatements = 0
+    for art in corpus:
+        for first, _last, text in prose_units(art):
+            if not CONTRADICTED_RE.search(text) or not STRUCTURAL_RE.search(text):
+                continue
+            structural = sorted({m.group(0).lower() for m in STRUCTURAL_RE.finditer(text)})
+            seen_lines: set[int] = set()
+            for m in CONTRADICTED_RE.finditer(text):
+                sentence, _offset = _sentence_of(text, m.start())
+                line_no = first + text.count("\n", 0, m.start())
+                if line_no in seen_lines:
+                    continue
+                seen_lines.add(line_no)
+                if EPISTEMIC_PROHIBITION_RE.search(sentence):
+                    restatements += 1
+                    continue
+                conflations += 1
+                yield Finding(
+                    check_id="EPISTEMIC-AXIS-CONFLATION", severity=FAIL,
+                    code="structural-conflict-as-denied",
+                    message=(
+                        f"{art.loc(line_no)} writes a structural disagreement "
+                        f"({', '.join(structural)}) into `CONTRADICTED`. Per "
+                        f"`repair/ARBITRATION.md` §3 a structural reading belongs on the NEW "
+                        f"`RelationCandidate.assembly_state = CONFLICTING`; `CONTRADICTED` means "
+                        f"the assertion itself is denied. Quoted: \""
+                        f"{_excerpt(sentence, 220)}\""
+                    ),
+                    locations=[art.loc(line_no)],
+                    data={"artefact": art.name, "structural_terms": structural,
+                          "quoted": _excerpt(sentence, 320)},
+                )
+    yield _ok(
+        ctx, "EPISTEMIC-AXIS-CONFLATION", "epistemic-summary",
+        f"{len(corpus)} artefact(s) scanned for the three epistemic axes: "
+        f"{conflations} sentence(s) route a structural disagreement into `CONTRADICTED`, "
+        f"{restatements} sentence(s) mention both while prohibiting the conflation",
+        conflations=conflations, prohibition_restatements=restatements,
+        axes=["PredicateHypothesis.resolution_state=CONFLICTING (semantic)",
+              "RelationCandidate.assembly_state=CONFLICTING (structural, NEW)",
+              "CandidateStatus.CONTRADICTED (the assertion is denied)"],
+    )
+
+
+# --- COUNT-PRECISION ----------------------------------------------------------------------------
+
+# ARBITRATION §10. Four numbers, one job each. The rule cannot tell a number from its context by
+# itself, so the three enumerated conflation shapes are matched literally.
+ENTITY_COUNT_NOUNS = (
+    r"(?:foundational[ \t-]+)?(?:atomic[ \t-]+)?(?:entity[ \t-]+)?"
+    r"(?:value[ \t-]+)?(?:type[ \t-]+)?(?:types?|classes|extractors|items?|families)"
+)
+WRONG_ENTITY_COUNT_RE = re.compile(
+    rf"\b(?P<num>32)\b[ \t\u2010-\u2015-]*{ENTITY_COUNT_NOUNS}\b", re.IGNORECASE
+)
+# `seven_classes` inside a test name is the same defect as "seven classes" in prose, so the
+# guard is "not part of a longer alphanumeric token" rather than a word boundary: `_` counts.
+SEVEN_CLASSES_RE = re.compile(
+    r"(?<![A-Za-z0-9])(?:all[ \t_]+)?seven[ \t_-]+classes(?![A-Za-z0-9])", re.IGNORECASE
+)
+
+SECTION8_CONTEXT_RE = re.compile(
+    r"\u00a7[ \t]*8\b|entity[ \t_-]*extractor|extractor|entity[ \t_-]*class", re.IGNORECASE
+)
+COUNT_REFUTATION_MARKERS: tuple[str, ...] = (
+    # a correction of the number
+    "corrected", "correction", "miscount", "misreading", "misquote", "mis-cite", "miscited",
+    "renamed",
+    # an assertion that the number is absent
+    "is wrong", "does not exist", "nowhere writes", "nowhere states", "no such",
+    "does not state", "review-prose",
+    # an explicit negation of the number itself
+    "not 32", "no 32", "never 32", "rather than 32", "instead of 32",
+    "not seven classes", "never classes",
+)
+COUNT_REFUTATION_RE = re.compile(
+    "|".join(re.escape(m) for m in COUNT_REFUTATION_MARKERS), re.IGNORECASE
+)
+AUTHORITY_NUMBERS: dict[str, int] = {
+    "foundational entity types": 31,
+    "value types": 13,
+    "§8 extraction families": 7,
+    "new instrument modules": 4,
+}
+
+
+def check_count_precision(ctx: Context) -> Iterable[Finding]:
+    conflations = 0
+    refuted = 0
+    for art in ctx.governance():
+        for first, last, text in prose_units(art):
+            shapes: list[tuple[int, str, str, str]] = []
+            for m in WRONG_ENTITY_COUNT_RE.finditer(text):
+                shapes.append((m.start(), "count-32-as-entity-types", "32",
+                               m.group(0).strip()))
+            for m in SEVEN_CLASSES_RE.finditer(text):
+                if not SECTION8_CONTEXT_RE.search(text):
+                    continue
+                shapes.append((m.start(), "count-seven-classes", "7", m.group(0).strip()))
+            if not shapes:
+                continue
+            is_refutation = bool(COUNT_REFUTATION_RE.search(text))
+            for offset, code, claimed, raw in shapes:
+                line_no = first + text.count("\n", 0, offset)
+                location = art.loc(line_no)
+                if is_refutation:
+                    refuted += 1
+                    yield Finding(
+                        check_id="COUNT-PRECISION", severity=INFO, code="count-refutation",
+                        message=(
+                            f"{location} carries the conflated phrase {raw!r} inside a passage "
+                            f"that corrects it; reported as history, not as a live claim"
+                        ),
+                        locations=[location],
+                        data={"code_hint": code, "artefact": art.name,
+                              "quoted": _excerpt(text, 200)},
+                    )
+                    continue
+                conflations += 1
+                yield Finding(
+                    check_id="COUNT-PRECISION", severity=WARN, code=code,
+                    message=(
+                        f"{location} says {raw!r} in a §8 / entity-extractor context. The "
+                        f"authority is 31 foundational entity types, 13 value types, 7 §8 "
+                        f"extraction families and ~4 new instrument modules - four numbers, four "
+                        f"jobs. 'seven classes' is wrong vocabulary: the correct phrase is "
+                        f"'seven extraction families' or '§8 subsections'."
+                    ),
+                    locations=[location],
+                    data={"artefact": art.name, "claimed": claimed, "phrase": raw,
+                          "unit_lines": [first, last],
+                          "quoted": _excerpt(
+                              art.lines[line_no - 1].strip() if line_no - 1 < len(art.lines)
+                              else text, 240)},
+                )
+    yield _ok(
+        ctx, "COUNT-PRECISION", "count-precision-summary",
+        "four authority numbers checked: "
+        + ", ".join(f"{n} {what}" for what, n in AUTHORITY_NUMBERS.items())
+        + f". {conflations} live conflation(s), {refuted} conflated phrase(s) inside a "
+          f"passage that corrects them",
+        conflations=conflations, refutation_mentions=refuted,
+        authority_numbers=dict(AUTHORITY_NUMBERS),
+    )
+
+
+# --- GHOST-SUFFIX ---------------------------------------------------------------------------------
+
+GHOST_SUFFIX_RE = re.compile(r"\bFR-\d{3}(?P<suffix>[A-Za-z])\b")
+
+
+def check_ghost_suffix(ctx: Context) -> Iterable[Finding]:
+    live: dict[str, list[str]] = defaultdict(list)
+    exempted = 0
+    fenced = 0
+    for art in ctx.governance():
+        prose = prose_line_flags(art)
+        for i, line in enumerate(art.lines, start=1):
+            hits = [m.group(0) for m in GHOST_SUFFIX_RE.finditer(line)]
+            if not hits:
+                continue
+            if not prose[i - 1]:
+                fenced += len(hits)
+                continue
+            if DEPRECATION_RE.search(line):
+                exempted += len(hits)
+                continue
+            for ident in sorted(set(hits)):
+                live[ident].append(art.loc(i))
+    for ident in sorted(live):
+        locs = sorted(set(live[ident]), key=_loc_key)
+        by_file: dict[str, int] = defaultdict(int)
+        for loc in locs:
+            by_file[loc.rpartition(":")[0]] += 1
+        yield Finding(
+            check_id="GHOST-SUFFIX", severity=WARN, code="suffixed-fr-citation",
+            message=(
+                f"{ident} is cited normatively at {len(locs)} line(s) across "
+                f"{len(by_file)} file(s). A letter suffix is a transitional device: it forces "
+                f"every id regex to accept two styles and leaves the namespace speaking two "
+                f"languages at once. Fold it into its allocated slot rather than leaving a "
+                f"ghost. Files: "
+                + ", ".join(f"{name} x{n}" for name, n in sorted(by_file.items()))
+            ),
+            locations=locs,
+            data={"fr": ident, "citation_count": len(locs),
+                  "by_file": dict(sorted(by_file.items()))},
+        )
+    total = sum(len(v) for v in live.values())
+    yield _ok(
+        ctx, "GHOST-SUFFIX", "ghost-suffix-summary",
+        f"{len(live)} letter-suffixed FR id(s) carry {total} live normative citation(s) across "
+        f"{len({loc.rpartition(':')[0] for v in live.values() for loc in v})} file(s); "
+        f"{exempted} citation(s) sit on a deprecation-marked line and {fenced} inside a fenced "
+        f"block, so read as quotation rather than as a live claim",
+        suffixed_frs=sorted(live), citations=total, exempted=exempted, fenced=fenced,
+        per_id={ident: len(set(v)) for ident, v in sorted(live.items())},
+    )
+
+
+# ------------------------------------------------------------------------------------------
 # Runner
 # ------------------------------------------------------------------------------------------
 
@@ -2239,6 +3122,11 @@ CHECK_FNS: tuple[tuple[str, CheckFn], ...] = (
     ("RI-11-CONST", check_constitution),
     ("RI-11b-RESEARCH", check_research_refs),
     ("RI-12-STALE", check_stale_claims),
+    ("TOMBSTONED-FR-REF", check_tombstoned_fr_refs),
+    ("FR-NAMESPACE-COLLISION", check_fr_namespace_collisions),
+    ("EPISTEMIC-AXIS-CONFLATION", check_epistemic_axis_conflation),
+    ("COUNT-PRECISION", check_count_precision),
+    ("GHOST-SUFFIX", check_ghost_suffix),
 )
 
 assert {cid for cid, _ in CHECK_FNS} == set(CHECK_BY_ID), "check registry mismatch"
