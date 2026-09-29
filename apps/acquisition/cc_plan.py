@@ -10,9 +10,9 @@ SURT normalization (Sort-friendly URI Reordering Tuple, e.g.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from urllib.parse import urlsplit
-from typing import Mapping
 
 __all__ = ["CcQueryPlan", "build_cc_plan", "surt_from_host"]
 

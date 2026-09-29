@@ -155,9 +155,27 @@ class Dispatcher:
         client in pure unit tests. The producer is injected (Protocol above);
         production binds ``events.kafka.IdempotentProducer``, tests bind a
         memory sink — the envelope is never silently discarded.
+
+        Two properties the payload owes its consumer:
+
+        It is JSON
+            The payload was ``str(dict)``, which is a Python repr: single-quoted
+            keys, ``None`` for null. No consumer in any language can parse that
+            as the event the topic name promises, so the request was unreadable
+            on the wire. ``sort_keys`` also makes the bytes a pure function of
+            the content (Invariant 12) rather than of dict insertion order.
+
+        It carries the query
+            A worker resolves ``source_id`` in the catalogue and then has to ask
+            the source *something*. ``query`` was absent, and ``task_id`` is a
+            one-way digest over it, so the request was not executable by anyone
+            consuming it. The scheduler is what knows the task, so the scheduler
+            is where the query belongs.
         """
         if self._producer is None:
             return
+        import json
+
         from events.kafka import build_envelope
         from events.topics import topic_for
 
@@ -166,13 +184,16 @@ class Dispatcher:
             event_version="2.0",
             producer="dispatcher",
             producer_version="0.1.0",
-            payload=str(
+            payload=json.dumps(
                 {
                     "task_id": task.get("task_id"),
+                    "query": task.get("query"),
+                    "source_id": task.get("source_id"),
                     "verdict": decision.verdict.value,
                     "execution_class": decision.execution_class,
-                }
-            ).encode(),
+                },
+                sort_keys=True,
+            ).encode("utf-8"),
             investigation_id=task.get("investigation_id"),
             tenant_id=task.get("tenant_id"),
             source_id=task.get("source_id"),

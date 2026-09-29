@@ -65,6 +65,8 @@ All external input is untrusted. Mandatory: SSRF protection, DNS-rebinding prote
 - **Dead letter / quarantine** for malformed data, repeated parser failures, policy uncertainty, resource abuse, unsupported formats; rejected candidates are never auto-deleted (replay/re-evaluation supported).
 - **Idempotency**: every consumer is idempotent using event_id / task_id / observation_id / projection offsets.
 - **HTTP-first acquisition**, browser escalation only on insufficiency; separate browser fabric pool; resource classes priced by expected_value / estimated_cost.
+- **Donor reuse is the default, not an exception**: taking tuned, field-tested functionality from donor projects is the normal way to build. The concept defines *what*; the gap between concept and working code is the hardening against real edge cases, upstream quirks and garbage input — and donors have already paid that cost. Rewriting it re-runs a path someone else already walked. Architectural purity is not a price worth paying for implementation. This is bound by two limits: a donor may not write through a boundary the platform prohibits (§1–VII), and a donor that carries its own defect is *repaired on transfer* — never grounds to decline the transfer.
+- **Conceptual contradiction is the sole exception, and it is not the agent's call**: when donor functionality appears to contradict the platform's architecture, the agent stops and asks the owner, presenting the conflicting invariant and the options (take as-is / adapt / write fresh). The agent does not unilaterally decide and silently rewrite. See `AGENTS.md` §1.1.
 
 ## Governance
 
@@ -72,4 +74,4 @@ Constitution supersedes all other practices. Changes to architectural decisions 
 
 Compliance is verified on every PR/review. Rejected analysis outputs (admission rejections, TDA signals) are preserved with decision, reasons, score vectors, versions, and timestamps for replay. Source independence (copied/derived sources) is considered in evidence fusion; publication count is not treated as independent-source count.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-07 | **Last Amended**: 2026-09-07
+**Version**: 1.1.0 | **Ratified**: 2026-09-07 | **Last Amended**: 2026-09-29

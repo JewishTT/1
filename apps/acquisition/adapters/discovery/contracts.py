@@ -9,8 +9,9 @@ normalized, trailing slash preserved (it is significant).
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Protocol
+from typing import Any, Protocol
 from urllib.parse import urlsplit, urlunsplit
 
 _ALLOWED_SCHEMES = frozenset({"http", "https"})

@@ -76,7 +76,6 @@ from typing import Protocol, runtime_checkable
 from domain.capture import UNBATCHED_INGEST_BATCH, Capture
 from domain.temporal_observation import SourceTemporalObservation, TemporalAxis
 
-
 #: The stream registry's historical name for the six temporal axes (FR-026), bound to
 #: :class:`domain.temporal_observation.TemporalAxis` rather than defined beside it.
 #:

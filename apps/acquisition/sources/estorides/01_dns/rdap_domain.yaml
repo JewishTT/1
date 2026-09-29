@@ -1,0 +1,18 @@
+name: rdap_domain
+enabled: true
+category: 01. DNS Intelligence
+description: RDAP (Registration Data Access Protocol) lookup — returns registrar, registry domain id, status flags, and event dates for the queried domain. Public, no API key, standard IETF protocol.
+os: any
+requires_key: false
+parser: rdap_domain
+entity_hints:
+- domain
+- registrar
+applies_to:
+- domain
+tool:
+  method: GET
+  url: https://rdap.org/domain/{query}
+  headers:
+    Accept: application/rdap+json
+    User-Agent: Estorides/1.0

@@ -8,9 +8,10 @@ deduplicated downstream by the registry/frontier.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable
+from collections.abc import Callable, Iterable
+from typing import Any
 
-from .contracts import Candidate, canonicalize, candidates_from_urls
+from .contracts import Candidate, candidates_from_urls, canonicalize
 
 # An edge provider returns (source, target, edge_type) triples.
 EdgeProvider = Callable[[], Iterable[tuple[str, str, str]]]

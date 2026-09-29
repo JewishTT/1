@@ -9,7 +9,8 @@ the default implementation uses DuckDB with an S3/MinIO-aware config.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .contracts import Candidate, candidates_from_urls
 

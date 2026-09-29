@@ -7,7 +7,8 @@ Reads the Internet Archive CDX index through its public interface only
 from __future__ import annotations
 
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .contracts import Candidate, candidates_from_urls
 
