@@ -57,7 +57,7 @@ the `zip(..., strict=False)` truncation, `precision="exact"` on a heuristic, and
 header↔cell pairing that silently drops width-mismatched rows.
 
 **Why the DOM is the right move anyway, and it is forced rather than chosen:** FR-094 and
-FR-103 require every producer to cite a real mention id resolved in a mention index, and
+FR-016 require every producer to cite a real mention id resolved in a mention index, and
 require the `surface:`/`header:`/`cell:`/`attribute:` fabrications to be gone. Mentions need
 stable character offsets into a text stream. Deriving those from a regex match inside raw
 markup means re-deriving them differently per producer, which is precisely how the current
@@ -104,8 +104,18 @@ Consequences that must be honoured everywhere:
    identify data; it may not be the only copy required for reconstruction (FR-060).
 3. An unrecognised predicate produces a signature with a normalised form and
    `resolution_state=UNKNOWN`, and `relation_ref=None`. It is a first-class hypothesis, not a
-   gap. `material_requires_resolved_predicate` remains the correct CD-6 line: a candidate may
-   be untyped, a material may not.
+   gap. `material_requires_resolved_predicate` remains the correct line, and the live
+   requirement that forbids it being violated is **FR-024** (`input.md` §50,
+   `CLAIM MATERIAL BOUNDARY`): `RelationClaimMaterial` is constructible only when the predicate is
+   resolved, the participants are resolved and the role structure is known. The candidate half of
+   the same boundary is **FR-023** (`input.md` §67) — a signal with no operator survives as a
+   candidate with `predicate_state=UNKNOWN` — so a candidate may be untyped and a material may not.
+   *The `CD-n` label this line used to carry is withdrawn: the constitution's Domain Invariants are
+   an unlabelled 1–12 numbered list and define no label of that form at all, so the token named
+   nothing. The only place the brief writes such a label is the closing line of `input.md` §67, and
+   it names a different criterion; no label of that form for this obligation exists anywhere in the
+   corpus. The nearest constitutional anchor for the assertion-is-not-truth half is Domain Invariant
+   3, `Assertion != truth`, which `plan.md` already cites by position for the same reason.*
 4. **The signature is derived before ontology mapping, not after.** Mapping to a known
    operator is a later, versioned step. This is what keeps an open relation space open.
 
@@ -140,7 +150,7 @@ Verified state at HEAD:
 **Therefore:** `OntologyPack.relations` is inert and stays inert; it is not the vocabulary.
 The new bounded vocabulary governs *entity and value types* only, is versioned, is extensible
 by hierarchy, and an unmapped type yields `UNKNOWN` — never rejection, never a drop
-(FR-030…FR-034a). A non-empty, non-vocabulary `relation_type` continues to be legal; what
+(FR-030…FR-035, `INV-002`). A non-empty, non-vocabulary `relation_type` continues to be legal; what
 changes is that a claim is minted from a *signature*, and the signature records the mapping
 state explicitly.
 

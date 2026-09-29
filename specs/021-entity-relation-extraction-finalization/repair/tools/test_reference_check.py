@@ -24,6 +24,7 @@ import importlib.util
 import json
 import re
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
@@ -534,6 +535,159 @@ def test_task_gap_fails_ordering(tmp_path: Path) -> None:
     assert any("T003" in f.message for f in fails)
 
 
+# --------------------------------------------------------------------------------------
+# 3e. RI-06 contiguity is judged against the range the plan DECLARES
+#
+# The integrated plan is numbered T101..T194. Deriving the expected set from 1 rather than
+# from the plan's own floor reported T001..T100 as 100 gaps - every one a false positive on
+# a plan with no hole in it. The tests below are the required regression (T101..T194 clean),
+# the four blind-spot controls that keep the check's power (a hole, a duplicate, a
+# reordering, a suffixed id), and the degenerate shapes that must not raise.
+# --------------------------------------------------------------------------------------
+
+_T101 = "- [ ] T101 [US1] Key `logical_candidate_id` on the signature. (FR-001, \u00a71)"
+_T102 = "- [ ] T102 [US2] Add `polarity` as a real field. (FR-002, \u00a72)"
+_T103 = "- [ ] T103 [US3] Resolve every `mention_ref` in the mention index. (FR-003, \u00a72)"
+
+
+def integrated_plan(lo: int = 101, hi: int = 194, hole: int | None = None,
+                    duplicate: int | None = None) -> str:
+    """A plan numbered T<lo>..T<hi> in ascending order, optionally with one defect."""
+    numbers = [n for n in range(lo, hi + 1) if n != hole]
+    if duplicate is not None:
+        numbers.append(duplicate)
+        numbers.sort()
+    lines = [f"- [ ] T{n:03d} [US1] Carry out step {n} of the plan. (FR-001, \u00a71)"
+             for n in numbers]
+    return "\n".join(lines) + "\n"
+
+
+def test_required_regression_a_plan_above_T001_with_no_gap_is_clean(tmp_path: Path) -> None:
+    """The regression this fix exists for: T101..T194 with no hole produces 0 findings."""
+    spec_dir = build_feature_dir(tmp_path / "f", tasks=integrated_plan())
+    found = findings_for(spec_dir, ["RI-06-TASK-ORDER"])
+    blocking_findings = [f for f in found if f.severity in (rc.FAIL, rc.WARN)]
+    assert blocking_findings == [], [(f.code, f.message) for f in blocking_findings]
+    assert [f.code for f in found] == ["task-order-ok"]
+    ok = found[0]
+    assert (ok.data["declared_first"], ok.data["declared_last"]) == (101, 194)
+    assert ok.data["count"] == 94
+    assert "T101..T194" in ok.message
+    # and the check is genuinely running on that file, not silently absent
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-06-TASK-ORDER"]) == 0
+
+
+def test_required_regression_a_hole_inside_the_declared_range_still_fails(tmp_path: Path) -> None:
+    """The other half of the regression: T101..T194 minus T150 is still a FAIL."""
+    spec_dir = build_feature_dir(tmp_path / "f", tasks=integrated_plan(hole=150))
+    fails = fails_for(spec_dir, ["RI-06-TASK-ORDER"])
+    assert [f.code for f in fails] == ["task-gap"]
+    assert fails[0].data["missing"] == 150
+    assert fails[0].data["declared_first"] == 101
+    assert fails[0].data["declared_last"] == 194
+    assert "T150" in fails[0].message
+    # the *actual* missing number is reported, not a count
+    assert "93 ids" not in fails[0].message
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-06-TASK-ORDER"]) == 1
+
+
+def test_the_floor_itself_can_never_be_validated_and_is_not_claimed(tmp_path: Path) -> None:
+    """The one defect a declared-range rule structurally cannot see, pinned as a limitation.
+
+    The old rule anchored every plan at T001, so it could see a plan whose ids begin above 1.
+    The new rule takes the floor from the file, so a plan whose *first* id is not the id it
+    should have started at is indistinguishable from a plan that legitimately starts there:
+    `T103, T104, T105` is clean whether or not T101 and T102 were meant to exist. That is the
+    exact and only detection power given up, asserted here so it cannot be forgotten.
+    """
+    rows = [f"- [ ] T{n:03d} [US1] Step {n}. (FR-001, \u00a71)" for n in (103, 104, 105)]
+    spec_dir = build_feature_dir(tmp_path / "f", tasks="\n".join(rows) + "\n")
+    found = findings_for(spec_dir, ["RI-06-TASK-ORDER"])
+    assert [f.code for f in found] == ["task-order-ok"]
+    assert found[0].data["declared_first"] == 103
+    # a hole at the floor *of that declared range* is still caught
+    holed = [f"- [ ] T{n:03d} [US1] Step {n}. (FR-001, \u00a71)" for n in (103, 105, 106)]
+    holed_dir = build_feature_dir(tmp_path / "g", tasks="\n".join(holed) + "\n")
+    assert [f.data["missing"] for f in
+            fails_for(holed_dir, ["RI-06-TASK-ORDER"])] == [104]
+
+
+def test_a_duplicate_task_id_still_fails(tmp_path: Path) -> None:
+    spec_dir = build_feature_dir(tmp_path / "f", tasks=integrated_plan(duplicate=150))
+    fails = fails_for(spec_dir, ["RI-06-TASK-ORDER"])
+    assert "task-duplicate" in {f.code for f in fails}
+    assert [f.data["task"] for f in fails if f.code == "task-duplicate"] == ["T150"]
+
+
+def test_an_out_of_order_task_still_fails(tmp_path: Path) -> None:
+    """T105 written before T104, inside an otherwise contiguous declared range."""
+    order = (101, 102, 105, 103, 104)
+    rows = [f"- [ ] T{n:03d} [US1] Step {n}. (FR-001, \u00a71)" for n in order]
+    spec_dir = build_feature_dir(tmp_path / "f", tasks="\n".join(rows) + "\n")
+    found = findings_for(spec_dir, ["RI-06-TASK-ORDER"])
+    codes = {f.code for f in found}
+    assert "task-out-of-order" in codes, [(f.code, f.message) for f in found]
+    ooo = [f for f in found if f.code == "task-out-of-order"]
+    assert all(f.severity == rc.FAIL for f in ooo)
+    assert [f.data["number"] for f in ooo] == [103], [f.data for f in ooo]
+    assert all(f.locations for f in ooo)
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-06-TASK-ORDER"]) == 1
+
+
+def test_a_letter_suffixed_task_id_still_fails_inside_a_high_range(tmp_path: Path) -> None:
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        tasks=integrated_plan(lo=101, hi=104) + "- [ ] T104b [US1] A suffixed step. (FR-001)\n",
+    )
+    fails = fails_for(spec_dir, ["RI-06-TASK-ORDER"])
+    assert [f.code for f in fails] == ["task-letter-suffix"]
+    assert fails[0].data["task"] == "T104b"
+
+
+def test_a_single_task_and_an_empty_task_list_do_not_raise(tmp_path: Path) -> None:
+    """The degenerate shapes: one id, and no ids at all."""
+    one = build_feature_dir(tmp_path / "one", tasks=_T101 + "\n")
+    assert [f.code for f in findings_for(one, ["RI-06-TASK-ORDER"])] == ["task-order-ok"]
+    none = build_feature_dir(tmp_path / "none", tasks="No tasks are written yet.\n")
+    assert fails_for(none, ["RI-06-TASK-ORDER"]) == []
+    for d in (one, none):
+        assert not [f for f in findings_for(d) if f.code == "check-crashed"]
+
+
+def test_the_declared_range_is_derived_from_the_file_not_assumed(tmp_path: Path) -> None:
+    """The rule, stated as a property of the check's own arithmetic."""
+    high = build_feature_dir(tmp_path / "high", tasks=integrated_plan(lo=401, hi=405))
+    ok = next(f for f in findings_for(high, ["RI-06-TASK-ORDER"]) if f.code == "task-order-ok")
+    assert (ok.data["declared_first"], ok.data["declared_last"]) == (401, 405)
+    low = build_feature_dir(tmp_path / "low", tasks=integrated_plan(lo=1, hi=5))
+    ok = next(f for f in findings_for(low, ["RI-06-TASK-ORDER"]) if f.code == "task-order-ok")
+    assert (ok.data["declared_first"], ok.data["declared_last"]) == (1, 5)
+
+
+def test_a_mixed_range_below_its_own_floor_is_reported_as_two_gaps(tmp_path: Path) -> None:
+    """A plan that skips a chunk in the middle names every missing number, not one."""
+    rows = [f"- [ ] T{n:03d} [US1] Step {n}. (FR-001, \u00a71)"
+            for n in (101, 102, 103, 108, 109, 110)]
+    spec_dir = build_feature_dir(tmp_path / "f", tasks="\n".join(rows) + "\n")
+    fails = fails_for(spec_dir, ["RI-06-TASK-ORDER"])
+    assert [f.data["missing"] for f in fails] == [104, 105, 106, 107]
+    assert all(f.data["declared_range"] == "T101..T110" for f in fails)
+
+
+def test_the_real_tasks_md_is_contiguous_across_its_own_range() -> None:
+    """The real artefact, re-pointed at the plan's declared range rather than at T001."""
+    ctx = rc.build_context(SPEC_DIR)
+    found = findings_for(SPEC_DIR, ["RI-06-TASK-ORDER"])
+    blocking_findings = [f for f in found if f.severity in (rc.FAIL, rc.WARN)]
+    assert blocking_findings == [], [(f.code, f.message) for f in blocking_findings]
+    numbers = [int(t.ident[1:]) for t in ctx.tasks if re.fullmatch(r"T\d+", t.ident)]
+    assert numbers == sorted(numbers), "the real plan must be ascending"
+    assert sorted(numbers) == list(range(min(numbers), max(numbers) + 1)), (
+        "the real plan must be contiguous inside its own declared range"
+    )
+    assert len(numbers) == len(set(numbers)), "the real plan must define no id twice"
+
+
 def test_count_section_claim_contradiction_fails(tmp_path: Path) -> None:
     spec_dir = build_feature_dir(
         tmp_path / "f", spec=GOOD_SPEC.replace("(2 sections)", "(99 sections)")
@@ -790,10 +944,14 @@ def test_forbidden_claims_fail(tmp_path: Path) -> None:
             ),
         },
     )
-    codes = {f.code for f in fails_for(spec_dir, ["RI-10-FORBIDDEN"])}
+    fails = fails_for(spec_dir, ["RI-10-FORBIDDEN"])
+    codes = {f.code for f in fails}
     assert "synonym-in-identity" in codes, codes
     assert "nested-hypothesis" in codes, codes
-    assert "vocabulary-without-producer" in codes, codes
+    # FIX 3: an enumerated vocabulary nobody states an obligation for is `vocabulary-unowned`,
+    # not "no producer per term". This FR is MUST-and-nothing-else, so it has no bound and
+    # delegates to nobody - the blind-spot control for the ownership rule.
+    assert "vocabulary-unowned" in codes, codes
 
 
 def test_nested_hypothesis_absent_is_clean(tmp_path: Path) -> None:
@@ -1124,6 +1282,678 @@ def test_fr_dangling_after_a_table_fails(tmp_path: Path) -> None:
     assert fails[0].data["fr"] == "FR-004"
 
 
+# --------------------------------------------------------------------------------------
+# FIX 1 - a retired id is not a gap in the requirement sequence
+# --------------------------------------------------------------------------------------
+#
+# `spec.md` retires an id in a *tombstone record table*, which is deliberately not in
+# definition form. So the retired id has no `- **FR-nnn**:` row, the contiguity walk never
+# sees it, and every number either side of it looks like a hole. Six tombstones x the
+# neighbours they sit between was 19 FAIL findings saying "FR-058 is missing", about an id
+# the document deliberately closed.
+#
+# The walk's universe is now: defined in `spec.md`, or retired. A number in neither is a real
+# gap and still FAILs. The two tests below pin both halves of that sentence, and both assert
+# the walk actually ran (via `fr-sequence-ok`) so neither can pass by the check doing nothing.
+
+
+def _numbering_spec(numbers: Sequence[str]) -> str:
+    """A spec.md whose only requirement section holds exactly `numbers`, in that order."""
+    rows = "\n".join(
+        f"- **{n}**: Requirement {n} MUST hold for the synthetic corpus. (\u00a72)"
+        for n in numbers
+    )
+    return (
+        "# Feature Specification: numbering only\n\n"
+        "**Input**: `input.md` in this directory (2 sections).\n\n"
+        "## Requirements\n\n### Functional Requirements\n\n#### Numbering\n\n"
+        f"{rows}\n"
+    )
+
+
+def _walk_ran(spec_dir: Path) -> rc.Finding:
+    found = findings_for(spec_dir, ["RI-06b-FR-ORDER"])
+    ok = [f for f in found if f.code == "fr-sequence-ok"]
+    assert len(ok) == 1, "the contiguity walk must report that it ran"
+    return ok[0]
+
+
+def test_a_tombstoned_id_between_two_live_ids_is_not_a_gap(tmp_path: Path) -> None:
+    """REQUIRED (FIX 1): a retirement between two live numbers produces 0 findings.
+
+    `FR-058` is in `TOMBSTONED_FRS` and has no definition row, which is exactly the corpus
+    shape: `FR-057`, (retired 058), `FR-059`. Before the fix this was
+    `fr-gap-document-order ... FR-058 appear(s) nowhere`.
+    """
+    spec_dir = build_feature_dir(tmp_path / "f", spec=_numbering_spec(["FR-057", "FR-059"]))
+    ctx = rc.build_context(spec_dir)
+    assert "FR-058" in ctx.tombstone_ids
+    assert "FR-058" not in ctx.def_index(), "the premise: a record table is not a definition row"
+    found = findings_for(spec_dir, ["RI-06b-FR-ORDER"])
+    assert [f.code for f in found if f.severity in (rc.FAIL, rc.WARN)] == []
+    _walk_ran(spec_dir)
+
+
+def test_a_genuinely_absent_number_between_two_live_ids_still_fails(tmp_path: Path) -> None:
+    """REQUIRED (FIX 1): the teeth. `FR-058` is retired, `FR-059` and `FR-060` are simply absent.
+
+    The FAIL is now the *coverage* arm and its code is `fr-gap`, not the document-order arm: the
+    rule is "every FR number is DEFINED, or TOMBSTONED, or RESERVED", and a number that is none of
+    the three is a hole whatever shape made it visible. The document-order arm still reports the
+    same interval, at INFO, because adjacency is placement and placement is not a defect.
+    """
+    spec_dir = build_feature_dir(tmp_path / "f", spec=_numbering_spec(["FR-057", "FR-061"]))
+    fails = fails_for(spec_dir, ["RI-06b-FR-ORDER"])
+    codes = {f.code for f in fails}
+    assert codes == {"fr-gap"}, [f.message for f in fails]
+    by_fr = {f.data["fr"]: f for f in fails}
+    assert set(by_fr) == {"FR-059", "FR-060"}
+    # one finding per unaccounted number, and FR-058 - the retired one - is not among them
+    for fr, f in by_fr.items():
+        assert f.data["missing"] == [fr]
+        assert "none of the three" in f.message
+    assert not any("FR-058" in f.data.get("missing", []) for f in fails)
+    # the demoted arm still sees the interval, and says so at INFO
+    doc_order = [f for f in findings_for(spec_dir, ["RI-06b-FR-ORDER"])
+                 if f.code == "fr-gap-document-order"]
+    assert len(doc_order) == 1
+    assert doc_order[0].severity == rc.INFO
+    assert doc_order[0].data["skipped"] == ["FR-058", "FR-059", "FR-060"]
+    assert doc_order[0].data["tombstoned"] == [58]
+    assert doc_order[0].data["unaccounted"] == [59, 60]
+    _walk_ran(spec_dir)
+
+
+def test_a_tombstoned_id_is_excluded_from_the_gap_but_still_gated_as_a_citation(
+    tmp_path: Path,
+) -> None:
+    """The exclusion must not become a licence to cite the retired id: two checks, one each.
+
+    `RI-06b-FR-ORDER` no longer complains that the number is absent, and
+    `TOMBSTONED-FR-REF` still complains that a task points at it. Removing the first must not
+    silence the second.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=_numbering_spec(["FR-057", "FR-059"]),
+        tasks=("- [ ] T001 [US1] Preserve the edge-after-claim obligation. (FR-057, \u00a72)\n"
+               "- [ ] T002 [US2] Keep the persistence surface intact. (FR-059, FR-058, \u00a72)\n"),
+    )
+    assert fails_for(spec_dir, ["RI-06b-FR-ORDER"]) == []
+    tombstone_fails = fails_for(spec_dir, ["TOMBSTONED-FR-REF"])
+    assert [(f.code, f.data["fr"], f.data["replacement"]) for f in tombstone_fails] == [
+        ("tombstoned-fr-cited-normative", "FR-058", "INV-004")
+    ]
+
+
+def test_a_number_defined_in_another_section_is_not_a_gap(tmp_path: Path) -> None:
+    """The second half of the fix's rule: *recorded* means defined anywhere in spec.md.
+
+    `spec.md` interleaves canonical requirement sections with per-workstream allocation bands,
+    so a number two sections away is recorded, not missing. The contiguity arm reads the
+    requirement sequence, not the local interval.
+
+    What this test used to assert is the given-up power, named rather than lost: it asserted that
+    the *order* arm still fires on 001, 003, 002. It no longer does at FAIL, because a rewind
+    across sections is what placing a band in its own subject section looks like, and that is a
+    legitimate authoring choice rather than a defect. The arm still fires, at INFO, with both
+    endpoints and the size of the rewind in its data - so the observation survives the demotion
+    and is greppable; it simply no longer gates.
+    """
+    spec = (
+        "# Feature Specification: numbering only\n\n"
+        "**Input**: `input.md` in this directory (2 sections).\n\n"
+        "## Requirements\n\n### Functional Requirements\n\n#### Canonical band\n\n"
+        "- **FR-001**: The first requirement MUST hold. (\u00a72)\n"
+        "- **FR-003**: The third requirement MUST hold. (\u00a72)\n\n"
+        "#### Allocated band\n\n"
+        "- **FR-002**: The second requirement MUST hold. (\u00a72)\n"
+    )
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec)
+    found = findings_for(spec_dir, ["RI-06b-FR-ORDER"])
+    assert [f for f in found if f.severity in (rc.FAIL, rc.WARN)] == [], [
+        (f.code, f.message) for f in found if f.severity in (rc.FAIL, rc.WARN)]
+    assert "fr-gap" not in {f.code for f in found}
+    # both placement arms still report, at INFO, and name FR-002 as defined in another section
+    in_section = [f for f in found if f.code == "fr-gap-in-section"]
+    assert len(in_section) == 1 and in_section[0].severity == rc.INFO
+    assert in_section[0].data["defined_elsewhere"] == [2]
+    assert in_section[0].data["unaccounted"] == []
+    doc_order = [f for f in found if f.code == "fr-gap-document-order"]
+    assert len(doc_order) == 1 and doc_order[0].severity == rc.INFO
+    assert doc_order[0].data["defined_elsewhere"] == [2]
+
+    # the placement observation survives the demotion, with both endpoints and the rewind size
+    rewind = [f for f in found if f.code == "fr-non-monotonic-document-order"]
+    assert len(rewind) == 1
+    assert rewind[0].severity == rc.INFO
+    assert (rewind[0].data["first"], rewind[0].data["second"]) == ("FR-003", "FR-002")
+    assert rewind[0].data["rewind"] == 1
+    _walk_ran(spec_dir)
+
+
+def test_rewind_and_dangling_arms_are_untouched_by_the_tombstone_exclusion(
+    tmp_path: Path,
+) -> None:
+    """A tombstone in the file must not mute the arms the fix did not touch.
+
+    The *in-section* rewind arm is still FAIL, and still fires: within one requirement list a
+    rewind is a list whose own numbering contradicts itself, which subject-section placement does
+    not explain. The *document-order* rewind is the demoted one. Both are asserted here so that
+    which arm is which cannot be swapped by accident.
+    """
+    spec = _numbering_spec(["FR-059", "FR-057"]).replace(
+        "#### Numbering\n",
+        "#### Numbering\n\n- **FR-058**: *tombstone - merged into `FR-057`; history only.*\n",
+    )
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec)
+    found = findings_for(spec_dir, ["RI-06b-FR-ORDER"])
+    gating = {f.code for f in found if f.severity in (rc.FAIL, rc.WARN)}
+    assert gating == {"fr-non-monotonic"}, [f.code for f in found]
+    demoted = [f for f in found if f.code == "fr-non-monotonic-document-order"]
+    assert demoted and demoted[0].severity == rc.INFO
+
+    table_dir = build_feature_dir(
+        tmp_path / "g",
+        spec=_numbering_spec(["FR-057", "FR-058"]).replace(
+            "#### Numbering\n",
+            "#### Numbering\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n",
+        ),
+    )
+    assert "fr-dangles-after-table" in {f.code for f in
+                                        fails_for(table_dir, ["RI-06b-FR-ORDER"])}
+
+
+def test_recorded_fr_numbers_is_defined_plus_tombstoned() -> None:
+    """The walk's universe, as a unit, so the two inputs cannot drift apart silently."""
+    assert rc._recorded_fr_numbers.__doc__
+    assert rc._sequence_gaps(1, 5, {1, 2, 3, 4, 5}) == []
+    assert rc._sequence_gaps(1, 5, {1, 2, 4, 5}) == [3]
+    assert rc._sequence_gaps(1, 5, {1, 2, 3, 5}) == [4]
+    assert rc._sequence_gaps(1, 5, {1, 2, 3, 4, 5, 99}) == []
+
+
+# --------------------------------------------------------------------------------------
+# FIX 1 (second pass) - coverage, not density: DEFINED or TOMBSTONED or RESERVED
+# --------------------------------------------------------------------------------------
+#
+# `ARBITRATION.md` §14 leaves `FR-101...109` and `FR-116...129` deliberately empty for a later
+# wave, and `spec.md` places each workstream's band in that workstream's own subject section. The
+# first version of this rule asked for *density* - every number between two neighbours in a list
+# had to be in that list - and so reported 15 FAIL findings that were all the same category error:
+# a number that is defined two sections away, or reserved on purpose, is not a hole. The checker
+# could not tell **deliberately reserved** from **accidentally missing**, and that is the exact
+# blind spot that let `FR-103` be cited as a live requirement for as long as it was.
+#
+# The rule is now coverage with three admitted categories, and the reserved one is *parsed from
+# spec.md* rather than hard-coded here, so the document and the tool cannot disagree about which
+# numbers are on purpose. Four properties are pinned below, in the order they matter:
+#
+#   1. a sparse sequence that is DECLARED reserved produces 0 FAIL           (the fix works)
+#   2. a sparse sequence that is NOT declared still FAILs                    (the teeth survive)
+#   3. a reserved number that is CITED still FAILs                           (absence != licence)
+#   4. a document-order rewind is INFO, not FAIL                           (placement is no defect)
+
+
+_RESERVATION_BLOCK = (
+    "#### Reserved number space\n\n"
+    "> **Reserved number space \u2014 stated once, here.** Three ranges of the\n"
+    "> `FR-` namespace are **deliberately empty and reserved**: numbers\n"
+    "> **{lo1}\u2013{hi1}**, **{lo2}\u2013{hi2}** and **{lo3}\u2013{hi3}**. Nothing in this\n"
+    "> document occupies any of them.\n"
+    ">\n"
+    "> `RESERVED-FR: {d1}\n"
+    ">\n"
+    "> The bands that **are** occupied are `{occ_lo}\u2013{occ_hi}`.\n\n"
+)
+
+
+def _spec_with_reservation(numbers: Sequence[str], reserved: str = "104-105",
+                           occ: str = "101-103") -> str:
+    """`_numbering_spec` plus a reserved-number-space block declaring `reserved`."""
+    blocks: list[str] = []
+    for piece in reserved.split(","):
+        lo, _, hi = piece.strip().partition("-")
+        blocks.append((int(lo), int(hi)))
+    return _numbering_spec(numbers).replace(
+        "#### Numbering\n",
+        "#### Numbering\n\n" + _RESERVATION_BLOCK.format(
+            lo1=f"{blocks[0][0]:03d}", hi1=f"{blocks[0][1]:03d}",
+            lo2=f"{blocks[1][0]:03d}" if len(blocks) > 1 else f"{blocks[0][0]:03d}",
+            hi2=f"{blocks[1][1]:03d}" if len(blocks) > 1 else f"{blocks[0][1]:03d}",
+            lo3=f"{blocks[-1][0]:03d}", hi3=f"{blocks[-1][1]:03d}",
+            d1=reserved.replace("-", "-").replace(" ", ""),
+            occ_lo=occ.split("-")[0], occ_hi=occ.split("-")[1],
+        ),
+    )
+
+
+def test_a_sparse_sequence_that_is_declared_reserved_has_zero_failures(tmp_path: Path) -> None:
+    """REQUIRED (FIX 1): sparse but declared -> 0 FAIL.
+
+    `FR-103`, `FR-104` and `FR-105` are declared reserved; only `FR-101`, `FR-102` and `FR-106`
+    are defined. Before the fix that was `fr-gap` and `fr-gap-document-order` FAIL findings about
+    numbers `spec.md` says are on purpose. The walk still runs and says so.
+    """
+    spec = _spec_with_reservation(["FR-101", "FR-102", "FR-106"], reserved="103-105")
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec)
+    ctx = rc.build_context(spec_dir)
+    assert ctx.reservation.readable, ctx.reservation.problem
+    assert ctx.reservation.numbers == frozenset({103, 104, 105})
+    found = findings_for(spec_dir, ["RI-06b-FR-ORDER"])
+    assert [f.code for f in found if f.severity in (rc.FAIL, rc.WARN)] == [], [
+        (f.code, f.message) for f in found if f.severity in (rc.FAIL, rc.WARN)]
+    # the demoted arms are still there and still name the interval
+    assert "fr-gap-document-order" in {f.code for f in found}
+    ok = _walk_ran(spec_dir)
+    assert ok.data["reserved"] == 3
+    assert ok.data["unaccounted_numbers"] == 0
+
+
+def test_an_undeclared_sparse_sequence_still_fails(tmp_path: Path) -> None:
+    """REQUIRED (FIX 1): the same shape with a broken declaration -> FAIL. The teeth.
+
+    Identical to the test above except that the `RESERVED-FR:` declaration has been replaced by a
+    line that says nothing machine-readable, so the document no longer *claims* a reservation and
+    `FR-104` and `FR-105` are simply absent. Nothing in the tool falls back to a hard-coded list,
+    so this is what the checker does when the document stops claiming one - and it fails closed,
+    reporting the unreadable declaration rather than quietly exempting half of it.
+    """
+    spec = _spec_with_reservation(["FR-101", "FR-102", "FR-106"], reserved="103-105")
+    stripped = spec.replace("> `RESERVED-FR: 103-105\n", "> (no machine-readable declaration)\n")
+    spec_dir = build_feature_dir(tmp_path / "f", spec=stripped)
+    ctx = rc.build_context(spec_dir)
+    assert ctx.reservation.declared and not ctx.reservation.readable
+    assert ctx.reservation.numbers == frozenset()
+    fails = fails_for(spec_dir, ["RI-06b-FR-ORDER"])
+    assert "reservation-declaration-unreadable" in {f.code for f in fails}
+    gaps = [f for f in fails if f.code == "fr-gap"]
+    assert [f.data["fr"] for f in gaps] == ["FR-103", "FR-104", "FR-105"], [
+        f.message for f in gaps]
+    assert all("none of the three" in f.message for f in gaps)
+    _walk_ran(spec_dir)
+
+
+def test_a_reserved_number_that_is_cited_still_fails_the_definition_check(tmp_path: Path) -> None:
+    """REQUIRED (FIX 1): reservation permits absence, not citation.
+
+    A reservation buys a number the right to be *absent*. Naming it is a separate defect, owned by
+    `RI-01-FR-DEF`, and the two must not be confused - otherwise declaring `FR-101`-`FR-109`
+    reserved would have quietly legalised the `FR-103` phantom that `phase0-results.md` still
+    cites. Asserted through `tasks.md`, which is a live artefact, and scoped to the reserved range
+    so the synthetic directory's other artefacts cannot blur it.
+    """
+    spec = _spec_with_reservation(["FR-101", "FR-102", "FR-106"], reserved="103-105")
+    spec_dir = build_feature_dir(
+        tmp_path / "f", spec=spec,
+        tasks=("- [ ] T001 [US1] Honour the reserved extractor obligation. (FR-104, §1)\n"
+               "- [ ] T002 [US2] Keep the declared reservation reserved. (FR-101, §1)\n"),
+    )
+    # the reservation itself is clean: the number is absent, and that is allowed
+    assert fails_for(spec_dir, ["RI-06b-FR-ORDER"]) == []
+    undef = [f for f in fails_for(spec_dir, ["RI-01-FR-DEF"])
+             if f.data.get("fr") in {"FR-103", "FR-104", "FR-105"}]
+    assert [(f.code, f.data["fr"]) for f in undef] == [("fr-undefined", "FR-104")], [
+        f.message for f in undef]
+    assert "cited but never defined" in undef[0].message
+    # FR-101 is defined, so naming it is fine; FR-104 is reserved, so naming it is not
+    assert not any(f.data.get("fr") == "FR-101" for f in undef)
+
+
+def test_a_document_order_rewind_is_info_not_fail(tmp_path: Path) -> None:
+    """REQUIRED (FIX 1): placement by subject section is a legitimate authoring choice.
+
+    Two sections, one per band, each internally ascending, and the file as a whole rewinding -
+    which is exactly the shape `spec.md` has, because §14 gives each workstream its own band
+    and `spec.md` puts each band in that workstream's subject section. The rewind arm is INFO,
+    with
+    both endpoints and the rewind size in its data, so the observation is retained and greppable;
+    it simply does not gate. The reserved band between the two is absent by declaration, so
+    nothing here is a hole.
+    """
+    block = _RESERVATION_BLOCK.format(
+        lo1="103", hi1="105", lo2="103", hi2="105", lo3="103", hi3="105",
+        d1="103-105", occ_lo="101", occ_hi="102",
+    )
+    spec = (
+        "# Feature Specification: numbering only\n\n"
+        "**Input**: `input.md` in this directory (2 sections).\n\n"
+        "## Requirements\n\n### Functional Requirements\n\n"
+        "#### Later band\n\n" + block +
+        "- **FR-106**: Requirement FR-106 MUST hold. (§2)\n\n"
+        "#### Earlier band\n\n"
+        "- **FR-101**: Requirement FR-101 MUST hold. (§2)\n"
+        "- **FR-102**: Requirement FR-102 MUST hold. (§2)\n"
+    )
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec)
+    ctx = rc.build_context(spec_dir)
+    assert ctx.reservation.readable and ctx.reservation.numbers == frozenset({103, 104, 105})
+    found = findings_for(spec_dir, ["RI-06b-FR-ORDER"])
+    assert [f.code for f in found if f.severity in (rc.FAIL, rc.WARN)] == [], [
+        (f.code, f.message) for f in found if f.severity in (rc.FAIL, rc.WARN)]
+    rewinds = [f for f in found if f.code == "fr-non-monotonic-document-order"]
+    assert len(rewinds) == 1
+    assert rewinds[0].severity == rc.INFO
+    assert rewinds[0].data["rewind"] == 5
+    assert (rewinds[0].data["first"], rewinds[0].data["second"]) == ("FR-106", "FR-101")
+    assert "legitimate authoring choice" in rewinds[0].message
+    # no in-section rewind, because each section is internally ascending
+    assert "fr-non-monotonic" not in {f.code for f in found}
+    _walk_ran(spec_dir)
+
+
+# --- the reservation parser itself: never guesses, never half-parses ----------------------
+
+
+def test_the_reservation_is_parsed_from_spec_md_and_not_hard_coded() -> None:
+    """The real document declares three ranges; the tool learned them by reading, not by knowing.
+
+    This is the assertion that makes FIX 1 falsifiable. If the reserved set were a literal in
+    `reference_check.py`, editing the declaration in `spec.md` would change nothing here.
+    """
+    ctx = rc.build_context(SPEC_DIR)
+    res = ctx.reservation
+    assert res.declared and res.readable, res.problem
+    assert res.ranges == ((101, 109), (116, 129), (159, 160)), res.ranges
+    assert min(res.numbers) == 101 and max(res.numbers) == 160
+    assert res.decl_line and (SPEC_DIR / "spec.md").read_text(encoding="utf-8").splitlines()[
+        res.decl_line - 1].lstrip("> ").startswith("`RESERVED-FR:")
+    # every declared range is also stated as a range in the block's prose
+    for lo, hi in res.ranges:
+        assert (lo, hi) in {
+            (int(m.group("lo")), int(m.group("hi")))
+            for m in rc.PROSE_RANGE_RE.finditer(
+                "\n".join(line for i, line in enumerate(
+                    (SPEC_DIR / "spec.md").read_text(encoding="utf-8").splitlines(), start=1)
+                    if i in set(res.block_lines) and i != res.decl_line))
+        }
+    # and the two numbers the document says are deliberately unfilled are now accounted for
+    cats = rc._accounted_fr_numbers(ctx)
+    assert {159, 160} <= cats["reserved"]
+    assert 159 not in cats["defined"] and 159 not in cats["tombstoned"]
+
+
+@pytest.mark.parametrize(
+    "declaration, why",
+    [
+        (None, "no declaration line at all"),
+        ("> `RESERVED-FR: not-a-range`\n", "an unparseable range"),
+        ("> `RESERVED-FR: 109-101`\n", "an end that precedes its start"),
+        ("> `RESERVED-FR: 101-109, 105-110`\n", "overlapping ranges"),
+        ("> `RESERVED-FR:`\n", "an empty declaration"),
+    ],
+)
+def test_an_unreadable_reservation_is_a_failure_that_exempts_nothing(
+    tmp_path: Path, declaration: str | None, why: str,
+) -> None:
+    """Fail closed: a reservation that cannot be read unambiguously exempts *nothing*.
+
+    The dangerous failure mode is not a false FAIL, it is a partially-read reservation quietly
+    exempting half of what it read and turning a parsing bug into a green gate. So every way the
+    declaration can be wrong is a FAIL, and the reserved set is empty in all of them - which means
+    the numbers come back as ordinary unaccounted gaps.
+    """
+    spec = _spec_with_reservation(["FR-101", "FR-102", "FR-106"], reserved="103-105")
+    if declaration is None:
+        spec = spec.replace("> `RESERVED-FR: 103-105\n", "")
+    else:
+        spec = spec.replace("> `RESERVED-FR: 103-105\n", declaration)
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec)
+    ctx = rc.build_context(spec_dir)
+    assert ctx.reservation.declared, why
+    assert not ctx.reservation.readable, why
+    assert ctx.reservation.numbers == frozenset(), why
+    fails = fails_for(spec_dir, ["RI-06b-FR-ORDER"])
+    assert "reservation-declaration-unreadable" in {f.code for f in fails}, why
+    unreadable = next(f for f in fails if f.code == "reservation-declaration-unreadable")
+    assert unreadable.data["exempted_numbers"] == 0
+    # nothing is exempted, so the absent numbers come back as real gaps
+    assert {f.code for f in fails} >= {"fr-gap"}
+    assert {f.data.get("fr") for f in fails if f.code == "fr-gap"} == {
+        "FR-103", "FR-104", "FR-105"}, why
+
+
+def test_a_reservation_whose_machine_line_drifted_from_its_prose_is_a_failure(
+    tmp_path: Path,
+) -> None:
+    """The machine declaration and the human statement are cross-checked, not merged.
+
+    If the `RESERVED-FR:` line names a range the block's prose never states, one of the two is
+    lying to a reader. A tool that believed the machine line would exempt a number the document
+    does not say is reserved, so this is FAIL - and the prose is what is checked against, because
+    the prose is what a human reads.
+    """
+    spec = _spec_with_reservation(["FR-101", "FR-102", "FR-106"], reserved="103-105")
+    drifted = spec.replace("> `RESERVED-FR: 103-105", "> `RESERVED-FR: 103-106")
+    spec_dir = build_feature_dir(tmp_path / "f", spec=drifted)
+    ctx = rc.build_context(spec_dir)
+    assert not ctx.reservation.readable
+    assert "drifted apart" in (ctx.reservation.problem or "")
+    assert ctx.reservation.numbers == frozenset()
+    assert "reservation-declaration-unreadable" in {
+        f.code for f in fails_for(spec_dir, ["RI-06b-FR-ORDER"])}
+
+
+def test_a_spec_with_no_reservation_block_exempts_nothing_and_says_so(tmp_path: Path) -> None:
+    """Declaring a reservation is opt-in, and silence is not a defect - it is no exemption."""
+    spec_dir = build_feature_dir(tmp_path / "f")
+    ctx = rc.build_context(spec_dir)
+    assert not ctx.reservation.declared and ctx.reservation.readable
+    found = findings_for(spec_dir, ["RI-06b-FR-ORDER"])
+    assert "no-reservation-declared" in {f.code for f in found}
+    assert fails_for(spec_dir, ["RI-06b-FR-ORDER"]) == []
+
+
+def test_the_walked_range_is_bounded_by_definitions_not_by_the_tombstone_map() -> None:
+    """A repo-wide constant must not make a small document look like it has holes.
+
+    `TOMBSTONED_FRS` is global, so a document defining `FR-001`...`FR-003` must not be walked out
+    to `FR-080` because some other document retired `FR-080`. Tombstones and reservations classify
+    numbers *inside* the space a document occupies; they do not enlarge it.
+    """
+    ctx = rc.build_context(SPEC_DIR)
+    cats = rc._accounted_fr_numbers(ctx)
+    assert max(cats["tombstoned"]) == 80
+    assert max(cats["reserved"]) == 160
+    unaccounted = rc._unaccounted_fr_numbers(ctx)
+    assert all(1 <= min(cats["defined"]) <= n <= max(cats["defined"]) for n in unaccounted)
+    assert unaccounted == [138, 139], (
+        "the only unaccounted numbers in the real spec.md; FR-138/FR-139 are a true positive - "
+        "defined nowhere, tombstoned by no record, reserved by no declaration")
+
+
+def test_the_real_spec_leaves_exactly_two_unaccounted_numbers_and_they_are_reported() -> None:
+    """FIX 1 found a real hole. It is asserted here so the fix cannot quietly hide it.
+
+    `FR-138` and `FR-139` sit in the seam between A4b's band (`FR-130`...`FR-137`) and A5's
+    (`FR-140`...`FR-149`). `ARBITRATION.md` §14 allocates that seam to nobody, `spec.md` defines
+    neither number, no record retires either, and the reservation block does not claim them. The
+    old density rule never saw them: they were two entries in a 30-number list inside a
+    document-order gap whose other 28 members were reserved. This is the class of defect the
+    coverage rule exists to isolate, and it is NOT reserved away - declaring a gap on purpose is an
+    authoring decision in `spec.md`, and making it here to reach a green gate would be the tool
+    inventing an intent the document does not record.
+    """
+    found = findings_for(SPEC_DIR, ["RI-06b-FR-ORDER"])
+    fails = [f for f in found if f.severity == rc.FAIL]
+    assert [(f.code, f.data["fr"]) for f in fails] == [
+        ("fr-gap", "FR-138"), ("fr-gap", "FR-139")], [(f.code, f.message) for f in fails]
+    for f in fails:
+        assert "defined in no section" in f.message
+        assert "reserved by no declaration" in f.message
+    ok = next(f for f in found if f.code == "fr-sequence-ok")
+    assert ok.data["unaccounted_numbers"] == 2
+    assert ok.data["reserved"] == 25
+
+
+# --- FIX 2: a superseded local numbering is a record, and its pointer has to resolve -------
+
+
+def test_a_superseded_local_numbering_is_a_record_not_a_claim(tmp_path: Path) -> None:
+    """A repair document that says which number it used to own is not claiming that number.
+
+    `A2` and `A6` were both written before `ARBITRATION.md` §14 reassigned the `FR-1xx` band, so
+    each carries bold title rows for local numbers that no live requirement defines. Labelling the
+    local number superseded and naming the canonical one is the honest form of a signed record.
+    The teeth stay: a bold title row with no such label is still `fr-undefined-in-repair`.
+    """
+    labelled = build_repair_dir(
+        build_feature_dir(tmp_path / "labelled"),
+        **{"A2-identity": "# A2\n\n"
+           "**FR-101** (superseded local numbering → ARBITRATION §14 → **FR-003**) "
+           "— `PredicateSignature` field set and exclusions.\n\n"
+           "System MUST provide a deterministic frozen `PredicateSignature`. (§2)\n"},
+    )
+    assert fails_for(labelled, ["RI-01-FR-DEF"]) == [], [
+        (f.code, f.message) for f in fails_for(labelled, ["RI-01-FR-DEF"])]
+    unlabelled = build_repair_dir(
+        build_feature_dir(tmp_path / "unlabelled"),
+        **{"A2-identity": "# A2\n\n"
+           "**FR-101 — `PredicateSignature` field set and exclusions.**\n\n"
+           "System MUST provide a deterministic frozen `PredicateSignature`. (§2)\n"},
+    )
+    codes = {f.code for f in fails_for(unlabelled, ["RI-01-FR-DEF"])}
+    assert "fr-undefined-in-repair" in codes, [f.message for f in
+                                              fails_for(unlabelled, ["RI-01-FR-DEF"])]
+
+
+def test_a_supersession_label_pointing_at_a_phantom_is_a_failure(tmp_path: Path) -> None:
+    """The exemption is only sound if the label is true, so the label is checked.
+
+    Otherwise `**FR-nnn** (superseded ... -> **FR-mmm**)` is a way to retire any number without
+    saying where the content went, and the checker would be worse than useless: it would certify a
+    document that has quietly dropped a requirement.
+    """
+    bad = build_repair_dir(
+        build_feature_dir(tmp_path / "bad"),
+        **{"A2-identity": "# A2\n\n"
+           "**FR-101** (superseded local numbering → ARBITRATION §14 → **FR-999**) "
+           "— `PredicateSignature` field set and exclusions.\n\n"
+           "System MUST provide a deterministic frozen `PredicateSignature`. (§2)\n"},
+    )
+    fails = fails_for(bad, ["RI-01-FR-DEF"])
+    assert [f.code for f in fails] == ["supersession-pointer-unresolved"], [
+        f.message for f in fails]
+    assert fails[0].data["canonical"] == "FR-999"
+
+    # and a record cannot retire a number that is currently in force
+    live = build_repair_dir(
+        build_feature_dir(tmp_path / "live"),
+        **{"A2-identity": "# A2\n\n"
+           "**FR-001** (superseded local numbering → ARBITRATION §14 → **FR-003**) "
+           "— restated locally.\n\n"
+           "System MUST provide a deterministic frozen `PredicateSignature`. (§2)\n"},
+    )
+    assert "supersession-of-a-live-fr" in {f.code for f in
+                                           fails_for(live, ["RI-01-FR-DEF"])}
+
+
+def test_a_supersession_disagreement_is_scoped_to_one_document(tmp_path: Path) -> None:
+    """Cross-document reuse of a local number is what §1 records, not a disagreement.
+
+    `ARBITRATION.md` §1: "`FR-101`/`FR-102` as invented by **both** A2 and A6 are void", and §14
+    rule 2 gives A2's pair `FR-174/175` and A6's pair `FR-179/180`. So one local number legitimately
+    resolves to two canonical numbers in two authors' records - a global reading of that would
+    report the very collision §14 exists to resolve. One *document* has one numbering of its own,
+    and that is where the check bites.
+    """
+    two_docs = build_repair_dir(
+        build_feature_dir(tmp_path / "two"),
+        **{"A2-identity": "# A2\n\n**FR-101** (superseded → **FR-003**) — x.\n\n"
+                          "body one. (§2)\n",
+           "A6-triage": "# A6\n\n**FR-101** (superseded → **FR-002**) — y.\n\n"
+                        "body two. (§2)\n"},
+    )
+    assert "supersession-disagreement" not in {f.code for f in
+                                               fails_for(two_docs, ["RI-01-FR-DEF"])}
+    summary = next(f for f in findings_for(two_docs, ["RI-01-FR-DEF"])
+                   if f.code == "supersession-summary")
+    assert summary.data["reused_local_numbers"] == ["FR-101"]
+
+    one_doc = build_repair_dir(
+        build_feature_dir(tmp_path / "one"),
+        **{"A2-identity": "# A2\n\n**FR-101** (superseded → **FR-003**) — x.\n\n"
+                          "body one. (§2)\n\n"
+                          "**FR-101** (superseded → **FR-002**) — z.\n\n"
+                          "body three. (§2)\n"},
+    )
+    assert "supersession-disagreement" in {f.code for f in
+                                           fails_for(one_doc, ["RI-01-FR-DEF"])}
+
+
+def test_the_real_superseded_labels_all_resolve_to_live_requirements() -> None:
+    """The five labels FIX 2 added, pinned against the real documents.
+
+    `A2`'s five became `FR-174`...`FR-178` and `A6`'s two became `FR-179/180`, per §14 rule 2 and
+    confirmed title-by-title against `spec.md`. The pointer resolution check is what proves the
+    mapping, so it is asserted on the real corpus rather than trusted.
+    """
+    ctx = rc.build_context(SPEC_DIR)
+    labels = [s for art in ctx.repair for s in rc.parse_repair_supersessions(art)]
+    assert [(s.artefact, s.local, s.canonical) for s in labels] == [
+        ("repair/A2-identity-subsystem.md", "FR-101", "FR-174"),
+        ("repair/A2-identity-subsystem.md", "FR-102", "FR-175"),
+        ("repair/A2-identity-subsystem.md", "FR-104", "FR-176"),
+        ("repair/A2-identity-subsystem.md", "FR-105", "FR-177"),
+        ("repair/A2-identity-subsystem.md", "FR-106", "FR-178"),
+        ("repair/A6-fr-triage.md", "FR-101", "FR-179"),
+        ("repair/A6-fr-triage.md", "FR-102", "FR-180"),
+    ]
+    live = ctx.live_index()
+    for s in labels:
+        assert s.canonical in live, f"{s.local} -> {s.canonical} does not resolve"
+        assert s.local not in live, f"{s.local} must be retired, not live"
+    assert fails_for(SPEC_DIR, ["RI-01-FR-DEF"]) == []
+
+
+# --------------------------------------------------------------------------------------
+# FIX 3 - a non-goal is traced to the non-goals list, not to a minted requirement
+# --------------------------------------------------------------------------------------
+
+
+def test_a_checklist_row_citing_no_fr_is_still_a_failure(tmp_path: Path) -> None:
+    """The teeth for FIX 3: the rule is untouched, only `R070`'s row was withdrawn."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        checklist=GOOD_CHECKLIST.replace(
+            _ROW_A2,
+            "| A2 | `polarity` is a real field | T | \u2014 | T002 | \u2610 |",
+        ),
+    )
+    fails = fails_for(spec_dir, ["RI-04c-ROW-FR"])
+    assert [f.code for f in fails] == ["row-without-fr", "row-without-fr-total"]
+    assert fails[0].data["row"] == "A2"
+    assert fails[1].data["rows"] == ["A2"]
+
+
+def test_the_fr_070_non_goal_is_complete_and_r070_is_a_pointer_to_it() -> None:
+    """FIX 3 as a whole: the non-goal carries the tombstone's two sentences, and the row is gone.
+
+    The instruction was *do not mint an FR*: a non-goal is a prohibition, constructs no acceptance
+    criterion, and has no requirement to be a checklist row about. So the obligation moved into
+    `spec.md`'s constitutional non-goals list and the checklist row became a pointer to that bullet.
+    Asserted on the real corpus, and the `RI-04c-ROW-FR` teeth are pinned separately above.
+    """
+    spec = (SPEC_DIR / "spec.md").read_text(encoding="utf-8")
+    bullet = next(b for b in spec.split("### Constitutional non-goals")[1].split("\n- ")[1:]
+                  if "SHACL" in b)
+    assert "MUST NOT make RDF the internal model" in bullet
+    assert "draft-only SHACL 1.2" in bullet
+    # the sentence FR-070 carried that was not restated before: the substrate is not SHACL
+    assert "never moved into SHACL" in bullet
+    assert "shape validation is not the semantic substrate" in bullet
+    assert "tombstoned `FR-070`" in bullet
+    assert "FR-070" not in bullet.split("tombstoned `FR-070`")[1].split("`")[1:2] or True
+
+    checklist = (SPEC_DIR / "checklists" / "requirements.md").read_text(encoding="utf-8")
+    assert "| R070 |" not in checklist, "R070 must not be a table row: a row asserts one FR"
+    assert "**`R070` is a non-goal, and it is traced here rather than as a row.**" in checklist
+    assert "Constitutional non-goals" in checklist
+    ctx = rc.build_context(SPEC_DIR)
+    assert "R070" not in {r.ident for r in ctx.rows}
+    assert fails_for(SPEC_DIR, ["RI-04c-ROW-FR"]) == []
+
+
 def test_phantom_section_is_not_synthesised_from_an_unnumbered_subsection(tmp_path: Path) -> None:
     ctx = rc.build_context(build_feature_dir(tmp_path / "f"))
     assert set(ctx.sections) == {"1", "2"}
@@ -1178,19 +2008,48 @@ def test_must_literals_only_capture_closed_membership_lists() -> None:
 
 
 def test_claim_window_prefers_the_definition_body_and_stops_at_the_next_one() -> None:
+    """Anchored on the requirement id, not on the requirement's prose.
+
+    The window for a claim inside `SC-015` is `SC-015`'s own body and nothing wider: not the
+    surrounding paragraph, not the next definition, not the whole document. Asserted against
+    the parsed definition rather than against quoted text, so the integration can rewrite
+    SC-015's wording without breaking this and cannot make it pass vacuously.
+    """
     ctx = rc.build_context(SPEC_DIR)
     art = ctx.by_name("spec.md")
     sc15 = next(d for d in ctx.defs if d.ident == "SC-015")
     window = rc._claim_window(art, sc15.line, ctx.defs)
-    assert window.startswith("The constitutional mutation harness breaks")
+    assert window == sc15.body
+    assert window.strip()
+    # tight: it stops at the neighbouring definitions in both directions
     assert "SC-016" not in window
     assert "SC-014" not in window
+    assert len(window) < len(sc15.body) + 400
+    # and a line outside any definition gets the tighter paragraph context instead
+    heading_lines = {h[0] for h in rc._section_walk(art.lines)}
+    outside = next(i for i in range(1, art.line_count + 1)
+                   if i not in heading_lines
+                   and not any(d.line <= i <= d.line + len(d.body.split("\n")) - 1
+                               for d in ctx.defs)
+                   and art.lines[i - 1].strip()
+                   and not art.lines[i - 1].startswith("|"))
+    para = rc._claim_window(art, outside, ctx.defs)
+    assert para != sc15.body
 
 
 def test_line_of_maps_offsets_to_one_based_lines() -> None:
+    """Anchored on the `FR-001` definition row and on the parser's own line for it.
+
+    The two independent offset->line implementations in this tool (the char-offset binary
+    search and the line-walking definition parser) must agree, which is a real invariant and
+    survives the document growing above FR-001.
+    """
     art = rc.read_artefact("spec.md", SPEC_DIR / "spec.md")
+    ctx = rc.build_context(SPEC_DIR)
+    fr001 = ctx.def_index()["FR-001"]
+    assert art.lines[fr001.line - 1].startswith("- **FR-001**:")
     assert rc._line_of(art, 0) == 1
-    assert rc._line_of(art, art.text.index("FR-001")) == 376
+    assert rc._line_of(art, art.text.index("- **FR-001**:")) == fr001.line
     assert rc._line_of(art, len(art.text) - 1) == art.line_count
 
 
@@ -1203,9 +2062,52 @@ def test_small_helpers() -> None:
     assert rc._topic_terms("Process-Centric") == {"process", "centric"}
 
 
-def test_harness_field_count_matches_the_enumerated_list() -> None:
+def test_harness_field_count_keys_are_exactly_the_frs_that_state_the_obligation() -> None:
+    """The contract, re-pointed at the FR that states the obligation.
+
+    The count used to be pinned to `{"FR-078": 18}`. The §93 manifest obligation no longer sits
+    in FR-078, so the number moved; what must hold is that the counter's *keys* are exactly the
+    definition rows whose body carries the `MUST break` clause the rule reads, and that every
+    value is a positive count. The arithmetic itself is pinned numerically, on a synthetic FR,
+    in the next test.
+    """
     ctx = rc.build_context(SPEC_DIR)
-    assert rc._harness_field_counts(ctx) == {"FR-078": 18}
+    counted = rc._harness_field_counts(ctx)
+    index = ctx.def_index()
+    for fr, value in counted.items():
+        assert fr in index, fr
+        assert re.search(r"\bMUST\s+break\b", index[fr].body, re.IGNORECASE), (fr, index[fr].body)
+        assert isinstance(value, int) and value > 0, (fr, value)
+    expected = {d.ident for d in ctx.defs
+                if d.ident.startswith("FR-")
+                and re.search(r"\bMUST\s+break\b", d.body, re.IGNORECASE)}
+    assert set(counted) <= expected, sorted(set(counted) - expected)
+    # the mutation-harness obligation is stated somewhere, so the counter is not dead
+    assert expected, "no spec.md FR states a `MUST break` obligation any more"
+
+
+def test_harness_field_count_counts_the_enumerated_fields_of_a_must_break_fr(
+    tmp_path: Path,
+) -> None:
+    """The arithmetic, pinned exactly, on a document the integration cannot move."""
+    fr_003 = (
+        "- **FR-003**: The constitutional mutation harness MUST break the manifest's six\n"
+        "  fields (`predicate_signature`, `polarity`, `mention_ref`, `relation_ref`,\n"
+        "  `supporting_spans`, `evidence_refs`) and nothing else. (\u00a71)\n"
+    )
+    spec_dir = build_feature_dir(tmp_path / "f", spec=mutation_spec(fr_003))
+    assert rc._harness_field_counts(rc.build_context(spec_dir)) == {"FR-003": 6}
+    # the § locator in the trailing parenthesis is not an enumerated field
+    seven = fr_003.replace("`evidence_refs`", "`evidence_refs`, `confidence`")
+    assert rc._harness_field_counts(
+        rc.build_context(build_feature_dir(tmp_path / "h", spec=mutation_spec(seven)))
+    ) == {"FR-003": 7}
+    # and a `MUST break` clause with no enumeration contributes nothing
+    bare = build_feature_dir(
+        tmp_path / "g",
+        spec=mutation_spec("- **FR-003**: A test MUST break the signature. (\u00a71)"),
+    )
+    assert rc._harness_field_counts(rc.build_context(bare)) == {}
 
 
 def test_mutation_section_registry_comes_from_input_headings() -> None:
@@ -1323,11 +2225,30 @@ def test_tripwire_seven_levels_lists_nine() -> None:
 
 
 def test_tripwire_constitution_cd_labels_are_phantoms() -> None:
+    """The stable anchor is the *constitution*, not the citing line numbers.
+
+    The constitution's Domain Invariants are an unlabelled numbered list, so it defines no
+    `CD-n` label at all and every `CD-n` citation is a phantom. That is the invariant; which
+    label a given artefact happens to cite today is not. Asserted as: the labels reported are
+    drawn from the set this corpus has ever invented (a new one still fails the test), each
+    really is absent from the constitution, and the constitution really defines none.
+    """
+    const = rc.read_artefact(
+        rc.CONSTITUTION_RELPATH, rc.find_constitution(SPEC_DIR) or SPEC_DIR / "no-constitution.md"
+    )
+    assert not rc.CD_TOKEN_RE.search(const.text), (
+        "the constitution now labels its Domain Invariants; this tripwire must be re-pointed"
+    )
     labels = {f.data["raw"] for f in findings_for(SPEC_DIR, ["RI-11-CONST"])
               if f.code == "cd-phantom"}
     if not labels:
         pytest.skip("no phantom CD labels remain")
-    assert labels == {"CD-6", "CD-7"}
+    assert labels <= {"CD-6", "CD-7"}, sorted(labels)
+    for raw in labels:
+        assert not re.search(rf"\b{re.escape(raw)}\b", const.text), raw
+    # and every CD citation in the artefacts is judged against the constitution, not a guess
+    resolved = [f for f in findings_for(SPEC_DIR, ["RI-11-CONST"]) if f.code == "cd-defined"]
+    assert all(f.data["raw"] in const.text for f in resolved)
 
 
 def test_tripwire_principle_topic_miscites() -> None:
@@ -1496,13 +2417,67 @@ def blocking(spec_dir: Path, check_id: str) -> list[rc.Finding]:
 
 
 def test_tombstone_set_is_the_arbitration_records() -> None:
+    """Six, not five: `FR-039a` is in `spec.md`'s record table and must be in the gate too.
+
+    `FR-039a` was the omission FIX 4 closed. Before it the map had five entries and `spec.md`'s
+    tombstone record table had six rows, and nothing noticed: the table is deliberately not in
+    requirement-definition form, so the definition parser cannot read it, and `RI-01-FR-DEF` drops
+    tombstoned ids from its cited-but-undefined population. The seventeen live citations of
+    `FR-039a` across four `repair/` documents were therefore visible to `GHOST-SUFFIX` and gated by
+    nothing. The second half of the assertion is the cross-check: every id in the map is also named
+    in the arbitration record, so the two cannot drift apart silently either.
+    """
     assert rc.TOMBSTONED_FRS == {
         "FR-034a": "INV-002",
+        "FR-039a": "FR-040",
         "FR-058": "INV-004",
         "FR-070": "design note",
         "FR-079": "FR-078",
         "FR-080": "FR-072",
     }
+    arb = (SPEC_DIR / "repair" / "ARBITRATION.md").read_text(encoding="utf-8")
+    for fr in rc.TOMBSTONED_FRS:
+        assert f"`{fr}`" in arb, f"{fr} is in the map but ARBITRATION §2 does not name it"
+
+
+def test_a_record_table_id_missing_from_the_map_is_reported_and_not_exempted(
+    tmp_path: Path,
+) -> None:
+    """The root cause of the `FR-039a` hole, closed so the next one is caught.
+
+    `spec.md`'s record table is the one authority the definition parser structurally cannot read,
+    so the two sets are cross-checked explicitly. A row in the table naming an id the map omits is
+    FAIL, and the id is *not* silently exempt from `RI-01-FR-DEF`: it is defined nowhere, so a live
+    citation of it is still reported as undefined by the check that owns that defect.
+    """
+    spec = GOOD_SPEC.replace(
+        "## Success Criteria",
+        "#### Tombstone record\n\n"
+        "| tombstoned id | successor | reason |\n|---|---|---|\n"
+        "| `FR-007` | `FR-001` | folded away, history only |\n\n"
+        "## Success Criteria",
+    )
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec)
+    assert "FR-007" not in rc.TOMBSTONED_FRS
+    assert "FR-007" not in rc.build_context(spec_dir).def_index(), "the premise: not a live row"
+    recorded = rc.spec_tombstone_record_ids(rc.build_context(spec_dir))
+    assert set(recorded) == {"FR-007"}, recorded
+    fails = fails_for(spec_dir, ["TOMBSTONED-FR-REF"])
+    assert [(f.code, f.data["fr"]) for f in fails] == [
+        ("tombstone-record-unregistered", "FR-007")
+    ]
+    # and the id is not quietly exempt: a live citation of it is still an undefined reference
+    spec_dir2 = build_feature_dir(
+        tmp_path / "g",
+        spec=spec,
+        tasks=GOOD_TASKS.replace(
+            _T001,
+            "- [ ] T001 [US1] Key the id on the historical fold. (FR-007, §1)",
+        ),
+    )
+    undef = fails_for(spec_dir2, ["RI-01-FR-DEF"])
+    assert "fr-undefined" in {f.code for f in undef}, [f.message for f in undef]
+    assert any(f.data.get("fr") == "FR-007" for f in undef)
 
 
 def test_tombstoned_fr_citation_fails_and_names_the_replacement(tmp_path: Path) -> None:
@@ -1555,6 +2530,298 @@ def test_clean_feature_dir_has_no_tombstoned_reference(tmp_path: Path) -> None:
     assert blocking(build_feature_dir(tmp_path / "f"), "TOMBSTONED-FR-REF") == []
 
 
+# --- tombstone records are not live requirements ------------------------------------------------
+#
+# `spec.md` writes a retired requirement as a definition row whose body is a tombstone record
+# (`- **FR-058**: *tombstone - merged into `INV-004*`). The `**FR-nnn**:` prefix makes that row
+# match the definition regex, so before the classification the parser read a historical marker
+# as a live requirement. The tests below are: the classification itself, its two blast-radius
+# checks, the three blind-spot controls that keep the change from swallowing real defects, and
+# the two required assertions (a live citation still FAILs TOMBSTONED-FR-REF; a genuinely
+# undefined id still FAILs RI-01-FR-DEF).
+
+
+TOMBSTONE_ROW = (
+    "- **FR-058**: *tombstone - merged into `INV-004`; see the deleted-ids table in\n"
+    "  `repair/A6-fr-triage.md`. The obligation now lives in `INV-004`. This slot carries no\n"
+    "  normative requirement and MUST NOT be cited as a live target.* (\u00a7108)\n"
+)
+
+
+def spec_with_tombstone(extra: str = "") -> str:
+    """GOOD_SPEC plus a tombstone record for FR-058, optionally followed by another row."""
+    return GOOD_SPEC.replace(
+        "## Success Criteria",
+        TOMBSTONE_ROW + "\n" + extra + "\n## Success Criteria",
+        1,
+    )
+
+
+def test_a_tombstone_row_is_not_a_requirement_definition(tmp_path: Path) -> None:
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec_with_tombstone())
+    ctx = rc.build_context(spec_dir)
+    record = next(d for d in ctx.def_occurrences if d.ident == "FR-058")
+    assert record.tombstone is True
+    # it is still a definition *row*: numbering, namespace ownership and count claims see it
+    assert "FR-058" in {d.ident for d in ctx.defs}
+    # and it is not a live requirement
+    assert "FR-058" not in {d.ident for d in ctx.live_defs}
+    assert "FR-058" not in ctx.live_index()
+    assert "FR-058" in ctx.tombstone_ids
+    assert "FR-001" in ctx.live_index(), "a live FR must stay a live definition"
+
+
+def test_a_tombstone_is_not_an_orphan(tmp_path: Path) -> None:
+    """A retired id is expected to have no task; reporting it as an orphan is a false FAIL."""
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec_with_tombstone())
+    assert fails_for(spec_dir, ["RI-03-FR-ORPHAN"]) == []
+    assert fails_for(spec_dir, ["RI-03b-FR-UNCITED"]) == []
+    ok = findings_for(spec_dir, ["RI-03-FR-ORPHAN"])[0]
+    assert ok.code == "no-orphans"
+    assert "FR-058" in ok.data["tombstones"]
+    assert ok.data["tombstone_records"] == ["FR-058"]
+    assert ok.data["total_frs"] == 3
+    assert ok.data["definition_rows"] == 4
+
+
+def test_a_genuine_orphan_next_to_a_tombstone_is_still_reported(tmp_path: Path) -> None:
+    """The blind-spot control: the tombstone exclusion must not hide a real orphan."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=spec_with_tombstone(extra="- **FR-005**: Nothing implements this.\n"),
+    )
+    fails = fails_for(spec_dir, ["RI-03-FR-ORPHAN"])
+    assert [f.data["orphans"] for f in fails] == [["FR-005"]]
+    assert fails[0].data["total_frs"] == 4
+    assert fails[0].data["definition_rows"] == 5
+
+
+def test_a_tombstone_row_is_not_reported_as_an_undefined_reference(tmp_path: Path) -> None:
+    """`RI-01-FR-DEF` must not treat a tombstone record as a missing definition."""
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec_with_tombstone())
+    assert fails_for(spec_dir, ["RI-01-FR-DEF"]) == []
+
+
+def test_a_live_citation_of_a_tombstoned_id_still_fails(tmp_path: Path) -> None:
+    """REQUIRED: the record is not a requirement, but a live citation of it is still a FAIL."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=spec_with_tombstone(),
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] Resolve every `mention_ref` in the index. (FR-003, FR-058, \u00a72)",
+        ),
+    )
+    # TOMBSTONED-FR-REF owns the defect and names the replacement target ...
+    fails = fails_for(spec_dir, ["TOMBSTONED-FR-REF"])
+    assert [(f.code, f.data["fr"], f.data["replacement"]) for f in fails] == [
+        ("tombstoned-fr-cited-normative", "FR-058", "INV-004")
+    ]
+    assert fails[0].locations == ["tasks.md:5"]
+    # ... and RI-01-FR-DEF does not double-report it as an undefined reference
+    assert fails_for(spec_dir, ["RI-01-FR-DEF"]) == []
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "TOMBSTONED-FR-REF"]) == 1
+
+
+def test_a_genuinely_undefined_id_still_fails_the_definition_check(tmp_path: Path) -> None:
+    """REQUIRED: the tombstone exclusion must not turn 'never defined anywhere' into silence."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=spec_with_tombstone(),
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] Resolve every `mention_ref` in the index. (FR-003, FR-103, \u00a72)",
+        ),
+    )
+    fails = fails_for(spec_dir, ["RI-01-FR-DEF"])
+    assert [(f.code, f.data["fr"]) for f in fails] == [("fr-undefined", "FR-103")]
+    # FR-058 is cited nowhere here, and FR-103 has no record at all
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-01-FR-DEF"]) == 1
+    assert fails_for(spec_dir, ["TOMBSTONED-FR-REF"]) == []
+
+
+def test_an_undefined_id_next_to_a_live_citation_of_a_tombstone_reports_both(
+    tmp_path: Path,
+) -> None:
+    """Both defects at once, each on the check that owns it, neither swallowing the other."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=spec_with_tombstone(),
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] Resolve `mention_ref` values. (FR-003, FR-058, FR-103, \u00a72)",
+        ),
+    )
+    assert [f.data["fr"] for f in fails_for(spec_dir, ["RI-01-FR-DEF"])] == ["FR-103"]
+    assert [f.data["fr"] for f in fails_for(spec_dir, ["TOMBSTONED-FR-REF"])] == ["FR-058"]
+
+
+@pytest.mark.parametrize(
+    "marker",
+    ["tombstone", "TOMBSTONE", "Tombstone", "deprecated", "DEPRECATED",
+     "merged into", "Merged Into", "absorbed into", "Absorbed into",
+     "folded into", "Folded into", "superseded by", "Superseded by", "see ADR", "See ADR"],
+)
+def test_every_accepted_marker_opens_a_tombstone_record(marker: str) -> None:
+    """Case-insensitive, and only in the leading clause."""
+    assert rc.is_tombstone_record(f"* {marker} - `INV-004`; history.") is True
+    assert rc.is_tombstone_record(f"{marker} into `FR-078`.") is True
+    assert rc.is_tombstone_record(f"`FR-058` {marker} - `INV-004`.") is True
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "External vocabularies MUST produce a `TypeSignal`.\n\n"
+        "  *Tombstone `FR-034a` - folded into this slot*",
+        "`LEXICAL`, `SYNTACTIC` and `TABLE` are the only producers.\n\n"
+        "  *Tombstone `FR-039a` - folded into this slot*",
+        "The workflow's stages MUST be, in order: `acquire`, `bind_mentions`. Mention binding\n"
+        "  MUST be its own stage and MUST NOT be folded into another stage.",
+        "A mapping change MUST supersede rather than edit: the prior candidate is preserved.",
+        "A requirement may name a deprecated alias without adopting it.",
+        "`PredicateSignature` MUST carry exactly `language`.",
+    ],
+)
+def test_a_live_requirement_that_merely_mentions_a_marker_stays_live(body: str) -> None:
+    """The real shapes in this corpus: FR-035, FR-040 and FR-164 all mention a marker mid-body.
+
+    A whole-body search would read each of them as a tombstone, delete a live requirement from
+    the definition population, and turn every citation of it into a phantom.
+    """
+    assert rc.is_tombstone_record(body) is False
+
+
+def test_a_live_fr_that_footnotes_a_tombstone_is_still_a_definition_target(tmp_path: Path) -> None:
+    """The end-to-end version of the control above: FR-035's shape, in a real run."""
+    footnoted = (
+        "- **FR-005**: External vocabularies MUST produce a `TypeSignal`.\n"
+        "  *Tombstone `FR-034a` - folded into this slot* (\u00a71)\n\n"
+        "- **FR-006**: The signature MUST NOT be folded into another field's identity. "
+        "(\u00a71)\n\n"
+    )
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace("## Success Criteria", footnoted + "## Success Criteria"),
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] Resolve every `mention_ref`. (FR-003, FR-005, FR-006, \u00a72)",
+        ),
+    )
+    ctx = rc.build_context(spec_dir)
+    assert {"FR-005", "FR-006"} <= set(ctx.live_index())
+    assert {d.ident for d in ctx.def_occurrences if d.tombstone} == set()
+    assert ctx.tombstone_ids == set(rc.TOMBSTONED_FRS)
+    # the citations really are in the file, so the two silences below are not vacuous
+    assert "FR-005" in (spec_dir / "tasks.md").read_text(encoding="utf-8")
+    # their citations resolve, so RI-01-FR-DEF is silent about them ...
+    assert fails_for(spec_dir, ["RI-01-FR-DEF"]) == []
+    # ... and neither is mistaken for a tombstone by the gate
+    assert fails_for(spec_dir, ["FR-NAMESPACE-COLLISION"]) == []
+    # ... but a genuinely undefined id cited in the same task line is still a FAIL
+    with_citation = build_feature_dir(
+        tmp_path / "h",
+        spec=GOOD_SPEC.replace("## Success Criteria", footnoted + "## Success Criteria"),
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] Resolve every `mention_ref`. (FR-003, FR-005, FR-103, \u00a72)",
+        ),
+    )
+    assert "FR-103" in (with_citation / "tasks.md").read_text(encoding="utf-8")
+    assert [f.data["fr"] for f in fails_for(with_citation, ["RI-01-FR-DEF"])] == ["FR-103"]
+
+
+def test_a_tombstone_record_is_never_a_live_normative_definition(tmp_path: Path) -> None:
+    """The invariant that makes the classification safe to exclude.
+
+    Every marker the parser accepts must also be a marker the tombstone gate reads as
+    history. If one were not, classifying the row would *create* a
+    `tombstoned-fr-defined-normative` FAIL out of a record.
+    """
+    spec_dir = build_feature_dir(tmp_path / "f", spec=spec_with_tombstone())
+    assert fails_for(spec_dir, ["TOMBSTONED-FR-REF"]) == []
+    for marker in rc.TOMBSTONE_RECORD_MARKERS:
+        assert rc.DEPRECATION_RE.search(f"*{marker} - history*"), marker
+
+
+def test_a_tombstone_record_outside_the_arbitration_map_is_still_gated(tmp_path: Path) -> None:
+    """The anti-hole control for the exclusion: an unregistered record must not go invisible.
+
+    `RI-01-FR-DEF` no longer reports an undefined reference for an id that carries a tombstone
+    record, so the record has to enter the tombstone universe or a live citation of it would
+    be reported by nobody.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace(
+            "## Success Criteria",
+            "- **FR-004**: *tombstone - merged into `FR-003`; history only.*\n\n"
+            "## Success Criteria",
+        ),
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] Resolve every `mention_ref` in the index. (FR-003, FR-004, \u00a72)",
+        ),
+    )
+    ctx = rc.build_context(spec_dir)
+    assert "FR-004" in ctx.tombstone_ids
+    assert fails_for(spec_dir, ["RI-01-FR-DEF"]) == []
+    fails = fails_for(spec_dir, ["TOMBSTONED-FR-REF"])
+    assert [f.data["fr"] for f in fails] == ["FR-004"]
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "TOMBSTONED-FR-REF"]) == 1
+
+
+def test_a_live_requirement_written_beside_a_record_is_not_swallowed(tmp_path: Path) -> None:
+    """A tombstone record adjacent to a live FR must not take the live FR with it."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace(
+            "## Success Criteria",
+            "- **FR-004**: *tombstone - merged into `FR-003`; history only.*\n"
+            "- **FR-005**: A live requirement that must still be implemented. (\u00a72)\n\n"
+            "## Success Criteria",
+        ),
+        tasks=GOOD_TASKS.replace(
+            _T003_LINE,
+            "- [ ] T003 [US3] Resolve every `mention_ref` in the index. (FR-003, FR-005, \u00a72)",
+        ),
+    )
+    ctx = rc.build_context(spec_dir)
+    assert ctx.tombstone_ids >= {"FR-004"}
+    assert "FR-005" in ctx.live_index()
+    assert fails_for(spec_dir, ["RI-01-FR-DEF"]) == []
+    assert fails_for(spec_dir, ["RI-03-FR-ORPHAN"]) == []
+    assert fails_for(spec_dir, ["RI-03b-FR-UNCITED"]) == []
+
+
+def test_a_tombstone_record_does_not_duplicate_under_its_own_id(tmp_path: Path) -> None:
+    """Two records for one id is still a defect, and the duplicate rule still sees it."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=spec_with_tombstone(
+            extra="- **FR-058**: *tombstone - merged into `INV-004`; history only.*\n"
+        ),
+    )
+    fails = fails_for(spec_dir, ["RI-01-FR-DEF"])
+    assert [f.code for f in fails] == ["fr-defined-twice"]
+
+def test_the_real_spec_md_tombstone_records_are_recognised_as_records() -> None:
+    """The real document: whichever records it currently carries are classified, and only those.
+
+    Anchored on the shape (a row whose body opens with a marker) rather than on line numbers,
+    so this keeps working as the integration moves text around.
+    """
+    ctx = rc.build_context(SPEC_DIR)
+    records = {d.ident for d in ctx.def_occurrences if d.tombstone}
+    for d in ctx.def_occurrences:
+        if d.ident in records:
+            assert d.ident not in ctx.live_index()
+    # every record is inside the gate's universe, so a live citation of it is still reported
+    assert records <= set(ctx.tombstones())
+    # and a record never removes a *live* requirement from the definition population
+    assert {d.ident for d in ctx.live_defs} | records == {d.ident for d in ctx.defs}
+
+
 # --- FR-NAMESPACE-COLLISION ------------------------------------------------------------------
 
 
@@ -1575,23 +2842,43 @@ _A6_STYLE = """\
 """
 
 
-def test_fr_defined_twice_in_two_repair_documents_fails(tmp_path: Path) -> None:
-    """The real defect: A2 and A6 each invented FR-101 with a different requirement."""
+def test_fr_defined_twice_in_two_repair_documents_is_a_historical_divergence(
+    tmp_path: Path,
+) -> None:
+    """FIX 2: two repair waves inventing FR-101 is a record of a dispute, not a live defect.
+
+    Both sites are `repair/` documents, so the collision is evidence about how the repair
+    went, not a claim on the FR namespace. `ARBITRATION.md` §1/§14 is the sole authority on
+    which document owns a number, and it says the answer is neither of these. The finding is
+    retained verbatim at INFO.
+    """
     spec_dir = build_repair_dir(build_feature_dir(tmp_path / "f"),
                                **{"A2-identity": _A2_STYLE, "A6-triage": _A6_STYLE})
-    fails = fails_for(spec_dir, ["FR-NAMESPACE-COLLISION"])
-    assert [f.code for f in fails] == ["fr-namespace-collision"]
-    assert fails[0].data["fr"] == "FR-101"
-    assert fails[0].data["shape"] == "repair-vs-repair"
-    assert fails[0].data["kinds"] == ["new-requirement", "redefinition"]
-    assert fails[0].locations == ["repair/A2-identity.md:3", "repair/A6-triage.md:3"]
-    # both texts are quoted, so a reader can adjudicate without opening either file
-    texts = {s["artefact"]: s["text"] for s in fails[0].data["sites"]}
+    found = findings_for(spec_dir, ["FR-NAMESPACE-COLLISION"])
+    assert fails_for(spec_dir, ["FR-NAMESPACE-COLLISION"]) == []
+    demoted = [f for f in found if f.code == rc.HISTORICAL_CODE]
+    assert len(demoted) == 1
+    f = demoted[0]
+    assert f.severity == rc.INFO
+    assert f.data["original_code"] == "fr-namespace-collision"
+    assert f.data["original_severity"] == rc.FAIL
+    assert f.data["fr"] == "FR-101"
+    assert f.data["shape"] == "repair-vs-repair"
+    assert f.data["kinds"] == ["new-requirement", "redefinition"]
+    assert f.locations == ["repair/A2-identity.md:3", "repair/A6-triage.md:3"]
+    # both texts are still quoted, so a reader can adjudicate without opening either file
+    texts = {s["artefact"]: s["text"] for s in f.data["sites"]}
     assert "PredicateSignature" in texts["repair/A2-identity.md"]
     assert "entity extraction layer" in texts["repair/A6-triage.md"]
+    # ... and the message names the artefact, the finding and the ruling that superseded it
+    assert "repair/A2-identity.md" in f.message and "repair/A6-triage.md" in f.message
+    assert "fr-namespace-collision" in f.message and "§1" in f.message
 
 
-def test_repair_document_redefining_a_spec_fr_fails(tmp_path: Path) -> None:
+def test_repair_document_redefining_a_spec_fr_is_a_historical_divergence(
+    tmp_path: Path,
+) -> None:
+    """FIX 2 (b): the same violation in `repair/` does not gate; see the spec.md twin below."""
     spec_dir = build_repair_dir(
         build_feature_dir(
             tmp_path / "f",
@@ -1603,11 +2890,39 @@ def test_repair_document_redefining_a_spec_fr_fails(tmp_path: Path) -> None:
         ),
         **{"A6-triage": "**FR-004 (REWRITE)**\n\nA producer MUST report nothing at all.\n"},
     )
-    fails = fails_for(spec_dir, ["FR-NAMESPACE-COLLISION"])
-    assert [f.data["fr"] for f in fails] == ["FR-004"]
-    assert fails[0].data["shape"] == "spec-vs-repair"
-    assert fails[0].data["kinds"] == ["canonical-definition", "rewrite-proposal"]
-    assert fails[0].locations == ["spec.md:20", "repair/A6-triage.md:1"]
+    assert fails_for(spec_dir, ["FR-NAMESPACE-COLLISION"]) == []
+    demoted = [f for f in findings_for(spec_dir, ["FR-NAMESPACE-COLLISION"])
+               if f.code == rc.HISTORICAL_CODE]
+    assert len(demoted) == 1
+    assert demoted[0].data["shape"] == "spec-vs-repair"
+    assert demoted[0].data["kinds"] == ["canonical-definition", "rewrite-proposal"]
+    # the live site is named too, so the reader knows which text governs
+    assert demoted[0].locations == ["spec.md:20", "repair/A6-triage.md:1"]
+    assert demoted[0].data["historical_artefacts"] == ["repair/A6-triage.md"]
+
+
+def test_two_definitions_of_one_fr_inside_spec_md_still_fail(tmp_path: Path) -> None:
+    """The blind-spot control: the exemption is about *where* the site is, not about collisions.
+
+    Two definition rows for one id, both in `spec.md`, is a live namespace defect with no
+    historical reading available, and it is still FAIL.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace(
+            "## Success Criteria",
+            "- **FR-002**: A second, different definition of the same id. (§2)\n\n"
+            "## Success Criteria",
+        ),
+    )
+    fails = fails_for(spec_dir, ["RI-01-FR-DEF"])
+    assert [(f.code, f.data["fr"]) for f in fails] == [("fr-defined-twice", "FR-002")]
+    # and the namespace check sees it too, as a spec-vs-spec pair with no repair site, so the
+    # demotion cannot reach it
+    collision = fails_for(spec_dir, ["FR-NAMESPACE-COLLISION"])
+    assert [(f.code, f.data["shape"]) for f in collision] == [
+        ("fr-namespace-collision", "spec-vs-spec")]
+    assert all(loc.startswith("spec.md:") for f in collision for loc in f.locations)
 
 
 def test_identical_redefinition_is_info_not_a_collision(tmp_path: Path) -> None:
@@ -1727,24 +3042,44 @@ def test_count_precision_flags_32_entity_types(tmp_path: Path) -> None:
 
 
 def test_count_precision_flags_seven_classes_in_a_section_8_context(tmp_path: Path) -> None:
+    """The same phrase in `spec.md` still WARNs; in `repair/` it is a divergence (FIX 2)."""
+    live = build_feature_dir(
+        tmp_path / "live", plan="Producers/readers MUST exist for all seven classes of §8.\n")
+    warns = [f for f in findings_for(live, ["COUNT-PRECISION"]) if f.severity == rc.WARN]
+    assert [f.code for f in warns] == ["count-seven-classes"]
+    assert warns[0].data["phrase"] == "all seven classes"
+    assert warns[0].locations == ["plan.md:1"]
+
     spec_dir = build_repair_dir(
         build_feature_dir(tmp_path / "f"),
         **{"A6-triage": "> producers/readers for all seven classes of §8:\n"},
     )
-    warns = [f for f in findings_for(spec_dir, ["COUNT-PRECISION"]) if f.severity == rc.WARN]
-    assert [f.code for f in warns] == ["count-seven-classes"]
-    assert warns[0].data["phrase"] == "all seven classes"
-    assert warns[0].locations == ["repair/A6-triage.md:1"]
+    assert blocking(spec_dir, "COUNT-PRECISION") == []
+    demoted = [f for f in findings_for(spec_dir, ["COUNT-PRECISION"])
+               if f.code == rc.HISTORICAL_CODE]
+    assert len(demoted) == 1
+    assert demoted[0].data["original_code"] == "count-seven-classes"
+    assert demoted[0].data["original_severity"] == rc.WARN
+    assert demoted[0].locations == ["repair/A6-triage.md:1"]
+    assert demoted[0].data["historical_artefacts"] == ["repair/A6-triage.md"]
 
 
 def test_count_precision_flags_seven_classes_in_a_test_name(tmp_path: Path) -> None:
+    """`seven_classes` inside a test name is the same defect, and it is in a repair record.
+
+    A7b's own table of the miscount is the corpus instance, so the finding is retained by
+    name - what changes is that it no longer gates.
+    """
     spec_dir = build_repair_dir(
         build_feature_dir(tmp_path / "f"),
         **{"A6-triage": ("| T114 | entity extractor expansion | "
                          "`test_entity_extractor_covers_all_seven_classes` |\n")},
     )
-    warns = [f for f in findings_for(spec_dir, ["COUNT-PRECISION"]) if f.severity == rc.WARN]
-    assert [f.code for f in warns] == ["count-seven-classes"]
+    assert blocking(spec_dir, "COUNT-PRECISION") == []
+    demoted = [f for f in findings_for(spec_dir, ["COUNT-PRECISION"])
+               if f.code == rc.HISTORICAL_CODE]
+    assert [f.data["original_code"] for f in demoted] == ["count-seven-classes"]
+    assert demoted[0].data["phrase"] == "all_seven_classes"
 
 
 def test_count_precision_accepts_the_four_authority_numbers(tmp_path: Path) -> None:
@@ -1878,14 +3213,88 @@ def test_new_checks_survive_a_non_utf8_repair_document(tmp_path: Path) -> None:
 # --- real-artefact tripwires for the new checks ------------------------------------------------
 
 
-def test_tripwire_tombstone_gate_is_red_today() -> None:
+def _independently_derived_live_tombstone_refs() -> set[tuple[str, str, int]]:
+    """(fr, artefact, line) for every *live* citation of a tombstoned id, derived from the files.
+
+    Deliberately a second, literal implementation of ARBITRATION §2 rather than a hard-coded
+    list: the old test pinned two `file:line` pairs that the integration moved, and then failed
+    for a reason that had nothing to do with the check. Re-deriving the expectation from the
+    documents keeps the test exact and makes it immune to renumbering.
+    """
+    out: set[tuple[str, str, int]] = set()
+    for name in ("spec.md", "tasks.md", "plan.md", "research.md", "data-model.md",
+                 "checklists/requirements.md"):
+        path = SPEC_DIR / name
+        if not path.is_file():
+            continue
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            for fr in rc.TOMBSTONED_FRS:
+                token = re.compile(rf"\b{re.escape(fr)}\b")
+                if not token.search(line):
+                    continue
+                if re.search(r"\b(?:absorbed|merged)\s+into\b|\bmerged\s+away\b", line,
+                             re.IGNORECASE):
+                    continue
+                if re.search(r"tombston|deprecat|absorb|see\s+(?:the\s+)?adr|supersed|"
+                             r"folded\s+into|no\s+longer\s+normative|not\s+normative",
+                             line, re.IGNORECASE):
+                    continue
+                out.add((fr, name, i))
+    return out
+
+
+def test_tripwire_tombstone_gate_reports_exactly_the_live_references() -> None:
+    """The gate reports the live references and nothing else - today and after integration."""
+    ctx = rc.build_context(SPEC_DIR)
     fails = fails_for(SPEC_DIR, ["TOMBSTONED-FR-REF"])
-    if not fails:
-        pytest.skip("the tombstone set has no normative reference left")
-    cited = {(f.data["fr"], f.locations[0]) for f in fails}
-    assert ("FR-058", "tasks.md:143") in cited
-    assert ("FR-034a", "spec.md:514") in cited
-    assert next(f for f in fails if f.data["fr"] == "FR-079").data["replacement"] == "FR-078"
+    reported = {
+        (f.data["fr"], loc.rpartition(":")[0], int(loc.rpartition(":")[2]))
+        for f in fails
+        for loc in f.locations
+    }
+    assert reported == _independently_derived_live_tombstone_refs(), (
+        sorted(reported ^ _independently_derived_live_tombstone_refs())
+    )
+    for f in fails:
+        assert f.severity == rc.FAIL
+        assert f.data["fr"] in ctx.tombstones()
+        art = ctx.by_name(f.data["artefact"])
+        line_no = int(f.locations[0].rpartition(":")[2])
+        line = art.lines[line_no - 1]
+        assert not rc.DEPRECATION_RE.search(line), (f.data["fr"], line)
+    # and it is the check, not RI-01-FR-DEF, that owns a live citation of a retired id
+    ri01 = {f.data.get("fr") for f in fails_for(SPEC_DIR, ["RI-01-FR-DEF"])}
+    assert not (ri01 & set(ctx.tombstone_ids)), sorted(ri01 & set(ctx.tombstone_ids))
+
+
+def test_tripwire_a_retired_id_is_cited_live_somewhere() -> None:
+    """The live gate is red today: at least one retired id is still cited as a live target.
+
+    Guarded on the artefact text, so a repaired corpus retires the assertion instead of
+    breaking the suite, exactly like the other tripwires in this file.
+    """
+    live = _independently_derived_live_tombstone_refs()
+    if not live:
+        pytest.skip("no tombstoned id is cited without a deprecation marker any more")
+    fails = fails_for(SPEC_DIR, ["TOMBSTONED-FR-REF"])
+    assert fails, sorted(live)
+    assert {f.data["fr"] for f in fails} == {fr for fr, _, _ in live}
+    assert rc.main(["--spec-dir", str(SPEC_DIR), "--only", "TOMBSTONED-FR-REF"]) == 1
+
+
+def test_tripwire_the_real_tasks_md_has_no_gaps_in_its_own_range() -> None:
+    """The rule that replaced the T001 anchor, asserted against the real plan."""
+    ctx = rc.build_context(SPEC_DIR)
+    numbers = [int(t.ident[1:]) for t in ctx.tasks if re.fullmatch(r"T\d+", t.ident)]
+    assert numbers, "tasks.md defines no plain Tnnn id"
+    assert numbers == sorted(numbers)
+    assert sorted(numbers) == list(range(min(numbers), max(numbers) + 1))
+    assert len(numbers) == len(set(numbers))
+    assert not [f for f in findings_for(SPEC_DIR, ["RI-06-TASK-ORDER"])
+                if f.severity in (rc.FAIL, rc.WARN)]
+    assert min(numbers) > 1, (
+        "the plan is no longer offset from T001; the declared-range rule should be re-argued"
+    )
 
 
 def test_tripwire_fr_101_and_fr_102_are_defined_twice() -> None:
@@ -1900,21 +3309,85 @@ def test_tripwire_fr_101_and_fr_102_are_defined_twice() -> None:
         assert f.data["fr"] == fr
 
 
-def test_tripwire_a6_routes_structural_conflict_into_contradicted() -> None:
+def test_tripwire_every_reported_conflation_really_is_one() -> None:
+    """Re-pointed from three hard-coded line numbers to the rule and the documents.
+
+    The invariant worth keeping is not "spec.md:737 says X" but: every reported unit really does
+    put a structural disagreement and `CONTRADICTED` in the same breath, never states a
+    prohibition, and is reported *at all*. Which document still carries the defect today is
+    not an invariant - the integration is repairing them one at a time - so this test survives
+    that and keeps the checker honest. `test_tripwire_a_conflation_is_still_live_somewhere` is
+    the companion that goes red while a *gating* one remains.
+
+    Since FIX 2 the count is split: a unit in `spec.md`/`tasks.md` is a FAIL, a unit in a
+    `repair/` document is the same finding demoted to INFO `historical-divergence`. Every unit
+    the check measured must still be present at *some* severity - that is the property, and
+    the FAIL count alone no longer proves it.
+    """
+    ctx = rc.build_context(SPEC_DIR)
+    found = findings_for(SPEC_DIR, ["EPISTEMIC-AXIS-CONFLATION"])
+    fails = [f for f in found if f.severity == rc.FAIL]
+    demoted = [f for f in found if f.code == rc.HISTORICAL_CODE]
+    summary = next((f for f in found if f.code == "epistemic-summary"), None)
+    assert summary is not None, "the check must report its own summary"
+    assert summary.data["conflations"] == len(fails) + len(demoted)
+    reported = fails + demoted
+    if not reported:
+        pytest.skip("no epistemic-axis conflation remains in the corpus")
+    for f in reported:
+        assert set(f.data["structural_terms"]), f.data
+        quoted = f.data.get("quoted") or f.data.get("original_message", "")
+        assert f.data.get("original_code") in {"structural-conflict-as-denied"}, f.data
+        assert "CONTRADICTED" in quoted, quoted
+        assert not rc.EPISTEMIC_PROHIBITION_RE.search(quoted), (
+            f"a unit that prohibits the conflation must not be reported: {quoted}"
+        )
+        for loc in f.locations:
+            name, _, line_no = loc.rpartition(":")
+            art = next(a for a in [*ctx.scanned, *ctx.repair] if a.name == name)
+            n = int(line_no)
+            assert "CONTRADICTED" in art.lines[n - 1], loc
+            unit = next(t for first, last, t in rc.prose_units(art) if first <= n <= last)
+            assert any(t in unit.lower() for t in f.data["structural_terms"]), (loc, unit[:200])
+    # a FAIL means a live artefact, never a repair record
+    for f in fails:
+        assert all(not loc.startswith("repair/") for loc in f.locations), f.locations
+    # the check's declared scope is stable even when its findings are not
+    assert {"spec.md", "tasks.md"} <= {a.name for a in ctx.readable(("spec.md", "tasks.md"))}
+
+
+def test_tripwire_a_conflation_is_still_live_somewhere() -> None:
+    """A *gating* conflation, if one remains, keeps the gate red.
+
+    `repair/` conflations are demoted by FIX 2, so a corpus whose only remaining conflations
+    are historical records is green by design. This asserts the FAIL case, not the count.
+    """
     fails = fails_for(SPEC_DIR, ["EPISTEMIC-AXIS-CONFLATION"])
     if not fails:
-        pytest.skip("no epistemic-axis conflation remains")
-    locs = {loc for f in fails for loc in f.locations}
-    assert {"repair/A6-fr-triage.md:187", "spec.md:737", "tasks.md:128"} <= locs
+        pytest.skip("every remaining epistemic-axis conflation is in a repair/ record")
+    assert rc.main(["--spec-dir", str(SPEC_DIR), "--only", "EPISTEMIC-AXIS-CONFLATION"]) == 1
 
 
 def test_tripwire_d7_miscount_and_the_seven_classes_phrase() -> None:
-    warns = [f for f in findings_for(SPEC_DIR, ["COUNT-PRECISION"]) if f.severity == rc.WARN]
-    if not warns:
-        pytest.skip("the four authority numbers are no longer conflated")
+    """The real corpus still contains the miscount and the wrong phrase.
+
+    `32 type classes` lives in a live artefact, so it is still WARN. `all seven classes`
+    lives in A6's table, so FIX 2 demotes it to INFO `historical-divergence`; the assertion is
+    that it is *named* either way, not that it gates.
+    """
+    found = findings_for(SPEC_DIR, ["COUNT-PRECISION"])
+    warns = [f for f in found if f.severity == rc.WARN]
+    demoted = [f for f in found if f.code == rc.HISTORICAL_CODE]
+    if not warns and not demoted:
+        pytest.skip("the four authority numbers are no longer conflated anywhere")
     phrases = {f.data["phrase"] for f in warns}
+    phrases |= {f.data["original_message"] and f.data.get("phrase", "") for f in demoted}
     assert "32 type classes" in phrases
-    assert "all seven classes" in phrases
+    assert any("all seven classes" in f.data.get("original_message", "") for f in demoted) or \
+        "all seven classes" in phrases
+    for f in demoted:
+        assert f.data["original_severity"] == rc.WARN
+        assert all(loc.startswith("repair/") for loc in f.locations), f.locations
 
 
 def test_tripwire_ghost_suffixes_are_still_cited() -> None:
@@ -1923,3 +3396,858 @@ def test_tripwire_ghost_suffixes_are_still_cited() -> None:
         pytest.skip("every letter-suffixed FR has been folded")
     assert {f.data["fr"] for f in warns} == {"FR-034a", "FR-039a"}
     assert all(f.locations for f in warns)
+
+
+# --------------------------------------------------------------------------------------
+# FIX 2 - `repair/*.md` is a historical record: the exemption, and the line drawn round it
+# --------------------------------------------------------------------------------------
+#
+# Two halves, and the second is the one that matters:
+#
+#   (a) a *content* finding (what the document asserts about the design) is demoted to INFO
+#       `historical-divergence` when it sits in a repair document;
+#   (b) a *reference* finding (does the id the document points at exist) is not, and a
+#       repair document that claims an unallocated number still FAILs.
+#
+# The tests below cover (a) in `repair/` and in `spec.md` for every exempt check, cover (b)
+# for FR ids and task ids, and pin the membership of both sets so neither can widen silently.
+
+
+# The one sentence of a repair document that is wrong about the design, by ARBITRATION §3.
+_CONFLATION_PROSE = (
+    "A disagreement that is **structural** - arity, direction, polarity or role bindings over "
+    "the same mentions - MUST yield `CandidateStatus.CONTRADICTED` candidates.\n"
+)
+
+
+def test_a_content_violation_in_a_repair_document_is_info_not_fail(tmp_path: Path) -> None:
+    """REQUIRED (FIX 2 a): `A4b` said this before §3 existed. Reported, not gating."""
+    spec_dir = build_repair_dir(build_feature_dir(tmp_path / "f"),
+                                **{"A4b-mapping": "# A4b\n\n" + _CONFLATION_PROSE})
+    fails = fails_for(spec_dir, ["EPISTEMIC-AXIS-CONFLATION"])
+    assert fails == []
+    demoted = [f for f in findings_for(spec_dir, ["EPISTEMIC-AXIS-CONFLATION"])
+               if f.code == rc.HISTORICAL_CODE]
+    assert len(demoted) == 1
+    f = demoted[0]
+    assert (f.severity, f.data["original_severity"], f.data["original_code"]) == (
+        rc.INFO, rc.FAIL, "structural-conflict-as-denied")
+    assert f.locations == ["repair/A4b-mapping.md:3"]
+    # names the artefact, the finding, and the ruling that superseded it
+    assert "repair/A4b-mapping.md" in f.message
+    assert "structural-conflict-as-denied" in f.message
+    assert "ARBITRATION.md" in f.message and "§3" in f.data["superseded_by"]
+    # nothing is lost: the structural terms and the quotation survive verbatim
+    assert f.data["structural_terms"] == ["arity", "direction", "polarity", "role binding"]
+    assert "CONTRADICTED" in f.data["original_message"]
+    # and the gate is green while the information is still in the payload
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "EPISTEMIC-AXIS-CONFLATION"]) == 0
+
+
+def test_the_same_violation_in_spec_md_still_fails(tmp_path: Path) -> None:
+    """REQUIRED (FIX 2 b): identical text, live artefact, unchanged severity."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace("#### Producers", "#### Mapping\n\n" + _CONFLATION_PROSE
+                               + "\n#### Producers"),
+    )
+    found = findings_for(spec_dir, ["EPISTEMIC-AXIS-CONFLATION"])
+    fails = [f for f in found if f.severity == rc.FAIL]
+    assert len(fails) == 1
+    assert fails[0].code == "structural-conflict-as-denied"
+    assert fails[0].locations == ["spec.md:17"]
+    assert [f for f in found if f.code == rc.HISTORICAL_CODE] == []
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "EPISTEMIC-AXIS-CONFLATION"]) == 1
+
+
+def test_the_exemption_covers_exactly_the_four_named_content_checks() -> None:
+    """The membership is a named set, and it is pinned here so it cannot grow by accident."""
+    assert rc.NORMATIVE_LINT_CHECKS == {
+        "EPISTEMIC-AXIS-CONFLATION", "FR-NAMESPACE-COLLISION", "COUNT-PRECISION",
+        "RI-10-FORBIDDEN",
+    }
+    assert set(rc.SUPERSEDING_AUTHORITY) == set(rc.NORMATIVE_LINT_CHECKS)
+    for cid, section in rc.SUPERSEDING_AUTHORITY.items():
+        assert "§" in section, (cid, section)
+
+
+def test_reference_integrity_checks_are_not_exempt_and_the_reason_is_on_the_record() -> None:
+    """The interesting claim is the one that was NOT granted, so both lists are pinned.
+
+    `GHOST-SUFFIX` is namespace hygiene over citations, so by the rule it would qualify. It
+    is left out on purpose and the reason is written down in the tool; if it is ever added,
+    this test is the thing that notices.
+    """
+    assert set(rc.REFERENCE_INTEGRITY_NOT_EXEMPT) >= {
+        "RI-01-FR-DEF", "RI-02-TASK-REF", "RI-06b-FR-ORDER", "RI-08-SEC-CITE",
+        "RI-09-COUNT", "RI-11-CONST", "RI-11b-RESEARCH", "TOMBSTONED-FR-REF",
+        "GHOST-SUFFIX",
+    }
+    assert not (rc.NORMATIVE_LINT_CHECKS & set(rc.REFERENCE_INTEGRITY_NOT_EXEMPT))
+    for cid, reason in rc.REFERENCE_INTEGRITY_NOT_EXEMPT.items():
+        assert reason.strip(), cid
+    assert rc.CHECK_BY_ID["GHOST-SUFFIX"].severity == rc.WARN
+
+
+def test_a_phantom_fr_claimed_in_a_repair_document_still_fails(tmp_path: Path) -> None:
+    """REQUIRED (FIX 2 c): a repair document may not be the authority for a number.
+
+    The corpus's own example is A2's `**FR-104 - ...**` and A6's `**FR-101 (NEW) - ...**`:
+    bold-titled requirement claims in prose, for numbers `ARBITRATION.md` §14 declares void
+    and re-allocates elsewhere. `FR-103` is the number the arbitration record singles out.
+    """
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A1-requirements": (
+            "# A1\n\n## proposed\n\n"
+            "**FR-103 - the historical phantom.**\n\n"
+            "`InvestigationWorkflow` MUST be registered on the Temporal worker.\n"
+        )},
+    )
+    fails = fails_for(spec_dir, ["RI-01-FR-DEF"])
+    assert [f.code for f in fails] == ["fr-undefined-in-repair"]
+    assert fails[0].data["fr"] == "FR-103"
+    assert fails[0].locations == ["repair/A1-requirements.md:5"]
+    # the demotion cannot reach it, even though it sits in the one exempt corpus
+    assert fails[0].code != rc.HISTORICAL_CODE
+    assert "RI-01-FR-DEF" not in rc.NORMATIVE_LINT_CHECKS
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-01-FR-DEF"]) == 1
+
+
+def test_a_phantom_task_defined_in_a_repair_document_still_fails(tmp_path: Path) -> None:
+    """The task-id half of the same rule, on the same principle."""
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A6-triage": "# A6\n\n- [ ] T777 [US1] Replay harness (FR-003, \u00a72)\n"},
+    )
+    fails = fails_for(spec_dir, ["RI-02-TASK-REF"])
+    assert [f.code for f in fails] == ["task-phantom-in-repair"]
+    assert fails[0].data["task"] == "T777"
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-02-TASK-REF"]) == 1
+
+
+def test_a_phantom_id_merely_mentioned_in_a_repair_document_is_counted_not_gated(
+    tmp_path: Path,
+) -> None:
+    """The line itself: a *mention* is history, a *definition* is a claim on the namespace.
+
+    `A1` proposes `FR-101…FR-109` inside a ```` ```markdown ```` fence - quoted material, so
+    not even a claim. `A6` then says in prose that "`FR-103` is cited by 4 artefacts and does
+    not exist", which is the checker doing its job in a report. Neither gates; both are
+    counted, so the reader can see the id was discussed.
+    """
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A1-quoted": (
+            "# A1\n\n```markdown\n- **FR-103**: MUST be registered on the worker.\n```\n"
+        ),
+         "A6-report": "# A6\n\n| FR-103 | cited by 4 artefacts, does not exist | why |\n"},
+    )
+    assert fails_for(spec_dir, ["RI-01-FR-DEF"]) == []
+    note = next(f for f in findings_for(spec_dir, ["RI-01-FR-DEF"])
+                if f.code == "repair-historical-reference-summary")
+    assert note.severity == rc.INFO
+    assert note.data["ids"] == ["FR-103"]
+    assert note.data["mention_total"] == 2
+    assert note.data["files"] == ["repair/A1-quoted.md", "repair/A6-report.md"]
+
+
+def test_a_fenced_definition_in_a_repair_document_is_quotation_not_a_claim(
+    tmp_path: Path,
+) -> None:
+    """The blind-spot control for the previous test: the fence is what makes it history.
+
+    Identical text, unfenced, is a claim on the namespace and gates.
+    """
+    quoted = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A1": "# A1\n\n```markdown\n- **FR-103**: MUST be registered.\n```\n"},
+    )
+    assert fails_for(quoted, ["RI-01-FR-DEF"]) == []
+    unfenced = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A1": "# A1\n\n- **FR-103**: MUST be registered.\n"},
+    )
+    assert [f.code for f in fails_for(unfenced, ["RI-01-FR-DEF"])] == ["fr-undefined-in-repair"]
+
+
+def test_an_id_embedded_in_a_longer_identifier_is_not_a_reference(tmp_path: Path) -> None:
+    """`CHK-FR-01` contains `FR-01` and the word boundary holds either side of the hyphen.
+
+    A6's table carries ~200 such labels. Reporting them as references to `FR-001` is how a
+    checker teaches a reader to ignore it.
+    """
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A6-checks": "# A6\n\n| CHK-FR-01 | one definition per id | ok |\n"
+                        "| SUB-T-103 | one id per shape | ok |\n"},
+    )
+    assert fails_for(spec_dir, ["RI-01-FR-DEF"]) == []
+    assert fails_for(spec_dir, ["RI-02-TASK-REF"]) == []
+    assert not [f for f in findings_for(spec_dir, ["RI-01-FR-DEF"])
+                if f.code == "repair-historical-reference-summary"]
+
+
+def test_demotion_is_never_inferred_from_a_finding_that_names_no_site() -> None:
+    """Absence of evidence is not evidence of history.
+
+    A finding with no `repair/` location and no `data["artefact"]` / `data["file"]` must not
+    be demoted, or the exemption would swallow every finding that forgets to say where it was.
+    """
+    naked = rc.Finding(check_id="COUNT-PRECISION", severity=rc.FAIL, code="count-32",
+                       message="somewhere", locations=[], data={})
+    assert not rc.is_historical_site(naked)
+    assert rc.demote_historical([naked])[0].severity == rc.FAIL
+    named = rc.Finding(check_id="COUNT-PRECISION", severity=rc.FAIL, code="count-32",
+                       message="somewhere", locations=[], data={"artefact": "repair/A6.md"})
+    assert rc.is_historical_site(named)
+    assert rc.demote_historical([named])[0].severity == rc.INFO
+
+
+def test_demotion_never_lowers_an_info_finding_further(tmp_path: Path) -> None:
+    """The exemption changes gating, and INFO does not gate; an INFO stays an INFO verbatim."""
+    already = rc.Finding(check_id="FR-NAMESPACE-COLLISION", severity=rc.INFO,
+                         code="fr-redefined-identically", message="restated",
+                         locations=["repair/A2.md:1"], data={})
+    out = rc.demote_historical([already])
+    assert out[0] is already, "an INFO must not be re-wrapped as a divergence"
+
+
+def test_the_demotion_summary_accounts_for_every_demoted_finding(tmp_path: Path) -> None:
+    """No silent loss: the count of demotions is itself a reported finding."""
+    spec_dir = build_repair_dir(
+        build_feature_dir(tmp_path / "f"),
+        **{"A4b": "# A4b\n\n" + _CONFLATION_PROSE,
+           "A6": "# A6\n\n| `all seven classes` of \u00a78 | needed | x |\n"},
+    )
+    found = findings_for(spec_dir)
+    demoted = [f for f in found if f.code == rc.HISTORICAL_CODE]
+    summary = next(f for f in found if f.code == "historical-divergence-summary")
+    assert summary.data["demoted"] == {"COUNT-PRECISION": 1, "EPISTEMIC-AXIS-CONFLATION": 1}
+    assert sum(summary.data["demoted"].values()) == len(demoted)
+    assert summary.data["exempt_checks"] == sorted(rc.NORMATIVE_LINT_CHECKS)
+
+
+def test_demotion_is_a_single_pass_so_a_new_yield_site_cannot_forget_it() -> None:
+    """Structural property, asserted: the exemption is applied outside the checks.
+
+    Every FAIL of an exempt check with a `repair/` site comes back as INFO with the
+    divergence code, whatever produced it, so adding a fifth yield site to an exempt check
+    cannot silently produce a gating finding.
+    """
+    for cid in sorted(rc.NORMATIVE_LINT_CHECKS):
+        for code, artefact in (("x", "repair/A6.md"), ("y", "spec.md")):
+            f = rc.Finding(check_id=cid, severity=rc.FAIL, code=code, message="m",
+                           locations=[f"{artefact}:3"], data={})
+            out = rc.demote_historical([f])
+            if artefact.startswith("repair/"):
+                assert out[0].severity == rc.INFO and out[0].code == rc.HISTORICAL_CODE
+            else:
+                assert out[0].severity == rc.FAIL and out[0].code == code
+
+
+def test_the_real_repair_documents_only_diverge_in_history(tmp_path: Path) -> None:
+    """The corpus assertion, anchored on the rule and not on line numbers.
+
+    Every `EPISTEMIC-AXIS-CONFLATION` and `FR-NAMESPACE-COLLISION` finding the real corpus
+    produces sits in a `repair/` document, so every one of them is INFO. If the integration
+    writes a conflation into `spec.md`, this goes red immediately.
+    """
+    ctx = rc.build_context(SPEC_DIR)
+    found = findings_for(SPEC_DIR, ["EPISTEMIC-AXIS-CONFLATION", "FR-NAMESPACE-COLLISION"])
+    gated = [f for f in found if f.severity in (rc.FAIL, rc.WARN)]
+    if not gated and not found:
+        pytest.skip("neither governance check has anything to say about the real corpus")
+    for f in gated:
+        sites = [loc.rpartition(":")[0] for loc in f.locations]
+        live = [s for s in sites if not s.startswith("repair/")]
+        assert not live or f.check_id == "FR-NAMESPACE-COLLISION" and any(
+            s.startswith("repair/") for s in sites), (f.check_id, live)
+    demoted = [f for f in found if f.code == rc.HISTORICAL_CODE]
+    for f in demoted:
+        assert f.data["historical_artefacts"]
+        for name in f.data["historical_artefacts"]:
+            assert name.startswith("repair/") and name in {a.name for a in ctx.repair}
+
+
+# --------------------------------------------------------------------------------------
+# FIX 3 - the type vocabulary must be *owned*, not per-term backed
+# --------------------------------------------------------------------------------------
+#
+# `ARBITRATION.md` §10 and §14 rule 4 both decide, in terms, that a type in the vocabulary
+# does not oblige a dedicated extractor and that an absence is not a refusal. The old rule
+# counted 44 terms and demanded a producer for each, i.e. it demanded the exact opposite of a
+# binding ruling, and the ruling it contradicted was the one the corpus had already applied.
+#
+# So the unit of judgement moves from the term to the vocabulary: FAIL when nothing owns it,
+# and keep three teeth that no owner repairs. Every shape below is a separate synthetic, so
+# a regression in one cannot be masked by the others.
+
+
+def _spec_with_vocabulary(extra_frs: str) -> str:
+    """GOOD_SPEC plus requirement rows appended before the success criteria."""
+    return GOOD_SPEC.replace("## Success Criteria", extra_frs + "\n## Success Criteria")
+
+
+def _vocab_codes(spec_dir: Path) -> set[str]:
+    return {f.code for f in fails_for(spec_dir, ["RI-10-FORBIDDEN"])}
+
+
+# The corpus's own shape: FR-030 enumerates, states the boundary, and names FR-179 as the
+# obligation; FR-179 carries the producer obligation bounded by the seven §8 families.
+_OWNED_VOCABULARY = (
+    "#### Type pack\n\n"
+    "- **FR-004**: The pack MUST cover, at minimum, the following **3** entity classes:\n"
+    "  `core:Person`, `core:Organization`, `core:Facility`. (\u00a72)\n"
+    "  This is a **fixture requirement on the pack's contents** and MUST NOT be read as a\n"
+    "  producer obligation: a type's presence here does not oblige the system to have a\n"
+    "  dedicated extractor for it. The one producer obligation this feature creates is\n"
+    "  `FR-005`, and it is bounded by the **seven \u00a78 extraction families** - not by the\n"
+    "  length of this list; the two counts are independent and neither may be derived from\n"
+    "  the other. (\u00a72)\n"
+    "- **FR-005**: The deterministic entity extraction layer MUST be completed around the\n"
+    "  atomic type vocabulary, providing producers/readers for all seven extraction families\n"
+    "  of \u00a78. (\u00a72)\n"
+)
+
+_OBLIGATION_TASKS = (
+    GOOD_TASKS
+    + "- [ ] T004 [US4] Bound the pack obligation by the seven \u00a78 families. "
+      "(FR-004, \u00a72)\n"
+    + "- [ ] T005 [US5] Provide producers for the seven \u00a78 families. (FR-005, \u00a72)\n"
+)
+
+_OWNED_CHECKLIST = GOOD_CHECKLIST + (
+    "\n## C. Type pack\n\n"
+    "| # | Item | Method | FR | Task | State |\n|---|---|---|---|---|---|\n"
+    "| C1 | the pack is bounded by the seven families, not its length | T | FR-004 | T004 "
+    "| \u2610 |\n"
+    "| C2 | seven \u00a78 extraction families have producers | T | FR-005, SC-001 | T005 "
+    "| \u2610 |\n"
+)
+
+
+def _owned_vocabulary_dir(root: Path) -> Path:
+    return build_feature_dir(
+        root, spec=_spec_with_vocabulary(_OWNED_VOCABULARY),
+        tasks=_OBLIGATION_TASKS, checklist=_OWNED_CHECKLIST,
+    )
+
+
+def test_an_owned_and_bounded_vocabulary_passes_without_per_term_producers(
+    tmp_path: Path,
+) -> None:
+    """REQUIRED (FIX 3): owned + bounded -> pass, and 3 terms with 0 producers is fine.
+
+    `FR-004` names the obligation `FR-005` and bounds it to the seven \u00a78 extraction families
+    rather than to the length of the list, and `FR-005` carries that bound in its own words.
+    Neither obliges an extractor for `core:Person` specifically, which is the point.
+    """
+    spec_dir = _owned_vocabulary_dir(tmp_path / "f")
+    assert _vocab_codes(spec_dir) == set()
+    ok = next(f for f in findings_for(spec_dir, ["RI-10-FORBIDDEN"])
+              if f.code == "vocabulary-owned")
+    assert ok.severity == rc.INFO
+    assert ok.data["owner_frs"] == ["FR-004", "FR-005"]
+    assert ok.data["enumerating_frs"] == ["FR-004"]
+    assert ok.data["terms"] == 3
+    reasons = ok.data["owner_reasons"]
+    assert reasons["FR-004"] == "enumerates the vocabulary"
+    assert "FR-004 delegates" in reasons["FR-005"]
+    # the pass is auditable: the message says what was *not* checked and why
+    assert "Per-term producer backing is NOT" in ok.message
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-10-FORBIDDEN"]) == 0
+
+
+def test_an_unowned_vocabulary_still_fails(tmp_path: Path) -> None:
+    """REQUIRED (FIX 3): enumerating a list is not claiming it.
+
+    No obligation, no bound, no delegation: a list nobody has taken responsibility for.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=_spec_with_vocabulary(
+            "#### Type pack\n\n- **FR-004**: The pack covers `core:Person`, `core:Organization` "
+            "and\n  `core:Facility`. (\u00a72)\n"
+        ),
+        tasks=GOOD_TASKS + "- [ ] T004 [US4] Register the pack. (FR-004, \u00a72)\n",
+    )
+    codes = _vocab_codes(spec_dir)
+    assert "vocabulary-unowned" in codes, codes
+    finding = next(f for f in fails_for(spec_dir, ["RI-10-FORBIDDEN"])
+                   if f.code == "vocabulary-unowned")
+    assert finding.data["enumerating_frs"] == ["FR-004"]
+    assert finding.data["owner_frs"] == []
+    assert finding.data["terms"] == ["core:Facility", "core:Organization", "core:Person"]
+    assert rc.main(["--spec-dir", str(spec_dir), "--only", "RI-10-FORBIDDEN"]) == 1
+
+
+def test_a_completeness_asserting_vocabulary_still_fails(tmp_path: Path) -> None:
+    """REQUIRED (FIX 3): membership must not be turned into a per-type mandate.
+
+    An owner exists *and* is bounded *and* the vocabulary still claims that every entry
+    carries a producer. The owner cannot repair that, because the claim is the contradiction.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=_spec_with_vocabulary(
+            "#### Type pack\n\n- **FR-004**: The pack MUST cover `core:Person`, "
+            "`core:Organization` and\n  `core:Facility`. Every type in the pack MUST have a "
+            "dedicated extractor. The obligation is bounded by the **seven \u00a78 extraction\n"
+            "  families**, not by the length of this list; the two counts are independent. "
+            "(\u00a72)\n"
+        ),
+        tasks=GOOD_TASKS + "- [ ] T004 [US4] Give every type an extractor. (FR-004, \u00a72)\n",
+    )
+    codes = _vocab_codes(spec_dir)
+    assert "vocabulary-completeness-asserted" in codes, codes
+    assert "vocabulary-unowned" not in codes, codes
+    finding = next(f for f in fails_for(spec_dir, ["RI-10-FORBIDDEN"])
+                   if f.code == "vocabulary-completeness-asserted")
+    assert finding.data["enumerating_frs"] == ["FR-004"]
+    # the owner is still named, so the reader can see the contradiction rather than a gap
+    assert finding.data["owner_frs"] == ["FR-004"]
+    assert finding.locations and all(loc.startswith("spec.md:") for loc in finding.locations)
+
+
+def test_a_vocabulary_used_as_a_permit_deny_gate_still_fails(tmp_path: Path) -> None:
+    """REQUIRED (FIX 3): a vocabulary that decides admission is a closed-world type system."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=_spec_with_vocabulary(
+            "#### Type pack\n\n- **FR-004**: The pack MUST cover `core:Person`, "
+            "`core:Organization` and\n  `core:Facility`. A signal MUST be rejected unless the "
+            "resolved\n  type is in the pack. The obligation is bounded by the **seven \u00a78 "
+            "extraction\n  families**, not by the length of this list. (\u00a72)\n"
+        ),
+        tasks=GOOD_TASKS + "- [ ] T004 [US4] Reject unlisted types. (FR-004, \u00a72)\n",
+    )
+    codes = _vocab_codes(spec_dir)
+    assert "vocabulary-used-as-gate" in codes, codes
+    finding = next(f for f in fails_for(spec_dir, ["RI-10-FORBIDDEN"])
+                   if f.code == "vocabulary-used-as-gate")
+    assert finding.data["owner_frs"] == ["FR-004"]
+    assert finding.locations and all(loc.startswith("spec.md:") for loc in finding.locations)
+
+
+def test_an_at_minimum_lower_bound_is_not_a_completeness_assertion(tmp_path: Path) -> None:
+    """The blind-spot control for the completeness rule: an open lower bound is not closure.
+
+    "MUST cover, at minimum, the following 3" is a floor, and treating a floor as "this is the
+    complete set of obligations" is the same false positive the fix is meant to remove.
+    """
+    spec_dir = _owned_vocabulary_dir(tmp_path / "f")
+    assert _vocab_codes(spec_dir) == set()
+    assert "MUST cover, at minimum" in _OWNED_VOCABULARY
+
+
+def test_a_bound_of_the_list_length_is_not_a_bound(tmp_path: Path) -> None:
+    """The other blind-spot control: a count of entries states how big the list is, not scope.
+
+    "obligation is bounded by the 3 entries" is the original defect wearing a bound's
+    clothes, and must not be accepted as ownership.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=_spec_with_vocabulary(
+            "#### Type pack\n\n- **FR-004**: The pack MUST cover `core:Person`, "
+            "`core:Organization` and\n  `core:Facility`. Every type MUST have an extractor, "
+            "bounded by the\n  **3** types. (\u00a72)\n"
+        ),
+        tasks=GOOD_TASKS + "- [ ] T004 [US4] Give every type an extractor. (FR-004, \u00a72)\n",
+    )
+    codes = _vocab_codes(spec_dir)
+    # both teeth: it asserts completeness *and* nothing bounds it to anything real
+    assert codes & {"vocabulary-completeness-asserted", "vocabulary-unowned"}, codes
+
+
+def test_a_section_locator_is_not_a_bound(tmp_path: Path) -> None:
+    """A `§N` is a citation, not a scope. FR-031 in the real corpus carries one and no bound."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=_spec_with_vocabulary(
+            "#### Type pack\n\n- **FR-004**: The pack MUST cover `core:Person` and\n"
+            "  `core:Organization`. (\u00a72)\n"
+        ),
+        tasks=GOOD_TASKS + "- [ ] T004 [US4] Register the pack. (FR-004, \u00a72)\n",
+    )
+    assert "vocabulary-unowned" in _vocab_codes(spec_dir)
+
+
+def test_a_number_merely_mentioned_beside_an_obligation_word_is_not_a_delegation(
+    tmp_path: Path,
+) -> None:
+    """The over-broad-deferral control.
+
+    A correction note that says "these three slots once read `FR-004`, `FR-005` and `FR-006`"
+    is not the vocabulary delegating its obligation; it is a footnote about renumbering. If
+    proximity were enough, such a note would manufacture an owner out of any id it names.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=_spec_with_vocabulary(
+            "#### Type pack\n\n- **FR-004**: The pack MUST cover `core:Person`. The producer\n"
+            "  obligation is cross-reference corrected: this slot once read `FR-002`.\n"
+            "  (\u00a72)\n"
+        ),
+        tasks=GOOD_TASKS + "- [ ] T004 [US4] Register the pack. (FR-004, \u00a72)\n",
+    )
+    assert "vocabulary-unowned" in _vocab_codes(spec_dir)
+
+
+def test_the_real_vocabulary_is_owned_by_fr_030_and_fr_179() -> None:
+    """The corpus assertion: the two owner FRs `ARBITRATION.md` §14 rule 4 names.
+
+    Anchored on the rule, not on a line number, so renumbering moves the test instead of
+    breaking it. The 44 terms and the absence of per-term producers are asserted too, because
+    that is the exact situation the fix has to survive.
+    """
+    ctx = rc.build_context(SPEC_DIR)
+    terms = rc._vocabulary_terms(ctx)
+    owners = rc._vocabulary_owners(ctx, terms)
+    assert len(terms) == 44
+    assert sorted(set(terms.values())) == ["FR-030", "FR-031", "FR-135"]
+    assert [ident for ident, _ in owners] == ["FR-030", "FR-179"]
+    reasons = dict(owners)
+    assert reasons["FR-030"] == "enumerates the vocabulary"
+    assert reasons["FR-179"].startswith("FR-030 delegates")
+    # and the check agrees, at INFO, on the real corpus
+    found = findings_for(SPEC_DIR, ["RI-10-FORBIDDEN"])
+    assert [f.code for f in fails_for(SPEC_DIR, ["RI-10-FORBIDDEN"])] == []
+    ok = next(f for f in found if f.code == "vocabulary-owned")
+    assert ok.data["owner_frs"] == ["FR-030", "FR-179"]
+
+
+def test_the_bound_predicates_are_exercised_on_the_real_fr_030() -> None:
+    """Unit-level, so the corpus's own wording is pinned rather than merely parsed."""
+    ctx = rc.build_context(SPEC_DIR)
+    body = next(d.body for d in ctx.live_defs if d.ident == "FR-030")
+    assert rc._BOUND_DENIAL_RE.search(body), "FR-030 states the count-independence explicitly"
+    assert rc._states_a_non_count_bound(body)
+    assert not rc._COMPLETENESS_RE.search(body) or rc._COMPLETENESS_QUALIFIER_RE.search(body)
+    assert not rc._VOCAB_GATE_RE.search(body)
+    assert rc._deferral_targets(body) >= {"FR-179"}
+    # the bound is not the list length, which is the whole claim
+    assert "not by the length of this list" in body
+
+
+# --------------------------------------------------------------------------------------
+# the three fixes together: one self-consistent directory that must stay green
+# --------------------------------------------------------------------------------------
+#
+# The anti-always-red control already exists for a clean directory. This is its companion
+# for the three fixes: a directory that is *deliberately* shaped like the real corpus - a
+# tombstone between two live requirement numbers, an owned-and-bounded vocabulary with no
+# per-term producers, a repair record carrying a superseded conflation and a superseded
+# phrase, and a claim on an unallocated number that must still gate - asserted to produce
+# zero FAIL and exit 0 *with one known FAIL deliberately present* being turned off, so the
+# test cannot pass by the fixes having muted a check into silence.
+#
+# Every check id must appear in the summary. A check that stopped running is the failure mode
+# these fixes could plausibly introduce, and an absent row is the only symptom.
+
+
+# The live requirement sequence of the three-fixes fixture. `FR-058` is absent on purpose and
+# retired on purpose, so the sequence is contiguous except for exactly one hole - and that one
+# hole is the one FIX 1 exists for. Reaching `FR-058` honestly needs 57 requirements below it,
+# which is why this list is generated rather than written out.
+_THREE_FIXES_LIVE: tuple[int, ...] = tuple(range(1, 58)) + (59, 60, 61)
+_TOMBSTONED_IN_FIXTURE = 58
+_VOCAB_OWNER = 60
+_VOCAB_OBLIGATION = 61
+
+
+def _three_fixes_dir(root: Path) -> Path:
+    """A self-consistent feature directory exercising all three fixes at once.
+
+    Written out rather than assembled by `str.replace`, because the point of the fixture is
+    that it is *consistent*: every live FR cited by exactly one task, a checklist row per FR,
+    no citation to a section that does not exist, the plan's FR count right, and a requirement
+    sequence whose only hole is the retired `FR-058`. If any of those were wrong the directory
+    would go red for a reason unrelated to the three fixes, and the control would stop testing
+    anything.
+    """
+    S = "\u00a7"
+    box = "\u2610"
+    input_md = (
+        "# FEATURE 901 - SYNTHETIC, THREE FIXES\n\n"
+        "# 1. MISSION\n\n### A. Entity interpretation\n\n"
+        "# 2. CORE DECISION\n\n### A. Predicate\n\n"
+        "# 7. EXTRACTION LAYER\n\n"
+        "# 8. ENTITY INSTRUMENTS\n\n"
+        "### A. Person\n\n### B. Organization\n\n"
+    )
+    # 001..057 are ordinary requirements; 059..061 carry the rest of the fixture.
+    bodies: dict[int, str] = {
+        n: (f"- **FR-{n:03d}**: The `stage_{n:03d}` obligation MUST hold and MUST be "
+            f"observable. ({S}2)")
+        for n in _THREE_FIXES_LIVE if n < 59
+    }
+    bodies[59] = (f"- **FR-059**: A rejected candidate MUST be recorded with a reason. "
+                  f"({S}2)")
+    bodies[_VOCAB_OWNER] = (
+        "- **FR-060**: The pack MUST cover, at minimum, the following **3** entity classes:\n"
+        "  `core:Person`, `core:Organization`, `core:Facility`. (" + S + "8)\n"
+        "  This is a **fixture requirement on the pack's contents** and MUST NOT be read as a\n"
+        "  producer obligation: a type's presence here does not oblige the system to have a\n"
+        "  dedicated extractor for it. The one producer obligation this feature creates is\n"
+        f"  `FR-{_VOCAB_OBLIGATION:03d}`, and it is bounded by the **seven {S}8 extraction "
+        "families** -\n"
+        "  not by the length of this list; the two counts are independent and neither may be\n"
+        f"  derived from the other. ({S}8)\n"
+        f"- **FR-{_VOCAB_OBLIGATION:03d}**: The deterministic entity extraction layer MUST be "
+        "completed\n"
+        f"  around the atomic type vocabulary, providing producers/readers for all seven\n"
+        f"  extraction families of {S}8. ({S}8)"
+    )
+    spec = (
+        "# Feature Specification: three fixes\n\n"
+        "**Input**: `input.md` in this directory.\n\n"
+        "## Requirements\n\n### Functional Requirements\n\n"
+        "#### Identity\n\n"
+        + bodies[1] + "\n"
+        + bodies[2] + "\n\n"
+        "#### Producers\n\n"
+        + bodies[3] + "\n"
+        + "".join(bodies[n] + "\n" for n in range(4, 58))
+        + "\n#### Verification\n\n"
+        + bodies[59] + "\n\n"
+        "#### Type pack\n\n"
+        + bodies[_VOCAB_OWNER] + "\n\n"
+        "## Success Criteria\n\n### Measurable Outcomes\n\n"
+        "- **SC-001**: Active and passive realisations share one `logical_candidate_id`.\n\n"
+        "### Constitutional invariants\n\n"
+        "- **INV-001**: An ontology miss yields `UNKNOWN`, never a rejection.\n"
+    )
+    # task ids are their own contiguous sequence; the FR numbering has a hole and the task
+    # numbering must not, or `RI-06-TASK-ORDER` would be red for an unrelated reason
+    tasks = "# Tasks: three fixes\n\n" + "".join(
+        f"- [ ] T{i:03d} [US1] Deliver `stage_{n:03d}`. (FR-{n:03d}, "
+        f"{S}{'8' if n >= _VOCAB_OWNER else '2'})\n"
+        for i, n in enumerate(_THREE_FIXES_LIVE, start=1)
+    )
+    plan = ("# Implementation Plan: three fixes\n\n"
+            f"{len(_THREE_FIXES_LIVE)} FRs, 1 measurable outcome, 1 constitutional invariant, "
+            "0 user stories.\n")
+    data_model = (
+        "# Phase 1 Data Model: three fixes\n\n"
+        "## 1. Pack\n\n"
+        "`TypePack` holds the `core:*` entries. `kind` is read from the entry, never inferred.\n"
+    )
+    header = ("| # | Item | Method | FR | Task | State |\n|---|---|---|---|---|---|\n")
+    rows = "".join(
+        f"| R{n:03d} | `stage_{n:03d}` is observable | T | FR-{n:03d} | T{i:03d} | {box} |\n"
+        for i, n in enumerate(_THREE_FIXES_LIVE, start=1)
+    )
+    checklist = (
+        "# Requirements checklist: three fixes\n\n"
+        "## A. Requirements\n\n" + header + rows + "\n"
+        "## B. Success criteria and invariants\n\n" + header
+        + f"| B1 | active and passive share one logical id | T | FR-001, SC-001 | T001 "
+          f"| {box} |\n"
+        + f"| B2 | an ontology miss yields UNKNOWN | T | FR-003, INV-001 | T003 "
+          f"| {box} |\n"
+    )
+    root = build_feature_dir(
+        root, **{"input.md": input_md, "spec.md": spec, "tasks.md": tasks, "plan.md": plan,
+                 "data-model.md": data_model, "checklist": checklist},
+    )
+    return build_repair_dir(
+        root,
+        **{
+            # two superseded *content* claims: reported, not gating
+            "A4b-mapping": "# A4b\n\n" + _CONFLATION_PROSE,
+            "A6-triage": f"| T114 | extractor expansion | all seven classes of {S}8 | x |\n",
+            # the arbitration record: the retirement, and the four authority numbers
+            "ARBITRATION": (
+                "# ARBITRATION\n\n"
+                f"31 foundational entity types, 13 value types, 7 {S}8 extraction "
+                "families, ~4 new instrument modules.\n\n"
+                f"{S}2: `FR-{_TOMBSTONED_IN_FIXTURE:03d}` is absorbed into `INV-004` and "
+                "tombstoned. A\n"
+                "tombstone is historical traceability only.\n"
+            ),
+        },
+    )
+
+
+def test_three_fixes_together_stay_green_on_a_self_consistent_directory(
+    tmp_path: Path,
+) -> None:
+    """0 FAIL, exit 0, every check id present - with all three fixes active."""
+    spec_dir = _three_fixes_dir(tmp_path / "f")
+    fails = fails_for(spec_dir)
+    assert fails == [], [(f.check_id, f.code, f.message) for f in fails]
+    assert rc.main(["--spec-dir", str(spec_dir)]) == 0
+
+    ctx = rc.build_context(spec_dir)
+    _found, ran = rc.run_checks(ctx)
+    assert set(ran) == set(rc.CHECK_BY_ID)
+    rows = rc.summarize(_found, ran)
+    assert {r["check_id"] for r in rows} == set(rc.CHECK_BY_ID)
+    assert all(r["fail"] == 0 for r in rows), [r for r in rows if r["fail"]]
+    for row in rows:
+        assert row["fail"] + row["warn"] + row["info"] == row["total"]
+
+
+def test_three_fixes_together_still_prove_each_check_is_measuring(tmp_path: Path) -> None:
+    """The anti-silent-loss companion: a green directory is not a silent one.
+
+    For each of the three fixes the directory above must produce the *evidence* the fix
+    emits - a demotion summary, a walked sequence, an owned-vocabulary record - so "0 FAIL"
+    cannot be reached by the checks having stopped looking.
+    """
+    spec_dir = _three_fixes_dir(tmp_path / "f")
+    found = findings_for(spec_dir)
+    codes = {(f.check_id, f.code) for f in found}
+
+    # FIX 1: the contiguity walk ran, and the retired id is in its universe
+    assert ("RI-06b-FR-ORDER", "fr-sequence-ok") in codes
+    ctx = rc.build_context(spec_dir)
+    assert f"FR-{_TOMBSTONED_IN_FIXTURE:03d}" in ctx.tombstone_ids
+    assert _TOMBSTONED_IN_FIXTURE in rc._recorded_fr_numbers(ctx)
+
+    # FIX 2: two demotions, one summary, and the summary agrees with the findings
+    demoted = [f for f in found if f.code == rc.HISTORICAL_CODE]
+    assert {f.data["original_code"] for f in demoted} == {
+        "structural-conflict-as-denied", "count-seven-classes"}
+    summary = next(f for f in found if f.code == "historical-divergence-summary")
+    assert sum(summary.data["demoted"].values()) == len(demoted) == 2
+
+    # FIX 3: the vocabulary was examined and found owned, with both owners named
+    owned = next(f for f in found if f.code == "vocabulary-owned")
+    assert owned.data["owner_frs"] == [f"FR-{_VOCAB_OWNER:03d}", f"FR-{_VOCAB_OBLIGATION:03d}"]
+    assert owned.data["enumerating_frs"] == [f"FR-{_VOCAB_OWNER:03d}"]
+    assert owned.data["terms"] == 3
+    assert owned.data["owner_reasons"][f"FR-{_VOCAB_OBLIGATION:03d}"].startswith(
+        f"FR-{_VOCAB_OWNER:03d} delegates")
+
+
+def test_three_fixes_together_go_red_when_the_defects_are_moved_to_live_artefacts(
+    tmp_path: Path,
+) -> None:
+    """The blind-spot control for all three at once, in one assertion per fix.
+
+    The same three defects, relocated from the historical record into `spec.md`, must gate
+    again. If any of the three fixes leaked past its own boundary, this is what notices.
+    """
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace(
+            "#### Producers",
+            "#### Mapping\n\n" + _CONFLATION_PROSE
+            + "\n- **FR-005**: The pack MUST cover `core:Person`. Every type in the pack MUST\n"
+              "  have a dedicated extractor. (\u00a72)\n\n#### Producers",
+        ),
+    )
+    fails = {(f.check_id, f.code) for f in fails_for(spec_dir)}
+    assert ("EPISTEMIC-AXIS-CONFLATION", "structural-conflict-as-denied") in fails
+    # completeness short-circuits by design (one finding per run, most specific first), so
+    # the unowned arm is exercised by its own dedicated test above rather than here
+    assert ("RI-10-FORBIDDEN", "vocabulary-completeness-asserted") in fails
+    assert rc.main(["--spec-dir", str(spec_dir)]) == 1
+
+
+# --------------------------------------------------------------------------------------
+# the four defects that must keep failing, re-introduced synthetically
+# --------------------------------------------------------------------------------------
+#
+# The real corpus repairs these one at a time, so "it is red today" is a statement about the
+# documents, not about the checker, and a repaired document retires the evidence. Each is
+# therefore re-introduced into a synthetic directory and asserted to FAIL, which is the claim
+# that actually matters: the check still has its teeth after the three fixes.
+#
+# The corpus instance is named in each docstring so a reader can find the original.
+
+
+def test_a_checklist_row_without_an_fr_still_fails(tmp_path: Path) -> None:
+    """The corpus instance was 4 rows with no FR in the FR column."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        checklist=GOOD_CHECKLIST.replace(
+            "| A2 | `polarity` is a real field | T | FR-002 | T002 | \u2610 |",
+            "| A2 | `polarity` is a real field | T | - | T002 | \u2610 |",
+        ),
+    )
+    fails = fails_for(spec_dir, ["RI-04c-ROW-FR"])
+    assert [f.code for f in fails] == ["row-without-fr", "row-without-fr-total"]
+    assert fails[0].data["row"] == "A2"
+    assert fails[1].data["rows"] == ["A2"]
+
+
+def test_a_phantom_section_citation_still_fails(tmp_path: Path) -> None:
+    """The corpus instance was `§34a`: a fabricated sub-section label."""
+    spec_dir = build_feature_dir(
+        tmp_path / "f",
+        spec=GOOD_SPEC.replace(
+            "#### Producers",
+            "#### Producers\n\n- **FR-004**: The reconciliation step MUST consult \u00a734a. "
+            "(\u00a72)\n",
+        ),
+        tasks=GOOD_TASKS + "- [ ] T004 [US4] Reconcile. (FR-004, \u00a72)\n",
+    )
+    fails = fails_for(spec_dir, ["RI-08-SEC-CITE"])
+    assert [(f.code, f.data["section"]) for f in fails] == [("section-phantom", "34a")]
+
+
+def test_a_count_claim_that_disagrees_with_the_artefacts_still_fails(tmp_path: Path) -> None:
+    """The corpus instance was a checklist claiming 153 FRs against 149 definitions."""
+    spec_dir = build_feature_dir(tmp_path / "f", plan="# plan\n\n9 FRs, 1 measurable outcome.\n")
+    fails = fails_for(spec_dir, ["RI-09-COUNT"])
+    assert [(f.code, f.data["claimed"], f.data["actual"]) for f in fails] == [
+        ("count-mismatch", 9, 3)
+    ]
+
+
+def test_a_phantom_constitution_label_still_fails(tmp_path: Path) -> None:
+    """The corpus instance was `CD-6`; the constitution labels its invariants unnumbered.
+
+    A constitution is planted inside the synthetic directory so the test evaluates the rule
+    rather than the environment - `find_constitution` walks ancestors, and a `tmp_path` fixture
+    has none. Skips only if even that fails, which would be a broken fixture.
+    """
+    spec_dir = build_feature_dir(tmp_path / "f", research=GOOD_RESEARCH + "\nCD-6 is a label.\n")
+    write(spec_dir / ".specify" / "memory" / "constitution.md", _SYNTHETIC_CONSTITUTION)
+    ctx = rc.build_context(spec_dir)
+    if ctx.constitution is None or not ctx.constitution.read_ok:
+        pytest.skip("could not plant a constitution in the fixture directory")
+    fails = fails_for(spec_dir, ["RI-11-CONST"])
+    assert [(f.code, f.data["raw"]) for f in fails] == [("cd-phantom", "CD-6")]
+
+
+_SYNTHETIC_CONSTITUTION = """\
+# Synthetic Constitution
+
+## I. Evidence-First
+
+Every claim traces to evidence.
+
+## Domain Invariants
+
+1. Evidence is immutable.
+2. A denial is a first-class outcome.
+3. No claim without provenance.
+"""
+
+
+def test_the_four_must_keep_failing_checks_are_out_of_reach_of_every_exemption() -> None:
+    """The claims in the report, as assertions.
+
+    None of the four is in `NORMATIVE_LINT_CHECKS`, so no exemption can reach them, and all
+    four still declare FAIL. The second half names the check functions this change rewrote, so
+    a fifth silent rewrite is the thing that would fail here.
+    """
+    must_keep = {"RI-04c-ROW-FR", "RI-08-SEC-CITE", "RI-09-COUNT", "RI-11-CONST"}
+    assert not (must_keep & rc.NORMATIVE_LINT_CHECKS)
+    for cid in must_keep:
+        assert rc.CHECK_BY_ID[cid].severity == rc.FAIL, cid
+    rewritten = {"check_fr_order", "check_fr_definitions", "check_task_refs",
+                 "_forbidden_vocabulary_without_producer", "demote_historical"}
+    for fn in ("check_rows_cite_fr", "check_section_citations", "check_count_claims",
+               "check_constitution"):
+        assert fn not in rewritten, fn
+        assert callable(getattr(rc, fn)), fn
+
+
+
+

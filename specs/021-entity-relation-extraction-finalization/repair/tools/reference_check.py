@@ -36,7 +36,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-TOOL_VERSION = "1.2.0"
+TOOL_VERSION = "1.5.0"
 
 # --------------------------------------------------------------------------------------
 # Severity
@@ -99,7 +99,22 @@ CHECKS: tuple[CheckSpec, ...] = (
         FAIL,
         "An `FR-nnn` (or suffixed `FR-034a`) token appearing in any artefact must have "
         "exactly one `- **FR-nnn**:` definition in spec.md. Cited-but-undefined and "
-        "defined-twice are both FAIL.",
+        "defined-twice are both FAIL. A row whose body is a *tombstone record* "
+        "(`- **FR-058**: *tombstone - merged into INV-004*`) is historical metadata, not a "
+        "live definition: it is not a definition target, and a citation of that id is not "
+        "reported here as undefined either - `TOMBSTONED-FR-REF` owns that defect and names "
+        "the replacement target. `repair/*.md` is read as well, under the same FAIL: a "
+        "definition row or bold-titled claim of a number no live requirement defines is "
+        "FAIL (`fr-undefined-in-repair`), because a repair document is then an authority for "
+        "a number that does not exist - *unless* the title line labels the number a superseded "
+        "local number and names the canonical one it became, which is a record of a number the "
+        "document used to own rather than a claim on it; that label is then checked in the other "
+        "direction, so its canonical number has to be a live requirement "
+        "(`supersession-pointer-unresolved`). Any other mention inside a repair document is "
+        "counted in one aggregate INFO (`repair-historical-reference-summary`), because a report "
+        "of an older numbering is what a report is. A fenced block is quotation and is never a "
+        "claim. This check is about whether a reference resolves, so it is never demoted for "
+        "living in a historical record.",
     ),
     CheckSpec(
         "RI-01b-FR-SHAPE",
@@ -115,22 +130,28 @@ CHECKS: tuple[CheckSpec, ...] = (
         FAIL,
         "Any `Tnnn` (optionally letter-suffixed) token cited in any artefact must be defined "
         "by a `- [ ] Tnnn` bullet in tasks.md. Phantom task ids are FAIL: a checklist row "
-        "gated on T007f is a gate on nothing.",
+        "gated on T007f is a gate on nothing. `repair/*.md` is read on the same rule as "
+        "RI-01-FR-DEF: a `- [ ] Tnnn` bullet in a repair document for a task tasks.md does "
+        "not define is FAIL (`task-phantom-in-repair`), any other mention is counted in one "
+        "aggregate INFO. This check is about whether a reference resolves, so it is never "
+        "demoted for living in a historical record.",
     ),
     CheckSpec(
         "RI-03-FR-ORPHAN",
         "No orphan FR (defined, cited by neither tasks.md nor the checklist)",
         FAIL,
-        "An FR is an ORPHAN when spec.md defines it and neither tasks.md nor "
-        "checklists/requirements.md references it. An orphan requirement has no "
-        "implementation and no gate.",
+        "An FR is an ORPHAN when spec.md defines it as a live requirement and neither "
+        "tasks.md nor checklists/requirements.md references it. An orphan requirement has no "
+        "implementation and no gate. A tombstone record is not a live requirement and is "
+        "therefore never an orphan: a retired id is expected to have no task.",
     ),
     CheckSpec(
         "RI-03b-FR-UNCITED",
         "No FR is cited by no artefact at all",
         FAIL,
-        "Stricter than RI-03: the FR appears in no other artefact, so it is not merely "
-        "ungated, it is unreferenced prose wearing a requirement id.",
+        "Stricter than RI-03: the live FR appears in no other artefact, so it is not merely "
+        "ungated, it is unreferenced prose wearing a requirement id. Tombstone records are "
+        "excluded, for the same reason as in RI-03.",
     ),
     CheckSpec(
         "RI-03c-FR-COLUMN",
@@ -167,7 +188,8 @@ CHECKS: tuple[CheckSpec, ...] = (
         WARN,
         "An FR cited by zero tasks is an orphan (RI-03). An FR cited by two or more tasks has "
         "no single semantic owner: a change to the FR has no single blast radius. WARN, "
-        "because shared ownership is sometimes intentional.",
+        "because shared ownership is sometimes intentional. Tombstone records are excluded, "
+        "for the same reason as in RI-03.",
     ),
     CheckSpec(
         "RI-05-MISCITE",
@@ -190,17 +212,32 @@ CHECKS: tuple[CheckSpec, ...] = (
         "RI-06-TASK-ORDER",
         "Task ids are contiguous, ascending and unsuffixed",
         FAIL,
-        "Task ids must run T001..Tnnn with no gap, no reordering and no letter suffix. A "
-        "letter-suffixed task id is by definition not in the file's own definition set, so "
-        "it is a phantom waiting to happen.",
+        "Within the range the plan declares - T<floor>..T<ceiling>, where the floor is the "
+        "lowest id the plan actually defines, because an integrated plan may legitimately "
+        "begin above T001 - task ids must have no gap, no reordering, no duplicate and no "
+        "letter suffix. Contiguity is judged against the *declared* range, so T101..T194 with "
+        "no hole is clean while a hole anywhere inside T101..T194 is FAIL and the missing "
+        "numbers are named. A letter-suffixed task id is by definition not in the file's own "
+        "definition set, so it is a phantom waiting to happen.",
     ),
     CheckSpec(
         "RI-06b-FR-ORDER",
-        "FR numbering is monotonic within its requirement section",
+        "Every FR number is DEFINED, TOMBSTONED or RESERVED; order and grouping are INFO",
         FAIL,
-        "Within each spec.md requirement section, FR numbers must be strictly increasing, and "
-        "in document order across the whole file. A gap, a rewind, or an FR bullet dangling "
-        "after a table rather than grouped with the other requirements is FAIL.",
+        "The rule is **coverage, not density**. Every FR number inside the walked range must be "
+        "one of three things: DEFINED by a live `- **FR-nnn**:` row in spec.md (wherever it sits, "
+        "because spec.md places each workstream's band in that workstream's own subject section), "
+        "TOMBSTONED by a retirement record, or RESERVED by a declaration in spec.md's reserved-"
+        "number-space block. A number that is none of the three is FAIL and is named, once, "
+        "wherever it is noticed. The reserved set is *parsed* from that block's one-line "
+        "`RESERVED-FR:` declaration and cross-checked against the block's prose; it is never "
+        "hard-coded here, a block that cannot be read unambiguously is FAIL and exempts nothing, "
+        "and a document that declares no reservation exempts nothing either. Reservation permits "
+        "absence, not citation: naming a reserved number is still FAIL under RI-01-FR-DEF. "
+        "**Placement is not a defect**: the document-order gap and rewind arms are INFO, because "
+        "putting a band in its subject section legitimately makes the file read as more than one "
+        "ascending run. Two arms still gate at FAIL - a rewind *within one* requirement list, and "
+        "a requirement bullet dangling after a table instead of grouped with its list.",
     ),
     CheckSpec(
         "RI-07-SC-COVER",
@@ -263,13 +300,20 @@ CHECKS: tuple[CheckSpec, ...] = (
         FAIL,
         "Three shapes that a previous repair pass is forbidden to reintroduce: (a) a synonym "
         "/equivalence table inside the identity path, (b) a hypothesis that contains a "
-        "*collection of hypotheses*, (c) a vocabulary list with no producer obligation. All "
-        "three are FAIL. (b) is decided on the field's *type shape*, not its name: a scalar "
+        "*collection of hypotheses*, (c) a vocabulary that is **unowned**. All three are "
+        "FAIL. (b) is decided on the field's *type shape*, not its name: a scalar "
         "`hypothesis_state: HypothesisState` is brief §6's required field and is legal, while "
         "`hypotheses: tuple[TypeHypothesis, ...]` - any collection-typed field whose element is "
         "a `*Hypothesis`, or a `hypotheses`-named field typed as any collection - is a new "
         "epistemic level. A field typed as a plain hypothesis and *not* a collection is out of "
-        "scope for this rule by design.",
+        "scope for this rule by design. (c) is decided on the vocabulary, not the term: the "
+        "defect is a list nobody has claimed, so an owner FR that states the obligation and "
+        "bounds it to something other than the length of the list is sufficient and per-term "
+        "producer backing is neither required nor checked - `ARBITRATION.md` §10 and §14 rule 4 "
+        "decide that a type in the vocabulary does not oblige a dedicated extractor. Three "
+        "shapes stay FAIL with or without an owner: `vocabulary-unowned`, "
+        "`vocabulary-completeness-asserted` (membership asserted to entail production) and "
+        "`vocabulary-used-as-gate` (membership decides admission).",
     ),
     CheckSpec(
         "RI-11-CONST",
@@ -299,13 +343,18 @@ CHECKS: tuple[CheckSpec, ...] = (
         "TOMBSTONED-FR-REF",
         "No artefact cites a tombstoned FR as a live normative target",
         FAIL,
-        "`repair/ARBITRATION.md` §2 tombstoned `FR-034a`, `FR-058`, `FR-070`, `FR-079` and "
-        "`FR-080`: a tombstone exists for historical traceability only. Every citation of a "
-        "tombstoned id in spec.md / plan.md / tasks.md / data-model.md / "
+        "`repair/ARBITRATION.md` §2 tombstoned `FR-034a`, `FR-039a`, `FR-058`, `FR-070`, "
+        "`FR-079` and `FR-080`: a tombstone exists for historical traceability only. Every "
+        "citation of a tombstoned id in spec.md / plan.md / tasks.md / data-model.md / "
         "checklists/requirements.md / research.md is FAIL - as a citation and as a normative "
         "definition - unless the citing line itself carries a deprecation marker (tombstone, "
         "deprecated, absorbed into, merged into, see ADR, ...). Each violation names the "
-        "replacement target the arbitration record assigns.",
+        "replacement target the arbitration record assigns. The id universe is §2's map plus "
+        "every id spec.md carries a tombstone record for, so removing a record from the live "
+        "definition population can never make a citation of it invisible. The record table is "
+        "deliberately not in requirement-definition form, so the definition parser cannot read "
+        "it, and the two sets are cross-checked: an id the table retires and the map omits is "
+        "defined nowhere, exempt from RI-01-FR-DEF, and gated by nothing, so that is FAIL.",
     ),
     CheckSpec(
         "FR-NAMESPACE-COLLISION",
@@ -317,7 +366,11 @@ CHECKS: tuple[CheckSpec, ...] = (
         "`spec.md` and one is a repair document (an FR number claimed by a second owner). Both "
         "texts and both file:line locations are quoted. A fenced code block is quoted material, "
         "never a definition. Two sites whose text is byte-identical after normalisation are "
-        "reported INFO, not FAIL.",
+        "reported INFO, not FAIL. EXEMPT IN `repair/`: a collision pair that includes a repair "
+        "document is reported at INFO as `historical-divergence` (see `demote_historical`) - "
+        "the document records the state of a wave, and `ARBITRATION.md` §1/§14 is the sole "
+        "authority on which document owns a number. A collision between two `spec.md` sites is "
+        "not exempt and remains FAIL here via RI-01-FR-DEF's `fr-defined-twice`.",
     ),
     CheckSpec(
         "EPISTEMIC-AXIS-CONFLATION",
@@ -331,7 +384,11 @@ CHECKS: tuple[CheckSpec, ...] = (
         "disagreement term with `CONTRADICTED` is FAIL, because it instructs writing a "
         "structural disagreement into the denial state; the correct target is "
         "`assembly_state = CONFLICTING`. A sentence that carries a prohibition marker "
-        "(forbidden, never, must not, rather than) is stating the rule, not breaking it.",
+        "(forbidden, never, must not, rather than) is stating the rule, not breaking it. "
+        "EXEMPT IN `repair/`: a unit inside a repair document is reported at INFO as "
+        "`historical-divergence` (see `demote_historical`) - `A4b` and `A6` wrote it before "
+        "§3 existed and were right to at the time. A unit in `spec.md` or `tasks.md` is not "
+        "exempt and stays FAIL.",
     ),
     CheckSpec(
         "COUNT-PRECISION",
@@ -343,7 +400,10 @@ CHECKS: tuple[CheckSpec, ...] = (
         "`seven classes` / `all seven classes` / `seven_classes` in a §8 or entity-extractor "
         "context - the correct phrase is `extraction families` or `§8 subsections`. A unit that "
         "carries a refutation marker (corrected, miscount, misreading, renamed, `not 32`) is "
-        "stating the correction and is reported INFO, not WARN.",
+        "stating the correction and is reported INFO, not WARN. EXEMPT IN `repair/`: `A6` wrote "
+        "\"all seven classes\" before §10 renamed it, so such a unit is reported at INFO as "
+        "`historical-divergence` (see `demote_historical`) - the demotion lowers a WARN to an "
+        "INFO, so it never converts a conforming phrase into a silent one.",
     ),
     CheckSpec(
         "GHOST-SUFFIX",
@@ -530,6 +590,7 @@ class Definition:
     body: str
     section: str
     block: str = ""
+    tombstone: bool = False
 
 
 @dataclass
@@ -549,6 +610,47 @@ class ChecklistRow:
     columns: list[str]
     text: str
     section: str
+
+
+# --- tombstone records ------------------------------------------------------------------------
+#
+# A tombstone is a record that a requirement id was retired and where its obligation went.
+# `spec.md` writes one as a definition row whose body *is* the record:
+#
+#     - **FR-058**: *tombstone - merged into `INV-004`; see the deleted-ids table in ...*
+#
+# The `**FR-nnn**:` prefix makes that row match `DEF_RE`, so without a classification the
+# parser reads a historical marker as a live requirement definition - which is wrong in both
+# directions: the id is not a requirement anyone can implement, and it is not an orphan
+# needing one.
+#
+# The marker must be what the body *opens* with, behind any markdown decoration and behind a
+# redundant self-naming token. A whole-body search is wrong: `FR-035` and `FR-040` are live
+# requirements that carry a "Tombstone `FR-034a`" footnote in a later paragraph, and `FR-164`
+# writes a stage that "MUST NOT be folded into" another. Reading any of those as a tombstone
+# would delete a real requirement from the definition population and turn every live citation
+# of it into a phantom. Anchored to the leading clause, all three stay live and all four real
+# records are recognised.
+
+TOMBSTONE_RECORD_MARKERS: tuple[str, ...] = (
+    "tombstone", "deprecated", "merged into", "absorbed into",
+    "folded into", "superseded by", "see adr",
+)
+_TOMBSTONE_LEAD_DECORATION = r"[\s*_`>–—(\[]*"
+TOMBSTONE_RECORD_RE = re.compile(
+    r"^" + _TOMBSTONE_LEAD_DECORATION
+    + r"(?:\b(?:FR|SC|INV)-\d+[A-Za-z]?\b" + _TOMBSTONE_LEAD_DECORATION + r")*"
+    + r"(?:" + "|".join(re.escape(m) for m in TOMBSTONE_RECORD_MARKERS) + r")\b",
+    re.IGNORECASE,
+)
+
+
+def is_tombstone_record(body: str) -> bool:
+    """True when a definition body is a tombstone record rather than a requirement.
+
+    Decided on the *leading* clause only (see the note above `TOMBSTONE_RECORD_RE`).
+    """
+    return bool(TOMBSTONE_RECORD_RE.match(body))
 
 
 def _section_walk(lines: Sequence[str]) -> list[tuple[int, str, str]]:
@@ -589,7 +691,10 @@ def parse_definitions(art: Artefact, heading_depth: int) -> tuple[list[Definitio
 
     Returns (unique, occurrences): `unique` keeps the first definition of each id (what
     every other check wants), `occurrences` keeps every definition site so a requirement
-    defined twice is still visible.
+    defined twice is still visible. `Definition.tombstone` records a row that is a
+    tombstone record rather than a live requirement; the row is still returned here, so
+    every check that wants a *definition row* (numbering, namespace ownership, count
+    claims) keeps seeing it.
     """
     headings = _section_walk(art.lines)
     occurrences: list[Definition] = []
@@ -616,6 +721,7 @@ def parse_definitions(art: Artefact, heading_depth: int) -> tuple[list[Definitio
                 body=block,
                 section=_enclosing_heading(headings, i + 1),
                 block=block,
+                tombstone=is_tombstone_record(block),
             )
         )
     unique: list[Definition] = []
@@ -899,6 +1005,182 @@ def _containment(a: set[str], b: set[str]) -> float:
         return 0.0
     return len(a & b) / min(len(a), len(b))
 
+# --- the reserved FR number space, read from spec.md -------------------------------------
+
+# The reserved number space, *parsed from spec.md* and never hard-coded here.
+#
+# `repair/ARBITRATION.md` §14 leaves `FR-101…109` and `FR-116…129` deliberately empty so a later
+# wave has room, and `spec.md` records that decision in a blockquote under `### Functional
+# Requirements` together with a one-line machine-readable declaration. That declaration is the
+# only thing this tool reads. Three consequences, all of them the point of parsing rather than
+# hard-coding:
+#
+# 1. The tool cannot silently disagree with the document. A number is RESERVED because
+#    `spec.md` says so, and if the document stops saying so the number stops being exempt.
+# 2. A reservation that cannot be read *unambiguously* is FAIL and exempts nothing. A partially
+#    parsed reservation that quietly exempted half of what it read is the one behaviour that would
+#    turn a parsing bug into a green gate, so `readable=False` means the set is empty.
+# 3. Declaring a reservation is an authored decision, and it is bounded by a drift check: every
+#    range the machine line declares must also appear as a range in the block's own prose, so the
+#    machine view and the human statement cannot drift apart in silence.
+RESERVATION_BLOCK_MARKER_RE = re.compile(r"reserved\s+number\s+space", re.IGNORECASE)
+RESERVATION_DECL_RE = re.compile(
+    r"^[ \t]*(?:>[ \t]*)?`?RESERVED-FR\s*:[ \t]*(?P<body>[^`\n>]*)`?[ \t]*$", re.IGNORECASE
+)
+RESERVED_RANGE_PIECE_RE = re.compile(r"^(?P<lo>\d{1,3})(?:[ \t]*-[ \t]*(?P<hi>\d{1,3}))?$")
+PROSE_RANGE_RE = re.compile(
+    r"`?(?P<lo>\d{3})`?[ \t]*(?:-|\u2010|\u2011|\u2012|\u2013|\u2014|\.\.)[ \t]*`?(?P<hi>\d{3})`?"
+)
+_QUOTED_LINE_RE = re.compile(r"^[ \t]{0,3}>")
+
+
+@dataclass(frozen=True)
+class Reservation:
+    """What `spec.md` declares about the reserved `FR-` number space.
+
+    `declared` and `readable` are separate on purpose. `declared=False` means the document says
+    nothing about reserved number space, which is a legitimate state for a small spec and exempts
+    nothing. `declared and not readable` means the document *tries* to declare it and the
+    declaration cannot be read without guessing, which is a defect and also exempts nothing.
+    """
+
+    declared: bool = False
+    readable: bool = True
+    problem: str | None = None
+    numbers: frozenset[int] = frozenset()
+    ranges: tuple[tuple[int, int], ...] = ()
+    block_lines: tuple[int, ...] = ()
+    decl_line: int | None = None
+
+
+def _blockquote_runs(lines: Sequence[str]) -> list[list[int]]:
+    """Maximal runs of blockquote lines, 0-based. A blank line does not break a run.
+
+    A `>`-only line is a quote line, not a blank one, so the usual reservation block is a single
+    run already; tolerating a genuinely blank line inside means the parse does not depend on which
+    of the two the author used.
+    """
+    runs: list[list[int]] = []
+    current: list[int] = []
+    for i, line in enumerate(lines):
+        if _QUOTED_LINE_RE.match(line):
+            current.append(i)
+        elif not line.strip():
+            current.append(i)
+        else:
+            if current:
+                runs.append(current)
+            current = []
+    if current:
+        runs.append(current)
+    trimmed: list[list[int]] = []
+    for run in runs:
+        quoted = [i for i in run if _QUOTED_LINE_RE.match(lines[i])]
+        if quoted:
+            trimmed.append(quoted)
+    return trimmed
+
+
+def parse_fr_reservation(art: Artefact | None) -> Reservation:
+    """Read the reserved `FR-` ranges `spec.md` declares. Never guesses, never raises.
+
+    Three outcomes, and the difference between them is the whole safety argument:
+
+    * no reservation block at all -> `declared=False`, empty set. Nothing is exempt.
+    * exactly one block with exactly one readable declaration that agrees with the block's prose
+      -> `readable=True` and the declared set.
+    * a block that cannot be read unambiguously - two blocks, no declaration line, two
+      declaration lines, an unparseable range, `lo > hi`, overlapping ranges, or a declared range
+      with no matching prose - -> `readable=False`, empty set, and a problem string naming which.
+    """
+    if art is None or not art.read_ok:
+        return Reservation()
+    lines = art.lines
+    blocks = [run for run in _blockquote_runs(lines)
+              if any(RESERVATION_BLOCK_MARKER_RE.search(lines[i]) for i in run)]
+    if not blocks:
+        return Reservation()
+    if len(blocks) > 1:
+        return Reservation(declared=True, readable=False,
+                           problem=(f"spec.md carries {len(blocks)} blockquote blocks naming a "
+                                    f"reserved number space (starting at lines "
+                                    f"{', '.join(str(b[0] + 1) for b in blocks)}); the reserved "
+                                    f"set is read from exactly one declaration and which one is "
+                                    f"not decidable"),
+                           block_lines=tuple(i + 1 for b in blocks for i in b))
+    block = blocks[0]
+    decls = [i for i in block if RESERVATION_DECL_RE.match(lines[i])]
+    if not decls:
+        return Reservation(declared=True, readable=False,
+                           problem=("the reserved number space block in spec.md carries no "
+                                    "`RESERVED-FR:` declaration line, so the reserved set cannot "
+                                    "be read from the document and nothing is exempted"),
+                           block_lines=tuple(i + 1 for i in block))
+    if len(decls) > 1:
+        return Reservation(declared=True, readable=False,
+                           problem=(f"the reserved number space block in spec.md carries "
+                                    f"{len(decls)} `RESERVED-FR:` declaration lines (lines "
+                                    f"{', '.join(str(i + 1) for i in decls)}); the reserved set "
+                                    f"is read from exactly one and which one is not decidable"),
+                           block_lines=tuple(i + 1 for i in block),
+                           decl_line=decls[0] + 1)
+    decl = decls[0]
+    body = RESERVATION_DECL_RE.match(lines[decl]).group("body").strip()
+    ranges: list[tuple[int, int]] = []
+    if not body:
+        return Reservation(declared=True, readable=False,
+                           problem=(f"spec.md:{decl + 1} declares an empty reserved range list, "
+                                    f"which is not a declaration of anything"),
+                           block_lines=tuple(i + 1 for i in block), decl_line=decl + 1)
+    for piece in body.split(","):
+        m = RESERVED_RANGE_PIECE_RE.match(piece.strip())
+        if not m:
+            return Reservation(
+                declared=True, readable=False,
+                problem=(f"spec.md:{decl + 1} declares {piece.strip()!r}, which is not a number "
+                         f"or a `lo-hi` range; the reserved set is read from the declaration and "
+                         f"never guessed from it"),
+                block_lines=tuple(i + 1 for i in block), decl_line=decl + 1)
+        lo = int(m.group("lo"))
+        hi = int(m.group("hi")) if m.group("hi") else lo
+        if lo > hi:
+            return Reservation(
+                declared=True, readable=False,
+                problem=(f"spec.md:{decl + 1} declares the range {lo:03d}-{hi:03d}, whose end "
+                         f"precedes its start"),
+                block_lines=tuple(i + 1 for i in block), decl_line=decl + 1)
+        ranges.append((lo, hi))
+    for i, (lo, hi) in enumerate(ranges):
+        for lo2, hi2 in ranges[i + 1:]:
+            if lo <= hi2 and lo2 <= hi:
+                return Reservation(
+                    declared=True, readable=False,
+                    problem=(f"spec.md:{decl + 1} declares overlapping reserved ranges "
+                             f"{lo:03d}-{hi:03d} and {lo2:03d}-{hi2:03d}, so a reader cannot "
+                             f"tell which range a number belongs to"),
+                    block_lines=tuple(i + 1 for i in block), decl_line=decl + 1)
+    prose = set()
+    for i in block:
+        if i == decl:
+            continue
+        for m in PROSE_RANGE_RE.finditer(lines[i]):
+            prose.add((int(m.group("lo")), int(m.group("hi"))))
+    unstated = [r for r in ranges if r not in prose]
+    if unstated:
+        return Reservation(
+            declared=True, readable=False,
+            problem=(f"spec.md:{decl + 1} declares "
+                     f"{', '.join(f'{lo:03d}-{hi:03d}' for lo, hi in unstated)}, which the "
+                     f"block's own prose never states as a range: the machine declaration and "
+                     f"the human statement of the reservation have drifted apart, and a tool that "
+                     f"silently believed the machine one would exempt a number the document does "
+                     f"not say is reserved"),
+            block_lines=tuple(i + 1 for i in block), decl_line=decl + 1)
+    numbers = {n for lo, hi in ranges for n in range(lo, hi + 1)}
+    return Reservation(declared=True, readable=True, numbers=frozenset(numbers),
+                       ranges=tuple(ranges), block_lines=tuple(i + 1 for i in block),
+                       decl_line=decl + 1)
+
 
 # --------------------------------------------------------------------------------------
 # Context
@@ -925,6 +1207,10 @@ class Context:
     refs: dict[str, dict[str, list[str]]] = field(default_factory=dict)
     section_cites: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     repair: list[Artefact] = field(default_factory=list)
+    tombstone_ids: set[str] = field(default_factory=set)
+    live_defs: list[Definition] = field(default_factory=list)
+    reservation: Reservation = field(default_factory=Reservation)
+    _repair_claims: dict[str, frozenset[int]] | None = None
 
     def by_name(self, name: str) -> Artefact | None:
         for art in [*self.scanned, *self.authority]:
@@ -934,6 +1220,24 @@ class Context:
 
     def def_index(self) -> dict[str, Definition]:
         return {d.ident: d for d in self.defs}
+
+    def live_index(self) -> dict[str, Definition]:
+        """Definition sites that state a *live* requirement, i.e. no tombstone record."""
+        return {d.ident: d for d in self.live_defs}
+
+    def tombstones(self) -> dict[str, str]:
+        """id -> replacement target, for every id known to be a tombstone.
+
+        `repair/ARBITRATION.md` §2's map, plus every id `spec.md` carries a tombstone record
+        for. The record is itself an authority that the id is dead, and it has to be part of
+        this set: dropping such an id from the live definition population while leaving it
+        out of here would make a live citation of it invisible to every check.
+        """
+        out = dict(TOMBSTONED_FRS)
+        for d in self.def_occurrences:
+            if d.tombstone:
+                out.setdefault(d.ident, "the tombstone record in spec.md")
+        return out
 
     def task_index(self) -> dict[str, TaskDef]:
         return {t.ident: t for t in self.tasks}
@@ -960,6 +1264,40 @@ class Context:
                  if n not in have and (self.spec_dir / n).is_file()]
         return [*self.scanned, *extra, *self.repair]
 
+    def repair_claims(self) -> dict[str, frozenset[int]]:
+        """Per `repair/*.md`, the line numbers that *claim* an id rather than mention one.
+
+        The distinction the reference-integrity rules need, and the one that keeps them
+        reference-shaped rather than content-shaped (see `demote_historical`). A line that
+        *defines* a requirement id - a `- **FR-nnn**:` row, a bold-titled requirement claim,
+        or a `- [ ] Tnnn` bullet - is asserting ownership of a number in the namespace, and
+        whether that number exists is a present-tense fact no later ruling can change. Every
+        other line in a repair document is the narrative of a wave: it reports what its author
+        found, at a moment when the numbering was different.
+
+        A fenced code block is quotation and never a claim, on the rule
+        `FR-NAMESPACE-COLLISION` already uses.
+        """
+        if self._repair_claims is not None:
+            return self._repair_claims
+        out: dict[str, frozenset[int]] = {}
+        for art in self.repair:
+            if not art.read_ok:
+                out[art.name] = frozenset()
+                continue
+            prose = prose_line_flags(art)
+            lines: set[int] = set()
+            for i, line in enumerate(art.lines, start=1):
+                if not prose[i - 1]:
+                    continue
+                if DEF_RE.match(line) or TASK_DEF_RE.match(line):
+                    lines.add(i)
+            for d in parse_repair_definitions(art):
+                lines.add(d.line)
+            out[art.name] = frozenset(lines)
+        self._repair_claims = out
+        return out
+
 
 def build_context(spec_dir: Path, extra_artefacts: Sequence[str] = (),
                   include_all: bool = False) -> Context:
@@ -983,6 +1321,9 @@ def build_context(spec_dir: Path, extra_artefacts: Sequence[str] = (),
     spec_art = ctx.by_name("spec.md")
     if spec_art and spec_art.read_ok:
         ctx.defs, ctx.def_occurrences = parse_definitions(spec_art, 4)
+        ctx.tombstone_ids = set(ctx.tombstones())
+        ctx.live_defs = [d for d in ctx.defs if d.ident not in ctx.tombstone_ids]
+    ctx.reservation = parse_fr_reservation(ctx.by_name("spec.md"))
     tasks_art = ctx.by_name("tasks.md")
     if tasks_art and tasks_art.read_ok:
         ctx.tasks = parse_tasks(tasks_art)
@@ -1039,6 +1380,17 @@ def _ok(ctx: Context, cid: str, code: str, msg: str, **data) -> Finding:
     return Finding(check_id=cid, severity=INFO, code=code, message=msg, data=data)
 
 
+def _info(ctx: Context, cid: str, code: str, msg: str, locs: Iterable[str] = (), **data) -> Finding:
+    """`_f` with the severity the *finding* needs rather than the one the check is registered at.
+
+    Needed because a single check here deliberately carries arms of more than one severity: the
+    number-accounting walk is FAIL and the document-order placement arms are INFO, and the
+    difference between them is argued at each yield site rather than buried in a post-pass.
+    """
+    return Finding(check_id=cid, severity=INFO, code=code, message=msg,
+                   locations=list(locs), data=data)
+
+
 # --- RI-00 ---------------------------------------------------------------------------
 
 
@@ -1064,7 +1416,21 @@ def check_input(ctx: Context) -> Iterable[Finding]:
 
 
 def check_fr_definitions(ctx: Context) -> Iterable[Finding]:
-    index = ctx.def_index()
+    """Cited-but-undefined and defined-twice, over the *live* definitions.
+
+    A tombstone record is excluded in both directions. It is not a live definition (nothing
+    implements a marker), and it is not an undefined reference either: a live citation of a
+    tombstoned id is a real defect, but `TOMBSTONED-FR-REF` is the check that owns it and it
+    names the replacement target, which this check cannot.
+
+    The `repair/` corpus is read too, and split by what the citing line *is* (see
+    `Context.repair_claims` for the rule and `demote_historical` for why this check is not
+    exempt): a definition row claiming a number nothing defines is FAIL, because a repair
+    document is then being used as an authority for a number that does not exist; every other
+    mention is INFO, because a report of an old numbering is what a report is.
+    """
+    index = ctx.live_index()
+    dead = ctx.tombstone_ids
     cited: dict[str, list[str]] = defaultdict(list)
     for art_name, bucket in ctx.refs.items():
         if art_name == "spec.md":
@@ -1074,14 +1440,34 @@ def check_fr_definitions(ctx: Context) -> Iterable[Finding]:
                 cited[key[3:]].extend(locs)
 
     for fr in sorted(cited):
-        if fr not in index:
-            locs = sorted(cited[fr], key=_loc_key)
+        if fr in index or fr in dead:
+            continue
+        locs = sorted(cited[fr], key=_loc_key)
+        yield _f(
+            ctx, "RI-01-FR-DEF", "fr-undefined",
+            f"{fr} is cited but never defined in spec.md ({len(locs)} citation(s))",
+            locs, fr=fr, citation_count=len(locs),
+            citing_files=sorted({loc.rpartition(':')[0] for loc in locs}),
+        )
+
+    mentions_only: list[tuple[str, list[str]]] = []
+    for fr, claims, mentions in _split_repair_references(ctx, FR_TOKEN_RE, "FR"):
+        if claims:
             yield _f(
-                ctx, "RI-01-FR-DEF", "fr-undefined",
-                f"{fr} is cited but never defined in spec.md ({len(locs)} citation(s))",
-                locs, fr=fr, citation_count=len(locs),
-                citing_files=sorted({loc.rpartition(':')[0] for loc in locs}),
+                ctx, "RI-01-FR-DEF", "fr-undefined-in-repair",
+                f"{fr} is claimed as a requirement definition by {len(claims)} `repair/` "
+                f"document(s) but no live requirement in spec.md defines it: a repair document "
+                f"is being used as the authority for a number that does not exist "
+                f"({', '.join(claims[:6])}{' ...' if len(claims) > 6 else ''})",
+                claims, fr=fr, claim_count=len(claims),
+                claiming_files=sorted({loc.rpartition(':')[0] for loc in claims}),
+                mention_count=len(mentions),
             )
+        elif mentions:
+            mentions_only.append((fr, mentions))
+    note = _historical_mentions_note(ctx, "RI-01-FR-DEF", "FR", mentions_only)
+    if note is not None:
+        yield note
 
     for fr in sorted({d.ident for d in ctx.def_occurrences}):
         sites = [d for d in ctx.def_occurrences if d.ident == fr]
@@ -1090,6 +1476,162 @@ def check_fr_definitions(ctx: Context) -> Iterable[Finding]:
             yield _f(ctx, "RI-01-FR-DEF", "fr-defined-twice",
                      f"{fr} is defined {len(sites)} times",
                      [spec.loc(d.line) for d in sites], fr=fr, definition_sites=len(sites))
+
+    yield from _check_supersession_pointers(ctx, index)
+
+
+def _check_supersession_pointers(
+    ctx: Context, live: dict[str, Definition],
+) -> Iterable[Finding]:
+    """A `repair/` record that retires a local number must say where the content went.
+
+    The exemption that keeps `fr-undefined-in-repair` off a supersession label is only sound if
+    the label is *true*: "this number became `FR-mmm`" is a claim about a live requirement, and
+    nothing else in the tool reads it. So it is checked here, under the same FAIL, in three
+    directions:
+
+    * the canonical number named by the label is a live requirement in `spec.md`;
+    * the local number is not itself live, or the label is incoherent - a record cannot retire a
+      number that is currently in force, and if it tries, the live definition is what counts;
+    * one record does not point one local number at two different canonical numbers.
+
+    The third check is deliberately **per document**, not global, and the reason is on the
+    record: `ARBITRATION.md` §1 says `FR-101`/`FR-102` "as invented by **both** A2 and A6 are
+    void", and §14 rule 2 gives A2's pair `FR-174/175` and A6's pair `FR-179/180`. The same local
+    number meant two different requirements in two different authors' drafts, so cross-document
+    reuse is the *normal* shape of a superseded label here and a global reading of it would
+    report the collision that §14 exists to resolve. A single document, though, has one numbering
+    of its own, and pointing one of its numbers at two canonical ones is incoherent.
+    """
+    labels: list[RepairSupersession] = []
+    for art in ctx.repair:
+        if art.read_ok:
+            labels.extend(parse_repair_supersessions(art))
+    labels.sort(key=lambda s: (s.artefact, s.line))
+    for s in labels:
+        loc = f"{s.artefact}:{s.line}"
+        if s.canonical not in live:
+            yield _f(ctx, "RI-01-FR-DEF", "supersession-pointer-unresolved",
+                     f"{loc} retires the local number {s.local} in favour of {s.canonical}, "
+                     f"which no live requirement in spec.md defines: the label claims the "
+                     f"content moved somewhere that does not exist, so the reader is sent to a "
+                     f"phantom and the local number is left with no canonical home",
+                     [loc], local=s.local, canonical=s.canonical, artefact=s.artefact)
+        if s.local in live:
+            yield _f(ctx, "RI-01-FR-DEF", "supersession-of-a-live-fr",
+                     f"{loc} retires the local number {s.local}, but {s.local} is a live "
+                     f"requirement in spec.md: a record cannot supersede a number that is in "
+                     f"force, and the live definition governs",
+                     [loc], local=s.local, canonical=s.canonical, artefact=s.artefact)
+    targets: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for s in labels:
+        targets[(s.artefact, s.local)].add(s.canonical)
+    for (artefact, local), canonicals in sorted(targets.items()):
+        if len(canonicals) > 1:
+            sites = [f"{s.artefact}:{s.line}" for s in labels
+                     if s.artefact == artefact and s.local == local]
+            yield _f(ctx, "RI-01-FR-DEF", "supersession-disagreement",
+                     f"{artefact} supersedes its own local number {local} with "
+                     f"{len(canonicals)} different canonical numbers "
+                     f"({', '.join(sorted(canonicals))}): one document has one numbering of its "
+                     f"own, so the number this content became is not agreed even inside the "
+                     f"record that claims it",
+                     sites, artefact=artefact, local=local, canonicals=sorted(canonicals))
+    reused = sorted({s.local for s in labels
+                     if len({t.artefact for t in labels if t.local == s.local}) > 1})
+    if labels:
+        yield _ok(ctx, "RI-01-FR-DEF", "supersession-summary",
+                  f"{len(labels)} local requirement number(s) are labelled superseded across "
+                  f"{len({s.artefact for s in labels})} `repair/` record(s), each pointing at a "
+                  f"live requirement in spec.md: a signed record that says which number it used "
+                  f"to own and which number owns the content now is history stated accurately, "
+                  f"not a claim on the namespace "
+                  f"({', '.join(f'{s.local}->{s.canonical}' for s in labels)})"
+                  + (f". {len(reused)} local number(s) ({', '.join(reused)}) are reused by more "
+                     f"than one record, which is expected here: ARBITRATION §1 records that "
+                     f"A2 and A6 independently minted `FR-101`/`FR-102` for different subjects, "
+                     f"and §14 rule 2 is what resolves the collision"
+                     if reused else ""),
+                  labels=[f"{s.artefact}:{s.line} {s.local}->{s.canonical}" for s in labels],
+                  reused_local_numbers=reused)
+
+
+def _standalone_id(line: str, offset: int, token: str) -> bool:
+    """True when the id at `offset` is a whole token, not part of a longer identifier.
+
+    `\b` is not enough: `CHK-FR-01` contains `FR-01` and the word boundary holds either side
+    of the hyphen. A reference that is a component of a longer name is not a reference to the
+    requirement, and reporting it as one is how a checker teaches a reader to ignore it.
+    """
+    before = line[offset - 1] if offset else ""
+    after = line[offset + len(token)] if offset + len(token) < len(line) else ""
+    return not (before.isalnum() or before in "-_/") and not (after.isalnum() or after in "-_/")
+
+
+def _split_repair_references(
+    ctx: Context, pattern: re.Pattern[str], kind: str,
+) -> list[tuple[str, list[str], list[str]]]:
+    """(token, claim_sites, narrative_mentions) for ids a `repair/` document cites.
+
+    Sorted, de-duplicated by location, and split on the definition-site test in
+    `Context.repair_claims`. One entry per token so the caller reports one finding per id
+    rather than one per line.
+    """
+    index = ctx.live_index() if kind == "FR" else None
+    tasks = ctx.task_index() if kind == "TASK" else None
+    claims_by: dict[str, set[str]] = defaultdict(set)
+    mentions_by: dict[str, set[str]] = defaultdict(set)
+    sites = ctx.repair_claims()
+    for art in ctx.repair:
+        if not art.read_ok:
+            continue
+        claim_lines = sites.get(art.name, frozenset())
+        for i, line in enumerate(art.lines, start=1):
+            for m in pattern.finditer(line):
+                token = m.group(0)
+                if not _standalone_id(line, m.start(), token):
+                    continue
+                if kind == "FR":
+                    if token in index or token in ctx.tombstone_ids:
+                        continue
+                else:
+                    if token in tasks:
+                        continue
+                bucket = claims_by if i in claim_lines else mentions_by
+                bucket[token].add(art.loc(i))
+    out: list[tuple[str, list[str], list[str]]] = []
+    for token in sorted(set(claims_by) | set(mentions_by)):
+        out.append((token, sorted(claims_by.get(token, ()), key=_loc_key),
+                    sorted(mentions_by.get(token, ()), key=_loc_key)))
+    return out
+
+
+def _historical_mentions_note(
+    ctx: Context, check_id: str, kind: str, unreported: list[tuple[str, list[str]]],
+) -> Finding | None:
+    """One INFO per check for the ids a repair document only *mentions*.
+
+    Aggregated on purpose. A repair document naming 400 task ids from the plan it was written
+    against is that document working as a record, and 400 separate findings saying so would
+    bury the one finding that matters. The counts and the file list stay in `data`, so the
+    information is greppable and the total is visible, but it is one line, not four hundred.
+    """
+    if not unreported:
+        return None
+    per_id = {token: len(locs) for token, locs in unreported}
+    files = sorted({loc.rpartition(":")[0] for _t, locs in unreported for loc in locs})
+    return _ok(
+        ctx, check_id, "repair-historical-reference-summary",
+        f"{len(per_id)} {kind} id(s) are mentioned inside a `repair/` document without being "
+        f"defined there and without being live in the spec artefacts, and none of them is "
+        f"claimed as a definition: this is the narrative of an earlier numbering "
+        f"({sum(per_id.values())} mention(s) across {len(files)} file(s), "
+        f"e.g. {', '.join(f'{k} x{v}' for k, v in sorted(per_id.items())[:8])}"
+        f"{', ...' if len(per_id) > 8 else ''}). Reported as a count so the blind spot is "
+        f"visible, not as {len(per_id)} findings",
+        ids=sorted(per_id), mention_counts=per_id,
+        mention_total=sum(per_id.values()), files=files,
+    )
 
 
 def check_fr_shape(ctx: Context) -> Iterable[Finding]:
@@ -1150,6 +1692,26 @@ def check_task_refs(ctx: Context) -> Iterable[Finding]:
                 locs, task=tid, citation_count=len(locs),
                 citing_files=sorted({loc.rpartition(':')[0] for loc in locs}),
             )
+    # The `repair/` corpus, split on the same rule as RI-01-FR-DEF and for the same reason:
+    # this check is about whether a reference resolves, so it is never demoted.
+    mentions_only: list[tuple[str, list[str]]] = []
+    for tid, claims, mentions in _split_repair_references(ctx, TASK_TOKEN_RE, "TASK"):
+        if claims:
+            yield _f(
+                ctx, "RI-02-TASK-REF", "task-phantom-in-repair",
+                f"{tid} is defined as a task by {len(claims)} `repair/` document(s) but "
+                f"tasks.md defines no such task: the document is being used as the authority "
+                f"for a task that does not exist "
+                f"({', '.join(claims[:6])}{' ...' if len(claims) > 6 else ''})",
+                claims, task=tid, claim_count=len(claims),
+                claiming_files=sorted({loc.rpartition(':')[0] for loc in claims}),
+                mention_count=len(mentions),
+            )
+        elif mentions:
+            mentions_only.append((tid, mentions))
+    note = _historical_mentions_note(ctx, "RI-02-TASK-REF", "TASK", mentions_only)
+    if note is not None:
+        yield note
 
 
 # --- RI-03 / RI-03b / RI-03c -------------------------------------------------------------
@@ -1162,26 +1724,33 @@ def check_fr_orphans(ctx: Context) -> Iterable[Finding]:
         return
     covered: set[str] = set(FR_TOKEN_RE.findall(tasks.text))
     covered |= set(FR_TOKEN_RE.findall(checklist.text))
-    frs = [d.ident for d in ctx.defs if d.ident.startswith("FR-")]
-    orphans = [fr for fr in frs if fr not in covered]
+    live = [d.ident for d in ctx.live_defs if d.ident.startswith("FR-")]
+    orphans = [fr for fr in live if fr not in covered]
+    rows = len([d for d in ctx.defs if d.ident.startswith("FR-")])
     if orphans:
         spec = ctx.by_name("spec.md")
-        locs = [spec.loc(d.line) for d in ctx.defs if d.ident in set(orphans)] if spec else []
+        locs = [spec.loc(d.line) for d in ctx.live_defs if d.ident in set(orphans)] if spec else []
         yield _f(
             ctx, "RI-03-FR-ORPHAN", "fr-orphan",
-            f"{len(orphans)} of {len(frs)} FRs are defined in spec.md and referenced by "
+            f"{len(orphans)} of {len(live)} live FRs are defined in spec.md and referenced by "
             f"neither tasks.md nor checklists/requirements.md",
-            [], orphans=orphans, orphan_count=len(orphans), total_frs=len(frs),
-            definition_lines=sorted(locs, key=_loc_key),
+            [], orphans=orphans, orphan_count=len(orphans), total_frs=len(live),
+            definition_rows=rows, definition_lines=sorted(locs, key=_loc_key),
         )
     else:
+        records = [d.ident for d in ctx.def_occurrences if d.tombstone]
         yield _ok(ctx, "RI-03-FR-ORPHAN", "no-orphans",
-                  f"all {len(frs)} FRs are referenced by tasks.md or the checklist",
-                  total_frs=len(frs))
+                  f"all {len(live)} live FRs (of {rows} `- **FR-nnn**:` definition rows) are "
+                  f"referenced by tasks.md or the checklist; {len(records)} tombstone record(s) "
+                  f"in spec.md and {len(ctx.tombstone_ids) - len(records)} further id(s) named by "
+                  f"`repair/ARBITRATION.md` \u00a72 are excluded as historical metadata",
+                  total_frs=len(live), definition_rows=rows,
+                  tombstone_records=sorted(records),
+                  tombstones=sorted(ctx.tombstone_ids))
 
 
 def check_fr_uncited_anywhere(ctx: Context) -> Iterable[Finding]:
-    index = ctx.def_index()
+    index = ctx.live_index()
     cited: set[str] = set()
     for bucket in ctx.refs.values():
         for key in bucket:
@@ -1276,7 +1845,7 @@ def check_fr_owners(ctx: Context) -> Iterable[Finding]:
     for t in ctx.tasks:
         for fr in FR_TOKEN_RE.findall(t.text):
             owners[fr].add(t.ident)
-    defined = [d.ident for d in ctx.defs if d.ident.startswith("FR-")]
+    defined = [d.ident for d in ctx.live_defs if d.ident.startswith("FR-")]
     no_owner = [fr for fr in defined if not owners.get(fr)]
     shared = {fr: sorted(owners[fr]) for fr in defined if len(owners.get(fr, ())) > 1}
     if no_owner:
@@ -1458,13 +2027,22 @@ def check_task_order(ctx: Context) -> Iterable[Finding]:
 
     numbers = [int(re.match(r"^T(\d+)", t).group(1)) for t in idents if re.match(r"^T\d+$", t)]
     if numbers:
-        expected = list(range(1, max(numbers) + 1))
-        missing = sorted(set(expected) - set(numbers))
+        # Contiguity is a property of the range the plan *declares*, not of an assumed
+        # T001 origin. An integrated plan numbered T101..T194 is contiguous, and deriving
+        # the expected set from 1 reported every id below its own floor as a gap - 100
+        # findings on a plan with no hole in it. The floor is taken from the observed
+        # numbers, so a hole anywhere inside the declared range is still a hole.
+        floor, ceiling = min(numbers), max(numbers)
+        declared = list(range(floor, ceiling + 1))
+        missing = sorted(set(declared) - set(numbers))
         out_of_order = sorted({b for a, b in zip(numbers, numbers[1:], strict=False)
                                if b <= a})
         for n in missing:
-            yield _f(ctx, "RI-06-TASK-ORDER", "task-gap", f"T{n:03d} is missing from tasks.md",
-                     [tasks.name], missing=n)
+            yield _f(ctx, "RI-06-TASK-ORDER", "task-gap",
+                     f"T{n:03d} is missing from tasks.md: the declared range "
+                     f"T{floor:03d}..T{ceiling:03d} is not contiguous",
+                     [tasks.name], missing=n, declared_range=f"T{floor:03d}..T{ceiling:03d}",
+                     declared_first=floor, declared_last=ceiling)
         for n in out_of_order:
             locs = [tasks.loc(t.line) for t in ctx.tasks
                     if re.fullmatch(r"T\d+", t.ident)
@@ -1473,10 +2051,11 @@ def check_task_order(ctx: Context) -> Iterable[Finding]:
                      f"T{n:03d} appears after a higher task number", locs, number=n)
         if not missing and not out_of_order:
             yield _ok(ctx, "RI-06-TASK-ORDER", "task-order-ok",
-                      f"task ids are contiguous and ascending: "
-                      f"T{numbers[0]:03d}..T{numbers[-1]:03d} "
+                      f"task ids are contiguous and ascending across the declared range "
+                      f"T{floor:03d}..T{ceiling:03d} "
                       f"({len(numbers)} ids, 0 gaps, 0 reorderings)",
-                      first=numbers[0], last=numbers[-1], count=len(numbers))
+                      first=floor, last=ceiling, count=len(numbers),
+                      declared_first=floor, declared_last=ceiling)
 
     for tid in sorted({t.ident for t in ctx.tasks if re.match(r"^T\d+[A-Za-z]$", t.ident)}):
         lines = [t.line for t in ctx.tasks if t.ident == tid]
@@ -1488,9 +2067,132 @@ def check_task_order(ctx: Context) -> Iterable[Finding]:
 # --- RI-06b FR ordering ---------------------------------------------------------------------
 
 
+def _fr_number(ident: str) -> int:
+    m = re.match(r"^FR-(\d+)", ident)
+    return int(m.group(1)) if m else -1
+
+
+def _sequence_gaps(lo: int, hi: int, recorded: set[int]) -> list[int]:
+    """Numbers in the open interval (lo, hi) that no artefact defines, retires or reserves."""
+    return [n for n in range(lo + 1, hi) if n not in recorded]
+
+
+def _interval_breakdown(ctx: Context, lo: int, hi: int) -> dict[str, list[int]]:
+    """Every number stepped over between `lo` and `hi`, split by *how* it is accounted for.
+
+    The two INFO arms report the whole interval, not only its unaccounted part, because what they
+    are about is placement: a number that is two sections away or reserved on purpose was skipped
+    by the local interval, and that observation is the same whether or not the number is also
+    unaccounted. The verdict on the unaccounted ones belongs to the coverage arm, and this
+    breakdown is what lets the two say different things about the same interval without either
+    having to re-derive the other's claim.
+    """
+    cats = _accounted_fr_numbers(ctx)
+    skipped = list(range(lo + 1, hi))
+    return {
+        "skipped": skipped,
+        "defined_elsewhere": [n for n in skipped if n in cats["defined"]],
+        "tombstoned": [n for n in skipped if n in cats["tombstoned"]],
+        "reserved": [n for n in skipped if n in cats["reserved"]],
+        "unaccounted": [n for n in skipped
+                        if n not in cats["defined"] and n not in cats["tombstoned"]
+                        and n not in cats["reserved"]],
+    }
+
+
+def _fmt_fr_list(numbers: Sequence[int]) -> str:
+    return ", ".join(f"FR-{n:03d}" for n in numbers)
+
+
+def _accounted_fr_numbers(ctx: Context) -> dict[str, set[int]]:
+    """The three categories the coverage rule admits, as sets, so they can be compared and named.
+
+    **DEFINED** - a live `- **FR-nnn**:` definition in `spec.md`, wherever it sits. `spec.md`
+    interleaves its canonical sections with per-workstream allocation bands, so "not in this
+    interval" is not the same claim as "absent from the document".
+
+    **TOMBSTONED** - a retirement is a recorded outcome: the record table in `spec.md` and
+    `repair/ARBITRATION.md` §2 both say so. A retired id is a slot that was deliberately closed,
+    and demanding contiguity across it demands un-retiring the id.
+
+    **RESERVED** - a number `spec.md` declares reserved and unused in its reserved-number-space
+    block, on purpose, for a later wave. `repair/ARBITRATION.md` §14 is the authority for the
+    allocation. This is the category that was missing, and its absence is why the walk could not
+    tell a *deliberately reserved* number from an *accidentally missing* one - the exact blind
+    spot that let `FR-103` be cited as a live requirement for as long as it was.
+    """
+    defined = {_fr_number(d.ident) for d in ctx.defs if d.ident.startswith("FR-")}
+    tombstoned = {_fr_number(i) for i in ctx.tombstone_ids if i.startswith("FR-")}
+    reserved = set(ctx.reservation.numbers) if ctx.reservation.readable else set()
+    return {
+        "defined": {n for n in defined if n >= 0},
+        "tombstoned": {n for n in tombstoned if n >= 0},
+        "reserved": {n for n in reserved if n >= 0},
+    }
+
+
+def _recorded_fr_numbers(ctx: Context) -> set[int]:
+    """The union of the three categories: every number the artefact set accounts for."""
+    cats = _accounted_fr_numbers(ctx)
+    return cats["defined"] | cats["tombstoned"] | cats["reserved"]
+
+
+def _unaccounted_fr_numbers(ctx: Context) -> list[int]:
+    """Numbers inside the walked range that are DEFINED by nothing, TOMBSTONED by nothing and
+    RESERVED by nothing. This is the coverage arm, and it is the only FAIL it produces.
+
+    The walked range is bounded by the **definitions**, from the lowest `FR-` the document
+    defines to the highest. That bound is load-bearing and it is deliberately *not* the bound of
+    the union of the three categories: `TOMBSTONED_FRS` is a repository-wide constant, so a
+    document that defines `FR-001`…`FR-003` would otherwise be walked out to `FR-080` because
+    some other document once retired `FR-080`, and every number in between would be reported
+    unaccounted. A tombstone and a reservation classify numbers that lie *inside* the space the
+    document occupies; neither of them claims the document occupies more space than it does.
+    """
+    cats = _accounted_fr_numbers(ctx)
+    defined = cats["defined"]
+    if not defined:
+        return []
+    everything = defined | cats["tombstoned"] | cats["reserved"]
+    lo, hi = min(defined), max(defined)
+    return [n for n in range(lo, hi + 1) if n not in everything]
+
+
 def check_fr_order(ctx: Context) -> Iterable[Finding]:
     spec = ctx.by_name("spec.md")
     lines = spec.lines if spec else []
+    res = ctx.reservation
+
+    # --- the reserved number space, read from spec.md and never assumed -------------------
+    if not res.declared:
+        yield _ok(
+            ctx, "RI-06b-FR-ORDER", "no-reservation-declared",
+            "spec.md declares no reserved number space, so no number is exempt on the ground of "
+            "being reserved: every number inside the walked range must be defined or tombstoned. "
+            "A document that wants deliberately empty numbers has to say so, in the "
+            "`RESERVED-FR:` declaration, and that is the only way to buy an exemption",
+        )
+    elif not res.readable:
+        yield _f(ctx, "RI-06b-FR-ORDER", "reservation-declaration-unreadable",
+                 f"the reserved number space that spec.md declares cannot be read "
+                 f"unambiguously, and nothing is exempted: {res.problem}",
+                 [f"spec.md:{n}" for n in res.block_lines[:4]],
+                 block_lines=list(res.block_lines), declaration_line=res.decl_line,
+                 exempted_numbers=0)
+    else:
+        _declared = ", ".join(f"FR-{lo:03d}\u2013FR-{hi:03d}" for lo, hi in res.ranges)
+        yield _ok(
+            ctx, "RI-06b-FR-ORDER", "reservation-declared",
+            f"spec.md declares {len(res.ranges)} reserved range(s) ({_declared}) covering "
+            f"{len(res.numbers)} number(s), read from the `RESERVED-FR:` declaration at "
+            f"spec.md:{res.decl_line} and cross-checked against the block's prose: every declared "
+            f"range is stated as a range in the prose too. Reservation permits absence, not "
+            f"citation - a name inside one of these ranges is still a FAIL under RI-01-FR-DEF",
+            ranges=[f"FR-{lo:03d}-FR-{hi:03d}" for lo, hi in res.ranges],
+            reserved_numbers=len(res.numbers), declaration_line=res.decl_line,
+        )
+
+    recorded = _recorded_fr_numbers(ctx)
     by_section: dict[str, list[Definition]] = defaultdict(list)
     for d in ctx.defs:
         if not d.ident.startswith("FR-"):
@@ -1519,40 +2221,118 @@ def check_fr_order(ctx: Context) -> Iterable[Finding]:
         defs = by_section[section]
         if len(defs) < 2:
             continue
-        nums = [int(re.match(r"^FR-(\d{3})", d.ident).group(1)) for d in defs]
+        nums = [_fr_number(d.ident) for d in defs]
         for a, b, da, db in zip(nums, nums[1:], defs, defs[1:], strict=False):
             if b < a:
+                # Within one section a rewind stays FAIL. The document-order rewind below is a
+                # placement artefact; a rewind inside a single requirement list is a list whose
+                # own numbering contradicts itself, and nothing about subject-section placement
+                # explains that.
                 yield _f(ctx, "RI-06b-FR-ORDER", "fr-non-monotonic",
                          f"{db.ident} ({b:03d}) follows {da.ident} ({a:03d}) in "
                          f"'{section.split(' > ')[-1] or section}': numbering rewinds",
                          [spec.loc(db.line), spec.loc(da.line)],
                          section=section, first=da.ident, second=db.ident)
             elif b > a + 1:
-                yield _f(ctx, "RI-06b-FR-ORDER", "fr-gap",
-                         f"{db.ident} ({b:03d}) follows {da.ident} ({a:03d}) in "
-                         f"'{section.split(' > ')[-1] or section}': "
-                         f"FR-{a + 1:03d}..FR-{b - 1:03d} are not in this section",
-                         [spec.loc(da.line), spec.loc(db.line)],
-                         section=section, gap_from=f"FR-{a + 1:03d}", gap_to=f"FR-{b - 1:03d}")
+                # INFO, not FAIL. Placement by subject section is a legitimate authoring
+                # choice, not a defect: `spec.md` puts each workstream's band in that
+                # workstream's own section, so a section's list is *expected* to skip numbers
+                # that are defined two sections away. What the walk must decide is whether a
+                # number is accounted for at all, and that is the coverage arm below - it does
+                # not care which section a number lives in. A number that is accounted for
+                # nowhere is FAIL there, once, whatever shape made it visible here.
+                parts = _interval_breakdown(ctx, a, b)
+                yield _info(
+                    ctx, "RI-06b-FR-ORDER", "fr-gap-in-section",
+                    f"{db.ident} ({b:03d}) follows {da.ident} ({a:03d}) in "
+                    f"'{section.split(' > ')[-1] or section}': "
+                    f"FR-{a + 1:03d}\u2013FR-{b - 1:03d} "
+                    f"{'is' if len(parts['skipped']) == 1 else 'are'} not in this section - "
+                    f"{len(parts['defined_elsewhere'])} defined in another subject section, "
+                    f"{len(parts['tombstoned'])} tombstoned, {len(parts['reserved'])} reserved "
+                    f"and unused, {len(parts['unaccounted'])} accounted for nowhere. Placement by "
+                    f"subject section is a legitimate authoring choice, not a defect; whether "
+                    f"each of these numbers is accounted for at all is decided by the coverage "
+                    f"arm, not by adjacency",
+                    [spec.loc(da.line), spec.loc(db.line)],
+                    section=section, gap_from=f"FR-{a + 1:03d}", gap_to=f"FR-{b - 1:03d}",
+                    **{k: ([f"FR-{n:03d}" for n in v] if k == "skipped" else v)
+                       for k, v in parts.items()},
+                    skipped_numbers=parts["skipped"])
 
-    # document order, across section boundaries
+    # --- the coverage arm: the only FAIL this walk produces --------------------------------
+    unaccounted = _unaccounted_fr_numbers(ctx)
+    ordered = sorted({_fr_number(d.ident): d for d in ctx.defs
+                      if d.ident.startswith("FR-")}.items())
+    lo_def = min(ordered)[0] if ordered else 0
+    hi_def = max(ordered)[0] if ordered else 0
+    for n in unaccounted:
+        below = [num for num, d in ordered if num < n]
+        above = [num for num, d in ordered if num > n]
+        near_below = max(below) if below else None
+        near_above = min(above) if above else None
+        locs = [spec.loc(d.line) for num, d in ordered
+                if num in (near_below, near_above) and num is not None]
+        yield _f(
+            ctx, "RI-06b-FR-ORDER", "fr-gap",
+            f"FR-{n:03d} is inside the walked range FR-{lo_def:03d}\u2013FR-{hi_def:03d} but is "
+            f"defined in no section of spec.md, retired by no tombstone record, and reserved by no "
+            f"declaration. Every FR number is DEFINED, or TOMBSTONED, or RESERVED; this one is "
+            f"none of the three, so it is an unaccounted number and not a sparse sequence"
+            + (f" (nearest definitions either side: FR-{near_below:03d} and FR-{near_above:03d})"
+               if near_below is not None and near_above is not None else ""),
+            locs, fr=f"FR-{n:03d}", number=n, below=near_below, above=near_above,
+            missing=[f"FR-{n:03d}"], missing_numbers=[n])
+
+    # --- document order, across section boundaries: both arms are now INFO -----------------
     seq = [d for d in ctx.defs if d.ident.startswith("FR-")]
-    nums = [int(re.match(r"^FR-(\d+)", d.ident).group(1)) for d in seq]
+    nums = [_fr_number(d.ident) for d in seq]
     for a, b, da, db in zip(nums, nums[1:], seq, seq[1:], strict=False):
         if b < a:
-            yield _f(ctx, "RI-06b-FR-ORDER", "fr-non-monotonic-document-order",
-                     f"{db.ident} appears at spec.md:{db.line} after {da.ident} at "
-                     f"spec.md:{da.line}: the document-order FR sequence rewinds by "
-                     f"{a - b}",
-                     [spec.loc(db.line), spec.loc(da.line)],
-                     first=da.ident, second=db.ident, rewind=a - b)
+            # INFO, not FAIL. A rewind in document order is what *placing each band in its own
+            # subject section* looks like: `spec.md` defines `FR-174\u2013178` in the identity
+            # section and `FR-179\u2013180` in the §8 section, so the file cannot read as one
+            # ascending run and is not trying to. Demanding a single ascending document order
+            # would demand re-authoring the document's structure to satisfy a formatting rule.
+            # The number-level question - is every number accounted for - is the coverage arm
+            # above, and it does not care about order.
+            yield _info(
+                ctx, "RI-06b-FR-ORDER", "fr-non-monotonic-document-order",
+                f"{db.ident} appears at spec.md:{db.line} after {da.ident} at "
+                f"spec.md:{da.line}: the document-order FR sequence rewinds by {a - b}. "
+                f"Placement by subject section is a legitimate authoring choice, not a defect",
+                [spec.loc(db.line), spec.loc(da.line)],
+                first=da.ident, second=db.ident, rewind=a - b)
         elif b > a + 1:
-            missing = [f"FR-{n:03d}" for n in range(a + 1, b)]
-            yield _f(ctx, "RI-06b-FR-ORDER", "fr-gap-document-order",
-                     f"{db.ident} at spec.md:{db.line} follows {da.ident} at spec.md:{da.line}: "
-                     f"{', '.join(missing)} appear(s) nowhere between them in document order",
-                     [spec.loc(da.line), spec.loc(db.line)],
-                     first=da.ident, second=db.ident, missing=missing)
+            parts = _interval_breakdown(ctx, a, b)
+            yield _info(
+                ctx, "RI-06b-FR-ORDER", "fr-gap-document-order",
+                f"{db.ident} at spec.md:{db.line} follows {da.ident} at "
+                f"spec.md:{da.line}: {_fmt_fr_list(parts['skipped'])} "
+                f"{'is' if len(parts['skipped']) == 1 else 'are'} not adjacent in document "
+                f"order - {len(parts['defined_elsewhere'])} defined in another subject section, "
+                f"{len(parts['tombstoned'])} tombstoned, {len(parts['reserved'])} reserved and "
+                f"unused, {len(parts['unaccounted'])} accounted for nowhere. Placement by subject "
+                f"section is a legitimate authoring choice, not a defect; whether each of these "
+                f"numbers is accounted for at all is decided by the coverage arm, not by adjacency",
+                [spec.loc(da.line), spec.loc(db.line)],
+                first=da.ident, second=db.ident,
+                **{k: ([f"FR-{n:03d}" for n in v] if k == "skipped" else v)
+                   for k, v in parts.items()},
+                skipped_numbers=parts["skipped"])
+    cats = _accounted_fr_numbers(ctx)
+    yield _ok(
+        ctx, "RI-06b-FR-ORDER", "fr-sequence-ok",
+        f"every requirement number in the walked range is accounted for: the rule is coverage, "
+        f"not density - DEFINED ({len(cats['defined'])}), TOMBSTONED ({len(cats['tombstoned'])}) "
+        f"or RESERVED ({len(cats['reserved'])}), {len(unaccounted)} unaccounted over "
+        f"{len(recorded)} accounted number(s). Placement by subject section is a legitimate "
+        f"authoring choice, so the document-order gap and rewind arms are INFO; the in-section "
+        f"rewind arm and the dangling-after-a-table arm still gate",
+        recorded_numbers=len(recorded), unaccounted_numbers=len(unaccounted),
+        defined=len(cats["defined"]), tombstoned=len(cats["tombstoned"]),
+        reserved=len(cats["reserved"]),
+    )
 
 
 # --- RI-07 family --------------------------------------------------------------------------
@@ -2362,31 +3142,295 @@ def _forbidden_nested_hypothesis(ctx: Context, dm: Artefact) -> Iterable[Finding
                  annotation=type_text.strip())
 
 
-def _forbidden_vocabulary_without_producer(ctx: Context) -> Iterable[Finding]:
-    vocab: dict[str, str] = {}
-    for d in ctx.defs:
+_VOCAB_TERM_RE = re.compile(r"^(?:core|value):[A-Za-z]")
+_OBLIGATION_RE = re.compile(r"\bMUST\b|\brequired\b|\bobliges?\b", re.IGNORECASE)
+# The bound must be something *other than the length of the list*. Two literal shapes:
+#
+# (a) an explicit denial - "not by the length of this list", "the two counts are independent"
+#     - which is the vocabulary stating that entry count and obligation scope are unrelated;
+# (b) a named scope - a count attached to a noun that is not an entry noun (extraction
+#     families, subsections, phases, producers, tests) or a section reference.
+#
+# A count of the vocabulary's own entries is NOT a bound: "MUST cover all 31 types" states
+# how big the list is, not what the obligation covers, and treating it as a bound would
+# reinstate the defect this rule exists to catch.
+_BOUND_DENIAL_RE = re.compile(
+    r"not\s+by\s+the\s+(?:length|number|count|size|size)"
+    r"|not\s+the\s+(?:length|number|count|size)\s+of"
+    r"|rather\s+than\s+the\s+(?:length|number|count|size)"
+    r"|independent(?:ly)?\b"
+    r"|neither\s+may\s+be\s+derived"
+    r"|does\s+not\s+(?:imply|mean|require|oblige|entail)"
+    r"|\bnot\s+a\s+producer\s+obligation"
+    r"|\bno\s+per[-\s]term\b",
+    re.IGNORECASE,
+)
+_BOUND_SCOPE_RE = re.compile(
+    r"\b(?:\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|"
+    r"fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b"
+    r"[ \t\u2010-\u2015-]*(?:\u00a7[ \t]*\d+[ \t]*)?"
+    r"(?:extraction\s+famil\w*|subsections?|phases?|instrument\s+modules?|producers?|"
+    r"extractors?|tests?|passes?|scenarios?|instruments?)\b",
+    re.IGNORECASE,
+)
+# A `§N` locator is a *citation*, not a scope: `... (see §8)` bounds nothing. Only a count
+# attached to a scope noun is a bound, so the locator form is deliberately absent above.
+# "every type in the pack must have a dedicated extractor": the claim that entry membership
+# entails a producer. This is the *contradiction* of the owned-vocabulary position, so it is
+# a FAIL even when an owner exists. A qualified form ("at minimum", "need not", "does not
+# oblige") is excluded by requiring the quantifier to sit directly on the entry noun.
+_COMPLETENESS_RE = re.compile(
+    r"\b(?:every|all|each)\s+(?:\w+\s+){0,2}?"
+    r"(?:types?|entries|terms?|values?|elements?|members?)\b"
+    r"|\bcomprehensive\s+(?:type\s+)?vocabular"
+    r"|\bexhaustive\s+(?:type\s+)?vocabular"
+    r"|\bvocabulary\s+is\s+complete\b"
+    r"|\ball\s+of\s+the\s+\d{1,3}\s+(?:types?|entries|terms?)\b"
+    r"|\bcompleteness\s+of\s+the\s+(?:type\s+)?vocabular",
+    re.IGNORECASE,
+)
+_COMPLETENESS_QUALIFIER_RE = re.compile(
+    r"at\s+minimum|at\s+least|need\s+not|does\s+not\s+oblige|not\s+a\s+producer\s+obligation"
+    r"|\bis\s+not\s+a\b|neither\s+may\s+be\s+derived|independent",
+    re.IGNORECASE,
+)
+# The vocabulary consulted as a permit / deny condition. Membership decides whether a claim
+# is admitted, so the list has become a gate rather than a description.
+_VOCAB_GATE_RE = re.compile(
+    r"\b(?:reject|deny|refuse|block|bar)\w*\s+(?:it\s+|them\s+|a\s+(?:signal|candidate|"
+    r"relation|claim|material)\s+)?(?:unless|if\s+not)\b"
+    r"|\bonly\s+if\b[^.;]{0,80}?\b(?:in|belongs\s+to|is\s+registered\s+in)\s+"
+    r"(?:the\s+)?(?:pack|vocabulary|registry|type\s+pack)"
+    r"|\b(?:pack|vocabulary|registry)\s*\.\s*(?:contains|has|includes|lookup|get)\s*\("
+    r"|\bis_registered\s*\("
+    r"|\bMUST\s+be\s+present\s+in\s+the\s+(?:pack|vocabulary|registry)"
+    r"|\bmay\s+not\s+be\s+admitted\s+unless\b"
+    r"|\bgate[sd]?\s+on\s+(?:the\s+)?(?:pack|vocabulary|list)\b",
+    re.IGNORECASE,
+)
+# A vocabulary FR may own the obligation by *naming* the FR that carries it, rather than by
+# stating it itself: "the one producer obligation this feature creates is `FR-179`" is
+# ownership, not a gap. The shape required is a deferral predicate *between* an obligation
+# noun and the FR id, in the same clause - so a number mentioned in passing ("these three
+# slots once read `FR-155`") is not mistaken for a delegation.
+_DEFERRAL_RE = re.compile(
+    r"(?:obligation|producer|extractor|extraction|emission|evidence|requirement)"
+    r"[^.;]{0,80}?\b(?:is|are|was|were|belongs?|lives?|devolves?|falls?|sits?|carried|"
+    r"created|defined|handled|owned)\b[^.;]{0,60}?FR-\d{3}[A-Za-z]?"
+    r"|FR-\d{3}[A-Za-z]?\s+(?:is|are)\s+the\s+(?:one\s+|sole\s+)?"
+    r"(?:producer\s+|extraction\s+)?obligations?\b",
+    re.IGNORECASE,
+)
+_CLAUSE_SPLIT_RE = re.compile(r"(?<=[.;])\s+")
+# A requirement body is hard-wrapped, so a newline is inside a sentence far more often than
+# it ends one. Splitting on newlines as well would put "The one producer obligation this
+# feature creates is" in one clause and "`FR-005`" in the next, and every rule that needs a
+# noun and an id in the same sentence would silently stop firing. Soft wraps are joined first;
+# a blank line is a real break and is kept.
+_PARAGRAPH_BREAK_RE = re.compile(r"\n[ \t]*\n[ \t]*")
+_SOFT_WRAP_RE = re.compile(r"\n[ \t]*")
+
+
+def _clauses(text: str) -> list[str]:
+    """Sentence-ish units of a definition body, insensitive to hard wrapping.
+
+    Blank lines separate blocks; a single newline is a wrap and becomes a space. The result
+    is what every ownership / completeness / gate test in this section matches against, so a
+    requirement that happens to wrap a clause in two must not read as two clauses.
+    """
+    out: list[str] = []
+    for block in _PARAGRAPH_BREAK_RE.split(text):
+        if not block.strip():
+            continue
+        out.extend(c for c in _CLAUSE_SPLIT_RE.split(_flatten(block)) if c.strip())
+    return out
+
+
+def _flatten(text: str) -> str:
+    """Collapse hard wrapping to single spaces.
+
+    `parse_definitions` joins a definition row's continuation lines with newlines, so every
+    whole-body predicate must see the unwrapped text: a bound that reads "all seven\\n
+    extraction families" and a body that reads "all seven extraction families" are the same
+    requirement, and a checker that treats them differently is measuring line width.
+    """
+    return _SOFT_WRAP_RE.sub(" ", text)
+
+
+def _vocabulary_terms(ctx: Context) -> dict[str, str]:
+    """`core:*` / `value:*` literal -> the live FR that enumerates it."""
+    out: dict[str, str] = {}
+    for d in ctx.live_defs:
         for m in CODE_SPAN_RE.finditer(d.body):
             lit = m.group("body").strip()
-            if re.match(r"^(?:core|value):[A-Z]", lit):
-                vocab[lit] = d.ident
-    if not vocab:
-        return
-    producer_obligations: set[str] = set()
-    for d in ctx.defs:
-        body = " ".join(CODE_SPAN_RE.sub(lambda m: m.group("body"), d.body))
-        if not re.search(r"\bMUST\b", body):
+            if _VOCAB_TERM_RE.match(lit):
+                out.setdefault(lit, d.ident)
+    return out
+
+
+def _deferral_targets(body: str) -> set[str]:
+    """FR ids this body hands the obligation to, in a clause that says so."""
+    out: set[str] = set()
+    for clause in _clauses(body):
+        if not _DEFERRAL_RE.search(clause):
             continue
-        if re.search(r"producer|extractor|emit|writes?\s+to", body, re.I):
-            producer_obligations.add(d.ident)
-    unbacked = sorted(v for v, owner in vocab.items() if owner not in producer_obligations)
-    if unbacked:
-        owners = sorted({vocab[v] for v in unbacked})
-        yield _f(ctx, "RI-10-FORBIDDEN", "vocabulary-without-producer",
-                 f"{len(unbacked)} vocabulary terms are mandated by {owners} but no requirement "
-                 f"obliges any producer or extractor to emit them: the list has no producer "
-                 f"obligation",
-                 [], terms=unbacked, owner_frs=owners, count=len(unbacked),
-                 producer_obligation_frs=sorted(producer_obligations))
+        out.update(m.group(0) for m in FR_TOKEN_RE.finditer(clause))
+    return out
+
+
+def _states_a_non_count_bound(body: str) -> bool:
+    flat = _flatten(body)
+    return bool(_BOUND_DENIAL_RE.search(flat) or _BOUND_SCOPE_RE.search(flat))
+
+
+def _vocabulary_owners(ctx: Context, terms: dict[str, str]) -> list[tuple[str, str]]:
+    """(fr, why) for each live FR that states the vocabulary's obligation and bounds it.
+
+    The owner need not be the FR that *enumerates* the terms. A vocabulary FR that says "the
+    one producer obligation this feature creates is `FR-179`" has not failed to own the
+    vocabulary; it has delegated, and named the delegate. So the candidate set is the
+    enumerating FRs plus, for each, the ids it defers to under `_DEFERRAL_RE`.
+
+    Three conditions, all required, so no FR qualifies on a technicality:
+
+    * it enumerates a vocabulary term, or an enumerator delegates to it by name;
+    * it states an obligation (`MUST` / `required` / `obliges`);
+    * it bounds that obligation to something other than the length of the list.
+    """
+    enumerated = sorted(set(terms.values()))
+    bodies = {d.ident: d.body for d in ctx.live_defs}
+    candidates: dict[str, str] = {ident: "enumerates the vocabulary" for ident in enumerated}
+    for ident in enumerated:
+        for target in _deferral_targets(bodies.get(ident, "")):
+            candidates.setdefault(target, f"{ident} delegates the obligation to it by name")
+    out: list[tuple[str, str]] = []
+    for ident in sorted(candidates):
+        body = bodies.get(ident)
+        if body is None:
+            continue
+        if not _OBLIGATION_RE.search(_flatten(body)):
+            continue
+        if not _states_a_non_count_bound(body):
+            continue
+        out.append((ident, candidates[ident]))
+    return out
+
+
+def _forbidden_vocabulary_without_producer(ctx: Context) -> Iterable[Finding]:
+    """The `core:*` / `value:*` pack must be *owned*, not per-term backed.
+
+    What this rule is for: a vocabulary nobody has claimed. A list of types with no owner is
+    a description the system is not obliged to implement, and a description nobody is
+    obliged to implement is indistinguishable from a description nobody intends.
+
+    What it is **not** for: requiring a producer per term. `repair/ARBITRATION.md` §10 and
+    §14 rule 4 both say the opposite in terms - "a type in the vocabulary != the system must
+    have a dedicated extractor for it, and its absence != a refusal" - and a rule that
+    demanded per-term backing would demand the opposite of a binding decision. So the unit of
+    judgement is the vocabulary, not the term: an owner FR that states the obligation *and*
+    bounds it to something other than the length of the list is sufficient, and the terms
+    themselves are then not evidence of anything.
+
+    Three shapes are still FAIL, owner or not, because each makes the list load-bearing in a
+    way no owner repairs:
+
+    * `vocabulary-completeness-asserted` - the vocabulary claims that membership entails
+      production, i.e. that the list is the complete set of per-type obligations;
+    * `vocabulary-used-as-gate` - membership decides admission, so the list is a permit;
+    * `vocabulary-unowned` - nothing states and bounds an obligation for it at all.
+    """
+    terms = _vocabulary_terms(ctx)
+    if not terms:
+        return
+    owners = _vocabulary_owners(ctx, terms)
+    enumerating = sorted(set(terms.values()))
+    relevant: dict[str, str] = {}
+    for d in ctx.live_defs:
+        if any(_VOCAB_TERM_RE.match(m.group("body").strip())
+               for m in CODE_SPAN_RE.finditer(d.body)):
+            relevant[d.ident] = d.body
+
+    def _scan(pattern: re.Pattern[str], qualifier: re.Pattern[str] | None) -> list[tuple[str, str]]:
+        """(fr, the offending clause) for every clause in the vocabulary's own requirements."""
+        hits: list[tuple[str, str]] = []
+        for ident, body in relevant.items():
+            for clause in _clauses(body):
+                if not pattern.search(clause):
+                    continue
+                if qualifier is not None and qualifier.search(clause):
+                    continue
+                hits.append((ident, clause))
+        return sorted(hits)
+
+    completeness = _scan(_COMPLETENESS_RE, _COMPLETENESS_QUALIFIER_RE)
+    if completeness:
+        owners_txt = ", ".join(ident for ident, _ in owners) or "no owner FR"
+        # Reported at the requirement row rather than at the clause's exact line: a hard-wrapped
+        # clause has no single line, and the clause is quoted in `data` so a reader can find it.
+        sites = [f"spec.md:{defn_line(ctx, ident)}" for ident, _ in completeness]
+        yield _f(
+            ctx, "RI-10-FORBIDDEN", "vocabulary-completeness-asserted",
+            f"the type vocabulary asserts completeness: {', '.join(i for i, _ in completeness)}"
+            f" state that every/all entry carries an obligation, which converts a description "
+            f"of the pack into a per-type extractor mandate ({len(terms)} term(s) across "
+            f"{len(enumerating)} enumerating FR(s); owner FR(s): {owners_txt}). "
+            f"`repair/ARBITRATION.md` §10 forbids reading the vocabulary as a producer "
+            f"mandate. Quoted: \"{_excerpt(completeness[0][1], 200)}\"",
+            sites, terms=len(terms), enumerating_frs=enumerating,
+            owner_frs=[ident for ident, _ in owners], sites=sites,
+            quoted=[_excerpt(c, 200) for _i, c in completeness],
+        )
+        return
+
+    gates = _scan(_VOCAB_GATE_RE, None)
+    if gates:
+        sites = [f"spec.md:{defn_line(ctx, ident)}" for ident, _ in gates]
+        yield _f(
+            ctx, "RI-10-FORBIDDEN", "vocabulary-used-as-gate",
+            f"the type vocabulary is consulted as a permit/deny gate: "
+            f"{', '.join(i for i, _ in gates)} decide admission on pack membership, so "
+            f"an unlisted type is refused rather than unresolved. A vocabulary that gates "
+            f"behaves as a closed-world type system, which is a different requirement from "
+            f"the one that enumerates it. Quoted: \"{_excerpt(gates[0][1], 200)}\"",
+            sites, terms=len(terms), enumerating_frs=enumerating,
+            owner_frs=[ident for ident, _ in owners], sites=sites,
+            quoted=[_excerpt(c, 200) for _i, c in gates],
+        )
+        return
+
+    if not owners:
+        state = ("no live FR enumerates the vocabulary at all"
+                 if not enumerating
+                 else f"the enumerating FR(s) {', '.join(enumerating)} state no obligation "
+                      f"bound to anything other than the list, and delegate it to no named FR")
+        yield _f(
+            ctx, "RI-10-FORBIDDEN", "vocabulary-unowned",
+            f"{len(terms)} `core:*`/`value:*` vocabulary terms are enumerated by "
+            f"{', '.join(enumerating) or 'nothing'} but the vocabulary is unowned: {state}. "
+            f"An unowned list is a description nothing is obliged to implement",
+            [], terms=sorted(terms), count=len(terms),
+            enumerating_frs=enumerating, owner_frs=[],
+        )
+        return
+
+    yield _ok(
+        ctx, "RI-10-FORBIDDEN", "vocabulary-owned",
+        f"the {len(terms)}-term `core:*`/`value:*` vocabulary is owned and bounded: "
+        f"{', '.join(f'{i} ({why})' for i, why in owners)}. Per-term producer backing is NOT "
+        f"required and is deliberately not checked: `repair/ARBITRATION.md` §10 and §14 "
+        f"rule 4 decide that a type in the vocabulary does not oblige a dedicated extractor, "
+        f"and an absence is not a refusal. What is still gated: an unowned vocabulary, a "
+        f"vocabulary asserting completeness, and a vocabulary used as a permit/deny gate",
+        terms=len(terms), enumerating_frs=enumerating,
+        owner_frs=[ident for ident, _ in owners],
+        owner_reasons={i: w for i, w in owners},
+    )
+
+
+def defn_line(ctx: Context, ident: str) -> int:
+    """1-based line in `spec.md` where the definition of `ident` starts."""
+    definition = next((d for d in ctx.live_defs if d.ident == ident), None)
+    return definition.line if definition is not None else 0
 
 
 # --- RI-11 constitution ----------------------------------------------------------------------
@@ -2559,8 +3603,18 @@ def check_stale_claims(ctx: Context) -> Iterable[Finding]:
 
 # `repair/ARBITRATION.md` §2. Edit this mapping when the arbitration record moves a tombstone's
 # replacement target; the check reads nothing else to learn the set.
+#
+# SIX ids, and the sixth is `FR-039a`. `spec.md`'s tombstone record table lists six rows and §2
+# is the authority; the two must agree, because an id that is retired in the table but absent from
+# this map is a hole: `RI-01-FR-DEF` exempts tombstoned ids from its "cited but never defined"
+# arm, so an id missing from here is defined nowhere, exempt from that arm, and gated by
+# `TOMBSTONED-FR-REF` below only if it is in here too. `check_tombstoned_fr_refs` also reports any
+# record-table id that is still missing from this map, so the next omission is caught rather than
+# merely avoided. See `ARBITRATION.md` §2 for the `FR-039a` successor disagreement with
+# `tasks.md`, which §2 and `spec.md` both resolve as `FR-040`.
 TOMBSTONED_FRS: dict[str, str] = {
     "FR-034a": "INV-002",
+    "FR-039a": "FR-040",
     "FR-058": "INV-004",
     "FR-070": "design note",
     "FR-079": "FR-078",
@@ -2581,11 +3635,20 @@ DEPRECATION_RE = re.compile("|".join(re.escape(p) for p in DEPRECATION_MARKERS),
 
 
 def check_tombstoned_fr_refs(ctx: Context) -> Iterable[Finding]:
-    """Gate `TOMBSTONED_FR_MUST_HAVE_ZERO_NORMATIVE_REFERENCES` (ARBITRATION §2)."""
+    """Gate `TOMBSTONED_FR_MUST_HAVE_ZERO_NORMATIVE_REFERENCES` (ARBITRATION §2).
+
+    The id universe is `ARBITRATION §2`'s map *plus* every id `spec.md` carries a tombstone
+    record for (see `Context.tombstones`). The second half exists because the live-definition
+    population now excludes tombstone records: if a record were not registered here, a live
+    citation of that id would be excluded from RI-01-FR-DEF's targets and unknown here, and
+    nothing would report it. The line test is unchanged - a deprecation-marked line is
+    history, anything else is a live normative target.
+    """
+    tombstones = ctx.tombstones()
     live = 0
     exempted = 0
-    for fr in sorted(TOMBSTONED_FRS):
-        replacement = TOMBSTONED_FRS[fr]
+    for fr in sorted(tombstones):
+        replacement = tombstones[fr]
         token = re.compile(rf"\b{re.escape(fr)}\b")
         for art in ctx.scanned:
             for i, line in enumerate(art.lines, start=1):
@@ -2615,12 +3678,96 @@ def check_tombstoned_fr_refs(ctx: Context) -> Iterable[Finding]:
                 )
     yield _ok(
         ctx, "TOMBSTONED-FR-REF", "tombstone-summary",
-        f"{len(TOMBSTONED_FRS)} tombstoned ids ({', '.join(sorted(TOMBSTONED_FRS))}): "
+        f"{len(tombstones)} tombstoned ids ({', '.join(sorted(tombstones))}): "
         f"{live} live normative reference(s), {exempted} citation(s) carrying a deprecation "
         f"marker and therefore read as history",
-        tombstoned=sorted(TOMBSTONED_FRS), live_references=live, exempted=exempted,
-        replacements=dict(sorted(TOMBSTONED_FRS.items())),
+        tombstoned=sorted(tombstones), live_references=live, exempted=exempted,
+        replacements=dict(sorted(tombstones.items())),
     )
+    yield from _check_tombstone_records_registered(ctx, tombstones)
+
+
+# `spec.md` keeps its tombstone record as a *table*, deliberately not in requirement-definition
+# form, so `parse_definitions` cannot learn the set from it. The table is therefore the one
+# authority in the artefact set that the definition parser structurally cannot read, and the
+# consequence is a whole class of silent hole: `RI-01-FR-DEF` drops tombstoned ids from the
+# "cited but never defined" population, so a retired id that the table names and the
+# `TOMBSTONED_FRS` map does not is defined nowhere *and* exempt from the check that would say so.
+# `FR-039a` was exactly that: 17 live normative citations across four files, warned about by
+# `GHOST-SUFFIX` as visible, and gated by nothing.
+#
+# So the table is read here - narrowly, as a table - and every id it names must be in the map.
+# Reading it narrowly is deliberate: a row is only a record if it is a row of the table whose
+# header declares a `tombstoned id` column, so no prose and no other table in the document can
+# put an id into the set by accident.
+TOMBSTONE_TABLE_HEADER_RE = re.compile(r"\btombstoned\s+id\b", re.IGNORECASE)
+TOMBSTONE_CELL_RE = re.compile(r"`?(?P<ident>FR-\d{3}[A-Za-z]?)`?")
+
+
+def spec_tombstone_record_ids(ctx: Context) -> dict[str, int]:
+    """id -> 1-based line of its row, for every id `spec.md`'s tombstone *table* records.
+
+    The table is found by its header column, so this is a parse of one named table and not a
+    search for `FR-` tokens in prose.
+    """
+    spec = ctx.by_name("spec.md")
+    if spec is None or not spec.read_ok:
+        return {}
+    out: dict[str, int] = {}
+    has_id_col = False
+    in_fence = False
+    for i, line in enumerate(spec.lines, start=1):
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            token = stripped[:3]
+            in_fence = False if in_fence == token else (token if in_fence is None else token)
+            continue
+        if in_fence:
+            continue
+        if not line.startswith("|"):
+            has_id_col = False
+            continue
+        if TABLE_SEP_RE.match(line.strip()):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if any(TOMBSTONE_TABLE_HEADER_RE.search(c) for c in cells):
+            has_id_col = True
+            continue
+        if not has_id_col or not cells:
+            continue
+        m = TOMBSTONE_CELL_RE.match(cells[0])
+        if m and m.group("ident") not in out:
+            out[m.group("ident")] = i
+    return out
+
+
+def _check_tombstone_records_registered(
+    ctx: Context, tombstones: dict[str, str],
+) -> Iterable[Finding]:
+    """Every id `spec.md` records as tombstoned must be in the map the gate reads."""
+    recorded = spec_tombstone_record_ids(ctx)
+    unregistered = sorted(set(recorded) - set(tombstones))
+    spec = ctx.by_name("spec.md")
+    for fr in unregistered:
+        line = recorded[fr]
+        yield _f(
+            ctx, "TOMBSTONED-FR-REF", "tombstone-record-unregistered",
+            f"spec.md:{line} carries a tombstone record for {fr}, but {fr} is not in "
+            f"`repair/ARBITRATION.md` §2's set as this checker reads it. A retired id that is "
+            f"exempt from RI-01-FR-DEF as a tombstone but absent from this map is defined "
+            f"nowhere and gated by nothing: every live citation of it is invisible. Add it to "
+            f"TOMBSTONED_FRS and to ARBITRATION §2",
+            [spec.loc(line)], fr=fr, record_line=line,
+            registered=sorted(tombstones))
+    yield _ok(
+        ctx, "TOMBSTONED-FR-REF", "tombstone-record-cross-check",
+        f"all {len(recorded)} id(s) in spec.md's tombstone record table "
+        f"({', '.join(sorted(recorded))}) are registered in `repair/ARBITRATION.md` §2's set as "
+        f"this checker reads it, so none of them is exempt from RI-01-FR-DEF while ungated; the "
+        f"table is not in requirement-definition form, so this cross-check is the only thing "
+        f"that can notice the two sets disagreeing",
+        record_table_ids=sorted(recorded), registered=sorted(tombstones),
+        unregistered=unregistered)
 
 
 # --- FR-NAMESPACE-COLLISION --------------------------------------------------------------------
@@ -2629,8 +3776,28 @@ def check_tombstoned_fr_refs(ctx: Context) -> Iterable[Finding]:
 # the FR id, the span closes on the same line, and nothing but a dash-separated gloss may follow.
 # The negative lookahead rejects an id that continues into a range (`FR-001–FR-100`).
 REPAIR_FR_DEF_RE = re.compile(
-    r"^[ \t>]*(?P<title>\*\*(?P<ident>FR-\d{3}[A-Za-z]?)(?![-\u2010-\u2015\d])[^*]{0,200}\*\*)"
-    r"(?P<gloss>[ \t]*(?:[-\u2013\u2014][ \t]*[*_]?[^*\n]{0,140}\*?)?)[ \t]*$"
+    r"^[ \t>]*(?P<title>\*\*(?P<ident>FR-\d{3}[A-Za-z]?)(?![-‐-―\d])[^*]{0,200}\*\*)"
+    r"(?P<gloss>[ \t]*(?:[-–—][ \t]*[*_]?[^*\n]{0,140}\*?)?)[ \t]*$"
+)
+
+# ...unless the line says, in the same breath, that the number is a superseded *local* number and
+# names the canonical one it became. `repair/A2-identity-subsystem.md` and
+# `repair/A6-fr-triage.md` were both written against a pre-§14 numbering: A2's `FR-101/102/104/
+# 105/106` became `FR-174…178` and A6's `FR-101/102` became `FR-179/180`. Labelling the local
+# number superseded is the honest form of a signed record - it changes no requirement text, it
+# only stops the record from being read as a present-tense claim on a number that §14 voided.
+#
+# A line in this form is NOT a definition site, and that is a rule rather than a side effect of
+# the parenthesised gloss failing the dash-gloss test above. The reason is specific: a document
+# that says "this number is not mine any more, and here is the number that is" is not claiming
+# ownership of anything, so `fr-undefined-in-repair` must not fire on it. The gloss is *load
+# bearing* in the other direction, which is why `check_supersession_pointers` exists: a
+# supersession label whose canonical number is not a live requirement is FAIL, so the escape
+# hatch cannot be used to retire a number without saying where the content went.
+REPAIR_FR_SUPERSEDED_RE = re.compile(
+    r"^[ \t>]*\*\*(?P<local>FR-\d{3}[A-Za-z]?)(?![-‐-―\d])\*\*"
+    r"[ \t]*\((?P<note>[^()\n]*?superseded[^()\n]*?)"
+    r"(?P<tail>→[^*\n]*?\*\*(?P<canonical>FR-\d{3}[A-Za-z]?)\*\*)"
 )
 
 
@@ -2642,6 +3809,17 @@ class RepairDefinition:
     body: str
     artefact: str
     kind: str
+
+
+@dataclass(frozen=True)
+class RepairSupersession:
+    """One `**FR-nnn** (superseded local numbering -> **FR-mmm**)` label in a `repair/` record."""
+
+    local: str
+    canonical: str
+    artefact: str
+    line: int
+    note: str
 
 
 def _strip_quote(line: str) -> str:
@@ -2683,12 +3861,17 @@ def parse_repair_definitions(art: Artefact) -> list[RepairDefinition]:
     A fenced block is quoted material (a "old text, verbatim" block is a citation of the
     past, not a second claim on the number), so it never yields a definition site. So does a
     title whose body is a fence, a table or a heading: there is no requirement text there.
+    So does a title line that carries a supersession label: it is a record of a number this
+    document used to own and no longer does, and `check_supersession_pointers` is what reads
+    it, because the canonical number it names has to be live.
     """
     out: list[RepairDefinition] = []
     lines = art.lines
     prose = prose_line_flags(art)
     for i, line in enumerate(lines):
         if not prose[i]:
+            continue
+        if REPAIR_FR_SUPERSEDED_RE.match(line):
             continue
         m = REPAIR_FR_DEF_RE.match(line)
         if not m:
@@ -2716,6 +3899,26 @@ def parse_repair_definitions(art: Artefact) -> list[RepairDefinition]:
         out.append(RepairDefinition(
             ident=m.group("ident"), line=i + 1, title=title, body=body,
             artefact=art.name, kind=_definition_kind(title),
+        ))
+    return out
+
+
+def parse_repair_supersessions(art: Artefact) -> list[RepairSupersession]:
+    """Every `**FR-nnn** (superseded ... → **FR-mmm**)` label in a repair document.
+
+    One entry per label, so the caller reports one finding per label rather than one per line.
+    """
+    out: list[RepairSupersession] = []
+    prose = prose_line_flags(art)
+    for i, line in enumerate(art.lines):
+        if not prose[i]:
+            continue
+        m = REPAIR_FR_SUPERSEDED_RE.match(line)
+        if not m:
+            continue
+        out.append(RepairSupersession(
+            local=m.group("local"), canonical=m.group("canonical"),
+            artefact=art.name, line=i + 1, note=m.group("note").strip(),
         ))
     return out
 
@@ -2780,8 +3983,18 @@ def check_fr_namespace_collisions(ctx: Context) -> Iterable[Finding]:
                     continue
                 collisions += 1
                 owners = {first.kind, second.kind}
-                shape = ("spec-vs-repair" if "canonical-definition" in owners
-                         else "repair-vs-repair")
+                # Three shapes, not two. A pair of two `spec.md` sites is neither a repair
+                # document nor a cross-document dispute: it is the same document claiming one
+                # number twice, and labelling it `spec-vs-repair` sent a reader looking for a
+                # repair document that does not exist in the pair.
+                repair_sites = sum(1 for s in (first, second)
+                                   if s.artefact.startswith(f"{REPAIR_DIR_RELPATH}/"))
+                if repair_sites == 2:
+                    shape = "repair-vs-repair"
+                elif repair_sites == 1:
+                    shape = "spec-vs-repair"
+                else:
+                    shape = "spec-vs-spec"
                 yield Finding(
                     check_id="FR-NAMESPACE-COLLISION", severity=FAIL,
                     code="fr-namespace-collision",
@@ -3093,6 +4306,163 @@ def check_ghost_suffix(ctx: Context) -> Iterable[Finding]:
 
 
 # ------------------------------------------------------------------------------------------
+# FIX 2 - `repair/*.md` is a historical record, not normative content
+# ------------------------------------------------------------------------------------------
+#
+# `repair/*.md` is the wave-by-wave record of the repair effort: each document states the state
+# of its subject *at the moment it was written*. `A4b` routed a structural conflict into
+# `CandidateStatus.CONTRADICTED` and `A6` wrote "all seven classes of §8"; both were correct
+# for their moment and both were superseded by `repair/ARBITRATION.md` §3 and §10. Linting
+# them as normative is a category error: it demands rewriting history to satisfy a later
+# decision, and it is unsatisfiable by construction - no edit to a signed record can make it
+# agree with a ruling that did not exist when it was written.
+#
+# So `repair/*.md` is exempt from *normative* linting. It is NOT silenced. Every finding that
+# would have fired is still emitted, at INFO, under one greppable code, naming the artefact,
+# the finding it would have been, and the `ARBITRATION.md` section that superseded it.
+#
+# ## The line drawn
+#
+# A finding is demoted when, and only when, **its subject is the content of the sentence**:
+# what the document *asserts* to be true about the design. A finding is never demoted when
+# **its subject is a reference the document makes**: whether an id it points at resolves.
+#
+# The distinction is not "old file versus new file" - it is "a claim about the design" versus
+# "a pointer into the namespace". A repair document that says "seven classes" is stating what
+# the brief said in September; superseded, reportable, not gating. A repair document that says
+# "`FR-103` is the requirement for X" is claiming a number in a namespace; whether that number
+# exists is a fact about the namespace that no arbitration can change retroactively, so it
+# still gates. History can record a superseded opinion. It cannot make a number appear.
+#
+# Concretely, in one sentence: **demote when the finding would be repaired by changing what the
+# document says; keep FAIL when the finding would be repaired only by changing what some other
+# document is obliged to define.**
+#
+# The membership below is the whole of the exemption. It is a named set, not a heuristic, so
+# what is exempt is auditable in one glance and cannot widen by accident.
+
+HISTORICAL_CODE = "historical-divergence"
+
+#: Checks whose subject is the *content* of a normative statement.
+NORMATIVE_LINT_CHECKS: frozenset[str] = frozenset({
+    "EPISTEMIC-AXIS-CONFLATION",   # what the design says about CONFLICTING vs CONTRADICTED
+    "FR-NAMESPACE-COLLISION",      # which document owns a requirement number
+    "COUNT-PRECISION",             # which number counts what
+    "RI-10-FORBIDDEN",             # which shape a requirement or data model may take
+})
+
+#: Which `ARBITRATION.md` ruling retired each exempt check's reading of a repair document.
+#: Named in every demoted finding, so a reader can go read the decision that overrode it.
+SUPERSEDING_AUTHORITY: dict[str, str] = {
+    "EPISTEMIC-AXIS-CONFLATION": "§3 (`CONFLICTING` vs `CONTRADICTED`), and §13 item 3",
+    "FR-NAMESPACE-COLLISION": ("§1 and §14 (the A8prep allocation map is the sole authority "
+                               "for an FR number; a repair document is not)"),
+    "COUNT-PRECISION": "§10 (31 / 13 / 7 / ~4: four numbers, four jobs)",
+    "RI-10-FORBIDDEN": ("§10 and §14 rule 4 (a type in the vocabulary is not a per-type "
+                        "extractor mandate)"),
+}
+
+#: Checks deliberately NOT in `NORMATIVE_LINT_CHECKS`, with the reason. Asserted by a test, so
+#: the exemption cannot grow silently. These are named here because the interesting claim is
+#: the one that was *not* granted.
+REFERENCE_INTEGRITY_NOT_EXEMPT: dict[str, str] = {
+    "RI-01-FR-DEF": "does an FR id resolve to a definition",
+    "RI-02-TASK-REF": "does a task id resolve to a task",
+    "RI-06b-FR-ORDER": "is a requirement number accounted for in the sequence",
+    "RI-08-SEC-CITE": "does a `§N` resolve to a heading",
+    "RI-09-COUNT": "does a recomputed count agree with the claim",
+    "RI-11-CONST": "does a `CD-n` / Principle citation resolve",
+    "RI-11b-RESEARCH": "does an `R-nnn` resolve to a decision",
+    "TOMBSTONED-FR-REF": "is a retired id cited as a live target (ARBITRATION §2, a gate)",
+    # GHOST-SUFFIX is a namespace-hygiene rule over *citations*, so by the test above it is
+    # reference-shaped rather than content-shaped and would qualify for the exemption. It is
+    # left at WARN anyway, so the exemption would buy nothing, and widening the exempt set is
+    # exactly the move this design refuses to make silently. Named here so the omission is a
+    # decision on the record rather than an oversight.
+    "GHOST-SUFFIX": "left at WARN; not in the exempt set - see note above",
+}
+
+
+def _finding_sites(f: Finding) -> list[str]:
+    """Every artefact a finding is *about*, from its locations or its own `data`.
+
+    A finding that names no site is treated as naming no `repair/` site: absence of evidence
+    is not evidence of history, so the demotion can never be inferred from a finding that
+    simply forgot to say where it was.
+    """
+    out = [loc.rpartition(":")[0] for loc in f.locations]
+    for key in ("artefact", "file"):
+        value = f.data.get(key)
+        if isinstance(value, str) and value:
+            out.append(value.rpartition(":")[0] if re.match(r"^[^:]+\.md:\d+$", value) else value)
+    return out
+
+
+def is_historical_site(f: Finding) -> bool:
+    """True when at least one artefact this finding is about is a `repair/` record."""
+    return any(site.startswith(f"{REPAIR_DIR_RELPATH}/") for site in _finding_sites(f))
+
+
+def demote_historical(findings: Sequence[Finding]) -> list[Finding]:
+    """Demote a `repair/`-sited finding of a normative-lint check to INFO. Never drop one.
+
+    Runs as one pass over the whole result set rather than as an `if` at each yield site, so
+    a new yield site in any exempt check cannot forget the exemption, and so the decision is
+    in one readable place. FAIL and WARN are both demoted - the brief is "every finding that
+    would have fired", and an exempt check whose declared severity is WARN (`COUNT-PRECISION`)
+    would otherwise keep gating on a historical record. A finding that is already INFO is left
+    exactly as it is: the exemption changes gating, and INFO does not gate.
+    """
+    out: list[Finding] = []
+    demoted: Counter = Counter()
+    for f in findings:
+        if (f.severity in (FAIL, WARN)
+                and f.check_id in NORMATIVE_LINT_CHECKS
+                and is_historical_site(f)):
+            sites = sorted({s for s in _finding_sites(f)
+                            if s.startswith(f"{REPAIR_DIR_RELPATH}/")})
+            authority = SUPERSEDING_AUTHORITY[f.check_id]
+            demoted[f.check_id] += 1
+            out.append(Finding(
+                check_id=f.check_id,
+                severity=INFO,
+                code=HISTORICAL_CODE,
+                message=(
+                    f"{', '.join(sites)} would be {f.code} ({f.severity}): {f.message} "
+                    f"Demoted, not silenced. `repair/*.md` records the state of a repair "
+                    f"wave at the moment it was written and is not normative content, so "
+                    f"linting it as normative would demand rewriting history to satisfy a "
+                    f"later decision. `repair/ARBITRATION.md` {authority} is the ruling "
+                    f"that supersedes it. Retained at INFO so the divergence stays "
+                    f"greppable and auditable."
+                ),
+                locations=list(f.locations),
+                data={**f.data, "historical": True, "original_code": f.code,
+                      "original_severity": f.severity, "original_message": f.message,
+                      "historical_artefacts": sites, "superseded_by": authority},
+            ))
+            continue
+        out.append(f)
+    if demoted:
+        out.append(Finding(
+            check_id="RI-00-INPUT",
+            severity=INFO,
+            code="historical-divergence-summary",
+            message=(
+                f"{sum(demoted.values())} finding(s) across {len(demoted)} "
+                f"normative-lint check(s) were demoted to INFO because they sit in a "
+                f"`repair/` historical record rather than in normative content: "
+                + ", ".join(f"{cid} x{n}" for cid, n in sorted(demoted.items()))
+                + ". Reference-integrity findings are not in this set and did not change."
+            ),
+            data={"demoted": dict(sorted(demoted.items())),
+                  "exempt_checks": sorted(NORMATIVE_LINT_CHECKS),
+                  "rule": "content-shaped findings are exempt; reference-shaped ones are not"},
+        ))
+    return out
+
+
+# ------------------------------------------------------------------------------------------
 # Runner
 # ------------------------------------------------------------------------------------------
 
@@ -3155,7 +4525,7 @@ def run_checks(ctx: Context, only: Sequence[str] = ()) -> tuple[list[Finding], l
             )
     findings.sort(key=lambda f: (SEVERITY_RANK[f.severity], f.check_id, f.code,
                                  tuple(f.locations)))
-    return findings, ran
+    return demote_historical(findings), ran
 
 
 def summarize(findings: Sequence[Finding], ran: Sequence[str]) -> list[dict[str, Any]]:

@@ -109,13 +109,23 @@ house rule. **The Investigation is the only production entry point** — Princip
 constraint the previous revision of this file omitted entirely.
 
 **Scale/Scope**: 020 created 3 tables; 021 adds migration `021` plus new columns and new domain
-types. The scope is the requirement set in `spec.md` — `FR-001`…`FR-100` plus the constitutional
-band allocated to A1 (see **FR placement**) — over 9 user stories, with the measurable outcomes
-`spec.md` defines. **Pass-start measurement: the requirement set numbered 102 ids, the invariant
-set 5, the outcome set 16, the story set 9.** The requirement and outcome counts are A6's band,
-`spec.md` is being rewritten in this same pass, and the live counts have already moved twice while
-this file was being written, so read them from `spec.md` rather than from this line. Corpus target:
-8 golden end-to-end HTML cases (§109) + the §82/§83 type and relation case sets.
+types. The scope is the requirement set in `spec.md` — `FR-001`…`FR-100` **plus all seven
+`repair/ARBITRATION.md` §14 bands**, each occupied band named in `spec.md`'s **Reserved number
+space** block and in **FR placement** below — over 9 user stories, with the measurable outcomes
+`spec.md` defines. **Measured against the current `spec.md`, not at pass start: 149 requirements
+are defined in requirement form — the 100 slots in `FR-001`…`FR-100`, of which 4 are tombstone
+records and therefore carry no requirement, leaving 96 live, plus 53 defined above `FR-100`
+(6 already-live appends and 47 §14-band appends).** 5 constitutional invariants, 43 measurable
+outcomes (`SC-001`…`SC-043`, contiguous, no gaps), 9 user stories, 6 tombstone records. Corpus
+target: 8 golden end-to-end HTML cases (§109) + the §82/§83 type and relation case sets.
+
+**The A7 band is narrower than §14's table says, and the table is the thing that is wrong.**
+`ARBITRATION.md` §14 allocates A7 a range of 11 slots and counts it as 11, but
+`repair/A7-migration-021.md` authors **9** requirements in that range and no more; all 9 are
+applied in `spec.md`. §14's own arithmetic inherits the error: its "49 new normative FRs" is 47 by
+A7's content. Nothing is unapplied, so §14 rule 6 is not violated by the document — the two spare
+slots are named in the integrator's report as an arbitration correction, not written here, because
+§14 rule 1 forbids inventing a number and a citation to an id nothing defines is itself a defect.
 
 **Count conventions in this document.** Three id namespaces are in play and this plan keeps them
 apart, because conflating them is a defect the checker reports:
@@ -573,8 +583,14 @@ touches two test files no task owns.
 anywhere; A6's two-way `4A/4B` split is superseded by the three-way split):
 
 ```text
-P0 → P1 → P2 → P3 → P4A → P4B → P4C → P5 → P6 → P7 → P8 → P9
+P0 → P1a → P1b → P2 → P3 → P4A → P4B → P4C → P5 → P6 → P7 → P8 → P9
 ```
+
+`P1a` and `P1b` are the two commit stages **inside** the single phase `P1`, so the DAG above has
+**twelve phase headers** — `P0`, `P1`, `P2`, `P3`, `P4A`, `P4B`, `P4C`, `P5`, `P6`, `P7`, `P8`,
+`P9` — and **thirteen commit stages**. This is the canonical spelling: `tasks.md` carries the same
+line, and an earlier revision of this file printed `P1` without the split, which contradicted both
+the C-2 resolution below and `tasks.md`'s own header.
 
 | Phase | Subject | §110 coverage |
 |---|---|---|
@@ -633,14 +649,18 @@ round trips, replay, corpus, mutations, regression, benchmark — is P9. Persist
 before projection is verified, and no phase is reordered. This is the same split the persistence
 ordering section above requires, seen from the phase side.
 
-**Task-count conflict, flagged.** A6's task-graph deliverable in `repair/A6-fr-triage.md`
-specifies **13 phases, 0–12, 94 tasks** in a single `T1xx`…`T9xx` series, with ids `^T\d{3}$` and
-no letter suffix. The DAG above is A8prep's 10 phases. `ARBITRATION.md` §5 assigns the DAG to
-A8prep and supersedes only A6's two-way phase-4 split; it does **not** void A6's 13-phase task
-numbering, and the renumbered ids do not exist in `tasks.md` at the time of writing — `tasks.md`
-still carries its 74 pre-existing ids. Both are recorded here; the phase *order* above is the one
-that governs, and the task-id scheme is A6's. **This is not resolved by `ARBITRATION.md` and is
-flagged for the arbitration of record.**
+**Task-count conflict, closed against the file.** A6's task-graph deliverable in
+`repair/A6-fr-triage.md` specifies **13 phases, 0–12, 94 tasks** in a single `T1xx`…`T9xx` series,
+with ids `^T\d{3}$` and no letter suffix. The DAG above is A8prep's, as `ARBITRATION.md` §5
+assigns, and §5 also merges the signature phase into `P1` ahead of the phases A6 numbered in
+between — which is why applying A6's id table literally would have put the candidate-identity task
+on the page before the type pack. **`tasks.md` has since been rebuilt and the conflict is no longer
+live: it carries 94 tasks, `T101`…`T194`, contiguous, ascending in document order, with no letter
+suffix, under the twelve phase headers above.** The re-assignment is lossless — A6 owns each task's
+content, its phase and its FR citations, and only the label moved. A6's *content* count (94 tasks)
+and A8prep's *phase* count (12 headers, 13 commit stages) are therefore both satisfied, and no
+artefact may cite a pre-repair `T0xx` id: `tasks.md` states that such a citation reintroduces the
+very phantom its id grammar closes, and pre-repair tasks are named by what they did.
 
 ## Gate assertions
 
@@ -692,7 +712,7 @@ specs/021-entity-relation-extraction-finalization/
 ├── tasks.md                   # Phase 2 output
 ├── research.md                # Phase 0 output
 ├── data-model.md              # Phase 1 output
-├── phase0-results.md          # the T001/T002 baseline and the review verdict
+├── phase0-results.md          # the T101/T102 baseline and the review verdict
 ├── checklists/
 │   └── requirements.md        # gate checklist
 ├── repair/                    # ARBITRATION.md, A1, A2, A4b, A5, A6, A7, A7b, A8prep, tools/
@@ -883,7 +903,7 @@ is no longer uniform:
 | Q1 — exact `PredicateSignature` normalisation rule set | **Load-bearing** under ADR-0028: normalising a term of the logical id is an identity decision, not a quality nicety. One test per rule. |
 | Q2 — controlled type-space vocabulary vs free-form strings | Open; the §7 open vocabulary is drafted in `data-model.md` §6. |
 | Q3 — bounded-neighbourhood scope definition | Open; `Neighbourhood` currently carries a substring-tested `precision` string rather than a real scope. |
-| Q4 — whether n-ary identity uses role bindings or positional arguments | **CLOSED.** Answered by A2 D2/D4: structural `canonical_argument_slot` ordering, with `commutative_slots` as the only commutation marker, and multiplicity preserved. T014 becomes an ADR *record* of that answer, not a decision to be made. (Distinct from A2's epistemic-axes Q4, which `ARBITRATION.md` §3 closes: predicate-level conflict and candidate-level structural conflict are different axes, are never collapsed, and a structural conflict that is not a denial yields the new `assembly_state = CONFLICTING` rather than `candidate_status = CONTRADICTED`.) |
+| Q4 — whether n-ary identity uses role bindings or positional arguments | **CLOSED.** Answered by A2 D2/D4: structural `canonical_argument_slot` ordering, with `commutative_slots` as the only commutation marker, and multiplicity preserved. `T112` is the task that carries the answer, so it is a build task and not a decision to be made; `tasks.md`'s own Q4 register names `T112` as the task Q4 blocks. **No task owns the "record Q4 as an ADR" obligation** — see the report's `[NEEDS-OTHER-FILE]` list. (Distinct from A2's epistemic-axes Q4, which `ARBITRATION.md` §3 closes: predicate-level conflict and candidate-level structural conflict are different axes, are never collapsed, and a structural conflict that is not a denial yields the new `assembly_state = CONFLICTING` rather than `candidate_status = CONTRADICTED`.) |
 | Q5 — producer ↔ lifecycle import direction | Open; belongs with P6. |
 | Q6 — whether the `InterpretHook` seam is the intended binding point | **CLOSED in substance** by the dead-code disposition above: the seam's orchestrator is deleted and the four hook Protocols are retained on the investigation path, so the question is answered by construction rather than by argument. |
 | Q7 — whether `source_temporal_observation` gets a repository in 021 | Open; default is yes, and it is now an **entry condition of P8** rather than a Phase-9 task, because a projection with nothing to rebuild from is the Principle **III** violation. |
@@ -897,14 +917,25 @@ reads no external vocabulary has `source_vocab = null`, which is what makes the 
 legitimately have no vocabulary legal. A5's own withdrawn `TypeSignalSource` enum stays withdrawn:
 it duplicated `source_vocab` + `producer_ref`.
 
-**FR renumbering is unnecessary.** All 100 numeric ids `FR-001`…`FR-100` are present with **zero
-gaps**, so there is nothing to renumber. The remaining namespace work is **2 folds** (each of the
-two letter-suffixed ids folds into its allocated numeric slot — the `FR-035` slot and the `FR-040`
-slot respectively; a folded id is tombstoned and MUST NOT be cited as a live normative target),
-**1 move** (`FR-082`, currently stranded after `FR-100` in document order), and **29 appends**.
-51 of the 100 numeric numbers in `FR-001`–`FR-100`
-never change, which is what makes parallel requirement work safe: no number moves, so no two
-authors can collide on one.
+**FR renumbering is unnecessary, and the append count is now measured rather than inherited.**
+All 100 numeric ids `FR-001`…`FR-100` are present with **zero gaps**, so there is nothing to
+renumber and `ARBITRATION.md` §1 is satisfied. The namespace work that remained is **2 folds**
+(each letter-suffixed id folds into its allocated numeric slot — the `FR-035` slot and the `FR-040`
+slot respectively; a folded id is tombstoned and MUST NOT be cited as a live normative target) and
+**1 move** (`FR-082`, which was stranded after `FR-100` in document order). **Appends: 47, not
+29.** The earlier "29 appends" was A8prep O2's pre-§14 estimate; §14 withdrew §1's deferred
+instruction and replaced the target space with seven disjoint bands, and the current `spec.md`
+carries **53** defined ids above `FR-100`: the 6 already-live `FR-110`…`FR-115` (§14 rule 3) and
+**47** §14-band appends — A4b 8 (`FR-130`…`FR-137`), A5 10 (`FR-140`…`FR-149`), A7 9
+(`FR-150`…`FR-158`), A1 13 (`FR-161`…`FR-173`), A2 5 (`FR-174`…`FR-178`) and A6 2 (`FR-179`,
+`FR-180`). §14's table counts A7's range as 11 and its total as 49; A7 authored 9 and 47 are
+applied, so the discrepancy is §14's arithmetic (see **Scale/Scope**), not an unapplied
+requirement — nothing is minted here, because §14 rule 1 forbids it. The 4 slots retired inside
+`FR-001`…`FR-100` are tombstone records in `spec.md`, not requirements, so of the 100 numeric
+numbers **96 carry a live requirement and 4 are historical records** — the previous revision's
+"51 of the 100 … never change" was A8prep's pre-§14 arithmetic over a 102-id baseline and
+understated the surviving set on every axis. What makes parallel requirement work safe is
+unchanged and is now stronger: no number moves, so no two authors can collide on one.
 
 ## Still owed before the §100 deliverables gate
 

@@ -78,9 +78,16 @@ MUTATIONS: tuple[tuple[str, str, str, str, str], ...] = (
     (
         "CD-7: let the table producer mispair a ragged row",
         "extractors/signals/tables.py",
-        "        if len(row) != len(headers):\n            continue",
-        "        if len(row) > len(headers) + 99:\n            continue",
+        "        if len(row) != len(headers):\n            ragged.append",
+        "        if len(row) > len(headers) + 99:\n            pass",
         "test_constitution4_no_fabrication.py::TestThePlatformDoesNotRoundAnUnknownToAKnow::test_a_table_row_that_does_not_line_up_is_skipped_not_mispaired",
+    ),
+    (
+        "FR-095: let a ragged row be dropped with no trace at all",
+        "extractors/signals/tables.py",
+        "            ragged.append(_RaggedRow(row_index, len(headers), len(row)))",
+        "            pass",
+        "test_constitution4_no_fabrication.py::TestThePlatformDoesNotRoundAnUnknownToAKnow::test_a_ragged_row_is_reported_rather_than_silently_dropped",
     ),
     (
         "CD-5: pad a time by accepting a naive instant as UTC",

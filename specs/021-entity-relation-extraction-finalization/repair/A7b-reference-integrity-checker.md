@@ -1207,3 +1207,983 @@ the summary as `ran, no findings`.
 
 
 
+# 9. Extension - contiguity and tombstone classification (tool v1.3.0)
+
+Two rules were wrong about the documents rather than about the authors. One assumed a plan
+begins at `T001`; the other could not tell a *tombstone record* from a *requirement*. Both are
+stated below as *rule before* / *rule after*, with the blind-spot controls that keep each fix
+from costing detection power, the attributable delta measured on a frozen snapshot, and an
+itemised account of **every finding that disappeared** and why. No severity changed. No check was
+added or removed. No `.md` artefact other than this file was edited.
+
+## 9.0 A measurement caveat, stated first, because it recurred
+
+The `.md` artefacts were again being edited by another process throughout this pass, and this
+time the edits landed *inside* the measurement window:
+
+| Time (2026-09-27) | `spec.md` | `plan.md` | `research.md` | Observation |
+|---|---|---|---|---|
+| 20:30 | 157 578 B | 91 358 B | 14 628 B | the state the brief describes |
+| 21:04:01 | 161 512 B | 91 358 B | 14 638 B | mid-rewrite |
+| 21:04:48 | 160 888 B | 94 139 B | 14 638 B | torn intermediate state |
+| 21:05:27 | 163 462 B | 94 139 B | 14 638 B | settled for this pass |
+
+`tasks.md` did **not** move at any point in this pass (74 954 B, mtime 20:30:07), which is why
+the `RI-06` half of the delta below is directly re-runnable rather than inferred.
+
+Two consequences, both stated rather than papered over:
+
+1. **The attributed delta is measured on a frozen snapshot.** The whole feature directory was
+   copied once and both the pre-fix and post-fix tool were run in one process against those
+   byte-identical files. That is the only comparison that attributes a finding to a rule.
+2. **A first attempt at that A/B produced a wrong answer and was thrown away.** The
+   pre-fix tool was reconstructed by reverse-applying the edits; the first reconstruction left
+   `yield` outside the `if fr not in index:` guard, so it emitted a finding for *every* cited FR
+   and reported `RI-01-FR-DEF 155 → 2` - a catastrophic-looking silent weakening that was in fact
+   a broken baseline. The reconstruction was fixed and the 155 became 6. **A delta measured
+   against an unreconstructed baseline proves nothing**, and this one nearly did.
+
+The stated baseline **135 FAIL, 45 WARN, 68 INFO, exit 1, 30 check ids** was reproduced exactly
+on the live directory at the start of this pass, before any edit, and is the basis of §9.4.
+
+| Snapshot file (this pass) | SHA-256 (first 16) | bytes |
+|---|---|---|
+| `input.md` | `8E591907E31805EA` | 73230 |
+| `spec.md` | `2561EDF325051AB0` | 163462 |
+| `tasks.md` | `8484E6B13F2CC2A8` | 74954 |
+| `plan.md` | `58D7FE1170B5C63E` | 94139 |
+| `research.md` | `F68032657EB8A2F9` | 14638 |
+| `data-model.md` | `AA041E5E793FB6F7` | 155291 |
+| `checklists/requirements.md` | `0392493FBADFED14` | 71789 |
+| `phase0-results.md` | `19C20B49798CBF78` | 15509 |
+| `repair/A1-constitution-investigation.md` | `8040F68BECCB2ADA` | 136373 |
+| `repair/A2-identity-subsystem.md` | `280F7D75E7BBE2F5` | 137266 |
+| `repair/A4b-mapping-layer.md` | `1FA7EBBFBAA5DF15` | 148617 |
+| `repair/A5-type-vocabulary.md` | `2BB79CC7757FE165` | 124693 |
+| `repair/A6-fr-triage.md` | `D305321E75DAE722` | 116770 |
+| `repair/A7-migration-021.md` | `390F9369C446AA82` | 139730 |
+| `repair/A7b-reference-integrity-checker.md` | `7E22F507660FB4C1` | 74171 |
+| `repair/A8prep-ownership-and-dag.md` | `55AB4AD1A0AACFD0` | 106382 |
+| `repair/ARBITRATION.md` | `DF34F481C2EA3B6A` | 18033 |
+| `.specify/memory/constitution.md` | `CE7549540FA45543` | 2346 |
+
+## 9.1 FIX 1 - `RI-06-TASK-ORDER` contiguity is judged against the range the plan declares
+
+### The defect
+
+The integrated plan is `T101…T194`: 94 ids, ascending, no hole, no duplicate, no suffix. The
+rule derived its expected set from `1`:
+
+```python
+expected = list(range(1, max(numbers) + 1))          # <- the whole bug
+missing  = sorted(set(expected) - set(numbers))
+```
+
+`max(numbers)` is 194, so `T001`…`T100` were each reported as a missing task: **100 FAIL findings
+on a plan with no gap in it.** Contiguity is a property of the range a plan *declares*, not of an
+assumed origin.
+
+### Rule, before
+
+```python
+if numbers:
+    expected = list(range(1, max(numbers) + 1))
+    missing = sorted(set(expected) - set(numbers))
+    out_of_order = sorted({b for a, b in zip(numbers, numbers[1:], strict=False) if b <= a})
+    for n in missing:
+        yield _f(..., "task-gap", f"T{n:03d} is missing from tasks.md", [tasks.name], missing=n)
+    ...
+    if not missing and not out_of_order:
+        yield _ok(..., "task-order-ok", f"task ids are contiguous and ascending: "
+                                        f"T{numbers[0]:03d}..T{numbers[-1]:03d} ...")
+```
+
+### Rule, after
+
+```python
+if numbers:
+    floor, ceiling = min(numbers), max(numbers)
+    declared = list(range(floor, ceiling + 1))
+    missing = sorted(set(declared) - set(numbers))
+    ...
+    for n in missing:
+        yield _f(..., "task-gap",
+                 f"T{n:03d} is missing from tasks.md: the declared range "
+                 f"T{floor:03d}..T{ceiling:03d} is not contiguous",
+                 [tasks.name], missing=n, declared_range=f"T{floor:03d}..T{ceiling:03d}",
+                 declared_first=floor, declared_last=ceiling)
+```
+
+The floor comes from the file, so a hole **anywhere inside** `T101…T194` is still a hole, and
+the finding still names the **actual missing number** (`data["missing"] = 150`), never a count.
+`data` also carries the declared range so a reader can see the frame the gap was judged against.
+The empty set is still handled by the pre-existing `if numbers:` guard and the single-task case
+degenerates cleanly to a one-element range.
+
+### What still fires, measured
+
+| Input | Before | After |
+|---|---|---|
+| `T101…T194`, no gap | 100 FAIL | **0 FAIL**, 1 INFO `task-order-ok` (declared `T101..T194`, 94 ids) |
+| `T101…T194` minus `T150` | 100 FAIL | **1 FAIL** `task-gap`, `missing=150` |
+| `T101…T105` with a duplicated `T150` | 100 FAIL + dup | **1 FAIL** `task-duplicate` + gap |
+| `T101, T102, T105, T103, T104` | 100 FAIL | **1 FAIL** `task-out-of-order` `number=103` |
+| `T101…T104` plus `T104b` | 100 FAIL | **1 FAIL** `task-letter-suffix` |
+| one task, `T101` | 100 FAIL | **0 FAIL**, 1 INFO |
+| no tasks at all | 0 FAIL | **0 FAIL**, no exception |
+
+## 9.2 FIX 2 - a tombstone record is not a live requirement
+
+### The defect
+
+`spec.md` retires a requirement by writing a record in the slot. At the start of this pass there
+were four such rows:
+
+```text
+- **FR-058**: *tombstone — merged into `INV-004`; see the deleted-ids table in
+  `repair/A6-fr-triage.md`. ... This slot carries no normative requirement and MUST NOT be
+  cited as a live target.* (§108)
+```
+
+`DEF_RE` matches `**FR-nnn**:` in the bullet prefix, so the parser read each of those rows as a
+**requirement definition**, and the row then propagated: it counted as a live definition, it was
+eligible to be an orphan, and (once the live-definition population is separated) a citation of it
+would have been reported as *undefined*.
+
+### Rule, before
+
+```python
+m = DEF_RE.match(line)          # '- **FR-058**: *tombstone - ...'  -> a Definition
+...
+index = ctx.def_index()         # every matched row is a live requirement
+for fr in sorted(cited):
+    if fr not in index:         # a tombstone is either "defined" or "undefined": never right
+        yield _f(..., "fr-undefined", f"{fr} is cited but never defined in spec.md")
+frs = [d.ident for d in ctx.defs if d.ident.startswith("FR-")]   # tombstones counted as FRs
+```
+
+### Rule, after
+
+The parser classifies. `parse_definitions` sets `Definition.tombstone`, and the checks that
+decide whether an id is a *requirement* use `Context.live_defs` / `live_index()`:
+
+```python
+TOMBSTONE_RECORD_MARKERS = ("tombstone", "deprecated", "merged into", "absorbed into",
+                            "folded into", "superseded by", "see adr")
+TOMBSTONE_RECORD_RE = re.compile(
+    r"^[\s*_`>–—(\[]*"
+    r"(?:\b(?:FR|SC|INV)-\d+[A-Za-z]?\b[\s*_`>–—(\[]*)*"
+    r"(?:" + "|".join(re.escape(m) for m in TOMBSTONE_RECORD_MARKERS) + r")\b",
+    re.IGNORECASE,
+)
+```
+
+Case-insensitive, as specified, and tolerant of the markdown decoration a record is written with
+(`*tombstone — …`) and of a redundant self-naming token (`` `FR-058` tombstone — … ``).
+
+**`RI-01-FR-DEF`** now (a) resolves citations against `live_index()` and (b) does not report a
+tombstoned id as an undefined-reference target at all:
+
+```python
+index = ctx.live_index()
+dead  = ctx.tombstone_ids
+for fr in sorted(cited):
+    if fr in index or fr in dead:
+        continue
+    yield _f(..., "fr-undefined", ...)
+```
+
+**`RI-03-FR-ORPHAN`**, **`RI-03b-FR-UNCITED`** and **`RI-04d-FR-OWNER`** iterate
+`ctx.live_defs` instead of `ctx.defs`. Those three were not named in the brief; the extension is
+justified in §9.5 and has **zero** effect on any measured run.
+
+### The narrowing, and why it was necessary
+
+The brief says "a definition whose **body carries** a tombstone marker". Implemented literally -
+searching the whole body - the rule misclassifies **three live requirements** in this very
+corpus:
+
+| Row | Live requirement | Marker found, and where |
+|---|---|---|
+| `FR-035` | "External vocabularies … MUST produce a `TypeSignal`" | a `*Tombstone `FR-034a` - folded into this slot*` footnote in a **later paragraph** |
+| `FR-040` | the `SignalKind` member list | a `*Tombstone `FR-039a` - folded into this slot*` footnote in a **later paragraph** |
+| `FR-164` | the workflow stage order | "MUST NOT be **folded into** another stage", mid-sentence |
+
+Classifying any of those as a tombstone would delete a real requirement from the definition
+population, silently exempt its id from `RI-01-FR-DEF`, and — because the id would then also
+enter the tombstone universe of §9.3 — turn **every live citation of it** into a
+`tombstoned-fr-cited-normative` FAIL. So the marker must be what the body **opens** with. On the
+real corpus the leading-clause rule finds exactly the four records and nothing else, and both
+shapes are now pinned as tests in both directions.
+
+### What still fires, measured
+
+| Input | Expected | Result |
+|---|---|---|
+| tombstone row present, id never cited | 0 FAIL | 0 FAIL; `RI-03` INFO names the record and the row count |
+| tombstone row + a real orphan `FR-005` | orphan FAIL | `RI-03-FR-ORPHAN` FAIL `["FR-005"]`, `total_frs=4`, `definition_rows=5` |
+| tombstone row + **live** citation of `FR-058` | `TOMBSTONED-FR-REF` FAIL | FAIL `tombstoned-fr-cited-normative`, `replacement=INV-004`; `RI-01-FR-DEF` silent |
+| tombstone row + citation of `FR-103` (never defined anywhere) | `RI-01-FR-DEF` FAIL | FAIL `fr-undefined` `FR-103` |
+| both defects in one task line | two FAILs, on two checks | `RI-01` → `["FR-103"]`; `TOMBSTONED-FR-REF` → `["FR-058"]` |
+| live FR that footnotes a tombstone (`FR-035` shape) | stays a live definition | `FR-005`/`FR-006` in `live_index()`, `tombstone` records `set()` |
+| two records for one id | still a defect | `RI-01-FR-DEF` FAIL `fr-defined-twice` |
+| a record for an id **outside** the arbitration map, cited live | must not go invisible | `FR-004` enters the tombstone universe, `TOMBSTONED-FR-REF` FAIL, exit 1 |
+| a live requirement written beside a record | unaffected | `FR-005` live, `RI-01`/`RI-03`/`RI-03b` all clean |
+
+## 9.3 The hole FIX 2 would have opened, and the one change this made to `TOMBSTONED-FR-REF`
+
+Excluding a record from the live-definition population while leaving its id out of the tombstone
+universe would make a **live citation of that id invisible to every check**: `RI-01-FR-DEF` no
+longer reports it as undefined, and `TOMBSTONED-FR-REF` would not know the id exists. That is
+precisely the "do not let the new classification hide a real dangling reference" failure mode, so
+the tombstone universe is now derived rather than hard-coded:
+
+```python
+def tombstones(self) -> dict[str, str]:
+    out = dict(TOMBSTONED_FRS)
+    for d in self.def_occurrences:
+        if d.tombstone:
+            out.setdefault(d.ident, "the tombstone record in spec.md")
+    return out
+```
+
+This is the **only** behavioural change made to `TOMBSTONED-FR-REF`, and it is an *extension* of
+its id set, never a narrowing:
+
+* the **line test is byte-identical** — a deprecation-marked line is history, anything else is a
+  live normative target, and the FAIL / exemption logic is untouched;
+* on the measured snapshot `tombstones()` returns exactly the same five ids as
+  `TOMBSTONED_FRS`, so the summary text and the finding set are unchanged (0 findings added, 0
+  removed);
+* a record row can never *add* a FAIL, because a record's own line necessarily carries one of the
+  parser's markers, and every parser marker is also a `DEPRECATION_MARKERS` entry. That invariant
+  is asserted as a test rather than assumed: if it were ever violated, classifying a row would
+  manufacture a `tombstoned-fr-defined-normative` FAIL out of a record.
+
+**An interpretive call, flagged as one.** The brief also says `TOMBSTONED-FR-REF` "must still
+fire on any live normative citation of a tombstoned id, **with or without a deprecation marker on
+the citing line**". Read with the rule's own long-standing exemption, a marked line is by
+definition *not* a live normative citation — that exemption is load-bearing in the other
+direction and is asserted by a passing test
+(`test_tombstoned_fr_cited_inside_a_deprecation_note_is_history_not_a_violation`). I therefore
+left it alone rather than deleting a passing test, and I am reporting the residue instead of
+quietly picking a reading:
+
+> **Pre-existing limitation, not introduced here and not fixed here.** The exemption is
+> *line-level*, so a line that mentions the tombstone in passing **and** normatively requires it
+> is exempt. `"- [ ] T143 Implement the merged-into FR-058 obligation. (FR-058)"` would not be
+> reported. Narrowing the exemption to "a marked line that states no obligation" is a real
+> improvement and is **not** authorised by this brief, which said that rule is unchanged.
+
+If you want the literal reading of that sentence, the change is one predicate in
+`check_tombstoned_fr_refs` and it will flip exactly one currently-passing test. That is your
+call, not mine.
+
+## 9.4 The attributable delta, measured
+
+Old rules vs new rules, one process, byte-identical snapshot (§9.0):
+
+```
+BEFORE  146 FAIL, 48 WARN, 69 INFO      exit 1     30 check ids
+AFTER    42 FAIL, 48 WARN, 70 INFO      exit 1     30 check ids
+```
+
+| Check | FAIL before | FAIL after | WARN | INFO before | INFO after | What moved |
+|---|---|---|---|---|---|---|
+| `RI-01-FR-DEF` | 6 | **2** | 0 | 0 | 0 | −4 FAIL: the four retired ids |
+| `RI-06-TASK-ORDER` | 100 | **0** | 0 | 0 | **1** | −100 FAIL, +1 INFO `task-order-ok` |
+| all other 28 ids | — | — | — | — | — | **finding sets byte-identical** |
+
+The 28 unchanged check ids are the no-regression evidence: the fix touched two rules and nothing
+else. The two that changed are the two that were wrong.
+
+### The state the brief describes
+
+The brief's numbers were reproduced exactly at the start of this pass, before any edit:
+
+```
+135 FAIL, 45 WARN, 68 INFO      exit 1, 30 check ids
+```
+
+The fix's effect on **that** state is a pure subtraction plus one addition, and both halves are
+independently verified rather than inferred:
+
+```
+34 FAIL, 45 WARN, 69 INFO       exit 1, 30 check ids
+```
+
+| Check | before F/W/I | after F/W/I | why |
+|---|---|---|---|
+| `RI-01-FR-DEF` | 2/0/0 | **1/0/0** | `FR-103` stays; `FR-034a` moves to `TOMBSTONED-FR-REF` |
+| `RI-06-TASK-ORDER` | 100/0/0 | **0/0/1** | verified directly against the byte-identical `tasks.md` |
+| `RI-03-FR-ORPHAN` | 0/0/1 | 0/0/1 | same count; message now distinguishes 153 rows from 149 live FRs |
+| the other 27 ids | — | — | unchanged |
+
+`RI-06-TASK-ORDER` was re-run on the live `tasks.md` in isolation, which is safe because that file
+never moved during this pass:
+
+```
+[RI-06-TASK-ORDER] this run: FAIL=0 WARN=0 INFO=1
+  INFO task-order-ok: task ids are contiguous and ascending across the declared range T101..T194
+  (94 ids, 0 gaps, 0 reorderings)
+```
+
+The `FR-034a` half is unconditional — the id is in `TOMBSTONED_FRS`, so the skip does not depend
+on the document at all — and is pinned by a synthetic test.
+
+### The live directory, and why its numbers are a snapshot in time
+
+```
+21:19   37 FAIL, 43 WARN, 73 INFO      exit 1, 30 check ids
+```
+
+These are **not** comparable to the 135/45/68 above, because the corpus was repaired underneath
+this pass. Since 20:30 the integrator has removed the `FR-103` citations (all three
+`test_tripwire_phantom_fr_103` cases now skip), the four phantom task ids (`RI-02-TASK-REF` is
+now 0 FAIL), the last unmarked tombstone citation, and the `spec.md` epistemic conflation.
+**`RI-01-FR-DEF` is now 0 FAIL and `RI-02-TASK-REF` is now 0 FAIL on the live directory** — that
+is the document being repaired, not this tool. `RI-08-SEC-CITE` still fires on `§34a`, now at
+`spec.md:851` after the document moved; `RI-10-FORBIDDEN`, `RI-11-CONST` (`CD-6`),
+`FR-NAMESPACE-COLLISION` and `COUNT-PRECISION` are all still firing at the same or comparable
+strength.
+
+One live FAIL is new since 20:30 and is **not** this change's, which is worth showing rather than
+leaving for someone else to discover:
+
+```
+RI-09-COUNT FAIL checklists/requirements.md:37 claims '153 FRs' but the number of
+                      FR definitions in spec.md is 149
+```
+
+`spec.md` lost four definition rows during the rewrite while that prose claim still says 153.
+`RI-09-COUNT`'s FR basis is `len([d for d in ctx.defs ...])` — **definition rows**, not live
+requirements — and `ctx.defs` is deliberately left holding every row (§9.5), so the pre-fix tool
+reports this finding **identically**:
+
+```
+PREFIX: RI-09 fr_count basis = 149   ->  count-mismatch  153 vs 149
+NEW:    RI-09 fr_count basis = 149   ->  count-mismatch  153 vs 149
+```
+
+Had `RI-09-COUNT` been switched to the live-definition population along with `RI-03`, this
+finding would have read 153 against 145 and the number in the report would have been
+indistinguishable from the real defect. Keeping the two populations distinct is what makes the
+difference auditable.
+
+## 9.5 Every finding that disappeared, itemised
+
+**105 findings disappeared and 2 appeared** on the frozen snapshot. Nothing else moved.
+
+| # | Disappeared finding | Count | Verdict |
+|---|---|---|---|
+| 1 | `RI-06-TASK-ORDER` / `task-gap` / `T001 … T100 is missing from tasks.md` | **100** | **true false positive.** The plan declares `T101…T194`; those 100 ids are not in its range and never were. Each was individually wrong, and each named a task that nobody intended to write. |
+| 2 | `RI-01-FR-DEF` / `fr-undefined` / `FR-058 is cited but never defined` | 1 | **true false positive, wrong check.** `FR-058` is retired by `repair/ARBITRATION.md` §2. All four of its citations in the corpus carry an explicit history marker (`` `FR-058` tombstoned: merged into `INV-004` ``), so "never defined" was a true statement about the wrong question. |
+| 3 | same, `FR-070` | 1 | as #2 |
+| 4 | same, `FR-079` | 1 | as #2 |
+| 5 | same, `FR-080` | 1 | as #2 |
+| 6 | `RI-03-FR-ORPHAN` / `no-orphans` INFO, *text changed* | 1 | **not a defect, a re-worded receipt.** Same check, same severity, same meaning; the message now says "149 live FRs (of 149 rows) … 0 tombstone record(s) in spec.md and 5 further id(s) named by ARBITRATION §2 are excluded". Count unchanged at 1. |
+
+Appeared:
+
+| Finding | Verdict |
+|---|---|
+| `RI-06-TASK-ORDER` / `task-order-ok` INFO | the positive receipt for a clean declared range; this is the check now *measuring* rather than complaining |
+| `RI-03-FR-ORPHAN` / `no-orphans` INFO, new text | as #6 |
+
+**Nothing is labelled "rule weakened by mistake".** Specifically, the four `fr-undefined`
+disappearances are the *only* place where a FAIL was removed by FIX 2, and each one is
+individually accounted for: the id is in `ARBITRATION` §2's tombstone set, and
+`TOMBSTONED-FR-REF` — which is the check that owns this class of defect and which names the
+replacement target — still runs over the same ids. On the measured snapshot it reported 1 FAIL
+before and 1 FAIL after, on the same finding, and the §9.3 extension guarantees it will report a
+live citation of a record that is not in the hard-coded map. The gate was not weakened; the
+misfiled copy of the report was removed.
+
+### Detection power explicitly given up
+
+One property, and it is written down as a test so it cannot be forgotten:
+
+> **The floor of a plan can no longer be validated.** The old rule anchored every plan at
+> `T001`, so a plan whose *first* id is not the id it should have started at was detectable.
+> The new rule takes the floor from the file, so `T103, T104, T105` is clean whether or not
+> `T101` and `T102` were meant to exist. Asserted verbatim in
+> `test_the_floor_itself_can_never_be_validated_and_is_not_claimed`, alongside the control that
+> a hole at the floor of the *declared* range (`T103, T105, T106` → `T104`) is still a FAIL.
+>
+> Closing it needs an external anchor — a plan that declares its own range, or a feature-number
+> derived first-id convention. That is a change to the plan format, not to the checker.
+
+Two further narrowings, both named:
+
+* **A leading-clause tombstone marker, not any marker in the body** (§9.2). A live requirement
+  whose body *begins* with "deprecated" or "tombstone" and then states an obligation would be
+  misread. No such requirement exists in this corpus; the boundary is pinned from both sides.
+* **A repair document's bold-titled FR is not classified as a record.** `FR-NAMESPACE-COLLISION`
+  parses `repair/*.md` with a separate parser that this change deliberately does not touch, so a
+  tombstone record written there still counts as a definition site. Changing it would have moved
+  that check's findings, and the brief requires `FR-NAMESPACE-COLLISION` to keep firing.
+
+## 9.6 The named real defects, re-verified after the change
+
+Every defect the brief requires to keep firing, checked on the frozen snapshot, `BEFORE` vs
+`AFTER`:
+
+| Required to keep firing | BEFORE | AFTER | Held |
+|---|---|---|---|
+| `FR-103` phantom | FAIL | FAIL | yes |
+| phantom task `T001` | *see note* | *see note* | — |
+| phantom task `T002` | *see note* | *see note* | — |
+| phantom task `T014` | *see note* | *see note* | — |
+| phantom task `T019` | *see note* | *see note* | — |
+| `EPISTEMIC-AXIS-CONFLATION` on `spec.md` | 5 FAIL | 5 FAIL | yes (repaired by the integrator at 21:12; the check is untouched) |
+| `FR-NAMESPACE-COLLISION` | 5 FAIL | 5 FAIL | yes |
+| `COUNT-PRECISION` on "seven classes" | 3 WARN | 3 WARN | yes |
+| `RI-08-SEC-CITE` on `§34a` | 1 FAIL | 1 FAIL | yes (`spec.md:783` on the snapshot, `spec.md:851` live) |
+
+*Note on the phantom tasks.* On the state the brief describes, `T001`/`T002`/`T014`/`T019` are
+reported by `RI-02-TASK-REF` as 4 FAILs, and `RI-02-TASK-REF` is **byte-identical** before and
+after in the §9.4 measurement. They do not appear in the frozen-snapshot table because the
+integrator repaired them between 20:30 and the snapshot, which is why the current live run shows
+`RI-02-TASK-REF 0`. The requirement that they must keep firing is a property of the tool, and
+`test_phantom_fr_and_phantom_task_fail_the_gate` plus the five `test_tripwire_phantom_task_ids_*`
+cases hold it. Nothing in this change touches `TASK_TOKEN_RE`, `RI-02-TASK-REF` or
+`check_task_refs`.
+
+`EPISTEMIC-AXIS-CONFLATION`'s `spec.md` finding was at `spec.md:732` on the frozen snapshot and
+was repaired by the integrator at 21:12, so the live run no longer shows it (5 FAILs, all in
+`repair/`). The check is byte-identical either way. `RI-08-SEC-CITE`'s `§34a` FAIL survives the
+rewrite and is at `spec.md:851` live, `spec.md:783` on the snapshot.
+
+## 9.7 Tests — suite 139 → 187 collected; **6 failed → 0 failed**
+
+```
+before:  112 passed,  6 failed, 21 skipped      (139 collected)
+after:   164 passed,  0 failed, 23 skipped      (187 collected)
+```
+
+`ruff check` (`E,F,I,B,UP`, line-length 100) passes on both files.
+
+### The five pre-existing failures, what each was pinned to, and where it now points
+
+None was deleted or loosened. Each was re-pointed at a stable anchor, and each new form still
+fails if the property it guards regresses.
+
+| Was failing | Was pinned to | Cause | Now anchored on | Still fails if |
+|---|---|---|---|---|
+| `test_claim_window_prefers_the_definition_body_and_stops_at_the_next_one` | the literal prose of `SC-015`'s body | the integration rewrote `SC-015` | the parsed `SC-015` definition itself: `window == sc15.body`, plus the neighbouring `SC-015`/`SC-014` ids absent, plus a line outside any definition getting the *paragraph* window instead | `_claim_window` widens its context, or stops at a definition boundary |
+| `test_line_of_maps_offsets_to_one_based_lines` | `spec.md` line **376** for `FR-001` (now 397, and the document has grown further) | 21 lines inserted above | the `FR-001` **definition row**: the char-offset search and the line-walking parser must agree on its line, plus the first-line and last-line ends | the two offset→line implementations disagree, or `FR-001` stops being a definition row |
+| `test_harness_field_count_matches_the_enumerated_list` | the literal `{"FR-078": 18}` | the §93 manifest obligation left `FR-078`; the counter now reads `FR-131` (and mis-parses a `D2.4)` fragment of a §-locator — a **pre-existing** bug in `_harness_field_counts`, not touched here) | **split in two**: (a) the contract — the counter's keys are exactly the definition rows whose body carries the `MUST break` clause, every value positive, and at least one such row exists; (b) the arithmetic, pinned exactly (`6`, then `7` when a field is added, `{}` for a clause with no enumeration) on a **synthetic** `FR-003` the integration cannot move | a `MUST break` FR is miscounted, or the keys drift from the clause |
+| `test_tripwire_constitution_cd_labels_are_phantoms` | the exact set `{CD-6, CD-7}` | `CD-7` was repaired, so only `CD-6` remains and the equality broke | the **constitution**, which is the actual invariant: it contains no `CD-n` label at all, every reported label is drawn from the set this corpus has ever invented (a new one still fails the test), and each is genuinely absent from the constitution | the constitution starts labelling its invariants, or a new phantom label appears |
+| `test_tripwire_tombstone_gate_is_red_today` | the pairs `("FR-058","tasks.md:143")` and `("FR-034a","spec.md:514")` | the integration rewrote both lines *and* moved the live citation to `research.md:143` | an **independent re-derivation** of the expected set from the documents — a second, literal implementation of `ARBITRATION` §2 — compared for **exact set equality** with what the check reports, plus per-finding structural assertions and a cross-check that `RI-01-FR-DEF` never claims a tombstoned id | the gate over- or under-reports against its own rule |
+| `test_tripwire_a6_routes_structural_conflict_into_contradicted` | `spec.md:737`, `tasks.md:128`, `repair/A6-fr-triage.md:187` | the integration moved all three and repaired the `spec.md` one entirely | the **rule**: every reported unit really does pair a structural term with `CONTRADICTED`, never states a prohibition, is FAIL, and its prose unit is locatable in the file it names; the check's declared scope (`spec.md` + `tasks.md`) is asserted separately from its findings, plus a companion that the corpus is still red somewhere | the check reports a prohibition as a violation, or reports a unit that lacks one of the two halves |
+
+Two of these deserve a note beyond the table:
+
+* The tombstone tripwire is now **skipped** on the live corpus, because the integrator has
+  removed the last unmarked tombstone citation. The skip message says exactly that. The test is
+  not vacuous-by-construction: it becomes active again the moment a marked citation is dropped.
+* The epistemic tripwire was **split** rather than re-pointed, because its original assertion
+  ("`spec.md` still carries the conflation") is a statement about a defect the integrator has now
+  repaired. Asserting it would have meant keeping a red test forever, or weakening the assertion
+  to nothing. The rule-level test and the "still red somewhere" test are separate, and the
+  second retires itself when the corpus is clean.
+
+### Tests added — 24 new functions, 48 new collected items
+
+| Group | Test | Proves |
+|---|---|---|
+| FIX 1 | `test_required_regression_a_plan_above_T001_with_no_gap_is_clean` | **the required regression**: `T101…T194` → 0 FAIL/WARN, one `task-order-ok`, declared range in the data, exit 0 |
+| FIX 1 | `test_required_regression_a_hole_inside_the_declared_range_still_fails` | **the required regression, other half**: `T101…T194` minus `T150` → 1 FAIL, `missing=150`, the actual number not a count, exit 1 |
+| FIX 1 | `test_a_duplicate_task_id_still_fails` | **blind-spot control** |
+| FIX 1 | `test_an_out_of_order_task_still_fails` | **blind-spot control**: `T101, T102, T105, T103, T104` → FAIL `number=103` |
+| FIX 1 | `test_a_letter_suffixed_task_id_still_fails_inside_a_high_range` | **blind-spot control** |
+| FIX 1 | `test_a_single_task_and_an_empty_task_list_do_not_raise` | the degenerate shapes, no `check-crashed` |
+| FIX 1 | `test_the_declared_range_is_derived_from_the_file_not_assumed` | the rule as arithmetic: `T401…T405` and `T001…T005` both clean |
+| FIX 1 | `test_a_mixed_range_below_its_own_floor_is_reported_as_two_gaps` | a 4-wide hole names **every** missing number, with the declared range attached |
+| FIX 1 | `test_the_floor_itself_can_never_be_validated_and_is_not_claimed` | **the given-up power, asserted** (§9.5) |
+| FIX 1 | `test_the_real_tasks_md_is_contiguous_across_its_own_range` | **the real plan**, re-pointed at its declared range |
+| FIX 1 | `test_tripwire_the_real_tasks_md_has_no_gaps_in_its_own_range` | the real plan, ascending, no duplicates, 0 FAIL/WARN, and still offset from `T001` |
+| FIX 2 | `test_a_tombstone_row_is_not_a_requirement_definition` | classified as a record; still a definition **row**; not a live definition |
+| FIX 2 | `test_a_tombstone_is_not_an_orphan` | `RI-03` + `RI-03b` clean; the record is named separately from the row count |
+| FIX 2 | `test_a_genuine_orphan_next_to_a_tombstone_is_still_reported` | **blind-spot control** |
+| FIX 2 | `test_a_tombstone_row_is_not_reported_as_an_undefined_reference` | the fix |
+| FIX 2 | `test_a_live_citation_of_a_tombstoned_id_still_fails` | **required**: `TOMBSTONED-FR-REF` FAIL with the replacement target; `RI-01-FR-DEF` silent; exit 1 |
+| FIX 2 | `test_a_genuinely_undefined_id_still_fails_the_definition_check` | **required**: `FR-103` still FAILs `RI-01-FR-DEF`, and `TOMBSTONED-FR-REF` does not claim it |
+| FIX 2 | `test_an_undefined_id_next_to_a_live_citation_of_a_tombstone_reports_both` | both defects, each on the check that owns it |
+| FIX 2 | `test_every_accepted_marker_opens_a_tombstone_record` (14 cases) | the whole marker list, case-insensitive, in three decorations |
+| FIX 2 | `test_a_live_requirement_that_merely_mentions_a_marker_stays_live` (6 cases) | **the narrowing, pinned**: the `FR-035` / `FR-040` / `FR-164` shapes |
+| FIX 2 | `test_a_live_fr_that_footnotes_a_tombstone_is_still_a_definition_target` | the same, end to end, with a non-vacuous `FR-103` control |
+| FIX 2 | `test_a_tombstone_record_is_never_a_live_normative_definition` | **the safety invariant of §9.3**: every parser marker is also a `DEPRECATION_MARKERS` entry |
+| FIX 2 | `test_a_tombstone_record_outside_the_arbitration_map_is_still_gated` | **the anti-hole control** of §9.3 |
+| FIX 2 | `test_a_live_requirement_written_beside_a_record_is_not_swallowed` | a record does not take a neighbouring live FR with it |
+| FIX 2 | `test_a_tombstone_record_does_not_duplicate_under_its_own_id` | the duplicate rule still sees two records for one id |
+| FIX 2 | `test_the_real_spec_md_tombstone_records_are_recognised_as_records` | **the real document**, anchored on shape, not line numbers |
+| §9.3 | `test_tripwire_tombstone_gate_reports_exactly_the_live_references` | the gate vs an independent re-derivation, exact set equality |
+| §9.3 | `test_tripwire_a_retired_id_is_cited_live_somewhere` | the gate is red today, retiring itself when repaired |
+| §9.6 | `test_tripwire_every_reported_conflation_really_is_one` | the epistemic rule, line-number free |
+| §9.6 | `test_tripwire_a_conflation_is_still_live_somewhere` | the corpus is red today, retiring itself when clean |
+| §8.5 | `test_harness_field_count_keys_are_exactly_the_frs_that_state_the_obligation`, `test_harness_field_count_counts_the_enumerated_fields_of_a_must_break_fr` | the re-pointed counter, contract and arithmetic |
+
+### The anti-"always red" control, re-verified
+
+```
+FAIL: 0  WARN: 1 (constitution-missing, the temp dir has no .specify/)  INFO: 19
+exit code: 0
+check ids in summary: 30 of 30
+every id present: True     every id ran: True     all reported clean: True
+```
+
+The same directory with one hole punched into its own declared range goes red
+(`RI-06` FAIL `missing=150`, exit 1), so the control is measuring, not idling. `RI-03b-FR-UNCITED`
+and `RI-12-STALE` report no findings on this corpus either; that is the synthetic fixture's
+content, not a check that stopped running — both appear in the summary as `ran, no findings` and
+both are exercised by their own tests.
+
+## 9.8 Two pre-existing weaknesses found, reported, deliberately not fixed
+
+Found while measuring. Both are outside this brief; both would *add* findings if fixed, which is
+why they are flagged rather than taken.
+
+1. **`RI-03b-FR-UNCITED` cannot fire.** It asks whether a defined FR "is cited by no artefact at
+   all", but it collects citations from every scanned artefact **including `spec.md`**, and an
+   FR's own definition row is itself a citation of that FR. The check is therefore unsatisfiable
+   on any corpus. It has produced 0 findings on every state measured in this pass, including the
+   one where 153 FRs were live. FIX 2 changed which population it iterates (`live_defs` instead
+   of `defs`), which is correct but does not make the rule satisfiable. The fix is to exclude the
+   FR's own definition site from the citation set.
+2. **`_harness_field_counts` mis-parses a §-locator.** It counts comma-separated pieces of every
+   parenthesised group in a `MUST break` FR, and `cleaned.startswith("§")` only rejects the
+   *first* piece of `(§19, §22, §23, §104; A4b D2.3, D2.4)` — so `D2.4)` is counted as a field.
+   That is where the current `{'FR-131': 1}` comes from. It feeds `RI-09-COUNT`'s `invariants`
+   counter, so any artefact claiming "N invariants" in a mutation/`break` context is compared
+   against 1 and would be a false FAIL. It produces no finding today, so changing it would alter
+   `RI-09-COUNT`'s counter basis for no measured gain. Left alone and named.
+
+## 9.9 Files touched by this pass
+
+* `repair/tools/reference_check.py` — `TOOL_VERSION` 1.2.0 → 1.3.0; `RI-06-TASK-ORDER`;
+  `Definition.tombstone`; `TOMBSTONE_RECORD_MARKERS` / `TOMBSTONE_RECORD_RE` /
+  `is_tombstone_record`; `parse_definitions`; `Context.tombstone_ids` / `live_defs` /
+  `live_index()` / `tombstones()`; `build_context`; `check_fr_definitions`;
+  `check_fr_orphans`; `check_fr_uncited_anywhere`; `check_fr_owners`;
+  `check_tombstoned_fr_refs`; six `CheckSpec.rule` strings.
+* `repair/tools/test_reference_check.py` — 24 new test functions, 5 pre-existing failures
+  re-pointed, 2 tripwires split.
+* `repair/A7b-reference-integrity-checker.md` — this section, appended.
+
+No severity was changed. No check id was added, removed or reordered. No dependency was added;
+the standard library only. No `.md` artefact other than this file was edited, and no `apps/` code
+was touched.
+
+
+---
+
+# 10. Tooling scoping fixes (three named rules)
+
+Three rules, each with a stated reason. `TOOL_VERSION` 1.3.0 -> 1.4.0. Appended; nothing
+above this line was edited.
+
+Each rule is recorded here with the reason it exists, the rule used to draw its boundary, and
+the power it gives up. The power given up is stated in the same place as the rule, because a
+scoping decision whose cost is only written down somewhere else is a scoping decision nobody
+can audit.
+
+## 10.1 `RI-06b-FR-ORDER` must not read a retired id as a gap
+
+**Reason.** `spec.md` §"Tombstone record" retires `FR-058`, `FR-070`, `FR-079` and `FR-080`
+in a *record table*, deliberately not in definition form, so a retired id has no
+`- **FR-nnn**:` row. The contiguity walk reads the definition index, so each retired id looks
+like a hole between two live numbers. Six tombstones times the neighbours they sit between was
+19 FAIL findings asserting, in effect, "un-retire this id".
+
+**Rule.** A gap is decided against the *requirement sequence*, not against the local interval:
+a number is a gap only when it is neither defined anywhere in `spec.md` nor tombstoned.
+Implemented as `_recorded_fr_numbers()` = `FR-` numbers in `ctx.defs` ∪ `_fr_number(t)` for
+every id in `ctx.tombstone_ids`, and `_sequence_gaps(lo, hi, recorded)`.
+
+**Kept intact.** The rewind arms (`fr-non-monotonic`, `fr-non-monotonic-document-order`) and
+`fr-dangles-after-table` are untouched; a rewind is not a gap. `check_rows_cite_fr`'s
+`row-cites-unknown-fr` is a different check and untouched.
+
+**Power given up, named.** A requirement number allocated to a *different section* than its
+neighbours is no longer reported by the contiguity arm. `spec.md` interleaves its canonical
+requirement sections with per-workstream allocation bands, so this is a real class of defect.
+It is now reported by the rewind arm instead (an interleaved document rewinds by construction),
+and `RI-01-FR-DEF` / `RI-03c-FR-COLUMN` still police the mapping. `test_a_number_defined_in_another_section_is_not_a_gap`
+asserts the trade explicitly rather than leaving it implicit.
+
+## 10.2 `repair/*.md` is a historical record, not normative content
+
+**Reason.** A repair document records the state of its subject *at the moment it was written*.
+`A4b` routed a structural conflict into `CandidateStatus.CONTRADICTED`; `A6` wrote "all seven
+classes of §8". Both were correct for their moment and both were superseded by
+`ARBITRATION.md` §3 and §10. Linting them as normative is a category error: it demands
+rewriting history to satisfy a later decision, and no edit to a signed record can make it
+agree with a ruling that did not exist when it was written.
+
+**Rule - the line drawn.** A finding is demoted when, and only when, **its subject is the
+content of the sentence**: what the document asserts to be true about the design. A finding is
+never demoted when **its subject is a reference the document makes**: whether an id it points
+at resolves.
+
+The distinction is not "old file versus new file". A repair document that says "seven classes"
+is stating what the brief said in September - superseded, reportable, not gating. A repair
+document that says "`FR-103` is the requirement for X" is claiming a number in a namespace,
+and whether that number exists is a fact no arbitration can change retroactively. History can
+record a superseded opinion. It cannot make a number appear.
+
+In one sentence: **demote when the finding would be repaired by changing what the document
+says; keep FAIL when the finding would be repaired only by changing what some other document
+is obliged to define.**
+
+**Exempt set** (`NORMATIVE_LINT_CHECKS`, a named constant, not a heuristic):
+`EPISTEMIC-AXIS-CONFLATION` (§3), `FR-NAMESPACE-COLLISION` (§1/§14), `COUNT-PRECISION` (§10),
+`RI-10-FORBIDDEN` (§10, §14 rule 4). Not exempt, with reasons on the record in
+`REFERENCE_INTEGRITY_NOT_EXEMPT`: `RI-01-FR-DEF`, `RI-02-TASK-REF`, `RI-06b-FR-ORDER`,
+`RI-08-SEC-CITE`, `RI-09-COUNT`, `RI-11-CONST`, `RI-11b-RESEARCH`, `TOMBSTONED-FR-REF`, and
+`GHOST-SUFFIX`. `GHOST-SUFFIX` is namespace hygiene over *citations*, so by the rule above it
+would qualify; it is left at WARN anyway, so the exemption would buy nothing, and widening the
+exempt set is the move this design refuses to make silently.
+
+**Not silenced.** Every finding that would have fired is still emitted, at INFO, under the one
+greppable code `historical-divergence`, naming the artefact, the code and severity it would
+have had, its original message verbatim, and the `ARBITRATION.md` section that superseded it
+(`SUPERSEDING_AUTHORITY`). One `historical-divergence-summary` INFO per run states how many
+were demoted and from which checks, so the aggregate is auditable too.
+
+**Mechanism.** `demote_historical()` runs as a single pass over the whole result set inside
+`run_checks`, not as an `if` at each yield site. A new yield site in any exempt check therefore
+cannot forget the exemption. A finding that is already INFO is left byte-identical, and a
+finding that names no `repair/` site is never demoted - absence of evidence is not evidence of
+history, so the exemption can never be inferred from a finding that forgot to say where it was.
+
+**Reference integrity inside `repair/` - the blind spot this closes.** `RI-01-FR-DEF` and
+`RI-02-TASK-REF` previously did not read `repair/` at all, so *every* reference in the
+governance corpus was invisible. They now do, split by what the citing line **is**
+(`Context.repair_claims`): a definition site - a `- **FR-nnn**:` row, a bold-titled requirement
+claim, or a `- [ ] Tnnn` bullet, outside any fence - is a claim on the namespace and FAILs
+(`fr-undefined-in-repair`, `task-phantom-in-repair`); any other mention is narrative of an
+earlier numbering and is aggregated into one `repair-historical-reference-summary` INFO. A
+fenced block is quotation and is never a claim, on the rule `FR-NAMESPACE-COLLISION` already
+uses. An id embedded in a longer identifier (`CHK-FR-01` contains `FR-01`) is not a reference
+and is not reported.
+
+**On the brief's `FR-103` example, stated plainly.** `ARBITRATION.md` §1 names `FR-103` as the
+number no agent may claim, and A1 proposes it - but A1 proposes it inside a ```` ```markdown ````
+fence, i.e. as quoted proposed text, so under the fence rule it is a quotation and is counted,
+not gated. The rule fires on A2's `**FR-104 - ...**` and A6's `**FR-101 (NEW) - ...**`, which
+are live bold-titled claims in prose. The rule is the same in both cases; the corpus instances
+differ because one of them is quoted and the other is not. Named here rather than papered over.
+
+**Power given up, named.** Two things. (a) A `repair/` document's *content* claims no longer
+gate, so a real normative error written into a repair document after the arbitration record
+will be reported at INFO and will not turn the gate red - the integrator must read the
+`historical-divergence` findings. That is the intended trade and it is the whole of the rule.
+(b) `RI-01-FR-DEF` / `RI-02-TASK-REF` now read 9 more files per run, so their cost and their
+finding count both rose; the counts are aggregated deliberately, because 519 historical task
+mentions reported as 519 findings would bury the five that matter.
+
+## 10.3 The `core:*` / `value:*` vocabulary must be *owned*, not per-term backed
+
+**Reason.** The rule counted 44 terms and demanded a producer for each, so it demanded the
+exact opposite of `ARBITRATION.md` §10 and §14 rule 4, which decide in terms that "a type in
+the vocabulary != the system must have a dedicated extractor for it, and its absence != a
+refusal". A rule that fights a binding decision is a bug in the rule, not in the document.
+
+**Rule.** The unit of judgement is the vocabulary, not the term. An owner exists when a live
+FR (a) enumerates a `core:*`/`value:*` term, or an enumerator delegates to it by name;
+(b) states an obligation (`MUST` / `required` / `obliges`); and (c) bounds that obligation to
+something other than the length of the list. Delegation must be an explicit deferral clause -
+an obligation noun, a deferral predicate and the FR id in one sentence - so a number mentioned
+in a renumbering footnote is not mistaken for a delegation.
+
+**Three shapes still FAIL, owner or not**, because an owner cannot repair them:
+`vocabulary-completeness-asserted` (membership asserted to entail production),
+`vocabulary-used-as-gate` (membership decides admission), `vocabulary-unowned` (nothing states
+and bounds an obligation at all).
+
+**Measured on the corpus.** 44 terms, enumerators `FR-030` / `FR-031` / `FR-135`, owners
+`FR-030` (enumerates) and `FR-179` (`FR-030` delegates to it by name) - the two the brief
+names. Reported as `vocabulary-owned` INFO, which states explicitly that per-term backing is
+not checked and why.
+
+**Power given up, named.** The rule no longer has any opinion about a term that has no
+producer. That is the brief's explicit instruction and it is a real loss: a vocabulary that
+lists a type nobody will ever extract is now invisible to this check, and nothing else in the
+registry looks at per-term producer coverage. Accepted deliberately, and named here.
+
+## 10.4 Defects this pass found and did not fix
+
+1. **`FR-039a` is not in the checker's tombstone universe.** `spec.md`'s record table lists six
+   retirements; `TOMBSTONED_FRS` carries five. `Context.tombstones()` also learns definition-row
+   records, and the table is not in definition form, so nothing learns the sixth. A live
+   citation of `FR-039a` is therefore reported by nobody. **Not fixed here**: adding it changes
+   the tombstone universe, which is `ARBITRATION.md` §2's to set, and it would turn any live
+   citation into a FAIL - a change to a check this brief did not name. `GHOST-SUFFIX` already
+   WARNs that `FR-039a` is still cited in 17 places, so the id is not invisible; it is
+   *ungated*. Named, not silently left.
+2. **`RI-06b-FR-ORDER`'s remaining 15 FAILs are not tombstone artefacts.** Six are
+   `fr-non-monotonic-document-order` rewinds caused by the section/band interleaving, and nine
+   are contiguity gaps naming the 27 numbers that no artefact defines and no record retires
+   (`FR-101…FR-109`, `FR-116…FR-129`, `FR-138`, `FR-139`, `FR-159`, `FR-160`) - which
+   `ARBITRATION.md` §14 declares VOID / RESERVED and leaves empty on purpose. FIX 1 removes the
+   tombstone false positives and sharpens the rest; it does not and cannot make this check
+   green, because the corpus genuinely leaves 27 numbers unaccounted for.
+3. **`_harness_field_counts` still mis-parses a `§`-locator** (carried over from §9.8, still
+   open).
+4. **`RI-03b-FR-UNCITED` still cannot fire** (carried over from §9.8, still open).
+
+## 10.5 Files touched by this pass
+
+* `repair/tools/reference_check.py` - `TOOL_VERSION` 1.3.0 -> 1.4.0. Rewritten:
+  `check_fr_order`, `check_fr_definitions`, `check_task_refs`,
+  `_forbidden_vocabulary_without_producer`. Added: `demote_historical`, `is_historical_site`,
+  `_finding_sites`, `NORMATIVE_LINT_CHECKS`, `SUPERSEDING_AUTHORITY`,
+  `REFERENCE_INTEGRITY_NOT_EXEMPT`, `HISTORICAL_CODE`, `Context.repair_claims`,
+  `_split_repair_references`, `_standalone_id`, `_historical_mentions_note`,
+  `_recorded_fr_numbers`, `_sequence_gaps`, `_fr_number`, `_fmt_fr_list`, `defn_line`,
+  `_vocabulary_terms`, `_vocabulary_owners`, `_deferral_targets`, `_states_a_non_count_bound`,
+  `_clauses`, `_flatten`, and the `_VOCAB_*` / `_BOUND_*` / `_COMPLETENESS*` / `_DEFERRAL_*` /
+  `_OBLIGATION_RE` patterns. Seven `CheckSpec.rule` strings. `run_checks` gained one pass.
+  One incidental fix: `FR-NAMESPACE-COLLISION`'s `data["shape"]` said `spec-vs-repair` for a
+  pair of two `spec.md` sites, which sent a reader looking for a repair document that was not
+  in the pair; it now distinguishes `repair-vs-repair` / `spec-vs-repair` / `spec-vs-spec`.
+* `repair/tools/test_reference_check.py` - 226 collected / 200 passed / 0 failed / 26 skipped,
+  from 187 / 164 / 0 / 23. **39 new test functions**, 2 renamed, 7 pre-existing tests
+  re-pointed at the new behaviour (each naming in its docstring the behaviour it used to
+  pin). Test functions: 115 -> 183 against the last commit; the extra committed-to-working
+  delta belongs to the tombstone pass recorded in section 9, not to this one.
+* `repair/A7b-reference-integrity-checker.md` - this section, appended.
+
+No check id was added, removed or reordered; all 30 are present in the summary of every run.
+No declared severity was changed. No dependency was added; the standard library only. No `.md`
+artefact other than this file was edited, and no `apps/` code was touched.
+
+---
+
+## 11. Coverage, not density: the `FR-` numbering rule is rewritten (four mechanical fixes)
+
+This section is appended, not merged: everything above is the record of what the checker was, and
+this is the record of what it now is. The four fixes below are the ones §10.5 could not close.
+
+### 11.1 FIX 1 — `RI-06b-FR-ORDER` now asks "is every number accounted for?" instead of "are these
+numbers adjacent?"
+
+§10.5 item 2 recorded the diagnosis and declined the fix: 15 FAIL findings, of which 6 were
+document-order rewinds and 9 were contiguity gaps naming 27 numbers that `ARBITRATION.md` §14
+declares VOID / RESERVED and leaves empty on purpose. The rule could not tell a *deliberately
+reserved* number from an *accidentally missing* one, because there was no third category to put
+the first in — and that is the same blind spot that let `FR-103` be cited as a live requirement
+for as long as it was.
+
+The rule is now **coverage with three admitted categories**:
+
+```text
+every FR number is DEFINED  or  TOMBSTONED  or  RESERVED
+```
+
+* **DEFINED** — a live `- **FR-nnn**:` row anywhere in `spec.md`. `spec.md` interleaves its
+  canonical sections with per-workstream allocation bands, so "not in this interval" was never the
+  same claim as "absent from the document".
+* **TOMBSTONED** — unchanged: `spec.md`'s record table plus `ARBITRATION.md` §2's map.
+* **RESERVED** — new, and **parsed from `spec.md`**, never hard-coded here. The tool reads one
+  machine-readable line inside the existing reserved-number-space blockquote:
+
+  ```text
+  `RESERVED-FR: 101-109, 116-129, 159-160`
+  ```
+
+  Four properties of that decision, each pinned by a test:
+
+  1. **Parsed, not hard-coded.** `test_the_reservation_is_parsed_from_spec_md_and_not_hard_coded`
+     asserts the parsed ranges equal `((101,109),(116,129),(159,160))` *and* that the declaration
+     line is where `spec.md` says it is. A literal in the tool would fail this.
+  2. **No block means no exemption.** A document that declares nothing exempts nothing, reported
+     as INFO `no-reservation-declared`. Declaring a reservation is opt-in.
+  3. **An unreadable reservation is FAIL and exempts *nothing*.** Two blocks, no declaration line,
+     two declaration lines, an unparseable range, `lo > hi`, overlapping ranges, an empty
+     declaration — all FAIL, all with an empty reserved set. This is the direction that matters: a
+     partially-read reservation that quietly exempted half of what it read would turn a parsing
+     bug into a green gate. Five parametrisations pin it.
+  4. **Machine/prose drift is FAIL.** Every range the `RESERVED-FR:` line declares must also appear
+     as a range in the block's own prose, so the machine view and the human statement cannot
+     diverge in silence.
+
+**Severity, arm by arm.** Only one arm of this check FAILs now, and it is the coverage arm:
+
+| arm | was | is | why |
+|---|---|---|---|
+| `fr-gap` (unaccounted number, one per number) | FAIL, per *interval* | **FAIL** | the rule. Unchanged in severity, rewritten in *meaning*: it now fires on a number that is DEFINED by nothing, TOMBSTONED by nothing and RESERVED by nothing, wherever it is noticed, exactly once. |
+| `fr-gap-in-section` (a section's own list skips numbers) | was `fr-gap` at FAIL | **INFO**, new code | placement by subject section is a legitimate authoring choice, not a defect. The interval is still reported, split into defined-elsewhere / tombstoned / reserved / unaccounted. |
+| `fr-gap-document-order` | FAIL | **INFO** | as above, at document-order granularity. |
+| `fr-non-monotonic-document-order` (document-order rewind) | FAIL | **INFO** | as above. `spec.md` defines `FR-174…178` in the identity section and `FR-179/180` in the §8 section, so the file cannot read as one ascending run and is not trying to. |
+| `fr-non-monotonic` (rewind **within one** section) | FAIL | **FAIL** | *unchanged, deliberately.* A rewind inside a single requirement list is a list whose own numbering contradicts itself, and subject-section placement does not explain it. It fires 0 times today, so keeping it costs nothing and the two rewind arms cannot be swapped by accident. |
+| `fr-dangles-after-table` | FAIL | **FAIL** | unchanged. |
+| `reservation-declaration-unreadable` | — | **FAIL** | new; see (3) above. |
+| `no-reservation-declared` / `reservation-declared` / `fr-sequence-ok` | — | **INFO** | new/rewritten; the walk reports that it ran and what it decided. |
+
+**`FR-159` / `FR-160` — added to the declared reservation, and why that is not a loosening.**
+`spec.md` already recorded the decision in prose at the "measured divergence from §14's table"
+paragraph: §14 gives A7 the range `150`–`160` and counts 11, A7 authors 9, `spec.md` defines all 9,
+so the occupied part is `150`–`158` and "the last two slots of §14's range name no requirement
+anywhere", unfilled because §14 rule 1 forbids minting a number. FIX 1 promotes that already-stated
+decision into the machine-readable declaration, so the emptiness reads as a decision rather than a
+hole. Nothing was invented; the prose was already there and the checker simply could not see it.
+
+**`FR-138` / `FR-139` — left FAILING, on purpose.** These sit in the seam between A4b's band
+(`FR-130…FR-137`) and A5's (`FR-140…FR-149`). §14 allocates that seam to nobody, `spec.md` defines
+neither, no record retires either, and the reservation block does not claim them. Under the old
+density rule they were invisible: two entries inside a 30-number document-order gap whose other 28
+members were reserved, so nothing isolated them. The new coverage arm isolates them, and they are
+the check's remaining 2 FAIL. **They are not reserved away.** Declaring a gap on purpose is an
+authoring decision that belongs in `spec.md`; making it inside the checker to reach a green gate
+would be the tool inventing an intent the document does not record — which is the same failure, one
+level up, as the hard-coded list FIX 1 removed. Closing them means either authoring `FR-138`/`139`
+or declaring them reserved in `spec.md`; both are the spec owner's calls, not the checker's.
+
+`test_the_real_spec_leaves_exactly_two_unaccounted_numbers_and_they_are_reported` pins
+`unaccounted == [138, 139]` on the real corpus, so this hole cannot be quietly forgotten.
+
+### 11.2 FIX 2 — five labels in `repair/`, and the rule that makes them mean something
+
+`A2` and `A6` were both written before §14 reassigned the `FR-1xx` band, so each carries bold title
+rows for local numbers that no live requirement defines. Label-only, nothing else touched — these
+are signed historical records:
+
+| record | local | canonical | authority |
+|---|---|---|---|
+| `repair/A2-identity-subsystem.md` | `FR-101` | `FR-174` | §14 rule 2 + title match in `spec.md:507` |
+| `repair/A2-identity-subsystem.md` | `FR-102` | `FR-175` | §14 rule 2 + `spec.md:535` |
+| `repair/A2-identity-subsystem.md` | `FR-104` | **`FR-176`** | §14 rule 2 + `spec.md:569` |
+| `repair/A2-identity-subsystem.md` | `FR-105` | `FR-177` | §14 rule 2 + `spec.md:598` |
+| `repair/A2-identity-subsystem.md` | `FR-106` | `FR-178` | §14 rule 2 + `spec.md:630` |
+| `repair/A6-fr-triage.md` | `FR-101` | `FR-179` | §14 rule 2 + `spec.md:1108` |
+| `repair/A6-fr-triage.md` | `FR-102` | `FR-180` | §14 rule 2 + `spec.md:1485` |
+
+Shape: `**FR-104** (superseded local numbering → ARBITRATION §14 → **FR-176**) — <title>`. The
+requirement bodies, the test methods and the "Independently testable because" lines are unchanged.
+
+**`FR-104` maps to `FR-176`, not `FR-174`.** The brief's worked example said `**FR-174**`; §14 rule
+2 gives the band as a whole ("A2's `FR-101/102/104/105/106` **become** `FR-174…FR-178`"), so the
+positional reading of the example contradicts the band, and the titles settle it independently:
+A2's `FR-104` is "Canonical participant ordering is a specified deterministic algorithm" and
+`spec.md:569`'s `FR-176` carries that exact title. Writing `FR-174` would have pointed a reader at
+the `PredicateSignature` field-set requirement instead. Corrected rather than copied.
+
+**The label is a rule, not a regex accident.** `REPAIR_FR_SUPERSEDED_RE` recognises the form and
+`parse_repair_definitions` explicitly skips it, so the exemption does not depend on the
+parenthesised gloss happening to fail the dash-gloss test. Three new FAIL arms check the label is
+*true*, because otherwise `**FR-nnn** (superseded … → **FR-mmm**)` would be a way to retire any
+number without saying where the content went — a checker that certified that would be worse than
+useless:
+
+* `supersession-pointer-unresolved` — the canonical number is not a live requirement.
+* `supersession-of-a-live-fr` — the local number *is* live; a record cannot supersede a number in
+  force.
+* `supersession-disagreement` — one document points one local number at two canonical numbers.
+  **Scoped per document on purpose**: §1 records that "`FR-101`/`FR-102` as invented by **both** A2
+  and A6 are void", so cross-document reuse is the normal shape here and a global reading would
+  report the very collision §14 exists to resolve. The reuse is surfaced in the INFO summary's
+  `reused_local_numbers` instead of being reported as a defect.
+
+### 11.3 FIX 3 — `R070`: a non-goal does not carry a normative requirement
+
+`checklists/requirements.md` row `R070` cited no FR, `FR-070` is tombstoned, and no live requirement
+states the RDF/SHACL non-goal. No FR was minted — §14 rule 1 forbids it, and a non-goal is a
+prohibition that constructs no acceptance criterion, so there is nothing for a requirement row to be
+*about*.
+
+* `spec.md`'s existing constitutional non-goals bullet (§80, §81) is **completed**: it now carries
+  the two §81 sentences the old text omitted ("the extraction substrate is never moved into SHACL",
+  "shape validation is not the semantic substrate") and names itself as the constitutional home of
+  the tombstoned `FR-070`.
+* The `R070` table row is **replaced by a pointer** below the table, naming that bullet, `T193` and
+  the `repair/A6-fr-triage.md` design note. It is deliberately not a row: a row in that table
+  asserts that one `FR-` requirement is what makes the item true, and none does.
+* The section 2.15 preamble and the row-count self-measurement were corrected with the numbers the
+  parser actually reports: **230** rows, of which **152** in sub-section 2 (was 231 / 153).
+* `RI-04c-ROW-FR` is **untouched**; its teeth are re-pinned by
+  `test_a_checklist_row_citing_no_fr_is_still_a_failure`, which withdraws a row's FR cell and
+  asserts both `row-without-fr` and `row-without-fr-total` still fire.
+
+### 11.4 FIX 4 — `FR-039a` is no longer ungated, and the next omission is caught
+
+§10.5 item 1 recorded `FR-039a` as visible (`GHOST-SUFFIX` WARNs 17 live citations) but ungated:
+`spec.md`'s record table lists **six** retirements, `TOMBSTONED_FRS` had **five**. The table is
+deliberately not in requirement-definition form, so the definition parser cannot read it, and
+`RI-01-FR-DEF` *drops* tombstoned ids from its cited-but-undefined population — so the id was
+defined nowhere, exempt from the check that would have said so, and owned by no other.
+
+* `ARBITRATION.md` §2's set is now six, matching `spec.md`, with the "six, not five" paragraph
+  written out so the next reader knows the count is load-bearing.
+* `TOMBSTONED_FRS` gains `"FR-039a": "FR-040"`.
+* **New, and the actual root cause closed:** `spec_tombstone_record_ids()` reads the record
+  *table* — found by its `tombstoned id` header column, not by searching prose — and
+  `tombstone-record-unregistered` is FAIL for any id the table names and the map omits. So the
+  `FR-039a` hole cannot recur silently, and the parser gap that allowed it is named in the rule
+  text rather than left as a comment.
+
+**Successor disagreement, reported and not resolved.** `spec.md:403` and `ARBITRATION.md` §1/§2 all
+give `FR-039a`'s successor as the `FR-040` slot; `tasks.md:942` says "folded into `FR-112`".
+`FR-112` is a live requirement about type resolution over a bounded neighbourhood, so the two
+statements are not describing the same obligation and one is wrong. `tasks.md` is not a file this
+pass owns and is untouched. The disagreement is recorded in `ARBITRATION.md` §2 with the reasoning,
+naming the owner of `tasks.md` as the party who settles it. The successor string in
+`TOMBSTONED_FRS` is `FR-040` because that is what both files this pass owns say.
+
+### 11.5 What this pass gives up, named
+
+1. **Document-order monotonicity no longer gates.** 6 FAIL findings on the real corpus, all of
+   them `spec.md` placing a band in its subject section. The arm still fires, at INFO, with both
+   endpoints and the rewind size. A document that genuinely garbles its own FR sequence is now a
+   WARN-free INFO rather than a red gate.
+2. **Adjacency between two requirements in one list no longer gates.** 9 FAIL findings on the real
+   corpus, reporting 27 numbers that §14 declares reserved. `fr-gap-in-section` retains the
+   observation at INFO.
+3. **A reserved number is exempt from *nothing* that matters.** The exemption is absence only;
+   citation is still FAIL under `RI-01-FR-DEF`, and the superseded-label exemption is conditional
+   on the pointer resolving.
+4. **A reservation that cannot be parsed now blocks the gate** where it previously could not
+   exist. That is new FAIL surface, in exchange for the tool never guessing which numbers are
+   reserved.
+
+### 11.6 Files touched by this pass
+
+* `repair/tools/reference_check.py` — `TOOL_VERSION` 1.4.0 -> 1.5.0. `check_fr_order` rewritten;
+  `check_fr_definitions` gained the supersession-pointer pass; `check_tombstoned_fr_refs` gained
+  the record-table cross-check. Added: `Reservation`, `parse_fr_reservation`, `_blockquote_runs`,
+  `RESERVATION_BLOCK_MARKER_RE`, `RESERVATION_DECL_RE`, `RESERVED_RANGE_PIECE_RE`,
+  `PROSE_RANGE_RE`, `_QUOTED_LINE_RE`, `_accounted_fr_numbers`, `_unaccounted_fr_numbers`,
+  `_interval_breakdown`, `_fmt_fr_list`, `RepairSupersession`, `REPAIR_FR_SUPERSEDED_RE`,
+  `parse_repair_supersessions`, `_check_supersession_pointers`, `spec_tombstone_record_ids`,
+  `TOMBSTONE_TABLE_HEADER_RE`, `TOMBSTONE_CELL_RE`, `_check_tombstone_records_registered`,
+  `_info`, and `Context.reservation`. Three `CheckSpec.rule`/`title` strings rewritten
+  (`RI-06b-FR-ORDER`, `RI-01-FR-DEF`, `TOMBSTONED-FR-REF`). `fr-gap-in-section`,
+  `reservation-declared`, `no-reservation-declared`, `reservation-declaration-unreadable`,
+  `supersession-summary`, `supersession-pointer-unresolved`, `supersession-of-a-live-fr`,
+  `supersession-disagreement`, `tombstone-record-unregistered` and
+  `tombstone-record-cross-check` are new finding codes. `fr-gap` keeps its code and its severity
+  and changes its meaning; `fr-gap-document-order` and `fr-non-monotonic-document-order` keep
+  their codes and change severity.
+* `repair/tools/test_reference_check.py` — 247 collected / 221 passed / 0 failed / 26 skipped,
+  from 226 / 200 / 0 / 26. **21 new test functions**, 7 pre-existing tests re-pointed at the new
+  behaviour (each naming in its docstring the behaviour it used to pin, and the
+  `test_a_number_defined_in_another_section_is_not_a_gap` / `test_rewind_and_dangling_arms…`
+  docstrings stating the given-up power as an assertion). The four properties FIX 1 requires —
+  sparse-but-declared, undeclared, reserved-but-cited, document-order-rewind — are pinned by
+  `test_a_sparse_sequence_that_is_declared_reserved_has_zero_failures`,
+  `test_an_undeclared_sparse_sequence_still_fails`,
+  `test_a_reserved_number_that_is_cited_still_fails_the_definition_check` and
+  `test_a_document_order_rewind_is_info_not_fail`.
+* `spec.md` — the reserved-number-space block gains the third range and the `RESERVED-FR:`
+  declaration; the `FR-070` constitutional non-goal is completed. No requirement row added,
+  removed, renumbered or reworded.
+* `checklists/requirements.md` — the `R070` row becomes a pointer; two self-counts corrected.
+* `repair/ARBITRATION.md` — §2's tombstone set goes to six, plus the two explanatory paragraphs.
+* `repair/A2-identity-subsystem.md`, `repair/A6-fr-triage.md` — five label edits, nothing else.
+* `repair/A7b-reference-integrity-checker.md` — this section, appended.
+
+No check id was added, removed or reordered; all 30 are present in the summary of every run, and
+the anti-always-red control (`test_three_fixes_together_stay_green_on_a_self_consistent_directory`:
+0 FAIL, exit 0, all 30 ids present) is green. No `apps/` code, no `tasks.md`, no `data-model.md`,
+no `plan.md`, no `input.md`.

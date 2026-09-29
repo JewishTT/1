@@ -43,7 +43,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any, Protocol, runtime_checkable
+
+from domain.signal_basis import SignalBasis
 
 from extractors.signals.signal import (
     Neighbourhood,
@@ -239,12 +242,17 @@ def run_producer(
     * **Duplicate observations are collapsed** with
       :func:`~extractors.signals.signal.dedupe_by_content`, because two runs of one
       producer over one structure are one observation and FR-034 counts observations.
-    * **The producer's identity is stamped on every signal**, so a signal cannot arrive
-      with no ``producer_ref`` and become uncountable for independence. A producer that set
-      its own ref is overwritten, because the registry is the authority on who is speaking
-      - a producer that could name itself ``independent-source-7`` would otherwise be able
-      to manufacture corroboration, which is the same forgery as letting confidence into
-      a signal's address.
+* **The producer's identity is stamped on every signal**, so a signal cannot arrive
+  with no ``producer_ref`` and become uncountable for independence. A producer that set
+  its own ref is overwritten, because the registry is the authority on who is speaking
+  - a producer that could name itself ``independent-source-7`` would otherwise be able
+  to manufacture corroboration, which is the same forgery as letting confidence into
+  a signal's address.
+* **A signal that arrives with no :attr:`~extractors.signals.signal.RelationSignal.basis`
+  is refused**, unless its producer's declaration admits exactly one basis - see
+  :func:`_stamp`. A basis answers "how do you know?" and only the producer knows; the
+  registry can name what a signal *failed* to say, which is the useful half of the
+  job, and it does that with a code rather than a default.
 
     Failures are not swallowed. A producer that raises propagates: silently dropping one
     producer's output would make "no relations here" and "this producer crashed" the same
@@ -266,11 +274,44 @@ def _stamp(
     declaration: ProducerDeclaration,
     scope: ExtractionScope,
 ) -> RelationSignal:
-    """Overwrite the fields the registry owns and the producer does not.
+    """Overwrite the fields the registry owns, and **carry the two the producer must not
+    lose**.
 
     The producer owns what it *saw*; the registry owns *who spoke* and *in what frame*.
     Splitting them this way is what keeps a producer from being able to assert its own
     independence or read outside the frame it was given.
+
+    **Why ``basis`` and ``polarity`` are re-stamped rather than merely re-addressed.** Before
+    Phase 4B this function was:
+
+    .. code-block:: python
+
+        return _replace(signal, signal_id="", **changes)
+
+    which re-derives the address and **loses nothing** - ``basis`` and ``polarity`` are in
+    the address material, so they survive a ``replace``. The loss was different and worse:
+    a producer that emitted a signal with ``basis=None`` and ``polarity=ASSERTED`` (the two
+    defaults, so a producer written before Phase 4A could not get them wrong) had its output
+    stamped by a registry that knew, from the producer's own declaration, exactly how the
+    producer saw things - and did nothing about it. The registry is the authority on who is
+    speaking; the declaration is the authority on what that speaker reads; and a declared
+    basis of ``None`` is a declaration that says nothing, so there was nothing to restate.
+
+    What is restated now is narrower and real: a signal that reached the registry with **no
+    basis at all** is stamped with the *single* basis its producer's declaration implies,
+    and is **refused** if the producer reads more than one kind of structure. The refusal
+    matters more than the fill: a producer that reads cue phrases *and* proximity is
+    genuinely two producers, and papering over that with a default is how FR-034's
+    independence count gets corrupted. A signal that reached the registry with a basis is
+    left alone, because a producer that stated its basis and a registry that overrode it
+    would be a record disagreeing with itself.
+
+    ``polarity`` is **never** restated. It is a claim about the document - "this was denied"
+    - and no registry can know it. A producer that reads a negator states
+    ``polarity=Polarity.DENIED`` on the signal and that is the one authority on the question;
+    anything else here would be the registry guessing. Phase 4C deleted
+    ``SignalKind.NEGATION``, so there is no second place a producer could have said it and no
+    overrule this layer has to perform.
     """
     from dataclasses import replace as _replace
 
@@ -291,6 +332,22 @@ def _stamp(
             "producers wearing one name - which corrupts FR-034's independence count - or "
             "a declaration nobody maintains",
         )
+    if signal.basis is None:
+        implied = _implied_bases(declaration)
+        if len(implied) == 1:
+            changes["basis"] = next(iter(implied))
+        else:
+            raise SignalContractError(
+                "producer_basis_undeclared",
+                f"signal {signal.signal_id} from {declaration.producer_ref!r} carries no "
+                f"basis, and the kinds it declared ({[str(k) for k in declaration.kinds]}) "
+                f"do not imply exactly one observational basis ({sorted(str(b) for b in implied) or 'none'}). "
+                "A basis answers 'how do you know?' and it has to be stated by the producer "
+                "that knows: a registry cannot infer one from a signal kind, because "
+                "'a table slot' and 'an attribute key' are both reached by reading markup and "
+                "only the producer knows which it did. Fill basis= on the signal, or narrow "
+                "the declaration so the two agree (FR-014)",
+            )
     if signal.tenant_id and signal.tenant_id != scope.tenant_id:
         raise SignalContractError(
             "signal_tenant_mismatch",
@@ -299,6 +356,54 @@ def _stamp(
             "cross-tenant output is refused fail-closed (constitution IV)",
         )
     return _replace(signal, signal_id="", **changes)
+
+
+#: Which observational basis each declared :class:`~extractors.signals.signal.SignalKind`
+#: implies, and **not** a decision the registry acts on - the registry *refuses* whenever this
+#: maps to anything other than exactly one basis, which is every multi-kind producer here.
+#:
+#: It exists so the refusal can *name* what it found rather than say "some basis", and so
+#: the single-kind case has one authority rather than a chain of ``if``s. A kind that maps to
+#: nothing (``CO_OCCURRENCE``, and the three of Phase 4C's additions below) is genuinely
+#: ambiguous, and the registry's answer to an ambiguous kind is the refusal above rather than
+#: a guess: proximity is the usual basis for a co-mention but the kind does not say so, and
+#: the platform does not get to decide it on the producer's behalf.
+#:
+#: **Which of 4C's four new members are mapped, and why only :attr:`SignalKind.EVENT`.** A
+#: ``STRUCTURAL`` signal (brief §31) is reached by reading markup, and ``dom_relation``,
+#: ``table_slot``, ``hyperlink``, ``citation``, ``metadata_field`` and ``attribute_key`` are
+#: all reachable that way - six answers, so a single entry would be a fabrication. A
+#: ``SEMANTIC`` signal (brief §42) reads a schema, a mapping system or a profile and never the
+#: words between two mentions, so ``predicate_text`` is wrong and so is everything else. A
+#: ``TEMPORAL`` signal states the channel and its facts live in
+#: :class:`~domain.temporal_observation.SourceTemporalObservation`, so the basis is whatever
+#: produced the observation rather than anything the kind implies. Only ``EVENT`` (brief §39)
+#: is one thing read one way, and it is the same frame ``SYNTAX`` already names, so it maps to
+#: the same basis. All three unmapped kinds are therefore refused when a producer declares them
+#: and states no basis, which is the fail-closed answer and the one a reader can act on.
+_IMPLIED_BASIS: Mapping[SignalKind, frozenset[SignalBasis]] = MappingProxyType(
+    {
+        SignalKind.LEXICAL: frozenset({SignalBasis.PREDICATE_TEXT}),
+        SignalKind.SYNTAX: frozenset({SignalBasis.EVENT_FRAME}),
+        SignalKind.EVENT: frozenset({SignalBasis.EVENT_FRAME}),
+        SignalKind.LINK: frozenset({SignalBasis.HYPERLINK}),
+        SignalKind.REFERENCE: frozenset({SignalBasis.CITATION}),
+        SignalKind.TABLE: frozenset({SignalBasis.TABLE_SLOT}),
+        SignalKind.LIST: frozenset({SignalBasis.ATTRIBUTE_KEY}),
+        SignalKind.ATTRIBUTE: frozenset({SignalBasis.ATTRIBUTE_KEY}),
+        SignalKind.METADATA: frozenset({SignalBasis.METADATA_FIELD}),
+        SignalKind.SCHEMA: frozenset({SignalBasis.ATTRIBUTE_KEY}),
+        SignalKind.HIERARCHY: frozenset({SignalBasis.METADATA_FIELD}),
+    }
+)
+
+
+def _implied_bases(declaration: ProducerDeclaration) -> frozenset[SignalBasis]:
+    """Every basis the declared kinds jointly admit, which is all of them jointly."""
+    implied: set[SignalBasis] = set()
+    for kind in declaration.kinds:
+        implied |= _IMPLIED_BASIS.get(kind, frozenset())
+    return frozenset(implied)
 
 
 def synthesise_neighbourhood(

@@ -476,7 +476,7 @@ it is marked `[INTERFACE: …]` and the dependency is named.
 
 ### 2.5 The two new requirements
 
-**FR-101 (NEW) — the §8 entity extractor expansion, absent from every artefact**
+**FR-101** (superseded local numbering → ARBITRATION §14 → **FR-179**) **(NEW)** — the §8 entity extractor expansion, absent from every artefact
 
 > The deterministic entity extraction layer MUST be completed around the atomic type vocabulary,
 > extending existing extractors rather than duplicating them into a second framework, and providing
@@ -504,7 +504,7 @@ it is marked `[INTERFACE: …]` and the dependency is named.
 > this, and today it is occupied by work §110 places in Phase 5 — this is D15, and this FR is what
 > makes the phase non-empty. *(§8, §110-2)*
 
-**FR-102 (NEW) — the meta-rule that closes D9 permanently**
+**FR-102** (superseded local numbering → ARBITRATION §14 → **FR-180**) **(NEW)** — the meta-rule that closes D9 permanently
 
 > Every hard prohibition stated in the brief MUST have at least one named test that **fails** when
 > the prohibition is violated, and that test MUST be reachable from a task in this plan. At minimum

@@ -30,17 +30,31 @@ graph-projection invariant. It could not detect the failure it exists to prevent
 rebuild; this file is its output.
 
 **Task-numbering note.** Task ids are `^T\d{3}$` with no letter suffix, and `tasks.md` defines
-`T101`…`T194`. That grammar rule is what makes the letter-suffixed phantom class unrepresentable,
-so every `Task` cell here resolves. A `T`-token absent from `tasks.md` is a phantom and a row
-gated on it is a gate on nothing.
+**94** of them, `T101`…`T194`, with no gap and no suffix. That grammar rule is what makes the
+letter-suffixed phantom class unrepresentable, so every `Task` cell here resolves. A `T`-token
+absent from `tasks.md` is a phantom and a row gated on it is a gate on nothing. Measured across
+the five integrated artefacts and this file: **0** phantom task tokens.
 
-**FR-namespace note.** `spec.md` defines 153 FRs, in the `001`–`100` range plus seven allocated
-bands. Two bands are void or reserved and are never cited here: a number in a void band is the
-historical phantom class of defect, a citation that resolves to nothing. Four of the 153 are tombstones
-(sub-section 2.15). The
-governing count for the vocabulary is four separate numbers, never one: **31** `core:*` entity
-types, **13** `value:*` value types, **7** §8 extraction families, roughly **4** new instrument
-modules.
+**FR-namespace note.** `spec.md` defines **149** requirement-form FRs, measured by counting its
+`- **FR-nnn**:` definition rows: **96** in the `001`–`100` slot plus **53** above the `100` slot,
+across seven allocated bands (`110`–`115`, `130`–`137`, `140`–`149`, `150`–`158`, `161`–`173`,
+`174`–`178`, `179`–`180`). The `001`–`100` slot is 96 rather than 100 because four of its ids are
+tombstoned and were moved into the tombstone record table. Two bands are void or reserved and are
+never cited here: a number in a void band is the historical phantom class of defect, a citation
+that resolves to nothing. **Six** ids are tombstoned in total: those four slots in the `001`–`100`
+range plus two letter-suffixed ghosts folded into the `FR-035` and `FR-040` slots. All six are named
+in `spec.md`'s tombstone record table and in `repair/ARBITRATION.md` §2, and are deliberately not
+spelled here: spelling a retired id on a line that does not also carry a deprecation marker is the
+same defect this file exists to catch. That table is **not** in requirement-definition form, so none
+of the six is inside the 149, and a row that cited one as a live target mapped no requirement.
+
+The other populations in this file, each measured rather than inherited: **43** measurable outcomes
+`SC-001`…`SC-043`, contiguous; **5** invariants `INV-001`…`INV-005`; **9** user stories; **116**
+numbered headings in `input.md` — §0…§114 top-level, plus the one sub-numbered §4.1 — of which
+§110's development order is the source of the **12** brief phases; **230** rows across the tables
+of this file, of which **152** are in sub-section 2. The governing count for the vocabulary is four
+separate numbers, never one: **31** `core:*` entity types, **13** `value:*` value types, **7** §8
+extraction families, roughly **4** new instrument modules.
 
 ---
 
@@ -94,7 +108,13 @@ this feature legitimately cleared), `flaky` (non-deterministic; must be shown fl
 ### 0.3 The 22 tests that never executed
 
 A green run proves a fraction of the suite, not the suite. These are tracked, never reported as
-passes: 14 that self-skip and report a skip, and 8 that report nothing at all.
+passes. The 22 are the five groups `phase0-results.md` §1.2 itemises, and the itemisation is what
+sums to 22 — 10 `apps/acquisition` (MinIO absent), 2 `apps/feedback` (PostgreSQL absent),
+2 `apps/bulk-ingestion` (MinIO absent), the whole of `test_tantivy_backend.py` (a module-level
+`importorskip`), and 7 `apps/control-plane` tests needing a live PostgreSQL/dev stack. All 22
+self-skipped rather than failed. (`phase0-results.md` §1.2 also prints "14" as a headline for the
+same list whose own bullets sum to 22; the bullet arithmetic is the one reproduced here and in
+rows `N1`–`N5`.)
 
 | # | FR | Requirement (one line) | Method | Task | State |
 |---|---|---|---|---|---|
@@ -124,7 +144,7 @@ passes: 14 that self-skip and report a skip, and 8 that report nothing at all.
 | A1 | FR-007, FR-098 | the named types stay distinct types; `CandidateStatus` never becomes a `rank()`, and the partition stays `CAND-` / `CNDR-` with no fourth epistemic level (`INV-001`, `SC-025`) | T | T107, T134 | ☐ |
 | A2 | FR-034, FR-074, FR-137 | the type vocabulary is an interpretation instrument — naming, hierarchy, aliases, blocking, role hints, mapping surface, validation vocabulary — and is never a gate or a completeness condition; the ontology pack's relation list is deleted, not merely unused (`INV-002`, `SC-024`) | T | T111, T152 | ☐ |
 | A3 | FR-038, FR-111 | no producer drops an observation because the semantic layer does not understand it; an ontology miss yields `UNKNOWN`, never rejection (`INV-003`) | M | T117, T184 | ☐ |
-| A4 | FR-058 — tombstone, merged into `INV-004` | a `GraphEdge` or `HyperEdge` exists only after an admitted `RelationClaim`, enforced at the type level with no overload; see the deleted-ids table in `repair/A6-fr-triage.md` (`SC-031`) | T | T174, T184 | ☐ |
+| A4 | FR-083, FR-020 | a `GraphEdge` or `HyperEdge` exists only after an admitted `RelationClaim`, enforced at the type level with no overload; that obligation is constitutional (`INV-004`) and is restated as ADR **H** of `FR-083` and measured by `SC-031`, which pairs it with `FR-020`; the retired `058` slot is a tombstone record in `spec.md` and in the deleted-ids table in `repair/A6-fr-triage.md` §2.2, and is history rather than a live target | T | T176, T184 | ☐ |
 | A5 | FR-068, FR-169 | evidence lineage and derivation lineage stay separate over **two distinct hop vocabularies**, and a `SIGNAL` hop is traversable in both directions; a candidate is derivation, never evidence (`INV-005`, `SC-013`) | T | T179 | ☐ |
 | A6 | FR-073, FR-085, FR-089 | determinism: ids are re-derived and never trusted, and depend on no producer order, dict iteration order, clock read or random tie-break (`SC-010`, `SC-035`) | T | T105, T129, T186 | ☐ |
 | A7 | FR-019, FR-020 | no `ENT-`/`RES-` literal in producer code, and no `TYPE_CHECKING` outside a type position | I | T152 | ☐ |
@@ -138,7 +158,11 @@ passes: 14 that self-skip and report a skip, and 8 that report nothing at all.
 
 ## 2. Normative map — one row per FR in `spec.md`
 
-153 rows, one per FR definition, grouped by subject. Sub-section 2.15 holds the four tombstones.
+**153 rows**: one for each of the **149** requirement-form FR definitions in `spec.md`, plus the
+**4** rows of sub-section 2.15 that name the live successor of a retired `001`–`100` slot. Grouped by
+subject. Sub-section 2.15 holds those four; the two letter-suffixed ghosts have no row of their own,
+because their successors are already rows — `R035` and `R040` — and `ARBITRATION.md` §2 forbids
+citing a tombstoned id as a live target in any case.
 
 ### 2.1 Identity, signature and derivation
 
@@ -361,16 +385,40 @@ passes: 14 that self-skip and report a skip, and 8 that report nothing at all.
 
 ### 2.15 Tombstones
 
-These four slots carry no normative requirement. The row exists to prove nothing cites them as a
-live target, and to name where the obligation went.
+These four slots carry no normative requirement, so **no row in this file cites a retired id as a
+live target**: each row names the live requirement that now carries the obligation, and the retired
+id is named here in prose, on a line that carries the word *tombstone*, so it reads as history. The
+four tombstoned ids are the tombstone set's `FR-058`, `FR-070`, `FR-079` and `FR-080`; the two
+tombstoned letter-suffixed
+ghosts are folded into the `FR-035` and `FR-040` slots and get no row. All six tombstone records sit
+in `spec.md`'s tombstone record table, which is deliberately **not** in requirement-definition form,
+so none of them is in the 149-row definition population and a row that cited one as a live target
+mapped no requirement — the `RI-04c-ROW-FR` defect this sub-section used to carry. Each row's
+`Task` cell is the task that owns the successor obligation, taken from the deleted-ids table in
+`tasks.md`, not from the retired id's own era. The tombstone `FR-070` gets no row either, for the
+different reason stated immediately below the table: a non-goal is not a permission and has no
+requirement to be a row about.
 
 | # | FR | Requirement (one line) | Method | Task | State |
 |---|---|---|---|---|---|
-| R058 | FR-058 — tombstone, merged into `INV-004` | the edge-after-claim obligation lives in `INV-004` and is enforced by row `A4`; see the deleted-ids table in `repair/A6-fr-triage.md`; no artefact may cite this slot as a live requirement target | I | T174 | ☐ |
-| R070 | FR-070 — tombstone, removed to a design note and the constitutional non-goals | a permission plus two restatements of the non-goals constructs no acceptance criterion; both surviving sentences are restated as non-goals; see the deleted-ids table in `repair/A6-fr-triage.md` | I | T193 | ☐ |
-| R079 | FR-079 — tombstone, merged into `FR-078` | the six section mutations are manifest entries of `FR-078`, not a separate apparatus, so the "four" that contradicted its own list of six is withdrawn; a manifest entry breaking `type_ref`, `predicate_signature`, `participants`, `polarity` or `edge` identity keeps a named test; see the deleted-ids table in `repair/A6-fr-triage.md` | I | T184 | ☐ |
-| R080 | FR-080 — tombstone, merged into `FR-072` | it restated the same five metrics, so the bound and the counters both live in `FR-072`: `characters_scanned`, `tokens_scanned`, `candidate_pairs_considered`, `structural_nodes_considered` and `signals_emitted`; enforced by rows `R072` and `Y13`; see the deleted-ids table in `repair/A6-fr-triage.md` | I | T187 | ☐ |
+| R058 | FR-083 | the edge-after-claim obligation moved to `INV-004` when the id was retired, and its live requirement is ADR **H** of `FR-083` — "`GraphEdge` is a projection of admitted claims only" — measured by `SC-031` and enforced at the type level by row `A4`; the retired id is a record, not a target | I | T176 | ☐ |
+| R079 | FR-078 | the six section mutations are manifest entries 7–12 of `FR-078`'s eighteen field groups, not a separate apparatus, so the "four" that contradicted its own list of six is withdrawn; a manifest entry breaking `type_ref`, `predicate_signature`, `participants`, `polarity` or `edge` identity keeps a named test | I | T186 | ☐ |
+| R080 | FR-072 | it restated the same five metrics, so the bound and the counters both live in `FR-072`: `characters_scanned`, `tokens_scanned`, `candidate_pairs_considered`, `structural_nodes_considered` and `signals_emitted`; enforced by rows `R072` and `Y13` | I | T189 | ☐ |
 
+**`R070` is a non-goal, and it is traced here rather than as a row.** The tombstoned id `FR-070`
+was a permission — RDF-shaped interoperation *may* be expressed — plus two restatements of the
+brief's non-goals. A permission from which no acceptance criterion is constructible carries no
+normative requirement, so it was retired with its two surviving sentences restated in full in
+`spec.md`'s
+**Constitutional non-goals** list (§80, §81), the RDF/SHACL bullet that names this pointer. That
+bullet, `T193` (the ADR set and `contracts/`), and the design note in `repair/A6-fr-triage.md` are
+the whole of its trace. It is deliberately **not** a row in the table above: a row in that table
+asserts that one `FR-` requirement is what makes the item true, and no live requirement states the
+RDF/SHACL non-goal — the only definition in `spec.md` that cites §80 at all is the migration
+requirement about dropping the obsolete `020` CHECK constraints, which is a different obligation.
+`ARBITRATION.md` §14 rule 1 forbids minting a number to fill the gap, and a row carrying a
+placeholder in the `FR` column is exactly the `RI-04c-ROW-FR` defect this file exists to catch:
+it was the one row of 231 that cited no `FR`, and it is now 0 of 230.
 ---
 
 ## 3. Production-path proofs
@@ -471,8 +519,12 @@ that is possible.
 The placement agent states 87 machine-checkable assertions, each with a sole owner, and 21 failing
 against the revision as it stands. **Its own per-gate arithmetic sums to 82, not 87** — G1 6, G2
 13, G3 13, G4 9, G5 10, G6 8, G7 7, G8 8, G9 8 — so the two numbers in §O6 disagree and the
-authoritative one is not established. The rows above are what the feature-side assertions are
-gated on; the rest are properties of the placement itself. A **fail (measured)** marker means the
+authoritative one is not established. Re-measured on the table below: it carries **82** rows, the
+same 82 the per-gate arithmetic gives, of which **41** read `pass` and **41** carry a failing marker.
+The placement agent's own "21 failing" is its figure at its own head and is **not** reproduced here;
+the two are different measurements and are not reconciled by this file. The rows above are what the
+feature-side assertions are gated on; the rest are properties of the placement itself. A
+**fail (measured)** marker means the
 assertion is already failing against the tree and is not a claim about this file.
 
 | Assertion | Enforced by the rows | State |
@@ -487,7 +539,7 @@ assertion is already failing against the tree and is not a claim about this file
 | G2.2 | every FR id matches the three-digit form, with a deliberate suffix allowed | pass |
 | G2.3 | each agent's band is contiguous in document order | **fail (measured)** — `FR-082` sits out of numeric order |
 | G2.4 | `FR-082` sits numerically between `FR-081` and `FR-083` in document order | **fail (measured)** — owner A6 |
-| G2.5 | every FR is cited by at least one of `tasks.md`, this checklist or `data-model.md` | **fail (measured)** — 57 orphans; this file now closes the checklist side of all of them |
+| G2.5 | every FR is cited by at least one of `tasks.md`, this checklist or `data-model.md` | pass (re-measured) — **0 orphans**: all 149 live FRs are cited by `tasks.md` or by this checklist, and adding `data-model.md` changes nothing. The placement agent's 57 is its figure at its own head; this file closed the checklist side of all of them |
 | G2.6 | every FR carries at least one section reference into the brief | fail (measured) |
 | G2.7 | every FR appears in the traceability matrix with an owning phase and a verifying task | pass — sub-section 2 of this file is that matrix |
 | G2.8 | every success criterion is referenced by at least one task id that exists | pass — all 43 named |
@@ -497,13 +549,13 @@ assertion is already failing against the tree and is not a claim about this file
 | G2.12 | every supersession note names the superseding FR, the deciding rule and the deciding agent | fail (measured) |
 | G2.13 | `input.md` is byte-identical to the brief | pass |
 | G3.1 | every task id in `tasks.md` is unique and in range | pass — 94 ids |
-| G3.2 | every task token in the five files matches a defined task | **fail (measured)** — 9 phantoms; this file contributed 5 and now contributes 0 |
-| G3.3 | no letter-suffixed task id exists anywhere | **fail (measured)** — the same 9; this file now contributes 0 |
+| G3.2 | every task token in the five files matches a defined task | pass (re-measured) — **0 phantom task tokens** across the five files and this checklist against the 94 ids in `tasks.md`; the placement agent's 9 is its figure at its own head, and this file contributed 5 of them and now contributes 0 |
+| G3.3 | no letter-suffixed task id exists anywhere | pass (re-measured) — 0: `tasks.md` defines `T101`…`T194` with no gap and no suffix, and no `T`-token with a letter suffix appears in any of the five files or in this checklist |
 | G3.4 | every task carries a `files:` line listing its exact write set | pass — every task now has one |
 | G3.5 | no two parallel tasks in a phase share a write set, and none reads another's | pass — stated per phase in `tasks.md` |
 | G3.6 | no task references a task in a later phase | pass — the one backwards edge is replaced by the declared `red→green:` edge |
 | G3.7 | the phase graph is acyclic | pass |
-| G3.8 | phases are present with no gap | pass — twelve phase headers |
+| G3.8 | phases are present with no gap | pass — twelve phase headers (`P0`–`P9`, with `P4` split into `P4A`/`P4B`/`P4C`), plus the `Phase DAG` container heading that is not itself a phase |
 | G3.9 | every phase states an entry and an exit condition, and every exit is a machine command or a named test | pass |
 | G3.10 | the minimum viable increment is a prefix of the phase order and its story set matches its phases' story tags | **fail (measured)** — owner A8prep |
 | G3.11 | the mandated phase structure covers all 12 brief phases | pass — 12 of 12 |
@@ -572,8 +624,9 @@ tick is not a claim; it is a pointer to a run.
    that exists in `tasks.md` before sign-off, or the requirement it gates must be withdrawn in
    writing. The count is stated in the change log, not estimated.
 2. **No row points at a task that does not exist.** Every `Task` cell resolves against
-   `tasks.md`, whose ids are `^T\d{3}$`. A letter-suffixed id is by definition outside that set, so
-   it is a phantom waiting to happen; the five that used to be in this file are gone.
+   `tasks.md`, whose ids are `^T\d{3}$` — 94 of them, `T101`…`T194`, measured. A letter-suffixed id
+   is by definition outside that set, so it is a phantom waiting to happen; the five that used to be
+   in this file are gone, and a re-measurement finds 0 phantom task tokens in the six files.
 3. **The `P` rows cannot be ticked on a test harness.** `W1`–`W8` are production-path proofs. A
    corpus run, an in-memory store or a mocked repository satisfies none of them. `W7` is the one
    deliberate exception: its *write obligation* is proved with a recording repository, and the live
@@ -582,15 +635,19 @@ tick is not a claim; it is a pointer to a run.
    classification of `baseline`, `new`, `fixed` or `flaky`. A `new` classification is a gate
    failure. `K14` is the one row this feature may legitimately move to `fixed`, and it must say so
    explicitly rather than let the count drift.
-5. **The 22 never-executed tests are tracked, not assumed.** `N1`–`N5` are enumerated. If Docker is
-   started, `N6` fires and the whole of §0 is recomputed before any comparison is believed.
+5. **The 22 never-executed tests are tracked, not assumed.** `N1`–`N5` enumerate the 22 as the five
+   groups of §0.3. If Docker is started, `N6` fires and the whole of §0 is recomputed before any
+   comparison is believed.
 6. **Any stop condition triggered is listed as `deferred` with its reason.** Never silently
    resolved by widening the vocabulary, never resolved by casting a guess as a type, and never
    resolved by renaming the artefact that failed. The record is in `M7` and in the report's
    remaining-debt section.
-7. **Every tombstone has zero normative references.** `R058`, `R070`, `R079` and `R080` are cited
-   only as tombstones; their obligations are verified through `INV-004` and row `A4`, the
-   non-goals list, `R078` and `R072` respectively.
+7. **Every tombstone has zero normative references.** The six tombstoned ids — the four
+   `001`–`100` slots of §2.15 plus the two letter-suffixed ghosts — appear in this file only in
+   prose that names them as history and carries a deprecation marker, never in a row's `FR` cell;
+   their obligations are verified through row `A4` and ADR **H** of `FR-083` (`INV-004`), the
+   constitutional non-goals list, `R078` and `R072` respectively. `R070` is the one row with no FR
+   and is reported as `[NEEDS-AN-FR]` in §2.15 rather than given a wrong id.
 8. **The fourteen §114-mandated report headings are present**, not the five status categories the
    requirement kept. The status vocabulary classifies each claim inside a section; it does not
    replace the sections.

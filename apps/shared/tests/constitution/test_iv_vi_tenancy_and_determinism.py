@@ -46,6 +46,7 @@ from domain.relation_claim_material import (
     EvidenceGrade,
     build,
 )
+from domain.relation_participant import binary_participants
 from domain.temporal_observation import (
     SourceTemporalObservation,
     TemporalAxis,
@@ -72,8 +73,10 @@ def _candidate(**over) -> RelationCandidate:
 
 def _signal(**over) -> RelationSignal:
     base = {
-        "subject_mention_ref": "MN-A",
-        "object_mention_ref": "MN-B",
+        # The native participant tuple, as of Phase 4B. Two ends here because this suite's
+        # subject is tenancy and determinism, not arity; the tuple is the only construction
+        # path a `RelationSignal` has.
+        "participants": binary_participants("MN-A", "MN-B"),
         "kind": SignalKind.LEXICAL,
         "relation_surface": "CEO of",
         "neighbourhood": Neighbourhood(
@@ -261,8 +264,10 @@ class TestDeterminism:
         meant the property was real, load-bearing, and untested.
         """
         base = {
-            "subject_mention_ref": "MN-A",
-            "object_mention_ref": "MN-B",
+            # The canonical participant tuple, as of Phase 4B. The local literal rather than
+            # the module's `_signal` default, so the test keeps asserting about exactly the
+            # two ends it names.
+            "participants": binary_participants("MN-A", "MN-B"),
             "kind": SignalKind.LEXICAL,
             "relation_surface": "CEO of",
             "neighbourhood": Neighbourhood(

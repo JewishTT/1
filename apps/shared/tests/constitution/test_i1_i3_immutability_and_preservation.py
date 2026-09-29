@@ -29,6 +29,7 @@ import dataclasses
 from datetime import UTC, datetime
 
 import pytest
+from domain.relation_participant import binary_participants
 from extractors.signals import Neighbourhood, RelationSignal, SignalKind
 
 from domain.capture import CaptureTimeBasis
@@ -65,8 +66,11 @@ def _candidate(**over) -> RelationCandidate:
 
 def _signal(**over) -> RelationSignal:
     base = {
-        "subject_mention_ref": "MN-A",
-        "object_mention_ref": "MN-B",
+        # The native participant tuple, as of Phase 4B. This suite predates the n-ary
+        # contract and its two ends are still binary, so the tuple holds two members in
+        # `A0`/`A1` - which is what the tuple is for, not a binary column pair wearing a
+        # different spelling.
+        "participants": binary_participants("MN-A", "MN-B"),
         "kind": SignalKind.LEXICAL,
         "relation_surface": "CEO of",
         "neighbourhood": Neighbourhood(

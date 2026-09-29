@@ -36,25 +36,60 @@ unable to mistake a candidate for a claim:
 :class:`domain.relation_claim.RelationClaim`'s, modelled on it deliberately so a reader who
 knows the relation layer needs no second lesson:
 
-* ``logical_candidate_id`` (``CAND-``) answers *which hypothesis this is* — the mention pair,
-  the relation type, the role shape and the tenant. Every revision of one hypothesis shares it,
-  so a re-read under a different extractor is recognisably the same hypothesis.
-* ``candidate_id`` (``CNDR-``) answers *this reading of it* — that shape plus the regime, the
+* ``logical_candidate_id`` (``CAND-``) answers *which relational configuration this is* — the
+  :class:`domain.predicate_signature.PredicateSignature`, the canonical argument slots, the
+  participant configuration, the declared symmetry, the polarity, the arity shape and the tenant,
+  and nothing else. It is derived by :func:`domain.predicate_signature.logical_candidate_id`, so
+  the predicate term is a structural projection and never a raw surface, a mention-id text, a
+  producer, a span, a confidence, a reference collection or an ontology mapping. Every revision of
+  one configuration shares it, so a re-read under a different extractor — or under a different
+  mapping vocabulary — is recognisably the same hypothesis.
+* ``candidate_id`` (``CNDR-``) answers *this reading of it* — the logical id plus the mention
+  references that were named, the role words and surface the observation used, the regime, the
   extraction semantics, the guessed window, the spans, the evidence and the disposition. A
   different extractor version is a different candidate, and the field is in the id material so it
   cannot be forgotten.
 
-Arity handling is delegated to :func:`domain.relation_identity.logical_material` rather than
-reimplemented, so a candidate and the claim it becomes cannot drift on which order means the same
-relation. Two deliberate divergences from ``RL-``/``RC-``: ``tenant_id`` is in the *logical*
-material here, and ``candidate_status`` is in the *revision* material. Neither breaks the
-logical/revision split — a tenant never changes across revisions of one hypothesis — and both are
-required by the properties that matter here. Constitution IV forbids two tenants' hypotheses
-bucketing under one key. And a disposition is a *finding about a reading*, not a lifecycle
-transition on a fixed body of content: a candidate proposed and a candidate checked and found to
-hold are different states of knowledge, and giving them one id would conflate them in every store
-keyed on it. :meth:`RelationCandidate.with_status` drops the revision id for exactly that reason
-and keeps the logical one, so "the same hypothesis, now rejected" stays one filter.
+**A signature is required for a logical id, and its absence is the honest answer.** The contract is
+``specs/021-entity-relation-extraction-finalization/data-model.md`` part 5.4: a candidate with
+``predicate_signature is None`` gets ``logical_candidate_id = ""``, is addressable only by
+``candidate_id``, and :func:`verify_candidate_identity` refuses to certify it with
+``unaddressed_logical_identity``. There is deliberately no surface-keyed fallback term. That was
+this module's own defect until now — ``_logical_material`` passed ``relation_surface`` into
+``logical_material``'s ``relation_type`` parameter, so the words the observation used *were* the
+predicate term — and reintroducing it under a "degraded" tag would be the same violation with a
+version label on it, plus a second code path deriving ids, of which the second would be the wrong
+one. It would also be unreachable: the only way to obtain a signature is to read a construction,
+so a candidate carrying one has been read and an unread one has not.
+
+Arity handling is delegated to :func:`domain.predicate_signature.canonical_participant_ordering`
+rather than reimplemented, so no caller can introduce a second ordering. It is **not** delegated to
+:func:`domain.relation_identity.logical_material`, which is the *claim* layer's shape: that one
+sorts ``UNDIRECTED`` members by mention-id text through a ``set``, and takes ``NARY`` roles as free
+text, so wiring it here would key a candidate on the id minter's format and on the vocabulary a
+producer happened to use. Changing it there re-keys every stored ``RL-`` id and is a
+claim-layer migration; see ``data-model.md`` part 4.7 and ``repair/A2-identity-subsystem.md`` U8.
+
+Two deliberate divergences from ``RL-``/``RC-``: ``tenant_id`` is in the *logical* material here,
+and ``candidate_status`` is in the *revision* material. Neither breaks the logical/revision split —
+a tenant never changes across revisions of one hypothesis — and both are required by the properties
+that matter here. Constitution IV forbids two tenants' hypotheses bucketing under one key. And a
+disposition is a *finding about a reading*, not a lifecycle transition on a fixed body of content:
+a candidate proposed and a candidate checked and found to hold are different states of knowledge,
+and giving them one id would conflate them in every store keyed on it.
+:meth:`RelationCandidate.with_status` drops the revision id for exactly that reason and keeps the
+logical one, so "the same hypothesis, now rejected" stays one filter.
+
+**Three epistemic states, three axes, and the candidate carries two of them.** ``ARBITRATION`` §3
+forbids collapsing them, and this module is where that is enforced rather than where it is
+described. ``PredicateHypothesis.resolution_state`` answers *what the vocabulary makes of the
+predicate* and lives on the hypothesis. :attr:`RelationCandidate.assembly_state` answers *whether
+the producers agreed on the shape of the reading* and lives on the candidate.
+:attr:`CandidateStatus.CONTRADICTED` answers *whether the assertion was denied* and is the only one
+of the three that means something about the world. ``CONFLICTING`` on the candidate is therefore
+**not** ``CONTRADICTED`` on the status: "Acme acquired Beta" and "Acme did not acquire Beta" are
+incompatible readings, neither denies the other, and a candidate assembled from the pair says
+``PROPOSE`` with ``assembly_state = CONFLICTING``. See :class:`CandidateAssemblyState`.
 
 **A disagreement is data.** :class:`RelationCandidateSet` reports what was proposed over one
 mention pair and refuses to choose. Readings that cannot both hold come back as a
@@ -96,6 +131,15 @@ from types import MappingProxyType
 from typing import Any
 
 from domain.predicate_hypothesis import PredicateHypothesis
+from domain.predicate_signature import (
+    ArgumentSlot,
+    ParticipantBinding,
+    Polarity,
+    PredicateSignature,
+    SignatureContractError,
+    logical_candidate_material,
+    stable_participant_fingerprint,
+)
 from domain.relation_claim import (
     EvidenceGrade,
     RelationClaim,
@@ -108,7 +152,6 @@ from domain.relation_identity import (
     RelationArityMode,
     canonical_material,
     digest128,
-    logical_material,
 )
 from domain.relation_schema import TemporalSemantics
 from domain.temporal_worldline import DEFAULT_CONFIDENCE
@@ -177,6 +220,78 @@ class CandidateStatus(StrEnum):
     SUPPORTED = "supported"
     CONTRADICTED = "contradicted"
     REJECTED = "rejected"
+
+
+class CandidateAssemblyState(StrEnum):
+    """How one reading stands against the *other* readings of the same participant configuration.
+
+    **A separate axis from :class:`CandidateStatus`, and never merged with it.** ``ARBITRATION`` §3
+    names three states that used to be one and must be three:
+
+    ==================================  =============  ==========================================
+    ==================================  ==============  ===============================
+    state                               lives on        means
+    ==================================  ==============  ===============================
+    ``PredicateHypothesis.resolution_state``  the hypothesis  incompatible *semantic* readings
+    :attr:`RelationCandidate.assembly_state`  the candidate  incompatible *structural* readings
+    ``CandidateStatus.CONTRADICTED``    the candidate   the **assertion is denied**
+    ==================================  ==============  ===============================
+
+    So this enum says *whether the producers described one participant configuration in
+    incompatible shapes* — arity, direction, polarity, and (once role slots become a reading-key
+    component) slot occupancy. It says **nothing** about whether the relation holds, and
+    ``CONFLICTING`` here is **not** ``CONTRADICTED`` there: "Acme acquired Beta" and "Acme did not
+    acquire Beta" are incompatible readings, but neither of them *denies* the other, and a
+    candidate built from the pair says ``PROPOSE`` with ``assembly_state = CONFLICTING`` rather
+    than ``candidate_status = CONTRADICTED``. :class:`CandidateStatus` stays reserved for a
+    positive reading set against an explicit denial, and widening it to carry a structural
+    disagreement is exactly the dumping ground §3 forbids.
+
+    **The members, and which of them assembly writes.** ``CONSISTENT`` is the ordinary state and the
+    default: one reading, or several that agreed on every structural key.
+
+    ``CONFLICTING`` is written by :func:`semantic_path.assembly.assemble` when a pair's readings
+    disagree on a structural axis, and it goes on **every reading of that pair** — the disagreement
+    is about the configuration, and which side of it a given reading sits on does not make that
+    reading consistent. The other reading is preserved beside it, never dropped, so a reader sees
+    both.
+
+    ``AMBIGUOUS`` is declared and **not written by assembly**, and the reason is the whole point of
+    the separation. Several *compatible* readings of one pair are two semantic claims about the
+    world (``"CEO of"`` and ``"founder of"``) or one predicate with several defensible operator
+    names, and both of those already have a home: the pair is reported contested, and the
+    alternatives live on :attr:`predicate_hypothesis`'s ``alternative_refs`` with
+    ``resolution_state = AMBIGUOUS``. Marking them here as well would be the second axis reporting
+    the first axis's finding — a candidate that reads "ambiguous" for a reason that has nothing to
+    do with its structure. It is here because a closed three-member vocabulary is what
+    ``ARBITRATION`` §3 specifies and because a caller building a candidate by hand (a
+    :class:`domain.predicate_hypothesis.PredicateHypothesis` producing a second reading of a
+    surface it resolved itself) has to be able to say so.
+
+    **Revision material, never logical material, and the reason is worth stating in full.** Whether
+    a proposition is *hypothesised at all* is settled by the two mentions and the predicate
+    signature; how the producers who read it agreed about its shape is a finding about the reading
+    process, and a finding about a process is evidence. Two readings of one configuration that
+    disagree about arity are **one** hypothesis with two ``candidate_id`` values — the same shape
+    FR-039 gives predicate resolution, and the same reason a re-read by a second instrument must
+    not fork the hypothesis into two. If ``assembly_state`` entered the logical material, a second
+    producer disagreeing about a shape would mint a second ``logical_candidate_id``, and the
+    disagreement this field exists to record would destroy the one thing the split exists to
+    preserve.
+    """
+
+    CONSISTENT = "consistent"
+    AMBIGUOUS = "ambiguous"
+    CONFLICTING = "conflicting"
+
+
+#: The states that mean a structural disagreement was found, as a name rather than a literal
+#: comparison. :attr:`RelationCandidate.is_structurally_contested` is the question callers
+#: actually ask, and a one-member set is what keeps a fourth member from being added without
+#: somebody deciding what it means.
+CONFLICTING_ASSEMBLY_STATES: frozenset[CandidateAssemblyState] = frozenset(
+    {CandidateAssemblyState.CONFLICTING}
+)
 
 
 #: The disposition set the *old* lifecycle called admissible, kept as a named assessment
@@ -505,30 +620,76 @@ CLAIM_ONLY_FIELDS: frozenset[str] = frozenset(
     }
 )
 
-#: Fields deciding *which hypothesis this is*. Covered by
-#: :meth:`RelationCandidate._logical_material` and entering ``logical_candidate_id``, so
-#: every revision of one hypothesis shares them. ``schema_version`` is absent on purpose: it
-#: is the *operator* version, so a hypothesis read under a newer operator contract is a new
-#: reading of the same hypothesis, not a new hypothesis — exactly as ``RL-``/``RC-`` treat it.
+#: Fields deciding *which relational configuration this is*. Covered by
+#: :meth:`RelationCandidate._logical_material` and entering ``logical_candidate_id``, so every
+#: revision of one configuration shares them. Exactly ``data-model.md`` part 5.1's seven material
+#: keys, one candidate field each, with ``identity_schema`` supplied by the identity subsystem as
+#: a constant rather than by a field:
+#:
+#: * ``predicate_signature`` is the **sole** predicate term. It was ``relation_surface`` here, and
+#:   that was the defect this feature exists to remove: the words the observation used were the
+#:   predicate term of a logical id, so ``"works for"`` and ``"Works For"`` could not meet.
+#: * ``participants`` is the participant *configuration* — the canonical slot ordering and the
+#:   realisation-invariant fingerprints. ``subject_mention_ref`` / ``object_mention_ref`` /
+#:   ``role_assignments`` are **not** here and never may be: a mention-id *text* is a minting
+#:   artefact (``data-model.md`` part 4.3), and ``RelationRoleBinding.role`` is free text, so
+#:   ``purchaser`` vs ``buyer`` would fork the id. Both are revision material instead.
+#: * ``commutative_slots`` is the declared symmetry marker, always present and never inferred from
+#:   a missing or unknown direction (``data-model.md`` part 4.5).
+#: * ``polarity`` is the structure of the assertion, and lives on the candidate rather than the
+#:   signature for exactly that reason (``data-model.md`` part 1.1).
+#: * ``arity_mode`` is a **checked redundancy**: ``logical_candidate_material`` derives it from the
+#:   occupied slots and ``commutative_slots`` and refuses a declared value that disagrees
+#:   (``data-model.md`` part 2.5 check 4). It is verified, never independently asserted.
+#:
+#: ``schema_version`` is absent on purpose: it is the *operator* version, so a hypothesis read
+#: under a newer operator contract is a new reading of the same hypothesis, not a new hypothesis —
+#: exactly as ``RL-``/``RC-`` treat it.
 CANDIDATE_LOGICAL_MATERIAL_FIELDS: frozenset[str] = frozenset(
     {
         "tenant_id",
-        "relation_type",
-        "relation_surface",
         "arity_mode",
-        "subject_mention_ref",
-        "object_mention_ref",
-        "role_assignments",
+        "predicate_signature",
+        "participants",
+        "commutative_slots",
+        "polarity",
     }
 )
 
 #: Fields making a revision *itself*. A change here means a different reading of the same
-#: hypothesis: a different extractor, a different regime, a different guessed window, or a
+#: configuration: a different mention, a different set of role words, a different surface, a
+#: different mapping, a different extractor, a different regime, a different guessed window, or a
 #: different disposition. All enter ``candidate_id``, so none can be edited into a candidate
 #: without minting a new one.
+#:
+#: Five of these are here rather than in :data:`CANDIDATE_LOGICAL_MATERIAL_FIELDS` because they
+#: are *evidence or referential*, and each moved for a stated reason:
+#:
+#: - ``relation_surface`` / ``predicate_hypothesis`` — the words the observation used, and what the
+#:   vocabulary later made of them. A mapping is a later, versioned step; keying identity on it
+#:   would give "originator of" a different logical id the moment a regime recognised it, splitting
+#:   one hypothesis in two. So recognition shows up here as a new *reading* (``data-model.md``
+#:   part 5.3 step 5).
+#: - ``relation_type`` — the operator this candidate was mapped to. Same reason, and it is the
+#:   documented head of the "mapping below identity" inversion this wave removes.
+#: - ``subject_mention_ref`` / ``object_mention_ref`` / ``role_assignments`` — *which* mentions were
+#:   read, and the free-text role words the observation used for them. They must stay addressable,
+#:   so they are in ``candidate_id``: two readings over different mentions are different readings
+#:   and may not collide. They are not in ``logical_candidate_id`` because identity is over the
+#:   participant's realisation-invariant fingerprint, not over the id minter's text.
+#: - ``assembly_state`` — whether the producers agreed on the **shape** of this reading. Here
+#:   rather than in the logical material for the reason :class:`CandidateAssemblyState` gives in
+#:   full: two readings that disagree about a participant configuration's arity are one hypothesis
+#:   with two ``candidate_id`` values, and putting the verdict in the logical key would mint a
+#:   second ``logical_candidate_id`` for the very disagreement the field records.
 CANDIDATE_REVISION_MATERIAL_FIELDS: frozenset[str] = frozenset(
     {
         "schema_version",
+        "relation_type",
+        "relation_surface",
+        "subject_mention_ref",
+        "object_mention_ref",
+        "role_assignments",
         "predicate_hypothesis",
         "temporal_hypothesis",
         "observed_at",
@@ -545,6 +706,7 @@ CANDIDATE_REVISION_MATERIAL_FIELDS: frozenset[str] = frozenset(
         "investigation_id",
         "recorded_by",
         "candidate_status",
+        "assembly_state",
     }
 )
 
@@ -560,9 +722,38 @@ CANDIDATE_MUTABLE_PROJECTION_FIELDS: frozenset[str] = frozenset({"confidence"})
 #: is legible in the canonical material without the caller re-deriving it from a nested
 #: object — the same treatment ``role_bindings`` gets for the participants of an n-ary
 #: claim. Declared rather than inferred so the partition checks can account for it.
+#:
+#: Both parts are **revision** material. That is the whole of the change this wave made to
+#: them: ``relation_type`` used to be logical material, i.e. the predicate term of a logical id,
+#: which made a candidate's identity a function of the vocabulary the platform happened to have.
+#: The operator is still legible in the record — in ``candidate_id`` — which is where a mapping
+#: belongs (``data-model.md`` part 5.3 step 5).
 DECOMPOSED_CANDIDATE_FIELDS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {"relation_ref": ("relation_type", "schema_version")}
 )
+
+#: How each :data:`CANDIDATE_LOGICAL_MATERIAL_FIELDS` entry reaches the material
+#: :func:`domain.predicate_signature.logical_candidate_material` builds. One field, one material
+#: key, no exceptions — so the declared set and the emitted set can be reconciled mechanically
+#: rather than by reading both and hoping. ``identity_schema`` is the seventh material key and is
+#: deliberately *not* here: it is a constant owned by the identity subsystem
+#: (``IDENTITY_SCHEMA_VERSION``), not a candidate field, and a version that lived on the candidate
+#: would be the operator version in the identity term — the same defect as carrying ``relation_ref``
+#: (``data-model.md`` part 1.1).
+CANDIDATE_LOGICAL_MATERIAL_KEYS: Mapping[str, str] = MappingProxyType(
+    {
+        "tenant_id": "tenant_id",
+        "arity_mode": "arity_mode",
+        "predicate_signature": "predicate_signature",
+        "participants": "participants",
+        "commutative_slots": "commutative_slots",
+        "polarity": "polarity",
+    }
+)
+
+#: The one material key that is not a candidate field, named so the reconciliation above is
+#: exact in both directions.
+CANDIDATE_LOGICAL_MATERIAL_CONSTANT_KEYS: frozenset[str] = frozenset({"identity_schema"})
 
 
 @dataclass(frozen=True)
@@ -588,6 +779,59 @@ class RelationCandidate:
     relation_ref: RelationRef | None = None
     arity_mode: RelationArityMode = RelationArityMode.DIRECTED
     role_assignments: tuple[RelationRoleBinding, ...] = ()
+
+    predicate_signature: PredicateSignature | None = None
+    """The structural projection of the predicate realisation. **Required** for a
+    ``logical_candidate_id``; ``None`` means the construction was never read, which is the honest
+    state and not a gap to paper over with a surface.
+
+    This is the sole predicate term of the logical id (``data-model.md`` part 5.1). It is derived
+    *before* ontology mapping and is never re-derived from one, so swapping the whole mapping
+    apparatus leaves every logical id byte-identical while a recognition shows up as a new
+    ``candidate_id`` (part 5.3). The words the observation used are :attr:`relation_surface`, and
+    they are evidence: ``"works for"`` and ``"Works For"`` reach one signature, so they reach one
+    logical id, while both surfaces survive as two ``Text`` values on two records.
+    """
+
+    participants: tuple[ParticipantBinding, ...] = ()
+    """The participant *configuration* the signature's slots are occupied by: one
+    :class:`domain.predicate_signature.RoleBinding` plus the mention each fills it, per slot.
+
+    Distinct from :attr:`subject_mention_ref` / :attr:`object_mention_ref` and from
+    :attr:`role_assignments`, and the distinction is load-bearing rather than duplicative. The
+    mention refs and the free-text roles are *what this reading named* — revision material, and
+    citable. The participant bindings are *where each participant sat in the reading*, and the
+    mention inside one is digested by :func:`stable_participant_fingerprint`, which excludes the
+    mention-id text, the producer, the span, the type and the confidence on purpose
+    (``data-model.md`` part 4.3). Two realisations of one configuration in two documents have two
+    spans and two mention ids and one logical id.
+
+    Construction refuses a set that disagrees with the refs about *which* mentions this reading is
+    about, so the two can never become two truths. Empty is the ordinary state today: the only way
+    to obtain a signature is to read a construction, and no producer in this repository parses one
+    yet (``repair/A2-identity-subsystem.md`` D6.3 H1).
+    """
+
+    commutative_slots: frozenset[ArgumentSlot] = frozenset()
+    """Declared symmetry, always present and never inferred (``data-model.md`` part 4.5).
+
+    A ``frozenset()`` is the ordinary answer and is *not* a statement that the relation is
+    directed — it is a statement that nobody declared it symmetric. Symmetry may only come from an
+    explicit declared-symmetry contract: "do not infer symmetry merely because the extractor did
+    not know direction" (brief section 53). It is identity-bearing because a symmetric and an
+    asymmetric reading of one pair are different claims, and both are meant to stand.
+    """
+
+    polarity: Polarity = Polarity.ASSERTED
+    """Whether the assertion stands, is denied, or is held open (``data-model.md`` part 9).
+
+    It lives on the candidate and not on the signature, so ``acquire`` is one predicate under
+    assertion and under denial — and it enters logical material, so "John did not acquire Acme" is
+    a *different hypothesis* from "John acquired Acme" (brief section 109 case H). The default is
+    ``ASSERTED`` because it is not a guess about the world: it says that nothing in this reading
+    observed a denial, which is the state a positive reading is in. ``Polarity.UNCERTAIN`` is the
+    explicit value for a held-open reading, and ``DENIED`` the explicit value for a negation.
+    """
 
     predicate_hypothesis: PredicateHypothesis | None = None
     """How far the platform's vocabulary reaches on this relation.
@@ -650,6 +894,24 @@ class RelationCandidate:
 
     temporal_hypothesis: TemporalHypothesis = TemporalHypothesis()
     candidate_status: CandidateStatus = CandidateStatus.PROPOSE
+    assembly_state: CandidateAssemblyState = CandidateAssemblyState.CONSISTENT
+    """Whether the producers that read this configuration agreed on its **shape** (ARBITRATION §3).
+
+    Defaulted to :attr:`CandidateAssemblyState.CONSISTENT` because a candidate built by hand is a
+    single reading and a single reading cannot disagree with itself; the assembler is what
+    discovers a disagreement, by finding several readings of one pair. Kept adjacent to
+    :attr:`candidate_status` because the two are the pair most easily confused, and the confusion is
+    the defect this field was added to end.
+
+    **Revision material, and never
+    :attr:`~domain.relation_candidate.CandidateStatus.CONTRADICTED`.**
+    Two readings of one configuration that disagree about arity share a ``logical_candidate_id``
+    and differ in ``candidate_id`` — one hypothesis, two readings, and the disagreement is the
+    evidence. See :class:`CandidateAssemblyState` for the full separation and why ``AMBIGUOUS`` is
+    not written by assembly.
+    """
+
+
     confidence: float = DEFAULT_CONFIDENCE
 
     tenant_id: str = "default-tenant"
@@ -666,6 +928,19 @@ class RelationCandidate:
             self, "extraction_method", ExtractionStrategy(self.extraction_method)
         )
         object.__setattr__(self, "candidate_status", CandidateStatus(self.candidate_status))
+        try:
+            object.__setattr__(
+                self, "assembly_state", CandidateAssemblyState(self.assembly_state)
+            )
+        except ValueError as exc:
+            raise CandidateContractError(
+                "invalid_assembly_state",
+                "assembly_state must be a domain.relation_candidate.CandidateAssemblyState - "
+                f"consistent, ambiguous or conflicting - got {self.assembly_state!r}. It is a "
+                "closed three-member vocabulary rather than free text because it is the record of "
+                "whether the producers agreed on the SHAPE of a reading, and a token nobody can "
+                "read records nothing (ARBITRATION §3)",
+            ) from exc
         if self.relation_ref is not None and not isinstance(self.relation_ref, RelationRef):
             raise CandidateContractError(
                 "invalid_relation_ref",
@@ -682,13 +957,26 @@ class RelationCandidate:
             )
         object.__setattr__(self, "relation_surface", str(self.relation_surface or ""))
         if self.predicate_hypothesis is None:
+            # The hypothesis is built from the *observed words only*. It used to fall back to
+            # ``str(self.relation_ref.relation_type)``, which meant a candidate built with no
+            # surface and a relation_ref got its predicate surface from the operator it was
+            # mapped to - the mapping writing into the field identity keys on, and therefore
+            # "mapping below identity" with the arrow reversed. The line was harmless to the old
+            # material only because the old material keyed on the surface, so the two defects
+            # hid each other: deleting the fallback without deleting the surface keying would
+            # have silently changed every such id, and deleting the keying without deleting the
+            # fallback would have left the identity a function of the vocabulary. Both are gone
+            # in this commit (data-model.md part 7.1).
+            #
+            # A candidate with no surface and no signature is a candidate with no identity term.
+            # That is the honest state, it is brief section 90's case, and it is *addressable*:
+            # ``with_id`` still mints a ``candidate_id`` from the reading.
             object.__setattr__(
                 self,
                 "predicate_hypothesis",
                 PredicateHypothesis(
                     relation_ref=self.relation_ref,
-                    surface_form=self.relation_surface
-                    or ("" if self.relation_ref is None else str(self.relation_ref.relation_type)),
+                    surface_form=self.relation_surface,
                 ),
             )
         elif not isinstance(self.predicate_hypothesis, PredicateHypothesis):
@@ -706,10 +994,50 @@ class RelationCandidate:
                     f"{self.predicate_hypothesis.relation_ref}; they are the same predicate and "
                     "must be stated once, consistently",
                 )
-        if not self.relation_surface:
-            object.__setattr__(
-                self, "relation_surface", self.predicate_hypothesis.surface_form
+        try:
+            object.__setattr__(self, "polarity", Polarity(self.polarity))
+        except ValueError as exc:
+            raise CandidateContractError(
+                "invalid_polarity",
+                "polarity must be a domain.predicate_signature.Polararity - asserted, denied or "
+                f"uncertain - got {self.polarity!r}. It is identity-bearing, so it is a closed "
+                "vocabulary rather than free text (data-model.md part 9)",
+            ) from exc
+        if self.predicate_signature is not None and not isinstance(
+            self.predicate_signature, PredicateSignature
+        ):
+            raise CandidateContractError(
+                "invalid_predicate_signature",
+                "predicate_signature must be a domain.predicate_signature.PredicateSignature, or "
+                f"None for a reading whose construction was never read; got "
+                f"{type(self.predicate_signature).__name__}. None is not a degraded mode - it is "
+                "the state in which no logical_candidate_id is minted at all (data-model.md "
+                "part 5.4).",
             )
+        for participant in self.participants:
+            if not isinstance(participant, ParticipantBinding):
+                raise CandidateContractError(
+                    "invalid_participant_binding",
+                    "participants must hold domain.predicate_signature.ParticipantBinding values "
+                    "- a RoleBinding plus the mention that fills it - got "
+                    f"{type(participant).__name__}",
+                )
+        try:
+            object.__setattr__(
+                self,
+                "commutative_slots",
+                frozenset(
+                    slot if isinstance(slot, ArgumentSlot) else ArgumentSlot(int(slot))
+                    for slot in self.commutative_slots
+                ),
+            )
+        except (TypeError, ValueError) as exc:
+            raise CandidateContractError(
+                "invalid_commutative_slot",
+                "commutative_slots must hold structural ArgumentSlot values - the positions "
+                "declared symmetric - and never free-text role names, got "
+                f"{self.commutative_slots!r}",
+            ) from exc
         if not isinstance(self.temporal_hypothesis, TemporalHypothesis):
             raise CandidateContractError(
                 "invalid_temporal_hypothesis",
@@ -764,6 +1092,7 @@ class RelationCandidate:
                 "confidence_out_of_range",
                 f"confidence must be within [0.0, 1.0], got {self.confidence}",
             )
+        self._verify_participants_name_the_same_mentions()
 
         # A *carried* address is checked against the derived one (feature 019, T037).
         #
@@ -834,6 +1163,18 @@ class RelationCandidate:
         object.__setattr__(
             self, "evidence_refs", tuple(sorted({str(r) for r in self.evidence_refs}))
         )
+        # ``signal_refs`` was the one reference collection left in caller order, and it is
+        # revision material: it enters ``candidate_id``, so a producer that collected the same
+        # signals in a different order minted a different address for the same reading. The
+        # other four collections above were canonicalised here and this one was not, which left
+        # replay determinism resting on ``semantic_path/assembly.py`` happening to sort at one
+        # call site. Constitution Domain Invariant 12 (replay is a fixed point) is a property of
+        # the type, not of a caller's diligence, so it is enforced here (data-model.md part 7.3,
+        # FR-085).
+        object.__setattr__(
+            self, "signal_refs", tuple(sorted({str(r) for r in self.signal_refs if str(r).strip()}))
+        )
+        object.__setattr__(self, "participants", tuple(self.participants))
 
     @property
     def relation_type(self) -> str:
@@ -877,6 +1218,17 @@ class RelationCandidate:
     def is_contradicting(self) -> bool:
         """Whether this reading asserts a checked failure."""
         return self.candidate_status in CONTRADICTING_CANDIDATE_STATUSES
+
+    @property
+    def is_structurally_contested(self) -> bool:
+        """Whether a structural disagreement was recorded against this reading's configuration.
+
+        The question callers ask about :attr:`assembly_state`, stated as a name so the verdict
+        cannot be reached for by string comparison. **It is not
+        :attr:`CandidateStatus.CONTRADICTED`** and reading it as that is the confusion
+        ``ARBITRATION`` §3 exists to end: a structural disagreement is not a denial.
+        """
+        return self.assembly_state in CONFLICTING_ASSEMBLY_STATES
 
     @property
     def content_hash(self) -> str:
@@ -1105,39 +1457,94 @@ class RelationCandidate:
         )
         return admit(material, unvalidated_report(material), claim_status=claim_status)
 
-    def _logical_material(self) -> dict[str, Any]:
-        """The material of *which hypothesis this is*, shared by every revision.
+    def _verify_participants_name_the_same_mentions(self) -> None:
+        """Refuse a participant set that is not about the mentions this reading names.
 
-        Delegates the arity shape to :func:`domain.relation_identity.logical_material` so the
-        two layers canonicalise participants identically - sorted+deduped for ``UNDIRECTED``,
-        order-preserving for ``DIRECTED``, role pairs for ``NARY`` - and then adds
-        ``tenant_id``, which ``RL-`` deliberately omits. The divergence is a considered one
-        and costs nothing structurally: a tenant never changes across revisions of one
-        hypothesis, so the logical/revision split is unaffected, while omitting it would let
-        two tenants' hypotheses bucket under one key, which constitution IV forbids.
+        :attr:`participants` and (:attr:`subject_mention_ref`, :attr:`object_mention_ref` /
+        :attr:`role_assignments`) are two views of one thing, and two views that can disagree
+        are two sources of truth — the condition that produces
+        ``candidate.relation_ref = A`` against ``predicate_hypothesis.relation_ref = B`` and the
+        rest of that family. So the agreement is checked here rather than documented.
 
-        The predicate goes in as :attr:`relation_surface` rather than as the resolved
-        operator type, and that choice is the whole of CD-6 at this level. *Which hypothesis
-        this is* is settled by what the observation said, and not by what the vocabulary
-        could make of it: keying on the resolved type would give "originator of" a different
-        logical id the moment a regime recognised it, splitting one hypothesis into two and
-        losing the record that they were ever the same claim. The resolved type, the
-        resolution state and every alternative are revision material instead, so a
-        recognition shows up as a new reading of the same hypothesis.
-
-        For a candidate that supplies no surface, the surface was derived from the ref, so
-        this is keying on the type as before and no existing identity moves.
+        The check is as strong as the mention record allows. ``stable_participant_fingerprint``
+        deliberately digests no id (``data-model.md`` part 4.3), so a mention may carry no
+        reference at all; in that case only the cardinality is checked, and the residual is stated
+        rather than hidden. When the mentions *do* expose a reference — ``mention_ref`` or
+        ``mention_id`` — the multisets must be equal, and for a ``DIRECTED`` reading the
+        slot order must agree with the endpoint order as well, because for a directed binary
+        relation the slots *are* the direction and a disagreement is a silent fork rather than a
+        relabelling.
         """
-        return {
-            **logical_material(
-                self.arity_mode,
-                self.relation_surface,
-                self._participants,
-                self.role_assignments,
-            ),
-            "tenant_id": self.tenant_id,
-        }
+        if not self.participants:
+            return
+        expected = self._participants
+        if len(self.participants) != len(expected):
+            raise CandidateContractError(
+                "participant_count_disagrees_with_mentions",
+                f"this reading names {len(expected)} mention(s) {list(expected)} but binds "
+                f"{len(self.participants)} participant(s). The participant set is where each "
+                "participant sat in the construction; the mention refs are which mentions were "
+                "read. They are one fact stated twice and may not disagree",
+            )
+        refs = tuple(_mention_reference(participant.mention) for participant in self.participants)
+        if not all(refs):
+            return
+        if sorted(refs) != sorted(expected):
+            raise CandidateContractError(
+                "participants_disagree_with_mention_refs",
+                f"the participant set names mentions {sorted(refs)} but this reading's "
+                f"endpoints are {sorted(expected)}; they are one fact stated twice",
+            )
+        if self.arity_mode is RelationArityMode.DIRECTED:
+            by_slot = sorted(
+                self.participants, key=lambda p: p.role.canonical_argument_slot.index
+            )
+            oriented = tuple(_mention_reference(item.mention) for item in by_slot)
+            if oriented != tuple(expected):
+                raise CandidateContractError(
+                    "participant_slots_disagree_with_endpoint_order",
+                    f"slot order names mentions {list(oriented)} but subject/object are "
+                    f"{list(expected)}. For a directed relation the canonical argument slots ARE "
+                    "the direction, so a disagreement here is a silent identity fork rather than "
+                    "a relabelling",
+                )
 
+    def _logical_material(self) -> dict[str, Any] | None:
+        """The material of *which relational configuration this is*, or ``None``.
+
+        Delegates to :func:`domain.predicate_signature.logical_candidate_material` — the one
+        function the identity subsystem admits — so there is exactly one ordering of
+        participants, one arity derivation and one material shape, and a candidate cannot drift
+        from the rule that defines it (``data-model.md`` part 4.2, part 5.1).
+
+        **``None`` is the answer for an un-signatured candidate, not a failure to be worked
+        around.** The signature is the sole predicate term; with none, ``logical_candidate_id``
+        is ``""``, the candidate is addressable by ``candidate_id`` alone, and
+        :func:`verify_candidate_identity` refuses to certify it with
+        ``unaddressed_logical_identity``. The alternative — a surface-keyed fallback term — is
+        FR-001's violation alive under a version tag, and it is what this method used to be:
+        ``relation_surface`` was passed straight into ``logical_material``'s ``relation_type``
+        parameter, so the words the observation used *were* the predicate term. A fallback would
+        also mean two code paths deriving ids, of which the second would be the wrong one.
+
+        ``arity_mode`` is passed as the **checked redundancy** part 2.5 check 4 asks for: the
+        material derives it from the occupied slots and ``commutative_slots`` and refuses a
+        declared value that disagrees, so a candidate whose declared shape contradicts its own
+        bindings cannot mint an id.
+        """
+        if self.predicate_signature is None:
+            return None
+        try:
+            return logical_candidate_material(
+                self.predicate_signature,
+                self.participants,
+                tenant_id=self.tenant_id,
+                polarity=self.polarity,
+                commutative_slots=self.commutative_slots,
+                arity_mode=self.arity_mode,
+            )
+        except SignatureContractError as exc:
+            raise CandidateContractError(exc.code, exc.message) from exc
 
     def _revision_material(self, logical_candidate_id: str) -> dict[str, Any]:
         """The material of *this reading*, keyed by the logical id.
@@ -1148,17 +1555,42 @@ class RelationCandidate:
         parameter rather than read off the record so that derivation cannot recurse through
         :meth:`with_id` on an unaddressed candidate.
 
-        The predicate enters the same way, and for a sharper reason: it belongs to the
+        The predicate enters the same way, and for a sharper reason: the *mapping* belongs to the
         revision rather than the logical key because a later ``SemanticRegime`` may resolve the
-        *same* surface form to a different operator. That is a new reading of one hypothesis,
-        not a new hypothesis — and if the predicate sat in the logical material, resolving it
-        would silently mint a second candidate for one relation. The whole surface, the
-        resolution state and every alternative enter here, so an unresolved predicate that
-        later becomes a resolved one is visibly one candidate with two readings.
+        same signature to a different operator. That is a new reading of one configuration, not a
+        new configuration — and if the operator sat in the logical material, recognising it would
+        silently mint a second candidate for one relation, which is precisely the inversion this
+        module just removed. So the surface, the resolved operator type, the resolution state and
+        every alternative enter here, and an unresolved predicate that later becomes a resolved
+        one is visibly one candidate with two readings (``data-model.md`` part 5.3 step 5).
+
+        The mention refs and the free-text role words enter here too, and that is a collision
+        argument rather than a demotion: two readings that named different mentions, or that
+        called one slot ``purchaser`` and the other ``buyer``, are different readings and must
+        not share a ``candidate_id``. What they may not do is move a *logical* id — the
+        participant's fingerprint already covers which mention it was.
+
+        ``tenant_id`` enters **both** halves, and the reason is not redundancy. It is logical
+        material because FR-002 and brief section 19 require it and because omitting it would
+        let two tenants' configurations bucket under one key, which constitution IV forbids. But
+        the revision address is derived from the logical id, so for a candidate with **no**
+        signature the logical id is ``""`` and the tenant would reach no digest at all — two
+        tenants' un-signatured readings would share one ``candidate_id``. That is not a rounding
+        error in the constitution, it is the constitution. ``tenant_id`` is therefore emitted
+        directly as well, so the revision address is tenant-scoped whether or not the reading
+        carries a signature. For a signed candidate the value appears twice in the digest, which
+        costs nothing: a digest over the same value twice is still a function of that value.
         """
         return {
             "logical_candidate_id": logical_candidate_id,
+            "tenant_id": self.tenant_id,
             "schema_version": self.schema_version,
+            "relation_type": self.relation_type,
+            "relation_surface": self.relation_surface,
+            "subject_mention_ref": self.subject_mention_ref,
+            "object_mention_ref": self.object_mention_ref,
+            "arity_mode": str(self.arity_mode),
+            "role_assignments": [binding.to_dict() for binding in self.role_assignments],
             "predicate_hypothesis": self.predicate_hypothesis.content_key(),
             "temporal_hypothesis": self.temporal_hypothesis.to_dict(),
             "observed_at": _iso(self.observed_at),
@@ -1175,10 +1607,25 @@ class RelationCandidate:
             "investigation_id": self.investigation_id,
             "recorded_by": self.recorded_by,
             "candidate_status": str(self.candidate_status),
+            "assembly_state": str(self.assembly_state),
         }
 
     def _material(self) -> dict[str, Any]:
-        """The serialised field set the content hash is taken over (FR-005)."""
+        """The serialised field set the content hash is taken over (FR-005).
+
+        Complete by construction, and it has to be: :func:`verify_candidate_material_partition`
+        fails when a field is classified as material that the material never emits, and that
+        check was **not passing** before this wave — ``relation_surface``, ``signal_refs`` and
+        ``predicate_hypothesis`` were all declared and none was emitted, so the function raised
+        ``candidate_field_never_addressed`` and nothing in the repository called it to find out.
+        A verifier nobody runs is a comment; a verifier that runs is the mechanism.
+
+        A participant is serialised as its placement plus the identity material its fingerprint
+        digests, and deliberately not as the whole mention record: the candidate holds a
+        *reference* to a mention, not a copy of it, so the six fields the fingerprint reads are
+        the whole of what this record holds about one (``data-model.md`` part 4.3). Any other
+        field on the mention record is a fact about the mention, not about this reading.
+        """
         return {
             "tenant_id": self.tenant_id,
             "subject_mention_ref": self.subject_mention_ref,
@@ -1186,7 +1633,21 @@ class RelationCandidate:
             "relation_type": self.relation_type,
             "schema_version": self.schema_version,
             "arity_mode": str(self.arity_mode),
+            "predicate_signature": (
+                None if self.predicate_signature is None else self.predicate_signature.to_dict()
+            ),
+            "participants": [
+                {**participant.role.to_dict(), "participant_fingerprint": fingerprint}
+                for participant, fingerprint in (
+                    (participant, stable_participant_fingerprint(participant.mention))
+                    for participant in self.participants
+                )
+            ],
+            "commutative_slots": sorted(slot.token for slot in self.commutative_slots),
+            "polarity": str(self.polarity),
             "role_assignments": [binding.to_dict() for binding in self.role_assignments],
+            "relation_surface": self.relation_surface,
+            "predicate_hypothesis": self.predicate_hypothesis.content_key(),
             "context_ref": self.context_ref,
             "semantic_regime_ref": self.semantic_regime_ref,
             "trigger_span": None if self.trigger_span is None else self.trigger_span.to_dict(),
@@ -1196,13 +1657,31 @@ class RelationCandidate:
             "extraction_rule_id": self.extraction_rule_id,
             "observation_refs": list(self.observation_refs),
             "evidence_refs": list(self.evidence_refs),
+            "signal_refs": list(self.signal_refs),
             "temporal_hypothesis": self.temporal_hypothesis.to_dict(),
             "candidate_status": str(self.candidate_status),
+            "assembly_state": str(self.assembly_state),
             "confidence": self.confidence,
             "investigation_id": self.investigation_id,
             "observed_at": _iso(self.observed_at),
             "recorded_by": self.recorded_by,
         }
+
+
+def _mention_reference(mention: object) -> str:
+    """The mention's own reference if it publishes one, else ``""``.
+
+    ``stable_participant_fingerprint`` deliberately digests no id, so a mention is not required
+    to carry one and :class:`domain.predicate_signature.ResolvedMention` does not declare one.
+    Reading it here is therefore best-effort by design, and the caller is written to say so: a
+    mention that publishes nothing is checked for cardinality only, and the residual is documented
+    on :meth:`RelationCandidate._verify_participants_name_the_same_mentions` rather than hidden.
+    """
+    for attribute in ("mention_ref", "mention_id"):
+        value = getattr(mention, attribute, "")
+        if value:
+            return str(value)
+    return ""
 
 
 def recompute_candidate_identity(candidate: RelationCandidate) -> tuple[str, str]:
@@ -1212,14 +1691,23 @@ def recompute_candidate_identity(candidate: RelationCandidate) -> tuple[str, str
     :func:`domain.relation_identity.recompute_identity`, and the only id-producing path this
     module exposes. Pure, so a tampering store, a replay and a test all reach the same answer
     and can therefore disagree loudly (FR-011, FR-022).
+
+    The logical half is ``""`` for a candidate with no signature, and the revision half is still
+    derived — keyed on that empty string, deterministically. So an un-signatured reading is
+    addressable and reproducible; it simply has no logical identity to be addressed *by*, which
+    is what ``verify_candidate_identity`` then refuses to certify.
     """
-    logical = LOGICAL_CANDIDATE_ID_PREFIX + digest128(
-        canonical_material(candidate._logical_material())
+    material = candidate._logical_material()
+    logical = (
+        ""
+        if material is None
+        else LOGICAL_CANDIDATE_ID_PREFIX + digest128(canonical_material(material))
     )
-    material = candidate._revision_material(logical)
-    for key in ("observation_refs", "evidence_refs"):
-        material[key] = sorted(material[key])
-    return logical, REVISION_CANDIDATE_ID_PREFIX + digest128(canonical_material(material))
+    revision_material = candidate._revision_material(logical)
+    for key in ("observation_refs", "evidence_refs", "signal_refs"):
+        revision_material[key] = sorted(revision_material[key])
+    revision = REVISION_CANDIDATE_ID_PREFIX + digest128(canonical_material(revision_material))
+    return logical, revision
 
 
 def verify_candidate_identity(candidate: RelationCandidate) -> None:
@@ -1230,10 +1718,28 @@ def verify_candidate_identity(candidate: RelationCandidate) -> None:
     Refuses only the *addressed* case; an unaddressed candidate is simply not yet addressed
     and is not an error, because :meth:`RelationCandidate.with_id` is how a candidate becomes
     addressable.
+
+    **An addressed candidate with no signature is refused**, with ``unaddressed_logical_identity``
+    (``data-model.md`` part 5.4). The old behaviour here was to skip: ``with_id()`` had always
+    produced a ``logical_candidate_id``, so the asymmetry between an unaddressed candidate (fine)
+    and one whose logical half is missing (also fine) was never named. Naming it is the point —
+    a store that certifies such a row is certifying an identity nobody can re-derive, and the
+    alternative refusal a caller would reach for instead (falling back to the surface) is FR-001's
+    violation with a version tag on it.
     """
     if not candidate.candidate_id and not candidate.logical_candidate_id:
         return
     logical, revision = recompute_candidate_identity(candidate)
+    if not logical:
+        raise CandidateContractError(
+            "unaddressed_logical_identity",
+            f"candidate {candidate.candidate_id or '<unaddressed>'} is addressed but carries "
+            "no predicate_signature, so it has no logical_candidate_id to verify. "
+            "logical_candidate_id requires a PredicateSignature; a candidate whose construction "
+            "was never read is addressable by candidate_id alone, and a surface-keyed fallback "
+            "identity is FORBIDDEN (FR-001, data-model.md part 5.4). Re-extract to supply a "
+            "signature, or treat this row as un-signatured and replayable - never auto-deleted",
+        )
     if logical != candidate.logical_candidate_id or revision != candidate.candidate_id:
         raise CandidateContractError(
             "candidate_id_mismatch",
@@ -1721,14 +2227,18 @@ def _inverted_conflicts(
 
 __all__ = [
     "ADMISSIBLE_CANDIDATE_STATUSES",
+    "CANDIDATE_LOGICAL_MATERIAL_CONSTANT_KEYS",
     "CANDIDATE_LOGICAL_MATERIAL_FIELDS",
+    "CANDIDATE_LOGICAL_MATERIAL_KEYS",
     "CANDIDATE_MUTABLE_PROJECTION_FIELDS",
     "CANDIDATE_REVISION_MATERIAL_FIELDS",
     "CLAIM_ONLY_FIELDS",
+    "CONFLICTING_ASSEMBLY_STATES",
     "CONTRADICTING_CANDIDATE_STATUSES",
     "DECOMPOSED_CANDIDATE_FIELDS",
     "LOGICAL_CANDIDATE_ID_PREFIX",
     "REVISION_CANDIDATE_ID_PREFIX",
+    "CandidateAssemblyState",
     "CandidateConflict",
     "CandidateConflictKind",
     "CandidateContractError",

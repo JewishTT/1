@@ -41,7 +41,11 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from domain.predicate_signature import ArgumentSlot, Polarity
+from domain.relation_candidate import CandidateAssemblyState
 from domain.relation_identity import canonical_material, digest128
+from domain.relation_participant import RelationParticipant
+from domain.signal_basis import SignalBasis
 from extractors.signals import (
     DirectionHypothesis,
     Neighbourhood,
@@ -111,15 +115,50 @@ def _declared(
     producer: str = "request/declaration",
     kind: SignalKind = SignalKind.SCHEMA,
     direction: DirectionHypothesis = DirectionHypothesis.SUBJECT_TO_OBJECT,
+    basis: SignalBasis = SignalBasis.EVENT_FRAME,
+    polarity: Polarity = Polarity.ASSERTED,
     extra: Mapping[str, Any] | None = None,
 ) -> RelationSignal:
-    """A declared or synthetic signal, for the cases that need one the producers cannot make."""
+    """A declared or synthetic signal, for the cases that need one the producers cannot make.
+
+    **On the native participant path.** Phase 4B built this on
+    ``participants=(...)`` with the two ends in slots ``A0``/``A1`` and took the
+    ``subject_mention_ref=``/``object_mention_ref=`` constructor parameters away, so the
+    corpus cannot keep producing signals on a construction path the seven producers no
+    longer use - which is the point of removing it. ``basis`` and ``polarity`` are
+    **parameters with stated defaults rather than omitted**, because a corpus case that
+    declared neither was exercising a signal the platform cannot construct honestly: a
+    signal with no basis and a surface is legal, but it is a signal that has not said how
+    it saw anything, and a corpus is exactly where that should not go unexamined.
+
+    The default basis is :attr:`~domain.signal_basis.SignalBasis.EVENT_FRAME` because that
+    is the honest answer for a hand-declared reading: the case asserted it, from a parse or
+    a statement, rather than reporting an adjacency. ``EVENT_FRAME`` rather than
+    ``PREDICATE_TEXT`` because these cases carry a surface that is an operator's name, not
+    words the document used between two mentions.
+    """
     return RelationSignal(
-        subject_mention_ref=subject,
-        object_mention_ref=obj,
+        participants=(
+            RelationParticipant(
+                mention_ref=subject,
+                slot=ArgumentSlot(0),
+                role_hypothesis="A0",
+                ordinal=0,
+                confidence=1.0,
+            ),
+            RelationParticipant(
+                mention_ref=obj,
+                slot=ArgumentSlot(1),
+                role_hypothesis="A1",
+                ordinal=1,
+                confidence=1.0,
+            ),
+        ),
         kind=kind,
         relation_surface=surface,
         relation_ref=RelationRef(ref) if ref else None,
+        basis=basis,
+        polarity=polarity,
         neighbourhood=Neighbourhood(
             characters_scanned=0, pairs_considered=0, scope_read="the corpus case, by hand"
         ),
@@ -149,11 +188,20 @@ PRODUCERS = _producers()
 
 
 def _expect_active_passive(report, signals) -> dict:
-    """One relation, two realisations, one hypothesis, two readings.
+    """One relation, two realisations, one hypothesis, and the two of them **one** hypothesis.
 
     T035's finding pinned as a case: identity is keyed on the relation's own words, so the
-    two *surfaces* below are two hypotheses. The grammar-form claim holds where the surface
-    is shared, and that is what this case asserts.
+    two *surfaces* below are two **readings** of one claim. The grammar-form claim holds where
+    the surface is shared, and this case asserts both halves of that: shared surface collapses
+    to one candidate, different surfaces are two candidates of one ``logical_candidate_id``.
+
+    The second half was asserting two *logical* ids from two different surfaces, and that was
+    already false before Phase 4B: ``logical_candidate_material`` does not key on
+    ``relation_surface`` (``data-model.md`` part 7.1 - a vocabulary swap must not re-key a
+    stored observation), so two surfaces over the same pair with no operator type are one
+    hypothesis with two names. The old assertion was a stale expectation in a case no test
+    ran, and it is corrected here rather than left in place, because a case that cannot run
+    cannot document anything.
     """
     same_surface = assemble(
         [
@@ -169,19 +217,28 @@ def _expect_active_passive(report, signals) -> dict:
 
     different = assemble(
         [
-            _declared("MN-A", "MN-B", "is the CEO of", producer="prose/active"),
+            _declared("MN-A", "MN-B", "is the CEO of Acme", producer="prose/active"),
             _declared("MN-A", "MN-B", "The CEO of Acme is", producer="prose/passive"),
         ],
         **ASSEMBLE_KW,
     )
-    assert len(different.candidates) == 2, "different surfaces are two claims about the world"
-    assert len({c.logical_candidate_id for c in different.candidates}) == 2
+    # Two readings, because the surface is part of the reading key.
+    assert len(different.candidates) == 2, "different surfaces are two readings of one claim"
+    # ... and one hypothesis, because the surface is NOT part of the logical identity.
+    assert len({c.logical_candidate_id for c in different.candidates}) == 1, (
+        "two surfaces over one pair with no operator type are one hypothesis with two names; "
+        "if this ever becomes 2, the identity layer has started keying on the observation's "
+        "wording, and a vocabulary swap would re-key every stored candidate "
+        "(data-model.md part 7.1)"
+    )
+    assert len(different.competing()) == 1, different.competing()
     return {
         "same_surface_logical": same_surface.candidates[0].logical_candidate_id,
         "same_surface_readings": len(same_surface.candidates[0].signal_refs),
         "different_surface_logicals": sorted(
             c.logical_candidate_id for c in different.candidates
         ),
+        "different_surface_readings": len(different.candidates),
     }
 
 
@@ -195,6 +252,24 @@ def _expect_nary(report, signals) -> dict:
     - correctly, because a claim built on it could never be promoted. The refusal is the
     mechanism working: a caller cannot hand over role assignments and have the platform
     guess the arity they imply.
+
+    **Phase 4C added the second half of this case, and it is why the case's digest moved.**
+    The first signal below names the role slots of two of three ends and a second producer
+    names all three. That is a *partial set over one configuration*, and before 4C
+    :func:`~semantic_path.assembly._roles_of` answered it with ``()``: one candidate, no role
+    assignments, ``CONSISTENT``, and a producer that had genuinely read two slots
+    indistinguishable from one that had read none. ``ARBITRATION`` §3 names role slots as a
+    ``CONFLICTING`` trigger, so the pair is now two readings, both preserved, both
+    ``CONFLICTING``, and the axis is reported with both declared sets spelled out.
+
+    **The mutation recorded with it is that the old behaviour was not a wrong candidate but a
+    failed batch.** ``RelationCandidate`` refuses a ``NARY`` candidate with fewer than two role
+    assignments, so swallowing the partial set handed it a ``nary`` reading with nothing in
+    ``role_assignments`` and the whole assembly raised ``insufficient_role_assignments``. One
+    producer naming two of three slots took every other signal on the pair down with it. This
+    case now asserts the survivable half, and
+    ``test_restoring_the_role_slot_unanimity_rule_fails_this_file`` asserts the other half by
+    reproducing it.
     """
     roles = (
         ("actor", "MN-A", ""),
@@ -230,10 +305,40 @@ def _expect_nary(report, signals) -> dict:
             "role assignments without a stated arity assembled into a directed candidate, "
             "which is a shape no claim can be built from"
         )
+
+    # The partial set: one producer names two of three slots, the other names all three, and
+    # both readings survive with the slots each of them actually declared.
+    partial = assemble(
+        [
+            _declared(
+                "MN-A", "MN-B", "acquired", ref="acquired", producer="schema/partial",
+                extra={"role_bindings": roles[:2], "arity_mode": "nary"},
+            ),
+            _declared(
+                "MN-A", "MN-B", "acquired", ref="acquired", producer="schema/complete",
+                extra={"role_bindings": roles, "arity_mode": "nary"},
+            ),
+        ],
+        **ASSEMBLE_KW,
+    )
+    assert len(partial.candidates) == 2, partial.candidates
+    assert sorted(len(c.role_assignments) for c in partial.candidates) == [2, 3], partial.candidates
+    assert all(
+        c.assembly_state is CandidateAssemblyState.CONFLICTING for c in partial.candidates
+    ), [c.assembly_state for c in partial.candidates]
+    assert partial.groups_with_structural_conflict == ("MN-A->MN-B",)
+    assert {axis for _p, axis, _u, _s in partial.structural_conflicts} == {"role_slots"}
+    # One hypothesis, two readings: the verdict is revision material and does not fork identity.
+    assert len({c.logical_candidate_id for c in partial.candidates}) == 1
     return {
         "arity": str(candidate.arity_mode),
         "roles": sorted(f"{r.role}={r.member_ref}" for r in candidate.role_assignments),
         "refused_without_arity": True,
+        "partial_role_slots": sorted(
+            str(c.assembly_state) for c in partial.candidates
+        ),
+        "partial_role_counts": sorted(len(c.role_assignments) for c in partial.candidates),
+        "partial_axes": sorted({axis for _p, axis, _u, _s in partial.structural_conflicts}),
     }
 
 

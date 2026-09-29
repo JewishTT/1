@@ -356,23 +356,83 @@ round trip reaches every edge that source fed.
 ### Functional Requirements
 
 > **Reserved number space — stated once, here, so that absence reads as a decision and not as an
-> oversight.** Two ranges of the `FR-` namespace are **deliberately empty and reserved**, and no
-> requirement in this document occupies either of them: numbers **101–109** and **116–129**.
+> oversight.** Four ranges of the `FR-` namespace are **deliberately empty and reserved**, and no
+> requirement in this document occupies any of them: numbers **101–109**, **116–129**,
+> **138–139** and **159–160**.
 > `101` and `102` are void because two repair agents minted them for different subjects;
 > `103` is a live phantom — a brief section number presented as an FR, and still cited as one by
-> `research.md` and `tasks.md` — so it MUST remain unused until the checker reports it clean; and
+> `phase0-results.md`; the citation in `research.md` has been re-pointed, so it MUST remain unused
+> until the checker reports it clean; and
 > `104`–`109` were never allocated. `116`–`129` is reserved outright so a later wave has room
-> without colliding.
+> without colliding. `138`–`139` are the seam between §14's `130`–`137` band and its `140`–`149`
+> band, which §14 allocated to nobody: `spec.md` defines neither, no tombstone record retires
+> either, and the reservation previously did not claim them — so they read as an accidental hole.
+> They are unfilled on the same footing as the other ranges, and §14 rule 1 forbids minting them.
+> `159`–`160` are the two spare slots §14's `150`–`160` band leaves over — see
+> the measured divergence below — and are reserved on the same footing as the other three: unfilled
+> on purpose, and §14 rule 1 forbids minting them.
+>
+> **Machine-readable declaration of the reservation.** This is the one line
+> `repair/tools/reference_check.py` reads to learn the reserved set, and it reads nothing else:
+>
+> `RESERVED-FR: 101-109, 116-129, 138-139, 159-160`
+>
+> The checker parses that declaration instead of carrying a hard-coded list, so the machine view
+> and the prose above cannot drift apart silently: every declared range must also appear as a
+> range in this block, and a mismatch is FAIL rather than a guess. The rule the declaration feeds
+> is **coverage, not density**: every `FR-` number is DEFINED, or TOMBSTONED, or RESERVED. A
+> number in none of the three is a genuine hole and is still FAIL. Reservation permits
+> **absence**; it does not permit **citation** — naming a number inside a reserved range is still
+> a FAIL under `RI-01-FR-DEF`, which is why no artefact may name one.
 >
 > The bands that **are** occupied are `110`–`115` (already-applied appends), `130`–`137` (mapping
-> layer), `140`–`149` (type vocabulary and the §8 extraction families), `150`–`160` (migration
+> layer), `140`–`149` (type vocabulary and the §8 extraction families), `150`–`158` (migration
 > `021` and schema), `161`–`173` (constitution, lifecycle and provenance), `174`–`178` (identity
 > subsystem) and `179`–`180` (the §8 producer obligation and the prohibition-coverage meta-rule).
 > `repair/ARBITRATION.md` §14 is the authority for that whole allocation and supersedes §1's
 > withdrawn instruction; §14 rule 1 is the rule that keeps a number unrepeatable.
 >
-> **These two ranges are written here as a reservation, not as a citation.** No artefact may name a
+> **One measured divergence from §14's table, recorded and not resolved here.** §14 gives A7 the
+> range `150`–`160` and counts it as 11, but `repair/A7-migration-021.md` authors **9**
+> requirements in that range and this document defines all 9, so the occupied part of the band is
+> `150`–`158` and the last two slots of §14's range — `159` and `160` — name no requirement
+> anywhere. §14's own
+> "49 new normative FRs" is therefore 47 by A7's content, and nothing is unapplied — §14 rule 6 is
+> not violated by this document. The two spare slots are **not** filled here: §14 rule 1 forbids
+> minting a number, and a citation to an id nothing defines is itself a defect. They are declared
+> reserved in the block above so that their emptiness reads as that decision and not as a hole.
+> The correction to §14's own count belongs to §14's author.
+>
+> **These ranges are written here as a reservation, not as a citation.** No artefact may name a
 > number inside them as a live requirement target, and nothing in this document does so.
+
+#### Tombstone record
+
+**A tombstone is history, not a requirement.** The six ids below are retired: each carries **no
+normative requirement**, and every citation of one anywhere in this feature is a reference to a
+past state of the document, never a live target. The rule is
+`repair/ARBITRATION.md` §2's `TOMBSTONED_FR_MUST_HAVE_ZERO_NORMATIVE_REFERENCES`; the set is
+§2's, and it is closed — `FR-001`, `FR-002` and `FR-003` are **not** in it and remain live and
+normative. This table is deliberately **not** in requirement-definition form: a tombstone is
+recorded here, and the surviving requirement is named in the `successor` column, so that a reader
+and a checker both see a record rather than a definition. Where a tombstone exists, the
+obligation is carried by its successor and the reason it cannot simply be deleted is the reason
+the record is kept.
+
+| tombstoned id | successor — where the obligation now lives | reason it is retired, and why the record is kept | must not be cited |
+|---|---|---|---|
+| `FR-034a` | `FR-035`, with `INV-002` as its constitutional home | Folded into the `FR-035` slot per `ARBITRATION.md` §1 and §2. It was the sub-numbered type-space requirement, and a letter suffix is a transitional device that forces every id regex to accept two styles. Kept because a reader who met the old id must be able to find where its content went. | as a live normative target |
+| `FR-039a` | `FR-040` | Folded into the `FR-040` slot per `ARBITRATION.md` §1. It carried no normative requirement of its own. Kept for the same traceability reason. | as a live normative target |
+| `FR-058` | `INV-004` | Merged into `INV-004`; see the deleted-ids table in `repair/A6-fr-triage.md`. The edge-after-claim obligation is constitutional, not a functional requirement, and a `GraphEdge`/`HyperEdge` MUST NOT exist before a `RelationClaim` does. Kept because the obligation was **strengthened** by moving, not dropped. | as a live normative target |
+| `FR-070` | the design note in `repair/A6-fr-triage.md`, plus the constitutional non-goals list | Removed and **no longer normative** as a permission from which no acceptance criterion is constructible; both surviving sentences are restated as constitutional non-goals. The reasoning is in `repair/A6-fr-triage.md` and `design-notes/rdf-interoperability.md`. Kept because a permission with no constructible criterion is a *different kind* of removal from a merge, and the distinction has to stay visible. | as a live normative target |
+| `FR-079` | `FR-078` | Merged into `FR-078`. The six section mutations of `input.md` §94, §95, §96, §97, §98 and §99 are manifest entries 7–12 of `FR-078`, not a separate apparatus, so the old "Four"-versus-six contradiction is gone. Kept because the count contradiction it carried is the reason `FR-078` now states its count (18) explicitly. | as a live normative target |
+| `FR-080` | `FR-072` | Merged into `FR-072`; it restated the same five metrics. Kept because the duplication is the reason `FR-072` states the metrics once. | as a live normative target |
+
+> **What is deliberately *not* here.** A tombstone is not a downgrade. `020` remains the Alembic
+> head, is forward-only, and its `downgrade()` still raises `NotImplementedError`; nothing in this
+> record touches migration `020`, and no tombstoned id was ever the reason a `020` operation was
+> dropped. The one hard constraint on `020` is `FR-113` plus `FR-082`: `020` MUST NOT be edited,
+> and a persistence representation that loses information is a stop condition, not a tombstone.
 
 #### Constitutional invariants
 
@@ -428,7 +488,25 @@ round trip reaches every edge that source fed.
 
 Applied verbatim from `repair/A2-identity-subsystem.md` §D8 under `repair/ARBITRATION.md` §14
 rule 2, which renumbers A2's own five authored requirements into this band. The one internal
-cross-reference is renumbered with them; nothing else is touched.
+cross-reference is renumbered with them; nothing else is touched — **except the two trailing
+parentheticals recorded below**, which are the integrator's correction and not A2's wording.
+
+**`FR-001`, `FR-002` and `FR-003` stay live and normative. Nothing in this band tombstones,
+deletes or weakens any of them.** They are high-level normative invariants; this band is a
+refinement layer beneath them, and the relationship runs one way only:
+
+```text
+normative invariant  →  implementation contract  →  exact executable rule
+FR-001, FR-002, FR-003  →  FR-174, FR-177  →  the formula itself
+```
+
+`FR-174` is the **implementation refinement** of `FR-003`; `FR-177` is the **operational
+refinement** of `FR-001` and `FR-002`. A rule in the third column that appears to contradict an
+invariant in the first is a defect in the third column, not a licence to retire the first. The
+band's own `replaces`-clause phrasing is withdrawn for that reason: `ARBITRATION.md` §1 forbids
+renumbering `FR-001`…`FR-100` and §2 fixes the tombstone set at five ids, none of which is
+`FR-001`, `FR-002` or `FR-003`. `FR-175`, `FR-176` and `FR-178` carry no `replaces` phrasing and
+needed no correction on this point.
 
 - **FR-174**: `PredicateSignature` field set and exclusions. System MUST provide a deterministic
   frozen `PredicateSignature` carrying exactly `language`, `predicate_lemma`,
@@ -454,8 +532,9 @@ cross-reference is renumbered with them; nothing else is touched.
   `::test_normalized_predicate_is_a_derived_view_of_the_signature`,
   `::test_signature_without_a_normalization_version_is_a_contract_error`.
   **Independently testable because** it asserts a type's field list and two read-only
-  properties, with no producer, parser, corpus or store. (§18, §19, §20, §21, §23; replaces
-  FR-003.)
+  properties, with no producer, parser, corpus or store. (§18, §19, §20, §21, §23;
+  implementation refinement of FR-003 — FR-003 remains normative and is not replaced, weakened or
+  tombstoned by this FR.)
 
 - **FR-175**: `normalize_voice` is a specified deterministic algorithm. System MUST provide
   `normalize_voice(predicate, syntactic_structure, dependency_structure) ->
@@ -548,8 +627,9 @@ cross-reference is renumbered with them; nothing else is touched.
   `::test_verify_candidate_identity_refuses_an_unaddressed_logical_id`,
   and the §94 mutation `::test_mutation_relation_ref_in_logical_material_fails`.
   **Independently testable because** it asserts a literal key set on a pure function and a
-  refusal condition on a dataclass, with no corpus. (§17, §19, §23, §94, §95; replaces FR-001
-  and FR-002.)
+  refusal condition on a dataclass, with no corpus. (§17, §19, §23, §94, §95;
+  operational refinement of FR-001 and FR-002 — both remain normative and neither is replaced,
+  weakened or tombstoned by this FR.)
 
 - **FR-178**: The mapping-independence invariant. Changing the mapping vocabulary MUST NOT change
   the historical logical identity of an already-extracted relational observation. Every mapping
@@ -652,7 +732,7 @@ cross-reference is renumbered with them; nothing else is touched.
   index MUST be the **sole minter** of mention identifiers; no other component may construct
   one. Lookup MUST resolve to a mention, never to an entity.
   `[INTERFACE: the identifier prefix is currently `MENTION-…` in `spec.md` and `MN-…` in
-  `data-model.md` §6 and `tasks.md` T019. The identity owner picks one; the checker (§6) will
+  `data-model.md` §6 and `tasks.md` T118. The identity owner picks one; the checker (§6) will
   require spec and code to agree.]` *(§26)*
 - **FR-019**: Mention binding MUST remain distinct from entity resolution. Producers may use
   mention ids after binding and MUST NEVER use `ENT-` or `RES-` literals. (§26, §75)
@@ -687,11 +767,18 @@ cross-reference is renumbered with them; nothing else is touched.
 
 Applied verbatim from `repair/A4b-mapping-layer.md` §D7 under `repair/ARBITRATION.md` §14, which
 keeps A4b's own numbering. Placed where §D7 asks for it — after *Predicate and claim boundary*,
-before *Assembly*. **A known conflict, reported not resolved:** `FR-133` routes a **structural**
-disagreement into `CandidateStatus.CONTRADICTED`, which `repair/ARBITRATION.md` §3 forbids; the
-structural axis is `RelationCandidate.assembly_state = CONFLICTING`, as `FR-090` in this document
-already states. The text is the owner's and is carried over unaltered; `EPISTEMIC-AXIS-CONFLATION`
-is expected to report it against `spec.md` as well as against the repair document.
+before *Assembly*. **One conflict, found and resolved in the integrator's favour.**
+`repair/A4b-mapping-layer.md` §D7's `FR-133` routed a **structural** disagreement into
+`CandidateStatus.CONTRADICTED`, which `repair/ARBITRATION.md` §3 forbids and which §13 rule 3
+records as a forbidden A6 move extended to this band: a structural conflict that is not a denial
+yields `RelationCandidate.assembly_state = CandidateAssemblyState.CONFLICTING`, with both readings
+preserved and reported in `AssemblyReport`, and `CandidateStatus.CONTRADICTED` stays reserved for
+a positive reading set against an explicit denial. `FR-090` in this document already stated the
+correct axis, so the two answers were never in conflict on the merits — only A4b's sentence was
+wrong. The single clause is therefore corrected here, and the **divergence from
+`repair/A4b-mapping-layer.md:1661` is recorded for that document's owner**: A4b's own text still
+carries the forbidden routing, and `EPISTEMIC-AXIS-CONFLATION` will keep reporting it there until
+A4b is corrected. Nothing else in the band is touched.
 
 - **FR-130**: `PredicateMappingCandidate` MUST be a frozen value object carrying at least
   `source`, `target`, `match_type`, `target_relation_ref`, `confidence`, `provenance`,
@@ -729,7 +816,10 @@ is expected to report it against `spec.md` as well as against the repair documen
   can reconstruct why the hypothesis stalled. Both readings MUST be preserved. A disagreement
   that is **structural** — arity, direction, polarity or role bindings over the same mentions —
   is not representable as one hypothesis and MUST yield `FR-090`'s
-  `CandidateStatus.CONTRADICTED` candidates with both readings preserved. A `CONFLICTING`
+  `RelationCandidate.assembly_state = CandidateAssemblyState.CONFLICTING` candidates with both
+  readings preserved and both reported in `AssemblyReport` as a conflict.
+  `CandidateStatus.CONTRADICTED` is reserved for a positive reading set against an explicit denial
+  and MUST NOT be used for a structural disagreement. A `CONFLICTING`
   hypothesis MUST NOT yield `RelationClaimMaterial`. No count, confidence, insertion order or
   alphabetical tie-break may decide either state. (§45, §49, §83, §95; A4b D3.3, D3.4)
 - **FR-134**: A structured or external-vocabulary statement (JSON-LD, schema.org, OpenGraph,
@@ -780,7 +870,22 @@ is expected to report it against `spec.md` as well as against the repair documen
   `allows_relation`, on a hard-coded relation-name list, and on any `if … not in … relations`
   shape. The ORM class `control-plane.db.schema.OntologyPack` and its `ontology_packs`
   `relations` column MUST be removed by the migration owner, and migration `021` MUST NOT
-  create the table. (§73, §104, §65, §38, §34a; A4b D6)
+  create the table. (§73, §104, §65, §38, §76, §63; A4b D6)
+  *Section-citation correction: the list arrived from `repair/A4b-mapping-layer.md` §D7 with a
+  fifth token that names no section at all. `input.md` has no lettered sub-section there — `§34`
+  is `TABLE PRODUCER`, and the only sections of the brief carrying lettered subsections are §1
+  (`A. Entity interpretation`, `B. Relation interpretation`) and §8 (`A. Person` through
+  `G. Event mentions`). The trailing `a` is the ghost suffix of the sub-numbered
+  type-and-relation-policy requirement id — recorded at the old `spec.md:514` as
+  "Type and relation policy" — that `repair/ARBITRATION.md` §1 folded into the `FR-035` slot and
+  §2 then tombstoned, so the token was a section-form typo for that id rather than a mistyped
+  section number. §2 forbids citing a tombstoned id as a live target, and that id's content now
+  lives in `FR-035` with `INV-002` as its constitutional home, so the token is re-pointed to the
+  two brief sections that were still unanchored and that carry exactly that content: `§76`
+  (`TYPE EXTRACTION MAY USE ONTOLOGY HINTS` — "an ontology miss must mean `unknown type`, not
+  `mention rejected`", the clause above) and `§63` (`FOUNDATION PACK` — "Do not encode massive
+  relation semantics into the type pack", the clause that deletes the `relations` field and the
+  `ontology_packs` column).*
 
 ### Assembly
 
@@ -820,9 +925,21 @@ is expected to report it against `spec.md` as well as against the repair documen
   `core:Asset`, `core:Vehicle`, `core:FinancialInstrument`, `core:Event`. (§4)
   This is a **fixture requirement on the pack's contents** and MUST NOT be read as a producer
   obligation: a type's presence here does not oblige the system to have a dedicated extractor for
-  it (FR-155). `core:Coordinate` is an **entity** here; `value:Coordinate` in FR-031 is a
-  **value** with the same local name, and the two are distinct references distinguished by
-  `kind` (FR-153, FR-156).
+  it. The one producer obligation this feature creates is `FR-179`, and it is bounded by the
+  **seven §8 extraction families** — not by the length of this list; the two counts are independent
+  and neither may be derived from the other. `core:Coordinate` is an **entity** here;
+  `value:Coordinate` in FR-031 is a **value** with the same local name, and the two are distinct
+  references distinguished by `kind`, which is read from the entry and never inferred from the ref
+  (FR-110, FR-031). The 31 `core:*` entries here and the 13 `value:*` entries in FR-031 are the
+  **44** entries the registered pack must expose (FR-110, the normative parent of the 31/13
+  counts; asserted as `len(pack.entries) == 44` by SC-017).
+  *(Cross-reference correction: these three slots once read `FR-155`, `FR-153` and `FR-156`, which
+  under `repair/ARBITRATION.md` §14 are **A7's** migration/schema rules — tenant scoping, the
+  `ValidationResult` home and the `validation_findings` rules — and not the A5 type-vocabulary
+  rules they were written for. Each is re-pointed above to the requirement that now carries the
+  obligation. No number is minted: `ARBITRATION.md` §14 rule 1 forbids it, and the A5 surplus
+  requirement that says outright that the two counts are independent deliverables has no FR number
+  and is reported rather than numbered.)*
 - **FR-031**: Value types MUST be conceptually separate from entity classes, and the pack MUST
   cover exactly **13** value (`value:*`) types: `value:EmailAddress`, `value:PhoneNumber`,
   `value:URL`, `value:Handle`, `value:Identifier`, `value:IPAddress`, `value:Hash`,
@@ -857,9 +974,6 @@ is expected to report it against `spec.md` as well as against the repair documen
   `producer_version` independently answer *which instrument extracted it*; no synthetic
   vocabulary (`local`, `internal`, `regex`, `ner`) may be introduced to avoid a `null`. (§9,
   §64, §104, §65, §2)
-  *Tombstone `FR-034a` — folded into this slot per `repair/ARBITRATION.md` §1 and §2, with
-  `INV-002` as its surviving constitutional home. It carries no normative requirement and MUST
-  NOT be cited as a live target.*
 - **FR-036**: A type mapping MUST retain subject type, object type, mapping predicate,
   mapping set, mapping version, confidence, creator/operator and evidence/provenance, and MUST
   NOT collapse `schema:Person` into `core:Person` without a mapping record. SSSOM-compatible
@@ -997,7 +1111,7 @@ the context/bounded-neighbourhood rule, and the type/role mutual-consumption rul
   `test_a5_fr149_hypothesis_set_order_is_arrival_independent`.
 - **FR-179**: The deterministic entity extraction layer MUST be completed around the atomic type
   vocabulary, extending existing extractors rather than duplicating them into a second framework,
-  and providing producers/readers for all seven classes of §8:
+  and providing producers/readers for all seven extraction families of §8:
   **A. Person** — Latin, Cyrillic, initials, multi-token, titles, contextual cues, aliases,
   transliteration, Unicode normalisation, surname-first patterns; a name-shaped string MUST NOT
   imply person; every result is a hypothesis.
@@ -1021,10 +1135,15 @@ the context/bounded-neighbourhood rule, and the type/role mutual-consumption rul
   this, and today it is occupied by work §110 places in Phase 5 — this is D15, and this FR is what
   makes the phase non-empty. *(§8, §110-2)*
   *Applied verbatim from `repair/A6-fr-triage.md` §2.5, which is the only place the §8 producer
-  obligation appears; `repair/ARBITRATION.md` §14 allocates it to A6's band. The phrase "all seven
-  classes" is the owner's wording and is carried over unaltered: §10 of that record requires the
-  *vocabulary* to be "seven extraction families" and a rewrite is a finding, not an integrator's
-  edit.*
+  obligation appears; `repair/ARBITRATION.md` §14 allocates it to A6's band. **One vocabulary
+  correction, and it is not optional:** the owner's phrase "all seven classes" is replaced by
+  "all seven extraction families of §8". `repair/ARBITRATION.md` §10 states four numbers doing
+  four jobs — **31** `core:*` foundational entity types, **13** `value:*` types, **7** §8
+  extraction families, **~4** new instrument modules — and forbids the word *classes* for the
+  seven, because "seven classes" is the seed of a 32-extractor mandate. §10 is binding and
+  outranks A6's phrasing, so this is a correction and not an integrator's preference. The
+  divergence is recorded for A6's owner: `repair/A6-fr-triage.md:483` still reads "all seven
+  classes of §8", and `COUNT-PRECISION` will keep reporting it there.*
 
 ### Producers
 
@@ -1038,8 +1157,6 @@ the context/bounded-neighbourhood rule, and the type/role mutual-consumption rul
   a `works_for` operator hinting a `Person-like` subject and an `Organization-like` object. Those
   hints MUST   remain hints and MUST NOT become truth, and no role hint may enter
   `logical_candidate_id` material as a free-text `role: str`. (§27, §71)
-  *Tombstone `FR-039a` — folded into this slot per `repair/ARBITRATION.md` §1. It carries no
-  normative requirement of its own and MUST NOT be cited as a live target.*
 - **FR-041**: The existing lexical producer MUST remain one producer and MUST be upgraded to
   emit raw predicate surface, normalized predicate, predicate signature, participant roles,
   direction hypothesis, arity and trigger/support evidence. `RELATION_CUES` MUST be retained
@@ -1110,9 +1227,6 @@ the context/bounded-neighbourhood rule, and the type/role mutual-consumption rul
   lifecycle. No fake `SUPPORTED` technical gate. (§57)
 - **FR-057**: `ExecutionResult` MUST expose `material` as a real stage product. A stage that
   is semantically material but silently validates or admits is not acceptable. (§58)
-- **FR-058**: *tombstone — merged into `INV-004`; see the deleted-ids table in
-  `repair/A6-fr-triage.md`. The obligation now lives in `INV-004`. This slot carries no
-  normative requirement and MUST NOT be cited as a live target.* (§108)
 
 ### Persistence
 
@@ -1308,10 +1422,6 @@ requirement target.
   revision, which logical relation, which predicate interpretation, which evidence, which
   temporal interval, which regime, which validation and which source independence produced
   the edge. This metadata MUST NOT go into edge identity. (§79)
-- **FR-070**: *tombstone — removed as a permission from which no acceptance criterion is
-  constructible; both surviving sentences are restated as constitutional non-goals below, and
-  the reasoning is in `repair/A6-fr-triage.md` and `design-notes/rdf-interoperability.md`. This
-  slot carries no normative requirement and MUST NOT be cited as a live target.* (§80, §81)
 
 ### Boundedness and determinism
 
@@ -1366,14 +1476,6 @@ requirement target.
   a producer importing or constructing `GraphEdge` (§99). §100 is a deliverables section and §101
   is a domain-model section; **neither is a mutation source.** The count of manifest entries is
   **18**, and `SC-015`'s "≥ 20" is corrected to "every entry in the manifest".
-- **FR-079**: *tombstone — merged into `FR-078`; see the deleted-ids table in
-  `repair/A6-fr-triage.md`. The six section mutations of `input.md` §94, §95, §96, §97, §98 and
-  §99 are manifest entries 7–12 of `FR-078`,
-  not a separate apparatus, so the old "Four" / six contradiction is gone. This slot carries no
-  normative requirement and MUST NOT be cited as a live target.*
-- **FR-080**: *tombstone — merged into `FR-072`; see the deleted-ids table in
-  `repair/A6-fr-triage.md`. It restated the same five metrics. This slot carries no normative
-  requirement and MUST NOT be cited as a live target.* (§106)
 - **FR-081**: No regression may be introduced into `projection`, `acquisition`, `interpretation`,
   `admission`, `control-plane` or `shared`. Existing known failures MUST remain unchanged
   unless directly affected, and baseline membership, new failures, fixed failures and new
@@ -1989,7 +2091,13 @@ below reuses a void or reserved number, and nothing below is renumbered.
   world model. They are external semantic sources and mapping targets. (§2, §105)
 - The platform MUST NOT create a fourth epistemic level between signal and claim. (§103)
 - The platform MUST NOT make RDF the internal model, and MUST NOT depend on draft-only SHACL 1.2
-  behaviour; RDF-compatible shape and an optional SHACL sidecar are permitted. (§80, §81)
+  behaviour; RDF-compatible shape and an optional SHACL sidecar are permitted, and the extraction
+  substrate is never moved into SHACL, because shape validation is not the semantic substrate.
+  (§80, §81) **This bullet is the constitutional home of the tombstoned `FR-070`, and it carries
+  both of its surviving sentences in full**; the reasoning is the design note in
+  `repair/A6-fr-triage.md`, not a requirement. No functional requirement states this non-goal and
+  none may be minted for it: a non-goal is a prohibition, not a permission, and constructs no
+  acceptance criterion, so it is traced to this list and to `T193` and to no `FR-` row.
 - The platform MUST NOT optimise toward "find all edges" — see `input.md` §113 for the
   governing statement.
 

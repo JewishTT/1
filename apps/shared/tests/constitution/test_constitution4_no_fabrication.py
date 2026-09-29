@@ -63,6 +63,7 @@ from domain.relation_claim_material import (
     MaterialContractError,
     build,
 )
+from domain.relation_participant import binary_participants
 from domain.temporal_observation import (
     SourceTemporalObservation,
     TemporalAxis,
@@ -156,11 +157,17 @@ class TestThePlatformDoesNotDefaultSomebodyElsesDecision:
             assert excinfo.value.code == "extraction_scope_reference_required"
 
     def test_a_cd7_check_a_signal_with_neither_type_nor_words_is_refused(self) -> None:
-        """``''`` is not a small gap; it is an observation with no content."""
+        """``''`` is not a small gap; it is an observation with no content.
+
+        Built on the native ``participants=`` path, which is the only path left as of Phase
+        4B. The refusal this asserts is ``signal_asserts_nothing`` and not
+        ``signal_mentions_required``, which is the load-bearing part: the signal *does* name
+        two ends and still says nothing, so the two refusals are different facts and a
+        change that made the second one fire here would be a change in what the check means.
+        """
         with pytest.raises(SignalContractError) as excinfo:
             RelationSignal(
-                subject_mention_ref="MN-A",
-                object_mention_ref="MN-B",
+                participants=binary_participants("MN-A", "MN-B"),
                 kind=SignalKind.CO_OCCURRENCE,
                 relation_surface="",
                 neighbourhood=Neighbourhood(
@@ -248,7 +255,57 @@ class TestThePlatformDoesNotRoundAnUnknownToAKnown:
         the cheapest kind to produce, because the output still looks like a table. This
         suite records the decision rather than merely the behaviour, because a future
         maintainer will reasonably wonder why rows go missing.
+
+        Phase 4B added ``strict=True`` to the pairing ``zip`` as well, so the *second* half
+        of the guarantee is now enforced by two mechanisms rather than one: the width is
+        compared before the loop (this test) and the loop itself refuses a mismatch
+        (``test_a_ragged_row_is_reported_rather_than_silently_dropped``). Before, a future
+        edit to the comparison alone would have reopened silent truncation inside the loop.
         """
+        from extractors.signals.tables import TableExtractor
+
+        signals = self._ragged_signals()
+        rows = {s.extra["row_index"] for s in signals}
+        # Row 0 is the header, row 1 is the short one, row 2 is the well-formed one.
+        assert rows == {2}, f"only the well-formed row should report, got rows {sorted(rows)}"
+
+    def test_a_ragged_row_is_reported_rather_than_silently_dropped(self) -> None:
+        """FR-095, and the half the test above does not cover.
+
+        Skipping a row the markup wrote is a decision; skipping it with **no trace** is how
+        three cells of a real table go missing and leave a corpus that looks well formed. A
+        corpus answer to "how many rows did the table producer decline to pair" has to be a
+        number somebody can read off the output, so every signal the same table produced
+        carries the skipped row's index and a sentence saying what it carried.
+
+        This is the test the ``FR-095`` mutation in
+        :mod:`test_constitution_has_teeth` deletes the ``ragged.append`` for, so the guard is
+        known to have teeth rather than merely being present.
+        """
+        signals = self._ragged_signals()
+        assert signals, "the well-formed row should still report, or there is nothing to read"
+        for signal in signals:
+            assert signal.extra["ragged_row_indexes"] == [1]
+            described = signal.extra["ragged_rows"]
+            assert len(described) == 1
+            # Countable *and* checkable: the index, the declared width and the carried width.
+            assert "row 1" in described[0]
+            assert "3" in described[0] and "2" in described[0]
+            # And it is in the neighbourhood's own prose, so a reader of the record rather
+            # than of `extra` still sees it.
+            assert "not paired" in signal.neighbourhood.notes
+        # And a well-formed table reports nothing, so the field is not noise.
+        from extractors.signals.tables import TableExtractor
+
+        clean = TableExtractor().extract(
+            "<table><tr><th>Name</th><th>Role</th></tr>"
+            "<tr><td>Jane Doe</td><td>CEO</td></tr></table>",
+            scope=ExtractionScope(tenant_id="T1", context_ref="CX-1", semantic_regime_ref="RG-1"),
+        )
+        assert clean
+        assert all(s.extra["ragged_row_indexes"] == [] for s in clean)
+
+    def _ragged_signals(self):
         from extractors.signals.tables import TableExtractor
 
         ragged = (
@@ -256,15 +313,10 @@ class TestThePlatformDoesNotRoundAnUnknownToAKnown:
             "<tr><td>Jane Doe</td><td>CEO</td></tr>"
             "<tr><td>John Roe</td><td>CFO</td><td>2021</td></tr></table>"
         )
-        signals = TableExtractor().extract(
+        return TableExtractor().extract(
             ragged,
-            scope=ExtractionScope(
-                tenant_id="T1", context_ref="CX-1", semantic_regime_ref="RG-1"
-            ),
+            scope=ExtractionScope(tenant_id="T1", context_ref="CX-1", semantic_regime_ref="RG-1"),
         )
-        rows = {s.extra["row_index"] for s in signals}
-        # Row 0 is the header, row 1 is the short one, row 2 is the well-formed one.
-        assert rows == {2}, f"only the well-formed row should report, got rows {sorted(rows)}"
 
 
 class TestAdmissionIsNotAFormality:

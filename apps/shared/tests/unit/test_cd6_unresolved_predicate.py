@@ -86,8 +86,15 @@ class TestUnresolvedIsRepresentable:
     def test_a_typed_candidate_is_still_known(self) -> None:
         candidate = _candidate(relation_ref=RelationRef("works_for"))
         assert candidate.predicate_hypothesis.resolution_state is PredicateResolutionState.KNOWN
-        # A ref with no surface stated derives one, so nothing existing has to supply it.
-        assert candidate.relation_surface == "works_for"
+        # And the operator does NOT become a surface. It used to: ``__post_init__`` fell back to
+        # ``str(self.relation_ref.relation_type)`` when no surface was supplied, so a candidate
+        # built from a mapping carried words the observation never used - and those words were
+        # the predicate term of its logical id, which is the "mapping below identity" inversion
+        # with the arrow reversed. A ref names an operator; it is not a quotation.
+        assert candidate.relation_surface == ""
+        # The operator is still fully legible, in the hypothesis and in the reading's address.
+        assert candidate.relation_type == "works_for"
+        assert candidate.predicate_hypothesis.relation_ref == RelationRef("works_for")
 
     def test_no_ref_and_no_surface_describes_nothing_and_is_refused(self) -> None:
         with pytest.raises(PredicateContractError) as excinfo:
@@ -154,10 +161,27 @@ class TestResolutionIsARevision:
         assert resolved.candidate_id != unresolved.candidate_id
 
     def test_genuinely_different_predicates_stay_different_hypotheses(self) -> None:
-        assert (
-            _candidate(relation_ref=RelationRef("owns")).logical_candidate_id
-            != _candidate(relation_ref=RelationRef("located_in")).logical_candidate_id
-        )
+        """Two *readings* of two operators are two candidates; the operators are not the
+        identity.
+
+        This assertion used to be ``!=`` on ``logical_candidate_id``, and it passed only because
+        the candidate synthesised its predicate surface from ``relation_ref.relation_type``. That
+        is the defect this feature removes: keying identity on what the vocabulary happened to
+        call the relation means swapping the vocabulary re-keys every already-extracted
+        observation, and ``owns`` vs ``located_in`` become two *worlds* rather than two readings
+        of one pair. ``INV-IDENTITY`` forbids it outright, so the assertion is inverted: the two
+        candidates share a (here, absent) logical id and differ in the revision, which is where
+        a mapping belongs.
+
+        The distinction the old test was reaching for is real and is still enforced - by
+        ``candidate_id`` below, and, once a syntactic producer exists, by ``predicate_signature``:
+        two *different signatures* are two configurations and stay two logical ids. Two different
+        *operators mapped onto one signature* are one configuration with two readings.
+        """
+        owns = _candidate(relation_ref=RelationRef("owns"))
+        located = _candidate(relation_ref=RelationRef("located_in"))
+        assert owns.logical_candidate_id == located.logical_candidate_id
+        assert owns.candidate_id != located.candidate_id
 
     def test_two_readings_of_one_surface_differ_only_by_the_reading(self) -> None:
         """Ambiguity must be visible as ambiguity, not flattened to the first answer."""

@@ -1360,7 +1360,7 @@ number is left vacant rather than reused.
 
 ---
 
-**FR-101 — `PredicateSignature` field set and exclusions.**
+**FR-101** (superseded local numbering → ARBITRATION §14 → **FR-174**) — `PredicateSignature` field set and exclusions.
 
 System MUST provide a deterministic frozen `PredicateSignature` carrying exactly `language`,
 `predicate_lemma`, `construction_frame` (a member of the closed `ConstructionFrame` enumeration),
@@ -1385,7 +1385,7 @@ NOT be a `RelationRef` and MUST NOT be a semantic ontology concept.
 **Independently testable because** it asserts a type's field list and two read-only properties, with
 no producer, parser, corpus or store. (§18, §19, §20, §21, §23; replaces FR-003.)
 
-**FR-102 — `normalize_voice` is a specified deterministic algorithm.**
+**FR-102** (superseded local numbering → ARBITRATION §14 → **FR-175**) — `normalize_voice` is a specified deterministic algorithm.
 
 System MUST provide `normalize_voice(predicate, syntactic_structure, dependency_structure) ->
 CanonicalArgumentAssignment` as the ONLY function assigning canonical argument slots, executing the
@@ -1416,7 +1416,7 @@ it is not a morphological form, and the table MUST be a generated artefact with 
 **Independently testable because** it is a pure function of three declared data structures and a
 committed table, driven entirely by literal inputs. (§18, §20, §22, §29, §30, §84; unblocks SC-001.)
 
-**FR-104 — Canonical participant ordering is a specified deterministic algorithm.**
+**FR-104** (superseded local numbering → ARBITRATION §14 → **FR-176**) — Canonical participant ordering is a specified deterministic algorithm.
 
 System MUST provide `canonical_participant_ordering(signature, commutative_slots, participants) ->
 tuple[CanonicalParticipant, ...]` as the ONLY participant ordering admitted to logical identity.
@@ -1444,7 +1444,7 @@ from no other datum, and MUST NOT be inferred from a missing or unknown directio
 **Independently testable because** it is a pure function of a signature, an explicit slot set and a
 list of bindings, with no store and no parser. (§19, §22, §23, §52, §53, §54, §103.)
 
-**FR-105 — The logical candidate identity rule.**
+**FR-105** (superseded local numbering → ARBITRATION §14 → **FR-177**) — The logical candidate identity rule.
 
 `RelationCandidate.logical_candidate_id` MUST equal `"CAND-" + digest128(canonical_material(material))`
 where `material` contains exactly `identity_schema`, `tenant_id`, `arity_mode`, `commutative_slots`,
@@ -1472,7 +1472,7 @@ and the §94 mutation `::test_mutation_relation_ref_in_logical_material_fails`.
 **Independently testable because** it asserts a literal key set on a pure function and a refusal
 condition on a dataclass, with no corpus. (§17, §19, §23, §94, §95; replaces FR-001 and FR-002.)
 
-**FR-106 — The mapping-independence invariant.**
+**FR-106** (superseded local numbering → ARBITRATION §14 → **FR-178**) — The mapping-independence invariant.
 
 Changing the mapping vocabulary MUST NOT change the historical logical identity of an
 already-extracted relational observation. Every mapping artefact — the operator registry, the

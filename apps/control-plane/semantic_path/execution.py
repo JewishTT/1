@@ -124,6 +124,14 @@ from domain.evidence_context import (
     InMemoryContextResolver,
 )
 from domain.evidence_lineage import EvidenceGraph, EvidenceHop, HopKind, LineageTrace
+from domain.mention_occurrence_index import (
+    MentionOccurrence,
+    MentionOccurrenceIndex,
+    MentionOccurrenceKey,
+    mint_mention_id,
+    unbound_mention_id,
+)
+from domain.predicate_signature import ArgumentSlot, Polarity
 from domain.relation_candidate import (
     RelationCandidate,
     SpanRef,
@@ -139,7 +147,9 @@ from domain.relation_claim_material import admit as admit_material
 from domain.relation_claim_material import build as build_material
 from domain.relation_claim_material import validate as validate_material
 from domain.relation_identity import RelationArityMode, canonical_material, digest128
+from domain.relation_participant import RelationParticipant
 from domain.relation_schema import RelationSchema, TemporalSemantics
+from domain.signal_basis import SignalBasis
 from domain.temporal_observation import TemporalAxis
 from domain.temporal_worldline import EntityWorldline, WorldlineEvent, build_worldline
 from extractors.registry import DeterministicExtractorSet, Mention, SemanticHint
@@ -149,6 +159,7 @@ from extractors.relations import (
     extract_relational_readings,
     register_relational_extractors,
 )
+from extractors.signals.mentions import bind_producer_signals
 from extractors.signals.protocol import ExtractionScope, RelationSignalExtractor, run_producer
 from extractors.signals.signal import (
     DirectionHypothesis,
@@ -260,10 +271,14 @@ GOLDEN_SENTENCE = "John Smith became CEO of Acme in 2020."
 _OBSERVATION_ID_PREFIX = "OBS-"
 _EVENT_ID_PREFIX = "EVT-"
 _CAPTURE_ID_PREFIX = "CAP-"
-_MENTION_ID_PREFIX = "MN-"
 _ENTITY_ID_PREFIX = "ENT-"
 
 EXTRACTION_SET_VERSION_PREFIX = "det-set-"
+
+#: The extractor ref of the mention step's index scope. One name for "the deterministic
+#: extractor set", and a constant rather than a per-record value so the set is one scope instead
+#: of one scope per mention (see :func:`_occurrence_index`).
+EXTRACTOR_SET_SCOPE_REF = "deterministic-extractor-set"
 
 #: The three codes the resolver's context layer can record for a regime comparison, and
 #: the only three this module treats as a regime verdict (FR-015).
@@ -377,6 +392,7 @@ def _default_type_refs() -> Mapping[str, str]:
 
 
 def mention_id_for(
+    capture_ref: str,
     segment_ref: str,
     kind: str,
     value: str,
@@ -386,22 +402,34 @@ def mention_id_for(
 ) -> str:
     """``MN-`` + 128-bit digest: which mention this is, from its own surface.
 
-    Derived through the same ``digest128``/``canonical_material`` pair every other
-    content address in the platform uses, so two readings of the same surface in the
-    same segment are one mention (idempotency) and a *different* extractor reading
-    it is a different mention - the extractor is in the material because how a
-    surface was read is part of what was read.
+    **A thin adapter over :func:`domain.mention_occurrence_index.mint_mention_id`, and it exists
+    only so this composition root reads naturally at its call sites.** The minter itself moved to
+    :mod:`domain.mention_occurrence_index` for two reasons, and both are about the dependency
+    graph rather than about tidiness: the index is the one thing that mints ``MN-…``, and a minter
+    that lived here could not be reached by a producer without taking the edge
+    producer → composition root — this module imports :mod:`extractors.registry` and
+    :mod:`graph.relation_store`, so importing it below the mention layer would invert the layering
+    and pull the graph package into extraction. :mod:`domain` sits strictly below both.
+
+    ``capture_ref`` is **required and first**, and it was not before: the old tuple was
+    ``(segment, kind, value, start, end, extractor)`` with no capture, so two captures of one
+    segment addressed to **one** mention id and the platform could no longer say which retrieval
+    saw it. That is a collision, not a simplification, and it is why the index's mint tuple has
+    five keys of which the capture is one (``ARBITRATION`` §8, FR-018).
+
+    ``kind`` is accepted and is **not** part of the mint: a producer's classification of an
+    occurrence is evidence about a mention rather than part of its identity, and the index refuses
+    a second kind at the same address rather than forking the id.
     """
-    return _MENTION_ID_PREFIX + digest128(
-        canonical_material(
-            {
-                "segment": segment_ref,
-                "kind": kind,
-                "value": value,
-                "start": start,
-                "end": end,
-                "extractor": extractor,
-            }
+    del kind
+    return mint_mention_id(
+        MentionOccurrenceKey.of(
+            capture_ref=capture_ref,
+            segment_ref=segment_ref,
+            start=start,
+            end=end,
+            surface=value,
+            extractor_ref=extractor,
         )
     )
 
@@ -725,6 +753,23 @@ class MentionStep:
     candidate used to *guess* its trigger span. When this is ``None`` the sentence
     carried no cue, and the candidate falls back to the between-mentions guess and says
     so. It is never synthesised here: extraction reports, this step consumes.
+    """
+
+    index: MentionOccurrenceIndex | None = None
+    """The :class:`~domain.mention_occurrence_index.MentionOccurrenceIndex` over this step's
+    records, and the thing a producer's deferred address is resolved **through**.
+
+    Carried rather than rebuilt because there is exactly one index per
+    ``(capture, segment, extractor)`` scope, and a second one would be a second answer to "which
+    mention is this address?". The scope is required rather than defaulted, so ``None`` means the
+    request supplied no capture and no mention id could be minted honestly - it is never a
+    placeholder scope with an invented member (FR-016, FR-018).
+
+    **What it is for, and what it is not.** It answers "which ``MN-…`` is this occurrence?", and
+    that is the whole of it. Reconciling a producer's address to a mention is this index's job and
+    only this index's; deciding whether two mentions are the *same thing* is coreference, it
+    belongs to :mod:`semantic.resolution`, and it has a ``ResolutionDecisionRecord`` behind it
+    (constitution Invariant 2).
     """
 
 
@@ -1599,6 +1644,15 @@ def golden_candidates(
 
     The refs are content addresses over fixed material, so the table is the same in every
     process and a diff between two runs means something changed.
+
+    **The support mention is the one ``MN-`` on this path with no occurrence behind it.** It is a
+    corpus constant naming a mention an independent group is said to have seen, and the registry
+    it names does not exist in this slice - so it is minted through
+    :func:`domain.mention_occurrence_index.unbound_mention_id`, which is the *only* ``MN-`` on the
+    platform that is deliberately not resolvable through
+    :class:`domain.mention_occurrence_index.MentionOccurrenceIndex`. It is stated here rather than
+    quietly left as a string concatenation, because a fixture that resolved would be a claim about
+    provenance that nothing backs.
     """
     records = (
         ("acme-corporation", "Acme Corporation", "schema:Organization"),
@@ -1619,7 +1673,9 @@ def golden_candidates(
             valid_from=datetime(2010, 1, 1, tzinfo=UTC),
             valid_to=None,
             observed_at=datetime(2019, 11, 1, tzinfo=UTC),
-            support_mention_ids=(_MENTION_ID_PREFIX + digest128(f"golden-support:{key}"),),
+            support_mention_ids=(
+                unbound_mention_id(f"golden-support:{key}"),
+            ),
             supporting_groups=("grp-registry",),
         )
         for key, name, kind in records
@@ -2186,6 +2242,15 @@ def _mentions_step(result: ExecutionResult) -> ExecutionResult:
     are addressed by :func:`mention_id_for`. Every kind the set returns is kept: the
     ontology gate is gone, so nothing here filters down to the two kinds this relation
     needs and nothing drops an unfamiliar one (FR-002).
+
+    **The step builds the :class:`~domain.mention_occurrence_index.MentionOccurrenceIndex`
+    over what it found and hands it forward**, which is the production use of the one
+    ``MN-`` minter: the records are registered as occurrences, their ids are minted by the
+    index, and a producer's deferred address is resolved against this same object rather
+    than against a second table built somewhere else. The index needs the retrieval, and
+    the request's :attr:`ExecutionRequest.capture` is the only real one there is - so a
+    request built without a capture leaves :attr:`MentionStep.index` at ``None`` and says
+    so, rather than minting ids under an invented scope.
     """
     request = result.request
     observation = result.observation.observation
@@ -2197,6 +2262,8 @@ def _mentions_step(result: ExecutionResult) -> ExecutionResult:
         lang_hint=observation.language,
         observation_refs=(observation.observation_id,),
     )
+    capture = _acquisition_capture(result)
+    capture_ref = capture.capture_id if capture is not None else ""
     mentions: list[Mention] = []
     records: list[MentionRecord] = []
     hints: list[SemanticHint | None] = []
@@ -2217,6 +2284,7 @@ def _mentions_step(result: ExecutionResult) -> ExecutionResult:
         records.append(
             MentionRecord(
                 mention_id=mention_id_for(
+                    capture_ref,
                     observation.segment_id,
                     typed.kind,
                     typed.value,
@@ -2235,6 +2303,7 @@ def _mentions_step(result: ExecutionResult) -> ExecutionResult:
             mention.attrs["semantic_hint"] = hint.flag
         mentions.append(mention)
         hints.append(hint)
+    index = _occurrence_index(capture_ref, observation.segment_id, records)
     return replace(
         result,
         mentions=MentionStep(
@@ -2244,8 +2313,40 @@ def _mentions_step(result: ExecutionResult) -> ExecutionResult:
             obj=_select(records, request.object_kind, "object"),
             hints=tuple(hints),
             reading=readings[0] if readings else None,
+            index=index,
         ),
         reached=ExecutionStage.MENTIONS,
+    )
+
+
+def _occurrence_index(
+    capture_ref: str, segment_ref: str, records: Sequence[MentionRecord]
+) -> MentionOccurrenceIndex | None:
+    """The index over ``records``, or ``None`` when the run named no retrieval.
+
+    Two things are decided here rather than at each call site. **The extractor ref** is the set's
+    own version, because the scope's fifth key is *which instrument read this* and every record on
+    this step came from one set; a per-record extractor name would give each mention its own index
+    and turn the index into a lookup that always misses. **The refusal** is on a blank
+    ``capture_ref``: an index's scope is three of the five keys a mention id is minted from, and a
+    placeholder scope would mint ids that cannot say which retrieval produced them - the collision
+    the capture key was added to prevent, arriving by another route (FR-018).
+    """
+    if not capture_ref.strip():
+        return None
+    return MentionOccurrenceIndex(
+        capture_ref=capture_ref,
+        segment_ref=segment_ref,
+        extractor_ref=EXTRACTOR_SET_SCOPE_REF,
+        occurrences=[
+            MentionOccurrence(
+                kind=record.kind,
+                surface=record.value,
+                start=record.start,
+                end=record.end,
+            )
+            for record in records
+        ],
     )
 
 
@@ -2822,8 +2923,31 @@ def _signal_step(result: ExecutionResult) -> ExecutionResult:
     )
 
     declared = RelationSignal(
-        subject_mention_ref=mentions.subject.mention_id,
-        object_mention_ref=mentions.obj.mention_id,
+        # The native participant path (Phase 4B), and the two ends are **real mention ids**
+        # here - `result.mentions.subject.mention_id` is whatever
+        # :func:`mention_id_for` minted for the mention the mention layer found. This is the
+        # one construction site on this path that is not a producer: the orchestrator is
+        # holding a mention record, not a surface, so there is nothing deferred about it and
+        # nothing to resolve later.
+        participants=(
+            RelationParticipant(
+                mention_ref=mentions.subject.mention_id,
+                slot=ArgumentSlot(0),
+                # The request's own role names, which are the *caller's* declaration and not
+                # this module's reading. They are the role_hypothesis - evidence, and never
+                # identity material (FR-009).
+                role_hypothesis=request.role_names[0] if request.role_names else "",
+                ordinal=0,
+                confidence=1.0,
+            ),
+            RelationParticipant(
+                mention_ref=mentions.obj.mention_id,
+                slot=ArgumentSlot(1),
+                role_hypothesis=request.role_names[1] if len(request.role_names) > 1 else "",
+                ordinal=1,
+                confidence=1.0,
+            ),
+        ),
         kind=SignalKind.SCHEMA,
         # The relation's own words as the caller stated them, which for a declared
         # hypothesis is the operator's name. Unlike a producer's surface, this one *is* a
@@ -2831,6 +2955,19 @@ def _signal_step(result: ExecutionResult) -> ExecutionResult:
         # pretending otherwise would lose the only part of it that is unambiguous.
         relation_surface=request.relation_type,
         relation_ref=RelationRef(request.relation_type, request.schema.schema_version),
+        # `attribute_key` and not `predicate_text`, and the choice is the same one every
+        # producer in the package makes: a declaration is a key the caller asserted beside a
+        # value, not a phrase the document contained between two mentions. Nothing was read
+        # here - `Neighbourhood.characters_scanned` is 0 and says so - and a basis of
+        # `predicate_text` on a signal that read no predicate words would be a record
+        # claiming an observation this stage did not make.
+        basis=SignalBasis.ATTRIBUTE_KEY,
+        # Stated, not defaulted. The caller declared a relation; nothing in the request says
+        # the document denied it, and a denial this stage cannot see must not be invented.
+        # Phase 4C deleted `SignalKind.NEGATION`, so this is the only place a signal can be
+        # denied - which is what makes it the one place here the polarity has to be set by
+        # hand rather than left to a kind the producer would have chosen.
+        polarity=Polarity.ASSERTED,
         neighbourhood=Neighbourhood(
             characters_scanned=0,
             pairs_considered=0,
@@ -2882,6 +3019,50 @@ def _signal_step(result: ExecutionResult) -> ExecutionResult:
                 run_producer(producer, [request.text_for_producers()], scope=scope)
             )
         discovered = tuple(found)
+        # Phase 4C: **and the discovered signals are bound before assembly sees them.** They
+        # arrive holding deferred addresses, and assembly groups by participant reference, so
+        # unbound they would group under their own strings forever - report as though they had
+        # been read, corroborate nothing, and be unreachable by every mention id the platform
+        # holds. The mention layer's records address whole entity spans at extractor
+        # granularity while a producer addresses the cue group that matched, so there is no
+        # re-addressing that would be honest; what 4C does is register the producer's own reads
+        # and resolve through that, and refuse the ends that cannot resolve.
+        #
+        # `MentionStep.index` is the mention layer's own index and is the scope every bound id
+        # must be minted in: the binding takes its capture and segment from the index rather
+        # than from `document_ref`, because a minted id that disagreed with the mention layer's
+        # own scope would be a second set of addresses for one retrieval — which is the
+        # collision the capture key was added to prevent, arriving by another route (FR-018).
+        # It is also the *only* thing that can resolve a `capture:` end and an **unpositioned**
+        # surface (the syntactic producer's positions are clause-relative token indices, so
+        # there is no span to register an occurrence from). It is `None` when the request named
+        # no retrieval, and 4C then refuses rather than minting an id under an invented scope.
+        # It is not defaulted to a placeholder index: a placeholder would resolve nothing while
+        # looking as though it had been consulted.
+        #
+        # **What is deliberately not changed here.** `document_ref` above still comes from
+        # `request.capture` alone, so the *declared* signal keeps `capture_ref=""` on a request
+        # whose only retrieval is the one `_acquisition_capture` derived. That inconsistency is
+        # real and it is reported rather than silently repaired, because repairing it would
+        # change `capture_ref` — which is in `RelationSignal._material()` — and therefore re-key
+        # every stored signal, candidate and claim on the golden path for a reason that has
+        # nothing to do with 4C's deletions. See the phase report, `execution.py:2909`.
+        if mentions.index is None:
+            raise SemanticExecutionError(
+                "producer_occurrence_scope_unavailable",
+                f"{len(discovered)} producer signal(s) carry deferred participant addresses and "
+                "this run named no retrieval, so the mention layer minted no index and no "
+                "mention id can be minted honestly: a mention address is (capture, segment, "
+                "extractor, span, surface) and the capture is the first key. Bind the producers "
+                "against a named retrieval, or run no producer and keep the declared hypothesis "
+                "(FR-018)",
+            )
+        discovered = bind_producer_signals(
+            discovered,
+            capture_ref=mentions.index.capture_ref,
+            segment_ref=mentions.index.segment_ref,
+            mention_index=mentions.index,
+        )
 
     report = assemble(
         (*discovered, declared),

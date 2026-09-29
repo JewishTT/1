@@ -55,8 +55,26 @@ FR as a live requirement target. Every such citation is rewritten to `INV-002` o
 surviving FR that carries the obligation. A8prep's instruction that A4b "should reference
 FR-034a" is **overridden**.
 
-Tombstone set, per A6: `FR-058`→`INV-004`, `FR-079`→`FR-078`, `FR-080`→`FR-072`,
-`FR-070`→design note, `FR-034a`→`INV-002`.
+Tombstone set, per A6, plus the fold §1 records: `FR-058`→`INV-004`, `FR-079`→`FR-078`,
+`FR-080`→`FR-072`, `FR-070`→design note, `FR-034a`→`INV-002`, `FR-039a`→`FR-040`.
+
+**Six, not five.** `spec.md`'s tombstone record table carries **six** rows and this set is the
+authority the checker reads; `FR-039a` was missing here, which left a live citation of it gated by
+nothing at all. It is a letter-suffixed fold into the `FR-040` slot (§1: "the map reduces to 2
+folds (`FR-034a`→`FR-035` slot, `FR-039a`→`FR-040` slot)"), it carries no normative requirement of
+its own, and §1 already treats it as folded — so the omission was a gap in the record, not a
+decision that `FR-039a` is still live. A tombstone set that is shorter than the record table it
+mirrors is the failure mode this paragraph exists to prevent: `TOMBSTONED-FR-REF` and
+`RI-01-FR-DEF` both read this set, and an id that is absent from it is invisible to both.
+
+**One successor disagreement, reported and not resolved here.** `spec.md`'s tombstone table and
+§1 above both give `FR-039a`'s successor as the `FR-040` slot, and this record's own set agrees.
+`tasks.md:942` instead says `FR-039a` is "folded into `FR-112`". `FR-112` is a live requirement
+about type resolution over a bounded neighbourhood, so the two statements are not describing the
+same obligation and one of them is wrong. `tasks.md` is not this record's file and is left
+untouched; the disagreement is recorded here so that whoever owns `tasks.md` settles it, and until
+it is settled the successor column of the `spec.md` table (`FR-040`) is the one both this record
+and `spec.md` state.
 
 ---
 
