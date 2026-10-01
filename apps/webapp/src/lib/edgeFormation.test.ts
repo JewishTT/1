@@ -65,7 +65,13 @@ describe("makeEdgeId", () => {
   });
 
   it("pins the documented 128-bit identity vector, replacing the 32-bit one", () => {
-    expect(makeEdgeId("ENT-1", "ENT-2", "possible_match", "CE-1")).toBe("UI-PENDING");
+    // ADR-0023: the 32-bit `e:1d374e53` identity vector is replaced. This digest
+    // is sha256('{"mode":"directed","object":"ENT-2","source":"CE-1",'
+    // + '"subject":"ENT-1","type":"possible_match"}')[:32], computed by the
+    // Python donor's relation_identity.digest128 over canonical_material.
+    expect(makeEdgeId("ENT-1", "ENT-2", "possible_match", "CE-1")).toBe(
+      "UI-a3a1b4281e7cc32d98e597d7ef31621f",
+    );
   });
 
   it("hashes UTF-8 bytes, so a non-ASCII id is stable and width-correct", () => {

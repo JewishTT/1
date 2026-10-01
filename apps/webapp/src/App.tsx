@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { InvestigationWorkspaceRoute } from "./Workbench";
 import { SearchContainer } from "./containers/SearchContainer";
 import { EntityViewContainer } from "./containers/EntityViewContainer";
 import { FindingViewContainer } from "./containers/FindingViewContainer";
@@ -26,7 +27,12 @@ export function App() {
         <Route path="network" element={<NetworkAnalysisContainer />} />
         <Route path="search" element={<SearchContainer />} />
         <Route path="investigations" element={<InvestigationListContainer />} />
-        <Route path="investigations/:id" element={<InvestigationContainer />} />
+        {/* UI 2.0: the legacy InvestigationContainer (with its review panel and
+            edit form) stays reachable at its own path, and the investigation
+            route itself now mounts the shell + workspace, with the legacy
+            InvestigationPage injected into the Overview canvas (§97, §10). */}
+        <Route path="investigations/:id" element={<InvestigationWorkspaceRoute />} />
+        <Route path="investigations/:id/legacy" element={<InvestigationContainer />} />
         <Route path="entities/:id" element={<EntityViewContainer />} />
         <Route path="findings/:id" element={<FindingViewContainer />} />
         <Route path="connectors" element={<ConnectorsContainer />} />

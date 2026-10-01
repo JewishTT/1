@@ -1,0 +1,145 @@
+/* COGNITIVE UI 2.0 — colour tokens (§55–§58, §61, §93).
+ *
+ * ONE source of truth. Every colour in the new shell/workspace/primitives
+ * resolves through a custom property declared here. No component stylesheet
+ * may hard-code a hex value.
+ *
+ * Palette roles (Visual Direction):
+ *   base       near-black / graphite, four charcoal surface levels,
+ *              muted steel for secondary chrome, cold white for text.
+ *   accent     restrained technical / phosphor GREEN. Active connections,
+ *              confirmed state, selected path, live activity. Nothing else.
+ *   gold       amber / muted gold. Metadata, labels, annotations,
+ *              classification, temporal markers. Never a warning colour.
+ *   danger     red, SEMANTIC ONLY: error, contradiction, quarantine,
+ *              rejected evidence, anomaly. Never decoration.
+ *   analytical cyan, secondary only. Must not compete with accent; used for
+ *              derived/analytical marks, never for state.
+ *
+ * Hierarchy is NOT carried by these colours: §93 forbids glow, colour
+ * explosion, shadows and decorative borders as the means of hierarchy.
+ * Hierarchy comes from size, weight, contrast, spacing, position, selection.
+ */
+
+/* ── Dark (default) ─────────────────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Base ramp — near-black to graphite, four surface steps. */
+  --ui-bg: #0a0c0b;
+  --ui-bg-sunken: #070908;
+  --ui-surface-1: #101312;
+  --ui-surface-2: #161a18;
+  --ui-surface-3: #1d221f;
+  --ui-surface-raised: #242a26;
+
+  /* Muted steel — secondary chrome (rails, inactive iconography, rules). */
+  --ui-steel: #7c8a80;
+  --ui-steel-dim: #5f6b63;
+  --ui-steel-bright: #a9b5ab;
+
+  /* Cold white — primary text. */
+  --ui-text: #e7ece8;
+  --ui-text-secondary: #a6b0a8;
+  --ui-text-muted: #7d877f;
+  --ui-text-inverse: #0a0c0b;
+
+  /* Hairlines. Structural, not decorative. */
+  --ui-border: #232825;
+  --ui-border-strong: #333b36;
+  --ui-border-subtle: #1a1e1b;
+  --ui-focus-ring: #57c98a;
+
+  /* Phosphor green — system accent. */
+  --ui-accent: #46c07a;
+  --ui-accent-bright: #6fe0a3;
+  --ui-accent-muted: #2f6b4c;
+  --ui-accent-wash: rgba(70, 192, 122, 0.12);
+  --ui-accent-line: rgba(70, 192, 122, 0.42);
+  --ui-on-accent: #06120c;
+
+  /* Muted gold — metadata / labels / classification / temporal. */
+  --ui-gold: #c9a249;
+  --ui-gold-bright: #e0c078;
+  --ui-gold-wash: rgba(201, 162, 73, 0.12);
+  --ui-gold-line: rgba(201, 162, 73, 0.38);
+
+  /* Red — semantic only. */
+  --ui-danger: #d4574c;
+  --ui-danger-bright: #e8837a;
+  --ui-danger-wash: rgba(212, 87, 76, 0.12);
+  --ui-danger-line: rgba(212, 87, 76, 0.45);
+
+  /* Cyan — secondary analytical accent. */
+  --ui-analytical: #4f9cb8;
+  --ui-analytical-wash: rgba(79, 156, 184, 0.12);
+
+  /* Status aliases (closed vocabulary, §92). */
+  --ui-status-healthy: var(--ui-accent);
+  --ui-status-running: var(--ui-accent);
+  --ui-status-queued: var(--ui-steel);
+  --ui-status-paused: var(--ui-gold);
+  --ui-status-completed: var(--ui-steel-bright);
+  --ui-status-failed: var(--ui-danger);
+  --ui-status-blocked: var(--ui-danger);
+  --ui-status-unknown: var(--ui-steel-dim);
+}
+
+/* ── Light — a first-class theme, not an inverted dark (§57) ────────── */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Warm-neutral paper ramp. Dark chrome on light ground. */
+  --ui-bg: #f2f4f1;
+  --ui-bg-sunken: #e6e9e4;
+  --ui-surface-1: #fbfcfa;
+  --ui-surface-2: #f5f7f4;
+  --ui-surface-3: #ecefeb;
+  --ui-surface-raised: #e2e6e0;
+
+  --ui-steel: #5d6a62;
+  --ui-steel-dim: #7f8a83;
+  --ui-steel-bright: #3d4842;
+
+  --ui-text: #121714;
+  --ui-text-secondary: #3c463f;
+  --ui-text-muted: #5f6a63;
+  --ui-text-inverse: #fbfcfa;
+
+  --ui-border: #d3d9d2;
+  --ui-border-strong: #b6bfb7;
+  --ui-border-subtle: #e2e6e0;
+  --ui-focus-ring: #1c7a4c;
+
+  /* Darker phosphor green: the light ground needs more luminance contrast
+     before it reaches AA, so the light theme does not reuse the dark hex. */
+  --ui-accent: #1c7a4c;
+  --ui-accent-bright: #145f3a;
+  --ui-accent-muted: #a8d8bd;
+  --ui-accent-wash: rgba(28, 122, 76, 0.1);
+  --ui-accent-line: rgba(28, 122, 76, 0.4);
+  --ui-on-accent: #f2f4f1;
+
+  --ui-gold: #7d5a12;
+  --ui-gold-bright: #63470d;
+  --ui-gold-wash: rgba(125, 90, 18, 0.1);
+  --ui-gold-line: rgba(125, 90, 18, 0.34);
+
+  --ui-danger: #a8291f;
+  --ui-danger-bright: #851f17;
+  --ui-danger-wash: rgba(168, 41, 31, 0.09);
+  --ui-danger-line: rgba(168, 41, 31, 0.4);
+
+  --ui-analytical: #1c6480;
+  --ui-analytical-wash: rgba(28, 100, 128, 0.1);
+
+  --ui-status-healthy: var(--ui-accent);
+  --ui-status-running: var(--ui-accent);
+  --ui-status-queued: var(--ui-steel);
+  --ui-status-paused: var(--ui-gold);
+  --ui-status-completed: var(--ui-steel-bright);
+  --ui-status-failed: var(--ui-danger);
+  --ui-status-blocked: var(--ui-danger);
+  --ui-status-unknown: var(--ui-steel-dim);
+}

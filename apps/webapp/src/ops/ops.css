@@ -1,0 +1,553 @@
+/* COGNITIVE UI 2.0 — operations, quarantine and source catalogue (§46–§48).
+ *
+ * Imported by the three surfaces so they travel with their components; nothing
+ * here needs registering in styles/layers.css.
+ *
+ * THE THREE SURFACES ARE NOT THREE DASHBOARDS (§46, §47, §48).
+ *
+ *   .ui-ops      a status board. Statuses, and what to do about them.
+ *   .ui-quar     a work queue over refused data. Rows, and three actions.
+ *   .ui-catalog  a registry. Identity, capability, and what is unknown.
+ *
+ * They share one table shape and one status vocabulary and nothing else, because
+ * an operator moving between them must not have to relearn the surface each
+ * time — and an analyst must never mistake any of them for the investigation
+ * workspace.
+ *
+ * §70: no giant dashboard cards. Every block here is a dense row group sized by
+ * its content. §71: no decorative chrome — each element is a status, a number
+ * with a consequence, or an action.
+ *
+ * All colours resolve through tokens. This file introduces no hex value.
+ */
+
+/* ── Shared: a status strip, not a card ─────────────────────────────── */
+
+.ui-ops {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-5);
+  min-height: 0;
+  padding: var(--ui-pane-pad);
+}
+
+.ui-ops-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-ops-head-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ui-ops-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex-shrink: 0;
+}
+
+/* A block is a labelled group of rows. One surface step and a hairline, never a
+   card with a shadow — §93. */
+.ui-ops-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-ops-block-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-ops-block-head .ui-pane-title {
+  flex-shrink: 0;
+}
+
+.ui-ops-block-note {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  margin-inline-start: auto;
+  text-align: end;
+}
+
+.ui-ops-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+/* One signal. Grid rather than a flex pile so the key, value and consequence
+   stay in columns down the block and can be scanned without reading each row. */
+.ui-signal {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) minmax(72px, auto) auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--ui-space-3) var(--ui-space-4);
+  min-height: var(--ui-row-h-lg);
+  padding: var(--ui-cell-pad-y) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-signal:last-child {
+  border-bottom: none;
+}
+
+.ui-signal-key {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-signal-value {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-signal-meaning {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+}
+
+/* The consequence. Gold is metadata/classification and danger is semantic, so an
+   action line uses neither: it reads as body text and is found by position. */
+.ui-signal-action {
+  grid-column: 2 / -1;
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-danger-bright);
+  line-height: var(--ui-leading-normal);
+}
+
+.ui-signal[data-severity="watch"] .ui-signal-action {
+  color: var(--ui-text-secondary);
+}
+
+.ui-ops-empty {
+  padding: var(--ui-space-4);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+}
+
+/* ── Attention board ────────────────────────────────────────────────── */
+
+/*
+ * The one place the operational surface differs from the analyst's: a short list
+ * of what needs a decision, worst first. It is a list, not a gauge cluster, and
+ * an empty one says the pipeline is nominal rather than leaving a hole (§69).
+ */
+.ui-ops-attention {
+  border-color: var(--ui-danger-line);
+}
+
+.ui-ops-attention[data-clear="true"] {
+  border-color: var(--ui-border);
+}
+
+/* ── Worker pools ───────────────────────────────────────────────────── */
+
+.ui-pool {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) auto repeat(3, minmax(56px, auto)) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--ui-space-3) var(--ui-space-4);
+  min-height: var(--ui-row-h-lg);
+  padding: var(--ui-cell-pad-y) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-pool:last-child {
+  border-bottom: none;
+}
+
+.ui-pool-name {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text);
+}
+
+.ui-pool-num {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-secondary);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-pool-head {
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+  text-align: end;
+}
+
+.ui-pool-note {
+  grid-column: 1 / -1;
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-secondary);
+  line-height: var(--ui-leading-normal);
+}
+
+/* ── Quarantine ─────────────────────────────────────────────────────── */
+
+.ui-quar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-height: 0;
+}
+
+.ui-quar-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+  padding: var(--ui-space-3) var(--ui-space-4);
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-quar-toolbar .ui-field {
+  min-width: 200px;
+}
+
+/*
+ * The §47 column set, in its own order: Time / Source / Runtime / Object /
+ * Reason / Attempts / Status / Replayable, plus the served identifiers.
+ * `grid-template-columns` names each column so a header and a row cannot drift
+ * apart, and `Reason` takes the slack because it is the only narrative field.
+ */
+.ui-quar-table {
+  display: grid;
+  grid-template-columns:
+    84px 84px 96px 88px 72px 88px
+    minmax(200px, 1fr) 84px minmax(140px, 160px);
+  align-items: center;
+  gap: 0;
+  font-size: var(--ui-text-xs);
+}
+
+.ui-quar-head {
+  display: contents;
+}
+
+.ui-quar-head > span {
+  position: sticky;
+  top: 0;
+  z-index: var(--ui-z-sticky);
+  padding: var(--ui-cell-pad-y) var(--ui-cell-pad-x);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+  background: var(--ui-surface-2);
+  border-bottom: 1px solid var(--ui-border);
+  white-space: nowrap;
+}
+
+.ui-quar-row {
+  display: contents;
+  cursor: pointer;
+}
+
+.ui-quar-cell {
+  display: flex;
+  align-items: center;
+  min-height: var(--ui-row-h-lg);
+  padding: var(--ui-cell-pad-y) var(--ui-cell-pad-x);
+  border-bottom: 1px solid var(--ui-border-subtle);
+  color: var(--ui-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.ui-quar-cell[data-mono="true"] {
+  font-family: var(--ui-font-mono);
+}
+
+.ui-quar-row:hover .ui-quar-cell {
+  background: var(--ui-surface-2);
+}
+
+.ui-quar-row[data-selected="true"] .ui-quar-cell {
+  background: var(--ui-accent-wash);
+  color: var(--ui-text);
+}
+
+/* Selection on a grid row is a left rule, not a fill — same rule as the data
+   table, so the two read as one system. */
+.ui-quar-row[data-selected="true"] .ui-quar-cell:first-of-type {
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+/*
+ * A field the endpoint does not serve. Distinct from an empty value and from a
+ * zero: the cell states the absence (§90, §99) instead of leaving a hole that
+ * reads as "nothing here".
+ */
+.ui-quar-absent {
+  font-size: var(--ui-text-2xs);
+  font-style: italic;
+  color: var(--ui-text-muted);
+}
+
+.ui-quar-actions {
+  display: flex;
+  gap: var(--ui-space-2);
+  justify-content: flex-end;
+}
+
+/* A row that cannot be replayed says so in place of the button. The reason is
+   always present, so the absence of a control is never a mystery (§69). */
+.ui-quar-blocked {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-danger-bright);
+  text-align: end;
+  line-height: var(--ui-leading-tight);
+}
+
+/* ── Quarantine detail ──────────────────────────────────────────────── */
+
+.ui-quar-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-4);
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-quar-detail-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+  padding-bottom: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-quar-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+}
+
+.ui-quar-gap-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-quar-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  background: var(--ui-surface-2);
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-1);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+}
+
+.ui-quar-gap-endpoint {
+  font-family: var(--ui-font-mono);
+  color: var(--ui-gold);
+}
+
+/* The preserved payload. Mono, wrapping, and never interpreted as markup. */
+.ui-quar-payload {
+  max-height: 180px;
+  overflow: auto;
+  padding: var(--ui-space-3);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-secondary);
+  background: var(--ui-bg-sunken);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-1);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ── Source catalogue ───────────────────────────────────────────────── */
+
+.ui-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-5);
+  min-height: 0;
+}
+
+/*
+ * The catalogue's row shape. §48 makes this the point: one grid definition, used
+ * by the fabric rows AND by the out-of-fabric connectors, so an operator reading
+ * the registry never has to re-learn the columns.
+ */
+.ui-catalog-table {
+  display: grid;
+  grid-template-columns:
+    minmax(110px, 150px) minmax(96px, 130px) minmax(140px, 180px)
+    minmax(180px, 1fr) 88px 84px 100px 88px;
+  align-items: center;
+  font-size: var(--ui-text-xs);
+}
+
+/* The out-of-fabric connector block has fewer columns, so it declares its own. */
+.ui-catalog-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(120px, 180px) minmax(96px, 130px) minmax(140px, 1fr)
+    84px minmax(120px, 160px) 88px;
+  align-items: center;
+  font-size: var(--ui-text-xs);
+}
+
+.ui-catalog-head > span {
+  position: sticky;
+  top: 0;
+  z-index: var(--ui-z-sticky);
+  padding: var(--ui-cell-pad-y) var(--ui-cell-pad-x);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+  background: var(--ui-surface-2);
+  border-bottom: 1px solid var(--ui-border);
+  white-space: nowrap;
+}
+
+.ui-catalog-row {
+  display: contents;
+}
+
+.ui-catalog-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-height: var(--ui-row-h-lg);
+  padding: var(--ui-cell-pad-y) var(--ui-cell-pad-x);
+  border-bottom: 1px solid var(--ui-border-subtle);
+  color: var(--ui-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.ui-catalog-cell[data-mono="true"] {
+  font-family: var(--ui-font-mono);
+}
+
+.ui-catalog-source {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text);
+}
+
+/*
+ * Capabilities as one inline token run, not five badges. §48's point is that
+ * these are items of one fabric with one shape; rendering each capability as a
+ * chip would re-fragment them into per-source decorations.
+ */
+.ui-catalog-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-1) var(--ui-space-3);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-steel-bright);
+}
+
+.ui-catalog-caps-sep {
+  color: var(--ui-steel-dim);
+}
+
+.ui-catalog-coverage {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+}
+
+.ui-catalog-row-note {
+  grid-column: 1 / -1;
+  padding: 0 var(--ui-cell-pad-x) var(--ui-cell-pad-y);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+/* ── §160 blocker list ──────────────────────────────────────────────── */
+
+.ui-blockers {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ui-text-2xs);
+}
+
+.ui-blocker {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--ui-space-3) var(--ui-space-4);
+  min-height: var(--ui-row-h);
+  padding: var(--ui-cell-pad-y) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-blocker:last-child {
+  border-bottom: none;
+}
+
+.ui-blocker-name {
+  font-family: var(--ui-font-mono);
+  color: var(--ui-text-secondary);
+}
+
+.ui-blocker-settled {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-gold);
+  overflow-wrap: anywhere;
+}
+
+/* ── Reduced motion (§67) ───────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-signal,
+  .ui-pool,
+  .ui-quar-cell,
+  .ui-catalog-cell {
+    transition: none;
+  }
+}

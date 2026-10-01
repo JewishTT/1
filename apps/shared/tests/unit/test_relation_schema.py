@@ -754,6 +754,7 @@ def test_t063_every_field_is_part_of_the_content_key(field: str) -> None:
 _PEER_IMPORT_ERROR: str | None = None
 try:
     from domain.context_validation import ValidationWorld, validate
+
     from domain.evidence_context import EvidenceContext, InMemoryContextResolver
 except Exception as _exc:  # noqa: BLE001
     _PEER_IMPORT_ERROR = f"{type(_exc).__name__}: {_exc}"

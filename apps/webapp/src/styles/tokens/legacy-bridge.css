@@ -1,0 +1,19 @@
+/* COGNITIVE // NEXUS — design system.
+ * Web3 glass + chrome-crimson cyberpunk + Palantir-grade dense analytics shell.
+ * Module accents: OSINT (cyan/amber), ECONOMICS (emerald), SPECOPS (crimson).
+ * Keeps every legacy surface class so existing pages adopt the theme as-is.
+ */
+
+@theme {
+  --color-cyber: #22d3ee;
+  --color-cyber-hi: #67e8f9;
+  --color-ember: #f0a832;
+  --color-matri: #34d399;
+  --color-crimson: #f43f5e;
+  --color-violet: #a78bfa;
+  --color-magenta: #e879f9;
+  --color-abyss: #05070d;
+  --color-abyss-2: #0a101c;
+  --color-frame: #1e2a3d;
+  --color-ghost: #dde6f0;
+}

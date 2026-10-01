@@ -1,0 +1,11 @@
+/* COGNITIVE UI 2.0 — aggregate token entry.
+ *
+ * One file to import to get the full token set. Every other stylesheet in
+ * ui/ assumes these properties exist. Order matters only in that nothing
+ * here references a component class.
+ */
+@import "./color.css";
+@import "./typography.css";
+@import "./scale.css";
+@import "./density.css";
+@import "./motion.css";

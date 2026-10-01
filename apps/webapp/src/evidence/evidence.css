@@ -1,0 +1,470 @@
+/* COGNITIVE UI 2.0 — evidence and lineage (§28–§34, §82).
+ *
+ * Imported by the evidence surfaces so they travel with their components.
+ *
+ * §82: evidence is a PEER of the graph, so this is a two-pane work surface —
+ * list left, viewer right, both full height — with the same density and the same
+ * toolbar vocabulary as the graph. It is deliberately NOT a card, and it is
+ * deliberately NOT a popover over the canvas.
+ *
+ * §93: no glow, no gradients, no shadow-as-hierarchy. The panes are separated by
+ * a hairline and one surface step, and by nothing else.
+ *
+ * All colours resolve through tokens; this file introduces no hex value.
+ */
+
+.ui-evidence {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--ui-bg);
+}
+
+/* ── Toolbar (§82: same vocabulary as the graph) ─────────────────────── */
+
+.ui-evidence-toolbar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  background: var(--ui-surface-1);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-evidence-toolbar .ui-field {
+  min-width: 220px;
+}
+
+.ui-evidence-kindgroup,
+.ui-evidence-sort {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ui-space-2);
+}
+
+.ui-evidence-toolbar-grow {
+  flex: 1;
+  min-width: var(--ui-space-6);
+}
+
+/* ── Two panes (§28) ────────────────────────────────────────────────── */
+
+.ui-evidence-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.ui-evidence-list {
+  width: 380px;
+  flex: none;
+  padding: 0 var(--ui-space-4) var(--ui-space-4);
+  overflow-y: auto;
+  background: var(--ui-surface-1);
+  border-right: 1px solid var(--ui-border);
+}
+
+.ui-evidence-spacer {
+  width: 1px;
+}
+
+.ui-evidence-more {
+  display: block;
+  width: 100%;
+  padding: var(--ui-space-3);
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  background: transparent;
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--ui-radius-1);
+  cursor: pointer;
+}
+
+.ui-evidence-more:hover:not(:disabled) {
+  color: var(--ui-text);
+  border-color: var(--ui-border-strong);
+}
+
+.ui-evidence-more:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-evidence-viewer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ui-evidence-viewer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-evidence-viewer-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ui-evidence-viewer-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ui-evidence-viewer > .ui-tabs {
+  padding: var(--ui-space-2) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-evidence-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ui-pane-pad);
+}
+
+.ui-evidence-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+}
+
+/* ── Raw viewer (§30) ───────────────────────────────────────────────── */
+
+.ui-raw {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-raw-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-raw-toolbar .ui-field {
+  min-width: 200px;
+}
+
+.ui-raw-toolbar-grow {
+  flex: 1;
+  min-width: var(--ui-space-5);
+}
+
+.ui-raw-error {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  background: var(--ui-danger-wash);
+  border-bottom: 1px solid var(--ui-danger-line);
+}
+
+.ui-raw-note {
+  padding: var(--ui-space-2) var(--ui-space-4);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-gold);
+  background: var(--ui-gold-wash);
+  border-bottom: 1px solid var(--ui-gold-line);
+  overflow-wrap: anywhere;
+}
+
+.ui-raw-lines {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+}
+
+.ui-raw-lines:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: -2px;
+}
+
+.ui-raw-line {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 132px;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  min-height: 18px;
+  padding: 0 var(--ui-space-3);
+  cursor: pointer;
+  color: var(--ui-text-secondary);
+  white-space: pre;
+}
+
+.ui-raw-line:hover {
+  background: var(--ui-surface-2);
+}
+
+/* A search hit is a wash plus a left rule. Colour alone would fail for the
+   same reason every other mark here uses shape or a rule. */
+.ui-raw-line[data-hit="true"] {
+  background: var(--ui-gold-wash);
+  box-shadow: inset 2px 0 0 var(--ui-gold);
+}
+
+.ui-raw-line[data-cursor="true"] {
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.ui-raw-line[data-selected="true"] {
+  background: var(--ui-accent-wash);
+}
+
+.ui-raw-line[data-observation] {
+  color: var(--ui-text);
+}
+
+.ui-raw-gutter {
+  text-align: end;
+  color: var(--ui-steel-dim);
+  user-select: none;
+}
+
+.ui-raw-code {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.ui-raw-code [data-token="key"] {
+  color: var(--ui-steel-bright);
+}
+
+.ui-raw-code [data-token="string"] {
+  color: var(--ui-text);
+}
+
+.ui-raw-code [data-token="number"] {
+  color: var(--ui-gold);
+}
+
+.ui-raw-code [data-token="literal"] {
+  color: var(--ui-accent);
+}
+
+.ui-raw-code [data-token="punctuation"] {
+  color: var(--ui-steel-dim);
+}
+
+.ui-raw-elided {
+  margin-inline-start: var(--ui-space-3);
+  color: var(--ui-steel-dim);
+}
+
+.ui-raw-obs {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--ui-font-mono);
+  text-align: start;
+  cursor: pointer;
+}
+
+.ui-raw-spacer {
+  width: 1px;
+}
+
+.ui-raw-status {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-top: 1px solid var(--ui-border);
+}
+
+/* ── Lineage (§31, §32) ─────────────────────────────────────────────── */
+
+.ui-lineage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-5);
+}
+
+.ui-lineage-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+  padding-bottom: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-lineage-chain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-4);
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+}
+
+/* The two chains are visually distinguishable by their DIRECTION: one reads
+   downwards, the other upwards, which is the honest rendering of "this is how
+   it was found" versus "this is what it rests on". */
+.ui-lineage-chain[data-testid="derivation-chain"] {
+  border-inline-start: 2px solid var(--ui-gold-line);
+}
+
+.ui-lineage-chain[data-testid="evidence-chain"] {
+  border-inline-start: 2px solid var(--ui-accent-line);
+}
+
+.ui-lineage-chain-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+}
+
+.ui-lineage-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-lineage-steps[data-direction="up"] {
+  flex-direction: column-reverse;
+}
+
+.ui-lineage-step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.ui-lineage-step[data-direction="up"] {
+  align-items: flex-end;
+}
+
+.ui-lineage-node {
+  display: block;
+  max-width: 100%;
+}
+
+.ui-lineage-node-button,
+.ui-lineage-node-static {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  max-width: 100%;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  font-family: inherit;
+  text-align: start;
+  background: var(--ui-surface-2);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  color: var(--ui-text-secondary);
+  cursor: pointer;
+}
+
+.ui-lineage-node-button:hover {
+  background: var(--ui-surface-3);
+  border-color: var(--ui-border-strong);
+  color: var(--ui-text);
+}
+
+.ui-lineage-node-static {
+  cursor: default;
+  flex-wrap: wrap;
+  border-style: dashed;
+}
+
+/* The selected rung: an accent rule, not a fill. */
+.ui-lineage-node[data-selected="true"] .ui-lineage-node-button {
+  border-color: var(--ui-accent);
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.ui-lineage-node-button:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 1px;
+}
+
+.ui-lineage-step-label {
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.ui-lineage-step-ref {
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text);
+  overflow-wrap: anywhere;
+}
+
+.ui-lineage-step-detail {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ui-lineage-step-at,
+.ui-lineage-step-score {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-steel);
+}
+
+.ui-lineage-arrow {
+  padding: 0 0 0 var(--ui-space-4);
+  font-size: var(--ui-text-2xs);
+  line-height: 1;
+  color: var(--ui-steel-dim);
+}
+
+.ui-lineage-steps[data-direction="up"] .ui-lineage-arrow {
+  padding: 0 var(--ui-space-4) 0 0;
+}
+
+.ui-lineage-violation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+  background: var(--ui-danger-wash);
+  border: 1px solid var(--ui-danger-line);
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-lineage-violation ul {
+  margin: 0;
+  padding-inline-start: var(--ui-space-6);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-danger-bright);
+}

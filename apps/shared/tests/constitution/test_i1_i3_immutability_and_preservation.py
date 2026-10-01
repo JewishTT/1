@@ -29,7 +29,6 @@ import dataclasses
 from datetime import UTC, datetime
 
 import pytest
-from domain.relation_participant import binary_participants
 from extractors.signals import Neighbourhood, RelationSignal, SignalKind
 
 from domain.capture import CaptureTimeBasis
@@ -39,6 +38,7 @@ from domain.relation_candidate import (
     RelationCandidate,
     TemporalHypothesis,
 )
+from domain.relation_participant import binary_participants
 from domain.temporal_observation import (
     SourceTemporalObservation,
     TemporalAxis,

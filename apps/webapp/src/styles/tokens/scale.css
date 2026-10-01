@@ -1,0 +1,61 @@
+/* COGNITIVE UI 2.0 — scale tokens: spacing, radius, elevation, z-index.
+ *
+ * Low radius throughout (§57 "radius (low)"): 2–4px. A workbench reads as
+ * instrumented, not consumer. Elevation is minimal: separation is carried by
+ * surface level + hairline, shadow only for genuinely floating surfaces
+ * (palette, popover, drawer, context menu).
+ */
+
+/* ── Spacing — 4px base, 2px half-step ─────────────────────────────── */
+:root {
+  --ui-space-0: 0;
+  --ui-space-1: 2px;
+  --ui-space-2: 4px;
+  --ui-space-3: 6px;
+  --ui-space-4: 8px;
+  --ui-space-5: 12px;
+  --ui-space-6: 16px;
+  --ui-space-7: 20px;
+  --ui-space-8: 24px;
+  --ui-space-9: 32px;
+  --ui-space-10: 40px;
+
+  /* ── Radius (low) ─────────────────────────────────────────────────── */
+  --ui-radius-0: 0;
+  --ui-radius-1: 2px;
+  --ui-radius-2: 3px;
+  --ui-radius-3: 4px;
+  --ui-radius-pill: 999px;
+
+  /* ── Elevation (minimal) ──────────────────────────────────────────── */
+  --ui-elevation-0: none;
+  --ui-elevation-1: 0 1px 0 rgba(0, 0, 0, 0.18);
+  --ui-elevation-2: 0 6px 18px rgba(0, 0, 0, 0.28);
+  --ui-elevation-3: 0 16px 40px rgba(0, 0, 0, 0.38);
+  [data-theme="light"] {
+    --ui-elevation-1: 0 1px 0 rgba(18, 23, 20, 0.06);
+    --ui-elevation-2: 0 6px 18px rgba(18, 23, 20, 0.1);
+    --ui-elevation-3: 0 16px 40px rgba(18, 23, 20, 0.14);
+  }
+
+  /* ── Layout metrics ───────────────────────────────────────────────── */
+  --ui-topbar-h: 40px;
+  --ui-statusbar-h: 24px;
+  --ui-activitybar-h: 30px;
+  --ui-rail-min-w: 180px;
+  --ui-rail-max-w: 420px;
+  --ui-inspector-min-w: 260px;
+  --ui-inspector-max-w: 520px;
+  --ui-control-h: 26px;
+  --ui-control-h-sm: 22px;
+  --ui-hit-min: 24px;
+
+  /* ── Z-index ──────────────────────────────────────────────────────── */
+  --ui-z-base: 0;
+  --ui-z-pane: 10;
+  --ui-z-sticky: 20;
+  --ui-z-overlay: 30;
+  --ui-z-drawer: 40;
+  --ui-z-palette: 50;
+  --ui-z-toast: 60;
+}

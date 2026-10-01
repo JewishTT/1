@@ -42,7 +42,7 @@ export function buildEntityGraphElements(
   }
 
   const nodeIds = [...nodeLabels.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  const formed = formEdges(nodeIds, { observations: [], seeds });
+  const { edges: formed } = formEdges(nodeIds, { observations: [], seeds });
 
   const nodes: GraphElement[] = nodeIds.map((id) => ({
     id,

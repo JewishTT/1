@@ -100,8 +100,9 @@ function sourceHost(uri: string): string | null {
  * the UI can offer "materialize this candidate" actions.
  *
  * All edges flow through the deterministic edge factory (edgeFormation.ts):
- * content-addressed ids over (ordered pair, provenance kind, source), dedupe,
- * stable id-sorted emit order — same entities ⇒ identical graph across reloads.
+ * content-addressed 128-bit ids over ADR-0023's canonical material — arity mode,
+ * relation type, canonical participants and provenance source — dedupe, stable
+ * id-sorted emit order. Same entities ⇒ identical graph across reloads.
  */
 export function buildIntelGraph(
   entities: Record<string, EntityView>,
@@ -244,7 +245,10 @@ export function buildIntelGraph(
     .map(([observation_id, ids]) => ({ observation_id, nodes: ids.sort() }));
 
   const nodeIds = [...nodes.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  const edges = formEdges(nodeIds, { observations, seeds });
+  // N-ary observations are kept as records; the clique the intel map renders is
+  // a derived view, so the projection is asked for explicitly here rather than
+  // being the factory's default.
+  const { edges } = formEdges(nodeIds, { observations, seeds }, { pairwiseProjection: true });
 
   return {
     nodes: nodeIds.map((id) => nodes.get(id)!),

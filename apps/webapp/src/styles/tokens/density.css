@@ -1,0 +1,35 @@
+/* COGNITIVE UI 2.0 — density tokens (§66). Compact is the default.
+ *
+ * Density changes row height, control height and vertical padding only.
+ * It never changes type colour, never changes which information is visible,
+ * and never hides a control. Two modes, both complete.
+ */
+
+:root,
+[data-density="compact"] {
+  --ui-density: "compact";
+  --ui-row-h: 22px;
+  --ui-row-h-lg: 26px;
+  --ui-cell-pad-y: 2px;
+  --ui-cell-pad-x: 6px;
+  --ui-block-pad-y: 4px;
+  --ui-pane-pad: 8px;
+  --ui-stack-gap: 4px;
+  --ui-control-h: 26px;
+  --ui-control-h-sm: 22px;
+  --ui-label-w: 96px;
+}
+
+[data-density="comfortable"] {
+  --ui-density: "comfortable";
+  --ui-row-h: 30px;
+  --ui-row-h-lg: 34px;
+  --ui-cell-pad-y: 6px;
+  --ui-cell-pad-x: 10px;
+  --ui-block-pad-y: 8px;
+  --ui-pane-pad: 14px;
+  --ui-stack-gap: 8px;
+  --ui-control-h: 30px;
+  --ui-control-h-sm: 26px;
+  --ui-label-w: 120px;
+}

@@ -1,0 +1,39 @@
+/* COGNITIVE UI 2.0 — typography tokens (§57).
+ *
+ * Two families only:
+ *   sans  — UI text, labels, prose.
+ *   mono  — identifiers, hashes, digests, timestamps, queries, raw payloads.
+ *           Anything the analyst might copy and paste belongs in mono.
+ *
+ * No third display face. No all-caps-as-hierarchy trick beyond small
+ * metadata labels, which is a role, not a decoration.
+ */
+:root {
+  --ui-font-sans: "Inter", "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --ui-font-mono: "Geist Mono", "Cascadia Mono", "JetBrains Mono", "SF Mono", Consolas,
+    "Liberation Mono", monospace;
+
+  /* Type scale — small and dense; this is an instrument, not a landing page. */
+  --ui-text-2xs: 0.625rem; /* 10px metadata */
+  --ui-text-xs: 0.6875rem; /* 11px label */
+  --ui-text-sm: 0.75rem; /* 12px default UI */
+  --ui-text-md: 0.8125rem; /* 13px emphasis */
+  --ui-text-lg: 0.9375rem; /* 15px pane title */
+  --ui-text-xl: 1.125rem; /* 18px object name */
+  --ui-text-2xl: 1.375rem; /* 22px work title */
+
+  --ui-weight-regular: 400;
+  --ui-weight-medium: 500;
+  --ui-weight-semibold: 600;
+
+  --ui-leading-tight: 1.25;
+  --ui-leading-normal: 1.45;
+  --ui-leading-relaxed: 1.6;
+
+  /* Tracking. Small caps labels get positive tracking; body gets none. */
+  --ui-tracking-label: 0.08em;
+  --ui-tracking-tight: -0.005em;
+
+  /* Measure */
+  --ui-measure: 68ch;
+}

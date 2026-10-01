@@ -12,8 +12,11 @@ import { ReviewContainer } from "./ReviewContainer";
  * Fields that the backend does not yet expose per-investigation
  * (interpretation / admission / knowledge counts, recrawl schedule)
  * are left at zero / placeholder pending full event-pipeline wiring.
+ *
+ * Exported so the UI 2.0 workspace overview can mount the very same page with
+ * the very same adaptation instead of growing a second copy (§63, §97).
  */
-function adaptMetrics(inv: InvestigationView, ops: OpsMetrics | null): InvestigationMetrics {
+export function adaptMetrics(inv: InvestigationView, ops: OpsMetrics | null): InvestigationMetrics {
   const maxLag = Object.values(ops?.lags_s ?? {}).reduce(
     (max, v) => Math.max(max, v),
     0,

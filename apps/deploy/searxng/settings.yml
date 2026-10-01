@@ -1,0 +1,40 @@
+# Feature 023 §17: JSON output must be *declared* or SearXNG answers 403.
+#
+# The upstream default is `search.formats: [html]`. A request for `format=json`
+# against an instance that has not listed it is refused with HTTP 403, which is
+# easy to misread as an auth problem and impossible to parse. Enabling it here is
+# what makes the instance a legal acquisition source at all.
+#
+# The instance is deliberately minimal: one engine, no personalisation, no
+# result-proxy. The platform federates nothing - SearXNG does the federation,
+# and its per-engine latency variance is not a platform routing error (§172).
+use_default_settings: true
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
+  # Without `json` in this list every /search?format=json request is a 403.
+  formats:
+    - html
+    - json
+
+server:
+  # Bind inside the container only; the port is published to the host explicitly.
+  bind_address: "0.0.0.0"
+  port: 8080
+  secret_key: "cognitive-local-searxng-not-a-production-secret"
+  limiter: false
+  image_proxy: false
+
+outgoing:
+  request_timeout: 10.0
+  max_request_timeout: 20.0
+  pool_connections: 20
+  pool_maxsize: 10
+
+engines:
+  - name: duckduckgo
+    disabled: false
+  - name: wikipedia
+    disabled: true

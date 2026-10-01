@@ -20,8 +20,9 @@ from __future__ import annotations
 
 import hashlib
 from collections import defaultdict
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator, Protocol
+from typing import Protocol
 
 from domain import enforce_no_blobs
 from events.event_envelope_pb2 import EventEnvelope

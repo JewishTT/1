@@ -1,0 +1,38 @@
+/* COGNITIVE UI 2.0 — motion tokens (§57).
+ *
+ * 100–180ms, and only where motion explains a state change:
+ * a surface opening, a selection moving, a status settling.
+ * There is no ambient/looping motion in the shell. Nothing pulses for
+ * decoration. A live indicator changes opacity only while work is in flight,
+ * and reduced-motion removes even that (§67).
+ */
+
+:root {
+  --ui-motion-instant: 0ms;
+  --ui-motion-fast: 100ms;
+  --ui-motion-base: 140ms;
+  --ui-motion-slow: 180ms;
+
+  --ui-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ui-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ui-ease-enter: cubic-bezier(0, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ui-motion-instant: 0ms;
+    --ui-motion-fast: 0ms;
+    --ui-motion-base: 0ms;
+    --ui-motion-slow: 0ms;
+  }
+
+  /* Belt and braces: any component-level animation/transition is neutralised. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "apps" / "shared"))
 
 import pytest
 from confluent_kafka import Consumer, KafkaError, Producer
+
 from events.event_envelope_pb2 import EventEnvelope
 from events.kafka import build_envelope
 

@@ -1,5 +1,40 @@
-/*
- * Donor CSS layers — aggregated imports.
+/* COGNITIVE UI 2.0 — aggregate entry point (§62).
+ *
+ * `src/main.tsx` imports this file and nothing else, exactly as before the
+ * UI 2.0 work, so nothing breaks mid-migration (§62: layers.css stays the
+ * aggregate entry).
+ *
+ * Load order:
+ *   1. tokens     — one source of truth for colour/type/scale/density/motion
+ *   2. base       — reset + element defaults for UI 2.0 surfaces
+ *   3. components — primitives (§60)
+ *   4. shell      — AppShell (§5, §8)
+ *   5. workspace  — InvestigationWorkspace + ContextInspector (§4, §6)
+ *   6. views      — the stage 3-4 surfaces mounted in the centre canvas:
+ *                   graph + timeline (§14, §23) and evidence (§28, §31)
+ *   7. utilities  — small layout/text helpers
+ *   8. legacy     — the pre-2.0 surface rules, still loaded so the
+ *                   unmigrated pages render unchanged (§63, §97)
+ *   9. donor      — scoped vendor sheets, provenance in styles/donors/INDEX.md
+ *
+ * The `views` layer is separate from `workspace` on purpose: §96 keeps `workspace/`,
+ * `graph/`, `timeline/` and `evidence/` as distinct directories, and their stylesheets
+ * live beside their components rather than in one workspace pile. Each sheet contains
+ * tokens only — no raw hex — so both themes and any future theme inherit.
+ */
+@import "./tokens/index.css";
+@import "./tokens/legacy-bridge.css";
+@import "./base/index.css";
+@import "./components/index.css";
+@import "./shell/index.css";
+@import "./workspace/index.css";
+@import "../graph/graph.css";
+@import "../timeline/timeline.css";
+@import "../evidence/evidence.css";
+@import "./utilities/index.css";
+@import "../index.css";
+
+/* Donor CSS layers — aggregated imports.
  * Only scoped vendor stylesheets are imported here so they cannot collide with
  * the app's own index.css. See src/styles/donors/INDEX.md for provenance/licensing.
  */

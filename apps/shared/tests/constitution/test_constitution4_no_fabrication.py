@@ -262,7 +262,6 @@ class TestThePlatformDoesNotRoundAnUnknownToAKnown:
         (``test_a_ragged_row_is_reported_rather_than_silently_dropped``). Before, a future
         edit to the comparison alone would have reopened silent truncation inside the loop.
         """
-        from extractors.signals.tables import TableExtractor
 
         signals = self._ragged_signals()
         rows = {s.extra["row_index"] for s in signals}

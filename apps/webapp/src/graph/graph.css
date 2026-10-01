@@ -1,0 +1,276 @@
+/* COGNITIVE UI 2.0 — graph canvas (§14–§22).
+ *
+ * Imported by GraphCanvas so the surface travels with its component; nothing
+ * here needs to be registered in styles/layers.css.
+ *
+ * §93: no glow, no gradients, no shadows used as hierarchy. The canvas is
+ * separated from its surroundings by a hairline and by surface level, and by
+ * nothing else. §71: no decorative chrome — the toolbar, drawer, side panels
+ * and note line are the only chrome, and each of them is navigation, state or
+ * an action.
+ *
+ * All colours resolve through tokens. This file introduces no hex value.
+ */
+
+.ui-graph {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--ui-bg);
+}
+
+/* ── Overlaid toolbar (§14) ─────────────────────────────────────────── */
+
+.ui-graph-toolbar {
+  position: absolute;
+  z-index: var(--ui-z-sticky);
+  inset: 0 0 auto 0;
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  background: var(--ui-surface-1);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-graph-toolbar-group {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ui-space-2);
+}
+
+.ui-graph-toolbar-sep {
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  background: var(--ui-border);
+}
+
+.ui-graph-toolbar-grow {
+  flex: 1;
+  min-width: var(--ui-space-6);
+}
+
+.ui-graph-toolbar-counts {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex-wrap: wrap;
+}
+
+/* The search field is the one control wide enough to read a long id in. */
+.ui-graph-toolbar-group:has(> .ui-field) .ui-field {
+  min-width: 200px;
+}
+
+.ui-graph-toolbar .ui-field-label {
+  font-size: var(--ui-text-2xs);
+}
+
+.ui-graph-legend-row {
+  display: grid;
+  grid-template-columns: 16px 34px auto 1fr;
+  align-items: center;
+  gap: var(--ui-space-3);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-secondary);
+}
+
+.ui-graph-swatch {
+  color: var(--ui-steel-bright);
+}
+
+/* ── Body: canvas + drawer + side panels ────────────────────────────── */
+
+.ui-graph-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.ui-graph-host {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  /* The toolbar floats over the canvas, so the canvas starts at the top and
+     the toolbar reserves its own space with a background rather than a gap. */
+  background: var(--ui-bg);
+}
+
+.ui-graph-host[data-lasso="true"] {
+  cursor: crosshair;
+}
+
+/* ── Filter drawer (§22) ────────────────────────────────────────────── */
+
+.ui-graph-drawer {
+  position: absolute;
+  z-index: var(--ui-z-drawer);
+  top: var(--ui-space-9);
+  bottom: var(--ui-space-4);
+  left: var(--ui-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-5);
+  width: 268px;
+  padding: var(--ui-pane-pad);
+  overflow-y: auto;
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-2);
+  /* Elevation is allowed only for a genuinely floating surface; a drawer is
+     one (§57 scale.css). */
+  box-shadow: var(--ui-elevation-2);
+}
+
+.ui-graph-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+}
+
+.ui-graph-drawer-head .ui-pane-title {
+  flex: 1;
+}
+
+.ui-graph-facet {
+  gap: var(--ui-space-2);
+  padding: 0 0 var(--ui-space-4);
+  border: none;
+  border-bottom: 1px solid var(--ui-border-subtle);
+  margin: 0;
+}
+
+.ui-graph-facet[data-active="true"] > .ui-field-label {
+  color: var(--ui-accent-bright);
+}
+
+.ui-graph-facet-row {
+  width: 100%;
+}
+
+.ui-graph-facet-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-graph-facet-value {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.ui-graph-drawer-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  margin-top: auto;
+  padding-top: var(--ui-space-4);
+  border-top: 1px solid var(--ui-border);
+}
+
+/* ── Side panels (§17) ──────────────────────────────────────────────── */
+
+.ui-graph-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  width: 300px;
+  padding: var(--ui-space-4);
+  overflow-y: auto;
+  background: var(--ui-surface-1);
+  border-left: 1px solid var(--ui-border);
+}
+
+.ui-graph-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+}
+
+.ui-graph-detail-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex-wrap: wrap;
+  padding-bottom: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-graph-detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-1);
+  padding: var(--ui-space-2) 0;
+}
+
+.ui-graph-participant {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+
+.ui-graph-participant .ui-insp-field-label {
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.ui-graph-relation-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-secondary);
+}
+
+/* ── Note line, empty overlay, temporal badge ───────────────────────── */
+
+.ui-graph-note {
+  padding: var(--ui-space-2) var(--ui-space-4);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  background: var(--ui-surface-1);
+  border-top: 1px solid var(--ui-border);
+}
+
+.ui-graph-overlay {
+  position: absolute;
+  z-index: var(--ui-z-overlay);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ui-bg);
+}
+
+.ui-graph-temporal {
+  position: absolute;
+  z-index: var(--ui-z-sticky);
+  inset: auto auto var(--ui-space-5) var(--ui-space-5);
+}
+
+/* ── Docked timeline (§23, §84) ─────────────────────────────────────── */
+
+.ui-graph-timeline {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-surface-1);
+}
+
+/* Reduced motion (§67). Cytoscape is unanimated already; this covers the
+   drawer and the toolbar's own transitions if any are added later. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-graph-drawer {
+    transition: none;
+  }
+}

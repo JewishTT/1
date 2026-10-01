@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 import pytest
 
-from network.range_pull import WarcPull, parse_warc_prefix, pull_warc_range, split_warc_records
+from network.range_pull import parse_warc_prefix, pull_warc_range, split_warc_records
 
 pytestmark = pytest.mark.unit
 

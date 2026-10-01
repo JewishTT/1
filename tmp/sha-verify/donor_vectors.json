@@ -1,0 +1,74 @@
+[
+  {
+    "a": "ENT-1",
+    "b": "ENT-2",
+    "kind": "possible_match",
+    "source": "CE-1",
+    "material": "{\"mode\":\"directed\",\"object\":\"ENT-2\",\"source\":\"CE-1\",\"subject\":\"ENT-1\",\"type\":\"possible_match\"}",
+    "digest": "a3a1b4281e7cc32d98e597d7ef31621f"
+  },
+  {
+    "a": "ENT-2",
+    "b": "ENT-1",
+    "kind": "possible_match",
+    "source": "CE-1",
+    "material": "{\"mode\":\"directed\",\"object\":\"ENT-1\",\"source\":\"CE-1\",\"subject\":\"ENT-2\",\"type\":\"possible_match\"}",
+    "digest": "5c185c66d64955e23fe84d2976257492"
+  },
+  {
+    "a": "ENT-1",
+    "b": "ENT-2",
+    "kind": "assertion",
+    "source": "CE-1",
+    "material": "{\"mode\":\"directed\",\"object\":\"ENT-2\",\"source\":\"CE-1\",\"subject\":\"ENT-1\",\"type\":\"assertion\"}",
+    "digest": "f2e987fa7fbf1208d13dae17d667da28"
+  },
+  {
+    "a": "ENT-1",
+    "b": "ENT-2",
+    "kind": "relationship",
+    "source": "works_for",
+    "material": "{\"mode\":\"directed\",\"object\":\"ENT-2\",\"source\":\"works_for\",\"subject\":\"ENT-1\",\"type\":\"relationship\"}",
+    "digest": "e08c755aa12284d2b8c6a5d726e70337"
+  },
+  {
+    "a": "ENT-2",
+    "b": "ENT-1",
+    "kind": "relationship",
+    "source": "works_for",
+    "material": "{\"mode\":\"directed\",\"object\":\"ENT-1\",\"source\":\"works_for\",\"subject\":\"ENT-2\",\"type\":\"relationship\"}",
+    "digest": "b640cd00f898c5fd8973a3d1a6ecea56"
+  },
+  {
+    "a": "B",
+    "b": "A",
+    "kind": "co_occurrence",
+    "source": "OBS-7",
+    "material": "{\"members\":[\"A\",\"B\"],\"mode\":\"undirected\",\"source\":\"OBS-7\",\"type\":\"co_occurrence\"}",
+    "digest": "e4215fa5f3db312bf91f0f4f4f62dbd4"
+  },
+  {
+    "a": "A",
+    "b": "B",
+    "kind": "co_occurrence",
+    "source": "OBS-7",
+    "material": "{\"members\":[\"A\",\"B\"],\"mode\":\"undirected\",\"source\":\"OBS-7\",\"type\":\"co_occurrence\"}",
+    "digest": "e4215fa5f3db312bf91f0f4f4f62dbd4"
+  },
+  {
+    "a": "ИВАН",
+    "b": "ОРГАНИЗАЦИЯ",
+    "kind": "relationship",
+    "source": "works_for",
+    "material": "{\"mode\":\"directed\",\"object\":\"ОРГАНИЗАЦИЯ\",\"source\":\"works_for\",\"subject\":\"ИВАН\",\"type\":\"relationship\"}",
+    "digest": "4ea1142b936a9fc5ec7e0ae3a9df42b3"
+  },
+  {
+    "a": "ИВАН",
+    "b": "ОРГАНИЗАЦИЯ",
+    "kind": "relationship",
+    "source": "employed_by",
+    "material": "{\"mode\":\"directed\",\"object\":\"ОРГАНИЗАЦИЯ\",\"source\":\"employed_by\",\"subject\":\"ИВАН\",\"type\":\"relationship\"}",
+    "digest": "cffee93141382e74a7665a033c30f838"
+  }
+]

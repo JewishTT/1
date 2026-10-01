@@ -91,7 +91,7 @@ class SourceState:
         cost: float = 0.0,
         independence_yield: float = 0.0,
         fresh: bool = True,
-    ) -> "SourceState":
+    ) -> SourceState:
         succeeded = outcome in (Outcome.SUCCESS, Outcome.UNCHANGED, Outcome.DUPLICATE)
         a = self._alpha
         return SourceState(
@@ -140,7 +140,7 @@ class WorkerClassState:
         throughput: float | None = None,
         saturation: float | None = None,
         queue_age_s: float | None = None,
-    ) -> "WorkerClassState":
+    ) -> WorkerClassState:
         a = self._alpha
         failed = outcome is Outcome.FAILURE
         return WorkerClassState(

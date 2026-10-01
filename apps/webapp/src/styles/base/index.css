@@ -1,0 +1,131 @@
+/* COGNITIVE UI 2.0 — base layer.
+ *
+ * Scoped to `.ui-root` (set on every UI 2.0 surface root) plus the two
+ * things that must be global to be true: focus visibility and the
+ * reduced-motion contract (which lives in tokens/motion.css).
+ *
+ * Deliberately NOT global: no `body` background, no `h1`/`a`/`button` resets.
+ * The unmigrated pages still depend on the legacy element rules, and §97
+ * requires them to keep working (§63).
+ */
+
+.ui-root {
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-text-sm);
+  line-height: var(--ui-leading-normal);
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ui-root *,
+.ui-root *::before,
+.ui-root *::after {
+  box-sizing: border-box;
+}
+
+/* Focus: always visible for keyboard users, never a glow — a solid ring in
+   the accent, offset from the surface so it reads on any background (§93). */
+.ui-root :focus-visible,
+.ui-focusable:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 1px;
+  border-radius: var(--ui-radius-1);
+}
+
+.ui-root :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Content hierarchy (no colour explosion, no shadow, no glow — §93). */
+.ui-title {
+  font-size: var(--ui-text-xl);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-tight);
+  color: var(--ui-text);
+  margin: 0;
+}
+
+.ui-pane-title {
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+  margin: 0;
+}
+
+/* The one place gold is used as a colour role: metadata / classification /
+   temporal markers. Never as "warning" (§57). */
+.ui-meta {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  color: var(--ui-gold);
+}
+
+/* Anything the analyst may copy: ids, digests, URIs, timestamps, raw. */
+.ui-mono {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-secondary);
+  letter-spacing: 0;
+}
+
+.ui-id {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ui-body {
+  font-size: var(--ui-text-sm);
+  color: var(--ui-text-secondary);
+  max-width: var(--ui-measure);
+}
+
+.ui-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Scrollbars for UI 2.0 panes — quiet, not a design feature. */
+.ui-scroll {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-strong) transparent;
+}
+
+.ui-scroll::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.ui-scroll::-webkit-scrollbar-thumb {
+  background: var(--ui-border-strong);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--ui-radius-pill);
+}
+
+.ui-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-steel-dim);
+  background-clip: content-box;
+}
+
+/* Screen-reader-only, used for live-region announcements (§67). */
+.ui-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,51 @@
+/* LEGACY — pre-2.0 token block, frozen. Do not extend; extend src/styles/tokens/*.
+ * Kept verbatim so the unmigrated pages keep rendering exactly as they do today.
+ * --c-* is a closed set until those surfaces are migrated to --ui-* (§62, §97).
+
+/* ── Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --c-bg: #05070d;
+  --c-surface: #0a101c;
+  --c-surface-2: #0e1626;
+  --c-surface-3: #131e33;
+  --c-glass: rgba(13, 20, 34, 0.78);
+  --c-border: #1e2a3d;
+  --c-border-hi: rgba(34, 211, 238, 0.35);
+  --c-text: #dde6f0;
+  --c-text-2: #aeb9c9;
+  --c-muted: #7c889d;
+  --c-fg-muted: #7c889d;
+  --c-text-dim: #5c6a80;
+  --c-accent: #22d3ee;
+  --c-accent-2: #f0a832;
+  --c-accent-soft: rgba(34, 211, 238, 0.18);
+  --c-danger: #f43f5e;
+  --c-danger-hover: #fb7185;
+  --c-warning: #f0a832;
+  --c-success: #34d399;
+  --c-graph-node: #0e1626;
+  --c-graph-node-sel: #22d3ee;
+  --c-graph-node-label: #e6edf7;
+  --c-graph-edge: #3b4a63;
+  --acc: #22d3ee;
+  --acc-2: #f0a832;
+  --acc-soft: rgba(34, 211, 238, 0.16);
+  --acc-glow: 0 0 14px rgba(34, 211, 238, 0.40), inset 0 0 10px rgba(34, 211, 238, 0.06);
+  --font-mono: "Geist Mono", "Cascadia Mono", "JetBrains Mono", "SF Mono", Consolas, monospace;
+  --font-sans: "Inter", "Segoe UI", -apple-system, "Helvetica Neue", sans-serif;
+  --xl: 1.25rem;
+  --sidebar-w: 272px;
+  --header-h: 56px;
+}
+[data-module="economic"] {
+  --acc: #34d399;
+  --acc-2: #6ee7b7;
+  --acc-soft: rgba(52, 211, 153, 0.16);
+  --acc-glow: 0 0 14px rgba(52, 211, 153, 0.38), inset 0 0 10px rgba(52, 211, 153, 0.06);
+}
+[data-module="specops"] {
+  --acc: #f43f5e;
+  --acc-2: #fb7185;
+  --acc-soft: rgba(244, 63, 94, 0.16);
+  --acc-glow: 0 0 14px rgba(244, 63, 94, 0.40), inset 0 0 10px rgba(244, 63, 94, 0.06);
+}

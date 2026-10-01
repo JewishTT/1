@@ -10,9 +10,8 @@ Pinned behaviors:
 
 from __future__ import annotations
 
-import pytest
-
 import prometheus_client
+import pytest
 
 from scoring import metrics
 

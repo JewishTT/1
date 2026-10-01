@@ -1,0 +1,5 @@
+[{"generated": 1790800800, "type": "Internet Name", "data": "example.com", "module": "SpiderFoot UI", "source": "example.com"},
+{"generated": 1790800800, "type": "IP Address", "data": "8.6.112.0", "module": "sfp_dnsresolve", "source": "example.com"},
+{"generated": 1790800801, "type": "Domain Name", "data": "example.com", "module": "sfp_dnsresolve", "source": "example.com"},
+{"generated": 1790800801, "type": "IP Address", "data": "8.47.69.0", "module": "sfp_dnsresolve", "source": "example.com"},
+{"generated": 1790800801, "type": "Domain Name", "data": "example.com", "module": "SpiderFoot UI", "source": "example.com"}]

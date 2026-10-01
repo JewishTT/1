@@ -234,6 +234,40 @@ services:
     # CLI/one-shot crawler: pulled here; runs are scheduled via the ThumbCrawl
     # adapter (T098) rather than a long-running daemon.
 
+  searxng:
+    # Feature 023 §15/§17. A real search backend, not a mock: the acquisition
+    # worker talks only to this endpoint and never to Google/Bing/Brave directly
+    # (§144) - SearXNG performs the federation itself.
+    profiles: ["core"]
+    image: searxng/searxng@sha256:3284e8900e9b3e5df284ae8c48a26851ae2eff6f99b4b0b18ec3da5a4d9095c3
+    # Published on the host because the acquisition worker runs outside this
+    # network (plan D-14: the worker and tool runner stay host-run, only the
+    # tools are containerised). The alternative - moving the worker into compose
+    # - would be a second infrastructure stack, which §126 forbids.
+    #
+    # Bound to loopback on purpose: this is an internal search backend, and
+    # publishing it on all interfaces would make it the least protected surface in
+    # the stack. 18090 rather than 8080 or 18080: 8080 is host-side SearXNG's own
+    # default and 18080 is already allocated by redpanda-console in this stack.
+    # The host-side port is reached over loopback; in-network callers use
+    # searxng:8080 and need no host port at all.
+    ports: ["127.0.0.1:18090:8080"]
+    environment:
+      SEARXNG_BASE_URL: "http://searxng:8080/"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    healthcheck:
+      # Capability, not liveness: /config answering proves the process serves the
+      # API surface we are about to depend on. Whether `json` is in
+      # search.formats is asserted by the runtime's own probe (§17/§8), because a
+      # container cannot know its own settings file was not mounted.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/config >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
 volumes:
   minio-data:
   kafka-data:

@@ -1,0 +1,194 @@
+/* COGNITIVE UI 2.0 — timeline (§23, §84).
+ *
+ * Imported by TimelineCanvas so the surface travels with its component.
+ *
+ * §93: no glow, no gradients, no shadow-as-hierarchy. The dock is separated
+ * from the canvas by a hairline and one surface step. The chart has no border of
+ * its own — it is a plot area inside a pane, not a card.
+ *
+ * All colours resolve through tokens; this file introduces no hex value.
+ */
+
+.ui-timeline {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--ui-surface-1);
+  color: var(--ui-text-secondary);
+}
+
+/* The full centre view gets the pane padding; the docked variant does not —
+   a dock inside a pane that already has padding looks inset twice. */
+.ui-timeline[data-variant="full"] {
+  flex: 1;
+  padding: var(--ui-pane-pad);
+  background: var(--ui-bg);
+}
+
+.ui-timeline[data-variant="docked"] {
+  border-top: 1px solid var(--ui-border);
+}
+
+/* ── Toolbar ────────────────────────────────────────────────────────── */
+
+.ui-timeline-toolbar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-timeline-toolbar-group {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ui-space-2);
+}
+
+.ui-timeline-toolbar-sep {
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  background: var(--ui-border);
+}
+
+.ui-timeline-toolbar-grow {
+  flex: 1;
+  min-width: var(--ui-space-6);
+}
+
+.ui-timeline-toolbar-state {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  color: var(--ui-steel-dim);
+}
+
+.ui-timeline-brush {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ui-space-3);
+}
+
+.ui-timeline-brush .ui-field {
+  min-width: 132px;
+}
+
+.ui-timeline-brush .ui-field-label {
+  font-size: var(--ui-text-2xs);
+}
+
+.ui-timeline-focus {
+  flex-wrap: wrap;
+}
+
+.ui-timeline-focus-field {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ui-space-2);
+}
+
+.ui-timeline-focus-field .ui-field {
+  min-width: 132px;
+}
+
+/* ── Chart ──────────────────────────────────────────────────────────── */
+
+.ui-timeline-chart {
+  flex: 1;
+  min-height: 132px;
+  width: 100%;
+  color: var(--ui-text-secondary);
+}
+
+.ui-timeline[data-variant="docked"] .ui-timeline-chart {
+  height: 156px;
+  flex: none;
+}
+
+/* ── Lane rail ──────────────────────────────────────────────────────── */
+
+.ui-timeline-lanes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-5);
+  list-style: none;
+  margin: 0;
+  padding: var(--ui-space-2) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-timeline-lane {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+}
+
+.ui-timeline-lane-label {
+  color: var(--ui-text-secondary);
+}
+
+/* ── Event table ────────────────────────────────────────────────────── */
+
+.ui-timeline-events {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--ui-space-4) var(--ui-space-4);
+}
+
+.ui-timeline-events .ui-table tbody tr[data-focused="true"] td {
+  box-shadow: inset 2px 0 0 var(--ui-gold);
+}
+
+.ui-timeline-spacer {
+  width: 1px;
+}
+
+.ui-timeline-more {
+  display: block;
+  width: 100%;
+  padding: var(--ui-space-3);
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  background: transparent;
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--ui-radius-1);
+  cursor: pointer;
+}
+
+.ui-timeline-more:hover:not(:disabled) {
+  color: var(--ui-text);
+  border-color: var(--ui-border-strong);
+}
+
+.ui-timeline-more:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-timeline-note,
+.ui-timeline-coverage {
+  padding: var(--ui-space-2) var(--ui-space-4);
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  border-top: 1px solid var(--ui-border-subtle);
+}
+
+.ui-timeline-coverage {
+  font-family: var(--ui-font-mono);
+  color: var(--ui-steel-dim);
+  overflow-wrap: anywhere;
+}
+
+/* Reduced motion (§67). ECharts is unanimated already; this covers the
+   toolbar's own transitions if any are added. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-timeline-toolbar {
+    transition: none;
+  }
+}

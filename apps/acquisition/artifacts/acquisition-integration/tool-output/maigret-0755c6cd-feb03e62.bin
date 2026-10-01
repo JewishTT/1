@@ -1,0 +1,25 @@
+[*] DB auto-update: checking for updates...
+[*] DB auto-update: downloading database (6206 sites)...
+[+] DB auto-update: database updated successfully (6206 sites)
+[+] MAIGRET - collect a dossier by username from thousands of sites
+[♥] Support Maigret — sites database & development
+[♥] Donate on Patreon: https://www.patreon.com/soxoj
+[+] Using sites database: /root/.maigret/data.json (6206 sites)
+[-] Starting a search on top 2 sites from the Maigret database...
+[!] You can run search by full list of sites with flag `-a`
+[*] Checking username test on:
+[+] GitHubGist [GitHub]: https://gist.github.com/test
+[+] GitHub: https://github.com/test
+ ├─uid: 383316
+ ├─image: https://avatars.githubusercontent.com/u/383316?v=4
+ ├─created_at: 2010-09-01T10:39:12Z
+ ├─follower_count: 77
+ ├─following_count: 0
+ ├─public_gists_count: 0
+ └─public_repos_count: 5
+[-] Extracted IDs: {}
+[-] JSON simple report for test saved in /out/./report_test_simple.json
+[*] Short text report:
+Search by username test returned 2 accounts.
+Extended info extracted from 1 accounts.
+Interests (tags): coding, sharing, business, networking
