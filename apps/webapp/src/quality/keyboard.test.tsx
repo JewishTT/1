@@ -127,18 +127,22 @@ describe("§50 K1 — typing into an ARIA text field must not navigate", () => {
 });
 
 /**
- * The defect as it ships.
+ * The defect, as it shipped, and as it no longer does.
  *
- * `Workbench.KeyboardLayer` mounts `useCommandHotkeys` from
- * `src/workspace/commands.ts`, which still uses the defective predicate. So in
- * the real shell today, typing into an ARIA text field DOES navigate.
+ * This block used to be `it.fails`, and its docblock said so out loud: while
+ * `Workbench.KeyboardLayer` mounted `useCommandHotkeys` from
+ * `src/workspace/commands.ts` — the hook whose text-entry predicate ignores ARIA
+ * roles — typing into a `role="textbox"` field DID navigate, and the test could
+ * only express that by failing on purpose. "They pass while the defect is present
+ * and start failing the moment the integrating pass swaps the hook — which is
+ * the signal that the wiring landed."
  *
- * These are `it.fails` on purpose. They pass while the defect is present and
- * start failing the moment the integrating pass swaps the hook — which is the
- * signal that the wiring landed and the note can be deleted. Turning them into
- * plain assertions now would be claiming a fix that is not deployed.
+ * T131 landed the wiring. The assertion is now inverted and positive, and the
+ * harness is the REAL shipped shell rather than a stand-in, so this is no longer
+ * a claim about the harness — it is a claim about the application. A regression
+ * now fails here instead of being documented here.
  */
-describe("§50 K1 — the shipped shell still carries the defect (until wired)", () => {
+describe("§50 K1 — the shipped shell no longer carries the defect", () => {
   function renderShell() {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     return render(
@@ -153,14 +157,24 @@ describe("§50 K1 — the shipped shell still carries the defect (until wired)",
     );
   }
 
-  it.fails("typing 'graph' into a role=textbox field currently navigates to acquisition", () => {
+  it("typing 'graph' into a role=textbox field no longer navigates", () => {
     renderShell();
     const box = screen.getByTestId("shell-aria-textbox");
     act(() => box.focus());
     for (const key of ["g", "r", "a", "p", "h"]) fireEvent.keyDown(box, { key });
-    // 'a' is the acquisition chord, and the old predicate does not see a div
-    // with role=textbox as text entry, so it fires.
+    // 'a' is the acquisition chord and 'g' the graph chord. Neither may fire
+    // while a keystroke belongs to a text field.
     expect(useWorkspace.getState().view).toBe("overview");
+  });
+
+  it("the same keys still navigate the real shell when nothing is being typed into", () => {
+    // The complementary assertion, and the one that would fail if the fix had
+    // been made by suppressing chords instead of by recognising text entry.
+    renderShell();
+    act(() => {
+      fireEvent.keyDown(document, { key: "g" });
+    });
+    expect(useWorkspace.getState().view).toBe("graph");
   });
 });
 

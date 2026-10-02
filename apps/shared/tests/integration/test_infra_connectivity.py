@@ -31,7 +31,11 @@ from confluent_kafka import Producer
 pytestmark = pytest.mark.integration
 
 _PG = os.getenv("POSTGRES_DSN", "postgresql://cognitive:cognitive@localhost:5432/cognitive")
-_KAFKA = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
+# Feature 024 / D1=a: Redpanda is the single dev/live transport. `_KAFKA` and
+# `_REDPANDA` are deliberately the same endpoint -- the Kafka-compatible *protocol*
+# client and the Redpanda *runtime* are not two brokers. Both test names are kept
+# so the pre-024 baseline stays comparable; they assert against one listener.
+_KAFKA = os.getenv("KAFKA_BOOTSTRAP", "localhost:19092")
 _REDPANDA = os.getenv("KAFKA_BOOTSTRAP", "localhost:19092")
 _MINIO = os.getenv("S3_ENDPOINT", "http://localhost:9000")
 _AK = os.getenv("S3_ACCESS_KEY", "demo")

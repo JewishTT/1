@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from typing import Any
 
 BROKER_ENV = "COGNITIVE_KAFKA_BROKERS"
-DEFAULT_BROKER = "localhost:9092"
+DEFAULT_BROKER = "localhost:19092"  # Feature 024 D1=a: Redpanda transport
 DEFAULT_PARTITIONS = 3
 DEFAULT_REPLICATION = 1
 PUBLISH_TIMEOUT_S = 15.0

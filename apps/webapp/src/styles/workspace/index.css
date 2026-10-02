@@ -53,6 +53,43 @@
   min-height: 0;
   overflow: auto;
   padding: var(--ui-pane-pad);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-density-gap);
+}
+
+/* ── The per-view contract strip (FR-110) ─────────────────────────────────
+ *
+ * One quiet line above every canvas carrying two facts an operator needs
+ * without switching: which stage this view is at, and what the global selection
+ * still is. §7's claim that a selection made on one view is visible from another
+ * is only true if every view says so, which is why this is not a placeholder's
+ * decoration — it is the contract. */
+
+.ui-canvas-contract {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  flex: 0 0 auto;
+  min-width: 0;
+  padding-bottom: var(--ui-block-pad-y);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-canvas-stage-slot {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+
+.ui-canvas-stage-note {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* The legacy investigation page keeps its own layout inside the canvas; it is
@@ -300,4 +337,52 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--ui-space-2);
+}
+
+/* ── Width breakpoints (§5, FR-104) ────────────────────────────────────
+ *
+ * The inspector's two-column arrangement at 1920 lives here rather than in
+ * `styles/layout/breakpoints.css`, because it is a property of the inspector's
+ * CONTENT and belongs beside it; breakpoints.css owns the pane widths and the
+ * content cap. The split is deliberate — a rule goes in the surface stylesheet
+ * when it describes that surface, and in breakpoints.css when it describes the
+ * shell's frame.
+ *
+ * Below 1280 the canvas head has to stop trying to hold the tab bar, the stage
+ * label and the next-step hint on one line: at 1024 with the rail in a drawer
+ * there is no room, and the head silently clips.
+ */
+
+@media (max-width: 1279px) {
+  .ui-canvas-head {
+    height: auto;
+    min-height: var(--ui-control-h);
+    flex-wrap: wrap;
+    row-gap: var(--ui-space-2);
+    padding-block: var(--ui-space-2);
+  }
+
+  .ui-canvas-head-meta {
+    flex-wrap: wrap;
+  }
+
+  .ui-inspector-body {
+    gap: var(--ui-stack-gap);
+  }
+}
+
+/* 1920 — §5: "the inspector gains a second column". Two columns of fields, not
+   two panes: the sections stop stacking and lay out side by side, so a long
+   record stops being a single scroll. */
+@media (min-width: 1920px) {
+  .ui-inspector-body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: var(--ui-density-gap);
+  }
+
+  .ui-inspector-body > * {
+    min-width: 0;
+  }
 }

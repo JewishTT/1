@@ -4,6 +4,7 @@ import { Correlation, CcTemporalityPayload, EntityView } from "../lib/api";
 import { IntelGraph, IntelNode } from "../lib/intelGraph";
 import type { InvariantResult } from "../lib/science/types";
 import { StreamEvent } from "../lib/stream";
+import { Icon } from "../ui/Icon";
 import { IntelligenceGraph } from "../components/IntelligenceGraph";
 import { GraphStateBar } from "../components/GraphStateBar";
 import { TimelineSlider } from "../components/TimelineSlider";
@@ -136,7 +137,7 @@ function CcTemporalPanel({ data }: { data: CcTemporalityPayload }) {
               style={{
                 width: 10,
                 height: `${Math.round(6 + 40 * (p.count / max))}px`,
-                background: "var(--acc, #b5ff69)",
+                background: "var(--acc)",
               }}
             />
           ))
@@ -539,7 +540,7 @@ export function IntelligencePage({
             data-testid="entity-create-submit"
             title="Create an atomic entity (dynamic invariant)"
           >
-            ✦
+            <Icon name="plus" size={14} />
           </button>
         </form>
         <div className="seedbank-body">
@@ -646,7 +647,7 @@ export function IntelligencePage({
               data-testid="prov-toggle"
               title="Provenance layer"
             >
-              ⬡
+              <Icon name="hexagon" size={14} />
             </button>
             <button
               type="button"
@@ -657,7 +658,7 @@ export function IntelligencePage({
               data-testid="link-toggle"
               title="Link mode — tap two entities to draw a possible_match edge"
             >
-              ⧉
+              <Icon name="link" size={14} />
             </button>
             <button
               type="button"
@@ -668,7 +669,7 @@ export function IntelligencePage({
               data-testid="tda-toggle"
               title="TOPO layer"
             >
-              ◬
+              <Icon name="diagram" size={14} />
             </button>
           </div>
           <GraphStateBar
@@ -705,8 +706,11 @@ export function IntelligencePage({
         <div className="intel-canvas-body">
           {graph.nodes.length === 0 ? (
             <div className="intel-empty" data-testid="intel-empty">
-              <span style={{ fontSize: 22 }}>◈</span>
-              <p>No invariant anchors loaded — materialize a dynamic invariant (✦) or add an existing anchor to resolve its neighbourhood.</p>
+              <Icon name="view-graph" size={22} />
+              <p>
+                No invariant anchors loaded — materialize a dynamic invariant, or add an existing anchor
+                to resolve its neighbourhood.
+              </p>
             </div>
           ) : (
             <IntelligenceGraph
@@ -730,22 +734,42 @@ export function IntelligencePage({
             onToggle={onToggleTda}
           />
           <div className="intel-legend" data-provenance={provActive} data-testid="intel-legend">
+            {/* Tokens only (T135). The four hex literals this legend carried were
+                inline copies of `--c-accent`, `--c-accent-2`, a violet and a
+                green — none of them declared anywhere, and one of them (§3.3)
+                forbidden outright. They are now the token references, and the
+                markers are drawn from the icon set so they share its weight. */}
             <span>
-              <b style={{ color: "#22d3ee" }}>●</b> ATOMIC INVARIANT
+              <b className="intel-legend-mark" data-tone="accent">
+                <Icon name="dot" size={12} />
+              </b>{" "}
+              ATOMIC INVARIANT
             </span>
             <span>
-              <b style={{ color: "#f0a832" }}>□</b> CORRELATE
+              <b className="intel-legend-mark" data-tone="alt">
+                <Icon name="square" size={12} />
+              </b>{" "}
+              CORRELATE
             </span>
             <span>
-              <b style={{ color: "#a78bfa" }}>▲</b> RELATED
+              <b className="intel-legend-mark" data-tone="muted">
+                <Icon name="triangle" size={12} />
+              </b>{" "}
+              RELATED
             </span>
             {provActive ? (
               <>
                 <span>
-                  <b style={{ color: "#34d399" }}>◇</b> OBS
+                  <b className="intel-legend-mark" data-tone="success">
+                    <Icon name="diamond" size={12} />
+                  </b>{" "}
+                  OBS
                 </span>
                 <span>
-                  <b style={{ color: "#7c889d" }}>⬡</b> SOURCE
+                  <b className="intel-legend-mark" data-tone="muted">
+                    <Icon name="hexagon" size={12} />
+                  </b>{" "}
+                  SOURCE
                 </span>
               </>
             ) : null}

@@ -9,7 +9,7 @@ import {
   type WorkspaceStore,
 } from "./store";
 import { buildWorkspaceSearch, parseWorkspaceSearch } from "./url";
-import { OPEN_TIME_RANGE, type WorkspaceSelection } from "./types";
+import { DEFAULT_DENSITY, DEFAULT_THEME, OPEN_TIME_RANGE, type WorkspaceSelection } from "./types";
 
 /**
  * Selection store tests (§7, §76, §77).
@@ -37,8 +37,10 @@ function reset() {
     pinnedInspectors: [],
     paneWidths: DEFAULT_PANE_WIDTHS,
     paneVisibility: { rail: true, inspector: true, activity: true },
-    density: "compact",
-    theme: "dark",
+    // The product's own defaults, not literals: a test that pins `density` here
+    // would silently stop testing the default when §4.2 changes it.
+    density: DEFAULT_DENSITY,
+    theme: DEFAULT_THEME,
     commandPaletteOpen: false,
     contextMenu: null,
   });
@@ -222,11 +224,16 @@ describe("WorkspaceState — §77 URL round-trip", () => {
 });
 
 describe("WorkspaceState — layout actions", () => {
-  it("defaults to compact density (§66)", () => {
+  it("defaults to standard density and walks the three modes in canonical order (§4.2)", () => {
     reset();
-    expect(fresh().density).toBe("compact");
+    expect(fresh().density).toBe("standard");
     fresh().toggleDensity();
     expect(fresh().density).toBe("comfortable");
+    // Comfortable is the last mode, so the cycle wraps rather than sticking.
+    fresh().toggleDensity();
+    expect(fresh().density).toBe("compact");
+    fresh().toggleDensity();
+    expect(fresh().density).toBe("standard");
   });
 
   it("clamps a negative pane width rather than storing it", () => {

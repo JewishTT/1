@@ -2,8 +2,11 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 import {
+  DEFAULT_DENSITY,
+  DEFAULT_THEME,
   EMPTY_EVIDENCE_FILTER,
   OPEN_TIME_RANGE,
+  DENSITIES,
   isWorkspaceView,
   type Density,
   type EvidenceFilter,
@@ -174,8 +177,8 @@ const INITIAL_STATE: WorkspaceStateShape = {
   pinnedInspectors: [],
   paneWidths: DEFAULT_PANE_WIDTHS,
   paneVisibility: DEFAULT_PANE_VISIBILITY,
-  density: "compact",
-  theme: "dark",
+  density: DEFAULT_DENSITY,
+  theme: DEFAULT_THEME,
   commandPaletteOpen: false,
   contextMenu: null,
 };
@@ -260,7 +263,16 @@ export const useWorkspace = create<WorkspaceStore>()(subscribeWithSelector((set)
       paneVisibility: { ...state.paneVisibility, [pane]: !state.paneVisibility[pane] },
     })),
   setDensity: (density) => set({ density }),
-  toggleDensity: () => set((state) => ({ density: state.density === "compact" ? "comfortable" : "compact" })),
+  // Walks the canonical order rather than flipping a boolean, because there are
+  // now three modes and a flip has no answer for the middle one. The Appearance
+  // control renders `DENSITIES` in this same order, so ⌘K's toggle and the menu
+  // agree on what "next" means.
+  toggleDensity: () =>
+    set((state) => {
+      const index = DENSITIES.indexOf(state.density);
+      const next = DENSITIES[(index + 1) % DENSITIES.length];
+      return { density: next };
+    }),
   setTheme: (theme) => set({ theme }),
   toggleTheme: () => set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
   setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),

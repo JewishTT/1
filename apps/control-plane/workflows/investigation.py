@@ -77,6 +77,34 @@ class LifecycleConfig:
     recrawl_interval: timedelta = timedelta(hours=6)
     max_acquire_steps: int = 3
 
+    def to_dict(self) -> dict:
+        """JSON-serializable form for the Temporal workflow boundary.
+
+        Feature 024 T032: Temporal serializes workflow arguments as JSON, and
+        ``timedelta`` is not JSON-serializable -- passing this dataclass straight
+        into ``execute_workflow`` raised ``TypeError: Object of type timedelta is
+        not JSON serializable``. That failure only appears once a worker actually
+        polls the queue, which is why it survived while the queue was unserved.
+        """
+        return {
+            "autostart": self.autostart,
+            "approval_required": self.approval_required,
+            "recrawl_interval_seconds": int(self.recrawl_interval.total_seconds()),
+            "max_acquire_steps": self.max_acquire_steps,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict | None) -> LifecycleConfig:
+        """Rebuild from the dict form. Tolerates the empty/None case."""
+        payload = payload or {}
+        seconds = payload.get("recrawl_interval_seconds", 6 * 3600)
+        return cls(
+            autostart=bool(payload.get("autostart", True)),
+            approval_required=bool(payload.get("approval_required", False)),
+            recrawl_interval=timedelta(seconds=seconds),
+            max_acquire_steps=int(payload.get("max_acquire_steps", 3)),
+        )
+
 
 @dataclass
 class InvestigationLifecycle:
@@ -201,10 +229,12 @@ class InvestigationWorkflow:
         self._lifecycle: InvestigationLifecycle | None = None
 
     @workflow.run
-    async def run(self, investigation_id: str, config: LifecycleConfig) -> dict:
+    async def run(self, investigation_id: str, config: dict | None = None) -> dict:
+        # `config` arrives as a mapping, not a LifecycleConfig: Temporal serializes
+        # workflow arguments as JSON and timedelta is not JSON-serializable.
         self._lifecycle = InvestigationLifecycle(
             investigation_id=investigation_id,
-            config=config or LifecycleConfig(),
+            config=LifecycleConfig.from_dict(config),
         )
         self._lifecycle.auto_start(workflow.now())
         workflow.record_marker("checkpoint", self._lifecycle.checkpoint())

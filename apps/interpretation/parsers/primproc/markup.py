@@ -53,7 +53,6 @@ second process (constitution VI, Domain Invariant 12).
 from __future__ import annotations
 
 import bisect
-import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -162,10 +161,15 @@ IMPLIED_END_TAGS: Final[Mapping[str, frozenset[str]]] = MappingProxyType(
 _DROPPED_ATTR_EXACT: Final[frozenset[str]] = frozenset({"style"})
 _DROPPED_ATTR_PREFIX: Final[str] = "on"
 
-#: Markup that survived inside a text run means the tokenizer did not recognise it as markup.
-#: Checked on the raw slice so the check is a statement about the source rather than about a
-#: reconstruction.
-_MARKUP_AS_TEXT: Final[re.Pattern[str]] = re.compile(r"<[!?/]")
+#: Characters that cannot begin anything valid in HTML, and therefore mark a ``<`` the tokenizer
+#: declined to open a construct with. Paired with :data:`_BARE_LESS_THAN` to give the one
+#: reachable signature of "markup that was not tokenised as markup": a data run of exactly ``<``
+#: immediately followed by a data run starting with one of these.
+_MARKUP_OPENERS: Final[frozenset[str]] = frozenset("!/?")
+
+#: ``html.parser`` hands a ``<`` it declined back as a data run containing exactly that character,
+#: so this is the shape a non-construct ``<`` takes on the wire.
+_BARE_LESS_THAN: Final[str] = "<"
 
 
 def attribute_is_dropped(name: str) -> bool:
@@ -190,7 +194,7 @@ class SourceIndex:
     rather than one per lookup.
     """
 
-    __slots__ = ("_char_starts", "_byte_starts", "_codec", "_lines", "_offsets", "_text")
+    __slots__ = ("_byte_starts", "_char_starts", "_codec", "_lines", "_offsets", "_text")
 
     def __init__(self, text: str, codec: str) -> None:
         self._text = text
@@ -621,15 +625,19 @@ class _Collector(HTMLParser):
                     offset=element.start_char,
                 )
             )
-        for construct in kept:
-            if construct.kind != KIND_DATA:
+        for position, construct in enumerate(kept):
+            if construct.kind != KIND_DATA or construct.text != _BARE_LESS_THAN:
                 continue
-            if _MARKUP_AS_TEXT.search(self._raw_text[construct.start_char : construct.end_char]):
+            following = kept[position + 1] if position + 1 < len(kept) else None
+            if following is None or following.kind != KIND_DATA or not following.text:
+                continue
+            if following.text[0] in _MARKUP_OPENERS:
                 self._notes.append(
                     Note(
                         str(NoteCode.HTML_MARKUP_LEFT_AS_TEXT),
-                        "a '<!', '<?' or '</' sequence is inside a text run, so the tokenizer did "
-                        "not recognise it as markup; those characters are kept as text",
+                        f"a '<' at character {construct.start_char} is followed by "
+                        f"{following.text[0]!r} that the tokenizer did not read as a construct, so "
+                        "the sequence was markup the page never closed and it is kept as text",
                         offset=construct.start_char,
                     )
                 )

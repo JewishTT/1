@@ -44,7 +44,7 @@ All external input is untrusted. Mandatory: SSRF protection, DNS-rebinding prote
 - API: FastAPI / Python
 - High-throughput components: Rust
 - Workflow: Temporal
-- Event backbone: Apache Kafka (KRaft), Protobuf, Schema Registry
+- Event backbone: Kafka-compatible protocol, **Redpanda runtime (pinned by image digest)**, Protobuf, Schema Registry. "Kafka" in this platform names the wire protocol, never a specific product. See [ADR-0026](docs/adr/0026-redpanda-transport-runtime.md).
 - Raw storage: S3-compatible object storage (MinIO for dev/self-hosted)
 - Operational state: PostgreSQL
 - Search: OpenSearch projection
@@ -74,4 +74,5 @@ Constitution supersedes all other practices. Changes to architectural decisions 
 
 Compliance is verified on every PR/review. Rejected analysis outputs (admission rejections, TDA signals) are preserved with decision, reasons, score vectors, versions, and timestamps for replay. Source independence (copied/derived sources) is considered in evidence fusion; publication count is not treated as independent-source count.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-07 | **Last Amended**: 2026-09-29
+**Version**: 1.2.0 | **Ratified**: 2026-09-07 | **Last Amended**: 2026-10-02
+**Amendment log**: 1.1.0 (2026-09-29) — donor reuse is the default, not an exception. 1.2.0 (2026-10-02) — Technology Baseline: event backbone is the Kafka-compatible *protocol* with Redpanda as the pinned *runtime* (ADR-0026, Feature 024 D1=a).

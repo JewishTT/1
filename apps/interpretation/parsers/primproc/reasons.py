@@ -36,7 +36,6 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Final
 
-
 #: This stage's own version. Bumped when a rule changes in a way
 #: :data:`PRIMARY_PROC_RULE_DIGEST_INPUTS` does not already pin, and carried on every
 #: :class:`~parsers.primproc.result.PrimaryResult` and on the derived artifact's ``schema``.
@@ -265,8 +264,20 @@ class NoteCode(StrEnum):
     HTML_IMPLIED_END_TAG = "html_implied_end_tag"
     #: A ``<!``, ``<?`` or ``</`` sequence survived inside a text run, which means the
     #: tokenizer did not recognise it as markup. The text is kept — it is text as far as the
-    #: evidence is concerned — and the fact is recorded.
+    #: evidence is concerned — and the fact is recorded. Reachable because ``html.parser``
+    #: hands back a declined ``<`` as a data run of its own, so the signature is a ``<`` run
+    #: immediately followed by a run starting with ``!``, ``?`` or ``/``: none of those three
+    #: is valid HTML outside a construct, so their appearance in text is a fact rather than
+    #: a guess about the author's intent.
     HTML_MARKUP_LEFT_AS_TEXT = "html_markup_left_as_text"
+    #: An element's attributes could not be matched exactly against the ones the tokenizer
+    #: reported, so the whole tag was counted as markup rather than split. Every byte is
+    #: still counted; the note says the split was not justified rather than presenting a
+    #: number that looks like it was. The reachable trigger is a **disagreement** between
+    #: this stage's attribute scanner and :mod:`html.parser` — if one of them is wrong about
+    #: which attributes a tag carries, counting them individually would be counting the
+    #: wrong ones.
+    HTML_ATTRIBUTE_SCAN_INCOMPLETE = "html_attribute_scan_incomplete"
     #: A CDATA section, kept as text. Only reachable on the XML route; named because "the CDATA
     #: was dropped" and "the CDATA was read" are different results.
     XML_CDATA_KEPT = "xml_cdata_kept"
@@ -305,6 +316,14 @@ DONOR_IRRELEVANT_PATTERN: Final[str] = (
     r"subscribe|toolbar|widget)\b"
 )
 
+#: The fewest characters of surviving text an element must hold before the density strategy will
+#: choose it. Pinned because "the densest container" without a floor picks the container around a
+#: single character — and then reports :attr:`ExtractStrategy.DENSITY`, which reads as a measurement
+#: of the page's main content when nothing was measured. Below the floor the answer is
+#: :attr:`ExtractStrategy.WHOLE_DOCUMENT`, which is the honest one: no container claimed to be the
+#: content, so the whole document is it.
+MIN_DENSITY_CHARS: Final[int] = 24
+
 #: The content-name pattern, borrowed from the ``adversarygraph`` donor's ``_CONTENT_RE``.
 #: Matched against ``id``/``class``/``role``/``itemprop``/``data-testid`` and counted as
 #: :attr:`ExtractStrategy.CONTENT_CLASS` — a hint the page gave, which is a weaker fact than a
@@ -332,6 +351,7 @@ PRIMARY_PROC_RULE_DIGEST_INPUTS: Final[tuple[str, ...]] = (
     ",".join(sorted(DONOR_IRRELEVANT_TAGS)),
     DONOR_IRRELEVANT_PATTERN,
     CONTENT_CLASS_PATTERN,
+    f"min_density_chars={MIN_DENSITY_CHARS}",
 )
 
 

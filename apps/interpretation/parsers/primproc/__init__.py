@@ -79,6 +79,7 @@ from parsers.primproc.reasons import (
     DONOR_IRRELEVANT_TAGS,
     ENTITY_SYNTAX_REASON,
     EXTRACT_STRATEGIES,
+    MIN_DENSITY_CHARS,
     NOTE_CODES,
     PRIMARY_PROC_RULE_DIGEST_INPUTS,
     PRIMARY_PROC_SCHEMA,
@@ -96,8 +97,8 @@ from parsers.primproc.reasons import (
 )
 from parsers.primproc.result import (
     OutputLine,
-    PrimProcContractError,
     PrimaryResult,
+    PrimProcContractError,
     SourceSpan,
     zero_removals,
 )
@@ -113,6 +114,7 @@ __all__ = [
     "EXTRACT_STRATEGIES",
     "HTML_MEDIA_TYPES",
     "META_PROBE_WINDOW",
+    "MIN_DENSITY_CHARS",
     "NDJSON_MEDIA_TYPES",
     "NOTE_CODES",
     "PRIMARY_PROC_RULE_DIGEST_INPUTS",

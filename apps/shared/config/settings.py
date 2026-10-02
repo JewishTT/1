@@ -26,8 +26,19 @@ class StorageSettings(BaseSettings):
 
 
 class KafkaSettings(BaseSettings):
-    bootstrap_servers: str = "localhost:9092"
-    schema_registry_url: str = "http://localhost:8081"
+    """Transport settings.
+
+    Feature 024 / D1=a: the transport runtime is Redpanda. The Kafka-compatible
+    protocol contract is unchanged -- only the host and port moved. Ports are the
+    Redpanda service in apps/deploy/docker-compose.yml (profile `core`):
+    broker 19092, schema registry 18081.
+
+    To compare against Confluent Kafka, start the `legacy-kafka` profile and
+    override KAFKA_BOOTSTRAP_SERVERS / KAFKA_SCHEMA_REGISTRY_URL.
+    """
+
+    bootstrap_servers: str = "localhost:19092"
+    schema_registry_url: str = "http://localhost:18081"
 
     model_config = SettingsConfigDict(env_prefix="KAFKA_", case_sensitive=False)
 

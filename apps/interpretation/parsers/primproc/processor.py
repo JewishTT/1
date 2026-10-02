@@ -54,7 +54,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from html import unescape
-from typing import Any, Final
+from typing import Final
 
 from parsers.payload.detect import Detection, detect_json_text, media_type_essence
 from parsers.primproc.decode import DecodeDecision, decode_body
@@ -82,6 +82,7 @@ from parsers.primproc.reasons import (
     DONOR_IRRELEVANT_PATTERN,
     DONOR_IRRELEVANT_TAGS,
     ENTITY_SYNTAX_REASON,
+    MIN_DENSITY_CHARS,
     PRIMARY_PROC_SCHEMA,
     PRIMARY_PROC_VERSION,
     REMOVAL_REASONS,
@@ -113,9 +114,10 @@ XML_MEDIA_TYPES: Final[frozenset[str]] = frozenset(
     {"application/xml", "text/xml", "application/rss+xml", "application/atom+xml"}
 )
 
-#: Media types that route to the NDJSON passthrough. Checked **before** the JSON test, because NDJSON
-#: is JSON per line and a JSON detector would call it JSON — true and useless, since both routes are
-#: byte-identical and a caller counting structured payloads wants them apart.
+#: Media types that route to the NDJSON passthrough. Checked **before** the JSON test,
+#: because NDJSON is JSON per line and a JSON detector would call it JSON — true and
+#: useless, since both routes are byte-identical and a caller counting structured payloads
+#: wants them apart.
 NDJSON_MEDIA_TYPES: Final[frozenset[str]] = frozenset(
     {"application/x-ndjson", "application/ndjson", "application/jsonlines", "application/x-jsonlines"}
 )
@@ -178,13 +180,17 @@ def scan_tag_attributes(raw: str) -> tuple[int, tuple[_AttrSpan, ...]] | None:
     The leading whitespace of each attribute is **inside** that attribute's span. That is why
     ``<div style="x">`` reports six dropped bytes rather than four: the space that separated the
     name from the attribute left with it, and counting only ``style="x"`` would leave a byte the tag
-    was not really removed by.
+    was not really removed by. For the same reason the whitespace before the tag's ``>`` belongs to
+    the **tail** and is accounted as such: a live Wikipedia page has ``<div … title="Main menu" >``
+    with a space before the ``>``, and a scan that stopped at the last attribute left that byte
+    unclaimed — which is the one outcome this function exists to make impossible.
 
-    Returns ``None`` rather than a partial answer when the scan cannot account for every character
-    between the tag name and the tag's end. The caller then counts the whole tag as
-    :attr:`~parsers.primproc.reasons.RemovalReason.ELEMENT_MARKUP` and records a note — the bytes
-    are still counted, just not split, and the reason a reader gets is "we could not say which
-    attribute that was" rather than a guess.
+    So the scan is **total over well-formed tags**: every character of the tag is either the name
+    region, inside an attribute, or in the tail, and the caller's three-way split is gapless. The
+    ``None`` return is a guard against the alternative — a caller that partitions the tag and cannot
+    account for a byte — and it is not reached for any tag in the corpus the tests run. The caller
+    treats it as "count the whole tag as markup and record a note", which loses no byte and claims no
+    split it could not justify.
     """
     length = len(raw)
     cursor = 1
@@ -203,7 +209,11 @@ def scan_tag_attributes(raw: str) -> tuple[int, tuple[_AttrSpan, ...]] | None:
         attr_start = cursor
         while cursor < length and raw[cursor] in _TAG_SPACE:
             cursor += 1
-        if cursor >= length or raw[cursor] in _TAG_NAME_STOP:
+        if cursor >= length:
+            covered = cursor
+            break
+        if raw[cursor] in _TAG_NAME_STOP:
+            covered = cursor
             continue
         name_start = cursor
         while cursor < length and raw[cursor] not in _ATTR_NAME_STOP:
@@ -245,6 +255,10 @@ def select_region(document: MarkupDocument) -> tuple[ExtractStrategy, int, int]:
     strict ``>`` in document order, so a tie goes to the earlier element and no comparison depends
     on anything but positions in the source.
 
+    Density also has a floor, :data:`~parsers.primproc.reasons.MIN_DENSITY_CHARS`. Without one, the
+    container around a single character wins and the record says :attr:`ExtractStrategy.DENSITY`,
+    which reads as a measurement of the page's main content when nothing was measured.
+
     ``(WHOLE_DOCUMENT, 0, len)`` is the answer when nothing matched, and it is returned rather than
     raised: a page with no ``<article>`` is not an error, it is a page whose whole body is the best
     available guess, and the guess is what the strategy field says it is.
@@ -267,7 +281,7 @@ def select_region(document: MarkupDocument) -> tuple[ExtractStrategy, int, int]:
         if element.text_chars > best_chars:
             best = element
             best_chars = element.text_chars
-    if best is not None:
+    if best is not None and best_chars >= MIN_DENSITY_CHARS:
         return ExtractStrategy.DENSITY, best.start_char, best.end_char
     return ExtractStrategy.WHOLE_DOCUMENT, 0, document.index.char_length
 
@@ -383,7 +397,14 @@ class PrimaryProcessor:
         return self.route_for(content_type) in (Route.HTML, Route.XML)
 
     def route_for(self, content_type: str | None) -> Route:
-        """The route ``content_type`` names, without a body. Same order as :meth:`process`."""
+        """The route ``content_type`` names, without a body. Same order as :meth:`process`.
+
+        The JSON test runs **before** the text/passthrough split and not after it, which is the whole
+        point of delegating to :func:`parsers.payload.detect.detect_json_text`: a source that declares
+        ``application/ld+json`` is routed by the media type the platform already has five rules for,
+        and an ``ld+json`` payload must not fall through to "unaddressed type" because this function
+        happened to check the type prefix first.
+        """
         essence = media_type_essence(content_type)
         if essence in HTML_MEDIA_TYPES:
             return Route.HTML
@@ -394,8 +415,10 @@ class PrimaryProcessor:
         detection = detect_json_text(
             content_type=content_type, body=b"", probe_when_undeclared=not essence
         )
+        if detection.is_json:
+            return Route.JSON
         if essence.startswith("text/") or not essence:
-            return Route.JSON if detection.is_json else Route.TEXT
+            return Route.TEXT
         return Route.PASSTHROUGH
 
     # -- the stage ---------------------------------------------------------- #
@@ -564,12 +587,19 @@ class PrimaryProcessor:
                 or (self._irrelevant and self._is_irrelevant(construct))
             ):
                 skip_depth += 1
+            # The state at this construct, **including** the one it just opened: a ``<script>``
+            # start tag is inside the skip region as much as its content is, and an end tag
+            # is measured before it closes the region rather than after. An earlier version
+            # decremented on *every* end tag while the depth was positive, so
+            # ``<head><title>t</title></head>`` popped the depth twice and the ``</head>`` was
+            # counted as element markup rather than as part of the removed region. The ledger
+            # is what made that visible: the byte total was right and one span's reason was
+            # wrong, which is exactly the kind of error a summed count hides.
             in_skip = skip_depth > 0
             in_region = construct.start_char >= region_start and construct.end_char <= region_end
 
-            if is_start or is_end:
-                if construct.tag in BLOCK_TAGS:
-                    pending_break = True
+            if (is_start or is_end) and construct.tag in BLOCK_TAGS:
+                pending_break = True
 
             if construct.kind in MARKUP_KINDS:
                 if in_skip:
@@ -623,7 +653,7 @@ class PrimaryProcessor:
             else:  # pragma: no cover - the construct vocabulary is closed
                 removed(construct.start_char, construct.end_char, RemovalReason.ELEMENT_MARKUP)
 
-            if is_end and skip_depth > 0:
+            if is_end and construct.tag in self._skip_tags and skip_depth > 0:
                 skip_depth -= 1
 
         builder.flush()
@@ -674,7 +704,12 @@ class PrimaryProcessor:
         disagree with the ones the tokenizer reported, the whole tag is counted as
         :attr:`~parsers.primproc.reasons.RemovalReason.ELEMENT_MARKUP` and a note is recorded: the
         bytes are still counted, just not split, and the reason a reader gets is "we could not say
-        which attribute that was" rather than a guess.
+        which attributes this tag had" rather than a guess.
+
+        The disagreement check is a real guard and not paranoia. ``html.parser`` reports an attribute
+        *list* — names and values, no positions — so it cannot be used to measure bytes; and if the
+        two disagree about which attributes a tag carries, then one of them is wrong, and attributing
+        bytes to the wrong one of them is worse than not splitting.
         """
         if not self._drop_attributes:
             removed(construct.start_char, construct.end_char, RemovalReason.ELEMENT_MARKUP)
@@ -686,7 +721,7 @@ class PrimaryProcessor:
         ) == tuple(sorted(name.lower() for name, _ in construct.attrs))
         if scanned is None or not names_agree:
             add_note(
-                str(NoteCode.HTML_MARKUP_LEFT_AS_TEXT),
+                str(NoteCode.HTML_ATTRIBUTE_SCAN_INCOMPLETE),
                 f"the attributes of the <{construct.tag}> tag at character "
                 f"{construct.start_char} could not be located exactly, so the whole tag is counted "
                 "as element markup rather than split. Every byte is still counted",

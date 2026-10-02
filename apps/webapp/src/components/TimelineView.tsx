@@ -58,23 +58,28 @@ export function TimelineView({ entries, metrics, title = "Timeline" }: TimelineV
         aria-label="entity timeline"
         data-testid="timeline-svg"
       >
-        <line x1={PAD} y1={AXIS_Y} x2={W - PAD} y2={AXIS_Y} stroke="var(--c-muted, #888)" />
+        {/* Tokens only (T135). The `var(--x, #hex)` fallbacks these carried are
+            gone: every one of these variables IS declared in
+            styles/legacy/legacy-tokens.css, so the fallback was unreachable, and
+            it was a hex literal that no token governed — an inline copy that
+            could drift away from the value the cascade actually applies. */}
+        <line x1={PAD} y1={AXIS_Y} x2={W - PAD} y2={AXIS_Y} stroke="var(--c-muted)" />
         {entries.map((entry, i) => (
           <g key={entry.id} data-testid="timeline-marker">
-            <circle cx={xs[i]} cy={AXIS_Y} r={4} fill="var(--c-accent, #4caf50)" />
+            <circle cx={xs[i]} cy={AXIS_Y} r={4} fill="var(--c-accent)" />
             {i % 3 === 0 && (
               <text
                 x={xs[i]}
                 y={AXIS_Y + 18}
                 textAnchor="middle"
                 fontSize={9}
-                fill="var(--c-fg-muted, #bbb)"
+                fill="var(--c-muted)"
               >
                 {truncate(`${entry.id} · ${entry.label}`)}
               </text>
             )}
             {i % 3 === 0 && (
-              <text x={xs[i]} y={19} textAnchor="middle" fontSize={8} fill="var(--c-muted, #999)">
+              <text x={xs[i]} y={19} textAnchor="middle" fontSize={8} fill="var(--c-text-dim)">
                 {i + 1}
               </text>
             )}

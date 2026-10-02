@@ -12,6 +12,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Protocol
 
 from events.kafka import build_envelope
 from events.topics import topic_for
@@ -20,6 +21,34 @@ from scoring.scorer import HeuristicUtilityScorer
 from services.frontier import Frontier, FrontierItem
 from services.policy_service import PolicyService
 from services.source_registry import ReconPlan, ReconPlanStatus
+from services.throttle import rate_limiter
+
+
+@dataclass(frozen=True)
+class PressureSample:
+    """How much downstream pressure the platform is under right now."""
+
+    lag_s: float = 0.0
+    queue_depth: int = 0
+
+
+class BackpressureProbe(Protocol):
+    """Supplies live downstream pressure. Injected so the gate is testable without
+    a broker, and so the source of the number is explicit rather than hardcoded."""
+
+    def sample(self) -> PressureSample: ...
+
+
+class NullProbe:
+    """No broker attached: reports zero pressure. Backwards-compatible default.
+
+    This is a *default*, not the previous behaviour. The old code passed
+    ``{"downstream_lag_s": 0.0}`` as a literal inside ``_dispatch``, which made
+    backpressure impossible to exercise and impossible to observe.
+    """
+
+    def sample(self) -> PressureSample:
+        return PressureSample()
 
 
 @dataclass
@@ -44,32 +73,66 @@ class Dispatcher:
         *,
         batch_size: int = 10,
         producer=None,
+        probe: BackpressureProbe | None = None,
+        base_rate_per_s: float = 1.0,
     ) -> None:
         self._frontier = frontier
         self._scorer = scorer
         self._policy = policy
         self._batch_size = batch_size
         self._producer = producer
+        self._probe = probe or NullProbe()
+        self._base_rate_per_s = base_rate_per_s
         self._callbacks: list[Callable[[DispatchResult], None]] = []
+        self.halted_by_backpressure = 0
 
     def on_task(self, cb: Callable[[DispatchResult], None]) -> None:
         self._callbacks.append(cb)
 
+    def pressure(self) -> PressureSample:
+        return self._probe.sample()
+
+    def effective_rate(self, sample: PressureSample) -> float:
+        """Acquisition rate permitted under current downstream pressure.
+
+        Constitution: downstream queue growth must reduce the acquisition rate,
+        never widen the backlog. ``rate_limiter`` already encodes both curves
+        (lag and depth); reusing it keeps one definition of "how much slower".
+        """
+        return rate_limiter(
+            queue_depth=sample.queue_depth,
+            max_rate_per_s=self._base_rate_per_s,
+            downstream_lag_s=sample.lag_s,
+        )
+
     def poll_once(self, *, tenant_id: str | None = None) -> list[dict]:
-        """One scheduler tick: dispatch READY items (best N by priority)."""
+        """One scheduler tick: dispatch READY items (best N by priority).
+
+        Backpressure is consulted before anything is popped. Under sustained
+        pressure the item is left READY rather than popped and cooled down, so
+        sustained backpressure does not churn leases.
+        """
+        sample = self.pressure()
+        permitted = self.effective_rate(sample)
+        if permitted <= 0.0:
+            self.halted_by_backpressure += 1
+            return []
+        budget = max(1, int(self._batch_size * permitted))
+
         results: list[dict] = []
         dispatched = 0
-        for _ in range(self._batch_size):
+        for _ in range(budget):
             item = self._frontier.pop_next(tenant_id=tenant_id)
             if item is None:
                 break
-            result = self._dispatch(item)
+            result = self._dispatch(item, sample)
             results.append(result)
             if result.get("dispatched"):
                 dispatched += 1
         return results
 
-    def _dispatch(self, item: FrontierItem) -> dict:
+    def _dispatch(self, item: FrontierItem, sample: PressureSample | None = None) -> dict:
+        sample = sample if sample is not None else self.pressure()
         # Build a task-spec for the scorer from the frontier item.
         task_spec = {
             "expected_gain": 0.6,
@@ -83,7 +146,7 @@ class Dispatcher:
             "duplicate_risk": 0.1,
             "host_key": item.host_key,
         }
-        score = self._scorer.score(task_spec, {"downstream_lag_s": 0.0})
+        score = self._scorer.score(task_spec, {"downstream_lag_s": sample.lag_s})
 
         # Worker class based on url/source_class.
         worker_class = "http"

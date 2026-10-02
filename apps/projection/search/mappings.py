@@ -109,7 +109,7 @@ def index_config(
     tenant: str,
     kafka_topic: str = "search.projected",
     s3_bucket: str = "quickwit-indexes",
-    bootstrap_servers: str = "kafka:9092",
+    bootstrap_servers: str = "redpanda:19092"  # D1=a,
 ) -> dict[str, Any]:
     """Quickwit index config: Kafka-native ingest, index on object storage.
 
@@ -163,7 +163,7 @@ def all_index_configs(
     tenant: str,
     kafka_topic: str = "search.projected",
     s3_bucket: str = "quickwit-indexes",
-    bootstrap_servers: str = "kafka:9092",
+    bootstrap_servers: str = "redpanda:19092"  # D1=a,
 ) -> list[dict[str, Any]]:
     """Every index config for one tenant — the deployment applies this list."""
     return [

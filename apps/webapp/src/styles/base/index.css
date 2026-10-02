@@ -11,7 +11,12 @@
 
 .ui-root {
   font-family: var(--ui-font-sans);
-  font-size: var(--ui-text-sm);
+  /* §4.2's base font per density mode. This is the root of the whole density
+     system: it is what "13px at STANDARD" actually means, and every relative size
+     below follows from it. Before T138 the base layer referenced no density token,
+     so the three modes differed only where a component opted in — and the ones
+     that had not opted in were silently stuck at one size. */
+  font-size: var(--ui-density-font);
   line-height: var(--ui-leading-normal);
   color: var(--ui-text);
   background: var(--ui-bg);

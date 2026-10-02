@@ -48,12 +48,20 @@ export function isSameSelection(a: WorkspaceSelection | null, b: WorkspaceSelect
 
 /**
  * Workspace views (§4). Switchable in the *centre* canvas while the left
- * context and right inspector persist — that persistence is what produces
- * the single-workstation feeling (§24).
+ * context and right inspector persist — that persistence is what produces the
+ * single-workstation feeling (§24).
  *
- * Stages 3–8 fill in the content of the later views. All eight exist as
- * switchable destinations from stage 2 so the abstraction is real before the
- * screens are built (§95).
+ * The set is derived from `VIEW_META`/`ACTION_DESTINATIONS` nowhere and
+ * duplicated nowhere: `CommandBar.buildRegistry` generates its view commands
+ * from this list and `InvestigationWorkspace` renders its switcher from it, so a
+ * view cannot exist in one and be missing from the other.
+ *
+ * `ops` (T130, FR-109) is tenant-wide by content — pipeline health, quarantine,
+ * the source fabric — and is a view here because ui-upgrade §1 is explicit that
+ * "Acquisition, Findings, Analysis, Quality, and Ops are views *within* an
+ * investigation, not peer products". The surface keeps its own prominent
+ * "tenant-wide · not scoped to one investigation" label, which is what stops a
+ * tenant-wide failure rate from reading as a statement about the case in hand.
  */
 export const WORKSPACE_VIEWS = [
   "overview",
@@ -64,6 +72,7 @@ export const WORKSPACE_VIEWS = [
   "acquisition",
   "findings",
   "analysis",
+  "ops",
 ] as const;
 
 export type WorkspaceView = (typeof WORKSPACE_VIEWS)[number];
@@ -106,8 +115,41 @@ export interface PaneWidths {
   activity: number;
 }
 
-export type Density = "compact" | "comfortable";
+/**
+ * Density (ui-upgrade §4.2, FR-103).
+ *
+ * THREE modes, not two. `STANDARD` is the default the spec names, and it is the
+ * only one of the three that existed until T137 — the store previously shipped
+ * `compact` as both the default and the first mode, so a fresh session was
+ * denser than the design intends and there was no middle setting at all.
+ *
+ * The order is the canonical one: compact → standard → comfortable. The
+ * Appearance control renders `DENSITIES` in this order and ⌘K's
+ * `layout.density.toggle` walks it, so the two can never disagree about which
+ * mode comes next.
+ *
+ * §4.2 is emphatic that density is GLOBAL — "a density that applies to tables
+ * but not to the graph is a defect" — so this union has no per-surface
+ * variants. The px values live in `styles/tokens/density.css` and are mirrored
+ * as numbers in `objects/virtualization.ts`.
+ */
+export const DENSITIES = ["compact", "standard", "comfortable"] as const;
+
+export type Density = (typeof DENSITIES)[number];
+
+/** §4.2: "default STANDARD". */
+export const DEFAULT_DENSITY: Density = "standard";
+
+export function isDensity(value: string | null | undefined): value is Density {
+  return typeof value === "string" && (DENSITIES as ReadonlyArray<string>).includes(value);
+}
+
 export type ThemeName = "dark" | "light";
+
+/** §4.1/§3.2. Both themes are first class; neither is an inverted other. */
+export const THEME_NAMES = ["dark", "light"] as const;
+
+export const DEFAULT_THEME: ThemeName = "dark";
 
 /** Which panes are open. Collapsed is remembered so the layout survives (§76). */
 export interface PaneVisibility {

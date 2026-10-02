@@ -25,17 +25,21 @@ export const OVERSCAN = 8;
 /**
  * Row height per density, in px.
  *
- * These mirror `--ui-row-h` in `styles/tokens/density.css` (22px compact,
- * 30px comfortable). They are numbers rather than a `getComputedStyle` read
- * because windowing needs them in the scroll handler, synchronously, before the
- * browser has painted — a style read there is a forced reflow per scroll event.
+ * These mirror `--ui-row-h` in `styles/tokens/density.css`, which is ui-upgrade
+ * §4.2's normative row height per mode: COMPACT 26, STANDARD 32, COMFORTABLE 40.
+ * They are numbers rather than a `getComputedStyle` read because windowing needs
+ * them in the scroll handler, synchronously, before the browser has painted — a
+ * style read there is a forced reflow per scroll event.
  *
- * The pairing is asserted in `objects.test.ts`: if a token changes and these do
- * not, that test fails rather than the grid quietly mis-measuring itself.
+ * The pairing is asserted in `objects/virtualization.test.ts`: if a token changes
+ * and these do not, that test fails rather than the grid quietly mis-measuring
+ * itself. It is asserted against the stylesheet text, not against a hand-written
+ * copy of the numbers, so there is no third place for the value to live.
  */
 export const ROW_HEIGHT: Readonly<Record<Density, number>> = {
-  compact: 22,
-  comfortable: 30,
+  compact: 26,
+  standard: 32,
+  comfortable: 40,
 };
 
 /**
@@ -114,14 +118,24 @@ export function computeRowWindow(input: RowWindowInput): RowWindow {
   const viewport = Number.isFinite(input.viewportHeight) && input.viewportHeight > 0 ? input.viewportHeight : FALLBACK_VIEWPORT_HEIGHT;
   const scrollTop = Number.isFinite(input.scrollTop) ? Math.max(0, input.scrollTop) : 0;
 
-  const firstVisible = Math.floor(scrollTop / rowHeight);
+  // Clamp the scroll position to the largest one that still shows content.
+  //
+  // This is load-bearing, not tidiness. Without it, a `scrollTop` past the end
+  // produces `firstVisible = floor(scrollTop / rowHeight) > totalRows - 1`, so
+  // `start` exceeds `totalRows` and the window claims a sub-range it is not
+  // inside — `slice(start, end)` then returns nothing while the spacers add up
+  // to a scroll height that no longer matches. The reachable case is ordinary:
+  // the analyst scrolls a long table, then filters it down to a handful of rows
+  // while the scroll position is still where they left it.
+  const maxScroll = Math.max(0, totalHeight - viewport);
+  const offset = Math.min(scrollTop, maxScroll);
+
+  const firstVisible = Math.floor(offset / rowHeight);
   const visibleRows = Math.max(1, Math.ceil(viewport / rowHeight));
 
-  // Clamp to the scrollable range: a scrollTop past the end (which happens when
-  // the row set shrinks under a scroll position) must not produce start > total.
-  const lastVisible = Math.min(totalRows - 1, Math.floor((scrollTop + viewport) / rowHeight));
+  const lastVisible = Math.min(totalRows - 1, Math.floor((offset + viewport) / rowHeight));
 
-  const start = Math.max(0, firstVisible - overscan);
+  const start = Math.min(totalRows, Math.max(0, firstVisible - overscan));
   const end = Math.min(totalRows, lastVisible + 1 + overscan);
 
   return {
@@ -168,17 +182,16 @@ export function maxScrollOffset(totalRows: number, viewportHeight: number, rowHe
 
 /**
  * The rendered-row budget, stated once so the report and the tests can quote the
- * same number. Compact over a 480px fallback viewport:
- *   visible = ceil(480 / 22) = 22 rows
- *   window = 22 + 2×8 + up to 1 = 39 rows
- * Comfortable over the same viewport:
- *   visible = ceil(480 / 30) = 16 rows
- *   window = 16 + 2×8 + up to 1 = 33 rows
+ * same number. Over the 480px fallback viewport:
+ *   COMPACT      visible = ceil(480 / 26) = 19 rows → window = 19 + 2×8 + 1 = 36
+ *   STANDARD     visible = ceil(480 / 32) = 15 rows → window = 15 + 2×8 + 1 = 32
+ *   COMFORTABLE  visible = ceil(480 / 40) = 12 rows → window = 12 + 2×8 + 1 = 29
  */
-export const WINDOW_BUDGET = {
+export const WINDOW_BUDGET: Readonly<Record<Density, { visibleRows: number; overscan: number }>> = {
   compact: { visibleRows: Math.ceil(FALLBACK_VIEWPORT_HEIGHT / ROW_HEIGHT.compact), overscan: OVERSCAN },
+  standard: { visibleRows: Math.ceil(FALLBACK_VIEWPORT_HEIGHT / ROW_HEIGHT.standard), overscan: OVERSCAN },
   comfortable: {
     visibleRows: Math.ceil(FALLBACK_VIEWPORT_HEIGHT / ROW_HEIGHT.comfortable),
     overscan: OVERSCAN,
   },
-} as const;
+};

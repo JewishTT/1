@@ -197,6 +197,23 @@ export interface ResolvedColumn {
 }
 
 /**
+ * The kinds actually in play.
+ *
+ * §26 is explicit that an empty type filter means "all five kinds", and
+ * `applyFacets` already implements that. These two functions take the same list
+ * and used to read it the other way — as "the kinds to include" — so an
+ * unfiltered table (the state every analyst starts in) resolved to ZERO columns,
+ * including the selection rail. The table rendered with a header and no cells and
+ * no error, which is the worst of both: a bug that looks like an empty result set.
+ *
+ * One predicate now settles it for both, so "no filter" cannot mean two things in
+ * one module.
+ */
+function liveKinds(kinds: ReadonlyArray<ObjectRowKind>): ReadonlySet<ObjectRowKind> {
+  return kinds.length === 0 ? new Set(OBJECT_ROW_KINDS) : new Set(kinds);
+}
+
+/**
  * The columns a grid renders, in order.
  *
  * Three rules, applied in this order and no other:
@@ -211,7 +228,7 @@ export function resolveColumns(
   registry: ReadonlyArray<ColumnDefinition>,
   kinds: ReadonlyArray<ObjectRowKind>,
 ): ResolvedColumn[] {
-  const live = new Set(kinds);
+  const live = liveKinds(kinds);
   const applicable = registry.filter((column) => column.kinds.some((kind) => live.has(kind)));
   const byKey = new Map(applicable.map((column) => [column.key, column]));
 
@@ -289,7 +306,7 @@ export function defaultLayout(
   registry: ReadonlyArray<ColumnDefinition>,
   kinds: ReadonlyArray<ObjectRowKind>,
 ): { order: string[]; widths: Record<string, number>; hidden: string[] } {
-  const live = new Set(kinds);
+  const live = liveKinds(kinds);
   const applicable = registry.filter((column) => column.kinds.some((kind) => live.has(kind)));
   return {
     order: applicable.map((column) => column.key),

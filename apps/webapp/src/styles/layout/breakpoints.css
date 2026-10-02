@@ -1,0 +1,136 @@
+/* COGNITIVE UI 2.0 — width breakpoints (§5, FR-104, T139, T140).
+ *
+ * ONE FILE, FIVE WIDTHS, DECLARED ONCE.
+ *
+ * §5 fixes the set: 1024 / 1280 / 1440 / 1920 / 2560, and says what each one is
+ * for. Before this file the application-owned stylesheets contained ZERO
+ * width-based media queries — all five that existed were
+ * `prefers-reduced-motion` — and the three panes were fixed pixel widths read
+ * straight out of the store (`DEFAULT_PANE_WIDTHS = {rail: 264, inspector: 340,
+ * activity: 168}`). So the layout was one layout at every width, and the only
+ * thing a wider monitor bought was a wider canvas with the same three columns
+ * around it.
+ *
+ * WHY A SEPARATE FILE RATHER THAN A BLOCK IN `shell/index.css`. Breakpoints that
+ * live beside the component they adjust get applied to whichever surface happens
+ * to be mounted, which is how a graph rule ends up governing an evidence list. One
+ * file makes the whole width story readable in one place, and it is the file to
+ * read when a viewport "looks wrong".
+ *
+ * WHAT EACH WIDTH IS, AND WHY:
+ *
+ *   1024  the investigation panel collapses to a drawer; graph and inspector stay
+ *          side by side. Below this the rail is not a third column, it is an
+ *          overlay — 264px of a 1024px viewport is a quarter of the case the
+ *          operator is looking at, spent on a list they are not reading.
+ *   1280  full three columns: rail │ canvas │ inspector. This is the DEFAULT, not
+ *          a breakpoint — it is what the layout is when nothing applies.
+ *   1440  the baseline design-review target. Nothing changes here on purpose: a
+ *          breakpoint that changes nothing is a documented anchor, not dead code.
+ *   1920  the inspector gains a second column, and evidence and lineage sit side
+ *          by side. Past this the canvas is not the constraint — the analyst's
+ *          attention is — so the extra width goes to reading, not to canvas.
+ *   2560  content is capped and centred. "Max content width is NOT fluid-to-
+ *          infinity"; unbounded text line length is a defect. The graph is the one
+ *          element allowed to expand, because its coordinates ARE its content.
+ */
+
+/* The cap. Chosen so that at 2560 the three-column shell still fits with margin
+   and at 1920 it is never the binding constraint — a cap that bit at 1920 would
+   waste the width §5 explicitly assigns to a second inspector column. */
+:root {
+  --ui-content-max-w: 2240px;
+  /* §5's read-quality ceiling. `.ui-body` already caps measure at 68ch; this is
+     the same rule for the surfaces that hold prose in a column of their own. */
+  --ui-measure-max-w: 96ch;
+}
+
+/* ── 1024 — the investigation panel is a drawer, the canvas is not alone ── */
+
+@media (max-width: 1279px) {
+  .ui-workbench-rail {
+    /* Kept in the flow's DOM position for screen readers and for the tab order,
+       and lifted out of the flow visually. `visibility` rather than `display`
+       so a keyboard user's focus into it is still announced correctly once it is
+       opened. */
+    position: absolute;
+    z-index: var(--ui-z-drawer);
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: var(--ui-rail-max-w);
+    box-shadow: var(--ui-elevation-3);
+  }
+
+  .ui-shell-body {
+    position: relative;
+  }
+
+  /* The graph and the inspector remain side by side, which is what §5 asks for:
+     the canvas keeps a neighbour at 1024 rather than being the whole pane. */
+  .ui-workbench-inspector {
+    flex-basis: 300px;
+  }
+}
+
+/* ── 1440 — the baseline review target ──────────────────────────────────
+ *
+ * Declared, and deliberately empty of rules. A breakpoint with no rules is the
+ * record of a decision ("nothing changes at the design-review width"), which is
+ * worth stating here rather than leaving a reader to infer it from its absence.
+ */
+
+/* ── 1920 — the inspector gains a second column ───────────────────────── */
+
+@media (min-width: 1920px) {
+  .ui-workbench-inspector {
+    flex-basis: 460px;
+  }
+
+  /* The inspector's own content rules — its two-column field grid — live in
+     `styles/workspace/index.css`, beside the component they describe. This file
+     owns the frame: pane widths and the content cap. */
+
+  /* Section separators read as column separators at this width: a top border on
+     the first item of the second column would be a line across nothing. */
+  .ui-insp-section + .ui-insp-section {
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+/* ── 2560 — capped and centred (T140) ────────────────────────────────── */
+
+@media (min-width: 2560px) {
+  /* The shell's own columns are capped and centred as a unit. Without this the
+     top bar's readouts sit at the far left and the activity layer's at the far
+     right with 1000px of nothing between them. */
+  .ui-topbar,
+  .ui-activity,
+  .ui-shell-body {
+    max-width: var(--ui-content-max-w);
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  /* A rail pinned to the viewport edge while the canvas is centred reads as two
+     unrelated surfaces. The rail and the inspector stay with the canvas. */
+  .ui-shell-body {
+    overflow: hidden;
+  }
+
+  /* Prose gets its own cap: `--ui-measure` already limits `.ui-body` to 68ch,
+     and this holds the surfaces that carry long values in a wide column. */
+  .ui-inspector-body > *,
+  .ui-evidence-panel,
+  .ui-obj-record,
+  .ui-ops-rows {
+    max-width: var(--ui-measure-max-w);
+  }
+
+  /* The graph is the exception §5 names, and the only one: its coordinates are
+     its content, so a graph that stops growing has lost information. */
+  .ui-graph,
+  .ui-graph-host {
+    max-width: none;
+  }
+}

@@ -2,6 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type cytoscape from "cytoscape";
 import { deterministicLayout } from "../lib/edgeFormation";
+import { Icon } from "../ui/Icon";
+import {
+  entityTypeAccentVar,
+  readCssToken,
+  readGraphTokens,
+  readLegacyNodeTokens,
+  type GraphTokens,
+} from "../ui/tokens";
 import { EntityType, IntelGraph, IntelNode } from "../lib/intelGraph";
 
 interface Props {
@@ -19,19 +27,48 @@ interface Props {
   visible?: { nodeIds: readonly string[]; edgeIds: readonly string[] } | null;
 }
 
-// ── Volumetric entity-type palette ─────────────────────────────────────
+/**
+ * Volumetric entity-type palette — accent TOKEN NAMES, not colours (T135).
+ *
+ * These were eight hex literals, which is what "hardcoded hex in a component"
+ * means: no token governed any of them, so the intel board could not follow a
+ * theme and re-tuning meant editing a TypeScript file. They are now
+ * `--c-type-*` references into `styles/legacy/legacy-tokens.css`, resolved at
+ * mount by `readEntityTypeAccent` because Cytoscape paints to a canvas and cannot
+ * take a `var()`.
+ *
+ * `icon` is an SVG path on a 24×24 grid, unchanged: it was already inline SVG.
+ */
 export const TYPE_META: Record<EntityType, { accent: string; icon: string }> = {
-  account: { accent: "#b5ff69", icon: "M12 8a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.67 0-8 2.6-8 6v1h16v-1c0-3.4-3.33-6-8-6Z" },
-  organisation: { accent: "#ff8d70", icon: "M5 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17M3 21h16M9 7h3M9 11h3M9 15h3" },
-  device: { accent: "#8ce3a0", icon: "M8 2h8a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm4 18h.01" },
-  location: { accent: "#8ed7db", icon: "M12 21s-6.5-5.66-6.5-10.5A6.5 6.5 0 0 1 18.5 10.5C18.5 15.34 12 21 12 21ZM12 12.5a2 2 0 1 0-2-2 2 2 0 0 0 2 2Z" },
-  infrastructure: { accent: "#82adff", icon: "M4 4h16v7H4Zm0 9h16v7H4Zm4 1.5h.01M4 7.5h.01M20 7.5h.01" },
-  tool: { accent: "#ff6670", icon: "m21 3-3.6 3.6M8.5 12A4.5 4.5 0 1 0 13.6 5.4L10 9 8.5 12Zm-2 2-3.5 3.5A2.1 2.1 0 0 0 3 21h0a2.1 2.1 0 0 0 3.5-0.5L10 17" },
-  unknown: { accent: "#9aac9d", icon: "M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9Zm.5-10.5c.83-.5 1.5-1 1.5-2a2 2 0 1 0-4 0M12 16h.01" },
+  account: { accent: entityTypeAccentVar("account"), icon: "M12 8a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.67 0-8 2.6-8 6v1h16v-1c0-3.4-3.33-6-8-6Z" },
+  organisation: { accent: entityTypeAccentVar("organisation"), icon: "M5 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17M3 21h16M9 7h3M9 11h3M9 15h3" },
+  device: { accent: entityTypeAccentVar("device"), icon: "M8 2h8a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm4 18h.01" },
+  location: { accent: entityTypeAccentVar("location"), icon: "M12 21s-6.5-5.66-6.5-10.5A6.5 6.5 0 0 1 18.5 10.5C18.5 15.34 12 21 12 21ZM12 12.5a2 2 0 1 0-2-2 2 2 0 0 0 2 2Z" },
+  infrastructure: { accent: entityTypeAccentVar("infrastructure"), icon: "M4 4h16v7H4Zm0 9h16v7H4Zm4 1.5h.01M4 7.5h.01M20 7.5h.01" },
+  tool: { accent: entityTypeAccentVar("tool"), icon: "m21 3-3.6 3.6M8.5 12A4.5 4.5 0 1 0 13.6 5.4L10 9 8.5 12Zm-2 2-3.5 3.5A2.1 2.1 0 0 0 3 21h0a2.1 2.1 0 0 0 3.5-0.5L10 17" },
+  unknown: { accent: entityTypeAccentVar("unknown"), icon: "M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9Zm.5-10.5c.83-.5 1.5-1 1.5-2a2 2 0 1 0-4 0M12 16h.01" },
 };
 
+/**
+ * The resolved accent for an entity type, from its `var(--c-type-*)` reference.
+ *
+ * `TYPE_META` stores the reference so the table stays declarative and a test can
+ * assert it holds no hex; the canvas and the SVG data-URI helper both need the
+ * value, and this is where the reference becomes one.
+ *
+ * `host` is required rather than optional: the tokens are declared on `:root`, so
+ * any element resolves them, and reading from the graph's own host keeps the value
+ * correct if the surface is ever themed per-module.
+ */
+function resolveAccent(host: Element | null, reference: string, fallback: string): string {
+  return readCssToken(host, reference.slice(4, -1), fallback);
+}
+
+/** Lighten a resolved hex by `amount` (0..1) — used for the node's icon and wash. */
 function tint(hex: string, amount: number): string {
-  const n = parseInt(hex.slice(1), 16);
+  const parsed = /^#([0-9a-f]{6})$/i.exec(hex.trim());
+  if (parsed === null) return hex;
+  const n = parseInt(parsed[1], 16);
   const r = Math.min(255, Math.round(((n >> 16) & 255) + 255 * amount));
   const g = Math.min(255, Math.round(((n >> 8) & 255) + 255 * amount));
   const b = Math.min(255, Math.round((n & 255) + 255 * amount));
@@ -50,109 +87,136 @@ function entitySublabel(node: IntelNode): string {
   return `${node.id} · INV v${version} · ${ev} ev · ${tl} tl${signals > 0 ? ` · ${signals} sig` : ""}`;
 }
 
-const VOLUME: Record<string, object> = {
-  entity: {
-    "background-color": "#0a160d",
-    "border-width": 3.5,
-    "border-style": "double",
-    "border-opacity": 0.95,
-    "shadow-blur": 26,
-    "shadow-opacity": 0.6,
-    width: 78,
-    height: 78,
-    shape: "ellipse",
-    color: "#e7f4e5",
-    "font-size": 10,
-    label: "data(label)\ndata(sublabel)",
-    "text-wrap": "wrap",
-    "text-max-width": "140px",
-    "text-valign": "bottom",
-    "text-margin-y": 10,
-    "text-halign": "center",
-    "line-height": 1.3,
-    "font-family": "'Geist Mono', Consolas, monospace",
-    "underlay-color": "#020604",
-    "underlay-opacity": 0.4,
-    "underlay-padding": 7,
-  },
-  correlate: {
-    "background-color": "#100d0b",
-    "border-width": 2,
-    "border-style": "dashed",
-    "border-opacity": 0.85,
-    "shadow-blur": 16,
-    "shadow-opacity": 0.45,
-    width: 56,
-    height: 56,
-    shape: "round-rectangle",
-    color: "#d7c5b7",
-    "font-size": 9,
-    label: "data(label)\ndata(sublabel)",
-    "text-wrap": "wrap",
-    "text-max-width": "110px",
-    "text-valign": "bottom",
-    "text-margin-y": 7,
-    "font-family": "'Geist Mono', Consolas, monospace",
-  },
-  relationship: {
-    "background-color": "#0f1110",
-    "border-width": 1.5,
-    "border-opacity": 0.9,
-    "shadow-blur": 12,
-    "shadow-opacity": 0.4,
-    width: 40,
-    height: 40,
-    shape: "triangle",
-    color: "#cbd9ca",
-    "font-size": 8,
-    label: "",
-    "font-family": "'Geist Mono', Consolas, monospace",
-  },
-  observation: {
-    "background-color": "#06120a",
-    "border-color": "#a6ff4d",
-    "border-width": 1.5,
-    "border-opacity": 0.9,
-    "shadow-blur": 12,
-    "shadow-color": "#a6ff4d",
-    "shadow-opacity": 0.5,
-    width: 36,
-    height: 36,
-    shape: "diamond",
-    color: "#a5b4c7",
-    "font-size": 8,
-    label: "data(label)",
-    "text-valign": "bottom",
-    "text-margin-y": 5,
-    "font-family": "'Geist Mono', Consolas, monospace",
-  },
-  source: {
-    "background-color": "#0a100c",
-    "border-color": "#8ca28d",
-    "border-width": 1,
-    "border-opacity": 0.7,
-    "shadow-blur": 8,
-    "shadow-color": "#8ca28d",
-    "shadow-opacity": 0.3,
-    width: 30,
-    height: 30,
-    shape: "round-hexagon",
-    color: "#7c889d",
-    "font-size": 7,
-    label: "data(label)",
-    "text-valign": "bottom",
-    "text-margin-y": 4,
-    "font-family": "'Geist Mono', Consolas, monospace",
-  },
-};
+/**
+ * Per-node-kind surface styles, built from the `--c-graph-*` tokens (T135).
+ *
+ * A function rather than a module-level constant because Cytoscape cannot resolve
+ * `var()`: the tokens have to be read out of the cascade first, so the table cannot
+ * exist until the host element does. Every colour below used to be a hex literal
+ * in this file.
+ *
+ * Shape is what carries the kind (ellipse / dashed square / triangle / diamond /
+ * hexagon) and colour carries the surface — the same division of labour
+ * `graph/semantics.ts` documents for the migrated canvas.
+ */
+function volumeStyles(t: GraphTokens): Record<string, object> {
+  return {
+    entity: {
+      "background-color": t.entityBg,
+      "border-width": 3.5,
+      "border-style": "double",
+      "border-opacity": 0.95,
+      "shadow-blur": 26,
+      "shadow-opacity": 0.6,
+      width: 78,
+      height: 78,
+      shape: "ellipse",
+      color: t.label,
+      "font-size": 10,
+      label: "data(label)\ndata(sublabel)",
+      "text-wrap": "wrap",
+      "text-max-width": "140px",
+      "text-valign": "bottom",
+      "text-margin-y": 10,
+      "text-halign": "center",
+      "line-height": 1.3,
+      "font-family": "'Geist Mono', Consolas, monospace",
+      "underlay-color": t.labelUnderlay,
+      "underlay-opacity": 0.4,
+      "underlay-padding": 7,
+    },
+    correlate: {
+      "background-color": t.correlateBg,
+      "border-width": 2,
+      "border-style": "dashed",
+      "border-opacity": 0.85,
+      "shadow-blur": 16,
+      "shadow-opacity": 0.45,
+      width: 56,
+      height: 56,
+      shape: "round-rectangle",
+      color: t.entityLabel,
+      "font-size": 9,
+      label: "data(label)\ndata(sublabel)",
+      "text-wrap": "wrap",
+      "text-max-width": "110px",
+      "text-valign": "bottom",
+      "text-margin-y": 7,
+      "font-family": "'Geist Mono', Consolas, monospace",
+    },
+    relationship: {
+      "background-color": t.relationshipBg,
+      "border-width": 1.5,
+      "border-opacity": 0.9,
+      "shadow-blur": 12,
+      "shadow-opacity": 0.4,
+      width: 40,
+      height: 40,
+      shape: "triangle",
+      color: t.relationshipLabel,
+      "font-size": 8,
+      label: "",
+      "font-family": "'Geist Mono', Consolas, monospace",
+    },
+    observation: {
+      "background-color": t.observationBg,
+      "border-color": t.observationBorder,
+      "border-width": 1.5,
+      "border-opacity": 0.9,
+      "shadow-blur": 12,
+      "shadow-color": t.observationBorder,
+      "shadow-opacity": 0.5,
+      width: 36,
+      height: 36,
+      shape: "diamond",
+      color: t.observationLabel,
+      "font-size": 8,
+      label: "data(label)",
+      "text-valign": "bottom",
+      "text-margin-y": 5,
+      "font-family": "'Geist Mono', Consolas, monospace",
+    },
+    source: {
+      "background-color": t.sourceBg,
+      "border-color": t.sourceBorder,
+      "border-width": 1,
+      "border-opacity": 0.7,
+      "shadow-blur": 8,
+      "shadow-color": t.sourceBorder,
+      "shadow-opacity": 0.3,
+      width: 30,
+      height: 30,
+      shape: "round-hexagon",
+      color: t.sourceLabel,
+      "font-size": 7,
+      label: "data(label)",
+      "text-valign": "bottom",
+      "text-margin-y": 4,
+      "font-family": "'Geist Mono', Consolas, monospace",
+    },
+  };
+}
 
-const EDGE_STYLE: Record<string, object> = {
-  possible_match: { "line-color": "#b5ff69", width: 1.8, "line-style": "solid", "arrow-color": "#b5ff69" },
-  assertion: { "line-color": "#ff9b82", width: 1.3, "line-style": "dotted", "arrow-color": "#ff9b82" },
-  relationship: { "line-color": "#8ed7db", width: 1.1, "line-style": "dashed", "arrow-color": "#8ed7db" },
-  evidence: { "line-color": "#8ce3a0", width: 1.3, "line-style": "dashed", "arrow-color": "#8ce3a0" },
-  source_host: { "line-color": "#526a59", width: 0.9, "line-style": "dotted", "arrow-color": "#526a59" },
-};
+/**
+ * Per-edge-family styles. Width and dash pattern carry the family as well as
+ * colour, so the palette is never the only channel — the same rule
+ * `graph/semantics.ts` states for the investigation graph.
+ */
+function edgeStyles(t: GraphTokens): Record<string, object> {
+  const line = (colour: string, width: number, style: "solid" | "dotted" | "dashed") => ({
+    "line-color": colour,
+    width,
+    "line-style": style,
+    "arrow-color": colour,
+  });
+  return {
+    possible_match: line(t.edgePossibleMatch, 1.8, "solid"),
+    assertion: line(t.edgeAssertion, 1.3, "dotted"),
+    relationship: line(t.edgeRelationship, 1.1, "dashed"),
+    evidence: line(t.edgeEvidence, 1.3, "dashed"),
+    source_host: line(t.edgeSourceHost, 0.9, "dotted"),
+  };
+}
 
 // ── Maltego Detail-View card overlaid on the canvas near the node ─────────
 function NodeInfoCard({
@@ -328,12 +392,12 @@ function NodeInfoCard({
       <div className="panel-actions">
         {node.kind === "entity" && (
           <button type="button" className="btn btn-primary btn-sm" onClick={() => onExpand(node.id)} data-testid="node-card-expand">
-            ⧉ EXPAND NEIGHBOURHOOD
+            <Icon name="copy" size={12} /> EXPAND NEIGHBOURHOOD
           </button>
         )}
         {node.kind === "correlate" && !node.materialized && (
           <button type="button" className="btn btn-primary btn-sm" onClick={() => onMaterialize(node.id)} data-testid="node-card-materialize">
-            ◉ MATERIALIZE INVARIANT
+            <Icon name="plus" size={12} /> MATERIALIZE INVARIANT
           </button>
         )}
         <Link to={`/entities/${node.id}`} className="btn btn-sm">
@@ -365,24 +429,32 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
     import("cytoscape").then((mod) => {
       if (cancelled || !hostRef.current) return;
 
+      const t = readGraphTokens(hostRef.current);
+      const legacy = readLegacyNodeTokens(hostRef.current);
+      const volume = volumeStyles(t);
+      const edges = edgeStyles(t);
+
       const entityStyle = (Object.entries(TYPE_META) as Array<[EntityType, { accent: string; icon: string }]>)
-        .map(([type, meta]) => ({
-          selector: `node[kind="entity"][type="${type}"]`,
-          style: {
-            "border-color": meta.accent,
-            "shadow-color": meta.accent,
-            "background-image": svgIcon(meta.icon, tint(meta.accent, 0.35)),
-            "background-image-opacity": 1,
-            "background-width": "26px",
-            "background-height": "26px",
-            "background-fit": "none",
-            "background-position-x": "50%",
-            "background-position-y": "42%",
-            "background-gradient-start-color": tint(meta.accent, 0.22),
-            "background-gradient-stop-color": "#060b14",
-            "background-gradient-direction": "to-bottom-right",
-          } as never,
-        }));
+        .map(([type, meta]) => {
+          const accent = resolveAccent(hostRef.current, meta.accent, "#9aac9d");
+          return {
+            selector: `node[kind="entity"][type="${type}"]`,
+            style: {
+              "border-color": accent,
+              "shadow-color": accent,
+              "background-image": svgIcon(meta.icon, tint(accent, 0.35)),
+              "background-image-opacity": 1,
+              "background-width": "26px",
+              "background-height": "26px",
+              "background-fit": "none",
+              "background-position-x": "50%",
+              "background-position-y": "42%",
+              "background-gradient-start-color": tint(accent, 0.22),
+              "background-gradient-stop-color": t.canvas,
+              "background-gradient-direction": "to-bottom-right",
+            } as never,
+          };
+        });
 
       const nodeIdSet = visible ? new Set(visible.nodeIds) : null;
       const edgeIdSet = visible ? new Set(visible.edgeIds) : null;
@@ -413,13 +485,13 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
             style: {
               label: e.reason,
               "font-size": 7,
-              "label-background-color": "#020604",
+              "label-background-color": t.labelUnderlay,
               "label-background-opacity": 0.75,
               "label-background-padding": "2px",
               "label-rotation": "autorotate",
               "text-wrap": "ellipsis",
               "text-max-width": "120px",
-              color: "#8da58f",
+              color: t.edgeMuted,
               "font-family": "'Geist Mono', Consolas, monospace",
             },
           })),
@@ -428,39 +500,39 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
           {
             selector: "node",
             style: {
-              "background-color": "#0e1626",
-              color: "#e6edf7",
+              "background-color": t.headerBg,
+              color: t.headerLabel,
               label: "data(label)",
               "font-family": "'Geist Mono', Consolas, monospace",
             },
           },
-          { selector: 'node[kind="entity"]', style: VOLUME.entity as never },
-          { selector: 'node[kind="correlate"]', style: VOLUME.correlate as never },
-          { selector: 'node[kind="relationship"]', style: VOLUME.relationship as never },
-          { selector: 'node[kind="observation"]', style: VOLUME.observation as never },
-          { selector: 'node[kind="source"]', style: VOLUME.source as never },
+          { selector: 'node[kind="entity"]', style: volume.entity as never },
+          { selector: 'node[kind="correlate"]', style: volume.correlate as never },
+          { selector: 'node[kind="relationship"]', style: volume.relationship as never },
+          { selector: 'node[kind="observation"]', style: volume.observation as never },
+          { selector: 'node[kind="source"]', style: volume.source as never },
           ...entityStyle,
           {
             selector: "edge",
             style: {
               "curve-style": "bezier",
-              "line-color": "#526a59",
+              "line-color": t.edgeSourceHost,
               width: 1.2,
-              color: "#8da58f",
+              color: t.edgeMuted,
               "font-size": 7,
               "font-family": "'Geist Mono', Consolas, monospace",
             },
           },
-          { selector: 'edge[kind="possible_match"]', style: EDGE_STYLE.possible_match as never },
-          { selector: 'edge[kind="assertion"]', style: EDGE_STYLE.assertion as never },
-          { selector: 'edge[kind="relationship"]', style: EDGE_STYLE.relationship as never },
-          { selector: 'edge[kind="evidence"]', style: EDGE_STYLE.evidence as never },
-          { selector: 'edge[kind="source_host"]', style: EDGE_STYLE.source_host as never },
+          { selector: 'edge[kind="possible_match"]', style: edges.possible_match as never },
+          { selector: 'edge[kind="assertion"]', style: edges.assertion as never },
+          { selector: 'edge[kind="relationship"]', style: edges.relationship as never },
+          { selector: 'edge[kind="evidence"]', style: edges.evidence as never },
+          { selector: 'edge[kind="source_host"]', style: edges.source_host as never },
           {
             selector: ":selected",
             style: {
               "border-width": 3.5,
-               "border-color": "#b5ff69",
+               "border-color": legacy.accent,
               "shadow-blur": 30,
               "shadow-opacity": 0.85,
             } as cytoscape.Css.Node,
@@ -498,14 +570,28 @@ export function IntelligenceGraph({ graph, selectedId, onSelect, onExpand, onMat
     };
   }, [graph, onSelect, onExpand, onReady, visible]);
 
-  const accent =
-    selectedNode?.kind === "entity"
-      ? TYPE_META[selectedNode.type]?.accent ?? "#22d3ee"
-      : selectedNode?.kind === "observation"
-        ? "#34d399"
-        : selectedNode?.kind === "correlate"
-          ? "#f0a832"
-          : "#7c889d";
+  /**
+ * The detail card's accent, for the selected node's kind.
+ *
+ * The card draws an SVG data URI, so it needs a REAL colour rather than a
+ * `var()` reference — a data URI is parsed outside the cascade. Resolved against
+ * the host element, with the token's declared fallback when the host is not
+ * mounted yet (the card cannot render before the graph exists, so this is
+ * unreachable in practice rather than merely unlikely).
+ */
+const accentFallbacks: Record<string, string> = {
+  observation: "#a5b4c7",
+  correlate: "#f0a832",
+};
+
+const accent =
+  selectedNode?.kind === "entity"
+    ? resolveAccent(hostRef.current, TYPE_META[selectedNode.type]?.accent ?? TYPE_META.unknown.accent, "#9aac9d")
+    : selectedNode?.kind === "observation"
+      ? resolveAccent(hostRef.current, entityTypeAccentVar("device"), accentFallbacks.observation)
+      : selectedNode?.kind === "correlate"
+        ? resolveAccent(hostRef.current, entityTypeAccentVar("name"), accentFallbacks.correlate)
+        : resolveAccent(hostRef.current, entityTypeAccentVar("unknown"), "#9aac9d");
 
   return (
     <div

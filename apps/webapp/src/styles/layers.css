@@ -11,11 +11,14 @@
  *   4. shell      — AppShell (§5, §8)
  *   5. workspace  — InvestigationWorkspace + ContextInspector (§4, §6)
  *   6. views      — the stage 3-4 surfaces mounted in the centre canvas:
- *                   graph + timeline (§14, §23) and evidence (§28, §31)
+ *                   graph + timeline (§14, §23), evidence (§28, §31) and
+ *                   objects (§25, §26)
  *   7. utilities  — small layout/text helpers
- *   8. legacy     — the pre-2.0 surface rules, still loaded so the
+ *   8. layout     — the width breakpoints (§5), last among the app's own rules
+ *                   so a surface-level rule can be overridden by width
+ *   9. legacy     — the pre-2.0 surface rules, still loaded so the
  *                   unmigrated pages render unchanged (§63, §97)
- *   9. donor      — scoped vendor sheets, provenance in styles/donors/INDEX.md
+ *  10. donor      — scoped vendor sheets, provenance in styles/donors/INDEX.md
  *
  * The `views` layer is separate from `workspace` on purpose: §96 keeps `workspace/`,
  * `graph/`, `timeline/` and `evidence/` as distinct directories, and their stylesheets
@@ -31,7 +34,10 @@
 @import "../graph/graph.css";
 @import "../timeline/timeline.css";
 @import "../evidence/evidence.css";
+@import "../objects/objects.css";
+@import "../ops/ops.css";
 @import "./utilities/index.css";
+@import "./layout/breakpoints.css";
 @import "../index.css";
 
 /* Donor CSS layers — aggregated imports.

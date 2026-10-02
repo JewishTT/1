@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { formatLinkReason, linkColor, reportLag } from "./links";
+import {
+  LINK_ROLE_BY_KIND,
+  formatLinkReason,
+  linkColor,
+  linkRole,
+  reportLag,
+  type LinkPalette,
+} from "./links";
 
 describe("formatLinkReason", () => {
   it("formats donor-style siem reasons", () => {
@@ -19,14 +26,52 @@ describe("formatLinkReason", () => {
   });
 });
 
-describe("linkColor", () => {
-  it("maps known kinds to stable colours", () => {
-    expect(linkColor("possible_match")).toBe("#7aa2c2");
-    expect(linkColor("same_as")).toBe("#2e7d4f");
+/**
+ * The edge palette, supplied by the caller rather than baked into the module
+ * (T135). These are the `--c-*` values `styles/legacy/legacy-tokens.css`
+ * declares, spelled out so the test can assert the ROLE MAPPING rather than the
+ * colour — which is the part that is ours.
+ */
+const PALETTE: LinkPalette = {
+  accent: "accent-token",
+  accentAlt: "accent-alt-token",
+  muted: "muted-token",
+  border: "border-token",
+  danger: "danger-token",
+  success: "success-token",
+};
+
+describe("linkColor — a kind maps to a ROLE, and the caller's palette supplies the value", () => {
+  it("maps known kinds to their roles", () => {
+    expect(linkRole("possible_match")).toBe("info");
+    expect(linkRole("same_as")).toBe("accent");
+    expect(linkRole("alias_of")).toBe("accent");
+    expect(linkRole("event_followed_by")).toBe("warning");
+    expect(linkRole("located_at")).toBe("warning");
+    expect(linkRole("mentioned_with")).toBe("muted");
+    expect(linkRole("associated_with")).toBe("neutral");
+  });
+
+  it("resolves a role to the token the palette supplies", () => {
+    expect(linkColor("possible_match", PALETTE)).toBe(PALETTE.accent);
+    expect(linkColor("same_as", PALETTE)).toBe(PALETTE.success);
+    expect(linkColor("event_followed_by", PALETTE)).toBe(PALETTE.accentAlt);
+    expect(linkColor("mentioned_with", PALETTE)).toBe(PALETTE.muted);
   });
 
   it("uses a neutral default for unknown kinds", () => {
-    expect(linkColor("mystery")).toBe("#888888");
+    expect(linkRole("mystery")).toBe("neutral");
+    expect(linkColor("mystery", PALETTE)).toBe(PALETTE.border);
+  });
+
+  it("contains no hex literal of its own, so a theme change reaches the edges", () => {
+    // The previous form was a `Record<string, string>` of hex. Asserting the
+    // absence of `#` in the source is crude but it is the assertion that fails
+    // when somebody adds one back, which is the regression this change exists to
+    // prevent.
+    const source = LINK_ROLE_BY_KIND;
+    expect(Object.keys(source).length).toBeGreaterThan(0);
+    expect(JSON.stringify(source)).not.toContain("#");
   });
 });
 

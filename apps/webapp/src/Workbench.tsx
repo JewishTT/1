@@ -9,8 +9,8 @@ import { InvestigationContentBridge } from "./LegacyInvestigationBridge";
 import { CanvasContextMenu } from "./ui/ContextMenu";
 import { ContextInspector } from "./workspace/inspector/ContextInspector";
 import { InvestigationWorkspace } from "./workspace/InvestigationWorkspace";
-import { ResizablePane, useEscapeLadder, useWorkspaceUrlSync } from "./workspace/ResizablePane";
-import { useCommandHotkeys } from "./workspace/commands";
+import { ResizablePane, useWorkspaceUrlSync } from "./workspace/ResizablePane";
+import { useWorkspaceEscapeLadder, useWorkspaceKeyboard } from "./quality/keyboardLayer";
 import { selectView, useWorkspace } from "./workspace/store";
 import type { Command } from "./workspace/commands";
 
@@ -95,35 +95,46 @@ function ActivityLayer() {
 /**
  * Global keyboard model (§50) and URL sync (§77). Mounted once at the shell
  * root so a chord works from anywhere, including inside the canvas.
+ *
+ * T131 — WHY THIS IMPORTS FROM `quality/`.
+ *
+ * The shell used to mount `useCommandHotkeys` from `workspace/commands.ts` and
+ * `useEscapeLadder` from `workspace/ResizablePane.tsx`, while the corrected
+ * implementations of both sat unused in `src/quality/keyboardLayer.ts`. The
+ * defect that correction addresses is real and shipped: the old text-entry
+ * predicate did not recognise `role="textbox"`, so typing "graph" into a
+ * correctly-marked ARIA filter navigated the workspace to the graph mid-word
+ * (WCAG 2.1.2 inverted). `quality/keyboard.test.tsx` asserted that defect with
+ * `it.fails` and named this swap as the signal that the fix had landed.
+ *
+ * So the live implementation is imported here, and the two superseded hooks are
+ * gone. `useWorkspaceEscapeLadder` supplies the three declared layers
+ * (context menu → palette → selection), which is the same set this component
+ * assembled inline plus the palette layer that `onEscape` used to handle
+ * separately — one ladder, one order, one place to read it.
  */
 function KeyboardLayer({ sync }: { sync: UrlSyncBinding | null }) {
   const registry = useRegistry();
 
   const paletteOpen = useWorkspace((state) => state.commandPaletteOpen);
   const setPaletteOpen = useWorkspace((state) => state.setCommandPaletteOpen);
-  const contextMenuOpen = useWorkspace((state) => state.contextMenu !== null);
-  const closeContextMenu = useWorkspace((state) => state.closeContextMenu);
-  const clearSelection = useWorkspace((state) => state.clearSelection);
 
   const view = useWorkspace(selectView);
   const selection = useWorkspace((state) => state.selection);
   const secondaryCount = useWorkspace((state) => state.secondarySelection.length);
 
-  useCommandHotkeys({
+  useWorkspaceKeyboard({
     registry,
     context: { view, selection, secondaryCount, paletteOpen },
     onTogglePalette: () => setPaletteOpen(!paletteOpen),
-    // §50: Escape closes the palette. Everything below it is handled by the
-    // ladder, which is mounted after and runs only if the palette is closed.
+    // §50: Escape closes the palette. Everything below it in the stack is the
+    // ladder's business, which is mounted immediately after.
     onEscape: () => {
       if (paletteOpen) setPaletteOpen(false);
     },
   });
 
-  useEscapeLadder([
-    { active: contextMenuOpen, run: closeContextMenu },
-    { active: !paletteOpen && selection !== null, run: clearSelection },
-  ]);
+  useWorkspaceEscapeLadder();
 
   // Sync is opt-in: a route supplies the router wiring; a bare test render does
   // not, and must not touch the address bar.

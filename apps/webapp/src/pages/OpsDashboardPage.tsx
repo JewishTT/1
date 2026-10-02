@@ -1,3 +1,5 @@
+import { Icon } from "../ui/Icon";
+
 export interface OpsMetrics {
   throughput_per_s: number;
   useful_observations: number;
@@ -47,7 +49,7 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
           <p className="panel-note">Pipeline health, freshness and worker readiness at a glance.</p>
         </div>
         <button className="btn btn-primary btn-sm" type="button" data-testid="refresh-btn" onClick={onRefresh}>
-          ↻ REFRESH
+          <Icon name="refresh" size={12} /> REFRESH
         </button>
       </div>
 

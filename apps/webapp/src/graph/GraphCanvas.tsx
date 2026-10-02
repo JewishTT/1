@@ -18,6 +18,7 @@ import {
   nodeStyleFor,
   predicateIsVisible,
   readGraphPalette,
+  readNodeLabelFont,
   type Emphasis,
   type GraphPalette,
 } from "./semantics";
@@ -79,6 +80,9 @@ export function GraphCanvas({
   const selection = useWorkspace((state) => state.selection);
   const secondary = useWorkspace((state) => state.secondarySelection);
   const theme = useWorkspace((state) => state.theme);
+  // §4.2: density reaches the graph's node chrome, not just the tables. Read as
+  // its own slice so a density change re-renders the canvas and nothing else.
+  const density = useWorkspace((state) => state.density);
   const select = useWorkspace((state) => state.select);
   const toggleSecondary = useWorkspace((state) => state.toggleSecondary);
   const setView = useWorkspace((state) => state.setView);
@@ -108,6 +112,10 @@ export function GraphCanvas({
   const hostRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
   const paletteRef = useRef<GraphPalette>(readGraphPalette(null));
+  // The density-resolved base label size. A ref rather than state because it is
+  // read inside the creation effect (which must not re-run) and inside the
+  // density effect (which owns the re-application).
+  const labelFontRef = useRef(readNodeLabelFont(null));
   const handlersRef = useRef<{
     select: (value: WorkspaceSelection | null) => void;
     toggleSecondary: (value: WorkspaceSelection) => void;
@@ -162,6 +170,29 @@ export function GraphCanvas({
 
   /* ── Cytoscape: created once ───────────────────────────────────────── */
 
+  /**
+   * Cytoscape's base stylesheet, re-applied when the density changes.
+   *
+   * A stylesheet REPLACEMENT, not a rebuild: `cy.style()` swaps the base styles
+   * and leaves every element-level style `applyElements` wrote intact, so
+   * switching density changes the node chrome and nothing about the graph's
+   * state — no elements added or removed, no layout re-run, no selection lost.
+   */
+  const applyBaseStyle = useCallback((cy: cytoscape.Core, fontSize: string) => {
+    cy.style([
+      {
+        selector: "node",
+        style: {
+          label: "data(id)",
+          "font-size": fontSize,
+          "text-valign": "bottom",
+          "text-margin-y": 4,
+        },
+      },
+      { selector: "edge", style: { width: 1, "curve-style": "bezier", "target-arrow-shape": "none" } },
+    ]);
+  }, []);
+
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -172,6 +203,7 @@ export function GraphCanvas({
     void import("cytoscape").then((module) => {
       if (cancelled || hostRef.current === null) return;
       paletteRef.current = readGraphPalette(hostRef.current);
+      labelFontRef.current = readNodeLabelFont(hostRef.current);
       created = module.default({
         container: hostRef.current,
         elements: [],
@@ -181,12 +213,13 @@ export function GraphCanvas({
         minZoom: 0.15,
         maxZoom: 3,
         boxSelectionEnabled: false,
-        style: [
-          { selector: "node", style: { label: "data(id)", "font-size": 8, "text-valign": "bottom", "text-margin-y": 4 } },
-          { selector: "edge", style: { width: 1, "curve-style": "bezier", "target-arrow-shape": "none" } },
-        ],
+        // No literal font size here: `applyBaseStyle` runs immediately below and
+        // owns the whole base stylesheet, so a `font-size` in the constructor
+        // would be a value nothing governs and nothing checks (§4.2).
+        style: [] as cytoscape.CytoscapeOptions["style"],
       } as cytoscape.CytoscapeOptions);
       cyRef.current = created;
+      applyBaseStyle(created, labelFontRef.current);
       wireEvents(created, handlersRef);
     });
 
@@ -195,7 +228,20 @@ export function GraphCanvas({
       created?.destroy();
       if (cyRef.current === created) cyRef.current = null;
     };
-  }, []);
+  }, [applyBaseStyle]);
+
+  /* ── Node chrome follows the density (§4.2) ─────────────────────────────
+   *
+   * A style re-application, not a rebuild: see `applyBaseStyle`.
+   */
+  useEffect(() => {
+    const host = hostRef.current;
+    if (host === null) return;
+    const font = readNodeLabelFont(host);
+    labelFontRef.current = font;
+    const cy = cyRef.current;
+    if (cy) applyBaseStyle(cy, font);
+  }, [density, applyBaseStyle]);
 
   /* ── Elements: add/remove the delta only ───────────────────────────── */
 

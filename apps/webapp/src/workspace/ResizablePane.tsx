@@ -224,25 +224,17 @@ export function useWorkspaceUrlSync({ navigate, currentPath, initialSearch, read
 }
 
 /**
- * Escape ladder (§50): the first active handler wins, so Escape always closes
- * the topmost thing rather than every layer at once.
+ * Escape ladder (§50) — MOVED.
+ *
+ * This file used to carry a second `useEscapeLadder` alongside `quality/
+ * keyboardLayer.ts`'s. Two identical ladders is one too many: they were wired
+ * to the same `document` event and the same store, so which one closed the
+ * palette depended on listener registration order, and a change to one would
+ * silently not apply to a shell using the other. T131 removed this one; the
+ * surviving implementation is `useEscapeLadder` / `useWorkspaceEscapeLadder` in
+ * `src/quality/keyboardLayer.ts`, which is the one whose ladder order is
+ * declared rather than implied and whose `topmostLayer` is separately testable.
+ *
+ * See `quality/keyboardLayer.ts` for the layer order and its one documented
+ * wart (palette above context menu in the list, reverse of visual stacking).
  */
-export function useEscapeLadder(handlers: ReadonlyArray<{ active: boolean; run: () => void }>) {
-  const run = useCallback(() => {
-    for (const handler of handlers) {
-      if (handler.active) {
-        handler.run();
-        return;
-      }
-    }
-  }, [handlers]);
-
-  useEffect(() => {
-    const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      run();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [run]);
-}

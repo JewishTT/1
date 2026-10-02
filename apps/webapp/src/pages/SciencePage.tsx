@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { Icon } from "../ui/Icon";
 import { TDAPanel } from "../components/TDAPanel";
 import type {
   ClaimRecord,
@@ -34,10 +35,19 @@ const GATE_LABELS: Array<keyof LadderGates> = [
   "reproduction",
 ];
 
+/**
+ * One ladder cell. A drawn tick for a passed gate, an em dash for a gate the
+ * platform did not report (T135 — the glyph was `✔`).
+ *
+ * The tick carries the meaning and the dash states the absence, so the cell is
+ * never ambiguous: an unchecked gate is not a failing gate, it is an unreported
+ * one. Both are `aria-hidden` and the gate's own label sits beside them, so the
+ * table cell announces its state through the row rather than through a shape.
+ */
 function rungCells(gates: LadderGates): React.ReactNode {
   return GATE_LABELS.map((gate) => (
-    <td key={gate} data-testid={`gate-${gate}`}>
-      {gates[gate] ? "✔" : "—"}
+    <td key={gate} data-testid={`gate-${gate}`} data-passed={gates[gate] ? "true" : "false"}>
+      {gates[gate] ? <Icon name="check" size={12} /> : "—"}
     </td>
   ));
 }

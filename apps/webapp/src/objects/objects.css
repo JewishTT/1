@@ -1,0 +1,329 @@
+/* COGNITIVE UI 2.0 — objects surface (§25, §26, §13, FR-109, FR-114, T132).
+ *
+ * ONE table over five kinds, virtualised above 500 rows, and every row height
+ * taken from `--ui-row-h` so the grid moves with the density the rest of the app
+ * moves with (§4.2: a density that applies to tables but not to the graph is a
+ * defect — and equally one that applies to the table but not to the toolbar
+ * above it).
+ *
+ * THE SPACERS ARE LAYOUT, NOT DATA. `.ui-obj-grid-pad` carries `aria-hidden`
+ * because a screen reader must see one grid of `aria-rowcount` rows with
+ * `aria-rowindex` positions, not two blank regions it has to reason about.
+ *
+ * `--ui-obj-row-h` exists so the grid can be pinned in a test without changing
+ * the density of the whole app: it defaults to the density token and the grid
+ * never hardcodes a px value.
+ */
+
+.ui-obj {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-density-gap);
+  min-height: 0;
+  flex: 1;
+}
+
+.ui-obj-head-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+}
+
+.ui-obj-head-titles {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+
+.ui-obj-toolbar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--ui-space-4);
+  padding-bottom: var(--ui-block-pad-y);
+  border-bottom: 1px solid var(--ui-border-subtle);
+}
+
+.ui-obj-kind-group {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.ui-obj-kind-label {
+  font-size: var(--ui-text-xs);
+}
+
+.ui-obj-kind-count {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-muted);
+  margin-inline-start: var(--ui-space-2);
+}
+
+.ui-menu-check {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  min-height: var(--ui-hit-min);
+  font-size: var(--ui-text-xs);
+  cursor: pointer;
+}
+
+/* ── Body: table beside the record detail ─────────────────────────────── */
+
+.ui-obj-body {
+  display: flex;
+  gap: var(--ui-density-gap);
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.ui-obj-table {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.ui-obj-detail {
+  flex: 0 0 340px;
+  max-width: 30%;
+  min-width: 240px;
+  overflow: auto;
+  padding: var(--ui-pane-pad);
+  border-inline-start: 1px solid var(--ui-border);
+  background: var(--ui-surface-1);
+}
+
+.ui-obj-record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-5);
+}
+
+.ui-obj-ref {
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* ── The grid ────────────────────────────────────────────────────────── */
+
+.ui-obj-grid {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+}
+
+.ui-obj-grid-head,
+.ui-obj-grid-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.ui-obj-grid-head {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface-1);
+  /* Sticky inside the scroll viewport's parent so the header survives a scroll
+     through 2 000 rows without becoming a second scroll container. */
+  position: sticky;
+  top: 0;
+  z-index: var(--ui-z-pane);
+}
+
+.ui-obj-head {
+  display: flex;
+  align-items: center;
+  height: var(--ui-control-h);
+  padding: 0 var(--ui-cell-pad-x);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+button.ui-obj-head {
+  font-family: var(--ui-font-mono);
+  border: none;
+  cursor: pointer;
+}
+
+.ui-obj-head-sortable:hover {
+  color: var(--ui-text);
+}
+
+.ui-obj-head[data-active="true"] {
+  color: var(--ui-accent-bright);
+}
+
+.ui-obj-sort {
+  margin-inline-start: var(--ui-space-2);
+}
+
+.ui-obj-grid-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ui-obj-grid-canvas {
+  position: relative;
+}
+
+.ui-obj-grid-row {
+  height: var(--ui-row-h);
+  border-bottom: 1px solid var(--ui-border-subtle);
+  cursor: pointer;
+}
+
+.ui-obj-grid-row:hover {
+  background: var(--ui-surface-1);
+}
+
+.ui-obj-grid-row[data-secondary="true"] {
+  /* Comparison targets: a left rule, not a colour wash, so the row's own
+     content keeps its meaning and the marker survives greyscale. */
+  box-shadow: inset 2px 0 0 var(--ui-gold);
+}
+
+.ui-obj-grid-row[data-selected="true"] {
+  background: var(--ui-surface-2);
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.ui-obj-cell {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 100%;
+  padding: 0 var(--ui-cell-pad-x);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-inline-end: 1px solid var(--ui-border-subtle);
+}
+
+.ui-obj-cell[data-align="end"] {
+  justify-content: flex-end;
+  /* §4.1: tabular figures in every numeric column. */
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-obj-cell[data-mono="true"] {
+  font-family: var(--ui-font-mono);
+  color: var(--ui-text-secondary);
+}
+
+.ui-obj-cell-primary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  line-height: var(--ui-leading-tight);
+}
+
+.ui-obj-cell-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-obj-cell-sub {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--ui-space-2);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  color: var(--ui-steel);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-1);
+}
+
+.ui-badge[data-tone="accent"] {
+  color: var(--ui-accent);
+  border-color: var(--ui-accent-line);
+}
+
+.ui-badge[data-tone="danger"] {
+  color: var(--ui-danger);
+  border-color: var(--ui-danger-line);
+}
+
+/* ── Coverage footer (§99: the gap is the finding) ───────────────────── */
+
+.ui-obj-coverage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--ui-border-subtle);
+}
+
+.ui-obj-missing {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding-inline-start: var(--ui-space-5);
+  list-style: none;
+}
+
+.ui-obj-missing-item {
+  font-size: var(--ui-text-2xs);
+  color: var(--ui-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* ── 1024 — the record detail becomes a drawer (ui-upgrade §5) ──────────
+ *
+ * Below 1280 there is no room for a table AND a detail pane side by side, and a
+ * squeezed table is worse than a full-width one: §4.3 asks for density, and
+ * density needs columns, not a 200px-wide record panel. So the detail moves below
+ * the table and the table keeps its width. */
+
+@media (max-width: 1279px) {
+  .ui-obj-body {
+    flex-direction: column;
+  }
+
+  .ui-obj-detail {
+    flex: 0 0 auto;
+    max-width: none;
+    min-width: 0;
+    max-height: 40vh;
+    border-inline-start: none;
+    border-top: 1px solid var(--ui-border);
+  }
+}
+
+/* 1920 — the detail pane earns a second column of its own (§5). */
+@media (min-width: 1920px) {
+  .ui-obj-detail {
+    flex: 0 0 420px;
+  }
+}

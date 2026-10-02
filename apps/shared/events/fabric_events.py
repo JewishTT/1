@@ -84,7 +84,6 @@ class EntityStreamConsumer(IdempotentConsumer):
         )
         self._fabric = fabric
 
-    @property
     def idempotency_key(self, envelope: Envelope) -> str:
         return envelope.event_id
 

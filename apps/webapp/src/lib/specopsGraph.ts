@@ -5,6 +5,7 @@
  */
 
 import type { SpecOpsGraphNode, SpecOpsGraphResponse } from "./api";
+import { entityTypeAccentVar } from "../ui/tokens";
 
 /** Entity-type presentation meta (human label + icon + canvas CSS class). */
 export interface EntityTypeStyle {
@@ -33,18 +34,34 @@ export function typeStyle(entityType: string): EntityTypeStyle {
   return ENTITY_TYPE_STYLES[entityType.trim().toUpperCase()] ?? FALLBACK_TYPE_STYLE;
 }
 
-/** Canvas accents keyed by style class — safe hex defaults for Cytoscape. */
+/**
+ * The accent token per canvas CSS class (T135).
+ *
+ * These were ten hex literals, so the panel's entity-type palette could not
+ * follow a theme and a re-tune meant editing a TypeScript file. They are now
+ * `var(--c-type-*)` references into `styles/legacy/legacy-tokens.css` — the right
+ * token family for a surface that has not been migrated to `--ui-*` (§62, §97).
+ *
+ * A `var()` reference rather than a resolved value, because Cytoscape is not the
+ * only consumer: `ENTITY_TYPE_ACCENTS` is also read by anything building a DOM
+ * style, and CSS resolves the token there. `SpecOpsGraphPanel` resolves them for
+ * the canvas through `readEntityTypeAccent`.
+ *
+ * The key is still the `so-*` class rather than the entity type, because that is
+ * what the DOM and the stylesheet both key on; the mapping from entity type to
+ * class is `ENTITY_TYPE_STYLES` above.
+ */
 export const ENTITY_TYPE_ACCENTS: Record<string, string> = {
-  "so-email": "#b5ff69",
-  "so-username": "#8ce3a0",
-  "so-phone": "#8ed7db",
-  "so-domain": "#82adff",
-  "so-url": "#a78bfa",
-  "so-name": "#f0a832",
-  "so-org": "#ff8d70",
-  "so-location": "#ffd166",
-  "so-ipv4": "#ff6670",
-  "so-unknown": "#9aac9d",
+  "so-email": entityTypeAccentVar("EMAIL"),
+  "so-username": entityTypeAccentVar("USERNAME"),
+  "so-phone": entityTypeAccentVar("PHONE"),
+  "so-domain": entityTypeAccentVar("DOMAIN"),
+  "so-url": entityTypeAccentVar("URL"),
+  "so-name": entityTypeAccentVar("NAME"),
+  "so-org": entityTypeAccentVar("ORG"),
+  "so-location": entityTypeAccentVar("LOCATION"),
+  "so-ipv4": entityTypeAccentVar("IPV4"),
+  "so-unknown": entityTypeAccentVar("UNKNOWN"),
 };
 
 /** Selection target handed to the entity toolbar. */

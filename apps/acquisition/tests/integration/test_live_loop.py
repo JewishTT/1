@@ -11,7 +11,7 @@ the wiring; this one proves the two claims a double cannot:
 It is skipped — not failed — when no broker answers, because a missing broker is
 an environment fact and a red test would say the code is wrong. What it needs:
 
-  * Kafka on ``COGNITIVE_KAFKA_BROKERS`` (default ``localhost:9092``)
+  * Kafka on ``COGNITIVE_KAFKA_BROKERS`` (default ``localhost:19092``)
   * outbound HTTPS to a real source
   * ``COGNITIVE_LIVE=1`` to run, so a routine suite never depends on a network
 

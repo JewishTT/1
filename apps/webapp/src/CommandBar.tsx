@@ -4,6 +4,7 @@ import type { IconName } from "./ui/Icon";
 import { useWorkspace } from "./workspace/store";
 import { useCommandPalette, type Command, type CommandContext } from "./workspace/commands";
 import type { WorkspaceView } from "./workspace/types";
+import { WORKSPACE_VIEWS } from "./workspace/types";
 
 /**
  * The command registry (§9, §49, §50).
@@ -12,7 +13,7 @@ import type { WorkspaceView } from "./workspace/types";
  * drift apart. Every entry has a stable, documented id — the id is the
  * contract; labels may be reworded.
  *
- *   workspace.view.overview|graph|objects|evidence|timeline|acquisition|findings|analysis
+ *   workspace.view.overview|graph|objects|evidence|timeline|acquisition|findings|analysis|ops
  *   selection.clear | selection.pin | selection.compare
  *   filter.evidence.clear | filter.time.clear
  *   layout.density.toggle | layout.theme.toggle
@@ -22,6 +23,11 @@ import type { WorkspaceView } from "./workspace/types";
  * Commands whose *content* belongs to stages 3–8 are still registered and
  * still move the workspace to the view that will host that work. They do not
  * pretend the screen exists.
+ *
+ * ONE TABLE, ONE LIST OF VIEWS: the view commands are generated from
+ * `WORKSPACE_VIEWS`, not from a hand-written copy of it. A second list would be
+ * a place for a view to exist in the switcher and not in ⌘K, which is the drift
+ * §9 forbids.
  */
 
 const VIEW_ICON: Record<WorkspaceView, IconName> = {
@@ -33,6 +39,7 @@ const VIEW_ICON: Record<WorkspaceView, IconName> = {
   acquisition: "view-acquisition",
   findings: "view-findings",
   analysis: "view-analysis",
+  ops: "view-ops",
 };
 
 /** §50 chords. Only these five views get a single key. */
@@ -47,18 +54,7 @@ const VIEW_KEYS: Partial<Record<WorkspaceView, string>> = {
 export function buildRegistry(): Array<Command> {
   const store = () => useWorkspace.getState();
 
-  const views: Array<Command> = (
-    [
-      "overview",
-      "graph",
-      "objects",
-      "evidence",
-      "timeline",
-      "acquisition",
-      "findings",
-      "analysis",
-    ] as const
-  ).map((view) => ({
+  const views: Array<Command> = WORKSPACE_VIEWS.map((view) => ({
     id: `workspace.view.${view}`,
     label: `Go to ${view[0].toUpperCase()}${view.slice(1)}`,
     group: "View",

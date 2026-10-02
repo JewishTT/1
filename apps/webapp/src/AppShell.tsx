@@ -4,7 +4,9 @@ import type { IconName } from "./ui/Icon";
 import { Badge, StatusDot } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
 import { Popover, Tooltip } from "./ui/Overlay";
+import { DENSITIES, THEME_NAMES } from "./workspace/types";
 import { useWorkspace } from "./workspace/store";
+import { useAppearanceAttributes } from "./workspace/useAppearance";
 import { useWorkState } from "./workspace/useWorkState";
 
 /**
@@ -159,13 +161,15 @@ function AppearanceMenu() {
       <div className="ui-menu">
         <span className="ui-pane-title">Density</span>
         <div className="ui-menu-row" role="group" aria-label="Density">
-          {(["compact", "comfortable"] as const).map((option) => (
+          {/* §4.2's three modes, in the canonical order the ⌘K toggle also walks. */}
+          {DENSITIES.map((option) => (
             <Button
               key={option}
               size="sm"
               variant={density === option ? "primary" : "default"}
               aria-pressed={density === option}
               onClick={() => setDensity(option)}
+              data-testid={`density-${option}`}
             >
               {option}
             </Button>
@@ -173,13 +177,14 @@ function AppearanceMenu() {
         </div>
         <span className="ui-pane-title">Theme</span>
         <div className="ui-menu-row" role="group" aria-label="Theme">
-          {(["dark", "light"] as const).map((option) => (
+          {THEME_NAMES.map((option) => (
             <Button
               key={option}
               size="sm"
               variant={theme === option ? "primary" : "default"}
               aria-pressed={theme === option}
               onClick={() => setTheme(option)}
+              data-testid={`theme-${option}`}
             >
               {option}
             </Button>
@@ -219,6 +224,11 @@ export interface AppShellProps {
 }
 
 export function AppShell({ children, activity }: AppShellProps) {
+  // FR-103: density and theme are DOM attributes, not Zustand-only fields.
+  // Mounted here because AppShell is the outermost UI 2.0 surface and every
+  // workspace, primitive and mounted view is inside it.
+  const { density, theme } = useAppearanceAttributes();
+
   const paneVisibility = useWorkspace((state) => state.paneVisibility);
   const togglePane = useWorkspace((state) => state.togglePane);
   const clearSelection = useWorkspace((state) => state.clearSelection);
@@ -235,6 +245,8 @@ export function AppShell({ children, activity }: AppShellProps) {
   return (
     <div
       className="ui-shell ui-root"
+      data-density={density}
+      data-theme={theme}
       data-pane-rail={paneVisibility.rail}
       data-pane-inspector={paneVisibility.inspector}
       data-pane-activity={paneVisibility.activity}

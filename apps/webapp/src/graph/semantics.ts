@@ -62,25 +62,32 @@ export interface GraphPalette {
  * before the stylesheet lands). In a browser the resolved values always win.
  * They are duplicated here rather than in a stylesheet because a fallback
  * that needs a stylesheet has already failed.
+ *
+ * Cytoscape cannot consume `var()` — it paints to a canvas — so the graph is
+ * the one surface that has to hold real colour strings. They are therefore
+ * mirrors of `styles/tokens/color.css` LAYER 1 (the normative palette,
+ * ui-upgrade §3.2), not a second palette: `tokens.colorTokens` below is the
+ * single place either of them is asserted against the spec, so a re-tune that
+ * misses one of the two is a failing test rather than a two-tone graph.
  */
 export const GRAPH_PALETTE_FALLBACK: GraphPalette = {
-  accent: "#46c07a",
-  accentBright: "#6fe0a3",
-  accentLine: "rgba(70, 192, 122, 0.42)",
-  gold: "#c9a249",
-  goldLine: "rgba(201, 162, 73, 0.38)",
-  danger: "#d4574c",
-  dangerLine: "rgba(212, 87, 76, 0.45)",
-  steel: "#7c8a80",
-  steelDim: "#5f6b63",
-  steelBright: "#a9b5ab",
-  text: "#e7ece8",
-  textMuted: "#7d877f",
-  textInverse: "#0a0c0b",
-  surface1: "#101312",
-  surface2: "#161a18",
-  surface3: "#1d221f",
-  border: "#232825",
+  accent: "#8fcb64",
+  accentBright: "#a7e477",
+  accentLine: "rgba(143, 203, 100, 0.42)",
+  gold: "#b99a66",
+  goldLine: "rgba(185, 154, 102, 0.38)",
+  danger: "#bf5b57",
+  dangerLine: "rgba(191, 91, 87, 0.45)",
+  steel: "#a5aea9",
+  steelDim: "#6e7873",
+  steelBright: "#e5eae7",
+  text: "#e5eae7",
+  textMuted: "#6e7873",
+  textInverse: "#070909",
+  surface1: "#121715",
+  surface2: "#161b18",
+  surface3: "#1c221e",
+  border: "#252c28",
 };
 
 const TOKENS: ReadonlyArray<keyof GraphPalette> = [
@@ -104,23 +111,23 @@ const TOKENS: ReadonlyArray<keyof GraphPalette> = [
 ];
 
 const CSS_VAR: Readonly<Record<keyof GraphPalette, string>> = {
-  accent: "--ui-accent",
-  accentBright: "--ui-accent-bright",
-  accentLine: "--ui-accent-line",
-  gold: "--ui-gold",
-  goldLine: "--ui-gold-line",
-  danger: "--ui-danger",
-  dangerLine: "--ui-danger-line",
-  steel: "--ui-steel",
-  steelDim: "--ui-steel-dim",
-  steelBright: "--ui-steel-bright",
-  text: "--ui-text",
-  textMuted: "--ui-text-muted",
-  textInverse: "--ui-text-inverse",
-  surface1: "--ui-surface-1",
-  surface2: "--ui-surface-2",
-  surface3: "--ui-surface-3",
-  border: "--ui-border",
+  accent: "--accent-green",
+  accentBright: "--accent-green-bright",
+  accentLine: "--accent-green-line",
+  gold: "--accent-amber",
+  goldLine: "--accent-amber-line",
+  danger: "--accent-red",
+  dangerLine: "--accent-red-line",
+  steel: "--text-secondary",
+  steelDim: "--text-muted",
+  steelBright: "--text-primary",
+  text: "--text-primary",
+  textMuted: "--text-muted",
+  textInverse: "--bg-0",
+  surface1: "--surface-0",
+  surface2: "--surface-1",
+  surface3: "--surface-2",
+  border: "--border-0",
 };
 
 /** Resolve the palette from the live DOM; falls back per-property, never wholesale. */
@@ -140,6 +147,32 @@ export function readGraphPalette(host: Element | null | undefined): GraphPalette
     if (value !== "") resolved[token] = value;
   }
   return resolved;
+}
+
+/**
+ * The node label's base font size, resolved from the density token.
+ *
+ * §4.2 requires density to reach "graph node chrome", and Cytoscape paints to a
+ * canvas so it cannot consume `var()` — it needs the resolved string handed to
+ * it. That is the whole reason `readGraphPalette` exists, and this is its
+ * non-colour member: the token is `--ui-node-label-font`, which
+ * `styles/tokens/density.css` sets to 10 / 11 / 12px for COMPACT / STANDARD /
+ * COMFORTABLE.
+ *
+ * The 11px fallback is STANDARD's value, for the same reason the palette fallback
+ * is the dark theme: an environment that cannot resolve a custom property should
+ * get the default mode, not an arbitrary one.
+ */
+export const NODE_LABEL_FONT_FALLBACK = "11px";
+
+export function readNodeLabelFont(host: Element | null | undefined): string {
+  if (!host || typeof window === "undefined") return NODE_LABEL_FONT_FALLBACK;
+  try {
+    const value = window.getComputedStyle(host).getPropertyValue("--ui-node-label-font").trim();
+    return value === "" ? NODE_LABEL_FONT_FALLBACK : value;
+  } catch {
+    return NODE_LABEL_FONT_FALLBACK;
+  }
 }
 
 /* ── Node semantics (§16) ─────────────────────────────────────────────── */

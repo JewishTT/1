@@ -13,7 +13,21 @@ import { useState } from "react";
 
 import type { InvariantParams, InvariantResult } from "../lib/science/types";
 
-const DIM_COLORS = ["#4caf50", "#2196f3", "#ff9800"];
+/**
+ * One colour per barcode dimension, as token references.
+ *
+ * SVG in a DOM node, so CSS CAN resolve these — unlike a canvas renderer, which
+ * needs a resolved string (see `ui/tokens.ts`). They were three hex literals
+ * (#4caf50 / #2196f3 / #ff9800), i.e. a rainbow on a categorical axis, and none
+ * of them was declared anywhere: no token governed them, so no theme or re-tune
+ * could reach them (T135, and §3.3's ban on rainbow categorical palettes).
+ *
+ * Now they are the three roles the token block already has, differentiated by
+ * lightness and saturation rather than by hue rotation — which is what §3.3 asks
+ * for. The set is deliberately closed at three: a persistence barcode has one bar
+ * per topological dimension and the platform serves 0/1/2.
+ */
+const DIM_COLOR_TOKENS = ["var(--c-success)", "var(--c-accent)", "var(--c-warning)"] as const;
 const BW = 560;
 const BPAD = 26;
 
@@ -62,14 +76,14 @@ function BarcodePanel({ diagrams }: BarcodePanelProps) {
                       y1={y}
                       x2={xEnd}
                       y2={y}
-                      stroke={DIM_COLORS[dim % DIM_COLORS.length]}
+                      stroke={DIM_COLOR_TOKENS[dim % DIM_COLOR_TOKENS.length]}
                       strokeWidth={4}
                       data-testid={`barcode-bar-${dim}`}
                     />
                     {infinite && (
                       <polygon
                         points={`${xEnd - 6},${y - 3} ${xEnd - 6},${y + 3} ${xEnd},${y}`}
-                        fill={DIM_COLORS[dim % DIM_COLORS.length]}
+                        fill={DIM_COLOR_TOKENS[dim % DIM_COLOR_TOKENS.length]}
                         data-testid={`barcode-inf-${dim}`}
                       />
                     )}

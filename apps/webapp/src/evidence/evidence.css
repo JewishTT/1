@@ -60,10 +60,18 @@
 .ui-evidence-list {
   width: 380px;
   flex: none;
-  padding: 0 var(--ui-space-4) var(--ui-space-4);
+  padding: 0 var(--ui-space-4) var(--ui-pane-pad);
   overflow-y: auto;
   background: var(--ui-surface-1);
   border-right: 1px solid var(--ui-border);
+}
+
+/* §4.2: density applies to the evidence rows exactly as it does to every other
+   table. Before this the file referenced zero density tokens, so the evidence
+   list stayed at one size in all three modes while the objects table beside it
+   moved. */
+.ui-evidence-list .ui-table tbody tr {
+  height: var(--ui-row-h);
 }
 
 .ui-evidence-spacer {
@@ -467,4 +475,35 @@
   padding-inline-start: var(--ui-space-6);
   font-size: var(--ui-text-2xs);
   color: var(--ui-danger-bright);
+}
+
+/* ── Width breakpoints (§5, FR-104) ────────────────────────────────────
+ *
+ * 1920 — "the inspector gains a second column; evidence and lineage stack side
+ * by side". Below it the viewer is one column, so the lineage panel sits under
+ * the record it explains and the analyst scrolls between them; at 1920 there is
+ * width for both, and the two become columns.
+ *
+ * 1024 — below this the fixed 380px list beside the viewer leaves too little for
+ * the raw payload to be readable, so the list becomes a row above the viewer. A
+ * raw-payload line that wraps every 30 characters is not a raw payload.
+ */
+
+@media (max-width: 1279px) {
+  .ui-evidence-body {
+    flex-direction: column;
+  }
+
+  .ui-evidence-list {
+    width: auto;
+    max-height: 34vh;
+    border-right: none;
+    border-bottom: 1px solid var(--ui-border);
+  }
+}
+
+@media (min-width: 1920px) {
+  .ui-evidence-list {
+    width: 440px;
+  }
 }

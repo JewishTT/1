@@ -34,19 +34,84 @@ export function formatLinkReason(reason: string): string {
   return reason.replaceAll("_", " ");
 }
 
-/** Stable hex colour per correlation kind (fallback: neutral grey). */
-const LINK_COLORS: Record<string, string> = {
-  possible_match: "#7aa2c2",
-  same_as: "#2e7d4f",
-  alias_of: "#2e7d4f",
-  event_followed_by: "#8a5a00",
-  mentioned_with: "#6b5b95",
-  associated_with: "#7a7a7a",
-  located_at: "#b34700",
+/**
+ * Edge colour per correlation kind.
+ *
+ * These are ROLES, not colours, since T135. A caller passes the tokens it read
+ * from the cascade (`ui/tokens.ts:readLegacyNodeTokens`) and this module maps a
+ * correlation kind onto the role that fits it:
+ *
+ *   possible_match    information — an analyst should look at it
+ *   same_as / alias_of the accent — an identity claim the platform accepted
+ *   event_followed_by / located_at warning — temporal and geographic claims
+ *   mentioned_with    muted — the weakest claim kind, and it should read that way
+ *   associated_with   neutral
+ *
+ * WHY ROLES. The previous form was a `Record<string, string>` of hex literals,
+ * which meant the edge palette could not follow a theme and could not be
+ * re-tuned without editing a `.ts` file. With roles, `styles/legacy/legacy-tokens.css`
+ * owns the values and this file owns only the mapping.
+ *
+ * `kindColor` keeps the old signature working by resolving the legacy tokens
+ * against `document.documentElement` — correct for the unmigrated surfaces, which
+ * declare `--c-*` on `:root`.
+ */
+export type LinkRole =
+  | "info"
+  | "accent"
+  | "warning"
+  | "muted"
+  | "neutral"
+  | "danger";
+
+export const LINK_ROLE_BY_KIND: Readonly<Record<string, LinkRole>> = {
+  possible_match: "info",
+  same_as: "accent",
+  alias_of: "accent",
+  event_followed_by: "warning",
+  mentioned_with: "muted",
+  associated_with: "neutral",
+  located_at: "warning",
 };
 
-export function linkColor(kind: string): string {
-  return LINK_COLORS[kind] ?? "#888888";
+/** A resolved palette, as returned by `readLegacyNodeTokens`. */
+export interface LinkPalette {
+  accent: string;
+  accentAlt: string;
+  muted: string;
+  border: string;
+  danger: string;
+  success: string;
+}
+
+/** Which role a correlation kind is drawn in. Unknown kinds are neutral. */
+export function linkRole(kind: string): LinkRole {
+  return LINK_ROLE_BY_KIND[kind] ?? "neutral";
+}
+
+/**
+ * Resolve a kind's role to a colour using the caller's resolved palette.
+ *
+ * A palette is a parameter rather than a global read so the function stays pure
+ * and testable: the edge colour for "same_as" is whatever the caller resolved
+ * `--c-accent` to, which differs between themes and between jsdom and a browser.
+ */
+export function linkColor(kind: string, palette: LinkPalette): string {
+  switch (linkRole(kind)) {
+    case "info":
+      return palette.accent;
+    case "accent":
+      return palette.success;
+    case "warning":
+      return palette.accentAlt;
+    case "muted":
+      return palette.muted;
+    case "danger":
+      return palette.danger;
+    case "neutral":
+    default:
+      return palette.border;
+  }
 }
 
 /**

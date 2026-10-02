@@ -1,4 +1,5 @@
 import { OpsMetrics } from "../lib/api";
+import { Icon } from "../ui/Icon";
 
 interface Props {
   metrics: OpsMetrics;
@@ -133,7 +134,7 @@ export function EconomicsPage({ metrics, onRefresh }: Props) {
         )}
         <div className="panel-actions">
           <button type="button" className="btn btn-sm" onClick={onRefresh} data-testid="eco-refresh">
-            ↻ REFRESH LEDGER
+            <Icon name="refresh" size={12} /> REFRESH LEDGER
           </button>
         </div>
       </div>

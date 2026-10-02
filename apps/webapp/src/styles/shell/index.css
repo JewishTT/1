@@ -17,8 +17,8 @@
 .ui-topbar {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-6);
-  padding: 0 var(--ui-space-5);
+  gap: var(--ui-density-gap);
+  padding: 0 var(--ui-pane-pad);
   background: var(--ui-surface-1);
   border-bottom: 1px solid var(--ui-border);
   min-width: 0;
@@ -42,7 +42,7 @@
 .ui-topbar-work {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-6);
+  gap: var(--ui-density-gap);
   flex: 1;
   min-width: 0;
 }
@@ -65,7 +65,7 @@
 .ui-topbar-meta {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-5);
+  gap: var(--ui-stack-gap);
 }
 
 .ui-count {
@@ -175,10 +175,14 @@
 /* ── Activity layer ─────────────────────────────────────────────────── */
 
 .ui-activity {
-  height: var(--ui-activitybar-h);
+  /* The activity layer's own height follows the row height, so the three density
+     modes give the canvas three different vertical budgets rather than one fixed
+     strip the canvas has to work around (§4.2). */
+  min-height: var(--ui-row-h);
+  height: auto;
   display: flex;
   align-items: center;
-  padding: 0 var(--ui-space-5);
+  padding: 0 var(--ui-pane-pad);
   background: var(--ui-surface-1);
   border-top: 1px solid var(--ui-border);
   overflow: hidden;
@@ -187,7 +191,7 @@
 .ui-activity-row {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-4);
+  gap: var(--ui-stack-gap);
   min-width: 0;
   flex: 1;
 }

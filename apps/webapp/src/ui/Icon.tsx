@@ -29,6 +29,7 @@ export type IconName =
   | "view-acquisition"
   | "view-findings"
   | "view-analysis"
+  | "view-ops"
   /* Shell (§5) */
   | "search"
   | "command"
@@ -46,7 +47,34 @@ export type IconName =
   | "copy"
   | "open-external"
   | "alert"
-  | "clock";
+  | "clock"
+  /* Legacy-surface set (T135).
+   *
+   * `components/Layout.tsx`, `pages/IntelligencePage.tsx`,
+   * `components/TimelineSlider.tsx`, `components/TDALayer.tsx`,
+   * `pages/SciencePage.tsx`, `pages/OpsDashboardPage.tsx` and
+   * `pages/EconomicsPage.tsx` shipped text glyphs as iconography — `♦ ✳ ☰ ⇅ ⚡
+   * ✦ ⬡ ✔ ↻ ◈ ⧉ ◬ ● □ ▲ ◇`. §3.3 forbids emoji-as-iconography and §59 requires one
+   * curated inline-SVG set, and a glyph has a second problem a drawn icon does
+   * not: its shape, weight and baseline are the font's, so it does not match the
+   * 1.5px stroke family around it and cannot be given a tooltip or an accessible
+   * name by anything except the text beside it.
+   *
+   * Each replacement below is drawn on the same 16px grid with the same 1.5px
+   * stroke, so the legacy surfaces finally sit in the same visual family as the
+   * workspace instead of next to it. */
+  | "refresh"
+  | "check"
+  | "plus"
+  | "list"
+  | "activity"
+  | "link"
+  | "diagram"
+  | "dot"
+  | "square"
+  | "triangle"
+  | "diamond"
+  | "hexagon";
 
 /** Path data, 16×16 grid. `d` only — every glyph is stroke-rendered. */
 const PATHS: Record<IconName, string> = {
@@ -66,6 +94,9 @@ const PATHS: Record<IconName, string> = {
   "view-findings": "M8 2.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11M8 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4",
   /* Bars on an axis: derived analysis. */
   "view-analysis": "M2.5 13.5h11M4.5 13.5v-4M7.5 13.5V5M10.5 13.5v-6",
+  /* A single pulse trace: pipeline health. One stroke, no frame, no dials — the
+   * ops view is a status report, not an instrument cluster (§3.3). */
+  "view-ops": "M2 8h2.6l1.4-3.8 1.9 7.6 1.4-3.8H14",
 
   "search": "M7 2.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9M10.5 10.5 13.5 13.5",
   "command": "M4.5 3.5h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1M5.5 9.5 8 7l2.5 2.5",
@@ -84,6 +115,42 @@ const PATHS: Record<IconName, string> = {
   "open-external": "M9.5 2.5H13V6M13 2.5 7.5 8M11 9v4.5H2.5V5H7",
   "alert": "M8 2.5 14 13H2zM8 6.5v3M8 11.2v.3",
   "clock": "M8 2.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11M8 5.5V8l2 1.5",
+
+  /* ── Legacy-surface set (T135) ──────────────────────────────────────────
+   *
+   * Each glyph below replaced a text character. The comment names it, because
+   * the reason a glyph cannot stay is not obvious from the drawing and the next
+   * person to wonder "why is this not a ●?" deserves the answer here rather than
+   * in a git log. */
+
+  /* `↻` — a circular arrow with a gap at the top right, so the arrowhead has
+     somewhere to point. A closed ring would read as a record, not an action. */
+  "refresh": "M13 5.5A5.5 5.5 0 1 0 13.2 10M13 2.6v3h-3",
+  /* `✔` — a check with a short down-stroke, matching the family's weight. */
+  "check": "M3 8.5 6.5 12 13 4.5",
+  /* `✦` — a four-pointed star: two crossed strokes, no fill. */
+  "plus": "M8 3v10M3 8h10",
+  /* `☰` — three rules with a leading tick column: a list, not a hamburger. */
+  "list": "M6 4h7.5M6 8h7.5M6 12h7.5M2.5 4h.01M2.5 8h.01M2.5 12h.01",
+  /* `⚡` — a pulse trace, the same glyph the Ops view tab uses. */
+  "activity": "M2 8h2.6l1.4-3.8 1.9 7.6 1.4-3.8H14",
+  /* `⇅` — two arcs meeting at a bar: a connector between two things. */
+  "link": "M6.6 9.4a2.6 2.6 0 0 0 3.7 0l2-2a2.6 2.6 0 0 0-3.7-3.7l-.9.9M9.4 6.6a2.6 2.6 0 0 0-3.7 0l-2 2a2.6 2.6 0 0 0 3.7 3.7l.9-.9",
+  /* `◬` — a triangle over a baseline: a derived diagram drawn on an axis. */
+  "diagram": "M8 2.8 13.5 11h-11zM2.5 13.5h11",
+  /* `●` — a filled dot would be the only filled glyph in the set, so the entity
+     marker is a small ring instead: same shape at the same optical weight. */
+  "dot": "M8 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7",
+  /* `□` */
+  "square": "M3.5 3.5h9v9h-9z",
+  /* `▲` */
+  "triangle": "M8 3.2 13.5 12.5h-11z",
+  /* `◇` */
+  "diamond": "M8 2.5 13.5 8 8 13.5 2.5 8z",
+  /* `⬡` — a pointy-topped hexagon; the distinct silhouette the graph's
+     Observation and Claim nodes already use (`graph/semantics.ts`), so the legend
+     marker and the canvas shape agree. */
+  "hexagon": "M5.2 3h5.6l2.8 5-2.8 5H5.2l-2.8-5z",
 };
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {

@@ -8,7 +8,7 @@ import { InvestigationWorkspace } from "./workspace/InvestigationWorkspace";
 import { ContextInspector } from "./workspace/inspector/ContextInspector";
 import { INSPECTOR_KINDS, actionsForSelection, destinationForAction } from "./workspace/commands";
 import { DEFAULT_PANE_WIDTHS, useWorkspace } from "./workspace/store";
-import { OPEN_TIME_RANGE, type WorkspaceObjectKind, type WorkspaceView } from "./workspace/types";
+import { OPEN_TIME_RANGE, WORKSPACE_VIEWS, type WorkspaceObjectKind, type WorkspaceView } from "./workspace/types";
 
 /**
  * §76 integration test: context survival across view switches, in the real
@@ -42,16 +42,17 @@ function selectObject(kind: WorkspaceObjectKind, id: string) {
   act(() => useWorkspace.getState().select({ kind, id }));
 }
 
-const ALL_VIEWS: ReadonlyArray<WorkspaceView> = [
-  "overview",
-  "graph",
-  "objects",
-  "evidence",
-  "timeline",
-  "acquisition",
-  "findings",
-  "analysis",
-];
+/**
+ * The views this file walks, derived from the product's own list rather than
+ * written out again.
+ *
+ * A literal copy is what let the stage-2 test suite and the stage-3–4 surface
+ * set disagree in the first place: the tests asserted eight views while
+ * `WORKSPACE_VIEWS` was the thing under test. Deriving it means a new view is
+ * covered the moment it is declared, and a view that disappears fails here
+ * instead of quietly going untested.
+ */
+const ALL_VIEWS: ReadonlyArray<WorkspaceView> = WORKSPACE_VIEWS;
 
 beforeEach(() => {
   useWorkspace.setState({
@@ -139,7 +140,7 @@ describe("§76 — switching views preserves context in the rendered tree", () =
 });
 
 describe("workspace — only the centre canvas switches", () => {
-  it("renders each of the eight documented views in the canvas", () => {
+  it("renders every declared view in the canvas", () => {
     renderWorkspace();
     for (const view of ALL_VIEWS) {
       switchView(view);
@@ -182,10 +183,10 @@ describe("workspace — only the centre canvas switches", () => {
 });
 
 describe("workspace — view switcher is keyboard reachable", () => {
-  it("exposes the switcher as a tablist of eight tabs with the active one selected", () => {
+  it("exposes the switcher as a tablist with one tab per declared view and the active one selected", () => {
     renderWorkspace();
     const tablist = screen.getByRole("tablist", { name: "Workspace views" });
-    expect(within(tablist).getAllByRole("tab")).toHaveLength(8);
+    expect(within(tablist).getAllByRole("tab")).toHaveLength(WORKSPACE_VIEWS.length);
     expect(within(tablist).getByRole("tab", { name: /Overview/ })).toHaveAttribute("aria-selected", "true");
   });
 

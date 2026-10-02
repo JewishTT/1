@@ -1,11 +1,13 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
+import { Icon, type IconName } from "../ui/Icon";
+
 type ModuleKey = "osint" | "economic" | "specops";
 
 interface NavSection {
   label: string;
-  items: Array<{ to: string; label: string; icon: string }>;
+  items: Array<{ to: string; label: string; icon: IconName }>;
 }
 
 const MODULES: Array<{ key: ModuleKey; short: string; label: string }> = [
@@ -14,50 +16,62 @@ const MODULES: Array<{ key: ModuleKey; short: string; label: string }> = [
   { key: "specops", short: "SPEC", label: "SpecOps" },
 ];
 
+/**
+ * The legacy nav's iconography, as names from the UI 2.0 set (T135).
+ *
+ * These were text glyphs — `◈ ⌕ ▤ ◉ ♦ ✳ ☰ ⧉ ⇅ § ⚡ ⏻` — which §3.3 forbids as
+ * iconography and which cannot be given a tooltip, a stroke weight or a focus
+ * ring, because their shape is the font's. The mapping keeps every destination's
+ * meaning: an investigation is the overview shape, a finding is the target shape,
+ * a connector is the link shape.
+ *
+ * `IconName` rather than `string` is what makes this enforceable — a glyph cannot
+ * be added here without the compiler knowing it is not a drawn icon.
+ */
 const NAV: Record<ModuleKey, NavSection[]> = {
   osint: [
     {
       label: "Intelligence",
       items: [
-        { to: "/intel", label: "Intel Board", icon: "◈" },
-        { to: "/search", label: "Search", icon: "⌕" },
+        { to: "/intel", label: "Intel Board", icon: "view-graph" },
+        { to: "/search", label: "Search", icon: "search" },
       ],
     },
     {
       label: "Investigate",
       items: [
-        { to: "/investigations/0", label: "Investigations", icon: "▤" },
-        { to: "/intel?entity=ENT-2001", label: "Entities", icon: "◉" },
-        { to: "/findings/0", label: "Findings", icon: "♦" },
+        { to: "/investigations/0", label: "Investigations", icon: "view-overview" },
+        { to: "/intel?entity=ENT-2001", label: "Entities", icon: "view-objects" },
+        { to: "/findings/0", label: "Findings", icon: "view-findings" },
       ],
     },
     {
       label: "Science",
       items: [
-        { to: "/science", label: "Science Console", icon: "◈" },
-        { to: "/network", label: "Network Analysis", icon: "✳" },
-        { to: "/hypotheses", label: "Hypotheses", icon: "☰" },
-        { to: "/experiments", label: "Experiments", icon: "⧉" },
+        { to: "/science", label: "Science Console", icon: "diagram" },
+        { to: "/network", label: "Network Analysis", icon: "view-analysis" },
+        { to: "/hypotheses", label: "Hypotheses", icon: "list" },
+        { to: "/experiments", label: "Experiments", icon: "copy" },
       ],
     },
     {
       label: "Acquisition",
-      items: [{ to: "/connectors", label: "Connectors", icon: "⇅" }],
+      items: [{ to: "/connectors", label: "Connectors", icon: "link" }],
     },
   ],
   economic: [
     {
       label: "Econometriks",
-      items: [{ to: "/economic", label: "Intelligence Economy", icon: "§" }],
+      items: [{ to: "/economic", label: "Intelligence Economy", icon: "view-analysis" }],
     },
   ],
   specops: [
     {
       label: "Operations",
       items: [
-        { to: "/ops", label: "SpecOps Console", icon: "⚡" },
-        { to: "/ops/graph", label: "Entity Graph", icon: "◉" },
-        { to: "/quarantine", label: "Quarantine / DLQ", icon: "⏻" },
+        { to: "/ops", label: "SpecOps Console", icon: "activity" },
+        { to: "/ops/graph", label: "Entity Graph", icon: "view-graph" },
+        { to: "/quarantine", label: "Quarantine / DLQ", icon: "alert" },
       ],
     },
   ],
@@ -166,7 +180,7 @@ export function Layout() {
                   className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
                 >
                   <span className="nav-icon" aria-hidden="true">
-                    {item.icon}
+                    <Icon name={item.icon} size={14} />
                   </span>
                   <span>{item.label}</span>
                 </NavLink>
@@ -190,7 +204,7 @@ export function Layout() {
         </div>
         <div className="header-right">
           <NavLink to="/ops" className="header-link" data-testid="pulse-link">
-            ⚡ POOL PULSE
+            <Icon name="activity" size={12} /> POOL PULSE
           </NavLink>
           <Clock />
         </div>

@@ -66,7 +66,7 @@ describe("command registry", () => {
     for (const command of registry) {
       if (command.icon === undefined) continue;
       expect(command.icon, command.id).toMatch(
-        /^(view-(overview|graph|objects|evidence|timeline|acquisition|findings|analysis)|search|command|panel-(left|right|bottom)|sun|moon|density|chevron-(left|right|down)|close|copy|open-external|alert|clock)$/,
+        /^(view-(overview|graph|objects|evidence|timeline|acquisition|findings|analysis|ops)|search|command|panel-(left|right|bottom)|sun|moon|density|chevron-(left|right|down)|close|copy|open-external|alert|clock)$/,
       );
     }
   });

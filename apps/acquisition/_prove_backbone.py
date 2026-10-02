@@ -40,7 +40,7 @@ def consume(topic: str, key: str, timeout_s: float = 25.0) -> list[dict]:
     consumer = Consumer(
         {
             "bootstrap.servers": ",".join(
-                os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:9092").split(",")
+                os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092").split(",")
             ),
             "group.id": f"proof-{os.getpid()}-{int(time.time())}",
             "auto.offset.reset": "earliest",

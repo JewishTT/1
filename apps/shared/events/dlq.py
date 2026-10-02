@@ -16,12 +16,27 @@ from dataclasses import dataclass, field
 
 @dataclass
 class DLQRecord:
-    record_id: str = field(default_factory=lambda: "DLQ-" + uuid.uuid4().hex[:12])
+    record_id: str = ""
     reason: str = ""
     payload: bytes = b""
     topic: str = ""
     partition: int = 0
     preserved: bool = True
+
+    def __post_init__(self) -> None:
+        """Derive ``record_id`` from content when none was supplied.
+
+        Feature 024 T020. This used to be ``uuid4().hex[:12]``, which made the id
+        non-deterministic: the same payload re-quarantined after a restart got a
+        different id, so the durable sink accumulated duplicate copies of one
+        rejected record and cross-restart idempotency was impossible. Identity in
+        this platform is content-addressed everywhere else, and a random id here was
+        an exception with no upside -- these ids never go on the wire.
+        """
+        if not self.record_id:
+            self.record_id = "DLQ-" + hashlib.sha256(
+                self.fingerprint().encode("utf-8") + self.topic.encode("utf-8")
+            ).hexdigest()[:12]
 
     def fingerprint(self) -> str:
         digest = hashlib.sha256(self.payload).hexdigest()

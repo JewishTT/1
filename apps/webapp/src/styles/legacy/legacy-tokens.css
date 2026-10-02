@@ -49,3 +49,80 @@
   --acc-soft: rgba(244, 63, 94, 0.16);
   --acc-glow: 0 0 14px rgba(244, 63, 94, 0.40), inset 0 0 10px rgba(244, 63, 94, 0.06);
 }
+
+/* ── Graph surface tokens (T135) ───────────────────────────────────────────
+ *
+ * These twenty-odd values used to be hex literals inside two Cytoscape
+ * components (`components/IntelligenceGraph.tsx`, `components/SpecOpsGraphPanel.tsx`)
+ * and one helper module (`lib/specopsGraph.ts`). That is what "hardcoded hex in
+ * components" means concretely: no token governed any of them, so no theme
+ * reached them, no re-tune was possible without editing TypeScript, and the two
+ * panels could drift apart with nothing to notice.
+ *
+ * They live here rather than in `src/styles/tokens/` because they belong to
+ * surfaces that have not been migrated to `--ui-*` (§62, §97), and this file is
+ * explicitly "a closed set until those surfaces are migrated". Putting them in the
+ * UI 2.0 token block would imply they had been.
+ *
+ * Cytoscape paints to a canvas and cannot resolve `var()`, so these are READ by
+ * `ui/tokens.ts` and handed to it resolved — the same arrangement as the `--*`
+ * tokens in `graph/semantics.ts`. A JSX attribute CAN take `var()` directly, and
+ * the SVG icon helper in `IntelligenceGraph.tsx` builds a data URI, which needs a
+ * real colour and therefore the resolved form.
+ *
+ * `legacy-tokens.test.ts` asserts every name below is declared, so a token
+ * referenced from TypeScript cannot silently go missing.
+ */
+:root {
+  /* Graph chrome */
+  --c-graph-canvas: #0a160d;
+  --c-graph-label: #e7f4e5;
+  --c-graph-label-underlay: #020604;
+  --c-graph-edge-muted: #8da58f;
+  --c-graph-header-bg: #0e1626;
+  --c-graph-header-label: #e6edf7;
+
+  /* Node kind surfaces. Shape still carries the kind (circle / dashed square /
+     triangle / diamond / hexagon); colour carries the surface, not the meaning. */
+  --c-graph-entity-bg: #100d0b;
+  --c-graph-entity-label: #d7c5b7;
+  --c-graph-correlate-bg: #06120a;
+  --c-graph-correlate-border: #a6ff4d;
+  --c-graph-relationship-bg: #0f1110;
+  --c-graph-relationship-label: #cbd9ca;
+  --c-graph-observation-bg: #06120a;
+  --c-graph-observation-border: #a6ff4d;
+  --c-graph-observation-label: #a5b4c7;
+  --c-graph-source-bg: #0a100c;
+  --c-graph-source-border: #8ca28d;
+  --c-graph-source-label: #7c889d;
+
+  /* Edge families. Width and dash pattern carry the family too, so the palette
+     is not the only channel — see graph/semantics.ts for the same principle
+     applied to the migrated canvas. */
+  --c-edge-possible-match: #b5ff69;
+  --c-edge-assertion: #ff9b82;
+  --c-edge-relationship: #8ed7db;
+  --c-edge-evidence: #8ce3a0;
+  --c-edge-source-host: #526a59;
+
+  /* Entity-type accents. The same seven hues under two vocabularies: the intel
+     board classifies by EntityType (account/organisation/…) and SpecOps by the
+     platform's uppercase label (EMAIL/USERNAME/…). One set of values, two names,
+     so a re-tune is one edit. */
+  --c-type-account: #b5ff69;
+  --c-type-organisation: #ff8d70;
+  --c-type-device: #8ce3a0;
+  --c-type-location: #8ed7db;
+  --c-type-infrastructure: #82adff;
+  --c-type-tool: #ff6670;
+  --c-type-unknown: #9aac9d;
+  --c-type-email: #b5ff69;
+  --c-type-username: #8ce3a0;
+  --c-type-phone: #8ed7db;
+  --c-type-domain: #82adff;
+  --c-type-url: #a78bfa;
+  --c-type-name: #f0a832;
+  --c-type-org: #ff8d70;
+  --c-type-location-alt: #ffd166;
+}

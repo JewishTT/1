@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import type cytoscape from "cytoscape";
 
+import { readEntityTypeAccent, readGraphTokens, readLegacyNodeTokens } from "../ui/tokens";
 import type { EntityToolbarTarget, CytoscapeElement } from "../lib/specopsGraph";
-import { ENTITY_TYPE_ACCENTS } from "../lib/specopsGraph";
+import { ENTITY_TYPE_STYLES } from "../lib/specopsGraph";
 
 interface Props {
   elements: CytoscapeElement[];
@@ -31,6 +32,21 @@ export function SpecOpsGraphPanel({ elements, selectedEntityId, onSelect }: Prop
     import("cytoscape").then((mod) => {
       if (cancelled || !hostRef.current) return;
 
+      // Cytoscape paints to a canvas and cannot resolve `var()`, so every colour
+      // below is read out of the `--c-*` token block and handed over resolved
+      // (T135). Before this the stylesheet carried eight hex literals that no token
+      // governed, so the panel could not follow a theme and could drift away from
+      // the intel board without anything noticing.
+      const t = readGraphTokens(hostRef.current);
+      const legacy = readLegacyNodeTokens(hostRef.current);
+      /** Resolved accent for one `so-*` class, keyed through its entity type. */
+      const accentFor = (className: string): string => {
+        const typeName = Object.keys(ENTITY_TYPE_STYLES).find(
+          (key) => ENTITY_TYPE_STYLES[key].className === className,
+        );
+        return readEntityTypeAccent(hostRef.current, typeName ?? "UNKNOWN");
+      };
+
       cy = mod.default({
         container: hostRef.current,
         elements,
@@ -38,8 +54,8 @@ export function SpecOpsGraphPanel({ elements, selectedEntityId, onSelect }: Prop
           {
             selector: "node",
             style: {
-              "background-color": "#0a160d",
-              "border-color": "#5b6d60",
+              "background-color": t.canvas,
+              "border-color": t.sourceBorder,
               "border-width": 3.5,
               "border-style": "double",
               "border-opacity": 0.95,
@@ -48,7 +64,7 @@ export function SpecOpsGraphPanel({ elements, selectedEntityId, onSelect }: Prop
               width: 78,
               height: 78,
               shape: "ellipse",
-              color: "#e7f4e5",
+              color: t.label,
               "font-size": 10,
               label: "data(label)",
               "text-wrap": "wrap",
@@ -59,13 +75,13 @@ export function SpecOpsGraphPanel({ elements, selectedEntityId, onSelect }: Prop
               "font-family": "'Geist Mono', Consolas, monospace",
             } as never,
           },
-          ...Object.entries(ENTITY_TYPE_ACCENTS).map(([cls, accent]) => ({
-            selector: `node.${cls}`,
+          ...Object.values(ENTITY_TYPE_STYLES).map((meta) => ({
+            selector: `node.${meta.className}`,
             style: {
-              "border-color": accent,
-              "shadow-color": accent,
-              "background-gradient-start-color": accent,
-              "background-gradient-stop-color": "#060b14",
+              "border-color": accentFor(meta.className),
+              "shadow-color": accentFor(meta.className),
+              "background-gradient-start-color": accentFor(meta.className),
+              "background-gradient-stop-color": t.canvas,
               "background-gradient-direction": "to-bottom-right",
             } as never,
           })),
@@ -73,12 +89,12 @@ export function SpecOpsGraphPanel({ elements, selectedEntityId, onSelect }: Prop
             selector: "edge",
             style: {
               "curve-style": "bezier",
-              "line-color": "#526a59",
+              "line-color": t.edgeSourceHost,
               width: 1.2,
-              color: "#8da58f",
+              color: t.edgeMuted,
               "font-size": 7,
               label: "data(label)",
-              "label-background-color": "#020604",
+              "label-background-color": t.labelUnderlay,
               "label-background-opacity": 0.75,
               "label-background-padding": "2px",
               "text-wrap": "ellipsis",
@@ -90,7 +106,7 @@ export function SpecOpsGraphPanel({ elements, selectedEntityId, onSelect }: Prop
             selector: ":selected",
             style: {
               "border-width": 3.5,
-              "border-color": "#b5ff69",
+              "border-color": legacy.accent,
               "shadow-blur": 30,
               "shadow-opacity": 0.85,
             } as cytoscape.Css.Node,

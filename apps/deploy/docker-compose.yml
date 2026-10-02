@@ -35,8 +35,12 @@ services:
       exit 0
       "
 
+  # Feature 024 / D1=a: Redpanda is the canonical transport. Confluent Kafka remains
+  # available under the "legacy-kafka" profile for comparison and for the
+  # Kafka-based ADRs being amended, but it is NO LONGER part of `core` -- bringing
+  # up `core` must yield exactly one broker. See services/redpanda.
   kafka:
-    profiles: ["core"]
+    profiles: ["legacy-kafka"]
     image: confluentinc/cp-kafka:7.7.0
     environment:
       KAFKA_NODE_ID: 1
@@ -64,7 +68,7 @@ services:
       retries: 30
 
   schema-registry:
-    profiles: ["core"]
+    profiles: ["legacy-kafka"]
     image: confluentinc/cp-schema-registry:7.7.0
     depends_on: [kafka]
     environment:
@@ -165,9 +169,12 @@ services:
 
   # --- Streaming / collector profiles (research R-06/R-10, plan phase C/D) ---
 
+  # Feature 024 / D1=a: Redpanda is the single dev/live transport runtime.
+  # The Kafka-compatible protocol contract is unchanged; only the runtime moved.
+  # Image pinned by digest (linux/amd64) -- FR-003, SC-003. Never revert to :latest.
   redpanda:
-    profiles: ["streaming"]
-    image: redpandadata/redpanda:latest
+    profiles: ["core", "streaming"]
+    image: redpandadata/redpanda@sha256:0996e23dfeb3e2a19508fb22ace04ba7e9415d5ab5b58d8998f2e38c54f0dc14
     command:
       - redpanda start
       - --smp 1

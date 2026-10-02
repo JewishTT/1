@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { IconName } from "../ui/Icon";
 import type { WorkspaceObjectKind, WorkspaceSelection, WorkspaceView } from "./types";
@@ -114,7 +114,24 @@ export function commandForKey(
 
 /**
  * Is this event target a place where a plain letter must stay a letter?
+ *
  * §50 is explicit that the keyboard model must not break text input.
+ *
+ * DEFECTIVE — KEPT ONLY AS A COMPARISON TARGET. T131 removed the last caller:
+ * `Workbench.KeyboardLayer` now mounts `useWorkspaceKeyboard` from
+ * `src/quality/keyboardLayer.ts`, which resolves text entry through the
+ * corrected `isTextEntryTarget` in `./keyboard.ts`. That version recognises
+ * ARIA text roles (`role="textbox" | "searchbox" | "combobox"`) and
+ * `contenteditable="plaintext-only"`; this one does not, so typing "graph" into a
+ * correctly-marked ARIA field navigated to the graph.
+ *
+ * It stays, and stays tested, as the regression witness: `commands.test.ts`
+ * asserts what the OLD predicate answered, and if the corrected predicate is ever
+ * moved back here, the assertions below stop describing reality rather than
+ * starting to fail — which is the wrong direction for a guard. Nothing in the
+ * application imports it.
+ *
+ * The live predicate is `keyboard.ts:isTextEntryTarget`.
  */
 export function isTextEntryTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -127,63 +144,6 @@ export function isTextEntryTarget(target: EventTarget | null): boolean {
   const type = (target as HTMLInputElement).type;
   // Buttons, checkboxes and the like are not text entry; ⌘K still applies.
   return !["button", "checkbox", "radio", "submit", "reset", "range", "file"].includes(type);
-}
-
-/* ── Keyboard wiring ─────────────────────────────────────────────────── */
-
-export interface CommandHotkeysOptions {
-  registry: ReadonlyArray<Command>;
-  context: CommandContext;
-  /** Fired by the ⌘K / Ctrl-K chord regardless of focus, unless in text entry. */
-  onTogglePalette: () => void;
-  /** Fired by Escape when there is nothing else to clear. */
-  onEscape: () => void;
-}
-
-/**
- * Document-level keyboard handling for §50:
- *   ⌘K / Ctrl-K  open the command palette
- *   G O E T A    switch the centre canvas view
- *   Esc          clear the selection, or close the palette, or close an overlay
- *
- * Single-key chords are suppressed inside text entry (§50), and are ignored
- * when a modifier is held, so ⌘R / Ctrl-R and browser chords still work.
- * `Enter` is deliberately not bound globally: it belongs to the focused
- * control, and the palette's own input handles it.
- */
-export function useCommandHotkeys({ registry, context, onTogglePalette, onEscape }: CommandHotkeysOptions) {
-  const latest = useRef({ registry, context, onTogglePalette, onEscape });
-  latest.current = { registry, context, onTogglePalette, onEscape };
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const { registry: reg, context: ctx, onTogglePalette: toggle, onEscape: escape } = latest.current;
-
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        toggle();
-        return;
-      }
-
-      if (event.key === "Escape") {
-        escape();
-        return;
-      }
-
-      // Modifier combinations belong to the browser and the OS, not to us.
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-      if (isTextEntryTarget(event.target)) return;
-
-      const command = commandForKey(reg, ctx, event.key);
-      if (command) {
-        event.preventDefault();
-        command.run();
-      }
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
 }
 
 /* ── Command palette interaction ─────────────────────────────────────── */

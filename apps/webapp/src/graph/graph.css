@@ -1,4 +1,4 @@
-/* COGNITIVE UI 2.0 — graph canvas (§14–§22).
+/* COGNITIVE UI 2.0 — graph canvas (§14–§22, §4.2, FR-103).
  *
  * Imported by GraphCanvas so the surface travels with its component; nothing
  * here needs to be registered in styles/layers.css.
@@ -10,6 +10,20 @@
  * an action.
  *
  * All colours resolve through tokens. This file introduces no hex value.
+ *
+ * DENSITY REACHES THE GRAPH, NOT JUST THE TABLES (§4.2: "a density that applies
+ * to tables but not to the graph is a defect"). Every spacing, height and
+ * type-size decision below reads `--ui-density-gap`, `--ui-stack-gap`,
+ * `--ui-control-h`, `--ui-pane-pad`, `--ui-row-h` or `--ui-node-label-font`, so
+ * COMPACT / STANDARD / COMFORTABLE move the canvas chrome, the drawer, the side
+ * panels and the node labels together. Before this, the file referenced zero
+ * density tokens and the graph stayed at one size in all three modes.
+ *
+ * `--ui-node-label-font` is the Cytoscape side of the same contract:
+ * `graph/GraphCanvas.tsx` reads it with the rest of the palette and passes it as
+ * the base `font-size` style, so node chrome scales with the mode. Cytoscape
+ * paints to a canvas and cannot consume `var()`, which is exactly why the
+ * resolved string has to be handed to it by `readGraphPalette`.
  */
 
 .ui-graph {
@@ -30,7 +44,7 @@
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: var(--ui-space-3);
+  gap: var(--ui-density-gap);
   padding: var(--ui-space-3) var(--ui-space-4);
   background: var(--ui-surface-1);
   border-bottom: 1px solid var(--ui-border);
@@ -115,7 +129,7 @@
   left: var(--ui-space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-5);
+  gap: var(--ui-density-gap);
   width: 268px;
   padding: var(--ui-pane-pad);
   overflow-y: auto;
@@ -182,7 +196,7 @@
 .ui-graph-side {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-4);
+  gap: var(--ui-density-gap);
   width: 300px;
   padding: var(--ui-space-4);
   overflow-y: auto;
@@ -193,7 +207,7 @@
 .ui-graph-detail {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-2);
+  gap: var(--ui-stack-gap);
 }
 
 .ui-graph-detail-head {
@@ -208,8 +222,8 @@
 .ui-graph-detail-block {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-1);
-  padding: var(--ui-space-2) 0;
+  gap: var(--ui-stack-gap);
+  padding: var(--ui-cell-pad-y) 0;
 }
 
 .ui-graph-participant {
@@ -272,5 +286,60 @@
 @media (prefers-reduced-motion: reduce) {
   .ui-graph-drawer {
     transition: none;
+  }
+}
+
+/* ── Width breakpoints (§5, FR-104) ────────────────────────────────────
+ *
+ * The canvas is the one element allowed to expand without limit, because its
+ * coordinates are its content. Everything else about the canvas chrome stops
+ * growing here:
+ *
+ *   1024  the side panels stack under the canvas instead of competing with it
+ *   1280  the default three-column arrangement, unchanged
+ *   1440  the baseline review target, unchanged
+ *   1920  the side panel widens; the toolbar stops wrapping
+ *   2560  handled centrally in styles/layout/breakpoints.css
+ *
+ * A side panel at a fixed 300px beside a canvas means the canvas loses 300px of
+ * width at every viewport, which on a laptop is the difference between a usable
+ * neighbourhood and a corridor. So below 1280 the panel moves under the canvas
+ * and gives the width back.
+ */
+
+@media (max-width: 1279px) {
+  .ui-graph-body {
+    flex-direction: column;
+  }
+
+  .ui-graph-host {
+    min-height: 0;
+  }
+
+  .ui-graph-side {
+    width: auto;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--ui-density-gap);
+    padding: var(--ui-pane-pad);
+    border-left: none;
+    border-top: 1px solid var(--ui-border);
+    max-height: 34vh;
+  }
+
+  .ui-graph-side > * {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* The drawer overlays the canvas, so it cannot also be squeezed by it. */
+  .ui-graph-drawer {
+    width: min(268px, calc(100% - var(--ui-space-8)));
+  }
+}
+
+@media (min-width: 1920px) {
+  .ui-graph-side {
+    width: 360px;
   }
 }

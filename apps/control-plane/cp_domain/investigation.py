@@ -33,10 +33,12 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from events.kafka import Envelope, build_envelope
-from events.topics import topic_for
+if TYPE_CHECKING:
+    # Annotation only. `from __future__ import annotations` means this is never
+    # evaluated at runtime, so the transport module stays out of the import graph.
+    from events.kafka import Envelope
 
 
 class InvestigationState(enum.StrEnum):
@@ -191,6 +193,16 @@ class Investigation:
         return self.monitor.update_counter(name, delta=delta, at=at)
 
     def _park_late_event(self, name: str, delta: int) -> None:
+        # Imported here, not at module level (Feature 024 T028/T032). A top-level
+        # `from events.kafka import ...` pulled 542 modules -- confluent_kafka,
+        # google.protobuf, pydantic_settings -- into the Temporal workflow sandbox,
+        # one of which computes `Path(__file__).resolve()` at import time and trips
+        # the sandbox's determinism check. The workflow never reaches this method, so
+        # the transport has no business in the workflow's import graph.
+        # `workflows/temporal_materialization.py` already uses this same shape.
+        from events.kafka import build_envelope
+        from events.topics import topic_for
+
         reason = "investigation_late_counter"
         payload = json.dumps(
             {

@@ -5,7 +5,7 @@ import {
   ResolutionPair,
   ReviewDecision,
 } from "../lib/api";
-import { CONFIDENCE_COLOR, CONFIDENCE_LABEL, Confidence } from "../lib/donor/confidence";
+import { CONFIDENCE_LABEL, confidenceColorVar, Confidence } from "../lib/donor/confidence";
 import {
   DEFAULT_REVIEW_FILTERS,
   ReviewAssertion,
@@ -16,11 +16,29 @@ import {
   filterReviewAssertions,
 } from "../lib/donor/review";
 
+/**
+ * Review state as a colour ROLE, not a colour.
+ *
+ * The four states were four hex literals, none of which appeared anywhere else in
+ * the product — so the review panel could not follow a theme and a re-tune of the
+ * token block would not reach it. These are `var()` references into the frozen
+ * `--c-*` block (`styles/legacy/legacy-tokens.css`), which is the right token
+ * family for a surface that has not been migrated to `--ui-*` yet (§62, §97):
+ *
+ *   unreviewed  information — nobody has ruled on it, which is not a failure
+ *   disputed    warning     — the analyst and the platform disagree
+ *   rejected    danger      — semantic failure only, which is exactly this
+ *   accepted    success     — the platform's own confirmation
+ *
+ * A declared return type of `string` on an inline style is required here because
+ * React's `CSSProperties.color` accepts any string; without it the object literal
+ * widens and the style prop loses its type.
+ */
 const STATE_COLOR: Record<ReviewAssertion["review_state"], string> = {
-  unreviewed: "#2f6f9f",
-  disputed: "#d97706",
-  rejected: "#b42318",
-  accepted: "#2e7d4f",
+  unreviewed: "var(--c-accent)",
+  disputed: "var(--c-warning)",
+  rejected: "var(--c-danger)",
+  accepted: "var(--c-success)",
 };
 
 const EVIDENCE_LABEL: Record<string, string> = {
@@ -174,7 +192,7 @@ export function ReviewContainer({ investigationId }: Props) {
                   <span
                     className="confidence-badge"
                     data-testid={`review-confidence-${item.id}`}
-                    style={{ color: CONFIDENCE_COLOR[item.confidence] }}
+                    style={{ color: confidenceColorVar(item.confidence) }}
                   >
                     {CONFIDENCE_LABEL[item.confidence]}
                   </span>

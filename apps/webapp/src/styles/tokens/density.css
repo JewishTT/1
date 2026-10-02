@@ -1,15 +1,58 @@
-/* COGNITIVE UI 2.0 — density tokens (§66). Compact is the default.
+/* COGNITIVE UI 2.0 — density tokens (ui-upgrade §4.2, §4.3, FR-103).
  *
- * Density changes row height, control height and vertical padding only.
- * It never changes type colour, never changes which information is visible,
- * and never hides a control. Two modes, both complete.
+ * THREE MODES, ONE DEFAULT, ONE TABLE.
+ *
+ *   MODE          ROW HEIGHT   BASE FONT   PANEL GAP
+ *   COMPACT       26px         12px        8px
+ *   STANDARD      32px         13px        12px      ← default (§4.2)
+ *   COMFORTABLE   40px         14px        16px
+ *
+ * The three row heights and the three panel gaps are NORMATIVE and are quoted
+ * here verbatim from §4.2. They are also mirrored as numbers in
+ * `objects/virtualization.ts` (ROW_HEIGHT), because windowing needs a px figure
+ * synchronously in a scroll handler and a `getComputedStyle` read there is a
+ * forced reflow per event. `objects/virtualization.test.ts` asserts the two
+ * agree, so a re-tune that misses one is a failing test rather than a grid that
+ * quietly mis-measures itself.
+ *
+ * `:root` carries the STANDARD block so a stylesheet that resolves before the
+ * shell has written `data-density` (first paint, a bare test render, a
+ * screenshot harness) gets the default rather than nothing.
+ *
+ * DENSITY IS GLOBAL (§4.2: "a density that applies to tables but not to the
+ * graph is a defect"). The tokens below are consumed by the base layer, the
+ * primitives, the workspace AND — since T138 — by `graph/graph.css`,
+ * `timeline/timeline.css` and `evidence/evidence.css`, which is why the node
+ * chrome, the timeline lanes and the evidence rows all move together.
  */
 
 :root,
+[data-density="standard"] {
+  --ui-density: "standard";
+  /* §4.2 — row height, base font, panel gap. */
+  --ui-row-h: 32px;
+  --ui-density-font: 13px;
+  --ui-density-gap: 12px;
+  /* Everything below is derived from those three, not authored independently. */
+  --ui-row-h-lg: 36px;
+  --ui-cell-pad-y: 4px;
+  --ui-cell-pad-x: 8px;
+  --ui-block-pad-y: 6px;
+  --ui-pane-pad: 12px;
+  --ui-stack-gap: 6px;
+  --ui-control-h: 28px;
+  --ui-control-h-sm: 24px;
+  --ui-label-w: 104px;
+  --ui-lane-h: 28px;
+  --ui-node-label-font: 11px;
+}
+
 [data-density="compact"] {
   --ui-density: "compact";
-  --ui-row-h: 22px;
-  --ui-row-h-lg: 26px;
+  --ui-row-h: 26px;
+  --ui-density-font: 12px;
+  --ui-density-gap: 8px;
+  --ui-row-h-lg: 30px;
   --ui-cell-pad-y: 2px;
   --ui-cell-pad-x: 6px;
   --ui-block-pad-y: 4px;
@@ -18,18 +61,24 @@
   --ui-control-h: 26px;
   --ui-control-h-sm: 22px;
   --ui-label-w: 96px;
+  --ui-lane-h: 22px;
+  --ui-node-label-font: 10px;
 }
 
 [data-density="comfortable"] {
   --ui-density: "comfortable";
-  --ui-row-h: 30px;
-  --ui-row-h-lg: 34px;
+  --ui-row-h: 40px;
+  --ui-density-font: 14px;
+  --ui-density-gap: 16px;
+  --ui-row-h-lg: 44px;
   --ui-cell-pad-y: 6px;
   --ui-cell-pad-x: 10px;
   --ui-block-pad-y: 8px;
-  --ui-pane-pad: 14px;
+  --ui-pane-pad: 16px;
   --ui-stack-gap: 8px;
-  --ui-control-h: 30px;
-  --ui-control-h-sm: 26px;
-  --ui-label-w: 120px;
+  --ui-control-h: 32px;
+  --ui-control-h-sm: 28px;
+  --ui-label-w: 112px;
+  --ui-lane-h: 36px;
+  --ui-node-label-font: 12px;
 }

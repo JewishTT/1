@@ -22,3 +22,12 @@ dependencies = []
 
 [tool.pytest.ini_options]
 markers = ["contract", "integration", "unit"]
+# FR-001/T001: six sibling test packages are named `contract` and two are named
+# `integration`. Under pytest's default `prepend` import mode they collapse into a
+# single top-level module, so whichever is collected first wins and the rest fail
+# collection with "No module named 'contract.<test>'". That silently hid 98 passing
+# tests, including the three transport-critical modules (test_idempotency,
+# test_infra_connectivity, test_redpanda_emission) -- the ones that verify
+# transport idempotency and emission. `importlib` import mode assigns unique module
+# names without sys.path insertion and collects all 106.
+addopts = "--import-mode=importlib"

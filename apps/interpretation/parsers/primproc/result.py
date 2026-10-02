@@ -45,8 +45,6 @@ from parsers.primproc.reasons import (
     REMOVAL_REASONS,
     DecodeRefusal,
     ExtractStrategy,
-    NoteCode,
-    RemovalReason,
     Route,
     SpanVerdict,
 )

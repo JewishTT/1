@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { formatLinkReason, linkColor } from "../lib/donor/links";
+import { readLegacyNodeTokens } from "../ui/tokens";
 
 export interface GraphElement {
   id: string;
@@ -27,6 +28,7 @@ export function GraphPanel({ elements, title = "Graph region" }: Props) {
     if (typeof window === "undefined" || typeof document === "undefined") return;
     if (elements.length === 0) return;
     let cy: cytoscape.Core | undefined;
+    const tokens = readLegacyNodeTokens(containerRef.current);
     // Lazily import Cytoscape only when the panel actually has content.
     import("cytoscape").then((mod) => {
       if (!containerRef.current) return;
@@ -49,7 +51,7 @@ export function GraphPanel({ elements, title = "Graph region" }: Props) {
                 target: e.target,
                 label: formatLinkReason(e.label),
               },
-              style: { "line-color": linkColor(e.label) },
+              style: { "line-color": linkColor(e.label, tokens) },
             })),
         ],
         style: [
@@ -57,17 +59,25 @@ export function GraphPanel({ elements, title = "Graph region" }: Props) {
             selector: "node",
             style: {
               label: "data(label)",
-              "background-color": "var(--c-graph-node, #2d2d30)",
-              color: "var(--c-graph-node-label, #e6e6e6)",
+              // Cytoscape paints to a canvas, so it cannot resolve `var()`: the
+              // token has to be read out of the cascade and handed over as a
+              // string. `LEGACY_NODE_TOKENS` is the closed `--c-*` set from
+              // styles/legacy/legacy-tokens.css, which is the right token family
+              // for a surface that has not been migrated to `--ui-*` yet (§62).
+              // The hex that used to sit inline as a `var()` fallback is gone:
+              // the variable IS declared, so the fallback was unreachable, and it
+              // was the only colour in the file that no token governed.
+              "background-color": tokens.nodeFill,
+              color: tokens.nodeLabel,
               "border-width": 1.5,
-              "border-color": "var(--c-graph-node-sel, #37373a)",
+              "border-color": tokens.nodeSelected,
               "text-valign": "bottom",
             },
           },
           {
             selector: "edge",
             style: {
-              "line-color": "var(--c-graph-edge, #646464)",
+              "line-color": tokens.edge,
               width: 1.2,
               "curve-style": "bezier",
             },

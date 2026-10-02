@@ -55,7 +55,9 @@ describe("LineageWalker", () => {
     render(<LineageWalker nodes={nodes} edges={EDGES} />);
     const badge = screen.getByTestId("confidence-f1");
     expect(badge).toHaveTextContent("Verified");
-    expect(badge).toHaveStyle({ color: "#2e7d4f" });
+    // A token reference, not a hex literal (T135): the badge follows the theme,
+    // and `styles/legacy/legacy-tokens.css` owns the value.
+    expect(badge).toHaveStyle({ color: "var(--c-success)" });
   });
 
   it("labels edges via the donor taxonomy (relationshipTypes)", () => {
