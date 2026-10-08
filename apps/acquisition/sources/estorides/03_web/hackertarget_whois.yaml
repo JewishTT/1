@@ -20,3 +20,16 @@ tool:
     User-Agent: Estorides/1.0
   params:
     q: '{query}'
+parse:
+  family: text_lines
+  fields:
+    field:
+      path: ""
+      kind: unknown
+      many: true
+      pattern: "^([A-Za-z][A-Za-z /]*):"
+    value:
+      path: ""
+      kind: unknown
+      many: true
+      pattern: "^\\s*[A-Za-z][A-Za-z /]*:\\s*(.+)$"

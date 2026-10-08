@@ -11,7 +11,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from hashlib import sha256
+from typing import Any
 
+from _events import envelope
 from causal.scope import ensure_scoped
 from structure.model import (
     NullModelResult,
@@ -118,16 +120,25 @@ def analyze(
     budget: AnalysisBudget,
     kind: StructureKind,
     null_params: NullParams,
+    producer: Any | None = None,
+    store: Any | None = None,
+    investigation_id: str | None = None,
 ) -> StructureAnalysisResult:
     """Guard scope, bound complexity, then run the requested structural kernel.
 
     Returns DEFERRED (never a truncated estimate) when the kind is not in the
     kernel or when the graph exceeds the complexity budget.
+
+    A DEFERRED result is still a decision worth recording, so both branches
+    emit ``science.structure.analyzed``; the event was declared in the store
+    projection but no code path produced it, which left the ``structure``
+    collection unreachable.
     """
     ensure_scoped(graph.graph_ref, entry_point="structure.analyze")
 
+    deferred_result: StructureAnalysisResult | None = None
     if kind not in (StructureKind.SPECTRAL, StructureKind.MOTIF):
-        return _deferred(
+        deferred_result = _deferred(
             graph=graph,
             kind=kind,
             rationale=(
@@ -136,18 +147,21 @@ def analyze(
                 "no estimate emitted (SC-006)"
             ),
         )
-
-    estimated = estimate_complexity(graph)
-    if estimated > budget.max_ops:
-        return _deferred(
+    elif estimate_complexity(graph) > budget.max_ops:
+        deferred_result = _deferred(
             graph=graph,
             kind=kind,
             rationale=(
-                f"deferred with sampling plan: estimated ops {estimated} exceed "
+                f"deferred with sampling plan: estimated ops {estimate_complexity(graph)} exceed "
                 f"budget {budget.max_ops}; random-edge subsample capped at "
                 "budget and flagged in output — no truncated estimate (SC-006)"
             ),
         )
+
+    if deferred_result is not None:
+        _emit_result(deferred_result, producer=producer, store=store,
+                     investigation_id=investigation_id)
+        return deferred_result
 
     n_permutations = min(null_params.n_permutations, budget.max_permutations)
     if kind is StructureKind.MOTIF:
@@ -183,7 +197,7 @@ def analyze(
         }
 
     digest = sha256(f"struct:{graph.graph_ref}:{kind.value}:{scores}".encode()).hexdigest()[:12]
-    return StructureAnalysisResult(
+    result = StructureAnalysisResult(
         result_id=f"ST-{digest}",
         graph_ref=graph.graph_ref,
         kind=kind,
@@ -192,3 +206,26 @@ def analyze(
         significance=null_result,
         status=StructureStatus.OK,
     )
+    _emit_result(result, producer=producer, store=store, investigation_id=investigation_id)
+    return result
+
+
+def _emit_result(
+    result: StructureAnalysisResult,
+    *,
+    producer: Any | None,
+    store: Any | None,
+    investigation_id: str | None,
+) -> None:
+    payload = result.as_dict()
+    payload["result_id"] = result.result_id
+    payload["graph_ref"] = result.graph_ref
+    payload["status"] = result.status.value
+    env = envelope(
+        event_type="science.structure.analyzed",
+        payload=payload,
+        producer=producer,
+        investigation_id=investigation_id,
+    )
+    if store is not None:
+        store.apply(env)

@@ -24,3 +24,24 @@ tool:
     domain: '{query}'
     api_key: '{api_key}'
     limit: '25'
+parse:
+  family: json_object
+  fields:
+    email:
+      path: data.email
+      kind: email
+    first_name:
+      path: data.first_name
+      kind: person
+    last_name:
+      path: data.last_name
+      kind: person
+    position:
+      path: data.position
+      kind: status
+    organization:
+      path: data.organization
+      kind: organization
+    domain:
+      path: data.domain
+      kind: domain

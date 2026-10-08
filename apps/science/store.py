@@ -41,7 +41,12 @@ ENTITY_BY_EVENT: dict[str, tuple[str, str]] = {
 
 
 class ScienceStore:
-    """Append-only event log + last-state projections (I-12 rebuildable)."""
+    """Append-only event log + last-state projections (I-12 rebuildable).
+
+    One projection per process, reached through :func:`shared_store`. A record
+    written through one surface is visible to every other surface, because the
+    envelope log -- not the surface -- is the authority (Constitution I-12).
+    """
 
     def __init__(self) -> None:
         self._collections: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
@@ -117,3 +122,27 @@ class ScienceStore:
     @property
     def collections(self) -> list[str]:
         return sorted(self._collections)
+
+
+_SHARED: ScienceStore | None = None
+
+
+def shared_store() -> ScienceStore:
+    """The process-wide projection. Constructed on first use, never per-surface."""
+    global _SHARED
+    if _SHARED is None:
+        _SHARED = ScienceStore()
+    return _SHARED
+
+
+def set_shared_store(store: ScienceStore | None) -> ScienceStore | None:
+    """Install or clear the process-wide projection; returns the previous one.
+
+    The seam exists so a durable kernel (Constitution V) and an isolated test
+    fixture can both replace the in-memory projection without touching call
+    sites. ``None`` restores lazy construction.
+    """
+    global _SHARED
+    previous = _SHARED
+    _SHARED = store
+    return previous

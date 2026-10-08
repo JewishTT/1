@@ -24,3 +24,24 @@ tool:
     part: snippet,statistics,topicDetails,brandingSettings
     forHandle: '{query}'
     key: '{api_key}'
+parse:
+  family: json_object
+  fields:
+    channel_id:
+      path: channelId
+      kind: channel
+    title:
+      path: title
+      kind: description
+    description:
+      path: description
+      kind: description
+    url:
+      path: url
+      kind: url
+    country:
+      path: country
+      kind: country
+    published:
+      path: publishedAt
+      kind: timestamp

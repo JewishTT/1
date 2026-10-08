@@ -16,3 +16,15 @@ tool:
   url: https://freeapi.robtex.com/ipquery/{query}
   headers:
     User-Agent: Estorides/1.0
+parse:
+  family: json_object
+  fields:
+    ip:
+      path: ip
+      kind: ip
+    prefix:
+      path: prefix
+      kind: prefix
+    asn:
+      path: asn
+      kind: asn

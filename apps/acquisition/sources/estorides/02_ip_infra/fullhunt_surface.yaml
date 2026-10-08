@@ -22,3 +22,24 @@ tool:
     X-API-Key: '{api_key}'
     Accept: application/json
   params: {}
+parse:
+  family: json_rows
+  list_path: hosts
+  fields:
+    domain:
+      path: host
+      kind: domain
+    ip:
+      path: ip
+      kind: ip
+    port:
+      path: port
+      kind: port
+    technology:
+      path: "technology[*].name"
+      kind: technology
+      many: true
+    cve:
+      path: "vulnerabilities[*].cve_id"
+      kind: cve
+      many: true

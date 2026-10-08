@@ -14,7 +14,7 @@ differently tomorrow without re-fetching anything.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import AsyncIterator, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -50,6 +50,18 @@ class AcquisitionTask:
     category: str
     tenant_id: str = "default-tenant"
     investigation_id: str = ""
+    #: The runtime that executes this task, or "" for the HTTP/system path. Carried on the
+    #: task because ``adapters.registry.resolve_task`` branches on exactly this key: with it
+    #: absent from ``to_task`` the explicit-runtime branch was unreachable and every task
+    #: fell through to capability selection, which routes a connector-shaped source to the
+    #: HTTP executor that refuses it.
+    runtime_ref: str = ""
+    #: The bound registry refs and constraints a query compiler produced for this task.
+    #: Free-form because the compiler's shape is the science layer's, and acquisition must
+    #: not import it -- but carried, so the constraint reaches the runtime instead of being
+    #: dropped between planning and execution.
+    query_ref: str = ""
+    constraints: tuple[Mapping[str, Any], ...] = ()
 
     def to_task(self) -> dict[str, Any]:
         return {
@@ -60,6 +72,9 @@ class AcquisitionTask:
             "category": self.category,
             "tenant_id": self.tenant_id,
             "investigation_id": self.investigation_id,
+            "runtime_ref": self.runtime_ref,
+            "query_ref": self.query_ref,
+            "constraints": [dict(item) for item in self.constraints],
         }
 
 
@@ -83,6 +98,9 @@ def tasks_for(
         category=definition.category or DEFAULT_CATEGORY,
         tenant_id=tenant_id,
         investigation_id=investigation_id,
+        # Carried from the definition so a runtime-backed source reaches the runtime that
+        # can actually run it, instead of the HTTP executor that refuses it.
+        runtime_ref=definition.runtime_ref,
     )
 
 

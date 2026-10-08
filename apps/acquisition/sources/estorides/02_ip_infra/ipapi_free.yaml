@@ -21,3 +21,37 @@ tool:
     User-Agent: Estorides/1.0
   params:
     fields: status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query,reverse,mobile,proxy,hosting
+parse:
+  family: json_object
+  fields:
+    ip:
+      path: query
+      kind: ip
+      required: true
+    org:
+      path: org
+      kind: organization
+    asn:
+      path: asn
+      kind: asn
+    country:
+      path: country
+      kind: country
+    city:
+      path: city
+      kind: place
+    country_code:
+      path: countryCode
+      kind: country
+    region:
+      path: regionName
+      kind: place
+    latitude:
+      path: lat
+      kind: geolocation
+    longitude:
+      path: lon
+      kind: geolocation
+    timezone:
+      path: timezone
+      kind: unknown

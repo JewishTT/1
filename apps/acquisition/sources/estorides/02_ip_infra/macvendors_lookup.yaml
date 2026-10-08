@@ -16,3 +16,9 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    vendor:
+      path: $
+      kind: vendor

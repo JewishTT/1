@@ -223,6 +223,12 @@ class InvestigationWorkflow:
     recrawls, and complete. Temporal replays history (durability + recovery);
     every mutation passes through the deterministic lifecycle and is recorded
     as a marker so a recovered run resumes from the last checkpoint.
+
+    The acquire loop is here rather than after a single call because the lifecycle's own
+    step counter is what bounds it: ``advance("acquire")`` increments ``step`` and
+    completes the investigation once ``step`` passes ``max_acquire_steps``. With one batch
+    and no loop, ``step`` never exceeded 1, the bound was unreachable, and every
+    investigation ended parked in ``ACQUIRING`` waiting for a signal that nothing sent.
     """
 
     def __init__(self) -> None:
@@ -232,34 +238,62 @@ class InvestigationWorkflow:
     async def run(self, investigation_id: str, config: dict | None = None) -> dict:
         # `config` arrives as a mapping, not a LifecycleConfig: Temporal serializes
         # workflow arguments as JSON and timedelta is not JSON-serializable.
+        lifecycle_config = LifecycleConfig.from_dict(config)
         self._lifecycle = InvestigationLifecycle(
             investigation_id=investigation_id,
-            config=LifecycleConfig.from_dict(config),
+            config=lifecycle_config,
         )
         self._lifecycle.auto_start(workflow.now())
         workflow.record_marker("checkpoint", self._lifecycle.checkpoint())
-        if self._lifecycle.state in (LifecycleState.ACQUIRING, LifecycleState.APPROVED):
-            await workflow.execute_activity(
-                "acquisition.acquire_batch",
-                args=[investigation_id, self._lifecycle.step],
-                task_queue=TASK_QUEUE,
-            )
+
         while self._lifecycle.state is not LifecycleState.COMPLETED:
+            if self._lifecycle.state in (
+                LifecycleState.ACQUIRING,
+                LifecycleState.APPROVED,
+                LifecycleState.RECRAWL,
+            ):
+                await workflow.execute_activity(
+                    "acquisition.acquire_batch",
+                    args=[investigation_id, self._lifecycle.step],
+                    task_queue=TASK_QUEUE,
+                    start_to_close_timeout=timedelta(minutes=15),
+                )
+                # A batch that did not complete the investigation means the frontier still
+                # has work, so the lifecycle is advanced again and the next batch is
+                # scheduled. ``advance`` is what enforces ``max_acquire_steps``, and it
+                # completes the investigation itself when the bound is passed.
+                self._lifecycle.advance("acquire", workflow.now())
+                workflow.record_marker("checkpoint", self._lifecycle.checkpoint())
+                continue
+
+            # Nothing runnable in the current state: wait for a signal. The predicate
+            # lists only states this state can be *left* for, so it cannot be satisfied on
+            # entry -- the earlier version included RECRAWL while RECRAWL was reachable
+            # from ACQUIRING, which made the loop spin without ever yielding or working.
             workflow.wait_condition(
-                lambda: self._lifecycle.state in (
+                lambda: self._lifecycle.state
+                in (
                     LifecycleState.APPROVED,
                     LifecycleState.QUEUED,
                     LifecycleState.RECRAWL,
                     LifecycleState.COMPLETED,
                 )
             )
+            if self._lifecycle.state is LifecycleState.QUEUED:
+                self._lifecycle.advance("acquire", workflow.now())
+                workflow.record_marker("checkpoint", self._lifecycle.checkpoint())
+
         workflow.record_marker(
             "investigation.snapshot",
             self._lifecycle.monitor.snapshot(
                 self._lifecycle.investigation_id, "COMPLETED", workflow.now()
             ),
         )
-        return {"investigation_id": investigation_id, "state": self._lifecycle.state.value}
+        return {
+            "investigation_id": investigation_id,
+            "state": self._lifecycle.state.value,
+            "steps": self._lifecycle.step,
+        }
 
     @workflow.signal
     async def pause(self) -> None:
@@ -306,16 +340,29 @@ class InvestigationWorkflow:
 
 @workflow.defn
 class RecrawlWorkflow:
-    """Scheduled recrawl: sleeps until the next recrawl, signals the parent
-    investigation, and re-runs the acquisition activity until stopped."""
+    """Sleep until the next recrawl is due, then run the recrawl activity.
+
+    It does **not** signal the parent investigation. The previous version called
+    ``workflow.signal(InvestigationWorkflow, "schedule_recrawl")``, which raises
+    ``TypeError: signal() takes from 0 to 1 positional arguments but 2 were given`` -- and
+    it did so on the first iteration, after the first sleep, so the workflow never reached
+    its activity at all. The arity was also the smaller problem: ``workflow.signal`` is a
+    decorator factory, not a transport. There is no in-workflow API for signalling a
+    sibling workflow; that needs an external handle, which is what
+    :mod:`control_plane.services.investigation_scheduler` provides.
+
+    So the recrawl is self-contained: sleep, re-queue frontier work, repeat. The parent
+    investigation observes the new work through its own acquire loop.
+    """
 
     @workflow.run
     async def run(self, investigation_id: str, interval_seconds: int) -> None:
+        interval = timedelta(seconds=max(1, int(interval_seconds)))
         while True:
-            await workflow.sleep(timedelta(seconds=interval_seconds))
-            workflow.signal(InvestigationWorkflow, "schedule_recrawl")
+            await workflow.sleep(interval)
             await workflow.execute_activity(
                 "acquisition.recrawl",
                 args=[investigation_id],
                 task_queue=TASK_QUEUE,
+                start_to_close_timeout=timedelta(minutes=15),
             )

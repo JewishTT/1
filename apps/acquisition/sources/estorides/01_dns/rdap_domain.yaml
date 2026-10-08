@@ -16,3 +16,29 @@ tool:
   headers:
     Accept: application/rdap+json
     User-Agent: Estorides/1.0
+parse:
+  family: json_object
+  fields:
+    ldh:
+      path: ldhName
+      kind: domain
+      required: true
+    handle:
+      path: handle
+      kind: identifier
+    status:
+      path: status
+      kind: status
+      many: true
+    registrar:
+      path: "entities[*].vcardArray[1][*][3]"
+      kind: organization
+      many: true
+    nameserver:
+      path: "nameservers[*].ldhName"
+      kind: domain
+      many: true
+    event_date:
+      path: "events[*].eventDate"
+      kind: timestamp
+      many: true

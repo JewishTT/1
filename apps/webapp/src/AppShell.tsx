@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 
-import type { IconName } from "./ui/Icon";
+import { Icon, type IconName } from "./ui/Icon";
 import { Badge, StatusDot } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
 import { Popover, Tooltip } from "./ui/Overlay";
+import { TopNav } from "./shell/TopNav";
 import { DENSITIES, THEME_NAMES } from "./workspace/types";
 import { useWorkspace } from "./workspace/store";
 import { useAppearanceAttributes } from "./workspace/useAppearance";
@@ -254,9 +255,17 @@ export function AppShell({ children, activity }: AppShellProps) {
     >
       <header className="ui-topbar" role="banner" data-testid="app-shell-topbar">
         <div className="ui-topbar-brand">
+          {/* A drawn icon, not the literal "?" the legacy shell used here. A text
+              glyph as a logo is iconography §3.3 forbids, and it cannot carry a
+              stroke weight or a focus ring because its shape is the font's. */}
+          <span className="ui-brand-mark" aria-hidden="true">
+            <Icon name="view-ops" size={16} />
+          </span>
           <span className="ui-brand">COGNITIVE</span>
           <span className="ui-meta">workbench</span>
         </div>
+
+        <TopNav />
 
         <WorkStateBar />
 

@@ -20,3 +20,23 @@ tool:
   params:
     search: '{query}'
     per_page: 10
+parse:
+  family: json_object
+  fields:
+    author:
+      path: id
+      kind: identifier
+      required: true
+    name:
+      path: display_name
+      kind: person
+    orcid:
+      path: orcid
+      kind: identifier
+    country:
+      path: "last_known_institutions[*].country_code"
+      kind: country
+      many: true
+    works_count:
+      path: works_count
+      kind: integer

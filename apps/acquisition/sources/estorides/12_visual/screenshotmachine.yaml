@@ -23,3 +23,15 @@ tool:
     url: '{query}'
     dimension: 1024x768
     format: json
+parse:
+  family: json_object
+  fields:
+    screenshot:
+      path: screenshot_url
+      kind: url
+    thumbnail:
+      path: thumbnail_url
+      kind: url
+    status:
+      path: status
+      kind: status

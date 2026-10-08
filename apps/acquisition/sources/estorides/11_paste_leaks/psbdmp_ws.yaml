@@ -17,3 +17,16 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: text_lines
+  fields:
+    leak:
+      path: ""
+      kind: leak
+      many: true
+      pattern: "([^\\s,]+:[^\\s,]+)"
+    url:
+      path: ""
+      kind: url
+      many: true
+      pattern: "(https?://\\S+)"

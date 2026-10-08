@@ -22,3 +22,26 @@ tool:
     User-Agent: Estorides/1.0
   params:
     truncateResponse: 'false'
+parse:
+  family: json_rows
+  fields:
+    breach:
+      path: Name
+      kind: leak
+      required: true
+    domain:
+      path: Domain
+      kind: domain
+    added:
+      path: AddedDate
+      kind: timestamp
+    modified:
+      path: ModifiedDate
+      kind: timestamp
+    pwn_count:
+      path: PwnCount
+      kind: integer
+    data_classes:
+      path: DataClass
+      kind: unknown
+      many: true

@@ -24,3 +24,24 @@ tool:
   params:
     q: domain:{query}
     size: 100
+parse:
+  family: json_object
+  fields:
+    domain:
+      path: page.domain
+      kind: domain
+    ip:
+      path: page.ip
+      kind: ip
+    country:
+      path: page.country
+      kind: country
+    asn:
+      path: page.asn
+      kind: asn
+    url:
+      path: page.url
+      kind: url
+    server:
+      path: page.server
+      kind: technology

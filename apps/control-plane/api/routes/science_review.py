@@ -17,12 +17,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from review.events import change_status, comment_on_claim
 from review.ladder import LadderGates, ladder_position, top_rung
+from store import shared_store
 
 from api.auth import TenantContext, resolve_tenant
-from api.routes.science_claims import _store as _claims_store
 from api.routes.science_robustness import _registry, _reports
 
 router = APIRouter(prefix="/api/science/review", tags=["science"])
+
+_claims_store = shared_store()
 
 _events: list[dict[str, Any]] = []
 _null_refs: dict[str, str] = {}

@@ -24,3 +24,25 @@ tool:
   params:
     ipAddress: '{query}'
     maxAgeInDays: 90
+parse:
+  family: json_object
+  fields:
+    ip:
+      path: ipAddress
+      kind: ip
+      required: true
+    abuse_confidence:
+      path: abuseConfidenceScore
+      kind: score
+    country:
+      path: countryCode
+      kind: country
+    isp:
+      path: isp
+      kind: isp
+    usage:
+      path: usageType
+      kind: status
+    report_count:
+      path: totalReports
+      kind: integer

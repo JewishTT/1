@@ -60,46 +60,46 @@ def saturated() -> SaturationState:
 
 # -- the loop runs while work remains -----------------------------------------
 
-def test_a_tick_proposes_work_for_an_open_obligation():
+async def test_a_tick_proposes_work_for_an_open_obligation():
     lp = loop()
     c = ctx()
-    lp.tick(c, feedback=[])
-    frontier = lp.engine.open_obligations(c.context_id)
-    assert frontier == () or lp.engine.frontier(c.context_id) is not None
+    await lp.tick(c, feedback=[])
+    frontier = await lp.engine.open_obligations(c.context_id)
+    assert frontier == () or await lp.engine.frontier(c.context_id) is not None
 
 
-def test_the_loop_does_not_report_terminal_while_obligations_are_open():
+async def test_the_loop_does_not_report_terminal_while_obligations_are_open():
     lp = loop()
     c = ctx()
-    lp.engine.ingest(
+    await lp.engine.ingest(
         c,
         [__import__("context_engine.engine", fromlist=["GapSignal"]).GapSignal(
             kind=__import__("context_engine.engine", fromlist=["TriggerKind"]).TriggerKind.COVERAGE_GAP,
             question="who owns acme?",
         )],
     )
-    step = lp.tick(c)
+    step = await lp.tick(c)
     assert step.status in (LoopStatus.CONTINUE, LoopStatus.BLOCKED)
 
 
-def test_a_suspended_investigation_stops_with_a_reason():
+async def test_a_suspended_investigation_stops_with_a_reason():
     lp = loop()
-    step = lp.tick(ctx(state=InvestigationState.SUSPENDED))
+    step = await lp.tick(ctx(state=InvestigationState.SUSPENDED))
     assert step.status is LoopStatus.SUSPENDED
     assert "suspended" in step.note
 
 
-def test_a_closed_investigation_stops_with_a_reason():
+async def test_a_closed_investigation_stops_with_a_reason():
     lp = loop()
-    step = lp.tick(ctx(state=InvestigationState.CLOSED))
+    step = await lp.tick(ctx(state=InvestigationState.CLOSED))
     assert step.status is LoopStatus.CLOSED
     assert step.note
 
 
-def test_a_resolved_investigation_reports_saturated():
+async def test_a_resolved_investigation_reports_saturated():
     lp = loop()
     c = ctx()
-    lp.engine.ingest(
+    await lp.engine.ingest(
         c,
         [
             __import__("context_engine.engine", fromlist=["GapSignal"]).GapSignal(
@@ -108,23 +108,23 @@ def test_a_resolved_investigation_reports_saturated():
             )
         ],
     )
-    for o in lp.engine.open_obligations(c.context_id):
+    for o in await lp.engine.open_obligations(c.context_id):
         from context_engine.engine import SatisfactionInput
 
-        lp.engine.evaluate_obligation(
+        await lp.engine.evaluate_obligation(
             o.obligation_id,
             SatisfactionInput(evidence_count=4, saturation=saturated()),
         )
-    step = lp.tick(c)
+    step = await lp.tick(c)
     assert step.status is LoopStatus.SATURATED
 
 
 # -- science is not an epilogue ----------------------------------------------
 
-def test_a_refuted_claim_becomes_a_question_the_investigation_must_answer():
+async def test_a_refuted_claim_becomes_a_question_the_investigation_must_answer():
     lp = loop()
     c = ctx()
-    lp.tick(
+    await lp.tick(
         c,
         feedback=[
             ScienceFeedback(
@@ -136,15 +136,15 @@ def test_a_refuted_claim_becomes_a_question_the_investigation_must_answer():
             )
         ],
     )
-    questions = [o.question for o in lp.engine.open_obligations(c.context_id)]
+    questions = [o.question for o in ((((((((((await lp.engine.open_obligations(c.context_id)))))))))))]
     assert any("refutation" in q for q in questions), questions
 
 
-def test_a_refutation_names_its_snapshot_and_method():
+async def test_a_refutation_names_its_snapshot_and_method():
     """A question you cannot trace to the evaluation that raised it is unactionable."""
     lp = loop()
     c = ctx()
-    lp.tick(
+    await lp.tick(
         c,
         feedback=[
             ScienceFeedback(
@@ -155,40 +155,40 @@ def test_a_refutation_names_its_snapshot_and_method():
             )
         ],
     )
-    obligations = lp.engine.open_obligations(c.context_id)
+    obligations = await lp.engine.open_obligations(c.context_id)
     assert any("WLS-7" in o.rationale and "method@v3" in o.rationale for o in obligations)
 
 
-def test_calibration_drift_becomes_a_question():
+async def test_calibration_drift_becomes_a_question():
     lp = loop()
     c = ctx()
-    lp.tick(
+    await lp.tick(
         c,
         feedback=[
             ScienceFeedback(outcome=ScienceOutcome.DRIFTED, claim_ref="CLM-2", snapshot_id="WLS-2")
         ],
     )
-    questions = [o.question for o in lp.engine.open_obligations(c.context_id)]
+    questions = [o.question for o in ((((((((((await lp.engine.open_obligations(c.context_id)))))))))))]
     assert any("drift" in q for q in questions)
 
 
-def test_a_supported_claim_produces_no_new_work():
+async def test_a_supported_claim_produces_no_new_work():
     """Nothing left to ask about a settled question. Inventing a signal for it is how
     a loop spins forever."""
     lp = loop()
     c = ctx()
-    step = lp.tick(
+    step = await lp.tick(
         c,
         feedback=[ScienceFeedback(outcome=ScienceOutcome.SUPPORTED, claim_ref="CLM-1")],
     )
     assert step.feedback_signals == 0
-    assert lp.engine.open_obligations(c.context_id) == ()
+    assert await lp.engine.open_obligations(c.context_id) == ()
 
 
-def test_inconclusive_science_produces_no_new_work():
+async def test_inconclusive_science_produces_no_new_work():
     lp = loop()
     c = ctx()
-    step = lp.tick(
+    step = await lp.tick(
         c, feedback=[ScienceFeedback(outcome=ScienceOutcome.INCONCLUSIVE, claim_ref="CLM-1")]
     )
     assert step.feedback_signals == 0
@@ -202,10 +202,10 @@ def test_an_action_that_produced_nothing_is_distinguishable():
     assert ObservationOutcome(action_id="A2", task_id="T2", produced_observations=("OBS-1",)).produced_nothing is False
 
 
-def test_a_contradicting_observation_becomes_a_question():
+async def test_a_contradicting_observation_becomes_a_question():
     lp = loop()
     c = ctx()
-    lp.tick(
+    await lp.tick(
         c,
         outcomes=[
             ObservationOutcome(
@@ -213,15 +213,15 @@ def test_a_contradicting_observation_becomes_a_question():
             )
         ],
     )
-    questions = [o.question for o in lp.engine.open_obligations(c.context_id)]
+    questions = [o.question for o in ((((((((((await lp.engine.open_obligations(c.context_id)))))))))))]
     assert any("CLM-9" in q for q in questions), questions
 
 
-def test_observations_alone_do_not_satisfy_without_saturation():
+async def test_observations_alone_do_not_satisfy_without_saturation():
     """FR-053 restated at the loop level: producing observations is not sufficiency."""
     lp = loop()
     c = ctx()
-    lp.engine.ingest(
+    await lp.engine.ingest(
         c,
         [
             __import__("context_engine.engine", fromlist=["GapSignal"]).GapSignal(
@@ -230,18 +230,18 @@ def test_observations_alone_do_not_satisfy_without_saturation():
             )
         ],
     )
-    oid = lp.engine.open_obligations(c.context_id)[0].obligation_id
-    lp.tick(
+    oid = (((((await lp.engine.open_obligations(c.context_id))))))[0].obligation_id
+    await lp.tick(
         c,
         outcomes=[ObservationOutcome(action_id="A", task_id="T", produced_observations=("OBS-1",))],
     )
-    assert lp.engine.store.get_obligation(oid).status is not ObligationStatus.SATISFIED
+    assert ((((((((((await lp.engine.store.get_obligation(oid))))))))))).status is not ObligationStatus.SATISFIED
 
 
-def test_saturated_plus_evidence_does_satisfy_through_the_loop():
+async def test_saturated_plus_evidence_does_satisfy_through_the_loop():
     lp = loop()
     c = ctx()
-    lp.engine.ingest(
+    await lp.engine.ingest(
         c,
         [
             __import__("context_engine.engine", fromlist=["GapSignal"]).GapSignal(
@@ -250,19 +250,19 @@ def test_saturated_plus_evidence_does_satisfy_through_the_loop():
             )
         ],
     )
-    oid = lp.engine.open_obligations(c.context_id)[0].obligation_id
-    lp.tick(
+    oid = (((((await lp.engine.open_obligations(c.context_id))))))[0].obligation_id
+    await lp.tick(
         c,
         outcomes=[ObservationOutcome(action_id="A", task_id="T", produced_observations=("OBS-1",))],
         saturation=saturated(),
     )
-    assert lp.engine.store.get_obligation(oid).status is ObligationStatus.SATISFIED
+    assert ((((((((((await lp.engine.store.get_obligation(oid))))))))))).status is ObligationStatus.SATISFIED
 
 
-def test_a_contradiction_through_the_loop_blocks_rather_than_satisfying():
+async def test_a_contradiction_through_the_loop_blocks_rather_than_satisfying():
     lp = loop()
     c = ctx()
-    lp.engine.ingest(
+    await lp.engine.ingest(
         c,
         [
             __import__("context_engine.engine", fromlist=["GapSignal"]).GapSignal(
@@ -271,8 +271,8 @@ def test_a_contradiction_through_the_loop_blocks_rather_than_satisfying():
             )
         ],
     )
-    oid = lp.engine.open_obligations(c.context_id)[0].obligation_id
-    lp.tick(
+    oid = (((((await lp.engine.open_obligations(c.context_id))))))[0].obligation_id
+    await lp.tick(
         c,
         outcomes=[
             ObservationOutcome(
@@ -281,15 +281,15 @@ def test_a_contradiction_through_the_loop_blocks_rather_than_satisfying():
         ],
         saturation=saturated(),
     )
-    assert lp.engine.store.get_obligation(oid).status is ObligationStatus.BLOCKED
+    assert ((((((((((await lp.engine.store.get_obligation(oid))))))))))).status is ObligationStatus.BLOCKED
 
 
 # -- the operator stays in control -------------------------------------------
 
-def test_a_proposed_action_waits_for_approval():
+async def test_a_proposed_action_waits_for_approval():
     lp = loop()
     c = ctx()
-    lp.engine.ingest(
+    await lp.engine.ingest(
         c,
         [
             __import__("context_engine.engine", fromlist=["GapSignal"]).GapSignal(
@@ -298,14 +298,14 @@ def test_a_proposed_action_waits_for_approval():
             )
         ],
     )
-    step = lp.tick(c)
+    step = await lp.tick(c)
     assert step.awaiting_approval, "an action was proposed without waiting for approval"
 
 
-def test_an_approved_action_is_recorded_as_an_attempt():
+async def test_an_approved_action_is_recorded_as_an_attempt():
     lp = loop()
     c = ctx()
-    lp.engine.ingest(
+    await lp.engine.ingest(
         c,
         [
             __import__("context_engine.engine", fromlist=["GapSignal"]).GapSignal(
@@ -314,16 +314,16 @@ def test_an_approved_action_is_recorded_as_an_attempt():
             )
         ],
     )
-    first = lp.tick(c)
+    first = await lp.tick(c)
     action_id = first.actions_proposed[0]
-    lp.tick(c, approved_action_ids=[action_id])
-    memory = lp.engine.store.memory_for(lp.engine.open_obligations(c.context_id)[0].obligation_id)
+    await lp.tick(c, approved_action_ids=[action_id])
+    memory = await lp.engine.store.memory_for((((((await lp.engine.open_obligations(c.context_id))))))[0].obligation_id)
     assert any(entry.outcome == "approved" for entry in memory)
 
 
-def test_the_tick_accounts_for_everything_it_did():
+async def test_the_tick_accounts_for_everything_it_did():
     lp = loop()
-    step = lp.tick(
+    step = await lp.tick(
         ctx(),
         feedback=[ScienceFeedback(outcome=ScienceOutcome.REFUTED, claim_ref="CLM-1", snapshot_id="W1")],
     )

@@ -19,3 +19,23 @@ tool:
     User-Agent: Estorides/1.0
   params:
     cors: 'true'
+parse:
+  family: json_rows
+  list_path: txs
+  fields:
+    hash:
+      path: hash
+      kind: hash
+      required: true
+    time:
+      path: time
+      kind: timestamp
+    total_out:
+      path: total_out
+      kind: amount
+    size:
+      path: size
+      kind: integer
+    block:
+      path: block_height
+      kind: integer

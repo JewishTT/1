@@ -21,3 +21,33 @@ tool:
   params:
     search: '{query}'
     per_page: 15
+parse:
+  family: json_rows
+  list_path: results
+  fields:
+    work:
+      path: id
+      kind: article
+      required: true
+    title:
+      path: title
+      kind: article
+    doi:
+      path: doi
+      kind: identifier
+    publisher:
+      path: primary_location.source.display_name
+      kind: organization
+    author:
+      path: "authorships[*].author.display_name"
+      kind: person
+      many: true
+    published:
+      path: publication_date
+      kind: timestamp
+    cited_by:
+      path: cited_by_count
+      kind: integer
+    language:
+      path: language
+      kind: language

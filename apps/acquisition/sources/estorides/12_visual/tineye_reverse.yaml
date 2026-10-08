@@ -18,3 +18,17 @@ tool:
   headers:
     User-Agent: Mozilla/5.0 (compatible; Estorides/1.0)
   params: {}
+parse:
+  family: json_object
+  fields:
+    match_count:
+      path: matches
+      kind: integer
+    image_url:
+      path: "results[*].image_url"
+      kind: url
+      many: true
+    domain:
+      path: "results[*].domain"
+      kind: domain
+      many: true

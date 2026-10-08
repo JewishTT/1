@@ -16,3 +16,22 @@ tool:
   url: https://otx.alienvault.com/api/v1/indicators/IPv4/{query}/general
   headers:
     User-Agent: Estorides/1.0
+parse:
+  family: json_object
+  fields:
+    ip:
+      path: indicator
+      kind: ip
+      required: true
+    asn:
+      path: asn
+      kind: asn
+    pulse_count:
+      path: pulse_info.count
+      kind: integer
+    reputation:
+      path: reputation
+      kind: score
+    indicator_type:
+      path: type
+      kind: status

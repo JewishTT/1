@@ -36,6 +36,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     desc,
     func,
     text,
@@ -112,6 +113,36 @@ class TemporalPolicy(str, enum.Enum):
 class CalibrationStatus(str, enum.Enum):
     UNCALIBRATED = "UNCALIBRATED"
     CALIBRATED = "CALIBRATED"
+
+
+#: ``EntityType`` values, copied into SQL CHECK constraints.
+#:
+#: Copied rather than imported into the constraint expression because SQLAlchemy needs a
+#: literal string here, and a constraint that silently stopped matching the enum after
+#: somebody added a type would be worse than no constraint at all. The drift is caught by
+#: ``test_ontology_and_schema_stay_in_step``, which compares this tuple with
+#: ``domain.ontology.EntityType`` on every run.
+ENTITY_TYPE_VALUES: tuple[str, ...] = (
+    "person", "organization", "domain", "subdomain", "website", "place", "email", "phone",
+    "handle", "ip", "crypto", "identifier", "document", "unknown",
+    "asn", "isp", "prefix", "network", "port", "nameserver", "registrar",
+    "mac_address", "bssid", "certificate", "cpe", "technology", "vendor", "repository",
+    "service", "platform",
+    "cve", "exploit", "malware", "threat_actor", "signature", "indicator",
+    "leak", "breach", "secret", "credential",
+    "article", "author", "doi", "orcid",
+    "subreddit", "channel", "reputation",
+    "vessel", "aircraft", "satellite", "geolocation", "country",
+    "hash",
+)
+
+
+#: ``StaticArtifactKind`` values, for the ``observations.content_type`` CHECK. Kept for the
+#: same reason as ``ENTITY_TYPE_VALUES`` and pinned by the same drift test.
+ARTIFACT_KIND_VALUES: tuple[str, ...] = (
+    "document", "text", "markup", "photo", "log", "spreadsheet",
+    "structured", "archive", "binary", "unknown",
+)
 
 
 # --- Investigation / control plane ---
@@ -350,6 +381,17 @@ class Entity(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
+        # The type vocabulary is a database invariant, not a convention. ``entity_type`` was
+        # free text written by two HTTP routes that validated nothing, so a row could hold
+        # ``entity_type='nonsense'`` and every reader downstream would treat it as a real
+        # kind. The values are the ones ``domain.ontology.EntityType`` declares; the test
+        # ``test_ontology_and_schema_stay_in_step`` fails if the two ever diverge.
+        CheckConstraint(
+            "entity_type IS NULL OR entity_type IN (" + ", ".join(
+                f"'{t}'" for t in ENTITY_TYPE_VALUES
+            ) + ")",
+            name="ck_entities_entity_type",
+        ),
         Index("ix_entities_tenant", "tenant_id"),
         Index("ix_entities_type", "entity_type"),
     )
@@ -963,6 +1005,16 @@ class EntityStreamRow(Base):
         Index("ix_entity_stream_tenant", "tenant_id"),
         Index("ix_entity_stream_entity", "entity_id"),
         Index("ix_entity_stream_hash", "record_hash"),
+        # The context fabric resolves observation -> entities on every tick to decide
+        # which cell an observation belongs to. The stream's own key is
+        # (tenant, entity, sequence), so without this the lookup degrades to a scan of
+        # every row in the tenant on each pass -- and it is the lookup that lets the
+        # context deepen at all.
+        Index(
+            "ix_entity_stream_observation",
+            "tenant_id",
+            "observation_id",
+        ),
     )
 
 
@@ -2521,3 +2573,322 @@ class SourceTemporalObservationRow(Base):
     )
 
 
+# --- Analyst assertions (025 FR-025-077, ADR-0038) ---
+
+
+class AnalystAssertion(Base):
+    """A statement an analyst made, recorded as evidence about the investigation.
+
+    An analyst assertion is an *input*, never an admission. It is stored separately from
+    the entity or relation it speaks about so that "who asserted this, when, and on what
+    basis" is answerable from durable state (025 Appendix L.8) instead of from logs.
+
+    It is deliberately not a claim, a relation, or a revision. Promoting an assertion into
+    any of those is the job of evaluation, and doing it here would let a human statement
+    enter the world model as a fact -- the exact failure §0.2 forbids.
+    """
+
+    __tablename__ = "analyst_assertions"
+
+    assertion_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    investigation_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    entity_ref: Mapped[str | None] = mapped_column(String(64))
+    relation_ref: Mapped[str | None] = mapped_column(String(64))
+    statement: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    basis: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_analyst_assertions_tenant", "tenant_id"),
+        Index("ix_analyst_assertions_investigation", "investigation_id"),
+        Index("ix_analyst_assertions_entity", "entity_ref"),
+        Index("ix_analyst_assertions_relation", "relation_ref"),
+        Index("ix_analyst_assertions_inv_created", "investigation_id", "created_at"),
+    )
+
+
+# --- Context fabric (025 §7, §13, §15.3, §33; migration 022) ---
+#
+# These four tables are what make the fabric an engine rather than a function. Each
+# pass used to start from nothing, so a contradiction found on one tick was invisible
+# on the next and a cell hierarchy could never deepen past a single call. The columns
+# here mirror ``022_context_fabric.py`` exactly; ``create_all`` and
+# ``alembic upgrade head`` must not diverge.
+
+
+class Derivation(Base):
+    """One recorded "this output, because of these inputs, under these numerics".
+
+    Identity is the content digest computed by ``domain.derivation.DerivationGraph``, not a
+    sequence value. A sequence would hand a replay a fresh id every time, and replay is the
+    whole reason the table exists: re-running one method over the same inputs has to collide
+    so the answer is found rather than recomputed into a second row.
+    """
+
+    __tablename__ = "derivations"
+
+    derivation_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    method_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    method_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    inputs: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'"))
+    output: Mapped[str] = mapped_column(String(512), nullable=False)
+    statement: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    environment: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'"))
+    confidence: Mapped[float | None] = mapped_column(Float)
+    context_id: Mapped[str | None] = mapped_column(String(64))
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        # One claim per tenant. Two methods reaching the same output is a disagreement to
+        # record as a new revision, not two rows both called current.
+        UniqueConstraint("tenant_id", "output", name="uq_derivations_tenant_output"),
+        Index("ix_derivations_method", "method_id", "method_version"),
+        Index("ix_derivations_tenant", "tenant_id"),
+        Index("ix_derivations_output", "output"),
+    )
+
+
+class DerivationEdge(Base):
+    """Parent-to-child between derivations, so "what does this rest on" is answerable."""
+
+    __tablename__ = "derivation_edges"
+
+    parent_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    child_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+
+    __table_args__ = (Index("ix_derivation_edges_child", "child_id"),)
+
+
+class EntityFact(Base):
+    """A bitemporal fact: when it was true, and when we learned it.
+
+    Two columns that the existing ``entity_stream`` conflates. Without the separation a fact
+    learned today about last year cannot be represented at all -- the stream has one
+    ``valid_from`` and no ``recorded_at``, so "true since March" and "we found out in
+    September" collapse into whichever was written first.
+    """
+
+    __tablename__ = "entity_facts"
+
+    fact_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    entity_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    predicate: Mapped[str] = mapped_column(String(128), nullable=False)
+    object_ref: Mapped[str] = mapped_column(String(512), nullable=False)
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    derivation_id: Mapped[str | None] = mapped_column(String(64))
+    confidence: Mapped[float | None] = mapped_column(Float)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "entity_id", "predicate", "object_ref",
+            "valid_from", "valid_until", name="uq_entity_facts_identity",
+        ),
+        Index("ix_entity_facts_entity", "tenant_id", "entity_id"),
+        Index("ix_entity_facts_valid", "valid_from", "valid_until"),
+    )
+
+
+class SemanticNode(Base):
+    """An ASG node: an entity, a relation, or a quantified pattern (spec 025 §32).
+
+    The quantified kind is why this is a table rather than a graph library held in memory:
+    "every subdomain resolves to AS13335" and "example.com resolves to AS13335" are
+    different claims, and storing the quantifier as a node keeps them distinguishable after
+    a restart. The CHECK constraints below encode what
+    :class:`context.semantic_graph.SemanticNode` refuses at construction, so a loader cannot
+    write a node that the in-memory graph would have rejected.
+    """
+
+    __tablename__ = "semantic_nodes"
+
+    node_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    node_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    label: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    entity_type: Mapped[str | None] = mapped_column(String(32))
+    predicate: Mapped[str | None] = mapped_column(String(128))
+    subject: Mapped[str | None] = mapped_column(String(128))
+    object: Mapped[str | None] = mapped_column(String(512))
+    quantifier: Mapped[dict | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "node_kind IN ('entity', 'relation', 'quantified')", name="ck_semantic_nodes_kind"
+        ),
+        CheckConstraint(
+            "node_kind <> 'quantified' OR quantifier IS NOT NULL",
+            name="ck_semantic_nodes_quantified_needs_quantifier",
+        ),
+        CheckConstraint(
+            "node_kind <> 'relation' "
+            "OR (predicate IS NOT NULL AND subject IS NOT NULL AND object IS NOT NULL)",
+            name="ck_semantic_nodes_relation_is_whole",
+        ),
+        Index("ix_semantic_nodes_tenant", "tenant_id", "node_kind"),
+    )
+
+
+class SemanticEdge(Base):
+    """An ASG edge, with observed and derived kept apart.
+
+    ``observed_in`` is what a source said; everything else is what inference concluded. The
+    CHECK below makes that separation a database invariant rather than a convention: an
+    observed edge carrying a derivation, or a derived edge carrying none, is rejected. One
+    edge type for both would make an inference indistinguishable from a report, which is the
+    failure this platform is built to avoid.
+    """
+
+    __tablename__ = "semantic_edges"
+
+    edge_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    source_node_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    target_node_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    edge_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    observation_ref: Mapped[str | None] = mapped_column(String(128))
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    derivation_id: Mapped[str | None] = mapped_column(String(64))
+    confidence: Mapped[float | None] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "source_node_id", "target_node_id", "edge_kind",
+            name="uq_semantic_edges_identity",
+        ),
+        CheckConstraint(
+            "edge_kind IN ('observed_in', 'entails', 'co_occurs', 'subsumes')",
+            name="ck_semantic_edges_kind",
+        ),
+        CheckConstraint(
+            "(edge_kind = 'observed_in' AND derivation_id IS NULL) "
+            "OR (edge_kind <> 'observed_in' AND derivation_id IS NOT NULL)",
+            name="ck_semantic_edges_observed_cites_nothing",
+        ),
+        Index("ix_semantic_edges_source", "source_node_id"),
+        Index("ix_semantic_edges_target", "target_node_id"),
+        Index("ix_semantic_edges_tenant", "tenant_id"),
+    )
+
+
+class ContextCell(Base):
+    """One local section of information, with the ancestry edge that makes depth possible.
+
+    ``parent_cell`` is indexed because every "everything under X" question is a descent
+    through it. Without that edge the table holds a bag of unrelated cells and a long
+    investigation cannot answer what its sub-questions concluded.
+    """
+
+    __tablename__ = "context_cells"
+
+    cell_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    context_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    parent_cell: Mapped[str | None] = mapped_column(String(64))
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("context_id", "cell_id", name="uq_context_cells_identity"),
+        Index("ix_context_cells_context", "context_id"),
+        Index("ix_context_cells_parent", "parent_cell"),
+        Index("ix_context_cells_tenant", "tenant_id"),
+    )
+
+
+class FabricReportRow(Base):
+    """One whole fabric pass, stored verbatim.
+
+    Constitution I-12 wants every projection rebuildable from the event log and I-2
+    wants every analytical result traceable to evidence. Keeping the pass means a reader
+    can ask why the obligation ledger says what it says without re-deriving it.
+    """
+
+    __tablename__ = "fabric_reports"
+
+    report_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    context_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    revision_id: Mapped[str | None] = mapped_column(String(64))
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_fabric_reports_context", "context_id"),
+        Index("ix_fabric_reports_tenant", "tenant_id"),
+        Index("ix_fabric_reports_context_created", "context_id", "created_at"),
+    )
+
+
+class ContextPropositionRow(Base):
+    """A proposition and its four-valued truth state.
+
+    ``truth_state`` is a column of its own rather than a pair of booleans folded into a
+    score. §13.4 keeps truth and confidence independent, and folding them here would
+    discard the distinction at the one place it was still intact.
+    """
+
+    __tablename__ = "context_propositions"
+
+    proposition_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    context_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    truth_state: Mapped[str] = mapped_column(String(16), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_context_propositions_context", "context_id"),
+        Index("ix_context_propositions_truth", "truth_state"),
+    )
+
+
+class ContextContradictionRow(Base):
+    """A contradiction, retained with both sides.
+
+    Resolution records an explanation and never deletes a side (§13.3), so this row is
+    append-oriented: a superseded contradiction stays queryable.
+    """
+
+    __tablename__ = "context_contradictions"
+
+    contradiction_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    proposition_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    context_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_context_contradictions_proposition", "proposition_id"),
+        Index("ix_context_contradictions_context", "context_id"),
+        Index("ix_context_contradictions_status", "status"),
+    )

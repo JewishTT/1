@@ -19,3 +19,21 @@ tool:
     User-Agent: Estorides/1.0
   params:
     limit: 100
+parse:
+  family: json_object
+  fields:
+    url:
+      path: url
+      kind: url
+    host:
+      path: host
+      kind: domain
+    sha256:
+      path: sha256_hash
+      kind: hash
+    malware:
+      path: threat
+      kind: malware
+    added:
+      path: date_added
+      kind: timestamp

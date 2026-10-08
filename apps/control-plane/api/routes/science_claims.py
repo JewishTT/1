@@ -18,13 +18,13 @@ from claims.status import transition_status
 from errors import ProvenanceRequiredError, ScopeBoundaryError, UnknownModelError
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from store import ScienceStore
+from store import shared_store
 
 from api.auth import TenantContext, resolve_tenant
 
 router = APIRouter(prefix="/api/science", tags=["science"])
 
-_store = ScienceStore()
+_store = shared_store()
 
 _EVENT_HANDLING = [
     ScopeBoundaryError,

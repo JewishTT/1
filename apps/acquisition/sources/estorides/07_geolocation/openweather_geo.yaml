@@ -22,3 +22,21 @@ tool:
     q: '{query}'
     limit: 5
     appid: '{api_key}'
+parse:
+  family: json_rows
+  fields:
+    name:
+      path: name
+      kind: place
+    country:
+      path: sys.country
+      kind: country
+    region:
+      path: sys.region
+      kind: place
+    latitude:
+      path: coord.lat
+      kind: geolocation
+    longitude:
+      path: coord.lon
+      kind: geolocation

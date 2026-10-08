@@ -18,3 +18,22 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    ip:
+      path: ip
+      kind: ip
+      required: true
+    name:
+      path: name
+      kind: organization
+    classification:
+      path: classification
+      kind: reputation
+    link:
+      path: link
+      kind: url
+    last_seen:
+      path: last_seen
+      kind: timestamp

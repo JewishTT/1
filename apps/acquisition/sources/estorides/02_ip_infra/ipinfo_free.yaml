@@ -20,3 +20,28 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    ip:
+      path: ip
+      kind: ip
+      required: true
+    hostname:
+      path: hostname
+      kind: domain
+    org:
+      path: org
+      kind: isp
+    city:
+      path: city
+      kind: place
+    region:
+      path: region
+      kind: place
+    country:
+      path: country
+      kind: country
+    geolocation:
+      path: loc
+      kind: geolocation

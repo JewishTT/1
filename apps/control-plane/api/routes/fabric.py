@@ -332,7 +332,7 @@ async def modifier_urgency(
 async def cross_semantic_search(
     body: SearchIn, ctx: Annotated[TenantContext, Depends(resolve_tenant)]
 ) -> dict:
-    module = _lazy("search")[0]
+    module = _lazy("retrieval")[0]
     if module is None:
         raise _missing("cognitive-interpretation")
     docs = body.docs or {
@@ -363,7 +363,7 @@ async def cross_semantic_search(
 async def search_badge(
     q: str, ctx: Annotated[TenantContext, Depends(resolve_tenant)]
 ) -> dict:
-    module = _lazy("search")[0]
+    module = _lazy("retrieval")[0]
     if module is None:
         raise _missing("cognitive-interpretation")
     resolved = module.CrossSemanticRetriever([]).badge_for(q)

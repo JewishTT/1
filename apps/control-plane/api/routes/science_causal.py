@@ -16,11 +16,11 @@ from claims.model import EvidenceDirection, EvidenceLink
 from errors import ScopeBoundaryError
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from store import ScienceStore
+from store import shared_store
 
 router = APIRouter(prefix="/api/science/causal", tags=["science"])
 
-_store = ScienceStore()
+_store = shared_store()
 _models: dict[str, CausalModel] = {}
 
 

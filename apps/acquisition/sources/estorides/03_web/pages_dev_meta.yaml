@@ -21,3 +21,21 @@ tool:
     User-Agent: Estorides/1.0
   params:
     url: '{query}'
+parse:
+  family: json_object
+  fields:
+    title:
+      path: title
+      kind: description
+    description:
+      path: description
+      kind: description
+    author:
+      path: author
+      kind: person
+    image:
+      path: image
+      kind: url
+    published:
+      path: published
+      kind: timestamp

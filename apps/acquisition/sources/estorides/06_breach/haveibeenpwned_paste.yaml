@@ -19,3 +19,19 @@ tool:
     hibp-api-key: '{api_key}'
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_rows
+  fields:
+    paste:
+      path: Key
+      kind: leak
+      required: true
+    date:
+      path: Date
+      kind: timestamp
+    url:
+      path: Link
+      kind: url
+    email_count:
+      path: EmailCount
+      kind: integer

@@ -19,3 +19,33 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    domain:
+      path: "hostnames[*]"
+      kind: domain
+      many: true
+    ip:
+      path: ip_str
+      kind: ip
+    cpe:
+      path: "cpes[*]"
+      kind: technology
+      many: true
+    cve:
+      path: "vulns[*].id"
+      kind: cve
+      many: true
+    cve_score:
+      path: "vulns[*].cvss.score"
+      kind: score
+      many: true
+    port:
+      path: "ports[*]"
+      kind: port
+      many: true
+    tag:
+      path: "tags[*]"
+      kind: tag
+      many: true

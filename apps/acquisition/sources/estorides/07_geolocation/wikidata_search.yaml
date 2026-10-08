@@ -23,3 +23,20 @@ tool:
     language: en
     format: json
     limit: 20
+parse:
+  family: json_rows
+  list_path: search
+  fields:
+    entity:
+      path: id
+      kind: identifier
+      required: true
+    label:
+      path: label
+      kind: description
+    description:
+      path: description
+      kind: description
+    url:
+      path: concepturi
+      kind: url

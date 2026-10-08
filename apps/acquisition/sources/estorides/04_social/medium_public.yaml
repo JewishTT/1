@@ -16,3 +16,21 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_rows
+  fields:
+    post:
+      path: title
+      kind: article
+    author:
+      path: author.name
+      kind: person
+    description:
+      path: dek
+      kind: description
+    url:
+      path: url
+      kind: url
+    published:
+      path: firstPublishedDate
+      kind: timestamp

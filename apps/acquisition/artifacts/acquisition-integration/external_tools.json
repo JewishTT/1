@@ -1,6 +1,6 @@
 {
   "run_manifest": {
-    "integration_run_id": "run-20260930T210737Z",
+    "integration_run_id": "run-20261003T163026Z",
     "tenant_id": "acceptance",
     "investigation_id": "int-tools-smoke",
     "tools": {
@@ -9,8 +9,8 @@
       "spiderfoot": 5
     },
     "published": 29,
-    "consumer_group": "tools-proof-11020",
-    "git_sha": "fe3eb4486fecf89574dfb78b13c3d28a51ffa04b",
+    "consumer_group": "tools-proof-928",
+    "git_sha": "9ce3db8fef1f17632559ba06314f3669f00c92c2",
     "targets": {
       "maigret": {
         "username": "test",
@@ -46,12 +46,12 @@
         "runtime_producer_version": "0.6.6",
         "target_uri": "tool://maigret/run/0755c6cd3d615f53aae03c7dd8a9b006",
         "locator": "maigret:record:0",
-        "capture_id": "CAP-950e243aec291fa18591f3ddf263144c",
-        "capture_payload_key": "52fc52e2869e3f47b4f7dce9023a2c42",
-        "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/4a25b69850f7d2f256c384a88d41ca15ccc1d097d152d531bf7e3084361dceed",
-        "content_digest": "4a25b69850f7d2f256c384a88d41ca15ccc1d097d152d531bf7e3084361dceed",
-        "observation_id": "OBS-a5b500d36f6348e96f72f2ba40c36eb1",
-        "event_id": "evt-3658fd0fba358b6316fc646990b9363d",
+        "capture_id": "CAP-ee6fc2ad242aa9ef38e44d88e95a998c",
+        "capture_payload_key": "35b6c901621651ae9f40e1ed371bbe2a",
+        "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/cf82aecb97adad58db712f689637013b6e460b7f4f25e1e0bfca3dbc50def34a",
+        "content_digest": "cf82aecb97adad58db712f689637013b6e460b7f4f25e1e0bfca3dbc50def34a",
+        "observation_id": "OBS-67dfa4c15096adadba296a8551a5c158",
+        "event_id": "evt-aa50574b8443e9c7034e62c648c6652f",
         "topic": "observation",
         "byte_length": 1165,
         "schema": "acquisition-artifact/v1"
@@ -70,7 +70,35 @@
       "run": {
         "scan_events": 2,
         "scan_events_are_evidence": false,
-        "process_exit_code": null
+        "process_exit_code": 0,
+        "bbot_run": {
+          "image": null,
+          "image_digest": "sha256:40ed0733e0163feee844d49346eb15e40872fa7008f621358eed9b9a7807382e",
+          "argv": [
+            "-t",
+            "example.com",
+            "-p",
+            "subdomain-enum",
+            "-rf",
+            "passive",
+            "--json",
+            "--no-color"
+          ],
+          "started_at": "2026-10-03T16:30:51.400237+00:00",
+          "finished_at": "2026-10-03T16:36:28.646745+00:00",
+          "exit_code": 0,
+          "stdout_bytes": 33281,
+          "stderr_bytes": 16944,
+          "lines_seen": 24,
+          "records": 22,
+          "scan_events": 2,
+          "quarantined": 0,
+          "quarantine_detail": [],
+          "seconds": 337.25,
+          "timed_out": false,
+          "truncated": false,
+          "stderr_tail": "--+--------------------------------------+\n[INFO] output.csv: Saved CSV output to /root/.bbot/scans/effervescent_leslie/output.csv\n[INFO] output.json: Saved JSON output to /root/.bbot/scans/effervescent_leslie/output.json\n[INFO] output.subdomains: Saved 2 subdomains to /root/.bbot/scans/effervescent_leslie/subdomains.txt\n[INFO] output.txt: Saved TXT output to /root/.bbot/scans/effervescent_leslie/output.txt\n[SUCC] Scan effervescent_leslie completed in 4 minutes, 20 seconds with status FINISHING\n"
+        }
       },
       "sample": {
         "task_id": "TSK-bbot-1",
@@ -79,23 +107,23 @@
         "runtime_producer": "bbot",
         "runtime_producer_version": "sha256:40ed0733e016",
         "target_uri": "bbot://scan/example.com",
-        "locator": "bbot:event:DNS_NAME:0a9e6bef-0ef7-4c16-af1e-1a349dbded57",
-        "capture_id": "CAP-25f73f05c0d6abff18958117a4de1cc8",
-        "capture_payload_key": "8e9ba48c44b817ee30b1799a5b302c51",
-        "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/79019fc46b1bcfb8fa0cd2312446c05fcdcc43662c6c4c147aec947b89d2d5d8",
-        "content_digest": "79019fc46b1bcfb8fa0cd2312446c05fcdcc43662c6c4c147aec947b89d2d5d8",
-        "observation_id": "OBS-af560faf307a9e663b59171b32b67ffc",
-        "event_id": "evt-47fb372ebf85e5416139890601fdbd87",
+        "locator": "bbot:event:DNS_NAME:3d07d3ec-c7c1-430b-9d1d-1f0ddc50bbef",
+        "capture_id": "CAP-9caae7384ff939254b123b0dca6d124e",
+        "capture_payload_key": "8b41f2eb3437ed80e47ec1f49f64acf3",
+        "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/755ddb055af47a342dc3ab824c3af9b1fdc4d36d7822928513d13c2efe7f76ed",
+        "content_digest": "755ddb055af47a342dc3ab824c3af9b1fdc4d36d7822928513d13c2efe7f76ed",
+        "observation_id": "OBS-e5d5f9c3dd3ed45349641ce5b1f80c96",
+        "event_id": "evt-3b1b14535a12d86b9e839e1f593a3082",
         "topic": "observation",
-        "byte_length": 1276,
+        "byte_length": 1270,
         "schema": "acquisition-artifact/v1"
       },
       "locators": [
-        "bbot:event:DNS_NAME:0a9e6bef-0ef7-4c16-af1e-1a349dbded57",
-        "bbot:event:ORG_STUB:2d11691c-f90e-491d-b93b-e6c9b60f967e",
-        "bbot:event:DNS_NAME:e23a3c02-8f87-4e4f-bd1b-5cec4089fb58",
-        "bbot:event:DNS_NAME:6cd7af91-ab76-4672-8d40-2441d2d5ed1e",
-        "bbot:event:DNS_NAME:2ccbfcfb-89de-45f1-88ab-ba0a491506d1"
+        "bbot:event:DNS_NAME:3d07d3ec-c7c1-430b-9d1d-1f0ddc50bbef",
+        "bbot:event:ORG_STUB:4d9829aa-ab6f-46e3-a46f-9aaca04a6e9d",
+        "bbot:event:DNS_NAME:737a6fbb-0ab2-4643-b702-c5c498cd2512",
+        "bbot:event:DNS_NAME:d59421f3-c250-4abf-bd2a-2ae133d903b3",
+        "bbot:event:DNS_NAME:7e54bb18-154b-4374-8d49-344e31bfab1c"
       ]
     },
     {
@@ -106,7 +134,7 @@
       "error": "",
       "run": {
         "exit_code": 0,
-        "stdout_bytes": 627
+        "stdout_bytes": 625
       },
       "sample": {
         "task_id": "TSK-spiderfoot-1",
@@ -116,12 +144,12 @@
         "runtime_producer_version": "unpinned",
         "target_uri": "tool://spiderfoot/run/0c5116c13e24a89076cdf810371d5bd8",
         "locator": "spiderfoot:record:0",
-        "capture_id": "CAP-6c6bd5df4fbe0c3c17475a6cc5dd36f5",
-        "capture_payload_key": "2ae07a102819986534d4a47559126c7b",
-        "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/14b3bba36cb63b8756e5228d77029024f61015db972c3b312da3814fac70d3d2",
-        "content_digest": "14b3bba36cb63b8756e5228d77029024f61015db972c3b312da3814fac70d3d2",
-        "observation_id": "OBS-f6261548c430d6ba006e1b92d23163a4",
-        "event_id": "evt-1e2aebfbf1144d9afbb2d1c301bb1707",
+        "capture_id": "CAP-4453ea7c275fd300aeacfdaa60ebedec",
+        "capture_payload_key": "1fa1dd433a33dc2fc0cd99ee35ac996a",
+        "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/9b0f72791cd5b11abfa763f535891b38d0a78e84234604ab0ec3c9d02c5da2a0",
+        "content_digest": "9b0f72791cd5b11abfa763f535891b38d0a78e84234604ab0ec3c9d02c5da2a0",
+        "observation_id": "OBS-b4578e5444fde60ff6f500ba8b3001e9",
+        "event_id": "evt-2440135981707976032d939e4fe6b1a4",
         "topic": "observation",
         "byte_length": 125,
         "schema": "acquisition-artifact/v1"
@@ -136,179 +164,266 @@
     }
   ],
   "readback": {
-    "OBS-a5b500d36f6348e96f72f2ba40c36eb1": {
-      "partition": 0,
-      "offset": 802,
+    "OBS-67dfa4c15096adadba296a8551a5c158": {
       "topic": "observation",
-      "event_id": "evt-3658fd0fba358b6316fc646990b9363d"
+      "partition": 0,
+      "offset": 1032,
+      "key": "OBS-67dfa4c15096adadba296a8551a5c158",
+      "event_id": "evt-aa50574b8443e9c7034e62c648c6652f",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-b972d6be0f912cd32c880d1dce07e6ef": {
-      "partition": 0,
-      "offset": 803,
+    "OBS-c9d1222f1690c33caedd9bf8777229ca": {
       "topic": "observation",
-      "event_id": "evt-1bcd483728f6a4abd8c3216f5fac9f05"
+      "partition": 0,
+      "offset": 1033,
+      "key": "OBS-c9d1222f1690c33caedd9bf8777229ca",
+      "event_id": "evt-af1c055495e617b364c585a547f76109",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-af560faf307a9e663b59171b32b67ffc": {
-      "partition": 0,
-      "offset": 804,
+    "OBS-e5d5f9c3dd3ed45349641ce5b1f80c96": {
       "topic": "observation",
-      "event_id": "evt-47fb372ebf85e5416139890601fdbd87"
+      "partition": 0,
+      "offset": 1034,
+      "key": "OBS-e5d5f9c3dd3ed45349641ce5b1f80c96",
+      "event_id": "evt-3b1b14535a12d86b9e839e1f593a3082",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-bceaa2623004feb4e22d71e0d5d70ce8": {
-      "partition": 0,
-      "offset": 805,
+    "OBS-7229b9e0ebbab821975ce45009bffeff": {
       "topic": "observation",
-      "event_id": "evt-ae8a75441e6e14bd202151bf26943384"
+      "partition": 0,
+      "offset": 1035,
+      "key": "OBS-7229b9e0ebbab821975ce45009bffeff",
+      "event_id": "evt-7af67b0ed2c829fb31a5ee0a5faeff75",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-cfc7db19f34505e5955d6ee2ac113cc6": {
-      "partition": 0,
-      "offset": 806,
+    "OBS-6c92ee84f1e9ef00b07dff5b9e5393f7": {
       "topic": "observation",
-      "event_id": "evt-e57a229bdf35d0beb18a3e8c8cd9839d"
+      "partition": 0,
+      "offset": 1036,
+      "key": "OBS-6c92ee84f1e9ef00b07dff5b9e5393f7",
+      "event_id": "evt-3e7557008ba2bb247cdeded4cd6e93db",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-e515b75077a81609c5bd64bcf4db0c71": {
-      "partition": 0,
-      "offset": 807,
+    "OBS-3c510ebf65912fdaace704726f0f0f39": {
       "topic": "observation",
-      "event_id": "evt-1b71d4cd8afa877675cae2e2a946bc42"
+      "partition": 0,
+      "offset": 1037,
+      "key": "OBS-3c510ebf65912fdaace704726f0f0f39",
+      "event_id": "evt-ea0dcb9104447c71e193df7c5dea473e",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-5f9803068fee444194fa6667f286f28b": {
-      "partition": 0,
-      "offset": 808,
+    "OBS-8d1a8d0dcf02ffb61c55c4ee0669d38c": {
       "topic": "observation",
-      "event_id": "evt-de383bf2a1767f61fb1b18a627975cda"
+      "partition": 0,
+      "offset": 1038,
+      "key": "OBS-8d1a8d0dcf02ffb61c55c4ee0669d38c",
+      "event_id": "evt-ccb8d27950b0ed6e1b920d1e6e76f0b4",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-825224defbded6c11bbec21833d5c850": {
-      "partition": 0,
-      "offset": 809,
+    "OBS-98fd2d045ba33e704a640f008862e4a9": {
       "topic": "observation",
-      "event_id": "evt-d4a0d47f282c7440fe1dcae82e7381cf"
+      "partition": 0,
+      "offset": 1039,
+      "key": "OBS-98fd2d045ba33e704a640f008862e4a9",
+      "event_id": "evt-c13b76756c066022e452dfbf713dbd0c",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-381e390938088b0082abaf71e5846504": {
-      "partition": 0,
-      "offset": 810,
+    "OBS-39fe0e0975c8424b117026834ad0646a": {
       "topic": "observation",
-      "event_id": "evt-9951d10be7b801760603299f1ce0fa2f"
+      "partition": 0,
+      "offset": 1040,
+      "key": "OBS-39fe0e0975c8424b117026834ad0646a",
+      "event_id": "evt-df6e833327bc021525dbff6d06323504",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-c35c77b285e6fd215fccbb6409bf3ce4": {
-      "partition": 0,
-      "offset": 811,
+    "OBS-6ac6d4d55d85760640885c3f244c676a": {
       "topic": "observation",
-      "event_id": "evt-6d08ddcbae64de9d62c4ac64eb88e9cf"
+      "partition": 0,
+      "offset": 1041,
+      "key": "OBS-6ac6d4d55d85760640885c3f244c676a",
+      "event_id": "evt-d86ceb4ce1f19887299a97b0fb12357c",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-af11ead8de164ad754eb911d062f543c": {
-      "partition": 0,
-      "offset": 812,
+    "OBS-57fa7736707cfc49556b6945c9c1c66d": {
       "topic": "observation",
-      "event_id": "evt-0676a46a934bdb3f5d3bcd0bfc32b18d"
+      "partition": 0,
+      "offset": 1042,
+      "key": "OBS-57fa7736707cfc49556b6945c9c1c66d",
+      "event_id": "evt-6ad629c63dc1db8f5a6c582c48d80568",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-56536687a1666fcb21eccc614783767d": {
-      "partition": 0,
-      "offset": 813,
+    "OBS-37ccc56b78d5724c3d6a36c28740bcc4": {
       "topic": "observation",
-      "event_id": "evt-181fdd8f4ae6d8d4871294dbb340ebce"
+      "partition": 0,
+      "offset": 1043,
+      "key": "OBS-37ccc56b78d5724c3d6a36c28740bcc4",
+      "event_id": "evt-17257788d8441c4fa0428e9da5ffe97d",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-fd29de7b5242a49a1c9f031218bab1ba": {
-      "partition": 0,
-      "offset": 814,
+    "OBS-67fbe73a2e33951de41b8e33cf8d02c9": {
       "topic": "observation",
-      "event_id": "evt-34eea1d4335dcac70879c34c58b53be0"
+      "partition": 0,
+      "offset": 1044,
+      "key": "OBS-67fbe73a2e33951de41b8e33cf8d02c9",
+      "event_id": "evt-a03174c5277810349de3b34e88f45e20",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-bc512a553d68e69c016ccd53ba831815": {
-      "partition": 0,
-      "offset": 815,
+    "OBS-9b7a1b774a0b254d49024e9c26f4076c": {
       "topic": "observation",
-      "event_id": "evt-70a7c10450d785eff6fdad143ba81424"
+      "partition": 0,
+      "offset": 1045,
+      "key": "OBS-9b7a1b774a0b254d49024e9c26f4076c",
+      "event_id": "evt-31bf7f5fdab3aa44c89998fa6182d8eb",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-2b2b9b8ce4e2a9084db97b3c3d7a70ca": {
-      "partition": 0,
-      "offset": 816,
+    "OBS-aa025f923996e58f489e065ba30868ae": {
       "topic": "observation",
-      "event_id": "evt-f3b7a0ff7601b261ef498058e07b9738"
+      "partition": 0,
+      "offset": 1046,
+      "key": "OBS-aa025f923996e58f489e065ba30868ae",
+      "event_id": "evt-1b0bce4007097211dad7a4fd89408d5d",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-b0e631af4f21c02277c52d094276d899": {
-      "partition": 0,
-      "offset": 817,
+    "OBS-562bd3524a7317ac93e945402fcec447": {
       "topic": "observation",
-      "event_id": "evt-040a76169bf0a8711d920a8e30c61964"
+      "partition": 0,
+      "offset": 1047,
+      "key": "OBS-562bd3524a7317ac93e945402fcec447",
+      "event_id": "evt-83e7c575dd30f4d57ab1d6df8e23aa44",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-68d637ec2be3ce279ab7ba5ee08bbd07": {
-      "partition": 0,
-      "offset": 818,
+    "OBS-7d927b097004248ba3bd6b814c5631ce": {
       "topic": "observation",
-      "event_id": "evt-e1f5f7e9681865b504ce4b3b2bed44b8"
+      "partition": 0,
+      "offset": 1048,
+      "key": "OBS-7d927b097004248ba3bd6b814c5631ce",
+      "event_id": "evt-1c324d3a10eda4e1f4662e1a25ecb8bf",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-50b77793497ec85eb72df335361aed9d": {
-      "partition": 0,
-      "offset": 819,
+    "OBS-6c6cdd96a6d54af13d18e7534e5bca05": {
       "topic": "observation",
-      "event_id": "evt-0ad06c937b47f4b7a206a4b58cd73531"
+      "partition": 0,
+      "offset": 1049,
+      "key": "OBS-6c6cdd96a6d54af13d18e7534e5bca05",
+      "event_id": "evt-92bef76d1c461648f28a6019b77360b2",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-939b399d316cd1a1e237dd22e8f96acd": {
-      "partition": 0,
-      "offset": 820,
+    "OBS-f5469c17f56609c11382ec148d37000f": {
       "topic": "observation",
-      "event_id": "evt-5d8b1b60d83962c93767478a1ae415ed"
+      "partition": 0,
+      "offset": 1050,
+      "key": "OBS-f5469c17f56609c11382ec148d37000f",
+      "event_id": "evt-5df9d40811bdd7e757a6e6781b9a804d",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-9f872ad62a7185062ed5d9b3c4ea022b": {
-      "partition": 0,
-      "offset": 821,
+    "OBS-c9edf2cfadfe101306da0519595bc20f": {
       "topic": "observation",
-      "event_id": "evt-3f97aea399f9812174bfcc664eeec377"
+      "partition": 0,
+      "offset": 1051,
+      "key": "OBS-c9edf2cfadfe101306da0519595bc20f",
+      "event_id": "evt-b14ce8c75538574b719258679f303040",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-e14f917630b381f73b09b523862af0c5": {
-      "partition": 0,
-      "offset": 822,
+    "OBS-baa4e70f46dd3f02ef28648ff9aff82d": {
       "topic": "observation",
-      "event_id": "evt-1a4ed107ee7be10f40cdd3bc406dd2d2"
+      "partition": 0,
+      "offset": 1052,
+      "key": "OBS-baa4e70f46dd3f02ef28648ff9aff82d",
+      "event_id": "evt-08120bd03780d7365521bf9b0e543139",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-8c35a4a52d72ccebab44272bc63c55b1": {
-      "partition": 0,
-      "offset": 823,
+    "OBS-dd793ca4900a3067e1090285752c5328": {
       "topic": "observation",
-      "event_id": "evt-605acb75d99961ff647e183a79945d4b"
+      "partition": 0,
+      "offset": 1053,
+      "key": "OBS-dd793ca4900a3067e1090285752c5328",
+      "event_id": "evt-b3da953cc7802606ba026edf6bc72c2c",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-16dabb32df78779113c4f71ad279c93b": {
-      "partition": 0,
-      "offset": 824,
+    "OBS-225550a8d766cf860dcd24b9f2971e01": {
       "topic": "observation",
-      "event_id": "evt-7c8921a685234819e4e6e9a449edd5f6"
+      "partition": 0,
+      "offset": 1054,
+      "key": "OBS-225550a8d766cf860dcd24b9f2971e01",
+      "event_id": "evt-0bba611021974daae12aa394b4f39bc9",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-35cc354052941aeac67a7a2735c29d83": {
-      "partition": 0,
-      "offset": 825,
+    "OBS-71835a899dcee1a91215ba3dd76bcef5": {
       "topic": "observation",
-      "event_id": "evt-d1c4ddc819a29d16599cfcdc8e06e923"
+      "partition": 0,
+      "offset": 1055,
+      "key": "OBS-71835a899dcee1a91215ba3dd76bcef5",
+      "event_id": "evt-e8174adbe777be81c1b5a60957c58f77",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-f6261548c430d6ba006e1b92d23163a4": {
-      "partition": 0,
-      "offset": 826,
+    "OBS-b4578e5444fde60ff6f500ba8b3001e9": {
       "topic": "observation",
-      "event_id": "evt-1e2aebfbf1144d9afbb2d1c301bb1707"
+      "partition": 0,
+      "offset": 1056,
+      "key": "OBS-b4578e5444fde60ff6f500ba8b3001e9",
+      "event_id": "evt-2440135981707976032d939e4fe6b1a4",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-565747defc5c5515302a9d9353c28fd9": {
-      "partition": 0,
-      "offset": 827,
+    "OBS-693d3685542839a2fb44c2a853c123df": {
       "topic": "observation",
-      "event_id": "evt-97a2dfecc8bc89fe3ae75de97d9d0672"
+      "partition": 0,
+      "offset": 1057,
+      "key": "OBS-693d3685542839a2fb44c2a853c123df",
+      "event_id": "evt-85f356c57cea48c637827b0f99522708",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-1ed9db76115a6c3d4622d0df30f786fe": {
-      "partition": 0,
-      "offset": 828,
+    "OBS-5f328513b0dafe139bad2caf3229a6bc": {
       "topic": "observation",
-      "event_id": "evt-c2cae02241825e132b87e1c0b6e5fe48"
+      "partition": 0,
+      "offset": 1058,
+      "key": "OBS-5f328513b0dafe139bad2caf3229a6bc",
+      "event_id": "evt-aaee37dc141ac358743747d03c6b7e39",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-c043bcc7b01b3006870de37243863ae0": {
-      "partition": 0,
-      "offset": 829,
+    "OBS-8689f3b103895fa22d8e23771900da34": {
       "topic": "observation",
-      "event_id": "evt-49f4e35b1e705652795d502e6508106d"
+      "partition": 0,
+      "offset": 1059,
+      "key": "OBS-8689f3b103895fa22d8e23771900da34",
+      "event_id": "evt-474348854fc707406246e0533b3a5582",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     },
-    "OBS-46cbfebce97137f59e22156fc941c941": {
-      "partition": 0,
-      "offset": 830,
+    "OBS-d38bc8a41f62c0ff4e33d4829f64ec35": {
       "topic": "observation",
-      "event_id": "evt-eb5eeaae59fa6a336bd70d24f9d8ec6e"
+      "partition": 0,
+      "offset": 1060,
+      "key": "OBS-d38bc8a41f62c0ff4e33d4829f64ec35",
+      "event_id": "evt-b4ef54af32d7a384458b2447d998c27a",
+      "event_type": "observation.created",
+      "producer": "observation-gate"
     }
   }
 }

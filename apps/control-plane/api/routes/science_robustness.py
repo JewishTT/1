@@ -21,11 +21,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from robustness.perturb import PerturbationGrid
 from robustness.report import RobustnessReport, analyze_robustness
-
-from api.routes.science_claims import _store as _claims_store
+from store import shared_store
 
 router = APIRouter(prefix="/api/science", tags=["science"])
 
+# One projection process-wide, not one per route module: a claim registered
+# through /claims must be resolvable from /robustness without a cross-route import.
+_claims_store = shared_store()
 _reports: dict[str, dict[str, Any]] = {}
 _registry = ExperimentRegistry()
 

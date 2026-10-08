@@ -41,7 +41,15 @@ describe("SciencePage", () => {
       "Degrees in the street network",
     );
     expect(screen.getByTestId("ladder-position").textContent).toContain("3 / 4");
-    expect(screen.getByTestId("gate-null_model").textContent).toContain("✔");
+
+    // A passed gate is a drawn tick and an unreported one is an em dash (T135
+    // replaced the `✔` glyph). The tick carries no text, so the state is asserted
+    // the way it is now expressed — on `data-passed` — and the dash is asserted as
+    // text. A test that reached for a glyph character would be asserting on a
+    // font, not on the product.
+    expect(screen.getByTestId("gate-null_model")).toHaveAttribute("data-passed", "true");
+    expect(screen.getByTestId("gate-null_model").querySelector("svg")).not.toBeNull();
+    expect(screen.getByTestId("gate-reproduction")).toHaveAttribute("data-passed", "false");
     expect(screen.getByTestId("gate-reproduction").textContent).toContain("—");
     expect(screen.getByTestId("review-state").textContent).toContain("REVIEW_PENDING");
   });

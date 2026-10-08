@@ -24,3 +24,28 @@ tool:
     Accept: application/json
   params:
     q: '{query}'
+parse:
+  family: json_rows
+  fields:
+    leak:
+      path: id
+      kind: leak
+      required: true
+    domain:
+      path: domain
+      kind: domain
+    username:
+      path: username
+      kind: handle
+    email:
+      path: email
+      kind: email
+    port:
+      path: port
+      kind: port
+    service:
+      path: service
+      kind: technology
+    found:
+      path: time
+      kind: timestamp

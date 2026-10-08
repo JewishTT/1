@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from engine import FeedbackEngine, FeedbackSignal
+from feedback_engine import FeedbackEngine, FeedbackSignal
 from stopping import StoppingPolicy, StopState
 
 

@@ -26,3 +26,22 @@ tool:
   params:
     q: 'parsed.names: {query}'
     per_page: '100'
+parse:
+  family: json_object
+  fields:
+    domain:
+      path: "names[*]"
+      kind: domain
+      many: true
+    issuer:
+      path: parsed.issuer_dn
+      kind: organization
+    not_before:
+      path: parsed.validity.start
+      kind: timestamp
+    not_after:
+      path: parsed.validity.end
+      kind: timestamp
+    fingerprint:
+      path: parsed.fingerprint_sha256
+      kind: identifier

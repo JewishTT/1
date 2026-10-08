@@ -20,3 +20,18 @@ tool:
     User-Agent: Estorides/1.0
   params:
     url: '{query}'
+parse:
+  family: json_object
+  fields:
+    latitude:
+      path: latitude
+      kind: geolocation
+    longitude:
+      path: longitude
+      kind: geolocation
+    camera:
+      path: camera
+      kind: technology
+    timestamp:
+      path: datetime_original
+      kind: timestamp

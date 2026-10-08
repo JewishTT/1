@@ -17,3 +17,25 @@ tool:
   headers:
     User-Agent: estorides:web:v1.3 (by /u/estorides-dev)
   params: {}
+parse:
+  family: json_object
+  fields:
+    subreddit:
+      path: display_name
+      kind: subreddit
+      required: true
+    title:
+      path: title
+      kind: description
+    description:
+      path: public_description
+      kind: description
+    subscribers:
+      path: subscribers
+      kind: integer
+    created:
+      path: created_utc
+      kind: timestamp
+    url:
+      path: url
+      kind: url

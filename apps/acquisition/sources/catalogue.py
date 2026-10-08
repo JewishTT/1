@@ -148,7 +148,30 @@ class SourceDefinition:
     parser_is_identity: bool
     source_path: str
     logs_queries: bool = False
+    #: The runtime that executes this source, or "" when the ordinary HTTP/system path
+    #: handles it. Absent until now, which left three things broken at once: the context
+    #: engine's catalogue bridge filtered every descriptor out because it read this and got
+    #: "", ``AcquisitionTask.to_task`` had no way to name a runtime, and the connector
+    #: registry's explicit-runtime branch was unreachable because no task could ever set
+    #: the key it reads.
+    #:
+    #: Optional rather than required because 145 of the existing sources genuinely run
+    #: through the HTTP or system executor. Making it mandatory would mean inventing a
+    #: ``runtime_ref`` for sources that have none, which is the kind of fiction that later
+    #: reads as a routing decision.
+    runtime_ref: str = ""
+    #: Cost class for planning. "cheap" is the honest default: a source that never declared
+    #: one has not been shown to be expensive, and claiming otherwise would bias selection
+    #: against it.
+    cost_class: str = "cheap"
+    #: Connector configuration for a runtime-backed source, verbatim from the definition.
+    #: Passed through untouched so the runtime owns the meaning of its own config keys.
+    runtime_config: Mapping[str, Any] = field(default_factory=dict, repr=False, compare=False)
     definition: Mapping[str, Any] = field(default_factory=dict, repr=False, compare=False)
+
+    @property
+    def is_runtime_backed(self) -> bool:
+        return bool(self.runtime_ref)
 
     @property
     def contact_level(self) -> int:
@@ -174,6 +197,11 @@ class SourceDefinition:
             "kind": self.kind,
             "kind_inferred": self.kind_inferred,
             "pagination": self.pagination.to_dict(),
+            # Present so a consumer can tell "runs on no named runtime" from "the field
+            # was never populated". Omitting the key entirely would make the two
+            # indistinguishable over HTTP.
+            "runtime_ref": self.runtime_ref,
+            "cost_class": self.cost_class,
         }
 
 
@@ -300,10 +328,21 @@ def load_source(path: Path) -> SourceDefinition:
 
     requires_key = bool(raw.get("requires_key"))
     key_env = str(raw.get("key_env") or "").strip()
-    if requires_key and not key_env:
+    # A credential *pair* is as valid a way to name a secret as a single one: WiGLE
+    # authenticates with an API name plus an API token over HTTP Basic, and no single
+    # env var can hold both. `basic_auth_env` names the pair; without this the
+    # validator rejected a correctly-declared source (issue #45).
+    basic_auth_env = _as_tuple((tool or {}).get("basic_auth_env"))
+    if requires_key and not key_env and not basic_auth_env:
         raise CatalogueError(
             "keyed_source_without_key_env",
-            f"{name} requires a key but names no key_env, so it cannot be run",
+            f"{name} requires a key but names neither key_env nor basic_auth_env, "
+            "so it cannot be run",
+        )
+    if basic_auth_env and len(basic_auth_env) != 2:
+        raise CatalogueError(
+            "bad_basic_auth_env",
+            f"{name} names {len(basic_auth_env)} basic_auth_env variables, expected 2",
         )
 
     tool = _flatten_params(tool)
@@ -333,6 +372,9 @@ def load_source(path: Path) -> SourceDefinition:
         parser_is_identity=parser in IDENTITY_PARSERS,
         source_path=str(path),
         logs_queries=bool(raw.get("logs_queries", False)),
+        runtime_ref=str(raw.get("runtime_ref") or "").strip(),
+        cost_class=str(raw.get("cost_class") or "cheap"),
+        runtime_config=dict(raw.get("runtime_config") or {}),
         definition=dict(raw),
     )
 
@@ -350,11 +392,25 @@ def load_catalogue(
     paths = sorted(p for ext in ("*.yaml", "*.yml") for p in base.rglob(ext))
     accepted: list[SourceDefinition] = []
     rejected: dict[str, list[str]] = {}
+    seen: dict[str, str] = {}
     for path in paths:
         try:
-            accepted.append(load_source(path))
+            definition = load_source(path)
         except CatalogueError as exc:
             rejected.setdefault(exc.code, []).append(f"{path.name}: {exc.message}")
+            continue
+        # Two files declaring one name collide on source_id, and the registry would
+        # silently keep whichever sorted last -- a source vanishing with no error.
+        # The catalogue had exactly this: hunter_email in both 08_knowledge and
+        # 16_people. Report it instead of overwriting.
+        previous = seen.get(definition.source_id)
+        if previous is not None:
+            rejected.setdefault("duplicate_source_id", []).append(
+                f"{path.name}: {definition.name} already defined by {previous}"
+            )
+            continue
+        seen[definition.source_id] = path.name
+        accepted.append(definition)
     accepted.sort(key=lambda s: s.source_id)
     for names in rejected.values():
         names.sort()

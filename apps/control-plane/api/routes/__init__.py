@@ -12,3 +12,4 @@ statements run.
 from __future__ import annotations
 
 from api import path_shim  # noqa: F401 - must precede every cross-app import below
+from api.routes import investigation_context  # noqa: E402,F401

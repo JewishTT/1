@@ -288,6 +288,27 @@ class ResearchAction:
 
         return replace(self, action_id=self.address())
 
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> ResearchAction:
+        """Rebuild from :meth:`to_dict`.
+
+        Added for the durable store. Every sibling in this module already had the pair,
+        and an action that can be written but not read cannot survive a restart, so the
+        asymmetry was a gap in the contract rather than a missing convenience.
+        """
+        return cls(
+            action_id=str(data.get("action_id", "")),
+            obligation_id=str(data.get("obligation_id", "")),
+            proposed_method=str(data.get("proposed_method", "")),
+            rationale=str(data.get("rationale", "")),
+            expected_gain=float(data.get("expected_gain", 0.0)),
+            capability_requirements=tuple(data.get("capability_requirements", ())),
+            requires_operator_approval=bool(data.get("requires_operator_approval", True)),
+            status=str(data.get("status", "proposed")),
+            task_id=str(data.get("task_id", "")),
+            realised_gain=data.get("realised_gain"),
+        )
+
     def to_dict(self) -> dict[str, Any]:
         return {**self._material(), "action_id": self.action_id}
 
@@ -341,6 +362,20 @@ class ContextFrontier:
     next_actions: tuple[str, ...] = ()
     pending_approval: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> ContextFrontier:
+        """Rebuild from :meth:`to_dict`; see :meth:`ResearchAction.from_dict`."""
+        return cls(
+            context_id=str(data.get("context_id", "")),
+            state=InvestigationState(str(data.get("state", InvestigationState.UNINVESTIGATED))),
+            open_obligations=tuple(data.get("open_obligations", ())),
+            blocked_obligations=tuple(data.get("blocked_obligations", ())),
+            closed_obligations=tuple(data.get("closed_obligations", ())),
+            next_actions=tuple(data.get("next_actions", ())),
+            pending_approval=tuple(data.get("pending_approval", ())),
+            notes=tuple(data.get("notes", ())),
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {

@@ -22,3 +22,22 @@ tool:
     APIKEY: '{api_key}'
     Accept: application/json
   params: {}
+parse:
+  family: json_object
+  fields:
+    domain:
+      path: domain
+      kind: domain
+    subdomain:
+      path: "subdomains[*]"
+      kind: subdomain
+      many: true
+    record_type:
+      path: record_type
+      kind: unknown
+    first_seen:
+      path: first_seen
+      kind: timestamp
+    last_seen:
+      path: last_seen
+      kind: timestamp

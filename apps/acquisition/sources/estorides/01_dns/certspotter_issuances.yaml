@@ -19,3 +19,22 @@ tool:
     domain: '{query}'
     include_subdomains: 'true'
     expand: dns_names
+parse:
+  family: json_rows
+  fields:
+    issuer:
+      path: issuer.dn
+      kind: organization
+    dns_names:
+      path: "dns_names[*]"
+      kind: subdomain
+      many: true
+    id:
+      path: id
+      kind: identifier
+    not_before:
+      path: not_before
+      kind: timestamp
+    not_after:
+      path: not_after
+      kind: timestamp

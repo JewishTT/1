@@ -525,12 +525,51 @@ _IDENTITY_KEY_TYPES: tuple[tuple[tuple[str, ...], str], ...] = (
 )
 
 
+#: Registry type -> the label vocabulary the tool catalogue is written in.
+#:
+#: ``tool_catalog`` predates the twelve-type registry and uses its own uppercase labels
+#: (``NAME``, ``ORG``, ``USERNAME``, ...). Rather than rewrite every ``entity_types`` tuple,
+#: the registry is the authority for *deciding* the type and this table translates. The
+#: translation is explicit, so an unmapped type is a visible gap rather than a silent
+#: fallback.
+_ONTOLOGY_TO_CATALOG_LABEL: dict[str, str] = {
+    "person": "NAME",
+    "organization": "ORG",
+    "domain": "DOMAIN",
+    "website": "URL",
+    "place": "LOCATION",
+    "email": "EMAIL",
+    "phone": "PHONE",
+    "handle": "USERNAME",
+    "ip": "IPV4",
+    "crypto": "ADDRESS",
+    "identifier": "ID_NUMBER",
+    "document": "DOCUMENT",
+}
+
+
 def infer_entity_type(identity: dict) -> str:
     """Map a canonical_identity dict onto an entity type label (deterministic).
 
-    First non-empty matching key wins, in the fixed order above; unknown or
-    empty identities fall back to ``"UNKNOWN"``. Pure, no IO.
+    The twelve-type registry decides. ``domain.ontology`` orders its field table so that a
+    ``registrar`` is read as an organisation *before* any name-shaped field can match --
+    which is what was happening before, where ``{"name": "Gazprom Neft"}`` produced a
+    person and a company's ASN was dropped entirely.
+
+    Falls back to ``UNKNOWN`` for an identity with no declared field. Pure, no IO.
     """
+    from domain.ontology import EntityType, read_record
+
+    for reading in read_record(identity):
+        if reading.type is EntityType.UNKNOWN:
+            continue
+        label = _ONTOLOGY_TO_CATALOG_LABEL.get(reading.type.value)
+        if label:
+            return label
+
+    # Legacy fallback for identities whose keys predate the registry table. Kept because
+    # existing rows still carry shapes like {"org": ...} or {"host": ...}, and silently
+    # relabelling them UNKNOWN would hide them from every tool that filters on type.
     for keys, entity_type in _IDENTITY_KEY_TYPES:
         if any(identity.get(key) for key in keys):
             return entity_type

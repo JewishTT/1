@@ -40,15 +40,18 @@ class AdjacencyView:
             raise KeyError(f"unknown node: {node_id}") from exc
 
     def to_tda_input(self) -> tuple[list[str], list[tuple[int, int, float]]]:
-        """Return (node_ids, weighted edge index triples) ready for TDA."""
-        seen: set[str] = set()
-        nodes: list[str] = []
+        """Return (node_ids, weighted edge index triples) ready for TDA.
+
+        ``self.nodes`` is the authority, not the endpoints of the edges. Collecting nodes
+        from the edges alone silently dropped every isolated vertex, which is the one node
+        an investigation most needs to see: the subject that nothing has been found about
+        yet. Its H0 class is the whole point.
+        """
+        seen: set[str] = set(self.nodes)
         for edge in self.edges:
-            for endpoint in (edge.source, edge.target):
-                if endpoint not in seen:
-                    seen.add(endpoint)
-                    nodes.append(endpoint)
-        nodes.sort()
+            seen.add(edge.source)
+            seen.add(edge.target)
+        nodes = sorted(seen)
         lookup = {node_id: position for position, node_id in enumerate(nodes)}
         triples = [
             (lookup[edge.source], lookup[edge.target], float(edge.properties.get("weight", 1.0)))
@@ -147,17 +150,35 @@ def adjacency_from_store(
 
 
 def to_distance_matrix(view: AdjacencyView) -> tuple[list[str], list[list[float]]]:
-    """Shortest-path distance matrix over unweighted edges (TDA input)."""
+    """Shortest-path distance matrix over the view's edges (TDA input).
+
+    ``to_tda_input`` already returns *index* triples, so this used to look them up in a
+    node-id map and raised ``KeyError: 0`` on the first edge — which is why the only
+    graph→distance bridge in the platform had zero callers and zero tests. The lookup is
+    gone rather than fixed, because the indices are the positions the triples are built from.
+
+    Weights become distances, clamped to ``(0, 1]`` so a zero-weight edge cannot masquerade
+    as a self-loop: a vertex is at distance 0 from itself and nowhere else. Symmetrised on
+    the way in, because H0/H1 over an undirected Vietoris–Rips filtration needs the metric to
+    be symmetric and an adjacency view carries one direction per edge.
+    """
     nodes, triples = view.to_tda_input()
-    lookup = {node_id: position for position, node_id in enumerate(nodes)}
     size = len(nodes)
     inf = float("inf")
     matrix = [[0.0 if i == j else inf for j in range(size)] for i in range(size)]
     for source, target, weight in triples:
-        distance = min(weight, 1.0)
-        i, j = lookup[source], lookup[target]
-        matrix[i][j] = min(matrix[i][j], distance)
-        matrix[j][i] = min(matrix[j][i], distance)  # undirected for H0/H1
+        distance = min(float(weight), 1.0)
+        if distance <= 0.0:
+            # A non-positive weight would make two distinct vertices coincide for
+            # Vietoris–Rips purposes and erase the edge. Clamped rather than dropped: the
+            # connectivity is real, only its claimed weight was unusable.
+            distance = 1.0
+        i, j = int(source), int(target)
+        if i == j:
+            continue
+        if distance < matrix[i][j]:
+            matrix[i][j] = distance
+            matrix[j][i] = distance  # undirected for H0/H1
     for k in range(size):
         for i in range(size):
             through_k = matrix[i][k]
@@ -167,6 +188,7 @@ def to_distance_matrix(view: AdjacencyView) -> tuple[list[str], list[list[float]
                 candidate = through_k + matrix[k][j]
                 if candidate < matrix[i][j]:
                     matrix[i][j] = candidate
+                    matrix[j][i] = candidate
     return nodes, matrix
 
 

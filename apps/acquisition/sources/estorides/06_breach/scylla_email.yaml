@@ -22,3 +22,16 @@ tool:
     Accept: application/json
   params:
     size: '50'
+parse:
+  family: json_object
+  fields:
+    email:
+      path: email
+      kind: email
+      required: true
+    breach:
+      path: breach
+      kind: leak
+    domain:
+      path: domain
+      kind: domain

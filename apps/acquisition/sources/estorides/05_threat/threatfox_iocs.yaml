@@ -29,3 +29,25 @@ tool:
   body:
     query: search_ioc
     search_term: '{query}'
+parse:
+  family: json_rows
+  fields:
+    ioc:
+      path: ioc
+      kind: unknown
+      required: true
+    ioc_type:
+      path: ioc_type
+      kind: status
+    malware:
+      path: malware_printable
+      kind: malware
+    confidence:
+      path: confidence_level
+      kind: score
+    first_seen:
+      path: first_seen
+      kind: timestamp
+    url:
+      path: url
+      kind: url

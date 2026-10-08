@@ -17,3 +17,14 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: text_lines
+  fields:
+    url:
+      path: ""
+      kind: url
+      pattern: "^(https?://\\S+wordpress\\S*)"
+    title:
+      path: ""
+      kind: description
+      pattern: "<title>([^<]+)</title>"

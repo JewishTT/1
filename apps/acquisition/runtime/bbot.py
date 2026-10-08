@@ -44,13 +44,14 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
+from contextlib import aclosing, suppress
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
 from domain.acquisition_artifact import AcquisitionArtifact
 
-from runtime import CostEstimate, ResourceClass, RuntimeError_, RuntimeHealth
-from runtime.airbyte import AirbyteRuntime  # the process boundary is identical
+from runtime import CostEstimate, RuntimeError_, RuntimeHealth
 from runtime.record_stream import StreamRecord, read_record_stream
 
 #: Pinned digest (O-4). Named once so the reference has one home.
@@ -58,6 +59,25 @@ BBOT_IMAGE = (
     "blacklanternsecurity/bbot@sha256:40ed0733e0163feee844d49346eb15e40872fa7008f621358eed9b9a7807382e"
 )
 BBOT_DIGEST = "sha256:40ed0733e0163feee844d49346eb15e40872fa7008f621358eed9b9a7807382e"
+
+#: Default wall-clock allowance. Measured on the pinned digest: a first run spends
+#: ~450s installing Ansible/pip/OS dependencies *inside* the container, because
+#: ``--rm`` throws them away afterwards. The figure is a real observation, not a guess.
+BBOT_DEFAULT_TIMEOUT = 900.0
+
+
+def resolve_image() -> str:
+    """The image to run: an explicit override, else the pinned digest.
+
+    An override exists because the pinned image reinstalls its dependencies on every
+    ``--rm`` run, which is most of its wall clock. A warmed derivative - the same
+    pinned base, committed once after its first run - cuts a measured 450s to 152s for
+    the same yield. The manifest always records which image actually ran, so a run made
+    with an override never looks like a run made with the pin.
+    """
+    import os
+
+    return os.environ.get("COGNITIVE_BBOT_IMAGE") or BBOT_IMAGE
 
 #: §10's locator scheme.
 LOCATOR_PREFIX = "bbot:event:"
@@ -119,6 +139,56 @@ class _BbotAdapter:
         return out
 
 
+@dataclass
+class BbotRun:
+    """What happened in a BBOT run. Reported in the manifest, never inferred from silence.
+
+    Modelled on ``external_tool.ToolRun`` and deliberately the same shape: one run
+    record for every tool-shaped runtime on this platform, so a manifest reader learns
+    it once. Reused rather than reinvented -- the fields are the ones the proof scripts
+    reconcile against (§141).
+    """
+
+    image: str = ""
+    image_digest: str = ""
+    argv: list[str] = field(default_factory=list)
+    started_at: str = ""
+    finished_at: str = ""
+    exit_code: int | None = None
+    stdout_bytes: int = 0
+    stderr_bytes: int = 0
+    lines_seen: int = 0
+    records: int = 0
+    scan_events: int = 0
+    quarantined: list[dict[str, Any]] = field(default_factory=list)
+    seconds: float = 0.0
+    timed_out: bool = False
+    truncated: bool = False
+    stderr_tail: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "image": self.image,
+            "image_digest": self.image_digest,
+            "argv": self.argv,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
+            "exit_code": self.exit_code,
+            "stdout_bytes": self.stdout_bytes,
+            "stderr_bytes": self.stderr_bytes,
+            "lines_seen": self.lines_seen,
+            "records": self.records,
+            "scan_events": self.scan_events,
+            # §141: the five numbers a collection volume is reconciled from.
+            "quarantined": len(self.quarantined),
+            "quarantine_detail": self.quarantined,
+            "seconds": round(self.seconds, 3),
+            "timed_out": self.timed_out,
+            "truncated": self.truncated,
+            "stderr_tail": self.stderr_tail[-500:],
+        }
+
+
 class BbotRuntime:
     """BBOT as an event-producing acquisition runtime."""
 
@@ -128,16 +198,16 @@ class BbotRuntime:
     def __init__(
         self,
         *,
-        image: str = BBOT_IMAGE,
+        image: str | None = None,
         image_digest: str = BBOT_DIGEST,
         cache_dir: str | None = None,
         presets: str = "subdomain-enum",
         module_flags: str = "passive",
         network_policy: str = "bridge",
-        timeout: float = 300.0,
+        timeout: float = BBOT_DEFAULT_TIMEOUT,
         max_record_bytes: int = 1024 * 1024,
     ) -> None:
-        self._image = image
+        self._image = image or resolve_image()
         self._digest = image_digest
         self._cache_dir = cache_dir
         self._presets = presets
@@ -145,20 +215,8 @@ class BbotRuntime:
         self._network = network_policy
         self._timeout = timeout
         self._max_record_bytes = max_record_bytes
-        # The process boundary is Airbyte's, unchanged: both spawn a container and
-        # read line-delimited JSON from stdout. Reusing it is the unification; a
-        # second subprocess implementation would be two places for §146's SIGTERM
-        # discipline to be forgotten.
-        self._process = AirbyteRuntime(
-            image=image,
-            image_digest=image_digest,
-            connector_ref="bbot",
-            resource_class=ResourceClass(
-                name="large", max_runtime_seconds=timeout, max_output_bytes=64 * 1024 * 1024
-            ),
-            task_timeout=timeout,
-        )
         self._scan_events: list[dict[str, Any]] = []
+        self._run = BbotRun(image=image, image_digest=image_digest)
 
     # ------------------------------------------------------------- contract --
 
@@ -173,11 +231,17 @@ class BbotRuntime:
         )
 
     async def aclose(self) -> None:
-        await self._process.aclose()
+        return None
 
     @property
-    def process_run(self):
-        return self._process.run
+    def run(self) -> BbotRun:
+        """The manifest of the last run.
+
+        Replaces the old ``process_run``, which was permanently ``None``: it read
+        ``self._process.run`` off an ``AirbyteRuntime`` that was constructed and then
+        never executed, so every manifest it appeared in said ``exit_code: null``.
+        """
+        return self._run
 
     @property
     def scan_events(self) -> list[dict[str, Any]]:
@@ -242,6 +306,7 @@ class BbotRuntime:
         argv = self._argv(target)
 
         lines = self._raw_lines(argv)
+        run = self._run
         self._scan_events.clear()
         seen_scans: list[dict[str, Any]] = []
         # §96/§97. Two live BBOT runs of the same target do **not** produce the same
@@ -252,22 +317,64 @@ class BbotRuntime:
         # stable ``uuid`` of its own, so the locator is derived from that instead:
         # ordering may vary, identity does not.
         record_index = 0
-
-        async for raw in lines:
-            stripped = raw.strip()
-            if not stripped.startswith("{"):
-                continue
+        # aclosing, not a bare `async for`: closing this generator does not close the
+        # one it is iterating, so a cancelled or abandoned acquire would leave the
+        # container running with nobody reading its stdout. Found by the test that
+        # asserts the process is killed on early exit.
+        async with aclosing(lines):
             try:
-                message = json.loads(stripped)
-            except ValueError:
-                continue
-            if message.get("type") in RUN_EVENT_TYPES:
-                seen_scans.append(message)
-                continue
-            yield self._to_artifact(message, task_id, source_id, target, record_index)
-            record_index += 1
+                async for raw in lines:
+                    stripped = raw.strip()
+                    if not stripped:
+                        continue
+                    if not stripped.startswith("{"):
+                        # §32: a line that is not protocol output is quarantined, not
+                        # skipped in silence. Silently dropping it means a broken BBOT
+                        # build looks exactly like a quiet one.
+                        self._quarantine(run, "non_json_stdout", stripped)
+                        continue
+                    try:
+                        message = json.loads(stripped)
+                    except ValueError as exc:
+                        self._quarantine(
+                            run, "malformed_json", stripped, detail=f"{type(exc).__name__}"
+                        )
+                        continue
+                    if not isinstance(message, dict) or "type" not in message:
+                        self._quarantine(run, "no_event_type", stripped)
+                        continue
+                    if message.get("type") in RUN_EVENT_TYPES:
+                        seen_scans.append(message)
+                        continue
+                    if len(stripped.encode("utf-8")) > self._max_record_bytes:
+                        # The limit used to be accepted and never applied.
+                        run.truncated = True
+                        self._quarantine(
+                            run,
+                            "record_too_large",
+                            stripped[:200],
+                            detail=f"limit={self._max_record_bytes}",
+                        )
+                        continue
+                    yield self._to_artifact(message, task_id, source_id, target, record_index)
+                    record_index += 1
+                    run.records = record_index
+            finally:
+                # In a finally, not after the loop: a consumer that stops early closes
+                # the generator here, and the scan metadata would otherwise be lost
+                # exactly when a run was cut short -- the case where it matters most.
+                self._scan_events.extend(seen_scans)
+                run.scan_events = len(self._scan_events)
 
-        self._scan_events.extend(seen_scans)
+    def _quarantine(
+        self,
+        run: BbotRun,
+        code: str,
+        raw: str,
+        *,
+        detail: str = "",
+    ) -> None:
+        run.quarantined.append({"code": code, "detail": detail, "raw": raw[:500]})
 
     def _argv(self, target: str) -> list[str]:
         # §144: passive by default. The flag set is part of the definition, not a
@@ -281,8 +388,21 @@ class BbotRuntime:
         return argv
 
     async def _raw_lines(self, argv: list[str]) -> AsyncIterator[str]:
-        """Spawn the container and yield stdout lines as they arrive (§27)."""
+        """Spawn the container and yield stdout lines as they arrive (§27).
+
+        Three things this has to get right, each of which was previously wrong:
+
+        1. **stderr is drained.** It is piped and BBOT is extremely talkative on it.
+           An undrained pipe fills (~64 KiB), the docker client blocks on write, and
+           ``readline()`` never returns again -- a task that hangs with no error and
+           no timeout, because the timeout was on the read that is now stuck.
+        2. **the deadline is on the run, not the line.** A per-line timeout never
+           fires while BBOT emits an event every second, so the scan is unbounded.
+        3. **the exit code is read.** A non-zero exit with records already yielded is
+           a partial run, and the manifest has to be able to say so.
+        """
         import asyncio
+        import time
 
         command = ["docker", "run", "--rm", "-i", "--network", self._network]
         if self._cache_dir:
@@ -293,17 +413,45 @@ class BbotRuntime:
                 f"type=bind,source={self._cache_dir},target=/cache",
             ]
         command += ["--workdir", "/work", self._image, *argv]
+        run = self._run
+        run.argv = list(argv)
+        run.started_at = datetime.now(UTC).isoformat()
+        started = time.monotonic()
+
         proc = await asyncio.create_subprocess_exec(
             *command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         assert proc.stdout is not None
+        assert proc.stderr is not None
+
+        # Keep only a bounded tail: unbounded stderr growth on a chatty tool is its
+        # own memory leak, and the tail is what a human reads.
+        stderr_chunks: list[bytes] = []
+        stderr_bytes = 0
+
+        async def drain_stderr() -> None:
+            nonlocal stderr_bytes
+            while True:
+                chunk = await proc.stderr.read(4096)
+                if not chunk:
+                    return
+                stderr_bytes += len(chunk)
+                if sum(len(c) for c in stderr_chunks) < 64 * 1024:
+                    stderr_chunks.append(chunk)
+
+        drain = asyncio.create_task(drain_stderr())
+        deadline = started + self._timeout
         try:
             while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError
                 try:
-                    raw = await asyncio.wait_for(proc.stdout.readline(), timeout=self._timeout)
+                    raw = await asyncio.wait_for(proc.stdout.readline(), timeout=remaining)
                 except TimeoutError as exc:
+                    run.timed_out = True
                     proc.kill()
                     await proc.wait()
                     raise RuntimeError_(
@@ -311,9 +459,21 @@ class BbotRuntime:
                     ) from exc
                 if not raw:
                     break
+                run.stdout_bytes += len(raw)
+                run.lines_seen += 1
                 yield raw.decode("utf-8", errors="replace")
         finally:
+            if proc.returncode is None:
+                proc.kill()
             await proc.wait()
+            run.exit_code = proc.returncode
+            run.stderr_bytes = stderr_bytes
+            run.stderr_tail = b"".join(stderr_chunks).decode("utf-8", errors="replace")
+            run.seconds = time.monotonic() - started
+            run.finished_at = datetime.now(UTC).isoformat()
+            drain.cancel()
+            with suppress(asyncio.CancelledError):
+                await drain
 
     def _to_artifact(
         self, message: dict[str, Any], task_id: str, source_id: str, target: str, index: int
@@ -351,6 +511,20 @@ class BbotRuntime:
             ("discovery_path", "donor_discovery_path"),
             ("parent_chain", "donor_parent_chain"),
             ("scope_description", "donor_scope"),
+            # §48 names twenty fields. The nine above were carried and these eleven
+            # were left only inside ``body``, which meant an indexer reading metadata
+            # could not answer "which module, at what distance, in what order" without
+            # re-opening and re-parsing every capture.
+            ("timestamp", "donor_timestamp"),
+            ("module_sequence", "donor_module_sequence"),
+            ("discovery_context", "donor_discovery_context"),
+            ("scope_distance", "donor_scope_distance"),
+            ("tags", "donor_tags"),
+            ("host_metadata", "donor_host_metadata"),
+            ("host", "donor_host"),
+            ("netloc", "donor_netloc"),
+            ("scan", "donor_scan"),
+            ("data_json", "donor_data_json"),
         ):
             if field in message:
                 meta[key] = message[field]

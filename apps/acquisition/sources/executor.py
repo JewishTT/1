@@ -29,6 +29,7 @@ The query is part of the identity
 from __future__ import annotations
 
 import asyncio
+import os
 import time
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass, field
@@ -86,6 +87,11 @@ class CapturePage:
     detail: Mapping[str, Any] = field(default_factory=dict)
 
     @property
+    def redirected_from(self) -> tuple[str, ...]:
+        """The URLs this page was reached through, empty when there were none."""
+        return tuple(self.detail.get("redirects") or ())
+
+    @property
     def byte_length(self) -> int:
         return len(self.body)
 
@@ -104,6 +110,7 @@ class CapturePage:
             "elapsed_s": round(self.elapsed_s, 6),
             "byte_length": self.byte_length,
             "truncated": self.truncated,
+            "redirected_from": list(self.redirected_from),
         }
 
 
@@ -145,6 +152,37 @@ def page_count(pagination: Pagination) -> int:
     return max(1, pagination.max_pages)
 
 
+def _basic_auth(source: Any) -> tuple[str, str] | None:
+    """HTTP Basic credentials for a source that declares them.
+
+    Some upstreams authenticate with a *pair* of secrets (WiGLE: an API name plus an
+    API token), which a single ``key_env`` string cannot express -- the YAML can only
+    name one variable, and an earlier attempt concatenated the names into a single
+    nonexistent identifier. ``basic_auth_env`` names the pair explicitly instead.
+
+    A half-configured pair is a configuration error, not a request to send one blank
+    credential, so it is reported rather than guessed at.
+    """
+    pair = source.tool.get("basic_auth_env")
+    if not pair:
+        return None
+    if isinstance(pair, str):
+        pair = [pair]
+    if len(pair) != 2:
+        raise AcquisitionError(
+            "bad_basic_auth_env",
+            f"{source.name} declares {len(pair)} basic_auth_env names, expected 2",
+        )
+    user, password = (os.environ.get(str(name), "") for name in pair)
+    missing = [str(n) for n, v in zip(pair, (user, password), strict=True) if not v]
+    if missing:
+        raise AcquisitionError(
+            "missing_credential",
+            f"{source.name} needs {', '.join(missing)} for HTTP Basic auth",
+        )
+    return user, password
+
+
 class HttpSourceExecutor:
     """Fetch a source definition, page by page, yielding one capture per page."""
 
@@ -166,8 +204,20 @@ class HttpSourceExecutor:
             return self._client
         import httpx
 
+        # ``follow_redirects=False`` turned every source that redirects into a permanent
+        # ``upstream_down``: rdap.org answers 302 to rdap.verisign.com, arxiv redirects
+        # http->https, openphish redirects to the plain-text feed. A live sweep found six
+        # sources in exactly that state, none of which was broken -- they just answered
+        # 301/302 like most of the web.
+        #
+        # The redirect chain is still recorded on the capture (see ``redirects_from``), so
+        # following one is visible rather than silent: a source that redirects is a fact
+        # about the source, and it belongs in the provenance of what came back.
         self._client = httpx.AsyncClient(
-            timeout=self.timeout, follow_redirects=False, headers={"User-Agent": self.user_agent}
+            timeout=self.timeout,
+            follow_redirects=True,
+            max_redirects=5,
+            headers={"User-Agent": self.user_agent},
         )
         return self._client
 
@@ -216,6 +266,11 @@ class HttpSourceExecutor:
         session = await self._session()
         method = str(source.tool.get("method") or "GET").upper()
         headers = {str(k): str(v) for k, v in (source.tool.get("headers") or {}).items()}
+        # Only forwarded when a source actually declares basic auth. Passing auth=None
+        # to every request would be harmless against httpx but changes the call
+        # signature every transport double has to match, for a feature 120+ of the
+        # 145 sources never use.
+        auth = _basic_auth(source)
 
         total = page_count(source.pagination)
         for page in range(1, total + 1):
@@ -224,7 +279,10 @@ class HttpSourceExecutor:
             started = time.monotonic()
             retrieved_at = time.time()
             try:
-                response = await session.request(method, url, headers=headers)
+                if auth is None:
+                    response = await session.request(method, url, headers=headers)
+                else:
+                    response = await session.request(method, url, headers=headers, auth=auth)
             except Exception as exc:  # transport failure is a value, not a crash
                 raise AcquisitionError(
                     "transport_failed", f"{source.name} page {page}: {type(exc).__name__}: {exc}"
@@ -247,7 +305,19 @@ class HttpSourceExecutor:
                 from_cache=False,
                 elapsed_s=time.monotonic() - started,
                 truncated=truncated,
-                detail={"final": page == total},
+                detail={
+                    "final": page == total,
+                    # The chain is recorded so following a redirect stays visible. Several
+                    # sources answer 301/302 by design (rdap.org -> the registry, arxiv
+                    # http -> https), and a reader of the provenance should see that the
+                    # bytes came from somewhere other than the URL they asked for.
+                    "redirects": [
+                        str(h.url)
+                        for h in (getattr(response, "history", None) or ())
+                    ],
+                    "requested_url": url,
+                    "final_url": str(getattr(response, "url", url) or url),
+                },
             )
             # A short page is a short page: the source told us there is no next one.
             if truncated or (source.pagination.page_size and len(body) == 0):

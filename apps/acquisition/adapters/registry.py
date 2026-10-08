@@ -94,10 +94,26 @@ class _Registry:
     def resolve_task(self, task: dict) -> SourceRegistration | CapabilityGap:
         """Registry entry point for the dispatcher: match a task dict.
 
-        ``task`` carries ``task_id`` and ``required_capabilities`` (defaults to
-        the ``http`` baseline). Returns a registration or an explicit gap.
+        A task that names its ``runtime_ref`` is routed to exactly that registration.
+        This is the only safe way to reach an event-producing surface: capability
+        selection returns the *first* registration covering the required set, and its
+        default baseline is ``{"http"}``. A scan runtime carries recon capabilities
+        (``dns``, ``subdomains``, ``event-stream``) that are not in this vocabulary at
+        all, so capability matching could only ever have routed a BBOT task to the http
+        worker -- which would fetch a wordlist instead of running a scan (§13).
+
+        Everything else keeps the old behaviour: no ``runtime_ref`` means capability
+        selection, unchanged.
         """
         task_id = str(task.get("task_id", ""))
+        runtime_ref = str(task.get("runtime_ref") or "").strip()
+        if runtime_ref:
+            registration = self._sources.get(runtime_ref)
+            if registration is not None:
+                return registration
+            # An explicit request for an unregistered runtime is a gap, not a reason
+            # to silently substitute something else that happens to match.
+            return CapabilityGap(task_id=task_id, missing=frozenset({runtime_ref}))
         required = frozenset(task.get("required_capabilities") or {"http"})
         selection = self.select(required=required)
         if isinstance(selection, CapabilityGap):

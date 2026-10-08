@@ -16,3 +16,23 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    asn:
+      path: data.asn
+      kind: asn
+      required: true
+    name:
+      path: data.name
+      kind: organization
+    description:
+      path: data.description_short
+      kind: description
+    country:
+      path: data.country_code
+      kind: country
+    prefix:
+      path: "data.prefixes[*].prefix"
+      kind: prefix
+      many: true

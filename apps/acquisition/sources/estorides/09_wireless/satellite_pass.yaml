@@ -19,3 +19,22 @@ tool:
     User-Agent: Estorides/1.0
   params:
     apiKey: '{api_key}'
+parse:
+  family: json_object
+  fields:
+    satellite:
+      path: info.name
+      kind: satellite
+      required: true
+    norad_id:
+      path: info.norad_cat_id
+      kind: identifier
+    start:
+      path: start
+      kind: timestamp
+    peak:
+      path: peak
+      kind: timestamp
+    duration:
+      path: duration
+      kind: integer

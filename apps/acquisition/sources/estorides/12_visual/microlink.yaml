@@ -25,3 +25,27 @@ tool:
     url: '{query}'
     screenshot: 'true'
     meta: 'true'
+parse:
+  family: json_object
+  fields:
+    title:
+      path: data.title
+      kind: description
+    description:
+      path: data.description
+      kind: description
+    author:
+      path: data.author
+      kind: person
+    publisher:
+      path: data.publisher
+      kind: organization
+    url:
+      path: data.url
+      kind: url
+    image:
+      path: data.image.url
+      kind: url
+    lang:
+      path: data.lang
+      kind: language

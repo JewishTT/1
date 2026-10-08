@@ -19,3 +19,23 @@ tool:
     User-Agent: Estorides/1.0
   params:
     usernames: '{query}'
+parse:
+  family: json_object
+  fields:
+    username:
+      path: them.username
+      kind: handle
+      required: true
+    full_name:
+      path: them.full_name
+      kind: person
+    location:
+      path: them.location
+      kind: place
+    identity:
+      path: "them.them.identities[*].network_name"
+      kind: handle
+      many: true
+    proofs_summary:
+      path: them.proofs_summary.all_time
+      kind: integer

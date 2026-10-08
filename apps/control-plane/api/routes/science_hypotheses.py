@@ -18,11 +18,11 @@ from hypotheses.evidence import attach_evidence
 from hypotheses.gain import EvidenceOpportunity, load_hypotheses, plan_collection
 from hypotheses.model import propose_hypothesis
 from pydantic import BaseModel, Field
-from store import ScienceStore
+from store import shared_store
 
 router = APIRouter(prefix="/api/science/hypotheses", tags=["science"])
 
-_store = ScienceStore()
+_store = shared_store()
 
 
 class ProposeRequest(BaseModel):

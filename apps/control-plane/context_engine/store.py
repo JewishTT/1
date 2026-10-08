@@ -44,62 +44,62 @@ class ContextStore(ABC):
     # -- contexts -----------------------------------------------------------
 
     @abstractmethod
-    def put_context(self, context: InvestigationContext) -> None: ...
+    async def put_context(self, context: InvestigationContext) -> None: ...
 
     @abstractmethod
-    def get_context(self, context_id: str) -> InvestigationContext | None: ...
+    async def get_context(self, context_id: str) -> InvestigationContext | None: ...
 
     @abstractmethod
-    def contexts(self) -> tuple[InvestigationContext, ...]: ...
+    async def contexts(self) -> tuple[InvestigationContext, ...]: ...
 
     # -- revisions (append-only, FR-026) -------------------------------------
 
     @abstractmethod
-    def append_revision(self, revision: ContextRevision) -> None: ...
+    async def append_revision(self, revision: ContextRevision) -> None: ...
 
     @abstractmethod
-    def revisions(self, context_id: str) -> tuple[ContextRevision, ...]: ...
+    async def revisions(self, context_id: str) -> tuple[ContextRevision, ...]: ...
 
     @abstractmethod
-    def current_revision(self, context_id: str) -> ContextRevision | None: ...
+    async def current_revision(self, context_id: str) -> ContextRevision | None: ...
 
     @abstractmethod
-    def next_revision_number(self, context_id: str) -> int: ...
+    async def next_revision_number(self, context_id: str) -> int: ...
 
     # -- obligations ---------------------------------------------------------
 
     @abstractmethod
-    def put_obligation(self, obligation: ResearchObligation) -> None: ...
+    async def put_obligation(self, obligation: ResearchObligation) -> None: ...
 
     @abstractmethod
-    def get_obligation(self, obligation_id: str) -> ResearchObligation | None: ...
+    async def get_obligation(self, obligation_id: str) -> ResearchObligation | None: ...
 
     @abstractmethod
-    def obligations(self, context_id: str) -> tuple[ResearchObligation, ...]: ...
+    async def obligations(self, context_id: str) -> tuple[ResearchObligation, ...]: ...
 
     # -- actions -------------------------------------------------------------
 
     @abstractmethod
-    def put_action(self, action: ResearchAction) -> None: ...
+    async def put_action(self, action: ResearchAction) -> None: ...
 
     @abstractmethod
-    def actions(self, obligation_id: str) -> tuple[ResearchAction, ...]: ...
+    async def actions(self, obligation_id: str) -> tuple[ResearchAction, ...]: ...
 
     # -- action memory (FR-059) ----------------------------------------------
 
     @abstractmethod
-    def remember(self, entry: ActionMemoryEntry) -> None: ...
+    async def remember(self, entry: ActionMemoryEntry) -> None: ...
 
     @abstractmethod
-    def memory_for(self, obligation_id: str) -> tuple[ActionMemoryEntry, ...]: ...
+    async def memory_for(self, obligation_id: str) -> tuple[ActionMemoryEntry, ...]: ...
 
     # -- frontier ------------------------------------------------------------
 
     @abstractmethod
-    def put_frontier(self, frontier: ContextFrontier) -> None: ...
+    async def put_frontier(self, frontier: ContextFrontier) -> None: ...
 
     @abstractmethod
-    def get_frontier(self, context_id: str) -> ContextFrontier | None: ...
+    async def get_frontier(self, context_id: str) -> ContextFrontier | None: ...
 
 
 class InMemoryContextStore(ContextStore):
@@ -120,16 +120,16 @@ class InMemoryContextStore(ContextStore):
     def durability(self) -> StoreDurability:
         return StoreDurability.MEMORY
 
-    def put_context(self, context: InvestigationContext) -> None:
+    async def put_context(self, context: InvestigationContext) -> None:
         self._contexts[context.context_id] = context
 
-    def get_context(self, context_id: str) -> InvestigationContext | None:
+    async def get_context(self, context_id: str) -> InvestigationContext | None:
         return self._contexts.get(context_id)
 
-    def contexts(self) -> tuple[InvestigationContext, ...]:
+    async def contexts(self) -> tuple[InvestigationContext, ...]:
         return tuple(sorted(self._contexts.values(), key=lambda c: c.context_id))
 
-    def append_revision(self, revision: ContextRevision) -> None:
+    async def append_revision(self, revision: ContextRevision) -> None:
         """Append-only: an existing revision number is refused, not overwritten."""
         chain = self._revisions.setdefault(revision.context_id, [])
         for existing in chain:
@@ -142,24 +142,24 @@ class InMemoryContextStore(ContextStore):
         chain.append(revision)
         chain.sort(key=lambda r: r.revision)
 
-    def revisions(self, context_id: str) -> tuple[ContextRevision, ...]:
+    async def revisions(self, context_id: str) -> tuple[ContextRevision, ...]:
         return tuple(self._revisions.get(context_id, ()))
 
-    def current_revision(self, context_id: str) -> ContextRevision | None:
+    async def current_revision(self, context_id: str) -> ContextRevision | None:
         chain = self._revisions.get(context_id)
         return chain[-1] if chain else None
 
-    def next_revision_number(self, context_id: str) -> int:
+    async def next_revision_number(self, context_id: str) -> int:
         chain = self._revisions.get(context_id)
         return (chain[-1].revision + 1) if chain else 1
 
-    def put_obligation(self, obligation: ResearchObligation) -> None:
+    async def put_obligation(self, obligation: ResearchObligation) -> None:
         self._obligations[obligation.obligation_id] = obligation
 
-    def get_obligation(self, obligation_id: str) -> ResearchObligation | None:
+    async def get_obligation(self, obligation_id: str) -> ResearchObligation | None:
         return self._obligations.get(obligation_id)
 
-    def obligations(self, context_id: str) -> tuple[ResearchObligation, ...]:
+    async def obligations(self, context_id: str) -> tuple[ResearchObligation, ...]:
         return tuple(
             sorted(
                 (o for o in self._obligations.values() if o.context_id == context_id),
@@ -167,7 +167,7 @@ class InMemoryContextStore(ContextStore):
             )
         )
 
-    def put_action(self, action: ResearchAction) -> None:
+    async def put_action(self, action: ResearchAction) -> None:
         bucket = self._actions.setdefault(action.obligation_id, [])
         for existing in bucket:
             if existing.action_id == action.action_id:
@@ -175,23 +175,23 @@ class InMemoryContextStore(ContextStore):
                 return
         bucket.append(action)
 
-    def actions(self, obligation_id: str) -> tuple[ResearchAction, ...]:
+    async def actions(self, obligation_id: str) -> tuple[ResearchAction, ...]:
         return tuple(sorted(self._actions.get(obligation_id, ()), key=lambda a: a.action_id))
 
-    def remember(self, entry: ActionMemoryEntry) -> None:
+    async def remember(self, entry: ActionMemoryEntry) -> None:
         bucket = self._memory.setdefault(entry.obligation_id, [])
         for existing in bucket:
             if existing.entry_id == entry.entry_id:
                 return
         bucket.append(entry)
 
-    def memory_for(self, obligation_id: str) -> tuple[ActionMemoryEntry, ...]:
+    async def memory_for(self, obligation_id: str) -> tuple[ActionMemoryEntry, ...]:
         return tuple(sorted(self._memory.get(obligation_id, ()), key=lambda e: e.entry_id))
 
-    def put_frontier(self, frontier: ContextFrontier) -> None:
+    async def put_frontier(self, frontier: ContextFrontier) -> None:
         self._frontiers[frontier.context_id] = frontier
 
-    def get_frontier(self, context_id: str) -> ContextFrontier | None:
+    async def get_frontier(self, context_id: str) -> ContextFrontier | None:
         return self._frontiers.get(context_id)
 
 

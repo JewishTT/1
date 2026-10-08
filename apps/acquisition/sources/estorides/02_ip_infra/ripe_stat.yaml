@@ -23,3 +23,22 @@ tool:
     User-Agent: Estorides/1.0
   params:
     resource: '{query}'
+parse:
+  family: json_object
+  fields:
+    resource:
+      path: data.resource
+      kind: network
+    prefix:
+      path: data.prefix
+      kind: prefix
+    asn:
+      path: "data.asns[*]"
+      kind: asn
+      many: true
+    holder:
+      path: data.holder
+      kind: organization
+    country:
+      path: data.country
+      kind: country

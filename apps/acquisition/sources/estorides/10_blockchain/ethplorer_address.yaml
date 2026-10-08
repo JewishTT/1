@@ -19,3 +19,25 @@ tool:
     User-Agent: Estorides/1.0
   params:
     apiKey: '{api_key}'
+parse:
+  family: json_object
+  fields:
+    address:
+      path: address
+      kind: crypto
+      required: true
+    balance:
+      path: ETH.balance
+      kind: amount
+    tx_count:
+      path: ETH.txCount
+      kind: integer
+    last_block:
+      path: ETH.lastBlock
+      kind: integer
+    name:
+      path: ETH.tokenInfo.name
+      kind: crypto
+    contract:
+      path: ETH.tokenInfo.address
+      kind: crypto

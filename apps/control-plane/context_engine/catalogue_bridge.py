@@ -24,6 +24,15 @@ from typing import Any
 
 from context_engine.engine import CapabilityDescriptor
 
+#: Which runtime executes a source of each declared kind. Keyed on the exact kind value,
+#: not a substring: ``system_app`` and ``http`` are execution surfaces the platform already
+#: has, and a source naming a kind not listed here has no runtime and is left unrouted
+#: rather than guessed at.
+_KIND_RUNTIMES: dict[str, str] = {
+    "http": "http",
+    "system_app": "external_tool",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class RoutingDecision:
@@ -50,6 +59,26 @@ class RoutingDecision:
             "available": list(self.available),
             "reason": self.reason,
         }
+
+
+def _runtime_ref_of(definition: Any) -> str:
+    """The routing identity for a catalogue source.
+
+    Taken from the definition's own ``runtime_ref`` when it declares one, and otherwise
+    derived from its ``kind``. The derivation is what makes this bridge usable at all:
+    145 of the catalogue's sources are HTTP or system tools with no declared runtime, and
+    filtering them out left the bridge permanently empty -- so ``check()`` answered
+    "not in the catalogue" for every capability and no obligation could ever be routed.
+
+    The mapping is explicit rather than inferred from the kind string, because a substring
+    match would silently route ``system_app`` sources to the wrong executor the first time
+    a new kind appeared.
+    """
+    declared = str(getattr(definition, "runtime_ref", "") or "").strip()
+    if declared:
+        return declared
+    kind = str(getattr(definition, "kind", "") or "").strip().lower()
+    return _KIND_RUNTIMES.get(kind, "")
 
 
 class SourceCatalogueBridge:
@@ -84,10 +113,12 @@ class SourceCatalogueBridge:
                 continue
             descriptors.append(
                 CapabilityDescriptor(
-                    runtime_ref=str(getattr(definition, "runtime_ref", "") or ""),
+                    runtime_ref=_runtime_ref_of(definition),
                     capabilities=capabilities,
                     source_id=str(getattr(definition, "source_id", "") or ""),
-                    cost_class=str(getattr(definition, "cost_class", "") or "cheap"),
+                    cost_class=str(
+                        getattr(definition, "cost_class", "") or "cheap"
+                    ),
                     active=bool(getattr(definition, "active", True)),
                 )
             )

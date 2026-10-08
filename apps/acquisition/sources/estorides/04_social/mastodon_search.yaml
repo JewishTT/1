@@ -21,3 +21,21 @@ tool:
     q: '{query}'
     type: accounts
     limit: 40
+parse:
+  family: json_rows
+  fields:
+    account:
+      path: account.acct
+      kind: handle
+    display_name:
+      path: account.display_name
+      kind: person
+    content:
+      path: content
+      kind: description
+    url:
+      path: url
+      kind: url
+    created:
+      path: created_at
+      kind: timestamp

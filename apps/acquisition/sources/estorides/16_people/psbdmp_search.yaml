@@ -18,3 +18,14 @@ tool:
   url: https://psbdmp.ws/api/search/{query}
   headers:
     User-Agent: Estorides/1.0
+parse:
+  family: json_object
+  fields:
+    email:
+      path: email
+      kind: email
+      required: true
+    breaches:
+      path: data
+      kind: leak
+      many: true

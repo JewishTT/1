@@ -23,3 +23,33 @@ tool:
   params:
     keywordSearch: '{query}'
     resultsPerPage: 20
+parse:
+  family: json_rows
+  list_path: vulnerabilities
+  fields:
+    cve:
+      path: cve.id
+      kind: cve
+      required: true
+    description:
+      path: "cve.descriptions[*].value"
+      kind: description
+      many: true
+    published:
+      path: cve.published
+      kind: timestamp
+    modified:
+      path: cve.lastModified
+      kind: timestamp
+    score:
+      path: "cve.metrics.cvssMetricV31[*].cvssData.baseScore"
+      kind: score
+      many: true
+    vector:
+      path: "cve.metrics.cvssMetricV31[*].cvssData.vectorString"
+      kind: unknown
+      many: true
+    reference:
+      path: "cve.references[*].url"
+      kind: url
+      many: true

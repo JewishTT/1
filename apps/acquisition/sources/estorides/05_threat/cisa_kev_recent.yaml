@@ -18,3 +18,29 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_rows
+  list_path: vulnerabilities
+  fields:
+    cve:
+      path: cveID
+      kind: cve
+      required: true
+    vendor:
+      path: vendorProject
+      kind: organization
+    product:
+      path: product
+      kind: technology
+    name:
+      path: vulnerabilityName
+      kind: description
+    added:
+      path: dateAdded
+      kind: timestamp
+    due:
+      path: dueDate
+      kind: timestamp
+    known_ransomware:
+      path: knownRansomwareCampaignUse
+      kind: unknown

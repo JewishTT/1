@@ -23,3 +23,18 @@ tool:
     srsearch: '{query}'
     format: json
     srlimit: 20
+parse:
+  family: json_object
+  fields:
+    title:
+      path: "query.pages[*].title"
+      kind: article
+      many: true
+    snippet:
+      path: "query.pages[*].snippet"
+      kind: description
+      many: true
+    pageid:
+      path: "query.pages[*].pageid"
+      kind: identifier
+      many: true

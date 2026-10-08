@@ -7,8 +7,8 @@ that is NOT guaranteed, and two member dirs collide on first-party names:
     ``apps/science/tda`` (VR persistence, Takens series, PHoDMS) and
     ``apps/projection/tda`` (diagram/feature materializers) are both top-level
     ``tda`` packages. ``apps/projection`` currently wins the .pth ordering, so a
-    bare ``from tda.persistence import …`` resolves to the projection package
-    and dies with ``ModuleNotFoundError: No module named 'tda.persistence'``.
+    bare ``from scitda.persistence import …`` resolves to the projection package
+    and dies with ``ModuleNotFoundError: No module named 'scitda.persistence'``.
     The science package is the only TDA surface the control plane imports by
     name; the projection half stays reachable by file path
     (``api/routes/network.py`` loads ``tda/features.py`` that way).

@@ -191,6 +191,13 @@ class Dispatcher:
                     "source_id": task.get("source_id"),
                     "verdict": decision.verdict.value,
                     "execution_class": decision.execution_class,
+                    # The runtime binding and the compiled constraints ride along here.
+                    # Without them the consumer sees only an execution_class it cannot act
+                    # on: it would re-derive nothing, name no runtime, and hand the work to
+                    # whichever connector happened to be wired.
+                    "runtime_ref": task.get("runtime_ref") or "",
+                    "query_ref": task.get("query_ref") or "",
+                    "constraints": task.get("constraints") or [],
                 },
                 sort_keys=True,
             ).encode("utf-8"),

@@ -2,16 +2,24 @@
 
 Feature 021 brief §25; constitution IV (fail-closed) and VI (determinism, Domain Invariant 12).
 
-**P5, in one paragraph.** 23 of the catalogue's 146 definitions declare a parser whose upstream
+**P5, in one paragraph.** 22 of the catalogue's 145 definitions declare a parser whose upstream
 implementation is the identity function, so for those the "structured view" is the payload
 itself. The answer this layer gives them is **no bespoke parser and a recorded route**: they are
-read as text — one record per line, no key path claimed, no schema invented — unless the
+read as text - one record per line, no key path claimed, no schema invented - unless the
 transport declared a JSON media type, in which case the structured walk reports the key paths
 the payload states *and* says, in
 ``declared_parser_is_identity_content_type_is_json``, that the definition declared no parser and
 the header declared the grammar. Nothing is claimed that the bytes and the header do not state;
 nothing is hidden about which rule fired. The count is asserted against the real catalogue
-below, so "23" is a measurement and not a recollection.
+below, so "22" is a measurement and not a recollection.
+
+**Why 145 and not 146.** The catalogue held 146 *files* but only 145 distinct sources:
+``hunter_email`` was declared twice, in ``08_knowledge`` (parser ``raw_text``) and
+``16_people`` (parser ``pass_through``). Both resolve to the same ``source_id``, so the registry
+was silently keeping one and discarding the other. The duplicate has been removed and the loader
+now reports ``duplicate_source_id`` instead of overwriting, so this cannot recur. The identity
+population drops 23 -> 22 with it, because one of the two copies was counted as a distinct
+identity definition when it never was one.
 
 **The two mutations at the bottom** are the ones the task names: remove the truncation report,
 and the suite notices; make the type detector guess, and the suite notices. Each has the
@@ -56,7 +64,7 @@ _COPIED = (
 #: How many of the catalogue's definitions declare an identity parser. Pinned because the
 #: routing rule below is stated *about those definitions*, and a rule that quietly stops applying
 #: to them because the catalogue grew is a rule nobody re-reads.
-IDENTITY_DEFINITION_COUNT = 23
+IDENTITY_DEFINITION_COUNT = 22
 
 
 # --------------------------------------------------------------------------- #
@@ -288,7 +296,7 @@ def catalogue_definitions() -> tuple[tuple[str, str], ...]:
 def test_the_catalogue_holds_the_identity_definitions_this_rule_was_written_for() -> None:
     """The count P5 states, measured rather than recalled."""
     definitions = catalogue_definitions()
-    assert len(definitions) == 146, (
+    assert len(definitions) == 145, (
         "the catalogue is not the corpus this rule was written against; re-read P5 before "
         "changing the count below"
     )

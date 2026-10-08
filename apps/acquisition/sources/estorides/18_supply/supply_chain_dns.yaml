@@ -20,3 +20,22 @@ tool:
   params:
     name: '{query}'
     type: ANY
+parse:
+  family: json_object
+  fields:
+    package:
+      path: name
+      kind: technology
+      required: true
+    version:
+      path: version
+      kind: unknown
+    registry:
+      path: registry
+      kind: repository
+    published:
+      path: published
+      kind: timestamp
+    maintainer:
+      path: maintainer
+      kind: person

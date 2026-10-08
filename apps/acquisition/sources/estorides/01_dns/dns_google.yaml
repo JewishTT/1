@@ -20,3 +20,17 @@ tool:
   params:
     name: '{query}'
     type: ANY
+parse:
+  family: dns_json
+  fields:
+    status:
+      path: Status
+      kind: integer
+    answer:
+      path: "Answer[*].data"
+      kind: unknown
+      many: true
+    authority:
+      path: "Authority[*].data"
+      kind: unknown
+      many: true

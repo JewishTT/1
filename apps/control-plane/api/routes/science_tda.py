@@ -19,8 +19,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from tda.persistence import from_distance_matrix
-from tda.series import embedding_distance_matrix, takens_embed
+from scitda.persistence import from_distance_matrix
+from scitda.series import embedding_distance_matrix, takens_embed
 
 router = APIRouter(prefix="/api/science/invariant", tags=["science"])
 

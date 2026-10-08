@@ -18,3 +18,26 @@ tool:
   headers:
     User-Agent: Estorides/1.0
     Accept: application/json
+parse:
+  family: json_object
+  fields:
+    email:
+      path: email
+      kind: email
+      required: true
+    reputation:
+      path: reputation
+      kind: score
+    details:
+      path: details
+      kind: leak
+      many: true
+    name:
+      path: details.full_name
+      kind: person
+    twitter:
+      path: details.twitter
+      kind: handle
+    linkedin:
+      path: details.linkedin
+      kind: url

@@ -17,3 +17,25 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    height:
+      path: height
+      kind: integer
+      required: true
+    hash:
+      path: hash
+      kind: hash
+    timestamp:
+      path: timestamp
+      kind: timestamp
+    tx_count:
+      path: n_tx
+      kind: integer
+    size:
+      path: size
+      kind: integer
+    weight:
+      path: weight
+      kind: integer

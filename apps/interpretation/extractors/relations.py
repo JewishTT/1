@@ -417,11 +417,66 @@ class RelationalReading:
         }
 
 
-_EN_ROLE = (
-    r"CEO|chief\s+[A-Za-z]+|president|chair(?:man|woman|person)|director|head"
-    r"|founder|manager|partner|owner"
+#: Role vocabulary for the English ``role_of`` grammar.
+#:
+#: Extended because the table's coverage, not its machinery, was the limit: the original
+#: alternation read "is deputy chairman of X" and nothing else. Three shapes were added,
+#: each a real English construction rather than a variation on one:
+#:
+#: * case - the cue pattern is now matched case-insensitively. "President of Russia" did
+#:   not match the alternation `president`, because the pattern carried no IGNORECASE
+#:   while ``role_words`` did. A title is capitalised at the start of a clause and
+#:   lowercase mid-sentence, so the original could only ever read one of the two.
+#: * multi-word titles - ``chief executive officer``, ``chief financial officer``,
+#:   ``deputy chairman``, ``vice president``. The old ``chief\s+[A-Za-z]+`` matched two
+#:   words and then demanded a preposition, so a three-word title could not match.
+#: * ownership and equity - ``owns``, ``owner of``, ``majority stake``. Ownership is not
+#:   employment; it is reported as ``owns`` rather than ``works_for``, because claiming a
+#:   founder is an employee would be a claim the text does not make.
+_EN_TITLE = (
+    # The trailing noun is part of the title, not filler: without it "chief executive
+    # officer" captured the role as "chief executive" and the bridge swallowed
+    # "officer of". A role is metadata an analyst reads, so it has to be the whole title.
+    r"(?:chief\s+(?:executive|financial|operating|technical|information|marketing)"
+    r"(?:\s+(?:officer|director))?"
+    r"|chief\s+[A-Za-z]+(?:\s+(?:officer|director))?|"
+    r"(?:deputy|assistant|acting|interim|co-)?"
+    r"(?:president|chair(?:man|woman|person)|director|manager|partner|owner"
+    r"|head|supervisor|administrator|treasurer|secretary|officer)"
+    r"(?:\s+(?:of|for|deputy|assistant))*)"
 )
-_EN_NAME = r"[A-Z][A-Za-z0-9&.'-]*(?:\s+[A-Z][A-Za-z0-9&.'-]*){0,3}"
+_EN_ROLE = (
+    r"CEO|" + _EN_TITLE + r"|owns?|owned|holder\s+of|majority\s+(?:stake|shareholder)"
+)
+
+#: Bridge between a role and its organisation.
+#:
+#: English puts material between them constantly - "chairman of the board of Gazprom",
+#: "owns 51 percent of the stake in Bank Rossiya". A cue that required the preposition to
+#: touch the name read none of those, which is most real sentences about senior people.
+_EN_BRIDGE = (
+    # Repeated rather than single-pass: English stacks material without limit -
+    # "of the board of", "of 51 percent of the class A shares of". One optional pass
+    # read none of the stacked forms, which is most of them. Non-greedy so the engine
+    # stops at the first preposition that a capitalised name follows, rather than
+    # swallowing the name into the filler.
+    r"(?:(?:of|in|at|for)\s+)?"
+    r"(?:(?:the|a|an|its|their|his|her)\s+)?"
+    r"(?:\d+(?:\.\d+)?\s*(?:percent|per\s+cent|%)\s*)?"
+    r"(?:[A-Za-z]+\s+){0,4}?"
+    r"(?:of|in|at)\s+"
+)
+#: An organisation name: capitalised tokens only.
+#:
+#: The ``(?-i:...)`` groups are load-bearing. The cue pattern carries IGNORECASE so a
+#: capitalised title like "President" matches its lowercase alternation, but that flag
+#: must not reach the name: without the scoped reset `[A-Z]` also matches lowercase and
+#: "owns 51 percent of the stake in Bank Rossiya" resolved its object as
+#: "the stake in Bank". A cue that names the wrong organisation is worse than no cue,
+#: because it is a false assertion rather than an absence.
+_EN_NAME = (
+    r"(?-i:[A-Z][A-Za-z0-9&.'-]*(?:\s+(?-i:[A-Z])[A-Za-z0-9&.'-]*){0,3})"
+)
 _RU_ROLE = (
     r"генеральный\s+директор(?:ом|а|у|е)?|директор(?:ом|а|у|е)?|президент(?:ом|а|у|е)?"
     r"|руководител(?:ем|я|ю|е|и)?|владелец(?:ом|а|у|е)?"
@@ -443,7 +498,14 @@ RELATION_CUES: tuple[RelationCue, ...] = (
         affordance=_WORKS_FOR_AFFORDANCE,
         relation_ref=RelationRef("works_for", "1"),
         arity_mode=RelationArityMode.NARY,
-        pattern=re.compile(rf"\b(?P<role>{_EN_ROLE})\s+(?:of|at|for)\s+(?P<object>{_EN_NAME})"),
+        # No leading verb. An earlier revision required one ("is", "serves as") and
+        # matched none of the corpus, because the cue is read as a role phrase wherever
+        # it sits: "the President of Russia" and a bare caption "chairman of Gazprom"
+        # are the same cue. Requiring a verb made the table read only full clauses.
+        pattern=re.compile(
+            rf"(?<![A-Za-z])(?P<role>{_EN_ROLE})\s+{_EN_BRIDGE}(?P<object>{_EN_NAME})",
+            re.IGNORECASE,
+        ),
         role_words=re.compile(rf"\b(?:{_EN_ROLE})\b", re.IGNORECASE),
         temporal_semantics=TemporalSemantics.POINT,
     ),

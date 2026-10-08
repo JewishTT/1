@@ -17,3 +17,19 @@ tool:
   headers:
     User-Agent: Mozilla/5.0 (compatible; Estorides/1.0)
   params: {}
+parse:
+  family: json_object
+  fields:
+    username:
+      path: username
+      kind: handle
+      required: true
+    description:
+      path: biography
+      kind: description
+    image:
+      path: image_large_url
+      kind: url
+    website:
+      path: website_url
+      kind: url

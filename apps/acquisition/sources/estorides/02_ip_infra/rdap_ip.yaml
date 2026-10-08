@@ -19,3 +19,26 @@ tool:
   headers:
     Accept: application/rdap+json
     User-Agent: Estorides/1.0
+parse:
+  family: json_object
+  fields:
+    handle:
+      path: handle
+      kind: identifier
+      required: true
+    name:
+      path: name
+      kind: network
+    country:
+      path: country
+      kind: country
+    start:
+      path: startAddress
+      kind: address
+    end:
+      path: endAddress
+      kind: address
+    cidr:
+      path: "cidr0_cidrs[*].v4prefix"
+      kind: prefix
+      many: true

@@ -17,3 +17,14 @@ tool:
     User-Agent: Estorides/1.0
   params:
     q: '{query}'
+parse:
+  family: text_lines
+  fields:
+    asn:
+      path: ""
+      kind: asn
+      pattern: "^(AS\\d+|\\d+)"
+    prefix:
+      path: ""
+      kind: prefix
+      pattern: (\d+\.\d+\.\d+\.\d+/\d+)

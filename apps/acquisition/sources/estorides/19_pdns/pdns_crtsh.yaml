@@ -21,3 +21,19 @@ tool:
     output: json
   headers:
     User-Agent: Estorides/1.0
+parse:
+  family: json_object
+  fields:
+    domain:
+      path: domain
+      kind: domain
+      required: true
+    subdomain:
+      path: subdomain
+      kind: subdomain
+    source:
+      path: source
+      kind: leak
+    created:
+      path: created_at
+      kind: timestamp

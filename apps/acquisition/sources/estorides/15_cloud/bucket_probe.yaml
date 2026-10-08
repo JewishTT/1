@@ -17,3 +17,19 @@ tool:
   url: https://{bucket}.s3.amazonaws.com/
   headers:
     User-Agent: Mozilla/5.0
+parse:
+  family: json_object
+  fields:
+    bucket:
+      path: bucket
+      kind: repository
+      required: true
+    region:
+      path: region
+      kind: place
+    provider:
+      path: provider
+      kind: organization
+    public:
+      path: public
+      kind: unknown

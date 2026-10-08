@@ -18,3 +18,22 @@ tool:
     User-Agent: Estorides/1.0
   params:
     url: '{query}'
+parse:
+  family: json_object
+  fields:
+    username:
+      path: username
+      kind: handle
+      required: true
+    name:
+      path: name
+      kind: person
+    location:
+      path: location
+      kind: place
+    website:
+      path: website_url
+      kind: url
+    joined:
+      path: joined_at
+      kind: timestamp

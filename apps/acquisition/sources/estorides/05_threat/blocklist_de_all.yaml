@@ -17,3 +17,11 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: text_lines
+  fields:
+    ip:
+      path: ""
+      kind: ip
+      required: true
+      pattern: ^(\d+\.\d+\.\d+\.\d+)

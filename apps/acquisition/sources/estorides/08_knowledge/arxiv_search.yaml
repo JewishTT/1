@@ -20,3 +20,28 @@ tool:
   params:
     search_query: all:{query}
     max_results: 15
+parse:
+  family: json_object
+  fields:
+    total:
+      path: "opensearch:totalResults"
+      kind: integer
+    id:
+      path: id
+      kind: article
+    title:
+      path: title
+      kind: article
+    summary:
+      path: summary
+      kind: description
+    author:
+      path: "author[*].name"
+      kind: person
+      many: true
+    published:
+      path: published
+      kind: timestamp
+    doi:
+      path: "arxiv:doi"
+      kind: identifier

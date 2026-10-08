@@ -18,3 +18,15 @@ tool:
     Accept: application/json
   params:
     check: '{query}'
+parse:
+  family: json_object
+  fields:
+    source:
+      path: source.name
+      kind: leak
+    date:
+      path: date
+      kind: timestamp
+    records:
+      path: records
+      kind: integer

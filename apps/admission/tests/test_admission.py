@@ -14,7 +14,7 @@ from engine.temporal import (
     TemporalConsistencyEngine,
     TemporalPolicy,
 )
-from evidence.independence import DerivationEdge, SourceIndependenceEngine
+from independence.independence import DerivationEdge, SourceIndependenceEngine
 from resolution.blocking import BlockingEngine, CandidateRecord
 from resolution.collective import CollectiveResolver
 from resolution.resolver import PairwiseResolver

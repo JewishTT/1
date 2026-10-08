@@ -20,3 +20,13 @@ tool:
   params:
     query: '{query}'
     page: 1
+parse:
+  family: json_rows
+  fields:
+    phone:
+      path: phone
+      kind: phone
+      required: true
+    url:
+      path: url
+      kind: url

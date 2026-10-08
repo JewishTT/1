@@ -18,3 +18,22 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    vessel:
+      path: NAME
+      kind: vessel
+      required: true
+    mmsi:
+      path: MMSI
+      kind: identifier
+    type:
+      path: TYPE
+      kind: technology
+    flag:
+      path: FLAG
+      kind: country
+    destination:
+      path: DESTINATION
+      kind: place

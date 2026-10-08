@@ -18,3 +18,15 @@ tool:
     User-Agent: Estorides/1.0
   params:
     url: '{query}'
+parse:
+  family: json_object
+  fields:
+    url:
+      path: archived_snapshots.closest.url
+      kind: url
+    status:
+      path: archived_snapshots.closest.status
+      kind: status
+    timestamp:
+      path: archived_snapshots.closest.timestamp
+      kind: timestamp

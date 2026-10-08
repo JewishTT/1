@@ -20,3 +20,16 @@ tool:
   params:
     q: '{query} extension:gist'
     per_page: 20
+parse:
+  family: json_rows
+  fields:
+    url:
+      path: html_url
+      kind: url
+      required: true
+    description:
+      path: description
+      kind: description
+    owner:
+      path: owner.login
+      kind: handle

@@ -16,3 +16,16 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    bssid:
+      path: BSSID
+      kind: bssid
+      required: true
+    ssid:
+      path: SSID
+      kind: unknown
+    vendor:
+      path: Vendor
+      kind: vendor

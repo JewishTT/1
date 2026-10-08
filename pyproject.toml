@@ -21,7 +21,22 @@ requires-python = ">=3.11"
 dependencies = []
 
 [tool.pytest.ini_options]
-markers = ["contract", "integration", "unit"]
+# `live` marks tests that make real network calls. They are deselected by default so the
+# ordinary suite stays hermetic, and selected explicitly with `-m live` when the point is to
+# prove the sources still answer. Skipped rather than passing quietly when the network is
+# absent -- a live test that cannot reach its endpoint has proved nothing.
+markers = ["contract", "integration", "live", "unit"]
+# The Context Engine is async end to end: its store contract, the in-memory store, the
+# Postgres store, the engine and CognitiveLoop all await. pytest-asyncio therefore has to
+# run unmarked `async def` tests here.
+#
+# This line is load-bearing for repo-wide runs, and its absence was silent. pytest picks
+# the config file from the *common ancestor* of the arguments, so `pytest apps/control-plane`
+# read `apps/control-plane/pyproject.toml` (which sets auto) and passed, while
+# `pytest apps/shared apps/control-plane` read this file, fell back to pytest-asyncio's
+# strict default, and reported 71 context-engine tests as
+# "async def functions are not natively supported". Green in one scope, red in the other.
+asyncio_mode = "auto"
 # FR-001/T001: six sibling test packages are named `contract` and two are named
 # `integration`. Under pytest's default `prepend` import mode they collapse into a
 # single top-level module, so whichever is collected first wins and the rest fail

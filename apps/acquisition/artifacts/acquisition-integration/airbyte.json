@@ -1,6 +1,6 @@
 {
   "run_manifest": {
-    "integration_run_id": "run-20260930T172332Z",
+    "integration_run_id": "run-20261003T155146Z",
     "tenant_id": "acceptance",
     "investigation_id": "int-airbyte-smoke",
     "task_id": "TSK-airbyte-1",
@@ -15,8 +15,8 @@
     "observations": 12,
     "published": 12,
     "processed": 12,
-    "consumer_group": "airbyte-proof-17172",
-    "git_sha": "fe3eb4486fecf89574dfb78b13c3d28a51ffa04b"
+    "consumer_group": "airbyte-proof-13932",
+    "git_sha": "9ce3db8fef1f17632559ba06314f3669f00c92c2"
   },
   "airbyte_run": {
     "connector_ref": "source-postgres@sha256",
@@ -24,8 +24,8 @@
     "image_digest": "",
     "config_ref": "run:read",
     "catalog_ref": "",
-    "started_at": "2026-09-30T17:24:11.856259+00:00",
-    "finished_at": "2026-09-30T17:24:58.956548+00:00",
+    "started_at": "2026-10-03T15:52:24.921169+00:00",
+    "finished_at": "2026-10-03T15:53:15.641738+00:00",
     "records": 12,
     "states": 1,
     "logs": 56,
@@ -57,12 +57,12 @@
       {
         "code": "trace",
         "message_index": 39,
-        "detail": "{'type': 'STREAM_STATUS', 'emitted_at': 1790789064805.0, 'stream_status': {'stream_descriptor': {'name': 'airbyte_smoke', 'namespace': 'public'}, 'status': 'STARTED', 'reasons': []}}"
+        "detail": "{'type': 'STREAM_STATUS', 'emitted_at': 1791042758917.0, 'stream_status': {'stream_descriptor': {'name': 'airbyte_smoke', 'namespace': 'public'}, 'status': 'STARTED', 'reasons': []}}"
       },
       {
         "code": "trace",
         "message_index": 64,
-        "detail": "{'type': 'STREAM_STATUS', 'emitted_at': 1790789065542.0, 'stream_status': {'stream_descriptor': {'name': 'airbyte_smoke', 'namespace': 'public'}, 'status': 'COMPLETE', 'reasons': []}}"
+        "detail": "{'type': 'STREAM_STATUS', 'emitted_at': 1791042759486.0, 'stream_status': {'stream_descriptor': {'name': 'airbyte_smoke', 'namespace': 'public'}, 'status': 'COMPLETE', 'reasons': []}}"
       }
     ]
   },
@@ -75,12 +75,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:45",
-      "capture_id": "CAP-e6e8de29c337c2ce394926ba77408e12",
+      "capture_id": "CAP-03e991f8bc0cfda99b733977da7dca07",
       "capture_payload_key": "ea8fbe2a1610ae89d290f6680e0a0077",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/c75cf2bec004869c4e37eb59d407571e189fcfdc2d68c27f69ee24ddcd33f69f",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/c75cf2bec004869c4e37eb59d407571e189fcfdc2d68c27f69ee24ddcd33f69f",
       "content_digest": "c75cf2bec004869c4e37eb59d407571e189fcfdc2d68c27f69ee24ddcd33f69f",
-      "observation_id": "OBS-4e6634408805987003847c326550e441",
-      "event_id": "evt-6f2672fe2e85fa24ee9cf51d8c3fef05",
+      "observation_id": "OBS-83932009b82ba871bfcbad4374489263",
+      "event_id": "evt-fd56e248f7bcae03daa20e5a961f2c11",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -93,12 +93,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:46",
-      "capture_id": "CAP-48765a6172429a5d946705d3adfa4b27",
+      "capture_id": "CAP-6360159ce627a7f745aed6b7104aef58",
       "capture_payload_key": "4040b8593b2a040761c79226ea21e829",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/ad67f2fb159e8fb384ce3d173b9b85134f8b650f410d04b03e0c645d28dad69c",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/ad67f2fb159e8fb384ce3d173b9b85134f8b650f410d04b03e0c645d28dad69c",
       "content_digest": "ad67f2fb159e8fb384ce3d173b9b85134f8b650f410d04b03e0c645d28dad69c",
-      "observation_id": "OBS-79791c7a9087149125af9001d4bd4b03",
-      "event_id": "evt-795d15f9a1eda0156033e4962e78af78",
+      "observation_id": "OBS-a0d2d9b2f2ee1af36fd82a6795e37210",
+      "event_id": "evt-c6e6257b6e6e5a3165ebd511494bd101",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -111,12 +111,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:47",
-      "capture_id": "CAP-c81320821aec8bcb93a32dd1edace383",
+      "capture_id": "CAP-8107f0874470305b10b0bdf044116572",
       "capture_payload_key": "a46d1782c0f022b5bf99de2a49fb8d55",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/94c9d6a47a9849f384121edfb9dad1eb6293c53be625ec9959760f58ac230786",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/94c9d6a47a9849f384121edfb9dad1eb6293c53be625ec9959760f58ac230786",
       "content_digest": "94c9d6a47a9849f384121edfb9dad1eb6293c53be625ec9959760f58ac230786",
-      "observation_id": "OBS-be766e0b15e495606afebbd004ae5fce",
-      "event_id": "evt-6cacd21dbec16d4591afc5476dd5396d",
+      "observation_id": "OBS-881c5b0dc72687a8a397c982d13e8bb0",
+      "event_id": "evt-1d35fcd931a62aff40ce6700bda49ca8",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -129,12 +129,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:48",
-      "capture_id": "CAP-7c95b51452bcbaf00945210c4fe1fa2c",
+      "capture_id": "CAP-08f7c547178c0f16c2ff2389dc394dcc",
       "capture_payload_key": "a018eacec7e480a321f97d068d5c97e5",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/22434aee844e706b7b953963691f13639629bded8153f0e6ad1831a93f058a48",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/22434aee844e706b7b953963691f13639629bded8153f0e6ad1831a93f058a48",
       "content_digest": "22434aee844e706b7b953963691f13639629bded8153f0e6ad1831a93f058a48",
-      "observation_id": "OBS-43b0591e6590ebe66e8a30d8c13b44a8",
-      "event_id": "evt-7548007eb640c40d0e31959461b512b5",
+      "observation_id": "OBS-874a82f3a5ca9d1c8f2901c010465e30",
+      "event_id": "evt-2f8d3d5f4b1c5e529393a755208d80a3",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -147,12 +147,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:49",
-      "capture_id": "CAP-1deddeabb12626c2b00a09bdcd77ddb0",
+      "capture_id": "CAP-5651d1febbc7d87c02ea2e5f42e92226",
       "capture_payload_key": "dfe876d5142a38d0075bb720326fa048",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/8d9bb2bbe9b0edf3074856241b9aacdb6d3d1051a7ccd6b23f55989bf946b7c8",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/8d9bb2bbe9b0edf3074856241b9aacdb6d3d1051a7ccd6b23f55989bf946b7c8",
       "content_digest": "8d9bb2bbe9b0edf3074856241b9aacdb6d3d1051a7ccd6b23f55989bf946b7c8",
-      "observation_id": "OBS-290ae4820cd8d9b2d41388778b394dbb",
-      "event_id": "evt-c08343bd9e76d31e67f9ba5ac2a4550f",
+      "observation_id": "OBS-07e5962b7e56d55b8954239638b4982a",
+      "event_id": "evt-c770912d2e9b61e64e5cc3cbe5b704dd",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -165,12 +165,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:50",
-      "capture_id": "CAP-b62c4c32b1c40c11e7fab9e8d4820c1e",
+      "capture_id": "CAP-aba8664eadde2c2ef80f1a8879296867",
       "capture_payload_key": "2063cc045a12c6b8bc4d641bf6e0272b",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/5d2a4a491f531b9dff5c8ca98662b66c83f3479774bccec394172b79a4e56f27",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/5d2a4a491f531b9dff5c8ca98662b66c83f3479774bccec394172b79a4e56f27",
       "content_digest": "5d2a4a491f531b9dff5c8ca98662b66c83f3479774bccec394172b79a4e56f27",
-      "observation_id": "OBS-14b7691960bee608e3e3c8e8d8ab6020",
-      "event_id": "evt-022df1ee87909c79b189b6df10c810e0",
+      "observation_id": "OBS-3d7b415519c1de5ee21d9685bb8a98bb",
+      "event_id": "evt-f57d3e34b7bfd030aced7b71ab118b74",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -183,12 +183,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:51",
-      "capture_id": "CAP-dc4c2a1e00ad4a4576a1210fa469f2b6",
+      "capture_id": "CAP-00df4d56aba6053a21c563ba93ad6dcf",
       "capture_payload_key": "f5d18748806417ec3964e05793e4e63a",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/4bbce122ebdf05632d53a02c0541395f4fb48bf40e78f5de1f678d1dce9e4d54",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/4bbce122ebdf05632d53a02c0541395f4fb48bf40e78f5de1f678d1dce9e4d54",
       "content_digest": "4bbce122ebdf05632d53a02c0541395f4fb48bf40e78f5de1f678d1dce9e4d54",
-      "observation_id": "OBS-f57341a3d7fe5c15eec0db46f85a81fd",
-      "event_id": "evt-09453159708dd65c449e2d3285aec5a2",
+      "observation_id": "OBS-9608518d6635a06d5ec92f165eb3986f",
+      "event_id": "evt-528fa0a3853b16536ea1b5e99e6d0fca",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -201,12 +201,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:52",
-      "capture_id": "CAP-2b68f54cd63485d19a089a36122c9d33",
+      "capture_id": "CAP-9ef471277e98d9a04fe40d90cc57bc0d",
       "capture_payload_key": "e9eeaf499516e87ee9aa6a1c1e41a2a0",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/b4dc9ab3587f9750c364ee8fc3f91a2dc817d99641b2fc94fa8d0a442a770aa7",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/b4dc9ab3587f9750c364ee8fc3f91a2dc817d99641b2fc94fa8d0a442a770aa7",
       "content_digest": "b4dc9ab3587f9750c364ee8fc3f91a2dc817d99641b2fc94fa8d0a442a770aa7",
-      "observation_id": "OBS-9d123f6e5ba28844887a8a97c89bf74c",
-      "event_id": "evt-50d37827c4e059280dc1ae72a131955f",
+      "observation_id": "OBS-63f4744e777a04e857c70b91309b70aa",
+      "event_id": "evt-3604046d77ef1b9b23cd7b1deff1abea",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -219,12 +219,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:53",
-      "capture_id": "CAP-569f1614c4b84eaa99d2e01523a2e8d2",
+      "capture_id": "CAP-354fdc6e50fde6fc353f03dabbadb31e",
       "capture_payload_key": "2e3ee112d11bf94fb67439fb24d4130d",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/51099d10ef5358dd9bf525e616f979a54068ef3d2dc5e3bf25c265e2798e30a8",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/51099d10ef5358dd9bf525e616f979a54068ef3d2dc5e3bf25c265e2798e30a8",
       "content_digest": "51099d10ef5358dd9bf525e616f979a54068ef3d2dc5e3bf25c265e2798e30a8",
-      "observation_id": "OBS-5ec877568a04ae4997fc50f4d92beca3",
-      "event_id": "evt-e284524aa831f495cd3c2f8d5fcbc7e4",
+      "observation_id": "OBS-c02a9deb1a2a0f9a37b0ecede8698863",
+      "event_id": "evt-4efd5dd30c52631574b654f024c11010",
       "topic": "observation",
       "byte_length": 124,
       "schema": "acquisition-artifact/v1"
@@ -237,12 +237,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:55",
-      "capture_id": "CAP-dd565080db17642ea93db66b5ec75636",
+      "capture_id": "CAP-f3cbf820eba46b42c5618461fa23ad8e",
       "capture_payload_key": "a97a3586864b545bfd948dad5abf6804",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/3a7df9b7cbe0dbdbea3d2d1b5d4a95943eec2fd13bd9f279377a9b95000318b2",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/3a7df9b7cbe0dbdbea3d2d1b5d4a95943eec2fd13bd9f279377a9b95000318b2",
       "content_digest": "3a7df9b7cbe0dbdbea3d2d1b5d4a95943eec2fd13bd9f279377a9b95000318b2",
-      "observation_id": "OBS-9336c8dacfefe8edd975a0121d0531b7",
-      "event_id": "evt-5217c19b15cd16f3142d8dc1a1a99a3f",
+      "observation_id": "OBS-e25fdc7caa4b22b189fa4688ddce51c1",
+      "event_id": "evt-86e1a449c6e3d8bcbd48deb9d4b87a76",
       "topic": "observation",
       "byte_length": 127,
       "schema": "acquisition-artifact/v1"
@@ -255,12 +255,12 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:57",
-      "capture_id": "CAP-7f2ea9803e02926552bd03aee5bdcb98",
+      "capture_id": "CAP-23438897d6534db2f59a35ccc3649328",
       "capture_payload_key": "3c3e36b60204a9fb8f819be61e17ca32",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/8d61a78e87b4c708687b6985a7201bce2532192217c51f4e70c78fdc852423e6",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/8d61a78e87b4c708687b6985a7201bce2532192217c51f4e70c78fdc852423e6",
       "content_digest": "8d61a78e87b4c708687b6985a7201bce2532192217c51f4e70c78fdc852423e6",
-      "observation_id": "OBS-4f9768faad1f41e711aeb7c08236317d",
-      "event_id": "evt-da19aacd7f79a63b10f4239e1e0fd03a",
+      "observation_id": "OBS-9f9762e0397cf05be660b160586a5246",
+      "event_id": "evt-b6f1d0d08a25dffefeccab5c2d52aed4",
       "topic": "observation",
       "byte_length": 127,
       "schema": "acquisition-artifact/v1"
@@ -273,110 +273,134 @@
       "runtime_producer_version": "sha256:e445ee1f7261",
       "target_uri": "airbyte://source-postgres@sha256/airbyte_smoke",
       "locator": "airbyte:public/airbyte_smoke:58",
-      "capture_id": "CAP-4de45948508a352675abf234e7225bdc",
+      "capture_id": "CAP-d1fe827fef641291a3dd309c4c29a0e6",
       "capture_payload_key": "35ed41edf251408036fff002876f2122",
-      "raw_ref": "s3://knowledge-raw/raw/acceptance/202609/7662e6dcdb6eee87283a1215448cac27f802a52b7bb42f1e3cd96f54b009a6b2",
+      "raw_ref": "s3://knowledge-raw/raw/acceptance/202610/7662e6dcdb6eee87283a1215448cac27f802a52b7bb42f1e3cd96f54b009a6b2",
       "content_digest": "7662e6dcdb6eee87283a1215448cac27f802a52b7bb42f1e3cd96f54b009a6b2",
-      "observation_id": "OBS-364f219fec2b63070bef23d40777e910",
-      "event_id": "evt-0bcffdcd7b0e7a9ec636ed57ff3d159e",
+      "observation_id": "OBS-94d6388a72b54d785995e9f3a37a380e",
+      "event_id": "evt-f2bfff61943c3e583d0f582b9d412938",
       "topic": "observation",
       "byte_length": 127,
       "schema": "acquisition-artifact/v1"
     }
   ],
   "readback": {
-    "OBS-4e6634408805987003847c326550e441": {
-      "partition": 0,
-      "offset": 655,
-      "event_id": "evt-6f2672fe2e85fa24ee9cf51d8c3fef05",
+    "OBS-83932009b82ba871bfcbad4374489263": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1010,
+      "key": "OBS-83932009b82ba871bfcbad4374489263",
+      "event_id": "evt-fd56e248f7bcae03daa20e5a961f2c11",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-79791c7a9087149125af9001d4bd4b03": {
-      "partition": 0,
-      "offset": 656,
-      "event_id": "evt-795d15f9a1eda0156033e4962e78af78",
+    "OBS-a0d2d9b2f2ee1af36fd82a6795e37210": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1011,
+      "key": "OBS-a0d2d9b2f2ee1af36fd82a6795e37210",
+      "event_id": "evt-c6e6257b6e6e5a3165ebd511494bd101",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-be766e0b15e495606afebbd004ae5fce": {
-      "partition": 0,
-      "offset": 657,
-      "event_id": "evt-6cacd21dbec16d4591afc5476dd5396d",
+    "OBS-881c5b0dc72687a8a397c982d13e8bb0": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1012,
+      "key": "OBS-881c5b0dc72687a8a397c982d13e8bb0",
+      "event_id": "evt-1d35fcd931a62aff40ce6700bda49ca8",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-43b0591e6590ebe66e8a30d8c13b44a8": {
-      "partition": 0,
-      "offset": 658,
-      "event_id": "evt-7548007eb640c40d0e31959461b512b5",
+    "OBS-874a82f3a5ca9d1c8f2901c010465e30": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1013,
+      "key": "OBS-874a82f3a5ca9d1c8f2901c010465e30",
+      "event_id": "evt-2f8d3d5f4b1c5e529393a755208d80a3",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-290ae4820cd8d9b2d41388778b394dbb": {
-      "partition": 0,
-      "offset": 659,
-      "event_id": "evt-c08343bd9e76d31e67f9ba5ac2a4550f",
+    "OBS-07e5962b7e56d55b8954239638b4982a": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1014,
+      "key": "OBS-07e5962b7e56d55b8954239638b4982a",
+      "event_id": "evt-c770912d2e9b61e64e5cc3cbe5b704dd",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-14b7691960bee608e3e3c8e8d8ab6020": {
-      "partition": 0,
-      "offset": 660,
-      "event_id": "evt-022df1ee87909c79b189b6df10c810e0",
+    "OBS-3d7b415519c1de5ee21d9685bb8a98bb": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1015,
+      "key": "OBS-3d7b415519c1de5ee21d9685bb8a98bb",
+      "event_id": "evt-f57d3e34b7bfd030aced7b71ab118b74",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-f57341a3d7fe5c15eec0db46f85a81fd": {
-      "partition": 0,
-      "offset": 661,
-      "event_id": "evt-09453159708dd65c449e2d3285aec5a2",
+    "OBS-9608518d6635a06d5ec92f165eb3986f": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1016,
+      "key": "OBS-9608518d6635a06d5ec92f165eb3986f",
+      "event_id": "evt-528fa0a3853b16536ea1b5e99e6d0fca",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-9d123f6e5ba28844887a8a97c89bf74c": {
-      "partition": 0,
-      "offset": 662,
-      "event_id": "evt-50d37827c4e059280dc1ae72a131955f",
+    "OBS-63f4744e777a04e857c70b91309b70aa": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1017,
+      "key": "OBS-63f4744e777a04e857c70b91309b70aa",
+      "event_id": "evt-3604046d77ef1b9b23cd7b1deff1abea",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-5ec877568a04ae4997fc50f4d92beca3": {
-      "partition": 0,
-      "offset": 663,
-      "event_id": "evt-e284524aa831f495cd3c2f8d5fcbc7e4",
+    "OBS-c02a9deb1a2a0f9a37b0ecede8698863": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1018,
+      "key": "OBS-c02a9deb1a2a0f9a37b0ecede8698863",
+      "event_id": "evt-4efd5dd30c52631574b654f024c11010",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-9336c8dacfefe8edd975a0121d0531b7": {
-      "partition": 0,
-      "offset": 664,
-      "event_id": "evt-5217c19b15cd16f3142d8dc1a1a99a3f",
+    "OBS-e25fdc7caa4b22b189fa4688ddce51c1": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1019,
+      "key": "OBS-e25fdc7caa4b22b189fa4688ddce51c1",
+      "event_id": "evt-86e1a449c6e3d8bcbd48deb9d4b87a76",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-4f9768faad1f41e711aeb7c08236317d": {
-      "partition": 0,
-      "offset": 665,
-      "event_id": "evt-da19aacd7f79a63b10f4239e1e0fd03a",
+    "OBS-9f9762e0397cf05be660b160586a5246": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1020,
+      "key": "OBS-9f9762e0397cf05be660b160586a5246",
+      "event_id": "evt-b6f1d0d08a25dffefeccab5c2d52aed4",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     },
-    "OBS-364f219fec2b63070bef23d40777e910": {
-      "partition": 0,
-      "offset": 666,
-      "event_id": "evt-0bcffdcd7b0e7a9ec636ed57ff3d159e",
+    "OBS-94d6388a72b54d785995e9f3a37a380e": {
       "topic": "observation",
+      "partition": 0,
+      "offset": 1021,
+      "key": "OBS-94d6388a72b54d785995e9f3a37a380e",
+      "event_id": "evt-f2bfff61943c3e583d0f582b9d412938",
+      "event_type": "observation.created",
       "producer": "observation-gate"
     }
   },
   "processing_result": {
-    "processing_run_id": "run-20260930T172332Z",
-    "observation_id": "OBS-4e6634408805987003847c326550e441",
-    "consumer": "airbyte-proof-17172",
+    "processing_run_id": "run-20261003T155146Z",
+    "observation_id": "OBS-83932009b82ba871bfcbad4374489263",
+    "consumer": "airbyte-proof-13932",
     "consumer_version": "0.1.0",
-    "processed_at": "2026-09-30T17:24:59.205605+00:00",
+    "processed_at": "2026-10-03T15:53:15.982083+00:00",
     "status": "processed",
-    "derived_ref": "observation[0]@655"
+    "derived_ref": "observation[0]@1010"
   }
 }

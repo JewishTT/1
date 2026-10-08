@@ -18,3 +18,18 @@ tool:
     User-Agent: Estorides/1.0
   params:
     q: site:t.me {query}
+parse:
+  family: json_rows
+  fields:
+    channel:
+      path: title
+      kind: channel
+    description:
+      path: description
+      kind: description
+    subscribers:
+      path: participants_count
+      kind: integer
+    url:
+      path: username
+      kind: handle

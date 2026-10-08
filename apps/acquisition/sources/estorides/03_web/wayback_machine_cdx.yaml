@@ -23,3 +23,26 @@ tool:
     output: json
     limit: 50
     fl: timestamp,original,statuscode,mimetype,length
+parse:
+  family: text_lines
+  fields:
+    url:
+      path: ""
+      kind: url
+      many: true
+      pattern: "^[a-z]+://"
+    timestamp:
+      path: ""
+      kind: timestamp
+      many: true
+      pattern: "\\b(\\d{14})\\b"
+    status:
+      path: ""
+      kind: status
+      many: true
+      pattern: "\\b(\\d{3})\\s"
+    digest:
+      path: ""
+      kind: identifier
+      many: true
+      pattern: "\\b([A-Fa-f0-9]{32})\\b"

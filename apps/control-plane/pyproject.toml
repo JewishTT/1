@@ -43,7 +43,7 @@ cognitive-projection = { workspace = true }
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 pythonpath = ["."]
-markers = ["contract", "integration", "unit"]
+markers = ["contract", "integration", "unit", "live: needs network egress or a running broker"]
 
 [tool.ruff]
 line-length = 100

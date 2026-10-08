@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from tda.persistence import (
+from scitda.persistence import (
     ActionPoint,
     AgentFeatures,
     Barcode,
@@ -17,7 +17,7 @@ from tda.persistence import (
     PointCloud,
     persistence_barcodes,
 )
-from tda.phodms import betti0_erosion_distance, betti_zero_surface, rank_invariant
+from scitda.phodms import betti0_erosion_distance, betti_zero_surface, rank_invariant
 
 
 def _cloud(coords: list[tuple[float, float]], metric: Metric = Metric.EUCLIDEAN) -> PointCloud:

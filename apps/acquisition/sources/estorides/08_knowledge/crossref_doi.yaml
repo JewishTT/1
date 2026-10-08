@@ -20,3 +20,29 @@ tool:
   params:
     query: '{query}'
     rows: 10
+parse:
+  family: json_rows
+  list_path: message.items
+  fields:
+    doi:
+      path: DOI
+      kind: identifier
+      required: true
+    title:
+      path: "title[*]"
+      kind: article
+      many: true
+    author:
+      path: "author[*].family"
+      kind: person
+      many: true
+    publisher:
+      path: publisher
+      kind: organization
+    published:
+      path: "issued.date-parts[*][*]"
+      kind: timestamp
+      many: true
+    url:
+      path: URL
+      kind: url

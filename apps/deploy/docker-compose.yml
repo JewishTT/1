@@ -127,7 +127,17 @@ services:
   clickhouse:
     profiles: ["analytics"]
     image: clickhouse/clickhouse-server:24.8
-    ports: ["8123:8123", "9009:9000"]
+    # The image's `default` user is host_names=['localhost'] with an empty password,
+    # so every request arriving through the published port is rejected with
+    # Code 516. A dedicated user is the fix -- and shipping no credentials at all is
+    # not an option either.
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-cognitive}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-cognitive_dev}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-cognitive}
+    # 18123, not 8123: the default host port collides with an unrelated listener on
+    # this machine that answers 403 instead of forwarding.
+    ports: ["18123:8123", "19009:9000"]
     volumes: [clickhouse-data:/var/lib/clickhouse]
     healthcheck:
       test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]

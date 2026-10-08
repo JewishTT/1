@@ -27,3 +27,22 @@ tool:
     User-Agent: Estorides/1.0
   params:
     q: '{query}'
+parse:
+  family: json_object
+  fields:
+    domain:
+      path: domain
+      kind: domain
+      required: true
+    technology:
+      path: "technologies[*].name"
+      kind: technology
+      many: true
+    version:
+      path: "technologies[*].version"
+      kind: unknown
+      many: true
+    category:
+      path: "technologies[*].categories[*]"
+      kind: tag
+      many: true

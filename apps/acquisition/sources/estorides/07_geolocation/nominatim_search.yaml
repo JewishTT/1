@@ -23,3 +23,22 @@ tool:
     format: json
     limit: 5
     addressdetails: 1
+parse:
+  family: json_rows
+  fields:
+    place:
+      path: display_name
+      kind: place
+      required: true
+    lat:
+      path: lat
+      kind: geolocation
+    lon:
+      path: lon
+      kind: geolocation
+    type:
+      path: type
+      kind: status
+    osm_id:
+      path: osm_id
+      kind: identifier

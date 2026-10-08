@@ -63,9 +63,9 @@ def engine(**kw) -> ContextEngine:
     return ContextEngine(InMemoryContextStore(), **kw)
 
 
-def seed(e: ContextEngine, signals) -> InvestigationContext:
+async def seed(e: ContextEngine, signals) -> InvestigationContext:
     c = ctx()
-    e.ingest(c, signals, event_ids=["evt-1"])
+    await e.ingest(c, signals, event_ids=["evt-1"])
     return c
 
 
@@ -86,10 +86,10 @@ def test_the_engine_owns_one_of_each_component():
 
 # -- FR-034: obligations are generated with a recorded, versioned reason -------
 
-def test_a_gap_produces_an_obligation_that_names_its_rule():
+async def test_a_gap_produces_an_obligation_that_names_its_rule():
     e = engine()
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="who owns acme?", rationale="no owner found")])
-    obligations = e.open_obligations(c.context_id)
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="who owns acme?", rationale="no owner found")])
+    obligations = await e.open_obligations(c.context_id)
     assert len(obligations) == 1
     assert obligations[0].created_by.startswith(RULES_VERSION)
     assert obligations[0].created_by.endswith("#coverage_gap")
@@ -106,14 +106,14 @@ def test_generation_is_deterministic_regardless_of_signal_order():
     assert forward == backward
 
 
-def test_the_same_gap_twice_is_not_new_work():
+async def test_the_same_gap_twice_is_not_new_work():
     e = engine()
     c = ctx()
     signal = GapSignal(kind=TriggerKind.COVERAGE_GAP, question="who owns acme?")
-    e.ingest(c, [signal], event_ids=["evt-1"])
-    _, created = e.ingest(c, [signal], event_ids=["evt-2"])
+    await e.ingest(c, [signal], event_ids=["evt-1"])
+    _, created = await e.ingest(c, [signal], event_ids=["evt-2"])
     assert created == []
-    assert len(e.open_obligations(c.context_id)) == 1
+    assert len(((((((((((await e.open_obligations(c.context_id)))))))))))) == 1
 
 
 def test_the_constitutional_core_takes_no_adaptive_input():
@@ -204,12 +204,12 @@ def test_satisfaction_carries_its_rules_version():
 
 # -- FR-035: terminal states carry a reason -----------------------------------
 
-def test_a_satisfied_obligation_records_how_it_was_satisfied():
+async def test_a_satisfied_obligation_records_how_it_was_satisfied():
     e = engine()
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    e.evaluate_obligation(oid, SatisfactionInput(evidence_count=3, saturation=saturated()))
-    closed = e.store.get_obligation(oid)
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    await e.evaluate_obligation(oid, SatisfactionInput(evidence_count=3, saturation=saturated()))
+    closed = await e.store.get_obligation(oid)
     assert closed.status is ObligationStatus.SATISFIED
     assert closed.disposition is Disposition.SATISFIED
     assert closed.disposition_reason
@@ -224,34 +224,34 @@ def test_an_obligation_cannot_be_marked_satisfied_without_saying_why():
     assert exc.value.code == "obligation_satisfied_without_disposition"
 
 
-def test_an_obligation_with_no_evidence_stays_open():
+async def test_an_obligation_with_no_evidence_stays_open():
     e = engine()
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    e.evaluate_obligation(oid, SatisfactionInput(evidence_count=0, saturation=saturated()))
-    assert e.store.get_obligation(oid).status is ObligationStatus.OPEN
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    await e.evaluate_obligation(oid, SatisfactionInput(evidence_count=0, saturation=saturated()))
+    assert ((((((((((await e.store.get_obligation(oid))))))))))).status is ObligationStatus.OPEN
 
 
-def test_a_contradiction_blocks_rather_than_closes():
+async def test_a_contradiction_blocks_rather_than_closes():
     e = engine()
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    e.evaluate_obligation(
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    await e.evaluate_obligation(
         oid, SatisfactionInput(evidence_count=4, saturation=saturated(), contradicting_evidence=2)
     )
-    blocked = e.store.get_obligation(oid)
+    blocked = await e.store.get_obligation(oid)
     assert blocked.status is ObligationStatus.BLOCKED
     assert "contradicted by 2" in blocked.disposition_reason
 
 
-def test_obligation_identity_survives_progress():
+async def test_obligation_identity_survives_progress():
     """If progress moved the address, action memory keyed by obligation could never
     match again."""
     e = engine()
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    e.evaluate_obligation(oid, SatisfactionInput(evidence_count=2, saturation=unsaturated()))
-    assert e.store.get_obligation(oid).obligation_id == oid
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    await e.evaluate_obligation(oid, SatisfactionInput(evidence_count=2, saturation=unsaturated()))
+    assert ((((((((((await e.store.get_obligation(oid))))))))))).obligation_id == oid
 
 
 # -- FR-036: actions are proposed, never executed -----------------------------
@@ -263,23 +263,23 @@ def catalogue():
     ]
 
 
-def test_an_action_is_proposed_but_not_executed():
+async def test_an_action_is_proposed_but_not_executed():
     e = engine(proposer=ActionProposer(catalogue()))
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    action = e.propose_action(oid, required_capabilities=["search"])
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    action = await e.propose_action(oid, required_capabilities=["search"])
     assert action is not None
     assert action.runtime_ref == "searxng"
     assert action.status == "proposed"
     assert action.requires_operator_approval is True
 
 
-def test_no_compatible_capability_proposes_nothing():
+async def test_no_compatible_capability_proposes_nothing():
     """FR-040: surface the gap, do not invent the capability."""
     e = engine(proposer=ActionProposer(catalogue()))
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    assert e.propose_action(oid, required_capabilities=["telepathy"]) is None
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    assert await e.propose_action(oid, required_capabilities=["telepathy"]) is None
 
 
 def test_capabilities_check_compatibility_and_never_choose_the_runtime():
@@ -290,92 +290,92 @@ def test_capabilities_check_compatibility_and_never_choose_the_runtime():
     assert d.runtime_ref == "searxng"
 
 
-def test_the_cheaper_compatible_runtime_is_preferred():
+async def test_the_cheaper_compatible_runtime_is_preferred():
     e = engine(proposer=ActionProposer(catalogue()))
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    cheap = e.propose_action(oid, required_capabilities=[])
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    cheap = await e.propose_action(oid, required_capabilities=[])
     assert cheap.runtime_ref == "searxng"
 
 
 # -- FR-059: action memory ----------------------------------------------------
 
-def test_the_engine_does_not_repropose_the_same_runtime():
+async def test_the_engine_does_not_repropose_the_same_runtime():
     """FR-059. The invariant is "not again", not "nothing left": with several
     runtimes, moving to an unattempted one is correct, re-offering the attempted one
     is the loop action memory exists to prevent."""
     e = engine(proposer=ActionProposer(catalogue()))
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
 
-    first = e.propose_action(oid, required_capabilities=[])
+    first = await e.propose_action(oid, required_capabilities=[])
     assert first.runtime_ref == "searxng"
-    e.record_attempt(first, outcome="no_new_information")
+    await e.record_attempt(first, outcome="no_new_information")
 
-    second = e.propose_action(oid, required_capabilities=[])
+    second = await e.propose_action(oid, required_capabilities=[])
     assert second is not None
     assert second.runtime_ref != "searxng", "the attempted runtime was proposed again"
 
 
-def test_when_every_runtime_is_exhausted_nothing_is_proposed():
+async def test_when_every_runtime_is_exhausted_nothing_is_proposed():
     """Only one runtime exists, so after it is attempted the proposer has nothing
     left and must return None rather than invent a capability (FR-040)."""
     only = [CapabilityDescriptor(runtime_ref="searxng", capabilities=("search",))]
     e = engine(proposer=ActionProposer(only))
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
 
-    action = e.propose_action(oid, required_capabilities=[])
+    action = await e.propose_action(oid, required_capabilities=[])
     assert action is not None
-    e.record_attempt(action, outcome="no_new_information")
-    assert e.propose_action(oid, required_capabilities=[]) is None
+    await e.record_attempt(action, outcome="no_new_information")
+    assert await e.propose_action(oid, required_capabilities=[]) is None
 
 
-def test_a_proposal_that_never_ran_is_not_treated_as_an_attempt():
+async def test_a_proposal_that_never_ran_is_not_treated_as_an_attempt():
     """FR-059 keys on attempts, not proposals. Skipping merely-proposed work would
     starve the engine of options that were never exercised."""
     e = engine(proposer=ActionProposer(catalogue()))
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    e.propose_action(oid, required_capabilities=[])
-    again = e.propose_action(oid, required_capabilities=[])
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    await e.propose_action(oid, required_capabilities=[])
+    again = await e.propose_action(oid, required_capabilities=[])
     assert again is not None and again.runtime_ref == "searxng"
 
 
-def test_action_memory_records_realised_gain():
+async def test_action_memory_records_realised_gain():
     e = engine(proposer=ActionProposer(catalogue()))
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    oid = e.open_obligations(c.context_id)[0].obligation_id
-    action = e.propose_action(oid, required_capabilities=[])
-    e.record_attempt(action, outcome="partial", realised_gain=0.2)
-    entries = e.store.memory_for(oid)
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    oid = (((((await e.open_obligations(c.context_id))))))[0].obligation_id
+    action = await e.propose_action(oid, required_capabilities=[])
+    await e.record_attempt(action, outcome="partial", realised_gain=0.2)
+    entries = await e.store.memory_for(oid)
     assert entries[0].realised_gain == 0.2
     assert entries[0].outcome == "partial"
 
 
 # -- FR-042/044: incremental, explainable revisions ---------------------------
 
-def test_a_tick_commits_a_revision_that_names_its_cause():
+async def test_a_tick_commits_a_revision_that_names_its_cause():
     e = engine()
     c = ctx()
-    revision, created = e.ingest(c, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")], event_ids=["evt-1"])
+    revision, created = await e.ingest(c, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")], event_ids=["evt-1"])
     assert revision.revision == 1
     assert revision.caused_by_event_ids == ("evt-1",)
     assert revision.is_auditable
     assert revision.rules_version == RULES_VERSION
 
 
-def test_a_tick_with_no_signals_still_commits_but_creates_nothing():
+async def test_a_tick_with_no_signals_still_commits_but_creates_nothing():
     e = engine()
     c = ctx()
-    revision, created = e.ingest(c, [], event_ids=["evt-2"])
+    revision, created = await e.ingest(c, [], event_ids=["evt-2"])
     assert created == []
     assert revision.revision == 1
 
 
-def test_every_decision_is_explainable():
+async def test_every_decision_is_explainable():
     e = engine()
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q", rationale="gap A")])
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q", rationale="gap A")])
     decisions = e.recorder.decisions(c.context_id)
     assert decisions
     d = decisions[0]
@@ -385,131 +385,131 @@ def test_every_decision_is_explainable():
     assert e.recorder.explain(d.decision_id) == d
 
 
-def test_a_tick_touches_only_what_it_was_given():
+async def test_a_tick_touches_only_what_it_was_given():
     """FR-042: incremental. A tick with one signal must not disturb another
     obligation's state."""
     e = engine()
-    e.ingest(ctx(), [
+    await e.ingest(ctx(), [
         GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q1"),
         GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q2"),
     ], event_ids=["evt-1"])
     c = ctx()
-    before = {o.question: o for o in e.open_obligations(c.context_id)}
-    e.ingest(c, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q3")], event_ids=["evt-2"])
-    after = {o.question: o for o in e.open_obligations(c.context_id)}
+    before = {o.question: o for o in ((((((((((await e.open_obligations(c.context_id)))))))))))}
+    await e.ingest(c, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q3")], event_ids=["evt-2"])
+    after = {o.question: o for o in ((((((((((await e.open_obligations(c.context_id)))))))))))}
     assert after["q1"] == before["q1"]
     assert after["q2"] == before["q2"]
 
 
-def test_the_mode_is_recorded_on_the_revision():
+async def test_the_mode_is_recorded_on_the_revision():
     e = engine()
     c = ctx()
-    det, _ = e.ingest(c, [], event_ids=["e1"], mode="deterministic")
-    adaptive, _ = e.ingest(c, [], event_ids=["e2"], mode="adaptive")
+    det, _ = await e.ingest(c, [], event_ids=["e1"], mode="deterministic")
+    adaptive, _ = await e.ingest(c, [], event_ids=["e2"], mode="adaptive")
     assert det.mode == "deterministic"
     assert adaptive.mode == "adaptive"
 
 
 # -- FR-026/027: append-only revisions ---------------------------------------
 
-def test_revisions_are_append_only_and_numbered():
+async def test_revisions_are_append_only_and_numbered():
     e = engine()
     c = ctx()
     for i in range(3):
-        e.ingest(c, [], event_ids=[f"evt-{i}"])
-    chain = e.revision_history(c.context_id)
+        await e.ingest(c, [], event_ids=[f"evt-{i}"])
+    chain = await e.revision_history(c.context_id)
     assert [r.revision for r in chain] == [1, 2, 3]
     assert [r.parent_revision for r in chain] == [0, 1, 2]
 
 
-def test_re_appending_the_same_revision_is_idempotent():
+async def test_re_appending_the_same_revision_is_idempotent():
     e = engine()
     c = ctx()
-    _, _ = e.ingest(c, [], event_ids=["e1"])
-    r = e.revision_history(c.context_id)[0]
-    e.store.append_revision(r)
-    assert len(e.revision_history(c.context_id)) == 1
+    _, _ = await e.ingest(c, [], event_ids=["e1"])
+    r = (((((await e.revision_history(c.context_id))))))[0]
+    await e.store.append_revision(r)
+    assert len(((((((((((await e.revision_history(c.context_id)))))))))))) == 1
 
 
-def test_a_different_revision_at_the_same_number_is_refused():
+async def test_a_different_revision_at_the_same_number_is_refused():
     """Two revisions claiming the same number with different content is a fork in
     history, not a merge. Refused at construction by the address check."""
     e = engine()
     c = ctx()
-    e.ingest(c, [], event_ids=["e1"])
-    first = e.revision_history(c.context_id)[0]
+    await e.ingest(c, [], event_ids=["e1"])
+    first = (((((await e.revision_history(c.context_id))))))[0]
     with pytest.raises(ValueError, match="revision_id_mismatch"):
         replace(first, snapshot={"tampered": True})
 
 
-def test_a_tampered_snapshot_cannot_be_appended():
+async def test_a_tampered_snapshot_cannot_be_appended():
     """And the store refuses a colliding revision number independently of the
     object's own check."""
     store = InMemoryContextStore()
     e = ContextEngine(store)
     c = ctx()
-    e.ingest(c, [], event_ids=["e1"])
-    first = store.revisions(c.context_id)[0]
+    await e.ingest(c, [], event_ids=["e1"])
+    first = (((((await store.revisions(c.context_id))))))[0]
     impostor = replace(first)
     object.__setattr__(impostor, "revision_id", "CXR-" + "0" * 32)
     with pytest.raises(ValueError):
-        store.append_revision(impostor)
+        await store.append_revision(impostor)
 
 
 # -- FR-028: replay -----------------------------------------------------------
 
-def test_replay_is_deterministic():
+async def test_replay_is_deterministic():
     e = engine()
     c = ctx()
     for i in range(3):
-        e.ingest(c, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question=f"q{i}")], event_ids=[f"evt-{i}"])
-    first = e.replay(c.context_id)
-    second = e.replay(c.context_id)
+        await e.ingest(c, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question=f"q{i}")], event_ids=[f"evt-{i}"])
+    first = await e.replay(c.context_id)
+    second = await e.replay(c.context_id)
     assert first == second
     assert first.revisions == 3
     assert first.obligations == 3
 
 
-def test_replay_of_an_unknown_context_is_an_error_not_an_empty_result():
+async def test_replay_of_an_unknown_context_is_an_error_not_an_empty_result():
     e = engine()
     with pytest.raises(ContextEngineError) as exc:
-        e.replay("CXI-nonexistent")
+        await e.replay("CXI-nonexistent")
     assert exc.value.code == "nothing_to_replay"
 
 
 # -- FR-050: queries and the frontier -----------------------------------------
 
-def test_the_frontier_is_queryable_and_separates_open_from_closed():
+async def test_the_frontier_is_queryable_and_separates_open_from_closed():
     e = engine()
-    c = seed(e, [
+    c = await seed(e, [
         GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q1"),
         GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q2"),
     ])
-    frontier = e.rebuild(c.context_id)
+    frontier = await e.rebuild(c.context_id)
     assert len(frontier.open_obligations) == 2
     first = frontier.open_obligations[0]
-    e.evaluate_obligation(first, SatisfactionInput(evidence_count=3, saturation=saturated()))
-    after = e.rebuild(c.context_id)
+    await e.evaluate_obligation(first, SatisfactionInput(evidence_count=3, saturation=saturated()))
+    after = await e.rebuild(c.context_id)
     assert len(after.open_obligations) == 1
     assert len(after.closed_obligations) == 1
 
 
-def test_queries_answer_which_are_open_satisfied_and_contradicted():
+async def test_queries_answer_which_are_open_satisfied_and_contradicted():
     e = engine()
-    c = seed(e, [
+    c = await seed(e, [
         GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q1"),
         GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q2"),
         GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q3"),
     ])
-    by_q = {o.question: o.obligation_id for o in e.open_obligations(c.context_id)}
-    e.evaluate_obligation(by_q["q1"], SatisfactionInput(evidence_count=3, saturation=saturated()))
-    e.evaluate_obligation(
+    by_q = {o.question: o.obligation_id for o in ((((((((((await e.open_obligations(c.context_id)))))))))))}
+    await e.evaluate_obligation(by_q["q1"], SatisfactionInput(evidence_count=3, saturation=saturated()))
+    await e.evaluate_obligation(
         by_q["q2"],
         SatisfactionInput(evidence_count=3, saturation=saturated(), contradicting_evidence=1),
     )
-    assert len(e.satisfied_obligations(c.context_id)) == 1
-    assert len(e.contradicted_obligations(c.context_id)) == 1
-    assert len(e.open_obligations(c.context_id)) == 1
+    assert len(((((((((((await e.satisfied_obligations(c.context_id)))))))))))) == 1
+    assert len(((((((((((await e.contradicted_obligations(c.context_id)))))))))))) == 1
+    assert len(((((((((((await e.open_obligations(c.context_id)))))))))))) == 1
 
 
 # -- FR-027: durability is a declared property, not an assumption ------------
@@ -552,7 +552,7 @@ def test_saturation_is_not_a_bare_boolean():
 
 # -- FR-035: no silent drops --------------------------------------------------
 
-def test_obligations_with_no_evidence_are_still_reportable_as_open():
+async def test_obligations_with_no_evidence_are_still_reportable_as_open():
     e = engine()
-    c = seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
-    assert len(e.open_obligations(c.context_id)) == 1
+    c = await seed(e, [GapSignal(kind=TriggerKind.COVERAGE_GAP, question="q")])
+    assert len(((((((((((await e.open_obligations(c.context_id)))))))))))) == 1

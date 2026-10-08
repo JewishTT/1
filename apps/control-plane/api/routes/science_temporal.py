@@ -12,14 +12,14 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from store import ScienceStore
+from store import shared_store
 from temporal.changedetect import ChangeDetectParams, detect_change_points
 from temporal.scenario import persist_series, reproject
 from temporal.timeseries import ObservationSample, build_series
 
 router = APIRouter(prefix="/api/science/temporal", tags=["science"])
 
-_store = ScienceStore()
+_store = shared_store()
 
 
 class SampleModel(BaseModel):

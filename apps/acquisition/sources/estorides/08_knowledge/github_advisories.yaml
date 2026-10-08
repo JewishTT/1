@@ -24,3 +24,33 @@ tool:
   params:
     query: '{query}'
     per_page: 30
+parse:
+  family: json_rows
+  fields:
+    ghsa:
+      path: ghsa_id
+      kind: identifier
+      required: true
+    cve:
+      path: cve_id
+      kind: cve
+    summary:
+      path: summary
+      kind: description
+    severity:
+      path: severity
+      kind: status
+    package:
+      path: "vulnerabilities[*].package.name"
+      kind: technology
+      many: true
+    ecosystem:
+      path: "vulnerabilities[*].package.ecosystem"
+      kind: unknown
+      many: true
+    url:
+      path: html_url
+      kind: url
+    published:
+      path: published_at
+      kind: timestamp

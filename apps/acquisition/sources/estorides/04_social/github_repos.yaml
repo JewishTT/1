@@ -21,3 +21,32 @@ tool:
     q: user:{query}
     per_page: 30
     sort: updated
+parse:
+  family: json_rows
+  fields:
+    repository:
+      path: full_name
+      kind: repository
+      required: true
+    description:
+      path: description
+      kind: description
+    language:
+      path: language
+      kind: language
+    owner:
+      path: owner.login
+      kind: handle
+    url:
+      path: html_url
+      kind: url
+    stars:
+      path: stargazers_count
+      kind: integer
+    created_at:
+      path: created_at
+      kind: timestamp
+    topics:
+      path: "topics[*]"
+      kind: tag
+      many: true

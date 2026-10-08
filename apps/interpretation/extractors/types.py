@@ -89,6 +89,15 @@ class ExtractionResult:
     content_type: str
     segments: list[Any] = field(default_factory=list)
     mentions: list[TypedMention] = field(default_factory=list)
+    #: Semantic relation readings -- (subject, relation_type, object) with spans.
+    #:
+    #: Added because the readings had nowhere to go. ``extractors.relations`` has
+    #: produced them for the whole life of this package and nothing carried them: the
+    #: result had no field for them, so the sentence "X is chairman of Y" reached the
+    #: graph only as a co-mention of X and Y. Typed as ``Any`` because the concrete
+    #: ``RelationalReading`` lives in ``extractors.relations`` and importing it here would
+    #: close a cycle; the shape is documented rather than asserted by a nominal type.
+    relations: list[Any] = field(default_factory=list)
     quarantined: bool = False
     reason: str | None = None
 

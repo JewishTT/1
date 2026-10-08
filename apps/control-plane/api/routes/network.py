@@ -225,14 +225,14 @@ async def post_diagram_features(body: DiagramFeaturesRequest) -> dict[str, Any]:
     """Quantitative TDA features over VR diagrams (T043; unifies both stacks).
 
     The diagram itself is produced by the pure-python science stack
-    (``tda.persistence``), then the projection plane's diagram-distance
+    (``scitda.persistence``), then the projection plane's diagram-distance
     features (bottleneck/Wasserstein amplitude, persistence entropy,
     landscapes, Betti curves) and real between-window drift are computed by the
     authored ``projection.tda.features`` module — bridged via file path because
     the ``tda`` top-level name collides between the two first-party apps.
     """
-    from tda.persistence import from_distance_matrix
-    from tda.series import embedding_distance_matrix
+    from scitda.persistence import from_distance_matrix
+    from scitda.series import embedding_distance_matrix
 
     features_module = _load_projection_features()
     if features_module is None:
@@ -312,7 +312,7 @@ async def post_phodms(body: PhodmsRequest) -> dict[str, Any]:
     Bounded by scope: ``n_times <= 6`` and ``n_points <= 8`` else refused —
     the β₀ surface is O(n_times² · combinations) and we defer rather than cut.
     """
-    from tda.phodms import betti_zero_surface, rank_invariant
+    from scitda.phodms import betti_zero_surface, rank_invariant
 
     n_times = len(body.clouds)
     n_points = len(body.clouds[0]) if n_times else 0

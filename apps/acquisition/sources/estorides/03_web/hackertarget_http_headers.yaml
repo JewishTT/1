@@ -23,3 +23,14 @@ tool:
     User-Agent: Estorides/1.0
   params:
     q: '{query}'
+parse:
+  family: text_lines
+  fields:
+    header:
+      path: ""
+      kind: unknown
+      pattern: "^([A-Za-z-]+):"
+    value:
+      path: ""
+      kind: unknown
+      pattern: "^[A-Za-z-]+:\\s*(.+)$"

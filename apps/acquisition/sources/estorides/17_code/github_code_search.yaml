@@ -24,3 +24,13 @@ tool:
   params:
     q: 'org:{query} password'
     per_page: '30'
+parse:
+  family: json_rows
+  list_path: items
+  fields:
+    repository:
+      path: repository.full_name
+      kind: repository
+    url:
+      path: html_url
+      kind: url

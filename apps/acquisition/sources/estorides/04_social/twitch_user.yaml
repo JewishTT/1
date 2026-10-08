@@ -24,3 +24,19 @@ tool:
     Authorization: Bearer {api_key}
   params:
     login: '{query}'
+parse:
+  family: json_object
+  fields:
+    username:
+      path: display_name
+      kind: handle
+      required: true
+    description:
+      path: description
+      kind: description
+    url:
+      path: url
+      kind: url
+    created:
+      path: created_at
+      kind: timestamp

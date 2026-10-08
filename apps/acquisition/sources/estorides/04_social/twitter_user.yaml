@@ -21,3 +21,25 @@ tool:
     Authorization: Bearer {api_key}
   params:
     user.fields: description,public_metrics,created_at,location,profile_image_url,url,verified
+parse:
+  family: json_object
+  fields:
+    username:
+      path: screen_name
+      kind: handle
+      required: true
+    name:
+      path: name
+      kind: person
+    description:
+      path: description
+      kind: description
+    url:
+      path: url
+      kind: url
+    followers:
+      path: followers_count
+      kind: integer
+    created:
+      path: created_at
+      kind: timestamp

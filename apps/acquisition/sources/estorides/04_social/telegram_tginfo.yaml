@@ -17,3 +17,19 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    username:
+      path: username
+      kind: handle
+      required: true
+    name:
+      path: name
+      kind: person
+    description:
+      path: bio
+      kind: description
+    subscribers:
+      path: subscribers_count
+      kind: integer

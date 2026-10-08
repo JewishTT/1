@@ -18,3 +18,34 @@ tool:
   url: https://ipwho.is/{query}
   headers:
     User-Agent: Estorides/1.0
+parse:
+  family: json_object
+  fields:
+    ip:
+      path: ip
+      kind: ip
+      required: true
+    asn:
+      path: connection.asn
+      kind: asn
+    org:
+      path: connection.org
+      kind: organization
+    isp:
+      path: connection.isp
+      kind: isp
+    country:
+      path: country
+      kind: country
+    region:
+      path: region
+      kind: place
+    city:
+      path: city
+      kind: place
+    latitude:
+      path: latitude
+      kind: geolocation
+    longitude:
+      path: longitude
+      kind: geolocation

@@ -14,6 +14,174 @@
 
 /* ── Top bar ────────────────────────────────────────────────────────── */
 
+/* Top navigation for the UI 2.0 shell (normalised from the legacy shell).
+ *
+ * The legacy shell's navigation was a full-height sidebar in `components/Layout.tsx`,
+ * which the router mounted *around* the UI 2.0 shell - so the UI 2.0 topbar rendered
+ * underneath an untouched legacy navbar. This is the navigation for the shell that
+ * actually owns the viewport.
+ *
+ * A horizontal strip, not a second column: the shell already spends the full viewport
+ * on rail / canvas / inspector, and a sidebar would take width the canvas needs. It
+ * scrolls on one row instead of wrapping, so the topbar keeps its height at every
+ * density.
+ *
+ * Colours are `--ui-*` semantic aliases only (role names, not palette values) and
+ * sizing is the `--ui-text-*` / `--ui-space-*` scale, so re-tuning the palette or the
+ * density moves this with it and no rule here can drift from either.
+ */
+
+.ui-topnav {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-density-gap);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.ui-nav-modules {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  flex: 0 0 auto;
+  padding-inline-end: var(--ui-space-3);
+  border-inline-end: 1px solid var(--ui-border);
+}
+
+.ui-nav-module {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ui-text-muted);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border-radius: var(--ui-radius-1);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ui-nav-module:hover {
+  color: var(--ui-text-secondary);
+  background: var(--ui-surface-2);
+}
+
+/* Active module: an accent wash plus a border. Colour alone would be the only
+   signal, which fails for a reader who cannot separate the hues. */
+.ui-nav-module[data-active="true"] {
+  color: var(--ui-accent-bright);
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+}
+
+.ui-nav-module:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 1px;
+}
+
+.ui-topnav-sections {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-4);
+  flex: 0 0 auto;
+}
+
+.ui-topnav-group {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.ui-topnav-group-label {
+  color: var(--ui-text-muted);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ui-topnav-group-items {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+}
+
+.ui-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-1);
+  color: var(--ui-text-secondary);
+  text-decoration: none;
+  font-size: var(--ui-text-sm);
+  white-space: nowrap;
+}
+
+.ui-nav-link:hover {
+  color: var(--ui-text);
+  background: var(--ui-surface-2);
+}
+
+.ui-nav-link[data-active="true"] {
+  color: var(--ui-text);
+  background: var(--ui-surface-3);
+  border-color: var(--ui-border-strong);
+}
+
+/* The accent marks the icon on the active link, so the state is carried by shape
+   and position as well as hue. */
+.ui-nav-link[data-active="true"] .ui-nav-icon {
+  color: var(--ui-accent);
+}
+
+.ui-nav-link:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 1px;
+}
+
+.ui-nav-icon {
+  display: inline-flex;
+  color: var(--ui-text-muted);
+}
+
+.ui-topnav-trail {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--ui-space-2);
+  margin-inline-start: auto;
+  padding-inline-start: var(--ui-space-3);
+  border-inline-start: 1px solid var(--ui-border);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.ui-topnav-sep {
+  color: var(--ui-text-muted);
+}
+
+.ui-topnav-title {
+  color: var(--ui-text);
+  font-size: var(--ui-text-sm);
+}
+
+/* The brand mark is a drawn icon. It was a literal "?" in the legacy shell, which is
+   iconography the standard forbids and which cannot take a stroke weight or a focus
+   ring because its shape is the font's. */
+.ui-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ui-accent);
+  margin-inline-end: var(--ui-space-1);
+}
+
 .ui-topbar {
   display: flex;
   align-items: center;

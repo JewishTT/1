@@ -17,3 +17,19 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    address:
+      path: address
+      kind: crypto
+      required: true
+    funded:
+      path: chain_stats.funded_txo_sum
+      kind: amount
+    received:
+      path: chain_stats.received_txo_sum
+      kind: amount
+    tx_count:
+      path: chain_stats.tx_count
+      kind: integer

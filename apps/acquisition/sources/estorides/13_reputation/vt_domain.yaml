@@ -22,3 +22,26 @@ tool:
     Accept: application/json
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    domain:
+      path: id
+      kind: domain
+      required: true
+    reputation:
+      path: reputation
+      kind: score
+    categories:
+      path: categories
+      kind: status
+      many: true
+    last_analysis:
+      path: last_analysis_date
+      kind: timestamp
+    asn:
+      path: asn
+      kind: asn
+    country:
+      path: country
+      kind: country

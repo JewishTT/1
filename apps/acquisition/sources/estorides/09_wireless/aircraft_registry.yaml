@@ -19,3 +19,25 @@ tool:
     User-Agent: Estorides/1.0
   params:
     icao24: '{query}'
+parse:
+  family: json_rows
+  fields:
+    registration:
+      path: mode_s
+      kind: identifier
+      required: true
+    icao:
+      path: icao24
+      kind: identifier
+    manufacturer:
+      path: manufacturer
+      kind: organization
+    model:
+      path: model
+      kind: technology
+    operator:
+      path: registered_owner_country_iso_name
+      kind: country
+    url:
+      path: url
+      kind: url

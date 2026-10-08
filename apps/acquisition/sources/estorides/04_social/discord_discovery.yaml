@@ -22,3 +22,21 @@ tool:
   params:
     q: '{query}'
     limit: 20
+parse:
+  family: json_object
+  fields:
+    invite:
+      path: code
+      kind: handle
+    guild:
+      path: guild.name
+      kind: organization
+    guild_id:
+      path: guild.id
+      kind: identifier
+    channel:
+      path: channel.name
+      kind: channel
+    online:
+      path: approximate_presence_count
+      kind: integer

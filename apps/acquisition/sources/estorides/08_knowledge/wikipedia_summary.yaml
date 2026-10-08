@@ -18,3 +18,19 @@ tool:
     User-Agent: Estorides/1.0
     Accept: application/json
   params: {}
+parse:
+  family: json_object
+  fields:
+    title:
+      path: title
+      kind: article
+      required: true
+    description:
+      path: description
+      kind: description
+    extract:
+      path: extract
+      kind: description
+    url:
+      path: content_urls.desktop.page
+      kind: url

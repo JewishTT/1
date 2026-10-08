@@ -30,6 +30,7 @@ The envelope the scheduler emits is the envelope that goes on the wire
 
 from __future__ import annotations
 
+import importlib
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -282,7 +283,16 @@ class PlanDriver:
         self.producer = self.producer or KafkaProducer()
 
     def ensure_capability(self) -> None:
-        """Register the http execution surface the connector actually uses."""
+        """Register the execution surfaces the connector actually uses.
+
+        The event-producing runtimes are registered so a task can name them, and they
+        are registered with **no** transport capabilities on purpose. ``select()``
+        returns the first registration covering the required set and defaults to
+        ``{"http"}``, so a scan runtime carrying ``http`` would be handed ordinary
+        fetch work. Their real capabilities (``dns``, ``subdomains``, ``event-stream``)
+        are a recon vocabulary this registry does not have, and are reached through
+        ``runtime_ref`` instead.
+        """
         if self._registered:
             return
         from adapters.registry import REGISTRY, register
@@ -291,6 +301,26 @@ class PlanDriver:
             "http" in registration.capabilities for registration in REGISTRY
         ):
             register("catalogue-http", execution_class="http", capabilities={"http"})
+
+        # Named from the runtime classes themselves, so a registration cannot claim a
+        # runtime_ref the runtime does not use.
+        for module_name, class_name in (
+            ("runtime.bbot", "BbotRuntime"),
+            ("runtime.airbyte", "AirbyteRuntime"),
+            ("runtime.searxng", "SearXNGRuntime"),
+        ):
+            try:
+                runtime_cls = getattr(importlib.import_module(module_name), class_name)
+            except (ImportError, AttributeError):
+                continue
+            runtime_ref = getattr(runtime_cls, "runtime_ref", None)
+            if not runtime_ref or any(r.source_type == runtime_ref for r in REGISTRY):
+                continue
+            register(
+                runtime_ref,
+                execution_class="custom",
+                capabilities=frozenset(),
+            )
         self._registered = True
 
     def run(

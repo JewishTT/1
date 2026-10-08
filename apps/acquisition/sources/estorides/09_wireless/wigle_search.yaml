@@ -1,18 +1,14 @@
 name: wigle_search
-# Issue #45: the previous `key_env: WIGLE_API_NAME_WIGLE_API_API_KEY`
-# referenced a non-existent env var (the typo concatenated three
-# identifiers). WiGLE actually requires HTTP Basic Auth with
-# (WIGLE_API_NAME, WIGLE_API_TOKEN), which the source YAML's single
-# `key_env` field cannot model. Until the schema supports
-# `basic_auth_env: [WIGLE_API_NAME, WIGLE_API_TOKEN]`, mark the
-# source disabled so it doesn't surface as 'always fails' — the
-# operator can re-enable it once the auth shape is supported.
-enabled: false
+# Issue #45 is resolved: the schema now supports `basic_auth_env: [USER_VAR, PASS_VAR]`,
+# which is the shape WiGLE actually requires (an API name plus an API token, sent as
+# HTTP Basic). The previous single `key_env` could not express a credential pair, so
+# this source used to be disabled to keep it from surfacing as "always fails".
+# Enabled again now that the auth shape is expressible.
+enabled: true
 category: 09. Wireless
-description: WiGLE — wireless network geolocation (SSID/BSSID lookup) [DISABLED pending Basic Auth support — issue #45]
+description: WiGLE — wireless network geolocation (SSID/BSSID lookup)
 os: any
 requires_key: true
-key_env: WIGLE_API_TOKEN
 parser: wigle
 entity_hints:
 - ssid
@@ -24,9 +20,26 @@ applies_to:
 tool:
   method: GET
   url: https://api.wigle.net/api/v2/network/search
+  # WiGLE authenticates with HTTP Basic using an API *name* plus an API token.
+  basic_auth_env:
+  - WIGLE_API_NAME
+  - WIGLE_API_TOKEN
   headers:
     User-Agent: Estorides/1.0
   params:
     ssid: '{query}'
     onlymine: 'false'
     first: 0
+parse:
+  family: json_object
+  fields:
+    bssid:
+      path: bssid
+      kind: bssid
+      required: true
+    ssid:
+      path: ssid
+      kind: unknown
+    vendor:
+      path: vname
+      kind: vendor

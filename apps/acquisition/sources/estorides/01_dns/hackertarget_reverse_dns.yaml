@@ -16,3 +16,10 @@ tool:
     User-Agent: Estorides/1.0
   params:
     q: '{query}'
+parse:
+  family: text_lines
+  fields:
+    ip:
+      path: ""
+      kind: ip
+      pattern: ^(\d+\.\d+\.\d+\.\d+)

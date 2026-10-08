@@ -20,3 +20,25 @@ tool:
   params:
     limit: 50
     cors: 'true'
+parse:
+  family: json_object
+  fields:
+    address:
+      path: address
+      kind: crypto
+      required: true
+    hash160:
+      path: hash160
+      kind: identifier
+    received:
+      path: total_received
+      kind: amount
+    sent:
+      path: total_sent
+      kind: amount
+    balance:
+      path: final_balance
+      kind: amount
+    tx_count:
+      path: n_tx
+      kind: integer

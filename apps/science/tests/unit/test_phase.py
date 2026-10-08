@@ -34,14 +34,49 @@ class TestOrderParameters:
 
 
 class TestGinzburgLandau:
-    def test_at_critical_linear_term_vanishes(self):
+    def test_quadratic_term_vanishes_at_critical_point(self):
         potential = ginzburg_landau_potential(0.5, control=1.5, r_critical=1.5)
-        assert potential["linear"] == pytest.approx(0.0)
+        assert potential["quadratic"] == pytest.approx(0.0)
         assert potential["free_energy"] == pytest.approx(potential["quartic"])
 
     def test_energy_is_component_sum(self):
         potential = ginzburg_landau_potential(0.4, control=1.2, r_critical=1.5)
-        assert potential["free_energy"] == pytest.approx(potential["linear"] + potential["quartic"])
+        assert potential["free_energy"] == pytest.approx(
+            potential["quadratic"] + potential["quartic"]
+        )
+
+    def test_below_critical_only_origin_minimum(self):
+        potential = ginzburg_landau_potential(0.4, control=1.2, r_critical=1.5)
+        assert potential["minima_abs"] == pytest.approx(0.0)
+
+    def test_above_critical_produces_double_well(self):
+        """The mean-field double well is the reason the operator exists.
+
+        The donor's linear control coupling could not produce it: it tilts a
+        single minimum. Repaired on transfer (AGENTS.md §2), so this pins the
+        repaired behaviour, not the donor's.
+        """
+        alpha, beta, r_c = 1.0, 0.5, 1.5
+        control = 2.5
+        expected = math.sqrt(alpha * (control - r_c) / beta)
+        potential = ginzburg_landau_potential(0.0, alpha=alpha, beta=beta,
+                                              control=control, r_critical=r_c)
+        assert potential["minima_abs"] == pytest.approx(expected)
+
+        # Each minimum is a stationary point of the repaired free energy.
+        psi = expected
+        field = -alpha * (control - r_c) * psi + beta * psi ** 3
+        assert field == pytest.approx(0.0, abs=1e-12)
+
+    def test_donor_linear_coupling_could_not_bistabilise(self):
+        """Guards the defect: a linear-in-psi coupling has a single stationary point."""
+        control, r_c, beta = 2.5, 1.5, 0.5
+        # donor form: F = -alpha (control - r_c) psi + beta psi^4 -> one real root pair
+        # repaired form: F = -1/2 alpha (control - r_c) psi^2 + 1/4 beta psi^4
+        depth = control - r_c
+        repaired_psi = math.sqrt(depth / beta)
+        donor_slope_at_min = -depth + 4 * beta * repaired_psi ** 3
+        assert donor_slope_at_min != pytest.approx(0.0)
 
 
 class TestCriticalSlowing:
@@ -70,8 +105,22 @@ class TestHysteresis:
         orders = [0.1, 0.4, 0.7, 0.9]
         assert hysteresis_width(orders, list(reversed(orders)), list(range(4))) == pytest.approx(0.0)
 
-    def test_divergent_sweeps_width(self):
-        assert hysteresis_width([0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [0, 1, 2]) == pytest.approx(1.0)
+    def test_divergent_sweeps_give_loop_area(self):
+        """Hysteresis is the enclosed area, so it scales with the control range.
+
+        The donor returned the mean branch separation (1.0 here) regardless of
+        how far control was swept. The rectangle below is 2 wide and 1 tall, so
+        its area is 2.0. Repaired on transfer (AGENTS.md §2).
+        """
+        assert hysteresis_width([0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [0, 1, 2]) == pytest.approx(2.0)
+
+    def test_area_scales_with_swept_control_range(self):
+        narrow = hysteresis_width([0.0, 0.0], [1.0, 1.0], [0.0, 1.0])
+        wide = hysteresis_width([0.0, 0.0], [1.0, 1.0], [0.0, 4.0])
+        assert wide == pytest.approx(4.0 * narrow)
+
+    def test_single_point_is_no_loop(self):
+        assert hysteresis_width([0.5], [0.5], [0.0]) == pytest.approx(0.0)
 
 
 class TestAnalyzeTrajectory:
@@ -87,3 +136,12 @@ class TestAnalyzeTrajectory:
         report = analyze_trajectory(np.zeros((0, 3)))
         assert report.regime == "disordered"
         assert report.order_parameter == 0.0
+
+    def test_dampening_reaches_the_report(self):
+        """The donor computed the slowing factor but never surfaced it."""
+        field = np.full((4, 3), 0.3)
+        near = analyze_trajectory(field, control_path=[0.0, 0.0, 0.0, 1.5])
+        far = analyze_trajectory(field, control_path=[0.0, 0.0, 0.0, 9.0])
+        assert near.dampening < far.dampening
+        assert 0.01 <= near.dampening <= 1.0
+        assert "critical_slowing_dampening" in near.as_dict()

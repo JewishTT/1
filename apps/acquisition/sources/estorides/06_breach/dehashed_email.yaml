@@ -23,3 +23,18 @@ tool:
     Authorization: Basic {api_key}
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    email:
+      path: value
+      kind: email
+    database:
+      path: database.name
+      kind: leak
+    username:
+      path: username
+      kind: handle
+    domain:
+      path: domain
+      kind: domain

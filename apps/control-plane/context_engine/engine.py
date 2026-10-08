@@ -410,7 +410,7 @@ class RevisionManager:
     def __init__(self, store: ContextStore) -> None:
         self.store = store
 
-    def commit(
+    async def commit(
         self,
         context: InvestigationContext,
         *,
@@ -420,7 +420,7 @@ class RevisionManager:
         operator_actions: Sequence[str] = (),
         mode: str = "deterministic",
     ) -> ContextRevision:
-        number = self.store.next_revision_number(context.context_id)
+        number = await self.store.next_revision_number(context.context_id)
         revision = context.next_revision(
             revision=number,
             state=state,
@@ -430,7 +430,7 @@ class RevisionManager:
             rules_version=RULES_VERSION,
             mode=mode,
         ).with_id()
-        self.store.append_revision(revision)
+        await self.store.append_revision(revision)
         return revision
 
 
@@ -504,33 +504,33 @@ class ContextEngine:
 
     # -- queries (FR-050) ----------------------------------------------------
 
-    def open_obligations(self, context_id: str) -> tuple[ResearchObligation, ...]:
-        return tuple(
+    async def open_obligations(self, context_id: str) -> tuple[ResearchObligation, ...]:
+        return tuple([
             o
-            for o in self.store.obligations(context_id)
+            for o in await self.store.obligations(context_id)
             if o.status
             in (ObligationStatus.OPEN, ObligationStatus.PARTIALLY_SATISFIED)
-        )
+        ])
 
-    def satisfied_obligations(self, context_id: str) -> tuple[ResearchObligation, ...]:
-        return tuple(
-            o for o in self.store.obligations(context_id) if o.status is ObligationStatus.SATISFIED
-        )
+    async def satisfied_obligations(self, context_id: str) -> tuple[ResearchObligation, ...]:
+        return tuple([
+            o for o in await self.store.obligations(context_id) if o.status is ObligationStatus.SATISFIED
+        ])
 
-    def contradicted_obligations(self, context_id: str) -> tuple[ResearchObligation, ...]:
-        return tuple(
-            o for o in self.store.obligations(context_id) if o.status is ObligationStatus.BLOCKED
-        )
+    async def contradicted_obligations(self, context_id: str) -> tuple[ResearchObligation, ...]:
+        return tuple([
+            o for o in await self.store.obligations(context_id) if o.status is ObligationStatus.BLOCKED
+        ])
 
-    def revision_history(self, context_id: str) -> tuple[ContextRevision, ...]:
-        return self.store.revisions(context_id)
+    async def revision_history(self, context_id: str) -> tuple[ContextRevision, ...]:
+        return await self.store.revisions(context_id)
 
-    def frontier(self, context_id: str) -> ContextFrontier | None:
-        return self.store.get_frontier(context_id)
+    async def frontier(self, context_id: str) -> ContextFrontier | None:
+        return await self.store.get_frontier(context_id)
 
     # -- the loop ------------------------------------------------------------
 
-    def ingest(
+    async def ingest(
         self,
         context: InvestigationContext,
         signals: Iterable[GapSignal] = (),
@@ -543,13 +543,13 @@ class ContextEngine:
         Incremental (FR-042): only the signals passed in are considered, and the
         revision names them, so a caller can always say which change caused what.
         """
-        self.store.put_context(context)
+        await self.store.put_context(context)
         created: list[ResearchObligation] = []
         for obligation, trigger in self.generator.generate(context, signals):
-            existing = self.store.get_obligation(obligation.obligation_id)
+            existing = await self.store.get_obligation(obligation.obligation_id)
             if existing is not None:
                 continue  # stable address: re-proposing the same gap is not new work
-            self.store.put_obligation(obligation)
+            await self.store.put_obligation(obligation)
             created.append(obligation)
             self.recorder.record(
                 context_id=context.context_id,
@@ -565,28 +565,28 @@ class ContextEngine:
             d.decision_id for d in self.recorder.decisions(context.context_id)
         )
         state = InvestigationState.ACTIVE if created else context.state
-        revision = self.revisions.commit(
+        revision = await self.revisions.commit(
             context,
             state=state,
             caused_by_event_ids=event_ids,
             decision_ids=decision_ids,
             mode=mode,
         )
-        self.store.put_frontier(
+        await self.store.put_frontier(
             ContextFrontier(
                 context_id=context.context_id,
                 state=state,
-                open_obligations=tuple(sorted(o.obligation_id for o in self.open_obligations(context.context_id))),
+                open_obligations=tuple(sorted([o.obligation_id for o in await self.open_obligations(context.context_id)])),
             )
         )
         return revision, created
 
-    def evaluate_obligation(
+    async def evaluate_obligation(
         self, obligation_id: str, data: SatisfactionInput, *, mode: str = "deterministic"
     ) -> SatisfactionVerdict:
         from dataclasses import replace
 
-        obligation = self.store.get_obligation(obligation_id)
+        obligation = await self.store.get_obligation(obligation_id)
         if obligation is None:
             raise ContextEngineError("obligation_unknown", obligation_id)
         verdict = self.evaluator.evaluate(obligation, data)
@@ -612,7 +612,7 @@ class ContextEngine:
             new = replace(
                 obligation, saturation=data.saturation, confidence=verdict.confidence
             ).with_id()
-        self.store.put_obligation(new)
+        await self.store.put_obligation(new)
         self.recorder.record(
             context_id=new.context_id,
             kind="obligation_evaluated",
@@ -635,18 +635,18 @@ class ContextEngine:
         """
         return f"{runtime_ref}|{obligation.question}"
 
-    def propose_action(
+    async def propose_action(
         self, obligation_id: str, *, required_capabilities: Sequence[str] = ()
     ) -> ResearchAction | None:
         """Propose, never execute (FR-036). Returns None when nothing can be
         proposed -- the caller then records a capability requirement (FR-040)."""
-        obligation = self.store.get_obligation(obligation_id)
+        obligation = await self.store.get_obligation(obligation_id)
         if obligation is None:
             raise ContextEngineError("obligation_unknown", obligation_id)
         # FR-059: attempts, not proposals. A proposal that never ran is not history.
         attempted = {
             self._attempt_key(obligation, entry.attempt_key.split("|", 1)[0])
-            for entry in self.store.memory_for(obligation_id)
+            for entry in await self.store.memory_for(obligation_id)
             if "|" in entry.attempt_key
         }
         action = self.proposer.propose(
@@ -655,14 +655,14 @@ class ContextEngine:
             required_capabilities=required_capabilities,
         )
         if action is not None:
-            self.store.put_action(action)
+            await self.store.put_action(action)
         return action
 
-    def record_attempt(
+    async def record_attempt(
         self, action: ResearchAction, *, outcome: str, realised_gain: float | None = None
     ) -> ActionMemoryEntry:
         """FR-059. Without this the engine re-proposes what it already did."""
-        obligation = self.store.get_obligation(action.obligation_id)
+        obligation = await self.store.get_obligation(action.obligation_id)
         if obligation is None:
             raise ContextEngineError("obligation_unknown", action.obligation_id)
         entry = ActionMemoryEntry(
@@ -671,42 +671,42 @@ class ContextEngine:
             outcome=outcome,
             realised_gain=realised_gain,
         )
-        self.store.remember(entry)
+        await self.store.remember(entry)
         return entry
 
     # -- replay (FR-028) -----------------------------------------------------
 
-    def replay(self, context_id: str) -> ReplayResult:
+    async def replay(self, context_id: str) -> ReplayResult:
         """Reconstruct state from the recorded revisions.
 
         Determinism is the point: replaying the same chain twice produces the same
         summary, and replaying a chain into an empty store reproduces it.
         """
-        chain = self.store.revisions(context_id)
+        chain = await self.store.revisions(context_id)
         if not chain:
             raise ContextEngineError("nothing_to_replay", context_id)
         final = chain[-1]
         return ReplayResult(
             context_id=context_id,
             revisions=len(chain),
-            obligations=len(self.store.obligations(context_id)),
-            actions=sum(len(self.store.actions(o.obligation_id)) for o in self.store.obligations(context_id)),
+            obligations=len(await self.store.obligations(context_id)),
+            actions=sum([len(await self.store.actions(o.obligation_id)) for o in await self.store.obligations(context_id)]),
             final_state=final.state.value,
         )
 
     # -- termination and re-opening (FR-057, FR-076) -------------------------
 
-    def termination_report(self, context_id: str) -> TerminationReport:
+    async def termination_report(self, context_id: str) -> TerminationReport:
         """Why the investigation stopped, what is still unknown, what would re-open it.
 
         FR-057. Termination is never silent: an operator reading only this report
         must be able to tell whether the investigation finished, stalled, or ran out
         of sources -- and what evidence would overturn it.
         """
-        context = self.store.get_context(context_id)
+        context = await self.store.get_context(context_id)
         if context is None:
             raise ContextEngineError("context_unknown", context_id)
-        obligations = self.store.obligations(context_id)
+        obligations = await self.store.obligations(context_id)
         by_status: dict[str, list[ResearchObligation]] = {}
         for o in obligations:
             by_status.setdefault(o.status.value, []).append(o)
@@ -715,7 +715,7 @@ class ContextEngine:
         )
         terminal = (
             bool(obligations)
-            and not self.open_obligations(context_id)
+            and not await self.open_obligations(context_id)
             and not by_status.get(ObligationStatus.BLOCKED.value)
         )
         reasons = {
@@ -743,7 +743,7 @@ class ContextEngine:
             would_reopen_on=tuple(reopeners),
         )
 
-    def reopen(self, context_id: str, *, reason: str, event_ids: Sequence[str] = ()) -> ContextRevision:
+    async def reopen(self, context_id: str, *, reason: str, event_ids: Sequence[str] = ()) -> ContextRevision:
         """Re-open a closed investigation because evidence contradicted it (FR-076).
 
         The terminal state is not overwritten: the revision chain keeps the closure,
@@ -751,7 +751,7 @@ class ContextEngine:
         state back would erase the record that the investigation had been declared
         finished.
         """
-        context = self.store.get_context(context_id)
+        context = await self.store.get_context(context_id)
         if context is None:
             raise ContextEngineError("context_unknown", context_id)
         from dataclasses import replace as _replace
@@ -759,7 +759,7 @@ class ContextEngine:
         reopened = _replace(
             context, state=InvestigationState.ACTIVE, context_id=context.address()
         )
-        self.store.put_context(reopened)
+        await self.store.put_context(reopened)
         decision = self.recorder.record(
             context_id=context_id,
             kind="context_reopened",
@@ -768,7 +768,7 @@ class ContextEngine:
             outcome=InvestigationState.ACTIVE.value,
             detail=reason,
         )
-        return self.revisions.commit(
+        return await self.revisions.commit(
             reopened,
             state=InvestigationState.ACTIVE,
             caused_by_event_ids=event_ids,
@@ -776,7 +776,7 @@ class ContextEngine:
             operator_actions=("reopen",),
         )
 
-    def abandon_obligation(
+    async def abandon_obligation(
         self, obligation_id: str, *, reason: str, mode: str = "deterministic"
     ) -> ResearchObligation:
         """Close an obligation as abandoned, with the reason recorded (FR-035).
@@ -791,7 +791,7 @@ class ContextEngine:
         """
         from dataclasses import replace
 
-        obligation = self.store.get_obligation(obligation_id)
+        obligation = await self.store.get_obligation(obligation_id)
         if obligation is None:
             raise ContextEngineError("obligation_unknown", obligation_id)
         if not reason.strip():
@@ -802,7 +802,7 @@ class ContextEngine:
             disposition=Disposition.ABANDONED,
             disposition_reason=reason,
         ).with_id()
-        self.store.put_obligation(abandoned)
+        await self.store.put_obligation(abandoned)
         self.recorder.record(
             context_id=abandoned.context_id,
             kind="obligation_abandoned",
@@ -814,7 +814,7 @@ class ContextEngine:
         )
         return abandoned
 
-    def propose_hypotheses(
+    async def propose_hypotheses(
         self, context_id: str, *, max_proposals: int = 5
     ) -> tuple[ResearchObligation, ...]:
         """FR-060. Autonomous question/hypothesis proposal from context state.
@@ -823,14 +823,14 @@ class ContextEngine:
         gaps (open obligations), and low-confidence claims. No heuristics, no clock --
         so the proposal set is a function of state, which is what makes it auditable.
         """
-        context = self.store.get_context(context_id)
+        context = await self.store.get_context(context_id)
         if context is None:
             raise ContextEngineError("context_unknown", context_id)
 
         out: list[ResearchObligation] = []
         seen: set[str] = set()
 
-        for o in self.store.obligations(context_id):
+        for o in await self.store.obligations(context_id):
             if o.status is ObligationStatus.BLOCKED and o.question not in seen:
                 seen.add(o.question)
                 out.append(
@@ -847,7 +847,7 @@ class ContextEngine:
         # Low confidence is checked before open coverage gaps. Re-proposing an open
         # obligation verbatim asks a question already on the board; asking for its
         # confidence to be raised is the question that actually advances it.
-        for o in self.open_obligations(context_id):
+        for o in await self.open_obligations(context_id):
             if o.question not in seen:
                 seen.add(o.question)
                 out.append(
@@ -863,7 +863,7 @@ class ContextEngine:
         # Low confidence targets *settled* obligations resting on thin evidence. It
         # deliberately skips open ones: an open obligation already occupies the board,
         # so restating it asks nothing new. The two rules do not overlap.
-        for o in self.store.obligations(context_id):
+        for o in await self.store.obligations(context_id):
             settled = o.status in (ObligationStatus.SATISFIED, ObligationStatus.ABANDONED)
             if settled and o.confidence < 0.5 and o.question not in seen:
                 seen.add(o.question)
@@ -881,12 +881,12 @@ class ContextEngine:
         out.sort(key=lambda o: (-o.priority, o.question))
         return tuple(out[:max_proposals])
 
-    def rebuild(self, context_id: str) -> ContextFrontier:
+    async def rebuild(self, context_id: str) -> ContextFrontier:
         """Re-derive the frontier from stored obligations. FR-050."""
-        context = self.store.get_context(context_id)
+        context = await self.store.get_context(context_id)
         if context is None:
             raise ContextEngineError("context_unknown", context_id)
-        obligations = self.store.obligations(context_id)
+        obligations = await self.store.obligations(context_id)
         open_ids = tuple(
             sorted(
                 o.obligation_id
@@ -912,7 +912,7 @@ class ContextEngine:
             blocked_obligations=blocked,
             closed_obligations=closed,
         )
-        self.store.put_frontier(frontier)
+        await self.store.put_frontier(frontier)
         return frontier
 
 

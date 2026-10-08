@@ -20,7 +20,7 @@ dev = ["pytest>=8.2", "pytest-asyncio>=0.23", "ruff>=0.6"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-markers = ["contract", "integration", "unit"]
+markers = ["contract", "integration", "unit", "live: needs network egress or a running broker"]
 
 [tool.ruff]
 line-length = 100

@@ -85,20 +85,32 @@ class TestToolsApi:
         assert seed["label"] == "Yard"
 
     def test_graph_returns_seed_node_and_correlation_edge(self, client: TestClient) -> None:
+        """Feature 024: the graph is served from PostgreSQL, not a fixture.
+
+        This test previously asserted the hardcoded demo (`ENT-2001 "Yard"`, one
+        `possible_match` edge). Asserting that fixture meant the endpoint could never
+        show a real investigation -- a green test over demo data. It now asserts the
+        contract that matters: the endpoint answers 200, and whatever it reports
+        declares where it came from, so a caller can tell real data from a degraded
+        fallback.
+        """
         resp = client.get("/api/v1/entities/graph")
         assert resp.status_code == 200
         body = resp.json()
-        node_ids = [n["id"] for n in body["nodes"]]
-        assert "ENT-2001" in node_ids
-        seed = next(n for n in body["nodes"] if n["id"] == "ENT-2001")
-        assert seed["label"] == "Yard"
-        assert seed["entity_type"] == "USERNAME"
-        assert seed["properties"] == {"account": "Yard"}
 
-        edge_ids = [e["id"] for e in body["edges"]]
-        assert "CE-200001" in edge_ids
-        edge = next(e for e in body["edges"] if e["id"] == "CE-200001")
-        assert edge["source"] == "ENT-2001"
-        assert edge["target"] == "ENT-2002"
-        assert edge["kind"] == "possible_match"
-        assert edge["label"] == "possible_match"
+        assert "nodes" in body and "edges" in body
+        assert body["source"] in ("postgres", "fixture")
+        assert body["source"] == "postgres" or body.get("degraded_reason")
+
+        for node in body["nodes"]:
+            assert node["id"]
+            assert node["label"] is not None
+            assert "entity_type" in node
+        for edge in body["edges"]:
+            assert edge["id"]
+            assert edge["source"] != edge["target"], "a self-edge is never a relation"
+            assert "kind" in edge and "label" in edge
+        known = {n["id"] for n in body["nodes"]}
+        for edge in body["edges"]:
+            assert edge["source"] in known, "edge endpoint is not in the node set"
+            assert edge["target"] in known, "edge endpoint is not in the node set"

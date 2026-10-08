@@ -22,3 +22,21 @@ tool:
   body:
     url: '{query}'
     format: json
+parse:
+  family: json_object
+  fields:
+    url:
+      path: url
+      kind: url
+    domain:
+      path: domain
+      kind: domain
+    brand:
+      path: brand
+      kind: organization
+    submitted:
+      path: submission_time
+      kind: timestamp
+    verified:
+      path: verified
+      kind: unknown

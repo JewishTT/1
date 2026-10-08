@@ -18,3 +18,15 @@ tool:
     User-Agent: Estorides/1.0
   params:
     q: '{query}'
+parse:
+  family: text_lines
+  fields:
+    record_type:
+      path: ""
+      kind: status
+      pattern: "^([A-Z0-9]+)\\s*:"
+    record_value:
+      path: ""
+      kind: unknown
+      required: true
+      pattern: "^[A-Z0-9]+\\s*:\\s*(\\S+)"

@@ -18,3 +18,22 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    ip:
+      path: data.ip
+      kind: ip
+      required: true
+    prefix:
+      path: data.prefix
+      kind: prefix
+    asn:
+      path: data.asn.asn
+      kind: asn
+    name:
+      path: data.asn.name
+      kind: organization
+    description:
+      path: data.asn.description_short
+      kind: description

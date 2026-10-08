@@ -11,7 +11,7 @@ from scoring.claim import ClaimVerdict, assess_claim, corroboration_score
 
 from engine.assertions import AssertionExtractor, EvidenceLink, EvidenceRef
 from engine.storyline import StorylineBuilder
-from evidence.independence import DerivationEdge, SourceIndependenceEngine
+from independence.independence import DerivationEdge, SourceIndependenceEngine
 from resolution.collective import CorrelationService, ResolvedPair
 
 

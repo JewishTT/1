@@ -19,3 +19,22 @@ tool:
   headers:
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_rows
+  fields:
+    cve:
+      path: id
+      kind: cve
+      required: true
+    summary:
+      path: summary
+      kind: description
+    published:
+      path: published
+      kind: timestamp
+    modified:
+      path: modified
+      kind: timestamp
+    score:
+      path: cvss.score
+      kind: score

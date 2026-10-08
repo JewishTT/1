@@ -19,3 +19,25 @@ tool:
     User-Agent: estorides:web:v1.3 (by /u/estorides-dev)
   params:
     limit: 50
+parse:
+  family: json_rows
+  list_path: data.children
+  fields:
+    post:
+      path: data.title
+      kind: article
+    subreddit:
+      path: data.subreddit
+      kind: subreddit
+    author:
+      path: data.author
+      kind: handle
+    url:
+      path: data.url
+      kind: url
+    score:
+      path: data.score
+      kind: integer
+    created:
+      path: data.created_utc
+      kind: timestamp

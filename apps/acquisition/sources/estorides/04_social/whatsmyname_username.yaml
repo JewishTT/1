@@ -20,3 +20,16 @@ tool:
     Accept: application/json
   params:
     username: '{query}'
+parse:
+  family: json_rows
+  list_path: users
+  fields:
+    username:
+      path: username
+      kind: handle
+    url:
+      path: url
+      kind: url
+    category:
+      path: category
+      kind: status

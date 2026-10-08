@@ -16,3 +16,23 @@ tool:
   url: https://otx.alienvault.com/api/v1/indicators/domain/{query}/general
   headers:
     User-Agent: Estorides/1.0
+parse:
+  family: json_object
+  fields:
+    domain:
+      path: indicator
+      kind: domain
+      required: true
+    pulse_count:
+      path: pulse_info.count
+      kind: integer
+    reputation:
+      path: reputation
+      kind: score
+    tags:
+      path: pulse_info.tags
+      kind: tag
+      many: true
+    indicator_type:
+      path: type
+      kind: status

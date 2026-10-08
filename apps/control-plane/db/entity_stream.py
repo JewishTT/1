@@ -153,6 +153,57 @@ class SqlEntityStreamRepository:
         """Materialization-facing alias for an ordered stream replay."""
         return await self.list_records(tenant_id=tenant_id, entity_id=entity_id, limit=limit)
 
+    async def entities_for_observations(
+        self, *, tenant_id: str, observation_ids: Iterable[str]
+    ) -> dict[str, tuple[str, ...]]:
+        """Resolve which entities each observation established.
+
+        The inverse of :meth:`list_records`, and the lookup the context fabric needs in
+        order to place an observation into a cell at all. Without it the only available
+        direction is entity -> observations, so every observation reached the fabric with
+        an undetermined scope, was refused placement, and the context could never deepen
+        past its root no matter how much evidence arrived.
+
+        Returns ``observation_id -> sorted entity ids``. An observation with no linked
+        entity is absent from the mapping rather than mapped to an empty tuple: absent
+        means "no membership was established", which is a different statement from "the
+        entities of this observation are the empty set", and the fabric needs to be able
+        to tell them apart.
+        """
+        if not tenant_id:
+            raise ValueError("tenant_id is required")
+        wanted = sorted({value for value in observation_ids if value})
+        if not wanted:
+            return {}
+
+        result = await self.session.execute(
+            select(EntityStreamRow.observation_id, EntityStreamRow.entity_id).where(
+                EntityStreamRow.tenant_id == tenant_id,
+                EntityStreamRow.observation_id.in_(wanted),
+            )
+        )
+        grouped: dict[str, set[str]] = {}
+        for observation_id, entity_id in result.all():
+            if observation_id and entity_id:
+                grouped.setdefault(str(observation_id), set()).add(str(entity_id))
+        return {key: tuple(sorted(value)) for key, value in grouped.items()}
+
+    async def observations_for_entity(
+        self, *, tenant_id: str, entity_id: str
+    ) -> tuple[str, ...]:
+        """Which observations mention one entity. The forward direction of the same edge."""
+        if not tenant_id or not entity_id:
+            raise ValueError("tenant_id and entity_id are required")
+        result = await self.session.execute(
+            select(EntityStreamRow.observation_id).where(
+                EntityStreamRow.tenant_id == tenant_id,
+                EntityStreamRow.entity_id == entity_id,
+            )
+        )
+        return tuple(
+            sorted({str(row[0]) for row in result.all() if row[0]})
+        )
+
     async def get_by_record_hash(
         self, record_hash: str, *, tenant_id: str
     ) -> StreamRecord | None:

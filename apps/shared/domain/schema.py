@@ -27,6 +27,10 @@ class UnknownSchemaError(KeyError):
 
 NAME_VALID = frozenset(
     {
+        # FTM's root: everything else is a ``Thing``. Registered so the hierarchy has a
+        # declared top -- ``ancestors_of`` stops at it, and a lookup for it is a question
+        # the registry can answer rather than an unknown-name error.
+        "Thing",
         "Person", "LegalEntity", "Organization", "Company", "UserAccount",
         "Address", "Asset", "Event", "Document", "Location", "Phone", "Email",
         "CryptoAddress", "Vehicle", "Membership", "Employment", "Ownership",
@@ -37,6 +41,10 @@ _PROPERTY_TYPES = frozenset(
     {
         "name", "alias", "email", "phone", "country", "address", "url", "ip",
         "username", "identifier", "date", "text", "number", "amount", "registry",
+        # A share of an entity is a percentage, not a bare number: 33 and 0.33 must not be
+        # the same value. Declaring it as ``number`` is what let ``Ownership.share`` ship
+        # with a type outside this vocabulary.
+        "percent",
     }
 )
 
@@ -115,6 +123,69 @@ class SchemaRegistry:
         if value is None or not str(value).strip():
             raise ValueError(f"schema {schema_name}: empty value for property {prop!r}")
 
+    def ancestors_of(self, schema_name: str) -> tuple[str, ...]:
+        """Every declared supertype of ``schema_name``, nearest first, excluding itself.
+
+        Walked by the registry rather than supplied by a caller, because a hierarchy
+        nobody can ask questions about does not constrain a type -- it is documentation.
+        Cycle-guarded: a cycle in ``extends`` is a data error, and letting it spin here
+        would turn a bad declaration into a hang rather than a refused lookup.
+        """
+        self.resolve(schema_name)
+        found: list[str] = []
+        seen = {schema_name}
+        frontier = list(self.schemas[schema_name].extends)
+        while frontier:
+            name = frontier.pop(0)
+            if name in seen:
+                continue
+            definition = self.schemas.get(name)
+            if definition is None:
+                continue
+            seen.add(name)
+            found.append(name)
+            frontier.extend(definition.extends)
+        return tuple(found)
+
+    def is_subtype_of(self, schema_name: str, ancestor: str) -> bool:
+        """Whether ``schema_name`` sits anywhere under ``ancestor``."""
+        return ancestor in self.ancestors_of(schema_name)
+
+    def descendants_of(self, ancestor: str) -> tuple[str, ...]:
+        """Every registered schema under ``ancestor``, nearest first.
+
+        Computed by walking the declared hierarchy rather than by scanning every schema and
+        testing ``is_subtype_of``: the scan is quadratic and, more importantly, would
+        resolve an undeclared parent to nothing instead of reporting it.
+        """
+        self.resolve(ancestor)
+        direct = {
+            name for name, d in self.schemas.items() if ancestor in d.extends
+        }
+        found: list[str] = []
+        seen: set[str] = set()
+        frontier = sorted(direct)
+        while frontier:
+            name = frontier.pop(0)
+            if name in seen:
+                continue
+            seen.add(name)
+            found.append(name)
+            frontier.extend(
+                sorted(n for n, d in self.schemas.items() if name in d.extends)
+            )
+        return tuple(found)
+
+    def type_closure(self, schema_name: str) -> tuple[str, ...]:
+        """The type plus everything it is a subtype of.
+
+        This is the set a derived type may assert. Ordered widest-last so a caller that
+        picks the most specific entry gets the narrowest claim and one that picks the first
+        gets the broadest -- and either choice is defensible, which is the point: the
+        registry should never have to guess which one the analyst meant.
+        """
+        return (schema_name,) + self.ancestors_of(schema_name)
+
     def validate_entity(self, schema_name: str, properties: dict) -> None:
         self.resolve(schema_name)
         for prop, entries in (properties or {}).items():
@@ -147,8 +218,12 @@ class SchemaRegistry:
 
 DEFAULT_REGISTRY = SchemaRegistry(
     schemas={
+        "Thing": SchemaDefinition(
+            "Thing",
+            properties={"name": "name", "summary": "text", "country": "country"},
+        ),
         "Person": SchemaDefinition(
-            "Person",
+            "Person", extends=("LegalEntity",),
             properties={
                 "name": "name", "nationality": "country", "birthDate": "date",
                 "email": "email", "phone": "phone", "address": "address", "idNumber": "identifier",
@@ -156,14 +231,14 @@ DEFAULT_REGISTRY = SchemaRegistry(
             },
         ),
         "LegalEntity": SchemaDefinition(
-            "LegalEntity",
+            "LegalEntity", extends=("Thing",),
             properties={
                 "name": "name", "country": "country", "legalForm": "text",
                 "status": "text", "registrationNumber": "identifier", "email": "email",
             },
         ),
         "Organization": SchemaDefinition(
-            "Organization",
+            "Organization", extends=("LegalEntity",),
             properties={
                 "name": "name", "country": "country", "legalForm": "text",
                 "status": "text", "registrationNumber": "identifier", "email": "email",
@@ -178,14 +253,14 @@ DEFAULT_REGISTRY = SchemaRegistry(
             },
         ),
         "UserAccount": SchemaDefinition(
-            "UserAccount",
+            "UserAccount", extends=("Thing",),
             properties={
                 "username": "username", "service": "text", "email": "email",
                 "url": "url", "owner": "text", "status": "text",
             },
         ),
         "Address": SchemaDefinition(
-            "Address",
+            "Address", extends=("Location",),
             properties={
                 "address": "address",
                 "postalCode": "text",
@@ -194,11 +269,11 @@ DEFAULT_REGISTRY = SchemaRegistry(
             },
         ),
         "Asset": SchemaDefinition(
-            "Asset",
+            "Asset", extends=("Thing",),
             properties={"name": "name", "assetType": "text", "value": "amount", "currency": "text"},
         ),
         "Event": SchemaDefinition(
-            "Event",
+            "Event", extends=("Thing",),
             properties={
                 "summary": "text",
                 "date": "date",
@@ -207,12 +282,74 @@ DEFAULT_REGISTRY = SchemaRegistry(
             },
         ),
         "Email": SchemaDefinition(
-            "Email",
+            "Email", extends=("Thing",),
             properties={"address": "email", "label": "name", "domain": "text"},
         ),
         "CryptoAddress": SchemaDefinition(
-            "CryptoAddress",
+            "CryptoAddress", extends=("Asset",),
             properties={"publicKey": "text", "label": "name", "network": "text"},
+        ),
+        # Admissible since NAME_VALID listed them; nothing ever registered them, so seven of
+        # the seventeen declared types could not be assigned to a stored entity at all.
+        "Document": SchemaDefinition(
+            "Document", extends=("Thing",),
+            properties={"title": "name", "fileName": "name", "mimeType": "text",
+                        "contentHash": "identifier", "author": "name", "createdAt": "date"},
+        ),
+        "Location": SchemaDefinition(
+            "Location", extends=("Thing",),
+            properties={"name": "name", "latitude": "number", "longitude": "number",
+                        "country": "country", "city": "text"},
+        ),
+        "Phone": SchemaDefinition(
+            "Phone", extends=("Thing",),
+            properties={"number": "text", "label": "name", "service": "text"},
+        ),
+        "Vehicle": SchemaDefinition(
+            "Vehicle", extends=("Asset",),
+            properties={"name": "name", "vin": "identifier", "registration": "identifier",
+                        "buildDate": "date", "brand": "name"},
+        ),
+        "Membership": SchemaDefinition(
+            "Membership", extends=("Thing",),
+            properties={"role": "text", "organization": "name", "member": "name",
+                        "startDate": "date", "endDate": "date"},
+        ),
+        "Employment": SchemaDefinition(
+            "Employment", extends=("Membership",),
+            properties={"role": "text", "employer": "name", "employee": "name",
+                        "title": "text", "salary": "amount"},
+        ),
+        "Ownership": SchemaDefinition(
+            "Ownership", extends=("Thing",),
+            properties={"owner": "name", "asset": "name", "share": "percent",
+                        "startDate": "date", "endDate": "date"},
         ),
     }
 )
+
+
+def _assert_registry_is_sound(registry: SchemaRegistry) -> None:
+    """Validate the literal ``DEFAULT_REGISTRY`` at import time.
+
+    The registry is built by handing ``schemas=`` straight to the constructor, which
+    bypasses :meth:`SchemaRegistry.register` and therefore its property-type check. That
+    let ``Ownership.share: "percent"`` ship with a type outside ``_PROPERTY_TYPES`` --
+    a bad declaration that no code path could ever have reported, because the only code
+    that would have caught it was the one being skipped.
+
+    Import-time rather than test-time on purpose: a vocabulary that can silently disagree
+    with the registry is worse than one that refuses to load.
+    """
+    for name, definition in registry.schemas.items():
+        for prop, value_type in definition.properties.items():
+            if value_type not in _PROPERTY_TYPES:
+                raise ValueError(
+                    f"schema {name}.{prop} declares unknown property type {value_type!r}"
+                )
+        for parent in definition.extends:
+            if parent not in registry.schemas:
+                raise ValueError(f"schema {name} extends unregistered schema {parent!r}")
+
+
+_assert_registry_is_sound(DEFAULT_REGISTRY)

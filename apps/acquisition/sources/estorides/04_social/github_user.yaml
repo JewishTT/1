@@ -20,3 +20,34 @@ tool:
     Accept: application/vnd.github.v3+json
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    username:
+      path: login
+      kind: handle
+      required: true
+    name:
+      path: name
+      kind: person
+    company:
+      path: company
+      kind: organization
+    location:
+      path: location
+      kind: place
+    email:
+      path: email
+      kind: email
+    blog:
+      path: blog
+      kind: url
+    bio:
+      path: bio
+      kind: description
+    created_at:
+      path: created_at
+      kind: timestamp
+    repos:
+      path: public_repos
+      kind: integer

@@ -27,3 +27,15 @@ tool:
     - leaks.private
     - pastes
     - darknet.tor
+parse:
+  family: json_object
+  fields:
+    email:
+      path: selector
+      kind: email
+    leak:
+      path: id
+      kind: leak
+    bucket:
+      path: bucket
+      kind: leak

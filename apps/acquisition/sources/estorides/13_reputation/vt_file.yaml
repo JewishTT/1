@@ -24,3 +24,26 @@ tool:
     Accept: application/json
     User-Agent: Estorides/1.0
   params: {}
+parse:
+  family: json_object
+  fields:
+    hash:
+      path: id
+      kind: hash
+      required: true
+    reputation:
+      path: reputation
+      kind: score
+    type:
+      path: type_description
+      kind: technology
+    size:
+      path: size
+      kind: integer
+    names:
+      path: names
+      kind: unknown
+      many: true
+    detections:
+      path: last_analysis_stats.detected
+      kind: integer

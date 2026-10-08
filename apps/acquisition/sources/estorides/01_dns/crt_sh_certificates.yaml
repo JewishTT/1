@@ -19,3 +19,25 @@ tool:
   params:
     q: '%.{query}'
     output: json
+parse:
+  family: json_rows
+  fields:
+    issuer:
+      path: issuer_name
+      kind: organization
+    issuer_ca:
+      path: issuer_ca_id
+      kind: identifier
+    common_name:
+      path: common_name
+      kind: domain
+    name_value:
+      path: name_value
+      kind: subdomain
+      many: true
+    not_before:
+      path: not_before
+      kind: timestamp
+    not_after:
+      path: not_after
+      kind: timestamp

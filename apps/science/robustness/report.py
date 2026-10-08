@@ -15,6 +15,7 @@ from enum import StrEnum
 from hashlib import sha256
 from typing import Any
 
+from _events import envelope
 from claims.model import EvidenceDirection, EvidenceLink
 from robustness.perturb import (
     PerturbationFamily,
@@ -77,8 +78,16 @@ def analyze_robustness(
     evidence: Sequence[EvidenceLink],
     *,
     perturbations: PerturbationGrid,
+    producer: Any | None = None,
+    store: Any | None = None,
+    investigation_id: str | None = None,
 ) -> RobustnessReport:
-    """Run the declared perturbation grid and report per-family flip rates."""
+    """Run the declared perturbation grid and report per-family flip rates.
+
+    Emits ``science.robustness.report`` (already declared in the store
+    projection but previously unreachable) so a flip decision becomes replayable
+    evidence rather than a value that exists only in the HTTP response.
+    """
     baseline = _conclusion(evidence)
     baseline_margin, _ = _margin(evidence)
 
@@ -114,7 +123,7 @@ def analyze_robustness(
         sensitivity[family.value] = round(sum(margin_deltas) / len(margin_deltas), 6)
 
     digest = sha256(f"rb:{claim_id}:{perturbations.as_dict()}".encode()).hexdigest()[:12]
-    return RobustnessReport(
+    report = RobustnessReport(
         report_id=f"RB-{digest}",
         claim_ref=claim_id,
         perturbations=grid_spec,
@@ -122,3 +131,15 @@ def analyze_robustness(
         sensitivity_summary=sensitivity,
         noise_regions=noise_regions,
     )
+    payload = report.as_dict()
+    payload["report_id"] = report.report_id
+    payload["claim_ref"] = report.claim_ref
+    env = envelope(
+        event_type="science.robustness.report",
+        payload=payload,
+        producer=producer,
+        investigation_id=investigation_id,
+    )
+    if store is not None:
+        store.apply(env)
+    return report

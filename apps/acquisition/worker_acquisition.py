@@ -51,8 +51,9 @@ recognised and not republished.
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol
 
 #: The lane names come from the shared topic catalog rather than being spelled
@@ -192,6 +193,13 @@ class RequestParser:
             category=str(data.get("category") or "unknown"),
             tenant_id=str(getattr(envelope, "tenant_id", "") or "default-tenant"),
             investigation_id=str(getattr(envelope, "investigation_id", "") or ""),
+            # Restored from the envelope rather than re-derived: the runtime choice was
+            # made by the planner, and a consumer that recomputed it would be guessing.
+            runtime_ref=str(data.get("runtime_ref") or ""),
+            query_ref=str(data.get("query_ref") or ""),
+            constraints=tuple(
+                dict(item) for item in (data.get("constraints") or []) if isinstance(item, dict)
+            ),
         )
 
 
@@ -229,6 +237,8 @@ class AcquisitionWorker:
         parser: RequestParser | None = None,
         seen: set[str] | None = None,
         completed: set[str] | None = None,
+        runtimes: Mapping[str, Any] | None = None,
+        config_dir: str | None = None,
     ) -> None:
         self.connector = connector or SourceConnector()
         self.sink = sink
@@ -236,12 +246,120 @@ class AcquisitionWorker:
         #: Injectable so the worker can be driven without a broker.
         self.publish = publish
         self.parser = parser or RequestParser()
+        #: runtime_ref -> constructed runtime. Empty by default: a runtime is only
+        #: constructed when a deployment wires one, so importing this module never pulls
+        #: in a docker dependency or a connector image.
+        self.runtimes: Mapping[str, Any] = dict(runtimes or {})
+        #: Where per-source ``config.json`` / ``catalog.json`` for connector runtimes live.
+        #: A connector protocol runtime needs both files and cannot invent them, so a
+        #: missing one is a reported failure rather than a silently empty read.
+        self.config_dir = config_dir or ""
         #: Idempotency: observation ids already published (Invariant 12 / FR-007).
         self.seen: set[str] = seen if seen is not None else set()
         #: Requests whose pages were all published. A replay of one of these is a
         #: no-op; a request that *failed* is deliberately absent, so replaying it
         #: re-runs it (the constitution requires rejected work stay replayable).
         self.completed: set[str] = completed if completed is not None else set()
+
+    async def _run_runtime(
+        self, envelope: Any, task: AcquisitionTask
+    ) -> ObservationResult:
+        """Execute a task on the runtime it names, and publish what it yields.
+
+        Every failure mode here is reported as a :class:`Failure` with the reason named,
+        because a task that names a runtime it cannot reach must say *which* part is
+        missing -- an unknown runtime, an unwired runtime, a missing config file -- rather
+        than surfacing as a generic acquisition error that reads like a source failure.
+        """
+        runtime = self.runtimes.get(task.runtime_ref)
+        if runtime is None:
+            return self._runtime_failure(
+                envelope,
+                task,
+                "runtime_unavailable",
+                f"task names runtime {task.runtime_ref!r}, "
+                "which this worker has no instance of",
+            )
+        if not self.config_dir:
+            return self._runtime_failure(
+                envelope,
+                task,
+                "runtime_unconfigured",
+                f"runtime {task.runtime_ref!r} needs a config directory, none was wired",
+            )
+
+        stem = task.source_name or task.source_id
+        config_path = str(Path(self.config_dir) / f"{stem}.config.json")
+        catalog_path = str(Path(self.config_dir) / f"{stem}.catalog.json")
+        missing = [path for path in (config_path, catalog_path) if not Path(path).exists()]
+        if missing:
+            return self._runtime_failure(
+                envelope,
+                task,
+                "runtime_config_missing",
+                f"missing connector files: {', '.join(missing)}",
+            )
+
+        payload = task.to_task()
+        payload["config_path"] = config_path
+        payload["catalog_path"] = catalog_path
+
+        observations: list[dict[str, Any]] = []
+        duplicates: list[str] = []
+        failures: list[Failure] = []
+        try:
+            async for artifact in runtime.acquire(payload):
+                observation_id = str(getattr(artifact, "observation_id", "") or "")
+                if not observation_id:
+                    continue
+                if observation_id in self.seen:
+                    duplicates.append(observation_id)
+                    continue
+                self.seen.add(observation_id)
+                observation = {
+                    "event_id": observation_id,
+                    "observation_id": observation_id,
+                    "source_id": task.source_id,
+                    "task_id": task.task_id,
+                    "runtime_ref": task.runtime_ref,
+                    "uri": str(getattr(artifact, "uri", "") or ""),
+                    "content_hash": str(getattr(artifact, "content_hash", "") or ""),
+                }
+                self._publish_observation(observation)
+                observations.append(observation)
+        except Exception as exc:  # noqa: BLE001 - a runtime failure is a source failure
+            failures.append(
+                classify_error(
+                    AcquisitionError("runtime_execution_failed", str(exc)),
+                    source_id=task.source_id,
+                    task_id=task.task_id,
+                )
+            )
+            for failure in failures:
+                self._route(failure, envelope)
+
+        return ObservationResult(
+            task_id=task.task_id,
+            source_id=task.source_id,
+            observations=tuple(observations),
+            failures=tuple(failures),
+            duplicates=tuple(duplicates),
+        )
+
+    def _runtime_failure(
+        self, envelope: Any, task: AcquisitionTask, reason: str, detail: str
+    ) -> ObservationResult:
+        failure = classify_error(
+            AcquisitionError(reason, detail),
+            source_id=task.source_id,
+            task_id=task.task_id,
+        )
+        self._route(failure, envelope)
+        return ObservationResult(
+            task_id=task.task_id,
+            source_id=task.source_id,
+            failures=(failure,),
+        )
 
     async def handle(self, envelope: Any) -> ObservationResult:
         """Run one request to completion. Never raises for a source-level failure."""
@@ -269,6 +387,14 @@ class AcquisitionWorker:
                 source_id=task.source_id,
                 superseded=True,
             )
+
+        # A task naming a runtime goes to that runtime, not to the HTTP connector. The
+        # fallback below would hand a connector-shaped source to ``HttpSourceExecutor``,
+        # which refuses every non-HTTP kind -- so the task would fail with a message about
+        # the wrong problem, and the operator would go looking at the source definition
+        # instead of at the missing runtime.
+        if task.runtime_ref:
+            return await self._run_runtime(envelope, task)
 
         observations: list[dict[str, Any]] = []
         failures: list[Failure] = []

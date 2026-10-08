@@ -75,6 +75,23 @@ _correlations = [
 ]
 
 _reviews = ReviewService()
+
+#: One engine for the process. Built lazily because importing this module must not
+#: require a reachable database -- the route degrades to the fixture instead.
+#:
+#: This is cached deliberately. `make_session_factory()` opens a new async engine, and
+#: calling it per request leaked a pool per call and deadlocked under Starlette's
+#: TestClient, which runs the app on a worker thread with its own event loop.
+_pg_factory: list = []
+
+
+def _pg_session():
+    if not _pg_factory:
+        from db.session import make_session_factory
+
+        _pg_factory.append(make_session_factory())
+    return _pg_factory[0]
+
 _materialization_operations = MaterializationOperations()
 # Process-local stream seam used by the fallback worker; production worker
 # replaces this with the SQL entity_stream repository.
@@ -530,32 +547,203 @@ async def list_entities(
 @router.get("/graph")
 async def list_graph(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+    investigation_id: str | None = None,
 ) -> dict:
-    """Entity→correlation graph projection: nodes from the catalog entities,
-    edges from possible_match correlations (OpenOSINT pattern, no merge)."""
+    """Entity graph projection, scoped.
+
+    Feature 024: reads PostgreSQL, which is authoritative (ADR-0027). This used to
+    serve a hardcoded two-node fixture (`ENT-2001 "Yard"` plus one `possible_match`
+    edge), so the UI's graph view could never show anything real -- it rendered the
+    demo, not the investigation.
+
+    **Scoping.** This previously read *every* entity and *every* relation claim with no
+    filter at all. Both tables carry ``tenant_id`` and ``RelationClaim`` also carries
+    ``investigation_id``, so an unscoped read was a cross-tenant read and a
+    cross-investigation read at the same time: two analysts working separate
+    investigations saw each other's graph. Tenant filtering is now mandatory and
+    non-optional; ``investigation_id`` narrows further and, because ``Entity`` has no
+    investigation column, is applied by keeping only entities that the investigation's own
+    relation claims actually reference -- plus entities named explicitly in the
+    investigation scope. An entity mentioned nowhere in this investigation is not part of
+    this investigation's graph.
+
+    The fixture is kept only as a last resort when the database holds no relations, so
+    a fresh install still has something to render -- and it is **never** returned for a
+    scoped request, because demo data shown under a real investigation id is a lie about
+    evidence that does not exist.
+    """
+    tenant = ctx.tenant_id if ctx else "default-tenant"
+
     nodes: list[dict] = []
-    for entity_id in _catalog.entity_ids():
-        view = _catalog.entity(entity_id)
-        identity = view.get("canonical_identity") or {}
+    edges: list[dict] = []
+    try:
+        from db.schema import Entity, RelationClaim
+        from sqlalchemy import select
+
+        async with _pg_session()() as session:
+            claim_stmt = select(
+                RelationClaim.relation_id,
+                RelationClaim.relation_type,
+                RelationClaim.subject_ref,
+                RelationClaim.object_ref,
+                RelationClaim.confidence,
+                RelationClaim.evidence_grade,
+            ).where(RelationClaim.tenant_id == tenant)
+            if investigation_id:
+                claim_stmt = claim_stmt.where(
+                    RelationClaim.investigation_id == investigation_id
+                )
+            claims = (await session.execute(claim_stmt)).all()
+
+            for relation_id, kind, subject, obj, confidence, grade in claims:
+                edges.append(
+                    {
+                        "id": relation_id,
+                        "source": subject,
+                        "target": obj,
+                        "kind": kind,
+                        "label": kind,
+                        "confidence": confidence,
+                        "evidence_grade": grade,
+                    }
+                )
+
+            entity_stmt = select(
+                Entity.entity_id, Entity.entity_type, Entity.canonical_name
+            ).where(Entity.tenant_id == tenant)
+            if investigation_id:
+                # Only entities this investigation actually touches.
+                referenced = {e["source"] for e in edges} | {e["target"] for e in edges}
+                referenced |= await _investigation_scope_entities(investigation_id, tenant)
+                if not referenced:
+                    return {
+                        "nodes": [],
+                        "edges": [],
+                        "tenant_id": tenant,
+                        "investigation_id": investigation_id,
+                        "source": "postgresql",
+                        "scoped": True,
+                    }
+                entity_stmt = entity_stmt.where(Entity.entity_id.in_(sorted(referenced)))
+
+            rows = (await session.execute(entity_stmt)).all()
+            seen: set[str] = set()
+            for entity_id, entity_type, canonical_name in rows:
+                if entity_id in seen:
+                    continue
+                seen.add(entity_id)
+                nodes.append(
+                    {
+                        "id": entity_id,
+                        "label": canonical_name or entity_id,
+                        "entity_type": entity_type or "entity",
+                        "properties": {"canonical_name": canonical_name},
+                    }
+                )
+    except Exception as exc:  # database absent -> demo path, not a 500
+        if investigation_id:
+            # A scoped request must never be answered with demo data.
+            return {
+                "nodes": [],
+                "edges": [],
+                "tenant_id": tenant,
+                "investigation_id": investigation_id,
+                "source": "unavailable",
+                "scoped": True,
+                "degraded_reason": type(exc).__name__,
+                "detail": "graph unavailable for this investigation; no demo data substituted",
+            }
+        nodes = []
+        edges = []
         nodes.append(
+            {"id": "ENT-2001", "label": "Yard", "entity_type": "account", "properties": {}}
+        )
+        edges.append(
             {
-                "id": entity_id,
-                "label": next(iter(identity.values()), entity_id),
-                "entity_type": infer_entity_type(identity),
-                "properties": identity,
+                "id": "CE-200001",
+                "source": "ENT-2001",
+                "target": "ENT-2002",
+                "kind": "possible_match",
+                "label": "possible_match",
             }
         )
-    edges = [
-        {
-            "id": e["edge_id"],
-            "source": e["candidate_a"],
-            "target": e["candidate_b"],
-            "kind": e["kind"],
-            "label": e["kind"],
+        nodes.append(
+            {"id": "ENT-2002", "label": "ENT-2002", "entity_type": "entity", "properties": {}}
+        )
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "tenant_id": tenant,
+            "source": "fixture",
+            "degraded_reason": type(exc).__name__,
         }
-        for e in _correlations
-    ]
-    return {"nodes": nodes, "edges": edges, "tenant_id": ctx.tenant_id}
+
+    if not edges:
+        # Nothing asserted yet. Say so instead of passing off the fixture as findings.
+        nodes = [
+            {"id": "ENT-2001", "label": "Yard", "entity_type": "account", "properties": {}},
+            {"id": "ENT-2002", "label": "ENT-2002", "entity_type": "entity", "properties": {}},
+        ]
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "tenant_id": tenant,
+            "source": "postgres",
+            "degraded_reason": "no asserted relations yet",
+        }
+
+    if investigation_id:
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "tenant_id": tenant,
+            "investigation_id": investigation_id,
+            "source": "postgres",
+            "scoped": True,
+        }
+    return {"nodes": nodes, "edges": edges, "tenant_id": tenant, "source": "postgres", "scoped": True}
+
+
+async def _investigation_scope_entities(investigation_id: str, tenant_id: str) -> set[str]:
+    """Entities named directly in the durable investigation scope.
+
+    ``Entity`` carries no investigation column, so the authoritative link is the relation
+    claims. An investigation may also name entities in its scope before any relation
+    exists -- the normal state of a fresh investigation -- and those must appear in its
+    graph. Read from the investigation's durable row rather than the in-memory repo, so
+    scoping does not depend on process state.
+
+    Returns an empty set on any failure. A missing scope read narrows the graph to
+    relation-derived entities; it never widens it.
+    """
+    import json
+
+    from sqlalchemy import text
+
+    try:
+        async with _pg_session()() as session:
+            row = await session.execute(
+                text(
+                    "SELECT COALESCE(scope, '{}'::jsonb)::text FROM investigations "
+                    "WHERE investigation_id = :inv AND tenant_id = :tenant"
+                ),
+                {"inv": investigation_id, "tenant": tenant_id},
+            )
+            raw = row.scalar()
+    except Exception:
+        return set()
+    if not raw:
+        return set()
+    try:
+        scope = json.loads(raw) if isinstance(raw, str) else dict(raw)
+    except Exception:
+        return set()
+    out: set[str] = set()
+    for key in ("entity_refs", "entities", "entity_ids"):
+        for value in scope.get(key, []) or []:
+            if isinstance(value, str):
+                out.add(value)
+    return out
 
 
 @router.get("/{entity_id}")

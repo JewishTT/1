@@ -12,7 +12,7 @@ import enum
 from dataclasses import dataclass, field
 from typing import Annotated
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 
@@ -41,32 +41,58 @@ _scheme = HTTPBearer(auto_error=False)
 
 
 async def resolve_tenant(
+    request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_scheme)] = None,
 ) -> TenantContext:
-    """Resolve tenant + user + roles from bearer token. Falls back to dev default."""
-    if credentials is None:
-        # Dev-only: assume anonymous + default tenant.
-        return TenantContext(tenant_id="default-tenant", user_id="dev-user", roles={Role.ADMIN})
+    """Resolve tenant + user + roles.
 
-    # Production: validate JWT, extract claims.
-    token = credentials.credentials
-    if not token:
-        raise HTTPException(status_code=401, detail="missing bearer token")
+    Bearer-token path: claims are read from the token and are the only trustworthy source.
 
-    # Placeholder: in real impl, decode JWT and return TenantContext.
-    # For now, treat token as JSON-ish claim envelope (test stub).
-    import json
+    Anonymous path (development): the tenant is taken from the ``X-Tenant-Id`` header, and
+    the user id from ``X-User-Id``, each falling back to ``default-tenant`` / ``dev-user``.
 
-    try:
-        claims = json.loads(token)
-    except Exception:
-        raise HTTPException(status_code=401, detail="invalid token format")
+    .. warning::
+       The anonymous path is **not a security boundary**. A caller chooses its own tenant
+       by choosing a header, so this provides *scoping* (one investigation's data does not
+       appear in another's queries) and **zero isolation**. It exists so that tenant-scoped
+       queries and their tests are exercisable locally.
 
-    return TenantContext(
-        tenant_id=claims.get("tenant_id", "default-tenant"),
-        user_id=claims.get("user_id", "unknown"),
-        roles=frozenset(Role(r) for r in claims.get("roles", ["viewer"])),
-    )
+       Previously this branch returned a hardcoded ``default-tenant`` and ignored the header
+       entirely. That was worse than no scoping: every caller silently shared one tenant, so
+       a scoped query looked correct while the isolation it appeared to provide did not
+       exist. A spoofable boundary is at least a visible one.
+
+       Real isolation requires the bearer path with a signed token; until that is wired,
+       treat cross-tenant separation as untested.
+    """
+    if credentials is not None and credentials.credentials:
+        # Placeholder: in real impl, decode and verify a signed JWT.
+        # Unverified claims are still not trusted for authorisation here.
+        import json
+
+        token = credentials.credentials
+        if not token:
+            raise HTTPException(status_code=401, detail="missing bearer token")
+        try:
+            claims = json.loads(token)
+        except Exception:
+            raise HTTPException(status_code=401, detail="invalid token format")
+        return TenantContext(
+            tenant_id=claims.get("tenant_id", "default-tenant"),
+            user_id=claims.get("user_id", "unknown"),
+            roles=frozenset(Role(r) for r in claims.get("roles", ["viewer"])),
+        )
+
+    tenant_id = "default-tenant"
+    user_id = "dev-user"
+    if request is not None:
+        raw_tenant = request.headers.get("x-tenant-id", "").strip()
+        if raw_tenant:
+            tenant_id = raw_tenant
+        raw_user = request.headers.get("x-user-id", "").strip()
+        if raw_user:
+            user_id = raw_user
+    return TenantContext(tenant_id=tenant_id, user_id=user_id, roles={Role.ADMIN})
 
 
 async def require_analyst(ctx: Annotated[TenantContext, Depends(resolve_tenant)]) -> TenantContext:

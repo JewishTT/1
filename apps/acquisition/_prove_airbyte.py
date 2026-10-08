@@ -149,41 +149,28 @@ async def main() -> int:
     # -- Redpanda + a real consumer -------------------------------------------
     print("\n6. REDPANDA + CONSUMER")
     producer.flush(timeout_s=60)
-    from confluent_kafka import Consumer
-    from events import event_envelope_pb2 as pb
+    # Shared read-back. This used to parse every message on the topic as an
+    # EventEnvelope and died with `Wire format was corrupt`: `observation` is
+    # long-lived and shared, so an earliest-offset read returns traffic from other
+    # producers too. The producer keys by observation_id, so membership is decided on
+    # the key and nothing else is decoded.
+    from _prove_readback import read_back
 
-    consumer = Consumer(
-        {
-            "bootstrap.servers": BROKERS,
-            "group.id": GROUP,
-            "auto.offset.reset": "earliest",
-            "enable.auto.commit": False,
-        }
+    readback = read_back(
+        BROKERS,
+        "observation",
+        {a.observation_id for a in accepted},
+        group=GROUP,
     )
-    consumer.subscribe(["observation"])
+    seen = readback.found
+    print(f"  consumer group  : {GROUP}")
+    print(f"  consumed        : {readback.consumed}")
+    print(f"  foreign skipped : {readback.foreign}")
+    print(f"  read back       : {len(seen)} из {len(accepted)}")
+    if readback.undecodable:
+        print(f"  UNDECODABLE     : {readback.undecodable[:5]}")
     wanted = {a.observation_id for a in accepted}
-    seen: dict[str, dict] = {}
-    import time
-
-    deadline = time.monotonic() + 60
-    while time.monotonic() < deadline and len(seen) < len(wanted):
-        msg = consumer.poll(1.0)
-        if msg is None or msg.error():
-            continue
-        env = pb.EventEnvelope()
-        env.ParseFromString(msg.value())
-        if env.observation_id in wanted:
-            seen[env.observation_id] = {
-                "partition": msg.partition(),
-                "offset": msg.offset(),
-                "event_id": env.event_id,
-                "topic": msg.topic(),
-                "producer": env.producer,
-            }
-    consumer.close()
-    print(f"   consumer group   : {GROUP}")
     print(f"   our observations : {len(wanted)}")
-    print(f"   read back        : {len(seen)}")
     if seen:
         p = next(iter(seen.values()))
         print(f"   example          : {p['topic']}[{p['partition']}]@{p['offset']}")

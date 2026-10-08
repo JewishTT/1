@@ -23,3 +23,22 @@ tool:
     format: json
     addressdetails: 1
     zoom: 18
+parse:
+  family: json_object
+  fields:
+    place:
+      path: display_name
+      kind: place
+      required: true
+    lat:
+      path: lat
+      kind: geolocation
+    lon:
+      path: lon
+      kind: geolocation
+    country:
+      path: address.country
+      kind: country
+    country_code:
+      path: address.country_code
+      kind: country

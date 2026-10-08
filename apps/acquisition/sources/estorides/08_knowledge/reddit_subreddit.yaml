@@ -19,3 +19,19 @@ tool:
   params:
     q: '{query}'
     limit: 25
+parse:
+  family: json_rows
+  list_path: data.children
+  fields:
+    post:
+      path: data.title
+      kind: article
+    subreddit:
+      path: data.subreddit
+      kind: subreddit
+    author:
+      path: data.author
+      kind: handle
+    url:
+      path: data.url
+      kind: url

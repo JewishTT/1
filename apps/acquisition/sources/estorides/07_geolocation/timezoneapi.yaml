@@ -24,3 +24,18 @@ tool:
     by: position
     lat: '{lat}'
     lng: '{lon}'
+parse:
+  family: json_object
+  fields:
+    place:
+      path: location
+      kind: place
+    zone:
+      path: timeZoneId
+      kind: unknown
+    abbrev:
+      path: abbreviation
+      kind: unknown
+    offset:
+      path: utcOffset
+      kind: timestamp

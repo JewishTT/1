@@ -17,3 +17,12 @@ tool:
   headers:
     User-Agent: Mozilla/5.0 (compatible; Estorides/1.0)
   params: {}
+parse:
+  family: json_object
+  fields:
+    is_cached:
+      path: cached
+      kind: unknown
+    url:
+      path: url
+      kind: url

@@ -23,3 +23,19 @@ tool:
   params:
     q: '{query}'
     limit: 50
+parse:
+  family: json_object
+  fields:
+    name:
+      path: name
+      kind: organization
+    description:
+      path: description
+      kind: description
+    pulse_count:
+      path: pulse_info.count
+      kind: integer
+    tags:
+      path: tags
+      kind: tag
+      many: true

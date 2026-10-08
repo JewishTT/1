@@ -115,7 +115,11 @@ async def run_one(
         run_meta = {
             "scan_events": len(runtime.scan_events),
             "scan_events_are_evidence": False,
-            "process_exit_code": runtime.process_run.exit_code if runtime.process_run else None,
+            # `runtime.run`, not the old `process_run`: that read an AirbyteRuntime the BBOT
+        # runtime constructed and never executed, so `exit_code` was permanently null
+        # and every manifest said so. The manifest now reports the real code.
+        "process_exit_code": runtime.run.exit_code,
+        "bbot_run": runtime.run.to_dict() if runtime.run.records or runtime.run.quarantined else None,
         }
         print(f"  SCAN events : {len(runtime.scan_events)}  <- run metadata, NOT evidence (§28)")
         print(f"  observations: {len(accepted)}")
@@ -197,44 +201,26 @@ async def main() -> int:
     producer.flush(timeout_s=60)
 
     print(f"\n{'=' * 74}\nREDPANDA + CONSUMER\n{'=' * 74}")
-    from confluent_kafka import Consumer
-    from events import event_envelope_pb2 as pb
+    # Shared read-back: `observation` is long-lived and shared, so an earliest-offset
+    # read returns other producers' messages. Parsing all of them raised
+    # `Wire format was corrupt` and killed the proof before it could report. Membership
+    # is decided on the message key, which is the observation_id.
+    from _prove_readback import read_back
 
     all_obs: list[str] = []
     for acc in sink.accepted:
         all_obs.append(acc.observation_id)
     wanted = set(all_obs)
 
-    consumer = Consumer(
-        {
-            "bootstrap.servers": BROKERS,
-            "group.id": GROUP,
-            "auto.offset.reset": "earliest",
-            "enable.auto.commit": False,
-        }
-    )
-    consumer.subscribe(["observation"])
-    seen: dict[str, dict] = {}
-    import time
-
-    deadline = time.monotonic() + 60
-    while time.monotonic() < deadline and len(seen) < len(wanted):
-        msg = consumer.poll(1.0)
-        if msg is None or msg.error():
-            continue
-        env = pb.EventEnvelope()
-        env.ParseFromString(msg.value())
-        if env.observation_id in wanted:
-            seen[env.observation_id] = {
-                "partition": msg.partition(),
-                "offset": msg.offset(),
-                "topic": msg.topic(),
-                "event_id": env.event_id,
-            }
-    consumer.close()
+    readback = read_back(BROKERS, "observation", wanted, group=GROUP)
+    seen = readback.found
     print(f"  consumer group  : {GROUP}")
     print(f"  tool observations: {len(wanted)}")
+    print(f"  consumed        : {readback.consumed}")
+    print(f"  foreign skipped : {readback.foreign}")
     print(f"  read back        : {len(seen)}")
+    if readback.undecodable:
+        print(f"  UNDECODABLE     : {readback.undecodable[:5]}")
 
     out = Path("artifacts/acquisition-integration")
     out.mkdir(parents=True, exist_ok=True)

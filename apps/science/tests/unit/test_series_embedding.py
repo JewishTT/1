@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pytest
 
-from tda.series import (
+from scitda.series import (
     embedding_distance_matrix,
     max_pairwise_distance,
     takens_embed,

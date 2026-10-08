@@ -23,3 +23,24 @@ tool:
     format: json
     no_html: '1'
     no_redirect: '1'
+parse:
+  family: json_object
+  fields:
+    heading:
+      path: Heading
+      kind: description
+    abstract:
+      path: AbstractText
+      kind: description
+    url:
+      path: AbstractURL
+      kind: url
+    source:
+      path: AbstractSource
+      kind: organization
+    definition:
+      path: Definition
+      kind: description
+    definition_url:
+      path: DefinitionURL
+      kind: url

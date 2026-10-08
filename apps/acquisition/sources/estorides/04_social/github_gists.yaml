@@ -20,3 +20,22 @@ tool:
   params:
     q: user:{query}
     per_page: 20
+parse:
+  family: json_rows
+  fields:
+    repository:
+      path: html_url
+      kind: url
+      required: true
+    description:
+      path: description
+      kind: description
+    owner:
+      path: owner.login
+      kind: handle
+    language:
+      path: language
+      kind: language
+    created_at:
+      path: created_at
+      kind: timestamp
