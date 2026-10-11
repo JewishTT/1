@@ -1,0 +1,58 @@
+# CI/SpecOps isolated lab fabric (Feature 027, research D2/D6).
+#
+# Direct donor integration, "make it work first": these run the donors' real
+# functionality inside a network-isolated lab. Full egress/sandbox hardening and
+# license reconciliation are DEFERRED by explicit owner decision (FR-003/SC-007);
+# what ships now is the lab boundary + the RoE gate, which is what makes the
+# capability safe to run at all.
+#
+# Isolation posture (wave 1):
+#   - a dedicated `specops-lab` bridge network with `internal: true` where the
+#     donor permits, so lab targets cannot reach the platform's real sources;
+#   - caldera and the target fixture live on that network;
+#   - the control plane reaches donors only through its proxy routes
+#     (specops_*.py), never the reverse.
+#
+# NOTE: service images/tags are the donors' own. Pin by digest before any
+# non-lab use; the RoE gate + lab-only targeting are the safety property here,
+# not image pinning (deferred hardening).
+
+name: cognitive-specops-lab
+
+services:
+  # caldera — MITRE adversary emulation & C2 core (Apache-2.0). The emulation
+  # engine behind the Kill-chain panel (US2). REST API on 8888.
+  caldera:
+    image: caldera/core:latest
+    container_name: specops-caldera
+    networks: [specops-lab]
+    ports:
+      - "8888:8888"   # loopback-only in practice; bind 127.0.0.1 in hardened deploy
+    environment:
+      - CALDERA_APP__CONTACT_GITHUB=false
+    # No egress to the platform's acquisition fabric; lab-only.
+
+  # PhishSlayer — CMDB+MCP+LLM phishing simulation lab (GPLv3). Runs isolated;
+  # the control plane proxies to it and enforces the RoE gate before any send.
+  phishslayer:
+    image: phishslayer/lab:latest
+    container_name: specops-phishslayer
+    networks: [specops-lab]
+    ports:
+      - "8080:8080"
+    environment:
+      - CAPTURE_PASSWORDS=false   # hard invariant (FR-006); never stored
+
+  # target-fixture — the authorized lab target that emulation/phishing run
+  # against. A throwaway container, never a real asset. Replaced per drill.
+  target-fixture:
+    image: specops/lab-target:latest
+    container_name: specops-target
+    networks: [specops-lab]
+
+networks:
+  specops-lab:
+    driver: bridge
+    # `internal: true` blocks egress to the outside world; enable in the
+    # hardened deploy once donors' own telemetry needs are reconciled.
+    internal: true

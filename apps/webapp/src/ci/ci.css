@@ -1,0 +1,221 @@
+/* CI/SpecOps department canvas (Feature 027, T010).
+ *
+ * One visual system across all panels, on the existing design tokens — the
+ * department reads as one elegant instrument, not seven unrelated boards (§70:
+ * no gauge clusters, no decorative chrome; every element carries operator
+ * meaning). Structure mirrors ops.css so the two operations surfaces sit in the
+ * same family.
+ */
+
+.ui-cicanvas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.ui-cicanvas-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--c-border);
+  flex-wrap: wrap;
+}
+
+.ui-cicanvas-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ui-ci-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.ui-ci-panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.ui-ci-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ui-ci-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-ci-list-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.ui-ci-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--c-border);
+  border-radius: 0.45rem;
+  background: var(--c-surface-2, rgba(255, 255, 255, 0.02));
+}
+
+.ui-ci-list-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ui-ci-abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-ci-abilities > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--c-border);
+  border-left-width: 3px;
+  border-radius: 0.4rem;
+}
+
+.ui-ci-abilities > li[data-state="executed"] {
+  border-left-color: var(--c-accent, #4ea1ff);
+}
+.ui-ci-abilities > li[data-state="failed"] {
+  border-left-color: var(--c-danger, #ff5d5d);
+}
+.ui-ci-abilities > li[data-state="planned"] {
+  border-left-color: var(--c-border);
+}
+.ui-ci-abilities > li[data-state="skipped"] {
+  border-left-color: var(--c-border);
+  opacity: 0.7;
+}
+
+.ui-ci-ability-tech {
+  font-weight: 600;
+}
+
+.ui-ci-metrics {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.ui-ci-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.ui-ci-invariants {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-ci-invariants > li {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--c-border);
+  border-radius: 0.4rem;
+}
+
+.ui-ci-invariants > li[data-supported="false"] {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.ui-ci-invariant-kind {
+  font-variant: all-small-caps;
+  letter-spacing: 0.04em;
+  color: var(--c-text-dim, var(--c-text));
+}
+
+.ui-ci-invariant-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ui-ci-coverage {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-ci-coverage > li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--c-border);
+  border-radius: 0.35rem;
+}
+
+.ui-ci-coverage > li[data-covered="false"] {
+  border-style: dashed;
+}
+
+.ui-ci-trajectory {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-ci-trajectory > li {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ui-ci-bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--c-accent, #4ea1ff);
+  min-width: 2px;
+}
+
+.ui-ci-bar-alt {
+  background: var(--c-gold, #e0b04a);
+  margin-top: 2px;
+}

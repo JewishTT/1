@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  api,
-  ResolutionPair,
-  ReviewDecision,
-} from "../lib/api";
+import { api, ResolutionPair, ReviewDecision } from "../lib/api";
 import { CONFIDENCE_LABEL, confidenceColorVar, Confidence } from "../lib/donor/confidence";
 import {
   DEFAULT_REVIEW_FILTERS,
@@ -111,9 +107,7 @@ export function ReviewContainer({ investigationId }: Props) {
         <select
           aria-label="Review state"
           value={filters.reviewState}
-          onChange={(e) =>
-            setFilter("reviewState", e.target.value as ReviewFilters["reviewState"])
-          }
+          onChange={(e) => setFilter("reviewState", e.target.value as ReviewFilters["reviewState"])}
         >
           <option value="all">Any state</option>
           <option value="unreviewed">Unreviewed</option>

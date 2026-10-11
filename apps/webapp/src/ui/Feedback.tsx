@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Icon, type IconName } from "./Icon";
+import { Button } from "./Button";
 
 export interface EmptyStateProps {
   title: string;
@@ -64,7 +65,11 @@ export function Skeleton({ rows = 3, variant = "rows", label, height }: Skeleton
     <div className="ui-skeleton" aria-busy="true" aria-live="polite" data-variant={variant}>
       <span className="ui-sr-only">{label}</span>
       {variant === "block" ? (
-        <span className="ui-skeleton-bar" style={height != null ? { height } : undefined} aria-hidden="true" />
+        <span
+          className="ui-skeleton-bar"
+          style={height != null ? { height } : undefined}
+          aria-hidden="true"
+        />
       ) : (
         Array.from({ length: Math.max(1, rows) }, (_, index) => (
           <span
@@ -77,5 +82,63 @@ export function Skeleton({ rows = 3, variant = "rows", label, height }: Skeleton
         ))
       )}
     </div>
+  );
+}
+
+export interface LoadingViewProps {
+  /** What is being waited for, in the analyst's terms: "Loading metrics…", not "Loading". */
+  message: string;
+}
+
+/**
+ * LoadingView (§60).
+ *
+ * Eight containers carried a byte-identical private copy of this, and none of them used
+ * `Skeleton`. A file-local `LoadingView` is the reason the skeleton never reached a single
+ * container: there was a loading view, it was right there, and it was already written.
+ *
+ * The markup is kept exactly as it was, `data-testid` included, so consolidating is invisible
+ * to the tests that assert on it -- which is the point of consolidating rather than
+ * restyling.
+ */
+export function LoadingView({ message }: LoadingViewProps) {
+  return (
+    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
+      <p>{message}</p>
+    </section>
+  );
+}
+
+export interface ErrorViewProps {
+  error: string;
+  /**
+   * Omitted where retrying cannot help (a 404, a refusal). Rendered as a real `Button`, not a
+   * styled `<button>`: four of the eight private copies inlined a `style` object, which meant
+   * a theme change could not reach their retry control while every other button in the app
+   * moved.
+   */
+  onRetry?: () => void | Promise<void>;
+}
+
+/**
+ * ErrorView (§60).
+ *
+ * The eight private copies had already diverged twice: four styled the retry button inline,
+ * three had no retry at all, and one used the `btn` class -- three different appearances for
+ * the same state. `onRetry` is optional so the states that genuinely cannot be retried stay
+ * honest about it.
+ */
+export function ErrorView({ error, onRetry }: ErrorViewProps) {
+  return (
+    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
+      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
+      {onRetry ? (
+        <div className="panel-actions">
+          <Button size="sm" variant="ghost" onClick={() => void onRetry()}>
+            Retry
+          </Button>
+        </div>
+      ) : null}
+    </section>
   );
 }

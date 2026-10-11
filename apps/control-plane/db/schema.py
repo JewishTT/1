@@ -2892,3 +2892,81 @@ class ContextContradictionRow(Base):
         Index("ix_context_contradictions_context", "context_id"),
         Index("ix_context_contradictions_status", "status"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Context Graph (spec 024 §3.2-3.6). First-class, durable, transactional.
+#
+# Stored as payloads keyed by content-derived ids rather than as ten typed tables. Two
+# reasons, both about the specs rather than about taste:
+#
+# * §3.2 requires ten node types "at minimum". Ten separate tables would freeze that list into
+#   the schema, and the next type someone needs -- an Agent, a Tool, an Opportunity -- would
+#   need a migration to express something the spec explicitly allows.
+# * The node type is checked by ``context_engine.context_graph.validate`` at write time,
+#   which is where an invalid shape can still be refused. A CHECK constraint per type would
+#   duplicate that decision in a second place that could disagree.
+#
+# ``edge_type`` carries its own CHECK because the edge vocabulary is closed and *is* the
+# graph's grammar: an edge of a type nobody defined means the reader is looking at a graph
+# this build does not understand, and that is worth failing on at the storage layer.
+# ---------------------------------------------------------------------------
+
+
+class ContextNodeRow(Base):
+    __tablename__ = "context_nodes"
+
+    node_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    node_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    investigation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    label: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    key: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index("ix_context_nodes_tenant_inv", "tenant_id", "investigation_id"),
+        Index("ix_context_nodes_tenant_type", "tenant_id", "node_type"),
+    )
+
+
+class ContextEdgeRow(Base):
+    __tablename__ = "context_edges"
+
+    edge_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    edge_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    weight: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    observation_refs: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        # Endpoint uniqueness is what makes re-applying a decision idempotent, exactly as the
+        # content-derived ids do for nodes.
+        UniqueConstraint("tenant_id", "edge_type", "source_id", "target_id", name="uq_context_edge_endpoints"),
+        Index("ix_context_edges_tenant_source", "tenant_id", "source_id"),
+        Index("ix_context_edges_tenant_target", "tenant_id", "target_id"),
+        CheckConstraint(
+            "edge_type IN ('asks','scopes','supports','contradicts','refines',"
+            "'delegates','observes','revises','derived_from','supersedes')",
+            name="ck_context_edges_type",
+        ),
+    )
+
+
+class ContextDecisionRow(Base):
+    __tablename__ = "context_decisions"
+
+    decision_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    actor: Mapped[str] = mapped_column(String(64), nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    added_nodes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    added_edges: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (Index("ix_context_decisions_tenant", "tenant_id", "created_at"),)

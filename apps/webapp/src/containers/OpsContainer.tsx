@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 import { OpsMetrics, fetchOpsMetrics } from "../lib/api";
 import { OpsDashboardPage } from "../pages/OpsDashboardPage";
+import { EmptyState, ErrorView, LoadingView } from "../ui/Feedback";
+import { Button } from "../ui/Button";
 
 export function OpsContainer() {
   const [metrics, setMetrics] = useState<OpsMetrics | null>(null);
@@ -27,38 +29,22 @@ export function OpsContainer() {
 
   if (loading) return <LoadingView message="Loading metrics…" />;
   if (error) return <ErrorView error={error} onRetry={load} />;
-  if (!metrics) return <ErrorView error="No metrics available" onRetry={load} />;
+  // Was an ErrorView, which asserts the request failed. It did not: metrics came back null.
+  // Reporting a successful empty answer as a failure sends the analyst hunting for an outage
+  // that is not there.
+  if (!metrics)
+    return (
+      <EmptyState
+        testId="ops-empty"
+        title="No metrics served"
+        description="The metrics endpoint answered without a payload. The platform has nothing measured to show yet — which is not the same as an error."
+        action={
+          <Button size="sm" variant="ghost" onClick={() => void load()}>
+            Ask again
+          </Button>
+        }
+      />
+    );
 
   return <OpsDashboardPage metrics={metrics} onRefresh={load} />;
-}
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
-    </section>
-  );
-}
-
-function ErrorView({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-      <button
-        type="button"
-        onClick={() => void onRetry()}
-        style={{
-          marginTop: "0.5rem",
-          padding: "0.4rem 0.8rem",
-          background: "var(--c-surface-2)",
-          border: "1px solid var(--c-border)",
-          borderRadius: "0.3rem",
-          color: "var(--c-text)",
-          cursor: "pointer",
-        }}
-      >
-        Retry
-      </button>
-    </section>
-  );
 }

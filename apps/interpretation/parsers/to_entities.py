@@ -22,7 +22,7 @@ looked.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -54,6 +54,23 @@ __all__ = [
 #: rather than the layer that happened to be running.
 PARSER_METHOD = MethodFingerprint("parser.fields", "v1")
 
+#: Field kinds whose value is a *link* to the thing a record is about.
+#:
+#: A record carrying one with a value different from the queried subject describes something
+#: that was *found*: a search API returns hits, and every other field of that hit -- title,
+#: organization, description -- belongs to the hit, not to us. An attribute API (whois, rdap,
+#: dns, ipinfo) echoes the subject's own identity, so the field equals the query and the
+#: record stays subject-scoped. The comparison is what separates them; the field name is not.
+#:
+#: Deliberately link-shaped fields only. ``handle``/``username``/``screen_name`` were tried
+#: here and removed on evidence: an RDAP domain object carries its own registry ``handle``,
+#: which made a verified run classify the *registrant's* organization as a found-thing and
+#: silently strip it from the subject. Losing a fact stays visible in the dossier; a
+#: fabricated one does not, so the ambiguous identifiers stay out.
+_SUBJECT_REFERENCE_KINDS: frozenset[str] = frozenset(
+    {"url", "link", "permalink", "profile_url"}
+)
+
 #: Entity types whose canonical form is case-insensitive and therefore lowercased. The rest
 #: keep their case, because lowercasing ``Example Corp`` and ``example corp`` into one
 #: referent merges two legally distinct names.
@@ -77,6 +94,29 @@ _LOWERCASE_TYPES: frozenset[EntityType] = frozenset(
         EntityType.CPE,
     }
 )
+
+
+def _iter_kv(record: Any) -> Iterator[tuple[str, str]]:
+    """Yield ``(kind, value)`` for every value a parsed record declares."""
+    kinds = getattr(record, "kinds", None) or {}
+    for name in sorted(kinds):
+        for value in record.all_of(name):
+            yield name, value
+
+
+def _shape_ok(entity_type: EntityType, value: str) -> bool:
+    """Whether the value's shape matches the type the source declared for it.
+
+    Uses the platform's own validator, so a source declaring ``ip`` and returning a
+    hostname is caught by exactly the same rule that validates an extracted mention. A
+    ``False`` here is not a drop: the caller records it in ``rejected_shapes`` so the
+    analyst can see that the source answered something other than what it declared.
+    """
+    from domain.ontology import validate
+
+    if entity_type is EntityType.UNKNOWN:
+        return True
+    return bool(validate(value, entity_type))
 
 
 def canon_of(entity_type: EntityType, value: str) -> str:
@@ -132,10 +172,25 @@ class SourceInterpretation:
     entities: tuple[ParsedEntity, ...] = ()
     #: Field values that are attributes rather than things, keyed by field name.
     values: Mapping[str, str] = None  # type: ignore[assignment]
+    #: Non-entity fields of result records, kept apart for the same reason as
+    #: :attr:`about_result`.
+    result_values: Mapping[str, str] = None  # type: ignore[assignment]
     #: Kinds the ontology has no name for. Carried, never dropped -- see the module docstring.
     unclassified: tuple[str, ...] = ()
+    #: ``kind=value`` strings we refused: the source echoed the query, or returned a value
+    #: whose shape contradicts the declared type. Counted, never silently discarded.
+    rejected_echoes: tuple[str, ...] = ()
+    rejected_shapes: tuple[str, ...] = ()
     derivations: DerivationGraph = None  # type: ignore[assignment]
     record_count: int = 0
+
+    #: Field values that describe what a source *returned*, not the subject that was
+    #: queried. ``title``/``description``/``url``/``organization`` from a web-search API are
+    #: properties of the result the engine found; writing them onto the subject claims "this
+    #: domain is organised as Wikipedia", which is a different and false statement. Kept as a
+    #: separate block so the dossier can show them as results rather than as facts about
+    #: the subject.
+    about_result: tuple[ParsedEntity, ...] = ()
 
     @property
     def typed(self) -> tuple[ParsedEntity, ...]:
@@ -165,6 +220,8 @@ class SourceInterpretation:
             "untyped": len(self.untyped),
             "values": len(self.values or {}),
             "unclassified": list(self.unclassified),
+            "rejected_echoes": list(self.rejected_echoes),
+            "rejected_shapes": list(self.rejected_shapes),
             "kinds": self.kinds_seen(),
             "record_count": self.record_count,
         }
@@ -182,6 +239,7 @@ def interpret_parse(
     source_name: str,
     tenant_id: str = "default-tenant",
     method: MethodFingerprint | None = None,
+    query: str = "",
 ) -> SourceInterpretation:
     """Read one :class:`~parsers.families.ParseOutcome` into typed referents.
 
@@ -192,37 +250,75 @@ def interpret_parse(
     fingerprint = method or PARSER_METHOD
     graph = DerivationGraph()
     entities: dict[str, ParsedEntity] = {}
+    about_result: dict[str, ParsedEntity] = {}
     values: dict[str, str] = {}
+    result_values: dict[str, str] = {}
     unclassified: list[str] = []
+    rejected_echoes: list[str] = []
+    rejected_shapes: list[str] = []
     record_count = 0
+
+    # A source that echoes its own query back is reporting what we asked, not what it
+    # found. Recording that as a discovered fact is how ``ip="example.com"`` ends up in a
+    # dossier: ipapi echoes the query in its ``ip`` field when the input is not an address.
+    echo = query.strip().lower()
 
     for record in getattr(outcome, "records", ()) or ():
         record_count += 1
         record_values: dict[str, str] = {}
+        # Evidence, not a whitelist: does this record point at something other than what we
+        # asked about? If yes it is a *result*, and its fields must not be asserted about the
+        # subject. When the answer is unknowable we keep subject scope, because losing a fact
+        # is visible in the dossier while a fabricated one is not.
+        record_is_result = any(
+            name in _SUBJECT_REFERENCE_KINDS
+            and value.strip().lower() != echo
+            for name, value in _iter_kv(record)
+            if value and value.strip()
+        )
         for name, declared in sorted(record.kinds.items()):
             raw_name = KIND_ALIASES.get(declared, declared)
             axis = axis_for(raw_name)
+            if axis == "unknown":
+                # Carried as a referent with no declared type, per ``axis_for``: a kind this
+                # ontology cannot name is still something real the source reported. Routing
+                # it to ``values`` -- which is what ``axis != "entity"`` did -- demoted every
+                # unknown kind to a claim attribute, so ``unclassified`` was unreachable and
+                # the loss was invisible.
+                unclassified.append(declared)
             for value in record.all_of(name):
                 if not value or not value.strip():
                     continue
-                if axis != "entity":
+                text = value.strip()
+                if echo and text.lower() == echo:
+                    rejected_echoes.append(f"{declared}={text}")
+                    continue
+                if axis == "value":
                     # A value on a claim. Recorded once, by field name, because two records
                     # reporting the same timestamp are the same claim and not two.
-                    values.setdefault(name, value.strip())
+                    (result_values if record_is_result else values).setdefault(name, text)
                     continue
                 parsed = _entity_for(
                     raw_name,
                     declared,
-                    value.strip(),
+                    text,
                     record_values=record_values,
                     tenant_id=tenant_id,
                     observation_ref="",
                 )
                 if parsed is None:
                     continue
-                if axis == "unknown":
-                    unclassified.append(declared)
-                entities.setdefault(parsed.referent_id, parsed)
+                # Shape check before the value becomes a fact. A source that declares
+                # ``ip`` and returns a hostname has answered something else, and recording it
+                # under ``ip`` would put a lie into a column the analyst filters on.
+                if not _shape_ok(parsed.entity_type, parsed.canonical):
+                    rejected_shapes.append(f"{declared}={text}")
+                    continue
+                # A result-describing field describes what the source returned, not the
+                # subject. Mixing the two is how ``organization="Wikipedia"`` ends up
+                # asserted about a domain that merely appears in a search result.
+                bucket = about_result if record_is_result else entities
+                bucket[parsed.referent_id] = parsed
 
     for entity in entities.values():
         graph.add(
@@ -247,8 +343,12 @@ def interpret_parse(
     return SourceInterpretation(
         source_name=source_name,
         entities=tuple(sorted(entities.values(), key=lambda e: e.referent_id)),
+        about_result=tuple(sorted(about_result.values(), key=lambda e: e.referent_id)),
+        result_values=result_values,
         values=values,
         unclassified=tuple(sorted(set(unclassified))),
+        rejected_echoes=tuple(sorted(set(rejected_echoes))),
+        rejected_shapes=tuple(sorted(set(rejected_shapes))),
         derivations=graph,
         record_count=record_count,
     )

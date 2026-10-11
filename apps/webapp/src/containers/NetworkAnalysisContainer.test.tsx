@@ -19,9 +19,24 @@ vi.mock("../lib/api", () => ({
           supporting_assertions: ["ASR-9001"],
           evidence: [{ evidence_id: "E-1", observation_id: "OBS-1001", immutable: true }],
           timeline: [
-            { observation_id: "OBS-1001", uri: "http://fixtures.local/a.html", immutable: true, observed_at: "2026-09-01T03:00:00Z" },
-            { observation_id: "OBS-1002", uri: "http://fixtures.local/b.html", immutable: true, observed_at: "2026-09-03T10:00:00Z" },
-            { observation_id: "OBS-1003", uri: "http://fixtures.local/c.html", immutable: true, observed_at: "2026-09-05T22:00:00Z" },
+            {
+              observation_id: "OBS-1001",
+              uri: "http://fixtures.local/a.html",
+              immutable: true,
+              observed_at: "2026-09-01T03:00:00Z",
+            },
+            {
+              observation_id: "OBS-1002",
+              uri: "http://fixtures.local/b.html",
+              immutable: true,
+              observed_at: "2026-09-03T10:00:00Z",
+            },
+            {
+              observation_id: "OBS-1003",
+              uri: "http://fixtures.local/c.html",
+              immutable: true,
+              observed_at: "2026-09-05T22:00:00Z",
+            },
           ],
           structural_signals: [],
           tenant_id: "t",
@@ -39,7 +54,11 @@ vi.mock("../lib/api", () => ({
           supporting_assertions: [],
           evidence: [{ evidence_id: "E-9", observation_id: "OBS-9001", immutable: true }],
           timeline: [
-            { observation_id: "OBS-9001", uri: "http://fixtures.local/snapshot.json", immutable: true },
+            {
+              observation_id: "OBS-9001",
+              uri: "http://fixtures.local/snapshot.json",
+              immutable: true,
+            },
           ],
           structural_signals: [],
           tenant_id: "t",
@@ -68,38 +87,78 @@ vi.mock("../lib/api", () => ({
 vi.mock("../lib/science/api", () => ({
   networkApi: {
     measures: vi.fn(async () => ({
-      n_nodes: 2, n_edges: 1, density: 1, avg_degree: 1, max_degree: 1,
-      avg_clustering: 0, transitivity: 0, assortativity: 0, degree_gini: 1,
-      power_law_alpha: null, power_law_x_min: null, avg_shortest_path: 1,
-      small_world_sigma: null, degree_distribution: {}, degree_centrality: { "ENT-2001": 1 },
+      n_nodes: 2,
+      n_edges: 1,
+      density: 1,
+      avg_degree: 1,
+      max_degree: 1,
+      avg_clustering: 0,
+      transitivity: 0,
+      assortativity: 0,
+      degree_gini: 1,
+      power_law_alpha: null,
+      power_law_x_min: null,
+      avg_shortest_path: 1,
+      small_world_sigma: null,
+      degree_distribution: {},
+      degree_centrality: { "ENT-2001": 1 },
       structural_only: true,
     })),
     communities: vi.fn(async () => ({
-      structural_only: true, n_nodes: 2, n_edges: 1, community_count: 1,
-      modularity_q: 0, communities: { "0": ["ENT-2001", "ENT-2002"] },
+      structural_only: true,
+      n_nodes: 2,
+      n_edges: 1,
+      community_count: 1,
+      modularity_q: 0,
+      communities: { "0": ["ENT-2001", "ENT-2002"] },
     })),
     hypergraph: vi.fn(async () => ({
-      num_nodes: 2, num_edges: 1, order: 1, edge_sizes: {}, hyperedge_sizes: {},
-      degree_distribution: {}, average_node_degree: 1, incidence_density: 1,
-      connected_pairs: 1, node_degrees: {}, structural_only: true,
+      num_nodes: 2,
+      num_edges: 1,
+      order: 1,
+      edge_sizes: {},
+      hyperedge_sizes: {},
+      degree_distribution: {},
+      average_node_degree: 1,
+      incidence_density: 1,
+      connected_pairs: 1,
+      node_degrees: {},
+      structural_only: true,
     })),
     temporal: vi.fn(async () => ({
-      structural_only: true, n_nodes: 2, n_edges: 1, nodes: ["ENT-2001", "ENT-2002"],
+      structural_only: true,
+      n_nodes: 2,
+      n_edges: 1,
+      nodes: ["ENT-2001", "ENT-2002"],
       distance_matrix: { "ENT-2001": { "ENT-2001": 0, "ENT-2002": 1 } },
       motifs: { out_star: 1, in_star: 0, relay: 0 },
       timeline: [[0, ["ENT-2001"]]],
     })),
     diagramFeatures: vi.fn(async () => ({
-      entity_id: "ENT-2001", provider: "vr-z2-science", structural_only: true,
+      entity_id: "ENT-2001",
+      provider: "vr-z2-science",
+      structural_only: true,
       series_len: 5,
       diagrams: { "0": [[0, null]], "1": [] } as Record<string, Array<[number, number | null]>>,
       features: { structural_only: true, dimensions: {} },
       features_digest: "sha256:beef0001",
     })),
     phodms: vi.fn(async () => ({
-      structural_only: true, n_times: 1, n_points: 3, n_thresholds: 2,
-      betti_zero_surface: [[[]]], rank_invariant: {
-        s1: 1, t1: 1, t2: 2, s2: 1, t3: 2, t4: 3, dim: 0, rank: 1, verdict: "stable",
+      structural_only: true,
+      n_times: 1,
+      n_points: 3,
+      n_thresholds: 2,
+      betti_zero_surface: [[[]]],
+      rank_invariant: {
+        s1: 1,
+        t1: 1,
+        t2: 2,
+        s2: 1,
+        t3: 2,
+        t4: 3,
+        dim: 0,
+        rank: 1,
+        verdict: "stable",
       },
     })),
   },
@@ -137,7 +196,10 @@ describe("NetworkAnalysisContainer (projection-plane /api/v1/network)", () => {
     render(await renderNet());
     await waitFor(() => expect(screen.getByTestId("net-board")).toBeInTheDocument());
     fireEvent.click(
-      screen.getByText(/NETWORK MEASURES/).closest(".panel")!.querySelector("button")!,
+      screen
+        .getByText(/NETWORK MEASURES/)
+        .closest(".panel")!
+        .querySelector("button")!,
     );
     await waitFor(() => expect(screen.getByTestId("measures-result")).toBeInTheDocument());
     expect(screen.getByTestId("measures-result")).toHaveTextContent("density");
@@ -147,9 +209,24 @@ describe("NetworkAnalysisContainer (projection-plane /api/v1/network)", () => {
   it("runs communities, hypergraph, temporal from the same edge set", async () => {
     render(await renderNet());
     await waitFor(() => expect(screen.getByTestId("net-board")).toBeInTheDocument());
-    fireEvent.click(screen.getByText(/COMMUNITIES/).closest(".panel")!.querySelector("button")!);
-    fireEvent.click(screen.getByText(/HYPERGRAPH/).closest(".panel")!.querySelector("button")!);
-    fireEvent.click(screen.getByText(/TEMPORAL PATHS/).closest(".panel")!.querySelector("button")!);
+    fireEvent.click(
+      screen
+        .getByText(/COMMUNITIES/)
+        .closest(".panel")!
+        .querySelector("button")!,
+    );
+    fireEvent.click(
+      screen
+        .getByText(/HYPERGRAPH/)
+        .closest(".panel")!
+        .querySelector("button")!,
+    );
+    fireEvent.click(
+      screen
+        .getByText(/TEMPORAL PATHS/)
+        .closest(".panel")!
+        .querySelector("button")!,
+    );
     await waitFor(() => expect(screen.getByTestId("communities-result")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId("hypergraph-result")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId("temporal-result")).toBeInTheDocument());
@@ -161,10 +238,16 @@ describe("NetworkAnalysisContainer (projection-plane /api/v1/network)", () => {
     render(await renderNet());
     await waitFor(() => expect(screen.getByTestId("net-board")).toBeInTheDocument());
     fireEvent.click(
-      screen.getByText(/DIAGRAM FEATURES/).closest(".panel")!.querySelector("button")!,
+      screen
+        .getByText(/DIAGRAM FEATURES/)
+        .closest(".panel")!
+        .querySelector("button")!,
     );
     fireEvent.click(
-      screen.getByText(/PHODMS INVARIANT/).closest(".panel")!.querySelector("button")!,
+      screen
+        .getByText(/PHODMS INVARIANT/)
+        .closest(".panel")!
+        .querySelector("button")!,
     );
     await waitFor(() => expect(screen.getByTestId("diagram-features-result")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId("phodms-result")).toBeInTheDocument());
@@ -179,7 +262,10 @@ describe("NetworkAnalysisContainer (projection-plane /api/v1/network)", () => {
     fireEvent.submit(screen.getByTestId("net-seed-form"));
     await waitFor(() => expect(screen.getAllByText("Silent").length).toBeGreaterThan(0));
     fireEvent.click(
-      screen.getByText(/DIAGRAM FEATURES/).closest(".panel")!.querySelector("button")!,
+      screen
+        .getByText(/DIAGRAM FEATURES/)
+        .closest(".panel")!
+        .querySelector("button")!,
     );
     await waitFor(() => expect(screen.getByText(/insufficient temporal data/)).toBeInTheDocument());
     expect(vi.mocked(networkApi.diagramFeatures)).not.toHaveBeenCalled();

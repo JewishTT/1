@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api, Connector, ReconPlan } from "../lib/api";
 import { ConnectorsPage } from "../pages/ConnectorsPage";
+import { EmptyState, ErrorView, LoadingView } from "../ui/Feedback";
+import { Button } from "../ui/Button";
 
 export function ConnectorsContainer() {
   const [connectors, setConnectors] = useState<Connector[] | null>(null);
@@ -29,7 +31,21 @@ export function ConnectorsContainer() {
 
   if (loading) return <LoadingView message="Loading connectors…" />;
   if (error) return <ErrorView error={error} onRetry={load} />;
-  if (!connectors || !plans) return <LoadingView message="Loading…" />;
+  // Same reasoning as the quarantine screen: settled request, null payload. Calling that
+  // "Loading…" left the analyst watching a spinner for something that had already happened.
+  if (!connectors || !plans)
+    return (
+      <EmptyState
+        testId="connectors-empty"
+        title="Nothing returned"
+        description="The connector endpoints answered, but with no catalogue. Nothing has been registered yet, or the registry is genuinely empty."
+        action={
+          <Button size="sm" variant="ghost" onClick={() => void load()}>
+            Ask again
+          </Button>
+        }
+      />
+    );
 
   return (
     <ConnectorsPage
@@ -49,36 +65,5 @@ export function ConnectorsContainer() {
       }}
       reload={load}
     />
-  );
-}
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
-    </section>
-  );
-}
-
-function ErrorView({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-      <button
-        type="button"
-        onClick={() => void onRetry()}
-        style={{
-          marginTop: "0.5rem",
-          padding: "0.4rem 0.8rem",
-          background: "var(--c-surface-2)",
-          border: "1px solid var(--c-border)",
-          borderRadius: "0.3rem",
-          color: "var(--c-text)",
-          cursor: "pointer",
-        }}
-      >
-        Retry
-      </button>
-    </section>
   );
 }

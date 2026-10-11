@@ -5,7 +5,12 @@ import { SpecOpsContainer } from "./SpecOpsContainer";
 
 const GRAPH = {
   nodes: [
-    { id: "e-1", label: "alice@example.com", entity_type: "EMAIL", properties: { email: "alice@example.com" } },
+    {
+      id: "e-1",
+      label: "alice@example.com",
+      entity_type: "EMAIL",
+      properties: { email: "alice@example.com" },
+    },
     { id: "e-2", label: "bob", entity_type: "USERNAME", properties: { username: "bob" } },
   ],
   edges: [{ id: "rel-1", source: "e-1", target: "e-2", kind: "related_to" }],
@@ -56,7 +61,8 @@ const EMAIL_TAP = {
 
 // Captured from the SpecOpsGraphPanel cytoscape mount (`cy.on("tap", "node", …)`).
 const mockNodeTap: {
-  current: ((evt: { target: { id: () => string; data: () => Record<string, unknown> } }) => void) | null;
+  current:
+    ((evt: { target: { id: () => string; data: () => Record<string, unknown> } }) => void) | null;
 } = { current: null };
 
 vi.mock("cytoscape", () => ({
@@ -132,7 +138,9 @@ describe("SpecOpsContainer", () => {
 
     const toolbar = await screen.findByTestId("entity-toolbar");
     expect(within(toolbar).getByTestId("toolbar-type")).toHaveTextContent("EMAIL");
-    expect(within(toolbar).getByTestId("toolbar-entity-name")).toHaveTextContent("alice@example.com");
+    expect(within(toolbar).getByTestId("toolbar-entity-name")).toHaveTextContent(
+      "alice@example.com",
+    );
     expect(screen.getByTestId("specops-tool-email-enrich")).toBeInTheDocument();
     expect(screen.queryByTestId("specops-tool-user-lookup")).not.toBeInTheDocument();
     expect(screen.queryByTestId("toolbar-hint")).not.toBeInTheDocument();
@@ -159,9 +167,7 @@ describe("SpecOpsContainer", () => {
       expect.stringContaining("/api/v1/tools/email-enrich/enqueue"),
       expect.objectContaining({ method: "POST" }),
     );
-    const body = fetchMock.mock.calls.find(([input]) =>
-      String(input).endsWith("/enqueue"),
-    )?.[1];
+    const body = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/enqueue"))?.[1];
     expect(JSON.parse(String(body?.body))).toEqual({
       entity_type: "EMAIL",
       entity_value: "alice@example.com",

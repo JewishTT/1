@@ -5,6 +5,7 @@ import { api, Correlation, EntityView } from "../lib/api";
 import { buildEntityGraphElements } from "../lib/entityGraph";
 import { usePipelineStream } from "../lib/stream";
 import { EntityViewPage } from "../pages/EntityViewPage";
+import { ErrorView, LoadingView } from "../ui/Feedback";
 
 export function EntityViewContainer() {
   const { id } = useParams<{ id: string }>();
@@ -59,20 +60,4 @@ export function EntityViewContainer() {
   const graphElements = buildEntityGraphElements(entityWithCorrelations, correlations);
 
   return <EntityViewPage entity={entityWithCorrelations} graphElements={graphElements} />;
-}
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
-    </section>
-  );
-}
-
-function ErrorView({ error }: { error: string }) {
-  return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-    </section>
-  );
 }

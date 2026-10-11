@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api, QuarantineRecord } from "../lib/api";
 import { QuarantinePage } from "../pages/QuarantinePage";
+import { EmptyState, ErrorView, LoadingView } from "../ui/Feedback";
+import { Button } from "../ui/Button";
 
 export function QuarantineContainer() {
   const [records, setRecords] = useState<QuarantineRecord[] | null>(null);
@@ -29,7 +31,22 @@ export function QuarantineContainer() {
 
   if (loading) return <LoadingView message="Loading quarantine…" />;
   if (error) return <ErrorView error={error} onRetry={() => load()} />;
-  if (!records) return <LoadingView message="Loading…" />;
+  // Reached once loading is false and error is null, so the request *succeeded* and the
+  // payload was null. "Loading…" here was a claim about a request that had already finished,
+  // and it rendered forever with no retry. An absent answer is an absent answer.
+  if (!records)
+    return (
+      <EmptyState
+        testId="quarantine-empty"
+        title="Nothing returned"
+        description="The quarantine endpoint answered, but with no records. That is not the same as an empty queue, and it is not an error either."
+        action={
+          <Button size="sm" variant="ghost" onClick={() => void load()}>
+            Ask again
+          </Button>
+        }
+      />
+    );
 
   return (
     <QuarantinePage
@@ -46,36 +63,5 @@ export function QuarantineContainer() {
       onFilter={(topic) => void load(topic)}
       reload={() => load()}
     />
-  );
-}
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
-    </section>
-  );
-}
-
-function ErrorView({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-      <button
-        type="button"
-        onClick={() => void onRetry()}
-        style={{
-          marginTop: "0.5rem",
-          padding: "0.4rem 0.8rem",
-          background: "var(--c-surface-2)",
-          border: "1px solid var(--c-border)",
-          borderRadius: "0.3rem",
-          color: "var(--c-text)",
-          cursor: "pointer",
-        }}
-      >
-        Retry
-      </button>
-    </section>
   );
 }

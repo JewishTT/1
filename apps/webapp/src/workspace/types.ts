@@ -73,6 +73,12 @@ export const WORKSPACE_VIEWS = [
   "findings",
   "analysis",
   "ops",
+  // The CI/SpecOps department (027): kill-chain emulation, phishing/SAT, APT
+  // forensics, counterintelligence, social-reaction. A view here for the same
+  // reason `ops` is — ui-upgrade §1 — but a DIFFERENT subject: an operations
+  // surface for the counterintelligence & special-operations department, not
+  // pipeline health. Its canvas carries its own scope note.
+  "ci",
 ] as const;
 
 export type WorkspaceView = (typeof WORKSPACE_VIEWS)[number];

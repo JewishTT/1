@@ -28,21 +28,14 @@ import type {
   TemporalPathsResult,
 } from "./types";
 
+import { clientFor, request as httpRequest } from "../http";
+
 const SCIENCE_BASE = "/api/science";
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${SCIENCE_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    ...init,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail ?? res.statusText),
-    );
-  }
-  return res.json();
-}
+// Bound from lib/http.ts. This copy used a different error shape from the other
+// three -- stringifying a non-string `detail` -- so the same failure read
+// differently depending on which client the caller happened to reach for.
+const request = clientFor(SCIENCE_BASE);
 
 export interface RankedOpportunityDto {
   opportunity_id: string;
@@ -271,19 +264,11 @@ export const scienceApi = {
 
 const NETWORK_BASE = "/api/v1/network";
 
-async function requestV1(path: string, init?: RequestInit): Promise<any> {
-  const res = await fetch(`${NETWORK_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    ...init,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail ?? res.statusText),
-    );
-  }
-  return res.json();
-}
+// A fourth copy of the same helper, living inside the science module because its base path
+// is `/api/v1` while the rest of this file is `/api/science`. The base belongs to the
+// client, but the fetch does not, so this is now a binding rather than an implementation.
+const requestV1 = <T,>(path: string, init?: RequestInit): Promise<T> =>
+  httpRequest<T>(NETWORK_BASE, path, init);
 
 /** /api/v1/network — projection-plane network & TDA features surface. */
 export const networkApi = {

@@ -174,11 +174,32 @@ class TestPlanning:
         assert reputation.candidate_sources == ("vt",)
         assert reputation.blocked_sources == ()
 
-    def test_an_offer_only_applies_to_its_entity_kinds(self) -> None:
-        person = plan_enrichment(EntityProfile("REF-2", "person"), OFFERS)
-        assert all(
-            "crt_sh" not in g.candidate_sources for g in person.gaps
-        ), "источник доменов не должен предлагаться для человека"
+    def test_offers_are_narrowed_by_input_shape_not_by_referent_kind(self) -> None:
+        """``applies_to`` names what a source *takes*, so narrowing compares shapes.
+
+        The offer filter used to test ``offer.applies_to(profile.type_label)``: a source's
+        declared input kinds against the referent's own kind. Those are different
+        vocabularies that share a word for domains and nothing else, so the check passed for
+        domains, then discarded every offer for a person -- 41 sources, 117 attributes -- and
+        the subject came back saturated on an empty surface. The caller now selects offers, and
+        ``kinds`` narrows them by shape for a caller that wants to.
+        """
+        everything = plan_enrichment(EntityProfile("REF-2", "person"), OFFERS)
+        assert "crt_sh" in {
+            source for gap in everything.gaps for source in gap.candidate_sources
+        }, "выбор источников -- дело вызывающего, а не сравнения kind с kind"
+
+        domain_only = plan_enrichment(
+            EntityProfile("REF-2", "person"), OFFERS, kinds={"domain"}
+        )
+        assert domain_only.gaps, "явное сужение по форме входа должно что-то оставить"
+        by_attribute = {gap.attribute: gap.candidate_sources for gap in domain_only.gaps}
+        assert "generic" in by_attribute["anything"], (
+            "источник без объявленных форм остаётся общим"
+        )
+        assert "crt_sh" in by_attribute["certificate"], (
+            "доменный источник остаётся, когда сужение выбрало доменную форму"
+        )
 
     def test_an_offer_without_kinds_applies_everywhere(self) -> None:
         # A source that names no kinds is claiming to be general; making it re-declare per
@@ -257,10 +278,29 @@ class TestSaturation:
         )
         assert independent.saturation.corroborated >= 1
 
-    def test_an_empty_plan_ratios_to_zero_rather_than_dividing_by_zero(self) -> None:
+    def test_an_empty_plan_is_not_complete(self) -> None:
+        """No expected surface is zero progress, not a finished investigation.
+
+        ``ratio`` returned 1.0 and ``is_saturated`` returned True whenever the surface was
+        empty, on the reasoning that nothing was owed. That made every subject the platform
+        had no source for report itself fully resolved -- the number a UI shows an analyst
+        first. Nothing was expected and nothing was learned.
+        """
         empty = plan_enrichment(EntityProfile("REF-x", "unheard-of-kind"), [])
-        assert empty.saturation.ratio == 1.0  # nothing wanted, nothing owed
+        assert empty.saturation.total_attributes == 0
+        assert empty.saturation.ratio == 0.0
+        assert empty.saturation.is_saturated is False
         assert empty.has_work is False
+
+    def test_a_surface_is_saturated_only_once_everything_is_resolved(self) -> None:
+        profile = EntityProfile("REF-y", "domain")
+        profile.attributes["registrar"] = merge_offer(
+            AttributeState("registrar"), source_id="rdap", values=["GoDaddy"]
+        )
+        plan = plan_enrichment(profile, OFFERS, kinds={"domain"})
+        assert plan.saturation.unknown > 0, "по одному атрибуту из шести -- не поверхность"
+        assert plan.saturation.is_saturated is False
+        assert plan.saturation.ratio < 1.0
 
 
 class TestProfileReads:

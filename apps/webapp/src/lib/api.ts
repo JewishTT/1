@@ -6,23 +6,16 @@
  * happens in the container components.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { clientFor } from "./http";
 
 const API_BASE = "/api/v1";
 
 // ── Core async helper ────────────────────────────────────────────
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    ...init,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || res.statusText);
-  }
-  return res.json();
-}
+// One shared implementation: four copies of this helper had drifted into three
+// error contracts, and all four merged `headers` before `...init`, which silently
+// dropped `Content-Type` whenever a caller passed its own headers. See lib/http.ts.
+const request = clientFor(API_BASE);
 
 // ── Shared types ─────────────────────────────────────────────────
 
@@ -702,6 +695,94 @@ export const api = {
       { method: "POST", body: JSON.stringify(body) },
     );
   },
+
+  // ── CI/SpecOps department (Feature 027) ──────────────────────────────
+  // Thin typed wrappers over /api/v1/specops/* (contracts/specops-api.md).
+  // Named-absence discipline: an unserved field arrives as null + the source
+  // named in `missing`, never a zero (FR-012). The RoE gate is enforced
+  // server-side, so a 409 here is the gate refusing, not a client error.
+
+  /** Record a rules-of-engagement sign-off (supervisor). */
+  recordRoe(body: {
+    target_ref: string;
+    scope: string;
+    approved_by: string;
+    expires_at?: string | null;
+  }): Promise<CiRoeView> {
+    return request<CiRoeView>("/specops/roe", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  /** Read a sign-off's status. */
+  getRoe(roeId: string): Promise<CiRoeView> {
+    return request<CiRoeView>(`/specops/roe/${encodeURIComponent(roeId)}`);
+  },
+
+  /** List ATT&CK emulation plans from the donor libraries. */
+  listEmulationPlans(): Promise<CiEnvelope<{ plans: CiPlanWire[] }>> {
+    return request("/specops/emulation/plans");
+  },
+
+  /** One plan's abilities + expected telemetry. */
+  getEmulationPlan(planId: string): Promise<CiEnvelope<{ plan: CiPlanDetailWire }>> {
+    return request(`/specops/emulation/plans/${encodeURIComponent(planId)}`);
+  },
+
+  /** Launch an operation. Blocked (409 RoEError) without a confirmed roe_id. */
+  launchOperation(body: { plan_id: string; lab_fixture: string; roe_id: string }): Promise<
+    CiEnvelope<{ operation: CiOperationWire }>
+  > {
+    return request("/specops/emulation/operations", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  /** Live + post-run operation state (per-ability planned vs executed). */
+  getOperation(operationId: string): Promise<CiEnvelope<{ operation: CiOperationWire }>> {
+    return request(`/specops/emulation/operations/${encodeURIComponent(operationId)}`);
+  },
+
+  /** Create a draft phishing campaign (no send). */
+  createCampaign(body: {
+    name: string;
+    template_source: string;
+    roster: string[];
+    attack_mapping?: string[];
+  }): Promise<CiEnvelope<{ campaign: CiCampaignWire }>> {
+    return request("/specops/phishing/campaigns", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  /** Send a campaign. Blocked (409 RoEError / 422 RosterError) when not authorized. */
+  launchCampaign(
+    campaignId: string,
+    body: { roe_id: string },
+  ): Promise<CiEnvelope<{ campaign: CiCampaignWire }>> {
+    return request(`/specops/phishing/campaigns/${encodeURIComponent(campaignId)}/launch`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** Read a campaign (engagement metrics; captured_credentials_count always 0). */
+  getCampaign(campaignId: string): Promise<CiEnvelope<{ campaign: CiCampaignWire }>> {
+    return request(`/specops/phishing/campaigns/${encodeURIComponent(campaignId)}`);
+  },
+
+  /** A counterintelligence subject + its invariants (each with evidence refs). */
+  getSubject(subjectId: string): Promise<CiEnvelope<{ subject: CiSubjectWire }>> {
+    return request(`/specops/counterintel/subjects/${encodeURIComponent(subjectId)}`);
+  },
+
+  /** Run a social-reaction projection over a modeled population. */
+  runProjection(body: {
+    population_ref: string;
+    narrative_input: string;
+    horizon: number;
+  }): Promise<CiEnvelope<{ projection: CiProjectionWire }>> {
+    return request("/specops/social/projections", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  /** Forensics for a completed operation: expected vs actual + gaps + coverage. */
+  getForensics(operationId: string): Promise<CiEnvelope<{ forensics: CiForensicsWire }>> {
+    return request(`/specops/forensics/operations/${encodeURIComponent(operationId)}`);
+  },
 };
 
 /**
@@ -714,3 +795,105 @@ export async function fetchOpsMetrics(): Promise<OpsMetrics> {
 }
 
 export { scienceApi } from "./science/api";
+
+// ── CI/SpecOps wire types (Feature 027) ────────────────────────────────
+// The shapes the /api/v1/specops/* endpoints serve, kept next to the client that
+// calls them (contracts/specops-api.md). `served`/`missing` carry the named-
+// absence contract: a field the endpoint does not serve is named in `missing`,
+// never defaulted here.
+
+export type CiEnvelope<T> = {
+  served: string[];
+  missing: string[];
+  scope: "tenant-wide" | "investigation-scoped";
+} & T;
+
+export interface CiRoeView {
+  roe_id: string;
+  target_ref: string;
+  scope: string;
+  approved_by: string;
+  signed_at: string;
+  expires_at: string | null;
+  status: "unconfirmed" | "confirmed" | "expired";
+}
+
+export interface CiPlanWire {
+  plan_id: string;
+  name: string;
+  source_donor: string;
+  target_techniques: string[];
+  lab_fixture: string;
+}
+
+export interface CiAbilityWire {
+  ability_id: string;
+  technique: string;
+  tactic: string;
+  executor: string;
+  state?: string | null;
+  expected_telemetry?: string[];
+}
+
+export interface CiPlanDetailWire {
+  plan_id: string;
+  abilities: CiAbilityWire[];
+  expected_telemetry: string[];
+  lab_fixture: string;
+}
+
+export interface CiOperationWire {
+  operation_id: string;
+  plan_id: string;
+  lab_fixture: string;
+  roe_status: "unconfirmed" | "confirmed" | "expired";
+  state: "planned" | "running" | "halted" | "complete";
+  abilities: CiAbilityWire[];
+  agent_beacons?: unknown[];
+  pivot_paths?: unknown[];
+  started_at: string | null;
+  halted_reason: string | null;
+}
+
+export interface CiCampaignWire {
+  campaign_id: string;
+  state: "draft" | "ready" | "sending" | "complete" | "refused";
+  roe_status: "unconfirmed" | "confirmed" | "expired";
+  roster: string[];
+  engagement_metrics: { sent: number; opened: number; clicked: number; submitted: number };
+  attack_mapping: string[];
+  captured_credentials_count: number;
+}
+
+export interface CiSubjectWire {
+  subject_id: string;
+  kind: string;
+  display: string;
+  invariants: Array<{
+    kind: string;
+    value: string;
+    confidence?: number | null;
+    evidence_refs?: string[];
+  }>;
+  relations?: Array<{ to: string; kind: string; evidence_refs?: string[] }>;
+}
+
+export interface CiProjectionWire {
+  projection_id: string;
+  trajectories: Array<{ t: number; reach: number; polarization: number }>;
+  phase_transition_risk: { indicator: number; threshold_crossed: boolean };
+  confidence: "low" | "medium" | "high";
+  artifacts_ref: string | null;
+}
+
+export interface CiForensicsWire {
+  operation_id: string;
+  comparison: Array<{
+    ability_id: string;
+    technique?: string;
+    expected: string;
+    actual?: string[];
+  }>;
+  gaps: Array<{ gap_id: string; ability_id: string; expected_telemetry: string }>;
+}
+

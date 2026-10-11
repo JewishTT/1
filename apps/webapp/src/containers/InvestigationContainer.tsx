@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { api, InvestigationView, OpsMetrics, fetchOpsMetrics } from "../lib/api";
 import { EMPTY_METRICS, InvestigationMetrics, InvestigationPage } from "../pages/InvestigationPage";
 import { ReviewContainer } from "./ReviewContainer";
+import { ErrorView, LoadingView } from "../ui/Feedback";
 
 /**
  * Adapt operational metrics + investigation metadata into the
@@ -17,10 +18,7 @@ import { ReviewContainer } from "./ReviewContainer";
  * the very same adaptation instead of growing a second copy (§63, §97).
  */
 export function adaptMetrics(inv: InvestigationView, ops: OpsMetrics | null): InvestigationMetrics {
-  const maxLag = Object.values(ops?.lags_s ?? {}).reduce(
-    (max, v) => Math.max(max, v),
-    0,
-  );
+  const maxLag = Object.values(ops?.lags_s ?? {}).reduce((max, v) => Math.max(max, v), 0);
   const queueTotal = Object.values(ops?.queues ?? {}).reduce((a, v) => a + v, 0);
 
   return {
@@ -64,7 +62,9 @@ export function InvestigationContainer() {
       })
       .catch((err: Error) => {
         if (id === "0") {
-          setError("No investigation is selected. Create one from the Investigations screen first.");
+          setError(
+            "No investigation is selected. Create one from the Investigations screen first.",
+          );
         } else {
           setError(err.message);
         }
@@ -184,21 +184,5 @@ function EditInvestigation({
         </p>
       )}
     </div>
-  );
-}
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
-    </section>
-  );
-}
-
-function ErrorView({ error }: { error: string }) {
-  return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-    </section>
   );
 }

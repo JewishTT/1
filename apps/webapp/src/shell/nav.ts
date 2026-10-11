@@ -56,6 +56,13 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
         // spans every investigation: two destinations whose labels both read "graph"
         // is how the tenant-wide one ended up looking like the investigation's.
         { to: "/investigations/graph", label: "Investigation Graph", icon: "view-graph" },
+        // Spans every investigation, so it sits beside the investigation-scoped graph rather
+        // than under SpecOps. It was filed there as an operations surface, which is the wrong
+        // level: the constitution makes an Investigation the unit of work and every graph a
+        // projection of one, so a graph over all of them is still an investigative surface --
+        // just a wider one. Filing it by *what it spans* rather than *where it belongs* is
+        // what put it two sections away from its own sibling.
+        { to: "/tenant-graph", label: "Tenant Graph", icon: "view-graph" },
         { to: "/intel?entity=ENT-2001", label: "Entities", icon: "view-objects" },
         { to: "/findings/0", label: "Findings", icon: "view-findings" },
       ],
@@ -66,6 +73,9 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
         { to: "/science", label: "Science Console", icon: "diagram" },
         { to: "/network", label: "Network Analysis", icon: "view-analysis" },
         { to: "/hypotheses", label: "Hypotheses", icon: "list" },
+        // Per-subject dossier: what is known, what was refused, what was never asked.
+        // Placed with the investigative surfaces because it is the readout of a sweep.
+        { to: "/dossier", label: "Dossier", icon: "view-evidence" },
         { to: "/experiments", label: "Experiments", icon: "copy" },
       ],
     },
@@ -82,12 +92,21 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
   ],
   specops: [
     {
+      label: "Counterintelligence & Spec-Ops",
+      items: [
+        // The CI/SpecOps department (Feature 027): a view within the investigation
+        // workspace, reached as one canvas with internal panels. Filed under the
+        // SPEC module beside Ops because it is an operations surface, but it is a
+        // DIFFERENT subject from pipeline health — kill-chain emulation, phishing/SAT,
+        // APT forensics, counterintelligence and social-reaction — NOT throughput or
+        // worker pools. The scope note on the canvas keeps the tenant-wide honesty.
+        { to: "/investigations/ci", label: "CI / SpecOps Department", icon: "view-ops" },
+      ],
+    },
+    {
       label: "Operations",
       items: [
-        { to: "/ops", label: "SpecOps Console", icon: "activity" },
-        // Tenant-wide, across every investigation. Named as such so it cannot be
-        // mistaken for the investigation-scoped graph.
-        { to: "/ops/graph", label: "Tenant Graph", icon: "view-graph" },
+        { to: "/ops", label: "Pipeline Operations", icon: "activity" },
         { to: "/quarantine", label: "Quarantine / DLQ", icon: "alert" },
       ],
     },
@@ -101,19 +120,26 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
  * naive first-match walk titles the graph page "SpecOps Console".
  */
 export const NAV_TITLES: ReadonlyArray<{ prefix: string; title: string }> = [
-  { prefix: "/ops/graph", title: "Tenant Graph (all investigations)" },
+  { prefix: "/tenant-graph", title: "Tenant Graph (all investigations)" },
   { prefix: "/investigations/graph", title: "Investigation Graph" },
   { prefix: "/economic", title: "Intelligence Economy" },
   { prefix: "/network", title: "Network & TDA analysis" },
   { prefix: "/quarantine", title: "Quarantine (DLQ)" },
+  // Before "/investigations" so the department view is titled as itself, not as a
+  // bare "Investigation": the department is a view within an investigation.
+  { prefix: "/investigations/ci", title: "CI / SpecOps Department" },
   { prefix: "/investigations", title: "Investigation" },
   { prefix: "/entities", title: "Entity" },
   { prefix: "/findings", title: "Finding" },
   { prefix: "/hypotheses", title: "Hypotheses & gain planning" },
+  { prefix: "/dossier", title: "Dossier" },
   { prefix: "/experiments", title: "Reproducible experiments" },
   { prefix: "/connectors", title: "Connectors & Recon Plans" },
   { prefix: "/science", title: "Scientific review" },
   { prefix: "/search", title: "Evidence-backed search" },
+  // Kept after the longer prefixes on purpose: "/ops" would otherwise swallow every
+  // /ops/* destination, including this one.
+  { prefix: "/ops/graph", title: "Tenant Graph (all investigations)" },
   { prefix: "/ops", title: "SpecOps Console" },
   { prefix: "/intel", title: "OSINT // Intel Board" },
 ];

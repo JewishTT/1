@@ -28,7 +28,7 @@ Statuses: `[x]` delivered · `[ ]` open · `[~]` partial · `[!]` blocked, reaso
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 026-F2-01 | `InvariantReducer`: stream → delta | [ ] | new component, control-plane |
+| 026-F2-01 | `InvariantReducer`: stream → delta | [x] | `context_engine/invariant_reducer.py`: `reduce`/`restore`/`history`, unit contract |
 | 026-F2-02 | `revision` increments when the digest changes | [ ] | `workflows/temporal_materialization.py:133` hardcodes `revision=1` |
 | 026-F2-03 | `supersedes` recorded on invariants | [ ] | field exists on claims (`relation_claim.py:215`), absent on invariants |
 | 026-F2-04 | `with_links()` records supersession | [ ] | `graph_invariant.py:630` |
@@ -42,12 +42,12 @@ Statuses: `[x]` delivered · `[ ]` open · `[~]` partial · `[!]` blocked, reaso
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 026-F3-01 | CIRCULARITY: cycle detection over claims | [ ] | nothing exists |
-| 026-F3-02 | CIRCULARITY: load-bearing vs inert | [ ] | the finding is the classification |
-| 026-F3-03 | HIERARCHY: transitive closure over predicates | [ ] | types-only version exists (`schema.py:descendants_of`) |
-| 026-F3-04 | HIERARCHY: derivation per derived edge | [ ] | `domain/derivation.py` provides the type |
-| 026-F3-05 | Unknown predicate still yields an edge | [ ] | FR-032 |
-| 026-F3-06 | Gate: chain ⇒ derived edge; cycle classified | [ ] | |
+| 026-F3-01 | CIRCULARITY: cycle detection over claims | [x] | `context/circularity.py`, Johnson SCC, no domain hardcoding |
+| 026-F3-02 | CIRCULARITY: load-bearing vs inert | [x] | `LOAD_BEARING`/`INERT`/`SUSPECT` with stated reasons |
+| 026-F3-03 | HIERARCHY: transitive closure over predicates | [x] | `context/hierarchy.py`, transitivity declared as data |
+| 026-F3-04 | HIERARCHY: derivation per derived edge | [x] | `DerivedEdge` carries the derivation |
+| 026-F3-05 | Unknown predicate still yields an edge | [x] | laws default empty, no name whitelist |
+| 026-F3-06 | Gate: chain ⇒ derived edge; cycle classified | [~] | 59 + 65 contract tests pass; neither is called from production π yet (F4-10) |
 
 ---
 
@@ -55,10 +55,10 @@ Statuses: `[x]` delivered · `[ ]` open · `[~]` partial · `[!]` blocked, reaso
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 026-F4-01 | Durable `ContextGraph`, 10 node types | [ ] | spec 024 §3.2 |
-| 026-F4-02 | 10 edge types | [ ] | spec 024 §3.3 |
-| 026-F4-03 | Transactional with decision records | [ ] | FR-003 |
-| 026-F4-04 | `Unknown` node distinct from absence | [ ] | FR-004 |
+| 026-F4-01 | Durable `ContextGraph`, 10 node types | [x] | `context_engine/context_graph.py`: 10 node types, content-derived ids, durable store protocol |
+| 026-F4-02 | 10 edge types | [x] | 10 edge types + `EDGE_ENDPOINTS` shape table; invalid shape refused at write time |
+| 026-F4-03 | Transactional with decision records | [x] | `PostgresContextGraphStore.apply` is one transaction; rollback verified on a real database |
+| 026-F4-04 | `Unknown` node distinct from absence | [x] | `Unknown` is a node type; `state_of` returns empty/unknown/known, `open_unknowns()` enumerates the open ones |
 | 026-F4-05 | ObligationGenerator | [ ] | FR-011 component 1 |
 | 026-F4-06 | SatisfactionEvaluator | [ ] | component 2 |
 | 026-F4-07 | ActionProposer | [ ] | component 3 |
@@ -67,6 +67,10 @@ Statuses: `[x]` delivered · `[ ]` open · `[~]` partial · `[!]` blocked, reaso
 | 026-F4-10 | π linear: seed · poll · fuse · frame · close · gap | [ ] | F4a |
 | 026-F4-11 | π recursive: subgraph per articulation node, back-linked | [ ] | F4b |
 | 026-F4-12 | Gate: 5 domains, one π, no domain branch | [ ] | the acceptance criterion |
+| 026-F4-13 | Audit trail per write (FR-003) | [x] | `DecisionRecord` with actor + rationale + what changed; `audit_trail()` |
+| 026-F4-14 | Replay converges | [x] | content-derived ids + endpoint unique constraint; 21 contract tests |
+| 026-F4-15 | Tenant isolation verified | [x] | another tenant reads empty; every statement filtered by `tenant_id` |
+| 026-F4-16 | `question` written with its scope atomically | [x] | a question visible without its scope cannot be answered correctly |
 
 ---
 
@@ -123,9 +127,25 @@ Statuses: `[x]` delivered · `[ ]` open · `[~]` partial · `[!]` blocked, reaso
 | 026-F2b-06 | Saturation over the **expected surface** | [x] | empty-profile defect found and fixed |
 | 026-F2b-07 | Corroboration by independence group | [x] | ADR-0036 |
 | 026-F2b-08 | Contract suite | [x] | `tests/contract/test_enrichment_contract.py`, 33 tests |
-| 026-F2b-09 | Offers loaded from the live source catalogue | [ ] | 145 definitions carry no offers yet |
-| 026-F2b-10 | Profile built from `GraphInvariant` + claims | [ ] | needs F2 |
+| 026-F2b-09 | Offers loaded from the live source catalogue | [x] | `sources/capabilities.py`: 145 offers, 206 distinct attributes |
+| 026-F2b-10 | Profile built from `GraphInvariant` + claims | [~] | live profile + invariant + dossier build together via `enrichment_service.py`; claims-store side absent |
 | 026-F2b-11 | Gaps become obligations in the loop | [ ] | needs F4/F5 |
+| 026-F2b-12 | `EnrichmentService`: subject -> sources -> invariant -> dossier | [x] | live run on `example.com`: 30 sources, 26 events, invariant folded, dossier `2/2` traced facts |
+| 026-F2b-13 | A dead source cannot close a gap | [x] | up to 3 candidates per gap; verified against a live 401/429/503 mix |
+| 026-F2b-14 | Echo, shape and attribution refusals | [x] | `ip=example.com` and `organization=Wikipedia` refused; 10 tests in `test_to_entities_honesty.py` |
+| 026-F2b-15 | `Dossier` core: timeline, links, contacts, gaps, conflicts | [x] | `context/dossier.py`, 49 contract tests |
+| 026-F2b-16 | Timeline never claims coverage it did not have | [x] | a 1995 event produced 1627 weekly windows; unswept ones counted, not rendered |
+| 026-F2b-17 | Dossier reader, API route, UI surface | [x] | `api/routes/dossier.py` + `/dossier` in the webapp; 5 views (coverage/timeline/links/sources/gaps), gaps resolved to source names at the API boundary |
+| 026-F2b-18 | `applies_to` mismatch: `person` gets 0 offers | [x] | not a vocabulary gap: offers declare *input shapes*. Service selects by the shape of the value; person 0 -> 57 sources / 117 attrs |
+| 026-F2b-19 | Sweep survives its process | [x] | `PostgresEnrichmentSink` -> `entity_stream`, sequence continues from stream max |
+| 026-F2b-20 | Dossier rebuilt from persisted rows | [x] | `DossierReader`; re-folds the invariant rather than reading a second copy of state |
+| 026-F2b-21 | Values keep their source through the round trip | [x] | facts travel in `entity_stream.payload`; `entity_facts` has no source column |
+| 026-F2b-22 | An unswept subject is not a complete one | [x] | `Saturation.ratio`/`is_saturated` returned 1.0/True on an empty surface |
+| 026-F2b-23 | `offers_for_query_kinds` | [x] | union by declared input shape, deduped by source; no kind-to-kind mapping invented |
+| 026-F2b-24 | Re-sweep appends instead of colliding | [x] | `record_hash` now includes event time; found by running against a real database |
+| 026-F2b-25 | Dossier API: sweep, read, list | [x] | `POST /dossier/enrich`, `GET /dossier/{ref}`, `GET /dossier`; 404 for an unswept subject, never a blank dossier |
+| 026-F2b-26 | Dossier UI surface | [x] | `DossierPage`/`DossierContainer` on the design-system primitives; refusal, coverage and dormant-window honesty asserted in 10 tests |
+| 026-F2b-27 | Sweep result survives to the next process | [x] | sequence continues from the stream max; re-sweep appends rather than colliding |
 
 ---
 
@@ -134,11 +154,11 @@ Statuses: `[x]` delivered · `[ ]` open · `[~]` partial · `[!]` blocked, reaso
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 026-X-01 | Relax `entities.entity_type` CHECK | [ ] | FR-031; 53-value whitelist blocks open vocabulary |
-| 026-X-02 | Unknown kinds preserved, not dropped | [ ] | `to_entities.py` routes them to values today |
+| 026-X-02 | Unknown kinds preserved, not dropped | [x] | `axis != 'entity'` demoted them; only `axis == 'value'` does now. `unclassified` was unreachable |
 | 026-X-03 | ProjectionLayer referent ids use `source_id` | [ ] | `scope_id` receives `""` today |
 | 026-X-04 | Predicate vocabulary extendable at runtime | [ ] | FR-032 |
 | 026-X-05 | Type conflict → `UNKNOWN` + recorded conflict | [ ] | FR-033 |
-| 026-X-06 | Migration 023 `NOT VALID` claim matches DDL | [!] | docstring promises it; `create_check_constraint` does not set it |
+| 026-X-06 | Migration 023 `NOT VALID` claim matches DDL | [x] | raw `ALTER TABLE ... NOT VALID` via `_add_check`; also fixed `sa.JSONB`, which does not exist |
 
 ---
 

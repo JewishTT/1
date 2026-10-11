@@ -18,6 +18,7 @@ import {
   snapshotGraph,
 } from "../lib/graphState";
 import { IntelligencePage } from "../pages/IntelligencePage";
+import { ErrorView, LoadingView } from "../ui/Feedback";
 
 interface FeedEntry {
   id: string;
@@ -26,25 +27,6 @@ interface FeedEntry {
 }
 
 let feedCounter = 0;
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
-    </section>
-  );
-}
-
-function ErrorView({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-      <button type="button" onClick={() => void onRetry()} className="btn btn-sm">
-        Retry
-      </button>
-    </section>
-  );
-}
 
 export function IntelligenceContainer() {
   const [params] = useSearchParams();
@@ -106,19 +88,22 @@ export function IntelligenceContainer() {
   // CC temporality (CC-TEMPORALITY v1): one honest pull per entity — the
   // backend plans, transports, extracts and projects the series in a single
   // auditable call; the UI only renders what came back (never fabricates).
-  const pullCcTemporality = useCallback(async (entityId: string) => {
-    if (ccTemporalityBusy) return;
-    setCcTemporalityBusy(true);
-    setError(null);
-    try {
-      const payload = await api.ccTemporality(entityId);
-      setCcTemporality((prev) => ({ ...prev, [entityId]: payload }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCcTemporalityBusy(false);
-    }
-  }, [ccTemporalityBusy]);
+  const pullCcTemporality = useCallback(
+    async (entityId: string) => {
+      if (ccTemporalityBusy) return;
+      setCcTemporalityBusy(true);
+      setError(null);
+      try {
+        const payload = await api.ccTemporality(entityId);
+        setCcTemporality((prev) => ({ ...prev, [entityId]: payload }));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setCcTemporalityBusy(false);
+      }
+    },
+    [ccTemporalityBusy],
+  );
 
   const onExpand = useCallback(
     (entityId: string) => {
@@ -149,17 +134,14 @@ export function IntelligenceContainer() {
 
   const clearActionNote = useCallback(() => setActionNote(null), []);
 
-  const refreshNeighbourhood = useCallback(
-    async (entityId: string) => {
-      try {
-        const corrData = await api.getCorrelations(entityId);
-        setCorrelations((prev) => ({ ...prev, [entityId]: corrData.correlations }));
-      } catch {
-        // neighbourhood refresh is best-effort; keep the map intact
-      }
-    },
-    [],
-  );
+  const refreshNeighbourhood = useCallback(async (entityId: string) => {
+    try {
+      const corrData = await api.getCorrelations(entityId);
+      setCorrelations((prev) => ({ ...prev, [entityId]: corrData.correlations }));
+    } catch {
+      // neighbourhood refresh is best-effort; keep the map intact
+    }
+  }, []);
 
   const handleCreateEntity = useCallback(
     async (name: string) => {
@@ -202,7 +184,9 @@ export function IntelligenceContainer() {
         // A correlate may stay non-materialized (no merge); hydrate if it is one.
         void materialize(targetId);
         await Promise.all([refreshNeighbourhood(source), refreshNeighbourhood(targetId)]);
-        setActionNote(`Linked ${res.edge.candidate_a} ↔ ${res.edge.candidate_b} (${res.edge.kind})`);
+        setActionNote(
+          `Linked ${res.edge.candidate_a} ↔ ${res.edge.candidate_b} (${res.edge.kind})`,
+        );
       } catch (err) {
         setActionNote(err instanceof Error ? err.message : String(err));
       }
@@ -229,9 +213,7 @@ export function IntelligenceContainer() {
     setLayoutName(name);
     const cy = cyRef.current;
     if (cy) {
-      void cy
-        .layout({ name, fit: true, animate: true } as cytoscape.LayoutOptions)
-        .run();
+      void cy.layout({ name, fit: true, animate: true } as cytoscape.LayoutOptions).run();
     }
   }, []);
   const onZoomIn = useCallback(() => {
@@ -293,7 +275,7 @@ export function IntelligenceContainer() {
     const labels: Record<string, string> = {};
     for (const [id, entity] of Object.entries(entities)) {
       const account = entity.canonical_identity["account"];
-      labels[id] = account ? String(account) : entity.aliases[0] ?? id;
+      labels[id] = account ? String(account) : (entity.aliases[0] ?? id);
     }
     return labels;
   }, [entities]);
@@ -305,15 +287,18 @@ export function IntelligenceContainer() {
       setLoaded(true);
       return;
     }
-    for (const id of raw.split(",").map((s) => s.trim()).filter(Boolean)) void materialize(id);
+    for (const id of raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean))
+      void materialize(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
   usePipelineStream((event) => {
-    setFeed((prev) => [
-      { id: `ev-${feedCounter++}`, event, at: new Date().toISOString() },
-      ...prev,
-    ].slice(0, 9));
+    setFeed((prev) =>
+      [{ id: `ev-${feedCounter++}`, event, at: new Date().toISOString() }, ...prev].slice(0, 9),
+    );
   });
 
   const graph = useMemo(() => {
@@ -405,7 +390,8 @@ export function IntelligenceContainer() {
   );
 
   if (!loaded) return <LoadingView message="Wiring the intelligence map…" />;
-  if (error && seeds.length === 0) return <ErrorView error={error} onRetry={() => void materialize(seeds[0] ?? "")} />;
+  if (error && seeds.length === 0)
+    return <ErrorView error={error} onRetry={() => void materialize(seeds[0] ?? "")} />;
 
   return (
     <IntelligencePage

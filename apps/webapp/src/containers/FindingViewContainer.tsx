@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 
 import { api, FindingView, LineageNode } from "../lib/api";
 import { FindingViewPage, submitReview } from "../pages/FindingViewPage";
+import { ErrorView, LoadingView } from "../ui/Feedback";
 
 export function FindingViewContainer() {
   const { id } = useParams<{ id: string }>();
@@ -35,27 +36,5 @@ export function FindingViewContainer() {
   if (error) return <ErrorView error={error} />;
   if (!finding) return <ErrorView error="Finding not found" />;
 
-  return (
-    <FindingViewPage
-      finding={finding}
-      lineage={lineage}
-      reviewApi={submitReview}
-    />
-  );
-}
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
-    </section>
-  );
-}
-
-function ErrorView({ error }: { error: string }) {
-  return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-    </section>
-  );
+  return <FindingViewPage finding={finding} lineage={lineage} reviewApi={submitReview} />;
 }

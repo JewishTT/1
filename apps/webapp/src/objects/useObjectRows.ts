@@ -10,6 +10,7 @@ import {
 } from "./model";
 import { emptyCounts } from "./model";
 import type { ObjectRow, ObjectRowKind } from "./types";
+import { entityProjectionKey, findingsKey } from "../lib/queryKeys";
 
 /**
  * Server state for the objects table (§7, §25, §68).
@@ -60,13 +61,13 @@ export function useObjectRows(investigationId: string | null): ObjectServerState
   const results = useQueries({
     queries: [
       {
-        queryKey: ["objects", "entity-projection", investigationId],
+        queryKey: entityProjectionKey(investigationId),
         queryFn: () => api.specOpsGraph(),
         enabled: investigationId !== null,
         staleTime: 60_000,
       },
       {
-        queryKey: ["objects", "findings", investigationId],
+        queryKey: findingsKey(investigationId),
         queryFn: () => api.listFindings(),
         enabled: investigationId !== null,
         staleTime: 60_000,
@@ -133,7 +134,9 @@ export function adaptProjectionNode(node: SpecOpsGraphNode): ProjectionEntity {
     evidence: evidenceRows(properties["evidence"]),
     timeline: timelineRows(properties["timeline"]),
     source_ids: properties["source_ids"],
-    invariant_status: properties["invariant_status"] ?? (node.entity_type === "ENTITY" ? "MATERIALIZED" : undefined),
+    invariant_status:
+      properties["invariant_status"] ??
+      (node.entity_type === "ENTITY" ? "MATERIALIZED" : undefined),
     invariant_continuity: properties["invariant_continuity"],
     invariant_first_seen: properties["invariant_first_seen"],
     invariant_last_seen: properties["invariant_last_seen"],

@@ -184,8 +184,14 @@ class Saturation:
 
     @property
     def ratio(self) -> float:
+        """Share of the expected surface that is resolved. Zero surface means zero progress.
+
+        Returning 1.0 for an empty surface reported a subject nobody had asked about as fully
+        resolved, which is the one number a UI would put in front of an analyst. Nothing was
+        expected and nothing was learned; the honest ratio is 0.
+        """
         if self.total_attributes == 0:
-            return 1.0
+            return 0.0
         return self.resolved / self.total_attributes
 
     @property
@@ -195,8 +201,13 @@ class Saturation:
         Not the same as complete: a profile whose every attribute came from one source is
         saturated and thinly evidenced, and the two facts are reported together so the UI
         cannot present one as the other.
+
+        A subject with no expected surface is never saturated. Saturated means the attempts
+        are done; when there were none, ``unknown == 0`` held only because there was nothing
+        to be uncertain about, and reporting that as completion is how an entity the platform
+        had no source for got filed as fully investigated.
         """
-        return self.unknown == 0
+        return self.total_attributes > 0 and self.unknown == 0
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -351,6 +362,7 @@ def plan_enrichment(
     *,
     available: Mapping[str, bool] | None = None,
     source_groups: Mapping[str, str] | None = None,
+    kinds: Iterable[str] | None = None,
 ) -> EnrichmentPlan:
     """What is still worth fetching for this entity, and where it would come from.
 
@@ -362,6 +374,10 @@ def plan_enrichment(
     ``source_groups`` maps a source to its independence group (ADR-0036). Corroboration
     counts distinct groups, not distinct sources: two outlets carrying the same wire story
     are one source of evidence however many URLs they run it under.
+
+    ``kinds`` narrows the offers by declared input shape. It is off by default because the
+    caller has already chosen: filtering a chosen list by the referent's own type is the
+    mistake this parameter exists to replace.
 
     Gaps are ordered by attribute name so two runs over identical state produce identical
     plans and a diff means something.
@@ -376,10 +392,20 @@ def plan_enrichment(
             return bool(runnable_flags.get(offer.source_id, False))
         return bool(runnable_flags.get(offer.source_id, True))
 
+    # The offers arrive already selected. An offer declares the *shape of input* it accepts;
+    # the profile declares the *kind of thing* it is. Re-filtering the first by the second
+    # compared two different vocabularies, and because they happened to share a name for
+    # domains it looked correct there. For a person it discarded every offer -- 41 sources,
+    # 117 attributes -- and the subject was then reported saturated on a surface of nothing.
+    #
+    # ``kinds`` narrows deliberately, by input shape, for a caller that wants only some.
+    narrowing = {k.strip().lower() for k in kinds if k and k.strip()} if kinds else None
     wanted: dict[str, list[CapabilityOffer]] = {}
     for offer in offers:
-        if not offer.applies_to(profile.type_label):
-            continue
+        if narrowing is not None:
+            declared = {k.strip().lower() for k in offer.entity_kinds}
+            if declared and not declared & narrowing:
+                continue
         for attribute in offer.attributes:
             wanted.setdefault(attribute, []).append(offer)
 

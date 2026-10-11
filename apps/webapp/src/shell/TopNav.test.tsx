@@ -30,7 +30,7 @@ function renderAt(path: string, withShell = false) {
         {tree}
         {withShell ? null : inner}
       </QueryClientProvider>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -42,7 +42,7 @@ describe("topnav", () => {
     expect(screen.getByTestId("topnav-sections")).toBeInTheDocument();
   });
 
-it("shows the OSINT destinations by default", () => {
+  it("shows the OSINT destinations by default", () => {
     renderAt("/intel");
     const nav = screen.getByTestId("topnav-sections");
     expect(nav).toHaveTextContent("Intel Board");
@@ -58,8 +58,24 @@ it("shows the OSINT destinations by default", () => {
   });
 
   it("names the tenant-wide graph as tenant-wide", () => {
-    renderAt("/ops");
+    renderAt("/intel");
     expect(screen.getByTestId("topnav-sections")).toHaveTextContent("Tenant Graph");
+  });
+
+  it("files the tenant-wide graph beside the investigation-scoped one", () => {
+    // It used to sit under SpecOps, filed by what it spans rather than by where it belongs.
+    // A graph over every investigation is still a projection of investigations -- a wider
+    // one -- so it belongs beside the investigation-scoped graph, and putting it two
+    // sections away is what made the two look unrelated.
+    renderAt("/intel");
+    const nav = screen.getByTestId("topnav-sections");
+    expect(nav).toHaveTextContent("Investigation Graph");
+    expect(nav).toHaveTextContent("Tenant Graph");
+  });
+
+  it("keeps the tenant-wide graph out of the SpecOps section", () => {
+    renderAt("/ops");
+    expect(screen.getByTestId("topnav-sections")).not.toHaveTextContent("Tenant Graph");
   });
 
   it("switches section sets with the module", () => {
@@ -111,7 +127,7 @@ it("shows the OSINT destinations by default", () => {
     const { container } = render(
       <QueryClientProvider client={new QueryClient()}>
         <AppShell>bare</AppShell>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
     expect(container.querySelector(".ui-topnav")).toBeNull();
     expect(screen.getByTestId("app-shell")).toBeInTheDocument();
@@ -126,7 +142,7 @@ describe("nav data", () => {
     expect(resolveModule("/economic")).toBe("economic");
   });
 
-it("titles the longest matching prefix, not the first", () => {
+  it("titles the longest matching prefix, not the first", () => {
     // /ops is a prefix of /ops/graph, so a naive first-match walk mislabels it.
     expect(resolveTitle("/ops")).toBe("SpecOps Console");
     expect(resolveTitle("/ops/graph")).toBe("Tenant Graph (all investigations)");

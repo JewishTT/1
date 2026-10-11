@@ -208,6 +208,15 @@ class _OpRecorder:
         self.calls.append(("add_column", (table_name, column.name), dict(kwargs)))
         self.added_columns.append((table_name, column.name))
 
+    def execute(self, sql: object, **kwargs: object) -> None:
+        """Record a raw statement.
+
+        A migration is allowed to write DDL directly -- ``NOT VALID`` checks cannot be
+        expressed through the alembic helpers at all -- so the recorder has to be able to see
+        them. It reads, never runs.
+        """
+        self.calls.append(("execute", (str(sql),), dict(kwargs)))
+
     def create_index(
         self,
         name: str,

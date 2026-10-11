@@ -3,6 +3,7 @@ import { useQueries } from "@tanstack/react-query";
 
 import { api, type FindingView, type SpecOpsGraphNode } from "../lib/api";
 import { TIMELINE_LANES, type TimelineEvent, type TimelineLane } from "./types";
+import { entityProjectionKey, findingsKey } from "../lib/queryKeys";
 
 /**
  * Server state for the timeline (§7, §23, §84).
@@ -101,7 +102,9 @@ export function buildTimeline(source: TimelineSource): BuiltTimeline {
         at: new Date(at).toISOString(),
         endAt: null,
         sourceId:
-          typeof row.source_id === "string" ? row.source_id : (hostOf(uri) ?? properties["source_id"] ?? null),
+          typeof row.source_id === "string"
+            ? row.source_id
+            : (hostOf(uri) ?? properties["source_id"] ?? null),
         status: row.immutable === true ? "IMMUTABLE" : null,
         entityRef: entityId,
       });
@@ -164,13 +167,13 @@ export function useTimelineEvents(investigationId: string | null): TimelineServe
   const results = useQueries({
     queries: [
       {
-        queryKey: ["timeline", "entity-projection", investigationId],
+        queryKey: entityProjectionKey(investigationId),
         queryFn: () => api.specOpsGraph(),
         enabled: investigationId !== null,
         staleTime: 60_000,
       },
       {
-        queryKey: ["timeline", "findings", investigationId],
+        queryKey: findingsKey(investigationId),
         queryFn: () => api.listFindings(),
         enabled: investigationId !== null,
         staleTime: 60_000,

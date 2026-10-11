@@ -88,7 +88,9 @@ describe("ScienceContainer", () => {
       series_len: 48,
       embedding: { lag: 2, embed_dim: 2, points: [[0, 1]] },
       diagrams: { "0": [[0, 1.5]] },
-      stats: { "0": { num_bars: 1, mean_persistence: 1.5, max_persistence: 1.5, total_persistence: 1.5 } },
+      stats: {
+        "0": { num_bars: 1, mean_persistence: 1.5, max_persistence: 1.5, total_persistence: 1.5 },
+      },
       digest: "af2ef693b83e6f7d1f1d200bc57e2c5ba19d51f3f22ac49f9d0ab25c1d248b17",
     });
     render(<ScienceContainer />);

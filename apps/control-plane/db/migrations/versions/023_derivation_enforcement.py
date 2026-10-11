@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision = "023_derivation_enforcement"
 down_revision = "022_context_fabric"
@@ -46,6 +47,24 @@ depends_on = None
 #: The vocabulary as SQL literals, generated from the Python authority rather than copied.
 #: Copied text would drift the first time somebody added an ``EntityType``, and the drift
 #: would be silent: the constraint would reject a type the platform happily writes.
+
+
+def _add_check(name: str, table: str, expression: object) -> None:
+    """Add a CHECK constraint as ``NOT VALID``.
+
+    Alembic's ``create_check_constraint`` has no way to express ``NOT VALID``, and validating
+    eagerly is the wrong move anyway: these constraints exist to bound what may be *written*
+    from here on, while the rows already in the table predate the vocabulary that produced the
+    list. Scanning them would fail the migration on exactly the data it was written to
+    grandfather in, and a migration that cannot be applied is a migration that has to be
+    hand-patched against a live database.
+    """
+    op.execute(
+        f"ALTER TABLE {table} ADD CONSTRAINT {name} "
+        f"CHECK ({expression!s}) NOT VALID"
+    )
+
+
 ENTITY_TYPE_VALUES: tuple[str, ...] = (
     "person", "organization", "domain", "subdomain", "website", "place", "email", "phone",
     "handle", "ip", "crypto", "identifier", "document", "unknown",
@@ -74,10 +93,10 @@ def upgrade() -> None:
         sa.Column("tenant_id", sa.String(36), nullable=False),
         sa.Column("method_id", sa.String(128), nullable=False),
         sa.Column("method_version", sa.String(32), nullable=False),
-        sa.Column("inputs", sa.JSONB, nullable=False, server_default=sa.text("'[]'")),
+        sa.Column("inputs", postgresql.JSONB, nullable=False, server_default=sa.text("'[]'")),
         sa.Column("output", sa.String(512), nullable=False),
         sa.Column("statement", sa.Text, nullable=False, server_default=""),
-        sa.Column("environment", sa.JSONB, nullable=False, server_default=sa.text("'{}'")),
+        sa.Column("environment", postgresql.JSONB, nullable=False, server_default=sa.text("'{}'")),
         sa.Column("confidence", sa.Float, nullable=True),
         sa.Column("context_id", sa.String(64), nullable=True),
         sa.Column("recorded_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
@@ -130,7 +149,7 @@ def upgrade() -> None:
         sa.Column("predicate", sa.String(128), nullable=True),
         sa.Column("subject", sa.String(128), nullable=True),
         sa.Column("object", sa.String(512), nullable=True),
-        sa.Column("quantifier", sa.JSONB, nullable=True),
+        sa.Column("quantifier", postgresql.JSONB, nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.CheckConstraint(
             "node_kind IN ('entity', 'relation', 'quantified')",
@@ -188,7 +207,7 @@ def upgrade() -> None:
     # already holds a bad type gets a loud failure instead of a silent one -- and the
     # alternative, refusing the migration, leaves the platform exactly as unconstrained as
     # it is now.
-    op.create_check_constraint(
+    _add_check(
         "ck_entities_entity_type",
         "entities",
         sa.text(
@@ -196,14 +215,13 @@ def upgrade() -> None:
             + ", ".join(f"'{v}'" for v in ENTITY_TYPE_VALUES)
             + ")"
         ),
-        deferrable=False,
     )
-    op.create_check_constraint(
+    _add_check(
         "ck_entity_stream_kind",
         "entity_stream",
         sa.text("kind IN ('entity', 'relation', 'assertion', 'observation', 'unknown')"),
     )
-    op.create_check_constraint(
+    _add_check(
         "ck_observations_content_type",
         "observations",
         sa.text(
@@ -214,7 +232,7 @@ def upgrade() -> None:
     )
     # The extractor version is what a replay is keyed on, so it must be namespaced rather
     # than a bare "1.0" two different extractors might both claim.
-    op.create_check_constraint(
+    _add_check(
         "ck_relation_claims_extractor_version",
         "relation_claims",
         sa.text("extractor_version IS NULL OR extractor_version LIKE '%@%'"),

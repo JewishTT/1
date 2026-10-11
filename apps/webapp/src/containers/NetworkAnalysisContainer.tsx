@@ -30,7 +30,9 @@ export function NetworkAnalysisContainer() {
   const [communities, setCommunities] = useState<NetStatus<CommunityResult>>({ state: "idle" });
   const [hypergraph, setHypergraph] = useState<NetStatus<HypergraphResult>>({ state: "idle" });
   const [temporal, setTemporal] = useState<NetStatus<TemporalPathsResult>>({ state: "idle" });
-  const [diagramFeatures, setDiagramFeatures] = useState<NetStatus<DiagramFeaturesResult>>({ state: "idle" });
+  const [diagramFeatures, setDiagramFeatures] = useState<NetStatus<DiagramFeaturesResult>>({
+    state: "idle",
+  });
   const [phodms, setPhodms] = useState<NetStatus<PhodmsResult>>({ state: "idle" });
 
   const materialize = useCallback(async (entityId: string) => {
@@ -174,13 +176,19 @@ export function NetworkAnalysisContainer() {
         }),
       });
     } catch (err) {
-      setDiagramFeatures({ state: "error", message: err instanceof Error ? err.message : String(err) });
+      setDiagramFeatures({
+        state: "error",
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
   }, [activeEntity, timelineSeries]);
 
   const runPhodms = useCallback(async () => {
     if (!timelineSeries || timelineSeries.length === 0) {
-      setPhodms({ state: "error", message: "No temporal data — building point clouds from series." });
+      setPhodms({
+        state: "error",
+        message: "No temporal data — building point clouds from series.",
+      });
       return;
     }
     // Honest bounded clouds: chunk the observed series into <=8-point windows,
@@ -205,7 +213,11 @@ export function NetworkAnalysisContainer() {
       setLoaded(true);
       return;
     }
-    for (const id of raw.split(",").map((s) => s.trim()).filter(Boolean)) void materialize(id);
+    for (const id of raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean))
+      void materialize(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
@@ -220,7 +232,11 @@ export function NetworkAnalysisContainer() {
     return (
       <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
         <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-        <button type="button" className="btn btn-sm" onClick={() => void materialize(seeds[0] ?? "")}>
+        <button
+          type="button"
+          className="btn btn-sm"
+          onClick={() => void materialize(seeds[0] ?? "")}
+        >
           Retry
         </button>
       </section>

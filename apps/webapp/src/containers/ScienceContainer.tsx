@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 
 import { usePipelineStream } from "../lib/stream";
 import { scienceApi } from "../lib/science/api";
-import type { ClaimReviewView, InvariantParams, InvariantResult, RobustnessReport } from "../lib/science/types";
+import type {
+  ClaimReviewView,
+  InvariantParams,
+  InvariantResult,
+  RobustnessReport,
+} from "../lib/science/types";
 import { ScienceClaim, SciencePage } from "../pages/SciencePage";
 
 const EMPTY_REVIEW: ClaimReviewView = {

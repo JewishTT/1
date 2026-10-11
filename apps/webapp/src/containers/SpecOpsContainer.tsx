@@ -5,6 +5,8 @@ import { api } from "../lib/api";
 import type { EntityToolbarTarget } from "../lib/specopsGraph";
 import { graphToCytoscape } from "../lib/specopsGraph";
 import { SpecOpsPage } from "../pages/SpecOpsPage";
+import { EmptyState, ErrorView, LoadingView } from "../ui/Feedback";
+import { Button } from "../ui/Button";
 
 export function SpecOpsContainer() {
   const [graph, setGraph] = useState<SpecOpsGraphResponse | null>(null);
@@ -67,7 +69,20 @@ export function SpecOpsContainer() {
 
   if (loading) return <LoadingView message="Loading SpecOps graph…" />;
   if (error) return <ErrorView error={error} onRetry={load} />;
-  if (!graph) return <ErrorView error="No entity graph available" onRetry={load} />;
+  // Was an ErrorView claiming failure for a successful null payload.
+  if (!graph)
+    return (
+      <EmptyState
+        testId="specops-graph-empty"
+        title="No entity graph"
+        description="The graph endpoint answered with no projection. There is no graph to draw yet, and no failure to investigate."
+        action={
+          <Button size="sm" variant="ghost" onClick={() => void load()}>
+            Ask again
+          </Button>
+        }
+      />
+    );
 
   return (
     <SpecOpsPage
@@ -83,36 +98,5 @@ export function SpecOpsContainer() {
       onSelect={onSelect}
       onRunTool={(tool) => void onRunTool(tool)}
     />
-  );
-}
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
-    </section>
-  );
-}
-
-function ErrorView({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
-      <button
-        type="button"
-        onClick={() => void onRetry()}
-        style={{
-          marginTop: "0.5rem",
-          padding: "0.4rem 0.8rem",
-          background: "var(--c-surface-2)",
-          border: "1px solid var(--c-border)",
-          borderRadius: "0.3rem",
-          color: "var(--c-text)",
-          cursor: "pointer",
-        }}
-      >
-        Retry
-      </button>
-    </section>
   );
 }

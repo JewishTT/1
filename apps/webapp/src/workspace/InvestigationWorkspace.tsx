@@ -10,6 +10,7 @@ import { TimelineCanvas } from "../timeline/TimelineCanvas";
 import { EvidenceWorkspace } from "../evidence/EvidenceWorkspace";
 import { ObjectsWorkspace } from "../objects/ObjectsWorkspace";
 import { OpsCanvas } from "../ops/OpsCanvas";
+import { CICanvas } from "../ci/CICanvas";
 import { actionsForSelection, destinationForAction } from "./commands";
 import { selectSelectionId, useWorkspace } from "./store";
 import { useWorkState } from "./useWorkState";
@@ -96,6 +97,13 @@ const VIEW_META: Record<WorkspaceView, { label: string; icon: IconName; stage: s
     icon: "view-ops",
     stage: "stage 5",
     purpose: "Event stream, consumer lag, schema registry, failure journal and replay controls.",
+  },
+  ci: {
+    label: "CI / SpecOps",
+    icon: "view-ops",
+    stage: "stage 5",
+    purpose:
+      "Counterintelligence & special operations: kill-chain emulation, phishing/SAT, APT forensics, social reaction.",
   },
 };
 
@@ -312,6 +320,11 @@ function surfaceFor(view: WorkspaceView, overview: ReactNode | undefined): React
   }
   if (view === "ops") {
     return <OpsCanvas />;
+  }
+  if (view === "ci") {
+    // The CI/SpecOps department (027): one canvas, internal panels, its own scope
+    // note. Mounted as a view like `ops` — a wiring change, not a re-implementation.
+    return <CICanvas />;
   }
   if (view === "overview") {
     // §97 / §63: the *existing* InvestigationPage mounts here instead of being

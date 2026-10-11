@@ -22,6 +22,7 @@ from api import sse
 from api.routes import (
     connectors,
     discovery,
+    dossier,
     entities,
     fabric,
     findings,
@@ -43,6 +44,12 @@ from api.routes import (
     science_temporal,
     search,
     search_rebuild,
+    specops_counterintel,
+    specops_emulation,
+    specops_forensics,
+    specops_phishing,
+    specops_roe,
+    specops_social,
     temporal_materializations,
     tools,
 )
@@ -112,6 +119,23 @@ for _router in (
 ):
     app.include_router(_router, prefix="/api/v1")
 app.include_router(temporal_materializations.router, prefix="/api/v1")
+# The CI/SpecOps department's rules-of-engagement sign-off (027, T005). Mounted
+# with the control plane because the emulation/phishing routers share this gate;
+# it is the safety precondition for any live spec-ops step.
+app.include_router(specops_roe.router, prefix="/api/v1")
+# Kill-chain emulation (027, US2): plans loaded whole from the donor libraries,
+# launched under the RoE gate above.
+app.include_router(specops_emulation.router, prefix="/api/v1")
+# Phishing / SAT (027, US3): campaigns gated by the same RoE gate; no send without
+# a confirmed sign-off, no out-of-roster target, no credential capture.
+app.include_router(specops_phishing.router, prefix="/api/v1")
+# Counterintelligence (027, US4): subject invariants, each evidence-backed or
+# rendered unsupported.
+app.include_router(specops_counterintel.router, prefix="/api/v1")
+# Social-reaction (027, US5): population reaction projection + phase-transition risk.
+app.include_router(specops_social.router, prefix="/api/v1")
+# APT forensics (027, US6): expected vs actual telemetry, gaps, derived coverage.
+app.include_router(specops_forensics.router, prefix="/api/v1")
 # The platform's own surface: component health and a cycle tick on demand. Mounted beside
 # the context routes because a tick *is* the thing the context routes describe.
 app.include_router(platform.router, prefix="/api/v1")
@@ -122,6 +146,10 @@ app.include_router(investigation_context.router, prefix="/api/v1")
 # entity or relation is reachable from the investigation workspace rather than only from
 # the legacy global routes.
 app.include_router(manual_assertions.router, prefix="/api/v1")
+# The dossier: run a sweep, then read back what it produced. Mounted with the control plane
+# because its state lives in entity_stream and its engine is the context_engine one, not a
+# separate science surface.
+app.include_router(dossier.router, prefix="/api/v1")
 
 # Science fabric routes carry their own `/api/science` prefix (science-api.md).
 app.include_router(science_claims.router)

@@ -1,9 +1,21 @@
 import { useCallback, useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 
-import { api, type Correlation, type FindingView, type SpecOpsGraphEdge, type SpecOpsGraphNode } from "../lib/api";
-import { buildGraphModel, type ClaimRelationInput, type GraphInput, type WireEntity } from "./model";
+import {
+  api,
+  type Correlation,
+  type FindingView,
+  type SpecOpsGraphEdge,
+  type SpecOpsGraphNode,
+} from "../lib/api";
+import {
+  buildGraphModel,
+  type ClaimRelationInput,
+  type GraphInput,
+  type WireEntity,
+} from "./model";
 import type { GraphEdge, GraphModel, GraphNode } from "./types";
+import { entityProjectionKey, findingsKey } from "../lib/queryKeys";
 
 /**
  * Server state for the graph (§7, §8, §68).
@@ -80,13 +92,13 @@ export function useGraphModel(investigationId: string | null): GraphServerState 
   const results = useQueries({
     queries: [
       {
-        queryKey: ["graph", "entity-projection", investigationId],
+        queryKey: entityProjectionKey(investigationId),
         queryFn: () => api.specOpsGraph(),
         enabled: investigationId !== null,
         staleTime: 60_000,
       },
       {
-        queryKey: ["graph", "findings", investigationId],
+        queryKey: findingsKey(investigationId),
         queryFn: () => api.listFindings(),
         enabled: investigationId !== null,
         staleTime: 60_000,
@@ -167,7 +179,9 @@ export function adaptProjectionNode(node: SpecOpsGraphNode): WireEntity {
     evidence: evidenceRows(properties["evidence"]),
     timeline: timelineRows(properties["timeline"]),
     sourceIds: properties["source_ids"] === undefined ? [] : [String(properties["source_ids"])],
-    invariantStatus: properties["invariant_status"] ?? (node.entity_type === "ENTITY" ? "MATERIALIZED" : undefined),
+    invariantStatus:
+      properties["invariant_status"] ??
+      (node.entity_type === "ENTITY" ? "MATERIALIZED" : undefined),
   };
 }
 
@@ -248,7 +262,9 @@ export function buildInput(
  * as a single `{ target, type }` object. All three are read: guessing one shape
  * would silently drop every relationship on the other two.
  */
-export function normaliseRelationships(rows: ReadonlyArray<Record<string, string>>): Array<Record<string, string>> {
+export function normaliseRelationships(
+  rows: ReadonlyArray<Record<string, string>>,
+): Array<Record<string, string>> {
   const out: Array<Record<string, string>> = [];
   const push = (record: Record<string, unknown>): void => {
     if (typeof record["target"] !== "string" || typeof record["type"] !== "string") return;
@@ -296,8 +312,7 @@ function relationshipRows(raw: string | undefined): Array<Record<string, string>
   }
   if (Array.isArray(parsed)) {
     return parsed.filter(
-      (entry): entry is Record<string, string> =>
-        typeof entry === "object" && entry !== null,
+      (entry): entry is Record<string, string> => typeof entry === "object" && entry !== null,
     );
   }
   if (typeof parsed === "object" && parsed !== null) {

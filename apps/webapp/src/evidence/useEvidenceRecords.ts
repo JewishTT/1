@@ -12,6 +12,7 @@ import {
 } from "./lineage";
 import { buildEvidenceChain } from "./lineageBuilder";
 import type { EvidenceRow } from "./types";
+import { entityProjectionKey, findingsKey } from "../lib/queryKeys";
 
 /**
  * Server state for evidence (§7, §28, §82).
@@ -74,13 +75,13 @@ export function useEvidenceRecords(investigationId: string | null): EvidenceServ
   const results = useQueries({
     queries: [
       {
-        queryKey: ["evidence", "entity-projection", investigationId],
+        queryKey: entityProjectionKey(investigationId),
         queryFn: () => api.specOpsGraph(),
         enabled: investigationId !== null,
         staleTime: 60_000,
       },
       {
-        queryKey: ["evidence", "findings", investigationId],
+        queryKey: findingsKey(investigationId),
         queryFn: () => api.listFindings(),
         enabled: investigationId !== null,
         staleTime: 60_000,
@@ -171,7 +172,8 @@ export function rowsFromProjection(
             existing.status ??
             (row["immutable"] === true || row["immutable"] === "true" ? "IMMUTABLE" : null),
           contentType:
-            existing.contentType ?? (typeof row["content_type"] === "string" ? row["content_type"] : null),
+            existing.contentType ??
+            (typeof row["content_type"] === "string" ? row["content_type"] : null),
         });
         continue;
       }
@@ -219,7 +221,9 @@ function parseTimeline(raw: string | undefined): Array<Record<string, unknown>> 
   try {
     const parsed: unknown = JSON.parse(raw);
     return Array.isArray(parsed)
-      ? parsed.filter((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null)
+      ? parsed.filter(
+          (entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null,
+        )
       : [];
   } catch {
     return [];
@@ -249,7 +253,14 @@ export interface SelectedEvidence {
 export function useSelectedEvidence(row: EvidenceRow | null): SelectedEvidence {
   return useMemo<SelectedEvidence>(() => {
     if (row === null) {
-      return { row: null, loading: false, error: null, observation: null, claim: null, lineage: EMPTY_LINEAGE };
+      return {
+        row: null,
+        loading: false,
+        error: null,
+        observation: null,
+        claim: null,
+        lineage: EMPTY_LINEAGE,
+      };
     }
 
     if (row.kind !== "Observation") {
@@ -292,6 +303,13 @@ export function useSelectedEvidence(row: EvidenceRow | null): SelectedEvidence {
     });
     const derivation: DerivationLineageChain | null = null;
 
-    return { row, loading: false, error: null, observation, claim: null, lineage: { evidence, derivation } };
+    return {
+      row,
+      loading: false,
+      error: null,
+      observation,
+      claim: null,
+      lineage: { evidence, derivation },
+    };
   }, [row]);
 }

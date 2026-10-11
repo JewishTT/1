@@ -63,7 +63,11 @@ describe("intel graph assembler", () => {
   });
 
   it("labels a correlate that becomes materialised as entity", () => {
-    const materialised = { ...ENTITY, entity_id: "ENT-2002", canonical_identity: { account: "Acct" } };
+    const materialised = {
+      ...ENTITY,
+      entity_id: "ENT-2002",
+      canonical_identity: { account: "Acct" },
+    };
     const graph = buildIntelGraph(
       { "ENT-2001": ENTITY, "ENT-2002": materialised },
       { "ENT-2001": [CORR] },
@@ -75,9 +79,12 @@ describe("intel graph assembler", () => {
   });
 
   it("dedupes nodes by id", () => {
-    const graph = buildIntelGraph({ "ENT-2001": ENTITY }, {
-      "ENT-2001": [CORR, { ...CORR, edge_id: "CE-200002" }],
-    });
+    const graph = buildIntelGraph(
+      { "ENT-2001": ENTITY },
+      {
+        "ENT-2001": [CORR, { ...CORR, edge_id: "CE-200002" }],
+      },
+    );
     expect(graph.nodes.filter((n) => n.id === "ENT-2002")).toHaveLength(1);
     expect(graph.edges).toHaveLength(3); // 2 correlation edges + 1 relationship
   });
@@ -116,7 +123,9 @@ describe("intel graph assembler", () => {
 
   it("classifies entity type by canonical identity dimensions", () => {
     expect(classifyEntity({ ...ENTITY, canonical_identity: { account: "Yard" } })).toBe("account");
-    expect(classifyEntity({ ...ENTITY, canonical_identity: { domain: "example.org", ip: "1.2.3.4" } })).toBe("infrastructure");
+    expect(
+      classifyEntity({ ...ENTITY, canonical_identity: { domain: "example.org", ip: "1.2.3.4" } }),
+    ).toBe("infrastructure");
     expect(classifyEntity({ ...ENTITY, canonical_identity: { org: "ACME" } })).toBe("organisation");
     expect(classifyEntity({ ...ENTITY, canonical_identity: {} })).toBe("unknown");
   });
@@ -125,7 +134,9 @@ describe("intel graph assembler", () => {
     const rich: EntityView = {
       ...ENTITY,
       evidence: [{ evidence_id: "E-1", observation_id: "OBS-1001", immutable: true }],
-      timeline: [{ observation_id: "OBS-1001", uri: "http://fixtures.local/report.html", immutable: true }],
+      timeline: [
+        { observation_id: "OBS-1001", uri: "http://fixtures.local/report.html", immutable: true },
+      ],
       supporting_assertions: ["ASR-9001"],
       aliases: ["Yard", "yard-account"],
     };
@@ -150,7 +161,9 @@ describe("intel graph assembler", () => {
     expect(kinds["OBS-1001"]).toBeUndefined();
     expect(kinds["SRC-fixtures.local"]).toBeUndefined();
     expect(kinds["ENT-2001"]).toBe("entity");
-    expect(stripped.edges.every((e) => e.kind !== "evidence" && e.kind !== "source_host")).toBe(true);
+    expect(stripped.edges.every((e) => e.kind !== "evidence" && e.kind !== "source_host")).toBe(
+      true,
+    );
   });
 });
 
@@ -204,7 +217,11 @@ vi.mock("../lib/api", () => ({
           supporting_assertions: [],
           evidence: [{ evidence_id: "E-9", observation_id: "OBS-9001", immutable: true }],
           timeline: [
-            { observation_id: "OBS-9001", uri: "http://fixtures.local/snapshot.json", immutable: true },
+            {
+              observation_id: "OBS-9001",
+              uri: "http://fixtures.local/snapshot.json",
+              immutable: true,
+            },
           ],
           structural_signals: [],
           tenant_id: "t",
@@ -233,8 +250,18 @@ vi.mock("../lib/api", () => ({
 const INVARIANT = {
   provider: "gudhi",
   structural_only: false,
-  embedding: { lag: 1, embed_dim: 2, points: [[0, 0], [1, 1]] },
-  diagrams: { "0": [[0, null]], "1": [[0.12, 0.7]] } as Record<string, Array<[number, number | null]>>,
+  embedding: {
+    lag: 1,
+    embed_dim: 2,
+    points: [
+      [0, 0],
+      [1, 1],
+    ],
+  },
+  diagrams: { "0": [[0, null]], "1": [[0.12, 0.7]] } as Record<
+    string,
+    Array<[number, number | null]>
+  >,
   stats: {
     "0": { num_bars: 2, mean_persistence: 0.05, max_persistence: 0.2, total_persistence: 0.25 },
     "1": { num_bars: 1, mean_persistence: 0.58, max_persistence: 0.58, total_persistence: 0.58 },
