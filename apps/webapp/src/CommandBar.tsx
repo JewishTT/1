@@ -40,6 +40,9 @@ const VIEW_ICON: Record<WorkspaceView, IconName> = {
   findings: "view-findings",
   analysis: "view-analysis",
   ops: "view-ops",
+  // The CI department view has no distinct glyph in the icon set; it is an operations
+  // surface, so it reads as one rather than inventing an icon for it.
+  ci: "view-ops",
 };
 
 /** §50 chords. Only these five views get a single key. */

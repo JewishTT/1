@@ -172,6 +172,8 @@ export interface WorkbenchProps {
    * the address bar.
    */
   sync?: UrlSyncBinding | null;
+  /** False when an ancestor already renders the shell (see App.tsx). */
+  shell?: boolean;
 }
 
 /** Mount point for tests: the workspace and inspector without AppShell chrome. */
@@ -184,16 +186,28 @@ export function WorkbenchCanvas({ overview }: { overview?: ReactNode }) {
   );
 }
 
-export function Workbench({ overview, sync = null }: WorkbenchProps) {
+export function Workbench({ overview, sync = null, shell = true }: WorkbenchProps) {
+  /* One shell, once.
+   *
+   * `App.tsx` already wraps every route in `AppShell`, so the workspace mounting its own put
+   * a second navigation bar, a second work-state bar and a second rail on top of the first
+   * inside the same viewport. The overlap is what made navigating to an investigation look
+   * like a blank screen: content rendered twice, half of it behind the other half, with
+   * neither copy legible.
+   *
+   * The shell stays on by default because the workbench is also mounted on its own in tests
+   * and previews, where nothing wraps it.
+   */
+  const body = (
+    <div className="ui-workbench">
+      <LeftRail />
+      <InvestigationWorkspace overview={overview} />
+      <RightInspector />
+    </div>
+  );
   return (
     <>
-      <AppShell activity={<ActivityLayer />}>
-        <div className="ui-workbench">
-          <LeftRail />
-          <InvestigationWorkspace overview={overview} />
-          <RightInspector />
-        </div>
-      </AppShell>
+      {shell ? <AppShell activity={<ActivityLayer />}>{body}</AppShell> : body}
       <CommandPalette />
       <CanvasContextMenu />
       <KeyboardLayer sync={sync} />
@@ -215,10 +229,12 @@ export function InvestigationRoute({
   id,
   overview,
   sync = null,
+  shell = true,
 }: {
   id: string;
   overview?: ReactNode;
   sync?: UrlSyncBinding | null;
+  shell?: boolean;
 }) {
   const setInvestigation = useWorkspace((state) => state.setInvestigation);
 
@@ -234,6 +250,7 @@ export function InvestigationRoute({
     <Workbench
       overview={overview}
       sync={sync ? { ...sync, ready: sync.ready && ready } : null}
+      shell={shell}
     />
   );
 }
@@ -253,6 +270,7 @@ export function InvestigationWorkspaceRoute() {
   return (
     <InvestigationRoute
       id={id}
+      shell={false}
       overview={<InvestigationContentBridge id={id} />}
       sync={{
         navigate,

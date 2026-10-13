@@ -360,6 +360,10 @@ describe("§15 — the toolbar", () => {
       counts: { entities: 2, observations: 1, findings: 0, hypotheses: 0, edges: 2 },
       coverage: { loaded: ["/entities/graph"], missing: ["/relations"] },
       disabled: false,
+      savedViews: [],
+      onSaveView: vi.fn(),
+      onRestoreView: vi.fn(),
+      onDeleteView: vi.fn(),
       ...overrides,
     };
     return { props, ...render(withQuery(<GraphToolbar {...props} />)) };
@@ -455,5 +459,105 @@ describe("§15 — the toolbar", () => {
     // it simply has nothing in it yet.
     renderToolbar({ disabled: true });
     expect(screen.getByLabelText("Search objects")).not.toBeDisabled();
+  });
+
+  /* ── saved views: save, then restore ──────────────────────────────────── */
+
+  describe("the saved-views menu", () => {
+    const VIEW = {
+      name: "morning",
+      savedAt: "2026-01-01T00:00:00.000Z",
+      mode: "lasso" as const,
+      layout: "circle" as const,
+      query: "acme",
+      temporalActive: true,
+      expandedIds: ["Entity:ENT-1"],
+    };
+
+    function openMenu() {
+      fireEvent.click(screen.getByTestId("graph-saved-views-toggle"));
+    }
+
+    it("says what a view holds, because 'restore' sounds like it replays records", () => {
+      renderToolbar({ savedViews: [] });
+      openMenu();
+      expect(screen.getByTestId("graph-saved-views")).toHaveTextContent(/never the objects/i);
+    });
+
+    it("starts empty and does not offer a save with no name typed", () => {
+      renderToolbar({ savedViews: [] });
+      openMenu();
+
+      expect(screen.getByTestId("saved-view-empty")).toBeInTheDocument();
+      expect(screen.getByTestId("saved-view-save")).toBeDisabled();
+
+      fireEvent.change(screen.getByTestId("saved-view-name"), { target: { value: "   " } });
+      // Whitespace is not a name.
+      expect(screen.getByTestId("saved-view-save")).toBeDisabled();
+    });
+
+    it("hands the canvas the trimmed name and clears the field", () => {
+      const { props } = renderToolbar({ savedViews: [] });
+      openMenu();
+
+      fireEvent.change(screen.getByTestId("saved-view-name"), { target: { value: "  morning  " } });
+      fireEvent.click(screen.getByTestId("saved-view-save"));
+
+      expect(props.onSaveView).toHaveBeenCalledWith("morning");
+      expect(screen.getByTestId("saved-view-name")).toHaveValue("");
+    });
+
+    it("saves on Enter, which is what a name field implies", () => {
+      const { props } = renderToolbar({ savedViews: [] });
+      openMenu();
+
+      fireEvent.change(screen.getByTestId("saved-view-name"), { target: { value: "morning" } });
+      fireEvent.keyDown(screen.getByTestId("saved-view-name"), { key: "Enter" });
+
+      expect(props.onSaveView).toHaveBeenCalledWith("morning");
+    });
+
+    it("lists a saved view with Restore and Drop, and restores the one clicked", () => {
+      const { props } = renderToolbar({ savedViews: [VIEW] });
+      openMenu();
+
+      expect(screen.queryByTestId("saved-view-empty")).not.toBeInTheDocument();
+      const row = screen.getByTestId("saved-view-morning");
+      expect(row).toHaveTextContent("morning");
+      // The row states the setup, so a view is recognisable before it is applied.
+      expect(row).toHaveTextContent("lasso");
+      expect(row).toHaveTextContent("circle");
+
+      fireEvent.click(screen.getByTestId("saved-view-restore-morning"));
+      expect(props.onRestoreView).toHaveBeenCalledWith(VIEW);
+      expect(props.onSaveView).not.toHaveBeenCalled();
+    });
+
+    it("drops a view by name, and dropping never restores it", () => {
+      const { props } = renderToolbar({ savedViews: [VIEW] });
+      openMenu();
+
+      fireEvent.click(screen.getByTestId("saved-view-drop-morning"));
+
+      expect(props.onDeleteView).toHaveBeenCalledWith("morning");
+      expect(props.onRestoreView).not.toHaveBeenCalled();
+    });
+
+    it("cannot save an empty canvas, but can still drop a view from one", () => {
+      // `disabled` means "nothing is loaded to frame". Cleaning up yesterday's views
+      // is still possible against an empty canvas; snapshotting one is not.
+      const { props } = renderToolbar({ savedViews: [VIEW], disabled: true });
+      openMenu();
+
+      expect(screen.getByTestId("saved-view-save")).toBeDisabled();
+      expect(screen.getByTestId("saved-view-restore-morning")).not.toBeDisabled();
+      fireEvent.click(screen.getByTestId("saved-view-drop-morning"));
+      expect(props.onDeleteView).toHaveBeenCalledWith("morning");
+    });
+
+    it("counts the saved views on the trigger", () => {
+      renderToolbar({ savedViews: [VIEW] });
+      expect(screen.getByTestId("graph-saved-views-toggle")).toHaveTextContent("Views (1)");
+    });
   });
 });

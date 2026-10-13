@@ -13,6 +13,7 @@ import { applyFacets, type GraphFacets } from "./filters";
 import { collapse, expand, expansionChoices, type ExpansionChoice } from "./expansion";
 import { isLayoutName, layoutOptionsFor, type LayoutName } from "./layout";
 import { findPath, resolveEmphasis, type PathResult } from "./path";
+import { deleteView, loadViews, saveView, scopeKeyFor, type SavedView } from "./savedViews";
 import {
   edgeStyleForContext,
   nodeStyleFor,
@@ -109,8 +110,35 @@ export function GraphCanvas({
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
+  /* ── Saved views (§15) ───────────────────────────────────────────────────
+   *
+   * `investigationId` is `string | null | undefined` — a prop for tests and
+   * previews, and a null meaning the tenant-wide scope — so it is resolved to
+   * a scope key HERE, above the `activeInvestigation === null` gate at the
+   * bottom of this component. That gate is an early `return`, so a hook written
+   * next to the toolbar would sit after a conditional and break the rules of
+   * hooks. Settling the key up here is also what makes it correct for the
+   * investigations container, which mounts the canvas with a null id.
+   */
+  const viewsScope = scopeKeyFor(activeInvestigation);
+  const [views, setViews] = useState<SavedView[]>(() => loadViews(viewsScope));
+  const viewsScopeRef = useRef(viewsScope);
+
+  // Reload only when the scope actually CHANGES. The lazy initialiser already
+  // read the first scope, so re-reading it on mount would allocate a second
+  // identical array and re-render the canvas for nothing (§68).
+  useEffect(() => {
+    if (viewsScopeRef.current === viewsScope) return;
+    viewsScopeRef.current = viewsScope;
+    setViews(loadViews(viewsScope));
+  }, [viewsScope]);
+
   const hostRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
+  type CytoscapeModule = { default: typeof cytoscape };
+  const buildRef = useRef<((mod: CytoscapeModule) => void) | null>(null);
+  /* Bumped whenever a live engine appears. See the elements effect below. */
+  const [engineReady, setEngineReady] = useState(0);
   const paletteRef = useRef<GraphPalette>(readGraphPalette(null));
   // The density-resolved base label size. A ref rather than state because it is
   // read inside the creation effect (which must not re-run) and inside the
@@ -195,17 +223,44 @@ export function GraphCanvas({
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host) return;
 
-    let cancelled = false;
-    let created: cytoscape.Core | null = null;
+    let disposed = false;
 
-    void import("cytoscape").then((module) => {
-      if (cancelled || hostRef.current === null) return;
-      paletteRef.current = readGraphPalette(hostRef.current);
-      labelFontRef.current = readNodeLabelFont(hostRef.current);
-      created = module.default({
-        container: hostRef.current,
+    /* Creation has to survive StrictMode's remount.
+     *
+     * The engine is imported dynamically, so the cleanup below used to run while the import
+     * was still in flight: it flagged the run cancelled, the cancelled run skipped creation,
+     * and the run that followed could find the graph already "owned" and leave it alone. The
+     * result was a mounted `.ui-graph-host` with no canvas behind it and nothing in the
+     * console -- the graph simply never appeared, while the counters said the data was there.
+     *
+     * So the decision to build is made from the state that matters (is the host still in the
+     * document, and is anything alive already) rather than from which run asked first, and
+     * cleanup tears down whatever is currently mounted instead of only what this run made.
+     */
+    const build = (mod: CytoscapeModule) => {
+      const D = ((window as unknown as Record<string, Record<string, number>>).__gc ??= {});
+      const bump = (k: string) => { D[k] = (D[k] ?? 0) + 1; };
+      bump("called");
+      const live = cyRef.current;
+      if (live && !live.destroyed()) { return; }
+      if (disposed && !host?.isConnected) { return; }
+
+      /* The container is resolved fresh, and only if it is actually in the document.
+       *
+       * React can replace this div between the effect running and the dynamic import
+       * resolving. Cytoscape then builds a perfectly good engine against a node that is no
+       * longer on the page: `built` was 1, `destroyed` was 0, and `document` held zero
+       * canvases. The panel showed its counters over nothing. Attaching to whatever the ref
+       * points at right now means the engine can only ever land on a live surface.
+       */
+      const container = hostRef.current;
+      if (!container || !container.isConnected) return;
+      
+      setEngineReady((n) => n + 1);
+
+      const created = mod.default({
+        container,
         elements: [],
         // No ambient motion (§93, §67): no bouncing, no pulsing, no easing.
         // Layout runs unanimated and selection is instant.
@@ -219,16 +274,60 @@ export function GraphCanvas({
         style: [] as cytoscape.CytoscapeOptions["style"],
       } as cytoscape.CytoscapeOptions);
       cyRef.current = created;
+      bump("created");
       applyBaseStyle(created, labelFontRef.current);
       wireEvents(created, handlersRef);
+    };
+
+    buildRef.current = build;
+    void import("cytoscape").then(build, () => {
+      // Swallowed on purpose: a failed engine import must not unbind the panel.
+      // The empty state in the same region tells the analyst what is missing.
     });
 
     return () => {
-      cancelled = true;
-      created?.destroy();
-      if (cyRef.current === created) cyRef.current = null;
+      disposed = true;
+      const live = cyRef.current;
+      (window as unknown as Record<string, number>).__cyDestroyed =
+        (((window as unknown as Record<string, number>).__cyDestroyed) || 0) + (live && !live.destroyed() ? 1 : 0);
+      if (live && !live.destroyed()) live.destroy();
+      if (cyRef.current === live) cyRef.current = null;
     };
   }, [applyBaseStyle]);
+
+  /* Repair pass.
+   *
+   * The creation effect is keyed on `applyBaseStyle` and so runs rarely, while teardown can
+   * happen at any time -- a StrictMode remount, a scope switch that swaps the host, an effect
+   * that disposes before its import lands. Whenever that leaves the mounted host with no live
+   * engine, this rebuilds it after the paint that caused it. Without it the panel showed its
+   * own counters ("2 ENTITY") over an empty canvas and nothing explained the gap.
+   */
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const live = cyRef.current;
+
+    /* Re-attach before rebuilding.
+     *
+     * React can replace this div after the engine has already built itself inside it. The
+     * graph was fine -- 5 nodes, 2 edges, three canvases, all present -- and attached to a
+     * node that had left the document, which is why the page showed counters and nothing
+     * else. `mount` moves the existing engine, with its elements and viewport, onto the host
+     * that is actually on screen. Rebuilding instead would throw the graph away and re-solve
+     * the layout, which is exactly the kind of silent state loss the graph must not do.
+     */
+    if (live && !live.destroyed()) {
+      if (live.container() !== host) live.mount(host);
+      return;
+    }
+
+    const build = buildRef.current;
+    if (!build) return;
+    void import("cytoscape").then(build, () => {
+      /* see the swallowed rejection above */
+    });
+  });
 
   /* ── Node chrome follows the density (§4.2) ─────────────────────────────
    *
@@ -245,11 +344,21 @@ export function GraphCanvas({
 
   /* ── Elements: add/remove the delta only ───────────────────────────── */
 
+  /* `engineReady` is in the dependencies on purpose.
+   *
+   * This effect used to bail whenever the engine had not been built yet and depend only on
+   * the data. But the data arrives first and the engine arrives last -- it is created by a
+   * dynamic import -- so the first pass with real nodes found `cyRef` empty and returned.
+   * Nothing about the data changed afterwards, so the effect never ran again, the graph
+   * instance stayed permanently empty, and because cytoscape creates its canvases only when
+   * there is something to draw, the panel showed its counters ("2 ENTITY") above a blank
+   * region with no error anywhere. The engine's arrival is now part of the trigger.
+   */
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
     applyElements(cy, filtered.nodes, filtered.edges, paletteRef.current, emphasis, hoveredEdgeId);
-  }, [filtered, emphasis, hoveredEdgeId]);
+  }, [filtered, emphasis, hoveredEdgeId, engineReady]);
 
   /* ── Palette follows the theme, not a prop ─────────────────────────── */
 
@@ -399,6 +508,66 @@ export function GraphCanvas({
     setNote(`Exported ${filtered.nodes.length} objects and ${filtered.edges.length} relations to the clipboard.`);
   }, [activeInvestigation, facets, server.counts, filtered]);
 
+  /* ── Saved views: save, restore, drop (§15) ───────────────────────────── */
+
+  // The SETUP is what is written — mode, layout, query, temporal, expansion —
+  // and nothing else. `filtered.nodes` and `filtered.edges` are deliberately
+  // absent: they are refetched on restore, so a view can never resurrect
+  // yesterday's copy of the graph under today's settings.
+  const onSaveView = useCallback(
+    (name: string) => {
+      const trimmed = name.trim();
+      if (trimmed === "") return;
+      setViews(
+        saveView(viewsScope, {
+          name: trimmed,
+          mode,
+          layout,
+          query: facets.query,
+          temporalActive,
+          expandedIds,
+        }),
+      );
+      setNote(`Saved view "${trimmed}" — the framing, not the records.`);
+    },
+    [viewsScope, mode, layout, facets.query, temporalActive, expandedIds],
+  );
+
+  const onDeleteView = useCallback(
+    (name: string) => {
+      setViews(deleteView(viewsScope, name));
+      setNote(`Dropped view "${name}".`);
+    },
+    [viewsScope],
+  );
+
+  const onRestoreView = useCallback(
+    (view: SavedView) => {
+      // Safe without re-validating here: `loadViews` admits only a view whose
+      // layout passes `isLayoutName`, whose mode is a real ToolbarMode and whose
+      // expandedIds are all strings — so these are the true unions, not whatever
+      // a stale payload claimed.
+      setMode(view.mode);
+      setLayout(view.layout);
+      setQuery(view.query);
+      setExpandedIds(view.expandedIds);
+      if (view.temporalActive !== temporalActive) {
+        setTemporalActive(view.temporalActive);
+        // The same store write `onToggleTemporal` makes. The workspace time range
+        // is the one temporal filter that IS in the store, so restoring a temporal
+        // view has to move it too — otherwise the badge claims a slice the graph
+        // is not showing (§23).
+        setTimeRange(
+          view.temporalActive
+            ? { from: new Date(Date.now() - 30 * 86_400_000).toISOString(), to: null }
+            : { from: null, to: null },
+        );
+      }
+      setNote(`Restored view "${view.name}".`);
+    },
+    [setQuery, setTimeRange, temporalActive],
+  );
+
   const expansions = useMemo(
     () =>
       expansionChoices(
@@ -418,18 +587,18 @@ export function GraphCanvas({
 
   /* ── States (§90, §91) ────────────────────────────────────────────── */
 
-  if (activeInvestigation === null) {
-    return (
-      <div className="ui-graph" data-testid="graph-canvas">
-        <EmptyState
-          icon="view-graph"
-          title="No investigation loaded"
-          description="The graph is a projection of one investigation's records. Choose an investigation and the canvas reads its entities, findings and correlation candidates."
-          testId="graph-no-investigation"
-        />
-      </div>
-    );
-  }
+  /* Tenant scope is not "nothing loaded".
+   *
+   * This gate rendered "No investigation loaded" whenever `activeInvestigation` was null --
+   * which is precisely the tenant-wide scope the Investigations screen opens on. The queries
+   * behind it were fetching every investigation's records and the result was discarded, so
+   * the landing surface promised a graph and showed a placeholder. `useGraphModel` already
+   * treats null as a real scope; this was the only place still saying otherwise, and it was
+   * the reason the whole reconnaissance surface looked broken.
+   *
+   * Empty is now decided by the data, not by the scope: an empty tenant gets an empty state
+   * because it has no records, which is a claim the payload supports.
+   */
 
   if (server.loading) {
     return (
@@ -497,6 +666,10 @@ export function GraphCanvas({
         counts={server.counts}
         coverage={server.coverage}
         disabled={server.model.nodes.length === 0}
+        savedViews={views}
+        onSaveView={onSaveView}
+        onRestoreView={onRestoreView}
+        onDeleteView={onDeleteView}
       />
 
       <div className="ui-graph-body">
@@ -710,9 +883,26 @@ function applyElements(
 
 /** Run a layout over the live elements. Unanimated by design (§67). */
 export function applyLayout(cy: cytoscape.Core | null, layout: LayoutName): void {
-  if (!cy) return;
-  const ids = cy.nodes().map((node) => node.id());
-  cy.layout(layoutOptionsFor(layout, ids)).run();
+  if (!cy || cy.destroyed()) return;
+  const nodes = cy.nodes();
+  if (nodes.length === 0) return;
+  const ids = nodes.map((node) => node.id());
+  try {
+    cy.layout(layoutOptionsFor(layout, ids)).run();
+  } catch {
+    // A layout must never be able to take the screen down with it.
+    //
+    // `cose` reads a geometry field off every node it is handed and throws when the element
+    // set is not what it expects. Switching scope can land on an investigation whose graph has
+    // not loaded yet, and that throw used to escape the effect, unmount the whole tree and
+    // leave the analyst staring at an empty document. Falling back to the stored positions
+    // keeps the graph on screen; the analyst can always re-run a layout by hand.
+    try {
+      cy.layout(layoutOptionsFor("preset", ids)).run();
+    } catch {
+      /* the graph is on screen with no layout; that is better than a blank page */
+    }
+  }
 }
 
 /** The filtered view of a model, as a model, sharing indices where possible. */

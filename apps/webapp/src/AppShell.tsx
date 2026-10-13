@@ -73,12 +73,12 @@ export function WorkStateBar() {
   const work = useWorkState(investigationId);
   const selection = useWorkspace((state) => state.selection);
 
+  // With nothing selected there is no work state to report, so the strip is left out
+  // entirely. It used to render a placeholder here, which stole width from the nav and
+  // clipped "Hypotheses" down to "Hypol" — an idle caption is not worth an unreadable
+  // navigation. The scope chips on the page already show that nothing is open.
   if (investigationId === null) {
-    return (
-      <div className="ui-topbar-work">
-        <span className="ui-topbar-idle">No investigation selected</span>
-      </div>
-    );
+    return null;
   }
 
   return (

@@ -16,9 +16,11 @@ export function HypothesisContainer() {
     setLoading(true);
     try {
       const hypRaw = await scienceApi.listHypotheses(project);
-      setHypotheses(
-        (hypRaw.hypotheses ?? []).map((h) => ({ ...h, evidence_count: h.evidence_count ?? 0 })),
-      );
+      // `evidence_count` is passed through as the server sent it. Defaulting a missing
+      // count to 0 made the page render "(0 links)" for a hypothesis nobody had
+      // measured -- a fabricated zero dressed as a measurement. The page treats an
+      // absent count as absent.
+      setHypotheses((hypRaw.hypotheses ?? []).map((h) => ({ ...h })));
       setError(null);
       try {
         setCoverage(await scienceApi.coverage(project));
@@ -70,8 +72,11 @@ export function HypothesisContainer() {
   const runPlan = async () => {
     try {
       const res = await scienceApi.planCollection(projectId, []);
+      // `plan` is the response's own list, and a planner that ranked nothing answers
+      // with an empty list or with none at all. Both are "no plan", and neither is a
+      // reason to throw away the page the analyst is looking at.
       setPlan(
-        res.plan.map((o) => ({
+        (res.plan ?? []).map((o) => ({
           opportunity_id: o.opportunity_id,
           expected_gain: o.expected_gain,
           discriminates: [],

@@ -54,8 +54,17 @@ export function QuarantinePage({
   }
 
   return (
-    <section data-testid="quarantine-page">
-      <h1>Quarantine (DLQ)</h1>
+    <section className="command-page ops-page" data-testid="quarantine-page">
+      <div className="page-banner">
+        <div>
+          <span className="op-label">SPEC / CONTROL PLANE</span>
+          <h1>Quarantine (DLQ)</h1>
+          <p className="panel-note">
+            Preserved rejects, byte-for-byte replayable. Nothing is dropped silently — every
+            poisoned candidate stays recoverable.
+          </p>
+        </div>
+      </div>
 
       <form className="dlq-toolbar" onSubmit={onSubmitFilter} data-testid="dlq-filter">
         <input
@@ -76,7 +85,8 @@ export function QuarantinePage({
         </span>
       </form>
 
-      <table className="dlq-table" data-testid="dlq-list">
+      <div className="spec-table-scroll">
+        <table className="dlq-table" data-testid="dlq-list">
         <thead>
           <tr>
             <th>Record</th>
@@ -133,7 +143,8 @@ export function QuarantinePage({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       {replayed && (
         <div className="dlq-payload" data-testid="dlq-payload">

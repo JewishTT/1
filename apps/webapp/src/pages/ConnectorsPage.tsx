@@ -75,8 +75,17 @@ export function ConnectorsPage({
   }
 
   return (
-    <section data-testid="connectors-page">
-      <h1>Connectors &amp; recon plans</h1>
+    <section className="command-page ops-page" data-testid="connectors-page">
+      <div className="page-banner">
+        <div>
+          <span className="op-label">SPEC / CONTROL PLANE</span>
+          <h1>Connectors &amp; recon plans</h1>
+          <p className="panel-note">
+            The machinery the pipeline runs on. Registering a connector is an operations
+            action, not a way to gather intelligence.
+          </p>
+        </div>
+      </div>
 
       <form className="conn-form" onSubmit={onSubmitRegister} data-testid="register-form">
         <input

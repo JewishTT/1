@@ -239,8 +239,16 @@ class Investigation:
             raise InvestigationValidationError("name is required")
         if not self.tenant_id:
             raise InvestigationValidationError("tenant_id is required")
-        if not self.objective:
-            raise InvestigationValidationError("objective is required")
+        # The objective is deliberately NOT required. An investigation can be opened before
+        # anyone can say what it is for -- "whales" is a perfectly good place to start, and
+        # the objective is what the platform's own work is for. Requiring one at creation made
+        # every create fail with "objective is required" while the only form in the UI asks
+        # for a name.
+        #
+        # An absent objective is a first-class *unknown*, not an invalid record: the same
+        # distinction the Context Graph keeps between "never asked" and "asked, nothing found".
+        # The investigation opens UNINVESTIGATED and the missing objective is what the
+        # frontier is for.
         self._validate_scope()
 
     def _validate_scope(self) -> None:

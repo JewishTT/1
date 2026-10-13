@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { Badge } from "../ui/Badge";
 import { Button, IconButton } from "../ui/Button";
@@ -6,6 +6,7 @@ import { Icon, type IconName } from "../ui/Icon";
 import { Input, Select } from "../ui/Input";
 import { Popover, Tooltip } from "../ui/Overlay";
 import type { GraphFacetId } from "./filters";
+import type { SavedView } from "./savedViews";
 import { EDGE_LEGEND, NODE_LEGEND } from "./semantics";
 import type { GraphCounts, GraphCoverage } from "./useGraphModel";
 import type { ExpansionChoice } from "./expansion";
@@ -60,6 +61,16 @@ export interface GraphToolbarProps {
   counts: GraphCounts;
   coverage: GraphCoverage;
   disabled: boolean;
+  /**
+   * The setup snapshots for this investigation's scope. The toolbar never stores one
+   * itself — the canvas owns the scope key and the store, and this list is a projection
+   * of it, so the menu cannot write a view into another investigation's key.
+   */
+  savedViews: readonly SavedView[];
+  /** Snapshot the current canvas setup under this name. The canvas refuses a blank one. */
+  onSaveView: (name: string) => void;
+  onRestoreView: (view: SavedView) => void;
+  onDeleteView: (name: string) => void;
 }
 
 const LAYOUTS: ReadonlyArray<{ value: LayoutName; label: string }> = [
@@ -97,6 +108,10 @@ export function GraphToolbar({
   counts,
   coverage,
   disabled,
+  savedViews,
+  onSaveView,
+  onRestoreView,
+  onDeleteView,
 }: GraphToolbarProps) {
   const hopExpansions = useMemo(() => expansions.filter((choice) => choice.request.kind === "hops"), [expansions]);
   const constraintExpansions = useMemo(
@@ -285,6 +300,13 @@ export function GraphToolbar({
         >
           Export
         </Button>
+        <SavedViewMenu
+          savedViews={savedViews}
+          onSaveView={onSaveView}
+          onRestoreView={onRestoreView}
+          onDeleteView={onDeleteView}
+          disabled={disabled}
+        />
         <LegendMenu />
       </div>
 
@@ -315,6 +337,125 @@ export function GraphToolbar({
         </Tooltip>
       </div>
     </div>
+  );
+}
+
+/**
+ * Saved views (§15 "report state").
+ *
+ * SAVE VIEW / RESTORE, which is the one thing the workspace graph was missing and the
+ * retired Intel Board had. It is a menu rather than a pair of buttons because the second
+ * button is meaningless without a named list to act on.
+ *
+ * The menu states plainly what a view holds: the SETUP, not the objects. An analyst who
+ * reads "stores the framing, not the records" knows that restoring tomorrow refetches the
+ * graph rather than replaying a snapshot — the difference between a view and a stale copy.
+ *
+ * Drop stays enabled even when the canvas is empty. `disabled` means "there is nothing
+ * loaded to snapshot", and cleaning up yesterday's views is still possible against an
+ * empty canvas; only Save is gated on it.
+ */
+function SavedViewMenu({
+  savedViews,
+  onSaveView,
+  onRestoreView,
+  onDeleteView,
+  disabled,
+}: {
+  savedViews: readonly SavedView[];
+  onSaveView: (name: string) => void;
+  onRestoreView: (view: SavedView) => void;
+  onDeleteView: (name: string) => void;
+  disabled: boolean;
+}) {
+  const [name, setName] = useState("");
+  const canSave = !disabled && name.trim() !== "";
+
+  const save = () => {
+    if (!canSave) return;
+    onSaveView(name.trim());
+    setName("");
+  };
+
+  return (
+    <Popover
+      label="Saved views"
+      placement="bottom"
+      align="end"
+      testId="graph-saved-views"
+      trigger={
+        <Button size="sm" variant="ghost" iconAfter="chevron-down" data-testid="graph-saved-views-toggle">
+          Views{savedViews.length > 0 ? ` (${savedViews.length})` : ""}
+        </Button>
+      }
+    >
+      <div className="ui-menu">
+        <span className="ui-pane-title">Saved views</span>
+        <span className="ui-rail-hint">
+          A view stores the framing — mode, layout, query, timeline, expansion — never the
+          objects. Restoring refetches the records.
+        </span>
+        <Input
+          label="View name"
+          value={name}
+          placeholder="what this framing shows"
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            // Enter saves rather than submitting anything: the menu is not a form and
+            // there is no page behind it to submit to.
+            event.preventDefault();
+            save();
+          }}
+          data-testid="saved-view-name"
+        />
+        <Button
+          size="sm"
+          disabled={!canSave}
+          onClick={save}
+          title={
+            disabled
+              ? "Nothing is loaded to frame — the canvas has no objects yet"
+              : "Save the current setup under this name, replacing any view already using it"
+          }
+          data-testid="saved-view-save"
+        >
+          Save
+        </Button>
+        {savedViews.length === 0 ? (
+          <span className="ui-rail-hint" data-testid="saved-view-empty">
+            No views saved for this investigation yet.
+          </span>
+        ) : (
+          savedViews.map((view) => (
+            <span key={view.name} className="ui-graph-legend-row" data-testid={`saved-view-${view.name}`}>
+              <span className="ui-body">{view.name}</span>
+              <span className="ui-rail-hint">
+                {view.mode} · {view.layout}
+                {view.temporalActive ? " · temporal" : ""}
+              </span>
+              <Button
+                size="sm"
+                onClick={() => onRestoreView(view)}
+                title={`Restore the ${view.layout} setup saved on ${view.savedAt}`}
+                data-testid={`saved-view-restore-${view.name}`}
+              >
+                Restore
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onDeleteView(view.name)}
+                title="Delete this saved view"
+                data-testid={`saved-view-drop-${view.name}`}
+              >
+                Drop
+              </Button>
+            </span>
+          ))
+        )}
+      </div>
+    </Popover>
   );
 }
 

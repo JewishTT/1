@@ -414,6 +414,104 @@ class EntityVersion(Base):
     )
 
 
+class InvestigationEntityMembership(Base):
+    """Which investigations an entity is part of. Mirrors migration 024 exactly.
+
+    **Why a table and not an ``investigation_id`` column on ``entities``.** Every other
+    durable table here carries one (``relation_claim``, ``evidence_context``,
+    ``analyst_assertions``, ``observations``, ``sources``, ...), and the difference is
+    what the row is about. Those tables hold *facts*, and a fact is produced by one
+    investigation: a relation claim belongs to the run that asserted it. An entity is not
+    a fact about an investigation, it is an identity -- the platform's answer to "are
+    these mentions the same thing", which is exactly the question two investigations
+    investigating the same subject both need answered. It is already durable and
+    tenant-wide in ``entities``, and ``api/routes/manual_assertions.py`` derives an
+    ``entity_id`` from ``(tenant_id, canonical_identity)`` alone -- with no investigation
+    in the digest -- so the same subject asserted from two investigations is *already*
+    one row. A single column would then be overwritten by whichever investigation wrote
+    last, and the first investigation would silently lose the entity: a last-writer-wins
+    answer to "what does this investigation contain", on a table whose whole purpose is
+    not to overwrite. A membership is a set element, and a set element that two
+    investigations hold in common is not a contradiction.
+
+    **Membership, not ownership.** Nothing here transfers an entity between
+    investigations, and deleting a membership (nothing does yet) would be a policy
+    question, not a consequence of this table.
+
+    **``basis`` is closed and says how the membership came to exist**, so "this
+    investigation contains this entity" is answerable together with *why* rather than as
+    a bare fact:
+
+    * ``EXPLICIT`` -- a caller named the investigation when the entity was created
+      (``POST /entities`` with ``investigation_id``).
+    * ``ANALYST_ASSERTION`` -- an analyst asserted the entity inside that investigation
+      (``POST /investigations/{id}/assertions/entity``).
+    * ``RELATION_DERIVED`` -- the investigation's own relation claims reference the
+      entity, which is how ``GET /entities/graph`` already decides graph membership.
+
+    **No foreign keys**, for the reason the 019 tables give (see the note above
+    ``CaptureRow``): an entity row and its membership are written by different processes
+    on different schedules, and an FK would make the order of those writes load-bearing.
+    A membership names an entity that does not exist *yet* far more often than it names
+    one that does not.
+
+    **Width.** ``entity_id`` is ``String(64)``, not the ``String(36)`` of
+    ``entities.entity_id``, for the measured reason ``evidence_links.candidate_id`` gives
+    in 019: the platform's own entity references (``entity_stream``,
+    ``analyst_assertions.entity_ref``, ``temporal_materialization_runs.entity_id``) are
+    all 64 wide, and a membership is a reference like any other. A too-narrow column
+    truncates an address silently; a too-wide one costs nothing.
+
+    The composite primary key is what makes re-establishing a membership idempotent at
+    the database rather than only in the request handler (I-11, constitution VII): a
+    replayed ``POST`` collides instead of growing a second identical row, and unlike the
+    typing ladder in ``TypeAssertionRow`` there is no second revision of a membership to
+    preserve, because membership carries no versioned content.
+    """
+
+    __tablename__ = "investigation_entity_memberships"
+
+    tenant_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    investigation_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    entity_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    basis: Mapped[str] = mapped_column(String(32))
+    established_by: Mapped[str] = mapped_column(String(128), server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        # Three NOT NULL columns that are NOT NULL is not enough: NOT NULL still admits
+        # '', and '' is neither a tenant nor an investigation nor an entity. Same
+        # correction 018 and 019 applied to their own tables, same reason.
+        CheckConstraint("tenant_id <> ''", name="ck_investigation_entity_membership_tenant"),
+        CheckConstraint(
+            "investigation_id <> ''", name="ck_investigation_entity_membership_investigation"
+        ),
+        CheckConstraint("entity_id <> ''", name="ck_investigation_entity_membership_entity"),
+        CheckConstraint(
+            "basis IN ('EXPLICIT', 'ANALYST_ASSERTION', 'RELATION_DERIVED')",
+            name="ck_investigation_entity_membership_basis",
+        ),
+        # "what does this investigation contain" -- the read ``GET
+        # /entities?investigation_id=`` exists to answer, and the leading ``tenant_id``
+        # makes the cross-tenant case an index prefix rather than a filter.
+        Index(
+            "ix_investigation_entity_membership_inv",
+            "tenant_id",
+            "investigation_id",
+        ),
+        # The other direction, which the detail view needs: "which investigations is
+        # this entity in". Asking it with a column scan is a full-table read of the one
+        # table that is expected to grow fastest.
+        Index(
+            "ix_investigation_entity_membership_entity",
+            "tenant_id",
+            "entity_id",
+        ),
+    )
+
+
 class Assertion(Base):
     __tablename__ = "assertions"
 

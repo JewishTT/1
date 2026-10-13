@@ -3,20 +3,17 @@ import { AppShell } from "./AppShell";
 import { InvestigationWorkspaceRoute } from "./Workbench";
 import { SearchContainer } from "./containers/SearchContainer";
 import { EntityViewContainer } from "./containers/EntityViewContainer";
-import { FindingViewContainer } from "./containers/FindingViewContainer";
+import { FindingsRoute } from "./containers/FindingsRoute";
 import { InvestigationContainer } from "./containers/InvestigationContainer";
-import { InvestigationListContainer } from "./containers/InvestigationListContainer";
-import { InvestigationGraphRoute } from "./containers/InvestigationGraphRoute";
+import { InvestigationsGraphContainer } from "./containers/InvestigationsGraphContainer";
 import { OpsContainer } from "./containers/OpsContainer";
 import { ConnectorsContainer } from "./containers/ConnectorsContainer";
 import { QuarantineContainer } from "./containers/QuarantineContainer";
 import { ScienceContainer } from "./containers/ScienceContainer";
 import { HypothesisContainer } from "./containers/HypothesisContainer";
 import { ExperimentContainer } from "./containers/ExperimentContainer";
-import { IntelligenceContainer } from "./containers/IntelligenceContainer";
 import { EconomicsContainer } from "./containers/EconomicsContainer";
 import { NetworkAnalysisContainer } from "./containers/NetworkAnalysisContainer";
-import { SpecOpsContainer } from "./containers/SpecOpsContainer";
 import { DossierContainer } from "./containers/DossierContainer";
 
 /**
@@ -63,17 +60,26 @@ export function App() {
     <Routes>
       <Route element={<ShellLayout />}>
         <Route index element={<Navigate to="/intel" replace />} />
-        <Route path="intel" element={<IntelligenceContainer />} />
+        {/* Intel Board was a second, parallel way to work on the same graphs the
+            investigation workspace already owns -- seed bank, canvas, inspector, export.
+            It survived as a top-level tab because it was built first, and the result was two
+            homes for one job, with the graph's save/restore and timelapse living only in the
+            one that was not an investigation. It is gone; its path lands on the investigations
+            list so an old bookmark arrives somewhere real rather than on a blank page. */}
+        <Route path="intel" element={<Navigate to="/investigations" replace />} />
         <Route path="economic" element={<EconomicsContainer />} />
         <Route path="network" element={<NetworkAnalysisContainer />} />
         <Route path="search" element={<SearchContainer />} />
-        <Route path="investigations" element={<InvestigationListContainer />} />
+        {/* The graph is the investigation. The canvas opens on every investigation at once
+            and a chosen one narrows it in place; opening it as a workspace is a different
+            job, not the same screen one level down. */}
+        <Route path="investigations" element={<InvestigationsGraphContainer />} />
         {/* The graph is scoped to one investigation and lives as a view inside it,
             so "Investigation Graph" resolves to the most recent investigation
             with the graph view selected. Without this the destination had no
             route and the tenant-wide graph was the only one anybody could reach,
             which is how it came to look like the investigation's own. */}
-        <Route path="investigations/graph" element={<InvestigationGraphRoute />} />
+        <Route path="investigations/graph" element={<Navigate to="/investigations" replace />} />
         {/* UI 2.0: the legacy InvestigationContainer (with its review panel and
             edit form) stays reachable at its own path, and the investigation
             route mounts the workspace, with the legacy InvestigationPage
@@ -81,15 +87,28 @@ export function App() {
         <Route path="investigations/:id" element={<InvestigationWorkspaceRoute />} />
         <Route path="investigations/:id/legacy" element={<InvestigationContainer />} />
         <Route path="entities/:id" element={<EntityViewContainer />} />
-        <Route path="findings/:id" element={<FindingViewContainer />} />
-        <Route path="connectors" element={<ConnectorsContainer />} />
-        <Route path="quarantine" element={<QuarantineContainer />} />
-        <Route path="ops" element={<OpsContainer />} />
+        {/* One route for both. `/findings` is the nav's destination and has no id of its
+            own; `/findings/:id` names one. The `:id?` is what makes them one route
+            rather than two -- a splat route would have put the id in `params["*"]`
+            instead, and a route that reads a param the route never declared is the
+            kind of thing that silently stops resolving. FindingsRoute then resolves
+            the first against the findings that exist, so neither the list path nor a
+            bookmarked placeholder like `/findings/0` can 404 on an id nothing minted. */}
+        <Route path="findings/:id?" element={<FindingsRoute />} />
+        {/* SpecOps owns three surfaces and has one home. The old bare paths stay as
+            redirects rather than as competing pages: two live URLs for one screen means the
+            bookmarks disagree with each other and nobody can tell which is canonical. */}
+        <Route path="specops" element={<OpsContainer />} />
+        <Route path="specops/quarantine" element={<QuarantineContainer />} />
+        <Route path="specops/connectors" element={<ConnectorsContainer />} />
+        <Route path="ops" element={<Navigate to="/specops" replace />} />
+        <Route path="quarantine" element={<Navigate to="/specops/quarantine" replace />} />
+        <Route path="connectors" element={<Navigate to="/specops/connectors" replace />} />
         {/* Tenant-wide graph: every investigation at once. Filed beside the
             investigation-scoped graph because that is the level it belongs to. The old
             /ops/graph path still resolves, so an existing bookmark lands on the graph
             rather than on a redirect that looks like a dead end. */}
-        <Route path="tenant-graph" element={<SpecOpsContainer />} />
+        <Route path="tenant-graph" element={<Navigate to="/investigations" replace />} />
         <Route path="ops/graph" element={<Navigate to="/tenant-graph" replace />} />
         <Route path="science" element={<ScienceContainer />} />
         <Route path="hypotheses" element={<HypothesisContainer />} />

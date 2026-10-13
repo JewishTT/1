@@ -376,3 +376,76 @@
   font-size: var(--ui-text-2xs);
   color: var(--ui-text-muted);
 }
+
+/* The top bar must fit the window, whatever it is holding.
+ *
+ * Flex children default to `min-width: auto`, so the counts, the investigation id and the
+ * work-state meta each refused to shrink below their own content. The row then measured
+ * 1779px inside a 1600px viewport, which pushed its right-hand group past the edge and made
+ * it render over the navigation: the overlap that read as a broken screen. Constraining the
+ * bar and letting its middle truncate is the difference between a bar that stays a bar and a
+ * bar that takes the whole layout down with it.
+ */
+.ui-topbar {
+  max-width: 100%;
+  overflow: hidden;
+  /* As a flex item of the shell it defaulted to min-width:auto, i.e. min-content, which is
+   * wider than the viewport whenever the counts and the id do not fit. */
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.ui-topbar-investigation,
+.ui-topbar-counts,
+.ui-topbar-meta,
+.ui-topbar-work {
+  min-width: 0;
+}
+
+.ui-topbar-counts > *,
+.ui-topbar-meta > * {
+  white-space: nowrap;
+}
+
+.ui-topbar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* The workbench row must fit the shell.
+ *
+ * Rail + canvas + inspector are flex children that defaulted to `min-width: auto`, so the
+ * canvas toolbar's intrinsic width set the column width and stretched the whole shell past
+ * the viewport: the top bar and the activity footer inherited 1779px and the nav's right-hand
+ * group ended up printed over the nav. `.ui-shell-body` is also given `overflow-x: hidden`
+ * as a backstop, so one wide row can never widen the page again.
+ */
+.ui-workbench > * {
+  min-width: 0;
+}
+
+.ui-shell-body {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+
+/* The work-state strip has to clip, not bleed.
+ *
+ * `.ui-topbar-work` was `flex: 1 1 0%`, so once the nav claimed the row it collapsed to zero
+ * width while its children kept `overflow: visible`. The strip was then painted straight over
+ * the nav and the controls, which is the overlap at the top right. Giving it a real basis,
+ * a real minimum and `overflow: hidden` means the row can no longer stack two layers in one
+ * 40px bar: the strip now either has room or is honestly hidden.
+ */
+.ui-topbar-work {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ui-topbar-work > * {
+  flex: 0 0 auto;
+}

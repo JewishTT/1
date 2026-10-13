@@ -76,6 +76,27 @@ _correlations = [
 
 _reviews = ReviewService()
 
+#: Which tenant owns each catalog entity.
+#:
+#: The catalog is process-global and has no tenant dimension of its own, so before this
+#: map existed an entity created for one tenant was listed for every tenant that asked --
+#: the same cross-tenant read ``/entities/graph`` already refuses to make. The endpoint
+#: now merges two sources (this catalog and PostgreSQL, the authoritative registry per
+#: ADR-0027), and one of them is tenant-scoped while the other was not; merging them
+#: without this map would have made the result half-isolated, which is worse than either
+#: half alone.
+#:
+#: The fixture entity is seeded under ``default-tenant`` so it keeps answering the
+#: smoke path, which is the tenant it was always implicitly filed under.
+_entity_owner: dict[str, str] = {"ENT-2001": "default-tenant"}
+
+#: Membership basis for an entity a caller placed into an investigation by naming it on
+#: ``POST /entities``. Mirrors ``db.schema.InvestigationEntityMembership.basis`` and the
+#: CHECK installed by migration 024;
+#: ``tests/unit/test_migration_024_investigation_entity_membership.py`` asserts the three
+#: agree.
+MEMBERSHIP_BASIS_EXPLICIT = "EXPLICIT"
+
 #: One engine for the process. Built lazily because importing this module must not
 #: require a reachable database -- the route degrades to the fixture instead.
 #:
@@ -91,6 +112,162 @@ def _pg_session():
 
         _pg_factory.append(make_session_factory())
     return _pg_factory[0]
+
+
+def _json_mapping(value: object) -> dict:
+    """A JSONB column as a dict, tolerating ``asyncpg`` handing it back as ``str``.
+
+    ``asyncpg`` returns ``jsonb`` as text whenever a statement carries a parameter. A row
+    with a JSON array where a mapping belongs, or a null, is a row whose attributes cannot
+    be read as identity -- and an unreadable attribute must not take out the whole list.
+    """
+    import json
+
+    if value is None:
+        return {}
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return {}
+    return dict(value) if isinstance(value, dict) else {}
+
+
+async def _durable_entity_views(tenant_id: str) -> list[dict]:
+    """The tenant's entities as PostgreSQL holds them -- the authoritative registry.
+
+    ADR-0027: Postgres is the source of truth for an entity. The process catalog beside
+    this is the smoke-path adapter and holds only what *this* process created, so a list
+    built from it alone reports a different set per worker and loses everything on
+    restart.
+    """
+    from sqlalchemy import select
+
+    from db.schema import Entity
+
+    async with _pg_session()() as session:
+        rows = (
+            await session.execute(
+                select(
+                    Entity.entity_id,
+                    Entity.entity_type,
+                    Entity.canonical_name,
+                    Entity.attributes,
+                )
+                .where(Entity.tenant_id == tenant_id)
+                .order_by(Entity.entity_id)
+            )
+        ).all()
+
+    views: list[dict] = []
+    for entity_id, entity_type, canonical_name, attributes in rows:
+        attributes_map = _json_mapping(attributes)
+        # ``entities`` stores a display name and an attribute bag, not the identity
+        # dimensions the catalog keeps in ``canonical_identity``. Reading an identity out
+        # of ``attributes`` where the writer put one, and rendering an empty identity
+        # where it did not, is the honest option: synthesising dimensions from the
+        # display name would hand ``infer_entity_type`` a guess and present it as a type.
+        identity = attributes_map.get("canonical_identity")
+        views.append(
+            {
+                "entity_id": entity_id,
+                "canonical_identity": dict(identity) if isinstance(identity, dict) else {},
+                # The stored type is the admitted kind; it is never re-inferred here.
+                "entity_type": entity_type or "UNKNOWN",
+                "label": canonical_name or str(attributes_map.get("label") or entity_id),
+            }
+        )
+    return views
+
+
+def _catalog_entity_views(tenant_id: str) -> list[dict]:
+    """The process catalog's entities, filtered to one tenant."""
+    views: list[dict] = []
+    for entity_id in _catalog.entity_ids():
+        if _entity_owner.get(entity_id) != tenant_id:
+            continue
+        view = _catalog.entity(entity_id)
+        identity = view.get("canonical_identity") or {}
+        aliases = view.get("aliases") or []
+        views.append(
+            {
+                "entity_id": entity_id,
+                "canonical_identity": identity,
+                "entity_type": infer_entity_type(identity),
+                "label": aliases[0] if aliases else next(iter(identity.values()), entity_id),
+            }
+        )
+    return views
+
+
+async def _membership_entity_ids(investigation_id: str, tenant_id: str) -> set[str]:
+    """Entity ids recorded as belonging to this investigation.
+
+    Raises on an unreadable database. The caller must not fall back to "everything":
+    a filter that could not be applied and a filter that matched everything are
+    indistinguishable at the response level, which is the defect this route had.
+    """
+    from sqlalchemy import select
+
+    from db.schema import InvestigationEntityMembership
+
+    async with _pg_session()() as session:
+        rows = (
+            await session.execute(
+                select(InvestigationEntityMembership.entity_id).where(
+                    InvestigationEntityMembership.tenant_id == tenant_id,
+                    InvestigationEntityMembership.investigation_id == investigation_id,
+                )
+            )
+        ).scalars().all()
+    return {str(entity_id) for entity_id in rows}
+
+
+async def _investigation_exists(investigation_id: str, tenant_id: str) -> bool:
+    """Whether this tenant owns this investigation. Cross-tenant reads are ``False``."""
+    from db.investigation_store import SqlInvestigationRepository
+
+    async with _pg_session()() as session:
+        return await SqlInvestigationRepository(session).exists(
+            investigation_id, tenant_id=tenant_id
+        )
+
+
+async def _record_membership(
+    *,
+    tenant_id: str,
+    investigation_id: str,
+    entity_id: str,
+    established_by: str,
+) -> None:
+    """Record one membership, idempotently.
+
+    ``ON CONFLICT DO NOTHING`` rather than a read-then-write: the primary key is the
+    triple, so a replayed request collides at the database (I-11) instead of depending on
+    two callers not racing. A membership carries no versioned content, so unlike the
+    typing ladder there is nothing to preserve by writing a second row.
+    """
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    from db.schema import InvestigationEntityMembership
+
+    statement = (
+        pg_insert(InvestigationEntityMembership)
+        .values(
+            tenant_id=tenant_id,
+            investigation_id=investigation_id,
+            entity_id=entity_id,
+            basis=MEMBERSHIP_BASIS_EXPLICIT,
+            established_by=established_by,
+        )
+        .on_conflict_do_nothing(
+            index_elements=["tenant_id", "investigation_id", "entity_id"]
+        )
+    )
+    async with _pg_session()() as session:
+        await session.execute(statement)
+        await session.commit()
+
 
 _materialization_operations = MaterializationOperations()
 # Process-local stream seam used by the fallback worker; production worker
@@ -151,6 +328,22 @@ class EntityCreate(BaseModel):
     aliases: list[str] = []
     label: str | None = None
     source_records: list[dict] = []
+    investigation_id: str | None = None
+    """The investigation this entity is being created for, when there is one.
+
+    Optional because the existing model permits an investigation-free entity and this
+    endpoint has always been one way to mint one: the smoke-path fixture, the API's own
+    test seeds and ``POST /investigations/{id}/assertions/entity`` all describe entities
+    without necessarily naming an investigation first. What was never permitted was an
+    entity that *claimed* an investigation and was not recorded as belonging to it --
+    ``investigation_id`` used to be accepted by clients and dropped on the floor, so a
+    scoped read answered for every investigation alike.
+
+    Supplying it is a durable write: the membership is recorded in
+    ``investigation_entity_memberships`` (migration 024) before this call returns 202.
+    An investigation that does not exist in this tenant is refused with 404 rather than
+    stored -- a membership naming nothing is a lie the scoped read would repeat.
+    """
 
 
 class TemporalRebuildRequest(BaseModel):
@@ -174,9 +367,38 @@ async def create_entity(
 ) -> dict:
     """Create a new atomic entity — a dynamic invariant: persistent identity
     across versions, evidence anchored to immutable observations (I-1), no
-    premature merging with correlates."""
+    premature merging with correlates.
+
+    Naming an investigation is a durable act, not a label on the response. The
+    membership is written before this returns; if it cannot be written the call fails
+    with 503 rather than answering 202 for an entity no scoped read would ever find --
+    silently dropping the scoping is the defect this route is being fixed for.
+    """
     if not body.canonical_identity or not any(body.canonical_identity.values()):
         raise HTTPException(status_code=422, detail="canonical_identity must not be empty")
+    if body.investigation_id is not None:
+        if not body.investigation_id.strip():
+            raise HTTPException(status_code=422, detail="investigation_id must not be blank")
+        try:
+            known = await _investigation_exists(body.investigation_id, ctx.tenant_id)
+        except Exception as exc:
+            # No durable scope check, no durable write: refusing is the only safe answer.
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "cannot verify the investigation against the database; refusing to "
+                    f"create an entity whose investigation scope cannot be recorded "
+                    f"({type(exc).__name__})"
+                ),
+            ) from exc
+        if not known:
+            raise HTTPException(
+                status_code=404,
+                detail=(
+                    f"no investigation {body.investigation_id} in tenant {ctx.tenant_id}; "
+                    "an entity may not be filed under an investigation that does not exist"
+                ),
+            )
     entity_id = _next_entity_id()
     for item in body.source_records:
         record = StreamRecord.from_dict(item)
@@ -202,6 +424,30 @@ async def create_entity(
             observations=[],
         )
     )
+    _entity_owner[entity_id] = ctx.tenant_id
+    if body.investigation_id:
+        # After the catalog write, not before: a catalog entity with no membership is a
+        # complete entity that simply belongs to no investigation yet -- a legal state
+        # this model has always allowed. A membership naming an entity that does not
+        # exist is a dangling reference, and that is the worse of the two partial states.
+        try:
+            await _record_membership(
+                tenant_id=ctx.tenant_id,
+                investigation_id=body.investigation_id,
+                entity_id=entity_id,
+                established_by=f"user:{ctx.user_id}",
+            )
+        except Exception as exc:
+            # Fail closed rather than under-record: a 202 for an entity no scoped read
+            # can find is the original defect with a nicer status code.
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "entity created but its investigation membership could not be "
+                    f"recorded ({type(exc).__name__}); the entity belongs to no "
+                    "investigation until this succeeds"
+                ),
+            ) from exc
     for item in body.source_records:
         record = StreamRecord.from_dict(item)
         _entity_streams.setdefault((ctx.tenant_id, entity_id), []).append(record)
@@ -219,6 +465,7 @@ async def create_entity(
             "entity_id": entity_id,
             "tenant_id": ctx.tenant_id,
             "identity": body.canonical_identity,
+            "investigation_id": body.investigation_id or "",
         },
     )
     materialization = None
@@ -524,24 +771,125 @@ class ReviewCreate(BaseModel):
 @router.get("")
 async def list_entities(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
+    investigation_id: str | None = None,
 ) -> dict:
-    """Compact entity overview: id, canonical identity, inferred entity type
-    and alias label for every atomic entity in the catalog."""
-    views: list[dict] = []
-    for entity_id in _catalog.entity_ids():
-        view = _catalog.entity(entity_id)
-        identity = view.get("canonical_identity") or {}
-        aliases = view.get("aliases") or []
-        label = aliases[0] if aliases else next(iter(identity.values()), entity_id)
-        views.append(
+    """Compact entity overview: id, canonical identity, entity type and label.
+
+    **The investigation filter used to be ignored.** The route never declared
+    ``investigation_id``, so FastAPI dropped the query parameter and every
+    investigation received the same list of the tenant's entities. That was measured
+    rather than suspected: five different investigations all answered with the same
+    five entities. The cause was underneath the route -- ``entities`` carried no
+    investigation reference, so there was nothing to filter on, and ``/entities/graph``
+    had been working around it for a while by deriving membership from each
+    investigation's relation claims (a workaround that is correct for a mature
+    investigation and empty for a fresh one).
+
+    Membership is now durable (``investigation_entity_memberships``, migration 024) and
+    this route reads it.
+
+    **Two sources, and why.** PostgreSQL is the authoritative registry (ADR-0027) and
+    holds every entity the platform has ever admitted -- the manual-assertion path, the
+    resolution pipeline, anything written by a previous process. The process catalog is
+    the smoke-path adapter this module has always served and holds what *this* worker
+    created. Reporting only the catalog would make the answer differ per worker and lose
+    everything on restart; reporting only PostgreSQL would make the fixture the API is
+    built around disappear. They are merged, and the response names which ones answered.
+
+    **Without a filter, every entity of the tenant.** With one, exactly the recorded
+    memberships of that investigation -- never a widened set, never demo data standing in
+    for a real investigation id, which is the same rule ``/entities/graph`` follows.
+
+    **Failing closed.** If the membership table cannot be read, a scoped request answers
+    with an empty list and an explicit ``degraded_reason`` rather than with the unfiltered
+    tenant: "the filter could not be applied" and "the filter matched everything" are the
+    same bytes on the wire, and answering the second one is how the original defect
+    survived being looked at.
+    """
+    tenant = ctx.tenant_id if ctx else "default-tenant"
+
+    durable: list[dict] = []
+    durable_error: str | None = None
+    try:
+        durable = await _durable_entity_views(tenant)
+    except Exception as exc:  # noqa: BLE001 - a missing database degrades, never widens
+        durable_error = type(exc).__name__
+
+    catalog = _catalog_entity_views(tenant)
+
+    # Catalog entries win on collision: they carry the identity dimensions and the alias
+    # label, which the durable row stores as a name and an attribute bag.
+    merged: dict[str, dict] = {view["entity_id"]: view for view in durable}
+    for view in catalog:
+        merged[view["entity_id"]] = view
+
+    payload: dict = {
+        "entities": sorted(merged.values(), key=lambda view: view["entity_id"]),
+        "tenant_id": tenant,
+        "scoped": investigation_id is not None,
+    }
+
+    if not investigation_id:
+        payload["source"] = "postgres+catalog" if durable else "catalog"
+        if durable_error:
+            payload["degraded_reason"] = durable_error
+            payload["detail"] = (
+                "the durable entity registry was unreadable; this list is the process "
+                "catalog alone and is not the tenant's full set"
+            )
+        return payload
+
+    payload["investigation_id"] = investigation_id
+    try:
+        member_ids = await _membership_entity_ids(investigation_id, tenant)
+    except Exception as exc:  # noqa: BLE001 - fail closed rather than widen
+        # No membership read, no answer. Empty plus a declared reason -- never the
+        # unfiltered tenant, which is precisely what a client cannot distinguish from a
+        # real match.
+        payload["entities"] = []
+        payload["source"] = "unavailable"
+        payload["degraded_reason"] = type(exc).__name__
+        payload["detail"] = (
+            "membership could not be read for this investigation; no entities are "
+            "claimed and no other investigation's entities are substituted"
+        )
+        return payload
+
+    known = {view["entity_id"] for view in merged.values()}
+    unresolved = sorted(member_ids - known)
+    payload["entities"] = [
+        view for view in payload["entities"] if view["entity_id"] in member_ids
+    ]
+    # An id can be a member before anything can render a view for it -- the membership is
+    # written by a different process from the entity row, and the table carries no
+    # foreign key for exactly that reason. Those ids are returned, and *named*, because
+    # dropping them would make an investigation that does hold entities answer as though
+    # it held none.
+    for entity_id in unresolved:
+        payload["entities"].append(
             {
                 "entity_id": entity_id,
-                "canonical_identity": identity,
-                "entity_type": infer_entity_type(identity),
-                "label": label,
+                "canonical_identity": {},
+                "entity_type": "UNKNOWN",
+                "label": entity_id,
             }
         )
-    return {"entities": views, "tenant_id": ctx.tenant_id}
+    payload["entities"].sort(key=lambda view: view["entity_id"])
+    payload["source"] = "postgres+catalog" if durable else "catalog"
+    payload["scoped"] = True
+    if durable_error:
+        payload["degraded_reason"] = durable_error
+        payload["detail"] = (
+            "membership was read, but the durable entity registry was not; members with "
+            "no catalog record are listed by id alone"
+        )
+    if unresolved:
+        payload["unresolved_memberships"] = unresolved
+        payload["note"] = (
+            "these ids are recorded as belonging to this investigation but have no "
+            "entity row or catalog record, so only the id can be rendered"
+        )
+    return payload
 
 
 @router.get("/graph")
@@ -561,11 +909,17 @@ async def list_graph(
     ``investigation_id``, so an unscoped read was a cross-tenant read and a
     cross-investigation read at the same time: two analysts working separate
     investigations saw each other's graph. Tenant filtering is now mandatory and
-    non-optional; ``investigation_id`` narrows further and, because ``Entity`` has no
+    non-optional; ``investigation_id`` narrows further and, because ``Entity`` still has no
     investigation column, is applied by keeping only entities that the investigation's own
     relation claims actually reference -- plus entities named explicitly in the
     investigation scope. An entity mentioned nowhere in this investigation is not part of
     this investigation's graph.
+
+    That derivation is a *graph* rule -- a node with no edge is not in the graph -- and
+    it stays. It is not the whole answer to "what does this investigation contain":
+    ``investigation_entity_memberships`` (migration 024) is, and ``GET /entities?
+    investigation_id=`` reads it. A membership with no relation behind it belongs to this
+    investigation's entity list and not to its graph, which are different questions.
 
     The fixture is kept only as a last resort when the database holds no relations, so
     a fresh install still has something to render -- and it is **never** returned for a
@@ -577,8 +931,9 @@ async def list_graph(
     nodes: list[dict] = []
     edges: list[dict] = []
     try:
-        from db.schema import Entity, RelationClaim
         from sqlalchemy import select
+
+        from db.schema import Entity, RelationClaim
 
         async with _pg_session()() as session:
             claim_stmt = select(

@@ -852,3 +852,23 @@
 .ui-palette-foot-id {
   margin-inline-start: auto;
 }
+
+/* Wide operational tables scroll inside their panel rather than widening the page.
+   A DLQ row carries a payload reference, an error and a fingerprint; on a narrow screen the
+   table used to push the whole console sideways, which moved the navigation off screen and
+   made the surface look broken rather than merely dense. */
+.spec-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.spec-table-scroll > table {
+  min-width: 720px;
+}
+
+@media (max-width: 900px) {
+  .spec-table-scroll > table {
+    min-width: 560px;
+  }
+}

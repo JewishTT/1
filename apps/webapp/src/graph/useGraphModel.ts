@@ -88,19 +88,22 @@ const EMPTY_COUNTS: GraphCounts = {
 };
 
 /** Nothing to fetch until an investigation is chosen. */
+// Tenant scope (`investigationId === null`) is a real scope, not "nothing selected": the
+// graph endpoints answer without a scope and return every investigation's records. Gating
+// the queries on a non-null id therefore made the default landing scope render an empty
+// canvas while claiming to show the tenant -- a placeholder that looks like data.
 export function useGraphModel(investigationId: string | null): GraphServerState {
   const results = useQueries({
     queries: [
       {
         queryKey: entityProjectionKey(investigationId),
         queryFn: () => api.specOpsGraph(),
-        enabled: investigationId !== null,
         staleTime: 60_000,
       },
       {
         queryKey: findingsKey(investigationId),
         queryFn: () => api.listFindings(),
-        enabled: investigationId !== null,
+
         staleTime: 60_000,
       },
     ],

@@ -50,8 +50,7 @@ export type IconName =
   | "clock"
   /* Legacy-surface set (T135).
    *
-   * `components/Layout.tsx`, `pages/IntelligencePage.tsx`,
-   * `components/TimelineSlider.tsx`, `components/TDALayer.tsx`,
+     * `components/TimelineSlider.tsx`, `components/TDALayer.tsx`,
    * `pages/SciencePage.tsx`, `pages/OpsDashboardPage.tsx` and
    * `pages/EconomicsPage.tsx` shipped text glyphs as iconography — `♦ ✳ ☰ ⇅ ⚡
    * ✦ ⬡ ✔ ↻ ◈ ⧉ ◬ ● □ ▲ ◇`. §3.3 forbids emoji-as-iconography and §59 requires one

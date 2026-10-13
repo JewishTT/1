@@ -70,13 +70,33 @@ def _render(event_type: str, payload: dict[str, Any]) -> str:
     return f"event: {event_type}\ndata: {json.dumps(payload, separators=(',', ':'))}\n\n"
 
 
-@router.get("/stream", response_class=StreamingResponse)
-async def stream(request: Request, replay_only: bool = False) -> AsyncIterator[str]:
+@router.get("/stream")
+async def stream(request: Request, replay_only: bool = False) -> StreamingResponse:
     """SSE stream: bounded backlog replay -> live events -> heartbeats.
 
     ``replay_only`` re-emits the backlog and closes (deterministic resync for
     test clients; browsers normally leave it off for the live channel).
+
+    The response is built by hand rather than declared with
+    ``response_class=StreamingResponse``. That declaration left the response
+    without a ``Content-Type``, and a browser's ``EventSource`` refuses a
+    stream it cannot identify: it aborted with a MIME error on every connect and
+    retried forever, so the graph never saw a live update. The media type is the
+    contract here, not a detail.
     """
+    return StreamingResponse(
+        _events(request, replay_only=replay_only),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            # Stops nginx and friends from holding the frames back as a buffer.
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+async def _events(request: Request, replay_only: bool = False) -> AsyncIterator[str]:
     queue = hub.subscribe()
     try:
         events = hub.backlog()

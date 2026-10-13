@@ -3,7 +3,6 @@ import { useCallback, useState } from "react";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { api } from "../../lib/api";
-import type { CiCampaignWire } from "../../lib/api";
 import { campaignRow } from "../model";
 import type { CampaignRow } from "../types";
 import { CiEmpty, CiPanelShell, StatusChip } from "./panelParts";
