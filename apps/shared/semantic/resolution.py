@@ -106,6 +106,8 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
+from domain.mention_occurrence_index import MentionBindingError
+
 from semantic.blocking import (
     BlockingResult,
     RelationRole,
@@ -275,6 +277,28 @@ class ResolutionMention:
     regime_id: str = ""
     declared_type_refs: tuple[str, ...] = ()
     type_assertions: tuple[TypeAssertion, ...] = ()
+    span: tuple[int, int] | None = None
+    """Where in the capture this mention sits, when the caller knows.
+
+    Added in spec 030 T059/T060. The span was being consumed into
+    ``MentionOccurrenceKey.span``, hashed by ``mint_mention_id`` and then dropped: the only
+    surviving trace was inside an irreversible digest. A resolver deciding a merge therefore
+    could not show either side's evidence, which is the whole point of an analyst reviewing a
+    merge.
+
+    ``None`` means *not supplied*, which is different from ``(-1, -1)`` meaning *supplied and
+    unlocatable*. Callers must not conflate them.
+    """
+    segment_ref: str = ""
+    segment_ref_for_span: str = ""
+    span_semantics: str = "unlocated"
+    """What ``span`` counts: ``document_char`` | ``segment_char`` | ``unlocated``.
+
+    Never overwritten silently. A caller that cannot locate a mention sets ``unlocated`` rather
+    than substituting ``0``, because ``0`` is a real position.
+    """
+    span_reason: str | None = None
+    """Why the position is unlocatable, when it is."""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "mention_id", str(self.mention_id).strip())
@@ -282,6 +306,36 @@ class ResolutionMention:
         object.__setattr__(self, "role", RelationRole(self.role))
         object.__setattr__(self, "declared_type_refs", tuple(self.declared_type_refs))
         object.__setattr__(self, "type_assertions", tuple(self.type_assertions))
+        if self.span is not None:
+            start, end = int(self.span[0]), int(self.span[1])
+            if end < start:
+                raise MentionBindingError(
+                    "resolution_mention_span_invalid",
+                    f"end {end} precedes start {start}; a span read backwards addresses nothing",
+                )
+            object.__setattr__(self, "span", (start, end))
+            if start < 0:
+                # A negative offset is the extractor's explicit "I could not locate this".
+                # It must never be reported as resolved: -1 is not a position, and leaving it
+                # looking resolved is how an ungroundable mention gets presented as grounded.
+                object.__setattr__(self, "span_semantics", "unlocated")
+                if self.span_reason is None:
+                    object.__setattr__(
+                        self, "span_reason", "extractor reported a negative (unlocatable) offset"
+                    )
+            elif self.span_semantics == "unlocated":
+                object.__setattr__(self, "span_semantics", "document_char")
+        else:
+            object.__setattr__(self, "span_semantics", "unlocated")
+
+    @property
+    def span_resolved(self) -> bool:
+        """Whether this mention can be pointed at in its source.
+
+        ``False`` means the analyst cannot be shown the evidence. A merge decision taken on such
+        a mention is a decision taken blind, and the UI must say so rather than draw the mention.
+        """
+        return self.span is not None and self.span_semantics != "unlocated"
 
     def type_refs(self) -> tuple[tuple[str, SemanticRef], ...]:
         """Every type this mention carries, with the vocabulary it was framed in.
@@ -326,9 +380,7 @@ class ResolutionMention:
         conservative direction: it is harder to earn corroboration, never easier.
         """
         return (
-            self.independence_group.strip()
-            or self.source_family.strip()
-            or self.source_id.strip()
+            self.independence_group.strip() or self.source_family.strip() or self.source_id.strip()
         )
 
 
@@ -378,9 +430,7 @@ class ResolutionCandidate:
         object.__setattr__(
             self, "support_mention_ids", tuple(sorted(set(self.support_mention_ids)))
         )
-        object.__setattr__(
-            self, "supporting_groups", tuple(sorted(set(self.supporting_groups)))
-        )
+        object.__setattr__(self, "supporting_groups", tuple(sorted(set(self.supporting_groups))))
 
     @property
     def has_established_ref(self) -> bool:
@@ -396,9 +446,10 @@ class ResolutionCandidate:
         """
         if self.entity_ref:
             return self.entity_ref
-        return UNIDENTIFIED_PREFIX + content_key(
-            {"name": self.name, "kind": self.kind, "tenant": self.tenant_id}
-        )[:16]
+        return (
+            UNIDENTIFIED_PREFIX
+            + content_key({"name": self.name, "kind": self.kind, "tenant": self.tenant_id})[:16]
+        )
 
     def name_keys(self) -> tuple[str, ...]:
         """Every normalised name this record answers to: its own plus recorded aliases."""
@@ -589,8 +640,7 @@ def resolution_scope_for(tenant_id: str, investigation_id: str = "") -> Resoluti
     tenant = str(tenant_id).strip() or "default-tenant"
     investigation = str(investigation_id).strip()
     return ResolutionScope(
-        scope_id=SCOPE_ID_PREFIX
-        + content_key({"tenant": tenant, "investigation": investigation}),
+        scope_id=SCOPE_ID_PREFIX + content_key({"tenant": tenant, "investigation": investigation}),
         tenant_id=tenant,
         investigation_id=investigation,
     )
@@ -744,9 +794,7 @@ def type_hypotheses_for(
     pairs = mention.type_refs()
     if not pairs and normalized.kind_key:
         pairs = ((normalized.kind_key, SemanticRef.INTERNAL),)
-    return tuple(
-        TypeHypothesis(type_ref=ref, scheme=scheme) for ref, scheme in pairs
-    )
+    return tuple(TypeHypothesis(type_ref=ref, scheme=scheme) for ref, scheme in pairs)
 
 
 @dataclass(frozen=True)
@@ -1014,9 +1062,7 @@ class CompatibilityEvidence:
         """The recorded reason codes, canonically ordered, optionally for one layer."""
         wanted = CompatibilityLayer(layer) if layer is not None else None
         return tuple(
-            reason.code
-            for reason in self.reasons
-            if wanted is None or reason.layer is wanted
+            reason.code for reason in self.reasons if wanted is None or reason.layer is wanted
         )
 
     def content_key(self) -> str:
@@ -1078,9 +1124,7 @@ def mutually_exclusive(
         and left.investigation_id != right.investigation_id
     ):
         return (True, "distinct_investigation")
-    if not _windows_overlap(
-        left.valid_from, left.valid_to, right.valid_from, right.valid_to
-    ):
+    if not _windows_overlap(left.valid_from, left.valid_to, right.valid_from, right.valid_to):
         return (True, "disjoint_validity_windows")
     return (False, "")
 
@@ -1242,8 +1286,10 @@ def analyse_candidate(
             )
         )
 
-    if mention.valid_from is not None or mention.valid_to is not None or (
-        candidate.valid_from is not None or candidate.valid_to is not None
+    if (
+        mention.valid_from is not None
+        or mention.valid_to is not None
+        or (candidate.valid_from is not None or candidate.valid_to is not None)
     ):
         if _windows_overlap(
             mention.valid_from, mention.valid_to, candidate.valid_from, candidate.valid_to
@@ -2145,25 +2191,24 @@ class MentionResolver:
             for mention in ordered
             if not scope or not mention.tenant_id or mention.tenant_id == scope.tenant_id
         )
-        out_of_scope = tuple(
-            mention for mention in ordered if mention not in active
-        )
+        out_of_scope = tuple(mention for mention in ordered if mention not in active)
         working = ResolutionScope(
-            scope_id=scope.scope_id if scope is not None else resolution_scope_for(
+            scope_id=scope.scope_id
+            if scope is not None
+            else resolution_scope_for(
                 active[0].tenant_id if active else "default-tenant",
                 active[0].investigation_id if active else "",
             ).scope_id,
-            tenant_id=scope.tenant_id if scope is not None else (
-                active[0].tenant_id if active else "default-tenant"
-            ),
-            investigation_id=scope.investigation_id if scope is not None else (
-                active[0].investigation_id if active else ""
-            ),
+            tenant_id=scope.tenant_id
+            if scope is not None
+            else (active[0].tenant_id if active else "default-tenant"),
+            investigation_id=scope.investigation_id
+            if scope is not None
+            else (active[0].investigation_id if active else ""),
             anchors=scope.anchors if scope is not None else (),
         )
         prepared = {
-            mention.mention_id: self._prepare(mention, universe, working)
-            for mention in active
+            mention.mention_id: self._prepare(mention, universe, working) for mention in active
         }
         collective = self._collective(active, prepared)
         grouped = self._anchor(active, prepared, working)
@@ -2257,9 +2302,7 @@ class MentionResolver:
             + (() if universe else ("the candidate universe was empty; nothing to compare",)),
         )
 
-    def _normalize(
-        self, mention: ResolutionMention
-    ) -> tuple[NormalizedSurface, str | None]:
+    def _normalize(self, mention: ResolutionMention) -> tuple[NormalizedSurface, str | None]:
         """Normalize through the vocabulary facade, recording a refusal rather than raising it.
 
         :class:`semantic.registry.SemanticRegistry` is fail-closed by tenant (constitution IV), so
@@ -2407,9 +2450,7 @@ class MentionResolver:
             surviving=tuple(entry.candidate_ref for entry in survivors),
             scored=scored,
             evidence=tuple(entry.evidence for entry in survivors),
-            reasons=tuple(
-                reason for entry in survivors for reason in entry.evidence.reasons
-            ),
+            reasons=tuple(reason for entry in survivors for reason in entry.evidence.reasons),
             blocked_out=item.refused
             + tuple(
                 reason
@@ -2473,11 +2514,7 @@ class MentionResolver:
         notes: list[str] = []
         mention_id = item.mention.mention_id
         if not survivors:
-            mine = [
-                removal
-                for removal in collective.removals
-                if removal.mention_id == mention_id
-            ]
+            mine = [removal for removal in collective.removals if removal.mention_id == mention_id]
             if item.blocking.after_count == 0:
                 notes.append(
                     "no candidate survived blocking for any comparison key "
@@ -2487,9 +2524,7 @@ class MentionResolver:
                 notes.append(
                     f"{item.blocking.after_count} candidate(s) survived blocking and the "
                     "collective pass then closed every one of them: "
-                    + ", ".join(
-                        f"{removal.candidate_ref} ({removal.code})" for removal in mine
-                    )
+                    + ", ".join(f"{removal.candidate_ref} ({removal.code})" for removal in mine)
                 )
             else:
                 notes.append(

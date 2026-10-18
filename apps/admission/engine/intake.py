@@ -32,7 +32,7 @@ replayable (FR-013, SC-007).
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
@@ -154,17 +154,46 @@ def untrustworthy_reason(document) -> str | None:
 
 @dataclass
 class _Cluster:
-    """All sightings of one triple, and the evidence that aggregates into it."""
+    """All sightings of one triple, and the evidence that aggregates into it.
+
+    **WP-E T071.** ``dependency_roots`` carries the lineage each document ultimately
+    derives from. When it is populated it *replaces* ``hosts`` as the independence
+    measure, because a hostname is not a source: one site syndicating to twenty
+    subdomains is one source wearing twenty hats, and counting the hats as
+    corroboration is how a press release becomes twenty independent confirmations.
+
+    ``independence_known`` records which measure was used, so a decision can be read
+    correctly rather than assumed. It is ``False`` only when no lineage was supplied
+    at all — an honest "we did not measure", never a silent fallback presented as one.
+    """
 
     triple: tuple[str, str, str]
     claims: list[IntakeClaim] = field(default_factory=list)
     document_ids: set[str] = field(default_factory=set)
     hosts: set[str] = field(default_factory=set)
+    #: document_id -> the lineage root it ultimately derives from.
+    lineage_roots: dict[str, str] = field(default_factory=dict)
 
     @property
     def publications(self) -> int:
         """Distinct documents asserting the triple (mirrors count once)."""
         return len(self.document_ids)
+
+    @property
+    def independence_known(self) -> bool:
+        """True once any document in this cluster carries a declared lineage."""
+        return bool(self.lineage_roots)
+
+    @property
+    def effective_sources(self) -> int:
+        """Distinct *origins*, which is what independence actually means.
+
+        With lineage, this is the number of distinct roots. Without, it is the number
+        of hosts and the caller is told so via :attr:`independence_known`.
+        """
+        if self.independence_known:
+            return len(set(self.lineage_roots.values()))
+        return len(self.hosts)
 
     @property
     def independent_hosts(self) -> int:
@@ -175,22 +204,25 @@ class _Cluster:
         return max((c.confidence for c in self.claims), default=0.0)
 
     def corroboration(self) -> float:
-        """Corroboration from breadth of publication and host independence.
+        """Corroboration from breadth of publication and true independence.
 
-        Both components start at zero for a single source: one document on one
-        host is an unconfirmed claim, not a corroborated one, and it must fall
+        Both components start at zero for a single source: one document from one
+        origin is an unconfirmed claim, not a corroborated one, and it must fall
         below the profile's defer floor rather than scraping past it. Publication
-        alone would let one site farm mirrors for a score and hosts alone would
-        let a site farm subdomains, so the two are averaged.
+        alone would let one site farm mirrors for a score, and hosts alone would let a
+        site farm subdomains — so the two are averaged.
+
+        **The second component is effective sources, not hosts** (T071). Twenty
+        mirrors of one press release on twenty domains now score as one origin.
         """
         by_publication = min(1.0, max(0, self.publications - 1) / 2.0)
-        by_independence = min(1.0, max(0, self.independent_hosts - 1) / 2.0)
+        by_independence = min(1.0, max(0, self.effective_sources - 1) / 2.0)
         return round((by_publication + by_independence) / 2.0, 3)
 
     def independence(self) -> float:
-        if not self.hosts:
+        if not self.effective_sources:
             return 0.0
-        return round(min(1.0, (self.independent_hosts - 1) / 2.0), 3)
+        return round(min(1.0, (self.effective_sources - 1) / 2.0), 3)
 
 
 class WarcIntake:
@@ -222,8 +254,19 @@ class WarcIntake:
         claims: Sequence[IntakeClaim] = (),
         *,
         resolver: Resolver | None = None,
+        lineage_by_document: Mapping[str, str] | None = None,
     ) -> IntakeResult:
-        """Interpret, aggregate and decide. Untrusted captures are quarantined."""
+        """Interpret, aggregate and decide. Untrusted captures are quarantined.
+
+        ``lineage_by_document`` maps a document to the origin it ultimately derives
+        from (**WP-E T071**). Supplying it replaces hostname counting as the
+        independence measure; omitting it leaves the old behaviour *and* marks every
+        decision as measured-on-hosts, so a reader can tell which was used.
+
+        The lineage itself is not invented here. A document with no declared origin
+        falls back to being its own root — which is the conservative direction: it
+        counts as one independent source, not as infinitely corroborated.
+        """
         result = IntakeResult()
         trusted: set[str] = set()
         hosts_by_document: dict[str, str] = {}
@@ -250,7 +293,7 @@ class WarcIntake:
                 result.revisits_seen += 1
 
         result.claims_seen = len(claims)
-        for cluster in self._cluster(claims, trusted, hosts_by_document):
+        for cluster in self._cluster(claims, trusted, hosts_by_document, lineage_by_document):
             decision, assertion = self._decide(cluster, resolver)
             result.decisions.append(decision)
             result.assertions.append(assertion)
@@ -261,6 +304,7 @@ class WarcIntake:
         claims: Sequence[IntakeClaim],
         trusted: set[str],
         hosts_by_document: dict[str, str],
+        lineage_by_document: dict[str, str] | None = None,
     ) -> list[_Cluster]:
         """Collapse claims into one cluster per triple, in first-seen order."""
         clusters: dict[tuple[str, str, str], _Cluster] = {}
@@ -273,6 +317,17 @@ class WarcIntake:
             host = hosts_by_document.get(claim.document_id, "")
             if host:
                 cluster.hosts.add(host)
+            if lineage_by_document is not None:
+                # A document with no declared origin is **its own root**.
+                #
+                # Skipping it instead would be the wrong direction twice over: the
+                # un-declared document would vanish from the independence count, so
+                # dropping evidence would *lower* the effective-source figure and
+                # manufacture the appearance of concentrated lineage that nobody
+                # established. Conservative here means "count it as one source we
+                # cannot trace", not "count it as nothing".
+                root = lineage_by_document.get(claim.document_id, "") or claim.document_id
+                cluster.lineage_roots[claim.document_id] = root
         return list(clusters.values())
 
     def _decide(
@@ -288,7 +343,7 @@ class WarcIntake:
         ]
         link = EvidenceLink(evidence_refs=refs)
         link.publication_count = cluster.publications
-        link.independent_source_count = cluster.independent_hosts
+        link.independent_source_count = cluster.effective_sources
 
         assertion = self._extractor.extract(
             subject_candidate_id=subject,
@@ -311,6 +366,12 @@ class WarcIntake:
                 evidence_counts={
                     "documents": cluster.publications,
                     "hosts": cluster.independent_hosts,
+                    # Both are reported, never only the flattering one. An analyst
+                    # reading "20 hosts" must be able to see "1 origin" beside it.
+                    "effective_sources": cluster.effective_sources,
+                    "independence_measured_on": (
+                        "lineage" if cluster.independence_known else "hosts"
+                    ),
                 },
                 matched_entity_id=match.entity_id if match else None,
                 match_score=match.score if match else 0.0,

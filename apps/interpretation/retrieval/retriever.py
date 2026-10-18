@@ -9,8 +9,27 @@ whose capability surface covers that badge. Backends expose a common
 from __future__ import annotations
 
 import difflib
+import hashlib
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
+
+from scoring.fusion import (
+    FusionPolicy,
+    RankedCandidate,
+    reciprocal_rank_fusion,
+)
+from scoring.fusion import (
+    RankerOutcome as FusionOutcome,
+)
+from scoring.fusion import (
+    RankerOutcome_ as _RankerOutcome,
+)
+
+
+def _backend_name(backend: object) -> str:
+    """Stable identity for a retriever backend, for fusion attribution."""
+    name = getattr(backend, "name", None) or getattr(backend, "backend", None)
+    return str(name) if name else type(backend).__name__
 
 # A small canonical catalog so the interpretation app stays dependency-light
 # while staying aligned with control-plane.badges.BADGE_CATALOG.
@@ -147,6 +166,20 @@ class CrossSemanticRetriever:
 
         ``merge="rrf_any"`` reciprocal-rank fuses hits from every covering
         backend; ``merge="first"`` returns the single best backend's list.
+
+        This delegates to the shared fusion contract rather than carrying a
+        second implementation. The local copy had three defects that the shared
+        module makes impossible by construction:
+
+        * ``enumerate`` started at 0, so a backend's *best* hit scored
+          ``1/(0+k)`` instead of ``1/(1+k)``. Every list was systematically
+          shifted, and a single-backend "fusion" was not a no-op.
+        * ``+ 0.01 * hit.score`` folded the raw score back into the fused value,
+          which is the one thing reciprocal rank fusion exists to avoid: the
+          backends do not share a scale, so whichever one emits large numbers
+          decides the ranking.
+        * Ties fell back to dict insertion order, i.e. backend arrival order,
+          which is not a property of the query.
         """
         badge = self.badge_for(query)
         if badge is None:
@@ -156,17 +189,49 @@ class CrossSemanticRetriever:
             return []
         if merge == "first":
             return backends[0].retrieve(badge, query, top_k=top_k)
-        buckets: dict[str, Hit] = {}
+
+        # `query_id` is shared by construction so the fusion contract can verify
+        # that every ranker answered the same question.
+        query_id = hashlib.sha256(query.encode("utf-8")).hexdigest()[:16]
+
+        outcomes: list[_RankerOutcome] = []
+        texts: dict[str, str] = {}
         for backend in backends:
-            for rank, hit in enumerate(backend.retrieve(badge, query, top_k=top_k)):
-                key = hit.doc_id
-                prev = buckets.get(key)
-                score = 1.0 / (rank + 60) + 0.01 * hit.score
-                if prev is None:
-                    buckets[key] = Hit(key, text=hit.text, score=score, backend=hit.backend or backend.__class__.__name__)
-                else:
-                    buckets[key] = Hit(key, text=prev.text, score=prev.score + score, backend=prev.backend)
-        return sorted(buckets.values(), key=lambda h: h.score, reverse=True)[:top_k]
+            retrieved = backend.retrieve(badge, query, top_k=top_k)
+            # A hit knows which backend produced it; prefer that over the
+            # instance's class name, which is an implementation detail and is
+            # what makes attribution useless to a reader of the response.
+            ranker_id = next((h.backend for h in retrieved if h.backend), "") or _backend_name(backend)
+            candidates = tuple(
+                RankedCandidate(
+                    candidate_id=h.doc_id,
+                    source_ranker_id=ranker_id,
+                    rank=rank,  # 1-based: rank 1 is the backend's best hit
+                    query_id=query_id,
+                )
+                for rank, h in enumerate(retrieved, start=1)
+            )
+            for h in retrieved:
+                texts.setdefault(h.doc_id, h.text)
+            outcomes.append(
+                _RankerOutcome(
+                    ranker_id=ranker_id,
+                    query_id=query_id,
+                    outcome=FusionOutcome.OK if candidates else FusionOutcome.EMPTY,
+                    candidates=candidates,
+                )
+            )
+
+        fused = reciprocal_rank_fusion(outcomes, query_id=query_id, policy=FusionPolicy())
+        return [
+            Hit(
+                f.candidate_id,
+                text=texts.get(f.candidate_id, ""),
+                score=f.fused_score,
+                backend=", ".join(f.contributing_rankers),
+            )
+            for f in fused[:top_k]
+        ]
 
 
 class MemoryRetriever:

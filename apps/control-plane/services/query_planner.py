@@ -19,11 +19,31 @@ Two invariants the fusion must hold (T006-T008):
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import re
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from scoring.fusion import (
+    DEFAULT_K,
+    FusionPolicy,
+    RankedCandidate,
+    reciprocal_rank_fusion,
+)
+from scoring.fusion import (
+    RankerOutcome as FusionOutcome,
+)
+from scoring.fusion import (
+    RankerOutcome_ as _RankerOutcome,
+)
+
 EVIDENCE_BASE = 0.6
+
+# The fusion strategies a plan may name. Both are observational: they order
+# observations that already exist, and neither invents one.
+SCORE_WEIGHTED = "score-weighted"
+RANK_FUSION = "rank-fusion"
+FUSION_STRATEGIES = (SCORE_WEIGHTED, RANK_FUSION)
 
 # A degradation notice is a label, not a log line: bounded so a chatty exception
 # cannot inflate a response body.
@@ -108,12 +128,28 @@ class FusedResult:
     evidence: list[dict] = field(default_factory=list)
     degraded_backends: list[dict] = field(default_factory=list)
 
+    # Rank-fusion attribution. Absent under `score-weighted`, where the composite
+    # is the whole story. Under rank fusion these are what make the number
+    # checkable: *which* ranker placed this document where.
+    fusion: str = SCORE_WEIGHTED
+    fusion_policy_fingerprint: str = ""
+    per_ranker_ranks: dict[str, int | None] = field(default_factory=dict)
+    fused_rank: int | None = None
+
     def rederive_composite(self) -> float:
         """Recompute `score` from the retained components.
 
         Exists so a client can check or dispute the stored composite against
         the declared formula rather than trusting one number (Constitution IV).
+
+        Under rank fusion the same guarantee holds with a different formula, so
+        this stays truthful instead of reporting a score that was never used to
+        produce the field it sits on.
         """
+        if self.fusion == RANK_FUSION:
+            return sum(
+                1.0 / (DEFAULT_K + rank) for rank in self.per_ranker_ranks.values() if rank
+            )
         return _composite(self.relevance, self.support)
 
 
@@ -138,12 +174,15 @@ class QueryPlan:
     query: str
     filters: QueryFilters
     backends: list[str]
-    fusion: str = "score-weighted"  # user never reasons about backends
+    fusion: str = SCORE_WEIGHTED  # user never reasons about backends
 
     def assert_observational(self) -> None:
         """US2 invariant: evidence must resolve to immutable observations."""
-        if self.fusion != "score-weighted":
-            raise ValueError("unexpected fusion strategy")
+        if self.fusion not in FUSION_STRATEGIES:
+            raise ValueError(
+                f"unexpected fusion strategy {self.fusion!r}; "
+                f"expected one of {', '.join(FUSION_STRATEGIES)}"
+            )
 
 
 class QueryPlanner:
@@ -153,10 +192,22 @@ class QueryPlanner:
         self._backends = dict(backends)
         self._observations = observations or {}
 
-    def plan(self, text: str, filters: QueryFilters | None = None, preferred: list[str] | None = None) -> QueryPlan:
+    def plan(
+        self,
+        text: str,
+        filters: QueryFilters | None = None,
+        preferred: list[str] | None = None,
+        *,
+        fusion: str = SCORE_WEIGHTED,
+    ) -> QueryPlan:
         candidate = list(self._backends)
         subset = [b for b in candidate if b in (preferred or candidate)]
-        plan = QueryPlan(query=text, filters=filters or QueryFilters(), backends=subset)
+        plan = QueryPlan(
+            query=text,
+            filters=filters or QueryFilters(),
+            backends=subset,
+            fusion=fusion,
+        )
         plan.assert_observational()
         return plan
 
@@ -183,13 +234,101 @@ class QueryPlanner:
             (o.degraded(recoverable=True) for o in outcomes if o.error is not None),
             key=lambda d: d["backend"],
         )
-        hits: dict[str, list[tuple[BackendHit, str]]] = {}
-        for outcome in healthy:
-            for h in outcome.hits:
-                hits.setdefault(h.doc_id, []).append((h, outcome.backend))
-        fused = [self._fuse(doc_id, docs, degraded) for doc_id, docs in hits.items()]
-        fused.sort(key=lambda f: (-f.score, f.doc_id))
+
+        if plan.fusion == RANK_FUSION:
+            fused = self._fuse_by_rank(outcomes, plan.query, degraded)
+        else:
+            hits: dict[str, list[tuple[BackendHit, str]]] = {}
+            for outcome in healthy:
+                for h in outcome.hits:
+                    hits.setdefault(h.doc_id, []).append((h, outcome.backend))
+            fused = [self._fuse(doc_id, docs, degraded) for doc_id, docs in hits.items()]
+            fused.sort(key=lambda f: (-f.score, f.doc_id))
         return fused[:limit]
+
+    def _fuse_by_rank(
+        self,
+        outcomes: list[_BackendOutcome],
+        query: str,
+        degraded: list[dict],
+    ) -> list[FusedResult]:
+        """Fuse by rank position, not by score magnitude.
+
+        Score-weighted fusion compares numbers that backends do not share a scale
+        for: a BM25 score, a graph degree and a vector similarity are not the same
+        unit, so `max()` silently lets whichever backend happens to produce large
+        numbers decide the ranking. Rank fusion only ever reads *position*, which
+        every backend does mean the same thing.
+
+        It also keeps a backend that failed distinguishable from one that found
+        nothing. Both contribute no candidates, but collapsing them loses the
+        difference between "this source has nothing" and "this source is broken" --
+        which is the distinction a user needs in order to trust the result at all.
+        """
+        # `query_id` has to be stable and shared: the fusion contract rejects a
+        # batch whose rankers disagree about which query they answered.
+        query_id = hashlib.sha256(query.encode("utf-8")).hexdigest()[:16]
+
+        ranker_outcomes: list[_RankerOutcome] = []
+        for outcome in outcomes:
+            if outcome.error is not None:
+                state = FusionOutcome.FAILED
+                cands: tuple[RankedCandidate, ...] = ()
+            elif not outcome.hits:
+                state = FusionOutcome.EMPTY
+                cands = ()
+            else:
+                state = FusionOutcome.OK
+                cands = tuple(
+                    RankedCandidate(
+                        candidate_id=hit.doc_id,
+                        source_ranker_id=outcome.backend,
+                        rank=rank,
+                        query_id=query_id,
+                        evidence_refs=((hit.observation_id,) if hit.observation_id else ()),
+                    )
+                    for rank, hit in enumerate(outcome.hits, start=1)
+                )
+            ranker_outcomes.append(
+                _RankerOutcome(
+                    ranker_id=outcome.backend,
+                    query_id=query_id,
+                    outcome=state,
+                    candidates=cands,
+                    error=outcome.error,
+                )
+            )
+
+        policy = FusionPolicy()
+        fused = reciprocal_rank_fusion(ranker_outcomes, query_id=query_id, policy=policy)
+
+        by_backend: dict[str, list[tuple[BackendHit, str]]] = {}
+        for outcome in outcomes:
+            if outcome.error is not None:
+                continue
+            for hit in outcome.hits:
+                by_backend.setdefault(hit.doc_id, []).append((hit, outcome.backend))
+
+        results: list[FusedResult] = []
+        for fr in fused:
+            docs = by_backend.get(fr.candidate_id, [])
+            results.append(
+                FusedResult(
+                    doc_id=fr.candidate_id,
+                    score=fr.fused_score,
+                    backends=sorted({name for _, name in docs}),
+                    relevance=max((hit.score for hit, _ in docs), default=0.0),
+                    support=len({hit.source_id for hit, _ in docs if hit.source_id}),
+                    observation_ids=sorted({h.observation_id for h, _ in docs if h.observation_id}),
+                    evidence=[self._to_evidence(h, name) for h, name in docs],
+                    degraded_backends=list(degraded),
+                    fusion=RANK_FUSION,
+                    fusion_policy_fingerprint=fr.fusion_policy_fingerprint,
+                    per_ranker_ranks=dict(fr.per_ranker_ranks),
+                    fused_rank=fr.fused_rank,
+                )
+            )
+        return results
 
     async def _search_one(self, name: str, plan: QueryPlan, limit: int) -> _BackendOutcome:
         """Isolate one backend call: a sick backend degrades the query, never ends it.

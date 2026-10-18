@@ -21,6 +21,46 @@ requires-python = ">=3.11"
 dependencies = []
 
 [tool.pytest.ini_options]
+# FR-049 / WP-0 T006: `testpaths` bounds collection to platform code.
+#
+# `donors/` and `tmp/` hold vendored third-party checkouts (sherlock, bm25s,
+# theharvester, user-scanner …). Before this line, a bare `pytest` at the repo root
+# walked both: measured on this machine, 6769 tests collected and **831 collection
+# errors** — every one of them a third-party module's own import failure, none of them
+# ours. A baseline that reports 831 errors is a baseline nobody reads, and the real
+# suite had to be selected by hand every time.
+#
+# `bench` is included deliberately. It is a workspace member with its own package
+# (`bench/bench/`) and was excluded from every run until WP-0 T007 removed the stray
+# empty `bench/__init__.py` that shadowed it.
+testpaths = ["apps"]
+# Directories never collected regardless of position, so an explicit
+# `pytest tests/ somewhere/` cannot reintroduce the vendored trees.
+norecursedirs = [
+    "donors",
+    "tmp",
+    "logs",
+    "*.egg-info",
+    ".venv",
+    "node_modules",
+    "dist",
+    "build",
+    "k8s",
+]
+# `bench` is deliberately NOT in `testpaths`, and this is measured rather than
+# preferred. `bench` is a workspace member whose importable package is
+# `bench/bench/`, while the repo root also holds a plain `bench/` directory. Adding it
+# to the root suite reproduces two failure modes depending on which other paths are on
+# the command line: collected alone it works, but collected alongside `apps/…` it fails
+# with `ImportError: cannot import name 'harness' from 'bench' (unknown location)` --
+# pytest has already installed a namespace placeholder for `bench` in `sys.modules`, and
+# a namespace package cannot be corrected after the fact.
+#
+# Both trees are legitimate; they simply cannot share one collection root. The bench
+# suite therefore runs from its own workspace member, where its own
+# `pyproject.toml` supplies `pythonpath = ["."]`. That run is reliable and is recorded
+# as the second half of the baseline in specs/028/quickstart.md.
+#
 # `live` marks tests that make real network calls. They are deselected by default so the
 # ordinary suite stays hermetic, and selected explicitly with `-m live` when the point is to
 # prove the sources still answer. Skipped rather than passing quietly when the network is

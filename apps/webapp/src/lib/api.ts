@@ -783,6 +783,161 @@ export const api = {
   getForensics(operationId: string): Promise<CiEnvelope<{ forensics: CiForensicsWire }>> {
     return request(`/specops/forensics/operations/${encodeURIComponent(operationId)}`);
   },
+
+  // ── GhostLine (Feature 031) ─────────────────────────────────────────────
+  // Voice-borne social engineering, served from /api/v1/specops/ghostline/*
+  // (contracts/ghostline-api.md). One method per GhostLine CLI verb, so the UI owns
+  // the whole control surface and the CLI is a convenience rather than a gate.
+  // The RoE gate is server-side: a 409 here is the gate refusing an unauthorised
+  // dial, and a 424 is a setup fact (a missing credential, an uninstalled donor
+  // dependency) — the two read differently and the panels keep them apart.
+
+  /** Everything the runtime panel renders: donor, providers, runtime, absences. */
+  ghostlineStatus(): Promise<CiEnvelope<GlStatusWire>> {
+    return request("/specops/ghostline/status");
+  },
+
+  /** The donor's playbook library. */
+  listGhostlinePlaybooks(): Promise<CiEnvelope<GlPlaybookListWire>> {
+    return request("/specops/ghostline/playbooks");
+  },
+
+  /** One playbook: every stage, its persona, the platform's ATT&CK mapping. */
+  getGhostlinePlaybook(playbookId: string): Promise<CiEnvelope<GlPlaybookDetailWire>> {
+    return request(`/specops/ghostline/playbooks/${encodeURIComponent(playbookId)}`);
+  },
+
+  /** Re-read the donor's playbook tree after a scenario was edited on disk. */
+  reloadGhostlinePlaybooks(): Promise<CiEnvelope<{ playbook_count: number }>> {
+    return request("/specops/ghostline/playbooks/reload", { method: "POST" });
+  },
+
+  /** Dry-run the donor's stage machine over a scripted transcript. */
+  simulateGhostlinePlaybook(
+    playbookId: string,
+    utterances: string[],
+  ): Promise<CiEnvelope<{ simulation: GlSimulationWire }>> {
+    return request(`/specops/ghostline/playbooks/${encodeURIComponent(playbookId)}/simulate`, {
+      method: "POST",
+      body: JSON.stringify({ utterances }),
+    });
+  },
+
+  /** Registered voices (cloned or premade). */
+  listGhostlineVoices(): Promise<CiEnvelope<GlVoiceListWire>> {
+    return request("/specops/ghostline/voices");
+  },
+
+  /** Record a voice id the operator already holds (the free-tier path). */
+  registerGhostlineVoice(body: {
+    voice_id: string;
+    name: string;
+    origin?: string;
+    notes?: string;
+  }): Promise<CiEnvelope<{ voice: GlVoiceWire }>> {
+    return request("/specops/ghostline/voices", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  /** Clone a voice from a sample (the donor CLI's `clone`). */
+  cloneGhostlineVoice(body: {
+    name: string;
+    sample_ref?: string;
+    sample_base64?: string;
+    sample_filename?: string;
+  }): Promise<CiEnvelope<{ voice: GlVoiceWire }>> {
+    return request("/specops/ghostline/voices/clone", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** Forget a voice. 409 while a running runtime is pinned to it. */
+  forgetGhostlineVoice(voiceId: string): Promise<CiEnvelope<{ removed: string }>> {
+    return request(`/specops/ghostline/voices/${encodeURIComponent(voiceId)}`, { method: "DELETE" });
+  },
+
+  /** Bring the runtime up (the donor CLI's `serve`). 424 with named blockers. */
+  startGhostlineRuntime(body: {
+    voice_id: string;
+    playbook_id: string;
+    port?: number | null;
+  }): Promise<CiEnvelope<{ runtime: GlRuntimeWire }>> {
+    return request("/specops/ghostline/runtime/start", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  /** Tear the runtime down and close the tunnel. Idempotent. */
+  stopGhostlineRuntime(): Promise<CiEnvelope<{ runtime: GlRuntimeWire }>> {
+    return request("/specops/ghostline/runtime/stop", { method: "POST" });
+  },
+
+  /** Place an outbound call (the donor CLI's `call`). 409 RoEError / 422 RosterError. */
+  dialGhostline(body: {
+    target: string;
+    campaign: string;
+    persona: string;
+    roe_id: string;
+    approved_roster: string[];
+    playbook_id?: string | null;
+  }): Promise<CiEnvelope<GlDialWire>> {
+    return request("/specops/ghostline/calls", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  /** Recent calls, most recent first. Transcripts are not inlined. */
+  listGhostlineCalls(limit = 50): Promise<CiEnvelope<{ calls: GlCallWire[] }>> {
+    return request(`/specops/ghostline/calls?limit=${limit}`);
+  },
+
+  /** One call with its redacted transcript. */
+  getGhostlineCall(callId: string): Promise<CiEnvelope<{ call: GlCallDetailWire }>> {
+    return request(`/specops/ghostline/calls/${encodeURIComponent(callId)}`);
+  },
+
+  /** Append a turn to a call. Redacted server-side before it is stored. */
+  logGhostlineTurn(
+    callId: string,
+    body: {
+      role: string;
+      content: string;
+      stage?: string | null;
+      playbook_id?: string | null;
+      sentiment_score?: number | null;
+      interest_level?: number | null;
+      objection_type?: string | null;
+      trigger_used?: string | null;
+    },
+  ): Promise<CiEnvelope<{ message: GlMessageWire }>> {
+    return request(`/specops/ghostline/calls/${encodeURIComponent(callId)}/turns`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** Close a call with its outcome. */
+  completeGhostlineCall(
+    callId: string,
+    body: { outcome: string; notes?: string | null },
+  ): Promise<CiEnvelope<{ call: GlCallWire }>> {
+    return request(`/specops/ghostline/calls/${encodeURIComponent(callId)}/complete`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** Stage distribution, outcome split, campaign rollups. */
+  ghostlineAnalytics(campaign?: string | null): Promise<CiEnvelope<{ analytics: GlAnalyticsWire }>> {
+    const query = campaign ? `?campaign=${encodeURIComponent(campaign)}` : "";
+    return request(`/specops/ghostline/analytics${query}`);
+  },
+
+  /** The donor's `analytics` export, served rather than written to a file. */
+  exportGhostlineAnalytics(
+    format: "csv" | "json" = "csv",
+    campaign?: string | null,
+  ): Promise<CiEnvelope<{ export: GlExportWire }>> {
+    const params = new URLSearchParams({ format });
+    if (campaign) params.set("campaign", campaign);
+    return request(`/specops/ghostline/analytics/export?${params.toString()}`);
+  },
 };
 
 /**
@@ -897,3 +1052,264 @@ export interface CiForensicsWire {
   gaps: Array<{ gap_id: string; ability_id: string; expected_telemetry: string }>;
 }
 
+
+// ── GhostLine wire types (Feature 031) ────────────────────────────────────────
+// The shapes /api/v1/specops/ghostline/* serves (contracts/ghostline-api.md). They
+// sit next to the client that calls them, and they keep the two disciplines the
+// rest of this file keeps: an unserved field is `null` plus a `missing[]` entry, and
+// `credentials_captured` is a number the server pins to 0 — rendered so the
+// invariant is visible where the credential would otherwise be.
+
+/** Whether one external provider is usable, and what would make it so. */
+export interface GlProviderWire {
+  name: string;
+  configured: boolean;
+  env_var: string;
+  detail: string;
+}
+
+/** The donor's voice-pipeline shape, from its own capability detector. */
+export interface GlCapabilitiesWire {
+  model: string;
+  /** text | realtime | hybrid_stt | hybrid_tts */
+  modality: string;
+  native_stt: boolean;
+  native_tts: boolean;
+  needs_deepgram: boolean;
+  needs_elevenlabs: boolean;
+  /** litellm | registry | env_override | default | platform-fallback */
+  source: string;
+}
+
+export interface GlDonorWire {
+  donor_id: string;
+  repo: string;
+  license: string;
+  root: string;
+  present: boolean;
+  playbooks_root: string;
+  stage_engine: { ready: string[]; absent: string[] };
+  live_edges: { ready: string[]; absent: string[] };
+  roles: Record<string, string>;
+}
+
+export interface GlRuntimeWire {
+  /** stopped | blocked | running */
+  state: string;
+  voice_id: string | null;
+  voice_name: string | null;
+  playbook_id: string | null;
+  playbook_name: string | null;
+  model: string | null;
+  capabilities: Partial<GlCapabilitiesWire>;
+  ws_url: string | null;
+  public_url: string | null;
+  tunnel_provider: string | null;
+  port: number | null;
+  started_at: string | null;
+  media_route_served: boolean;
+  blockers: string[];
+  missing: string[];
+}
+
+export interface GlStatusWire {
+  donor: GlDonorWire;
+  config: {
+    model: string;
+    litellm_api_base: string | null;
+    tts_model: string;
+    stt_model: string;
+    stt_language: string;
+    samples_root: string;
+    playbooks_root: string;
+    ledger_path: string;
+    log_level: string;
+  };
+  providers: GlProviderWire[];
+  blockers: string[];
+  runtime: GlRuntimeWire;
+  counts: { playbooks: number; playbooks_valid: number; voices: number; calls: number };
+  playbook_validation_errors: Record<string, string>;
+  missing: string[];
+}
+
+export interface GlTechniqueWire {
+  id: string;
+  reason: string;
+}
+
+export interface GlPlaybookSummaryWire {
+  playbook_id: string;
+  name: string;
+  author: string | null;
+  version: number;
+  culture: string | null;
+  description: string | null;
+  stage_count: number;
+  first_stage: string;
+  stage_names: string[];
+  has_branching: boolean;
+  persona_name: string;
+  techniques: GlTechniqueWire[];
+  /** Always "platform-declared": GhostLine carries no ATT&CK data of its own. */
+  mapping_source: string;
+  source_path: string;
+  valid: boolean;
+  invalid_reason: string | null;
+  missing: string[];
+}
+
+export interface GlStageWire {
+  stage: string;
+  position: number;
+  persona: string | null;
+  has_custom_prompt: boolean;
+  custom_prompt: string | null;
+  success_regex: string | null;
+  goto_on_success: string | null;
+  goto_on_fail: string | null;
+  max_cycles: number;
+  silent_until: number | null;
+  ambient_ratio: number | null;
+  language_hint: string | null;
+  operator_note: string | null;
+  /** null when the donor taxonomy module is not importable — named, not empty. */
+  psych_triggers: string[] | null;
+  default_prompt: string | null;
+  checkin_line: string | null;
+  captures_credential: boolean;
+}
+
+export interface GlPersonaWire {
+  name: string;
+  background: string;
+  voice: string;
+  persuasion_principles: string[];
+  do: string[];
+  dont: string[];
+}
+
+export interface GlPlaybookDetailWire {
+  playbook: GlPlaybookSummaryWire;
+  stages: GlStageWire[];
+  persona: GlPersonaWire | null;
+  defaults: Record<string, unknown> | null;
+}
+
+export interface GlPlaybookListWire {
+  playbooks: GlPlaybookSummaryWire[];
+  invalid: Record<string, string>;
+}
+
+export interface GlSimulationStepWire {
+  index: number;
+  /** Already redacted server-side: what the operator sees, not what they typed. */
+  utterance: string;
+  stage_before: string;
+  stage_after: string;
+  success: boolean;
+  cycles_remaining: number;
+  /** The matched span, or its redaction kind when the match was a credential. */
+  matched_pattern: string | null;
+  next_line: string | null;
+  exited: boolean;
+}
+
+export interface GlSimulationWire {
+  playbook_id: string;
+  playbook_name: string;
+  steps: GlSimulationStepWire[];
+  final_stage: string | null;
+  outcome: string | null;
+  outcome_reason: string | null;
+  capture_passwords: boolean;
+  credentials_captured: number;
+  redaction_kinds: string[];
+  missing: string[];
+}
+
+export interface GlVoiceWire {
+  voice_id: string;
+  name: string;
+  /** cloned | premade */
+  origin: string;
+  created_at: string;
+  sample_ref: string | null;
+  sample_bytes: number | null;
+  notes: string | null;
+}
+
+export interface GlVoiceListWire {
+  voices: GlVoiceWire[];
+}
+
+export interface GlMessageWire {
+  call_id: string;
+  role: string;
+  content: string;
+  stage: string | null;
+  timestamp: string;
+  /** Which credential shapes were removed from this turn. */
+  redaction_kinds: string[];
+  sentiment_score: number | null;
+  interest_level: number | null;
+  objection_type: string | null;
+  trigger_used: string | null;
+}
+
+export interface GlCallWire {
+  call_id: string;
+  sid: string | null;
+  target: string;
+  campaign: string;
+  persona: string;
+  playbook_id: string | null;
+  roe_id: string | null;
+  started_at: string;
+  ended_at: string | null;
+  outcome: string | null;
+  capture_passwords: boolean;
+  credentials_captured: number;
+  notes: string | null;
+  message_count: number;
+  final_stage: string | null;
+}
+
+export interface GlCallDetailWire extends GlCallWire {
+  messages: GlMessageWire[];
+}
+
+export interface GlDialWire {
+  call: GlCallWire;
+  placed: {
+    sid: string;
+    to_number: string;
+    from_number: string;
+    ws_url: string;
+  };
+  authorisation: { authorized: boolean; roe_id: string; target_count: number };
+  capture_passwords: boolean;
+  credentials_captured: number;
+}
+
+export interface GlAnalyticsWire {
+  campaign: string | null;
+  call_count: number;
+  completed_count: number;
+  in_progress_count: number;
+  turn_count: number;
+  stage_counts: Record<string, number>;
+  outcomes: Record<string, number>;
+  by_campaign: Record<string, number>;
+  redaction_kinds: Record<string, number>;
+  capture_passwords: boolean;
+  credentials_captured: number;
+  /** null when no call has completed — never a fabricated 0. */
+  conversion_rate: number | null;
+}
+
+export interface GlExportWire {
+  format: string;
+  filename: string;
+  payload: string | Record<string, unknown>;
+}

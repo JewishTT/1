@@ -73,6 +73,14 @@ class AdmissionResult:
     # Set when resolution matched this candidate to an already-admitted entity.
     matched_entity_id: str | None = None
     match_score: float = 0.0
+    #: The counts that fed the decision, carried onto the decision itself.
+    #:
+    #: **WP-E T071.** These were computed by intake and then dropped on the floor: the
+    #: score vector carries the three derived scalars, but not the raw counts they came
+    #: from, and certainly not *which measure* produced them. A reader of the decision
+    #: could see corroboration 0.5 and not know whether that meant two hosts or two
+    #: origins. Storing the distinction is what makes it auditable after the fact.
+    evidence_counts: dict[str, int | str] = field(default_factory=dict)
 
     @property
     def is_merge(self) -> bool:
@@ -108,6 +116,7 @@ class AdmissionEngine:
             profile=profile,
             matched_entity_id=inp.matched_entity_id,
             match_score=inp.match_score,
+            evidence_counts=dict(inp.evidence_counts),
         )
         result.decision, result.reason_codes = self._apply_ladder(inp, vector, profile)
         self._decisions[result.admission_id] = result  # replayable
@@ -130,18 +139,59 @@ class AdmissionEngine:
         if self._is_merge(inp, profile):
             # The candidate is a second sighting of an admitted entity.
             return AdmitDecision.ACCEPT_EXISTING, ["accept_existing_match"]
+        # **WP-E T070:** an unconfirmed match that cleared an uncalibrated bar did
+        # *not* merge. The candidate continues down the ladder, and the reason the
+        # merge was withheld travels with the decision so a reviewer sees why this is
+        # sitting in front of them rather than being silently fused or silently lost.
+        withheld = self.merge_refusal(inp, profile)
+        if withheld:
+            reasons = [withheld]
+        else:
+            reasons = []
         if vector.corroboration >= profile.threshold_accept:
-            return AdmitDecision.ACCEPT_NEW, ["accept_strong_corroboration"]
+            return AdmitDecision.ACCEPT_NEW, reasons + ["accept_strong_corroboration"]
         if vector.structural >= 0.7:
-            return AdmitDecision.ACCEPT_NEW, ["accept_qualified_structurally"]
-        return AdmitDecision.DEFER, ["no_confident_signal"]
+            return AdmitDecision.ACCEPT_NEW, reasons + ["accept_qualified_structurally"]
+        return AdmitDecision.DEFER, reasons + ["no_confident_signal"]
 
     @staticmethod
     def _is_merge(inp: AdmissionInput, profile: CalibrationProfile) -> bool:
-        """A confirmed match always merges; an unconfirmed one must clear the bar."""
+        """Whether an unconfirmed match may merge without review.
+
+        **WP-E T070.** A *reviewed* match (``match_confirmed``) always merges: a human
+        looked at it, and no threshold can overrule that. An *unreviewed* one may not
+        merge at all when the profile declares itself uncalibrated.
+
+        Previously the gate was ``match_score >= profile.threshold_match`` — a bar of
+        0.8, against a profile whose own ``version`` field reads
+        ``"UNCALIBRATED-v1"``, out of a ``MediaProfile`` that starts empty so every
+        unregistered entity type falls back to exactly these defaults. The audit found
+        this: a merge decided by a number nobody fitted.
+
+        The bar is not lowered here. It is *not applied* unless someone has declared
+        that the number means something. That is the difference between a threshold and
+        a guess, and a guess that fuses two people is not recoverable after the fact.
+
+        Refusing to merge is not refusing the candidate: the ladder still runs, and an
+        unmerged candidate with strong corroboration is still admitted as a new
+        entity and routed to review rather than silently fused.
+        """
         if not inp.has_existing_match:
             return False
-        return inp.match_confirmed or inp.match_score >= profile.threshold_match
+        if inp.match_confirmed:
+            return True
+        if not profile.is_calibrated:
+            return False
+        return inp.match_score >= profile.threshold_match
+
+    @staticmethod
+    def merge_refusal(inp: AdmissionInput, profile: CalibrationProfile) -> str:
+        """Why an automatic merge was withheld, or ``""`` when it was allowed."""
+        if not inp.has_existing_match or inp.match_confirmed:
+            return ""
+        if profile.is_calibrated:
+            return ""
+        return profile.merge_bar()
 
     def resident(self, admission_id: str) -> AdmissionResult | None:
         return self._decisions.get(admission_id)

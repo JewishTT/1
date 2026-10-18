@@ -33,7 +33,10 @@ export type CiPanel =
   | "forensics"
   | "detection"
   | "counterintel"
-  | "social";
+  | "social"
+  // GhostLine (031): voice-borne social engineering. A subject rather than a view —
+  // it places calls to people, which is a different kind of thing from the others.
+  | "ghostline";
 
 /** Scope every panel declares on screen so a tenant-wide figure is never misread. */
 export type CiScope = "tenant-wide" | "investigation-scoped";

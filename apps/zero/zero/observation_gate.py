@@ -15,9 +15,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-import uuid
 from dataclasses import dataclass
 from typing import Any
+
+from domain.relation_identity import canonical_material, digest128
 
 from .harvesters.contracts import ObservationCandidate
 from .type_detector import InputType, SeedInput
@@ -106,9 +107,22 @@ class ZeroLayerGate:
         candidates: list[ObservationCandidate],
         derived_seeds: list[str],
     ) -> ZeroLayerObservation:
-        """Create the immutable observation for one seed's harvest cycle."""
-        observation_id = "ZERO-OBS-" + uuid.uuid4().hex[:12]
-        produced_at = self._now()
+        """Create the immutable observation for one seed's harvest cycle.
+
+        **WP-C T043: the identifier is derived, not random.**
+
+        This was ``"ZERO-OBS-" + uuid.uuid4().hex[:12]`` — a random value on the
+        identity path, in a module whose own docstring claimed it "assigns a
+        content-addressed observation_id". The claim was false, and the cost was
+        concrete: replaying a harvest produced the same ``content_digest`` under a
+        second, differently-named observation, so a consumer deduplicating by id saw
+        fresh evidence every time.
+
+        The body is built *before* the id precisely so the id can be cut from it.
+        ``produced_at`` is a clock and stays out of the material — the same rule the
+        shared identity module follows. Two harvest cycles over identical candidates
+        now produce one observation.
+        """
         body = {
             "seed_id": seed.seed_id,
             "seed_type": seed.detected_type.value,
@@ -116,6 +130,8 @@ class ZeroLayerGate:
             "candidates": [candidate.as_dict() for candidate in candidates],
             "derived_seeds": derived_seeds,
         }
+        observation_id = "ZERO-OBS-" + digest128(canonical_material(body))[:32]
+        produced_at = self._now()
         observation = ZeroLayerObservation(
             observation_id=observation_id,
             seed_id=seed.seed_id,
@@ -188,7 +204,11 @@ class ZeroLayerGate:
                 payload=json.dumps(payload, sort_keys=True).encode(),
             )
             topic = topic_for(event_type)
-            self._producer.produce(topic, envelope, key=key or str(uuid.uuid4()))
+            # The partition key is the envelope's own address, not a random value.
+            # A random key spreads the same logical event across partitions, which
+            # is how a consumer's ordering and dedup assumptions quietly stop
+            # holding. The derived event_id is stable across replays by construction.
+            self._producer.produce(topic, envelope, key=key or envelope.event_id)
         except Exception:
             return
 

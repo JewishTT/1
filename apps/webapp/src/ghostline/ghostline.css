@@ -1,0 +1,853 @@
+/* GhostLine surface — holographic deck (Feature 031).
+ *
+ * The material comes from `styles/holo.css`; this file places it. What GhostLine adds
+ * on top of the department is a piece of vocabulary the rest of SpecOps has no
+ * precedent for, and it is worth being explicit about why it gets its own treatment:
+ *
+ *   Everything else in this department acts on SYSTEMS. GhostLine acts on PEOPLE. It
+ *   places a telephone call. So its surfaces are the ones where a careless visual is
+ *   least acceptable — an operator who cannot tell a refusal from a setup gap will
+ *   either dial something they should not, or think the tool is refusing them.
+ *
+ * Three kinds of signal therefore get three visually distinct treatments, and the
+ * distinction is carried by SHAPE as well as colour (§67: colour never carries meaning
+ * alone):
+ *
+ *   [data-kind="gate"]    the RoE gate refused. A red edge and a solid left rule.
+ *                         An authorisation fact. Nothing here is retryable.
+ *   [data-kind="setup"]   something is not configured or not installed. An amber edge
+ *                         and a DASHED left rule, because the fix is a variable or a
+ *                         package, not a decision.
+ *   [data-kind="absent"]  an endpoint does not serve this. Steel, dashed, quiet.
+ *
+ * The dashed-vs-solid distinction on the left rule is the load-bearing one. Colour
+ * alone would fail a red/amber colourblind reader exactly where it matters most.
+ */
+
+/* ── The canvas inside the department ──────────────────────────────── */
+
+.ui-cicanvas[data-testid="gl-canvas"] {
+  padding-top: 0;
+  gap: 0.5rem;
+}
+
+/*
+ * GhostLine's own head is a SUB-HEAD, not a second head.
+ *
+ * The department head above it is already a framed plane, and GhostLine sits inside
+ * that canvas — so giving the inner one the same frame produced two identical framed
+ * bars stacked with an 8px gap, which is the single thing that made the whole surface
+ * look like a form. The sub-head therefore has no frame at all: a hairline, the title,
+ * the tabs sitting on a track, and the scope note. One frame per nesting level, and
+ * the inner level does not have one.
+ */
+.ui-gl-subhead {
+  padding: 0 0.15rem 0.45rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-steel) 14%, transparent);
+  background: none;
+  box-shadow: none;
+  gap: 0.75rem;
+}
+
+.ui-gl-subhead .ui-pane-title {
+  font-size: 0.64rem;
+  font-weight: 700;
+  font-variant: all-small-caps;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ui-accent);
+  text-shadow: 0 0 22px color-mix(in srgb, var(--ui-accent) 45%, transparent);
+}
+
+/* ── The deck strip ───────────────────────────────────────────────── */
+
+/*
+ * Six readouts, live, answering one question on every panel: can I run an exercise now,
+ * and if not, what is missing. It is the only place on the surface where a numeral is
+ * allowed to be large — the budget for size goes here and nowhere else, which is what
+ * stops every other panel from shouting at the same volume.
+ */
+.ui-gl-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.9rem;
+  padding: 0.75rem 0.9rem 0.85rem;
+}
+
+.ui-gl-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  --holo-hue: var(--ui-steel);
+}
+
+.ui-gl-readout-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  font-variant: all-small-caps;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-readout-value {
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text);
+  text-shadow: 0 0 26px color-mix(in srgb, var(--holo-hue) 40%, transparent);
+}
+
+.ui-gl-readout-caption {
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: var(--ui-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-gl-readout[data-tone="live"] {
+  --holo-hue: var(--ui-accent);
+}
+.ui-gl-readout[data-tone="info"] {
+  --holo-hue: var(--ui-analytical);
+}
+.ui-gl-readout[data-tone="warn"] {
+  --holo-hue: var(--ui-gold);
+}
+.ui-gl-readout[data-tone="fail"] {
+  --holo-hue: var(--ui-danger);
+}
+.ui-gl-readout[data-tone="idle"] {
+  --holo-hue: var(--ui-steel);
+}
+
+/* A live readout's value carries the only pulse on the strip: it is the one thing that
+ * is changing right now, and a pulsing numeral is more honest than a static one. */
+.ui-gl-readout[data-tone="live"] .ui-gl-readout-value::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: var(--ui-accent);
+  box-shadow: 0 0 10px 0 color-mix(in srgb, var(--ui-accent) 90%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ui-gl-readout[data-tone="live"] .ui-gl-readout-value::after {
+    animation: holo-pulse 2.4s ease-in-out infinite;
+  }
+}
+
+.ui-gl-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1.35rem;
+  align-items: start;
+}
+
+.ui-gl-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.7rem;
+}
+
+/* ── Refusals: the three kinds ─────────────────────────────────────── */
+
+.ui-gl-refusal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.7rem 0.85rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 26%, transparent);
+  border-left: 2px solid var(--holo-hue, var(--ui-steel));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 6%, transparent);
+  box-shadow: 0 0 30px -20px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 85%, transparent);
+}
+
+/*
+ * A column flex stretches its children to full width by default, so a badge or a
+ * button placed directly inside one renders as a full-width input field. These are
+ * controls, not blocks. This line is the difference between a refusal reading as a
+ * sentence with a tag on it and reading as a stack of empty bars.
+ */
+.ui-gl-refusal > .ui-badge,
+.ui-gl-refusal > .ui-btn,
+.ui-ci-col > .ui-badge,
+.ui-ci-panel-head > .ui-badge,
+.ui-ci-list-head > .ui-badge {
+  align-self: flex-start;
+}
+
+.ui-gl-refusal-reason {
+  align-self: stretch;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ui-text);
+  overflow-wrap: anywhere;
+}
+
+/* An authorisation refusal. Solid rule, red edge, and a glow that reaches slightly
+ * further than the setup case — this one is the operator's own authority saying no. */
+.ui-gl-refusal[data-kind="gate"] {
+  --holo-hue: var(--ui-danger);
+  border-style: solid;
+}
+
+/* A setup gap. The rule is DASHED, and that is the whole point: nothing is refusing
+ * anybody, there is a variable to set and a package to add. */
+.ui-gl-refusal[data-kind="setup"] {
+  --holo-hue: var(--ui-gold);
+  border-style: dashed;
+  border-left-style: solid;
+  border-left-width: 2px;
+}
+
+.ui-gl-refusal[data-kind="absent"] {
+  --holo-hue: var(--ui-steel-dim);
+  border-style: dashed;
+  opacity: 0.9;
+}
+
+
+.ui-gl-hint {
+  font-size: 0.76rem;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-hint[data-kind="danger"] {
+  color: var(--ui-danger);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--ui-danger) 40%, transparent);
+}
+
+/* ── Donor composition: the three readouts ────────────────────────── */
+
+.ui-gl-donor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.6rem;
+}
+
+/* Provenance: three flat cards under one lit header. Deliberately NOT the readout
+ * treatment the deck strip uses — the deck answers "can I run", this answers "what am
+ * I running", and giving them the same visual weight would put them in competition. */
+.ui-gl-provenance {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem 0.75rem;
+  border-radius: 9px;
+}
+
+.ui-gl-provenance-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.ui-gl-provenance-side > strong {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ui-text);
+}
+
+.ui-gl-provenance-side .op-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  font-variant: all-small-caps;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-donor-repo {
+  font-size: 0.72rem;
+  color: var(--ui-accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  overflow-wrap: anywhere;
+}
+
+.ui-gl-donor-repo:hover {
+  border-bottom-color: var(--ui-accent);
+}
+
+.ui-gl-compose {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.7rem;
+}
+
+.ui-gl-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* An unset variable, rendered as something you can copy. This is the single most
+ * useful piece of type on the whole surface when a deployment is not configured yet. */
+.ui-gl-env {
+  font-size: 0.7rem;
+  padding: 0.12rem 0.35rem;
+  border: 1px dashed color-mix(in srgb, var(--ui-gold) 40%, transparent);
+  border-radius: 4px;
+  color: var(--ui-gold);
+  background: color-mix(in srgb, var(--ui-gold) 7%, transparent);
+  overflow-wrap: anywhere;
+}
+
+/* ── Provider readiness ───────────────────────────────────────────── */
+
+.ui-gl-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-gl-providers > li {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 11%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--ui-accent) 45%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-0) 45%, transparent);
+}
+
+.ui-gl-providers > li[data-configured="false"] {
+  border-style: dashed;
+  border-left-style: solid;
+  border-left-color: color-mix(in srgb, var(--ui-steel) 28%, transparent);
+  background: transparent;
+}
+
+.ui-gl-provider-detail {
+  font-size: 0.79rem;
+  color: var(--ui-text-secondary);
+}
+
+/* ── Playbook ladder ──────────────────────────────────────────────── */
+
+.ui-gl-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  background: color-mix(in srgb, var(--surface-0) 55%, transparent);
+}
+
+.ui-gl-card:hover {
+  background: color-mix(in srgb, var(--surface-1) 70%, transparent);
+  border-color: color-mix(in srgb, var(--ui-accent) 30%, transparent);
+}
+
+/* The selected scenario is the ONE lit thing on this panel. Everything else on the
+ * surface stays flat, which is what makes this read as selection rather than as a
+ * list of decorated rows. */
+.ui-gl-card[data-active="true"] {
+  --holo-hue: var(--ui-accent);
+  border-color: color-mix(in srgb, var(--ui-accent) 46%, transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ui-accent) 12%, transparent),
+    color-mix(in srgb, var(--surface-1) 55%, transparent) 60%
+  );
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, var(--ui-accent) 22%, transparent),
+    0 0 26px -12px color-mix(in srgb, var(--ui-accent) 80%, transparent);
+}
+
+.ui-gl-card[data-valid="false"] {
+  border-style: dashed;
+}
+
+.ui-gl-invalid {
+  font-size: 0.74rem;
+  color: var(--ui-danger);
+}
+
+/* The ladder is the one place a vertical spine earns its keep: the twelve stages are
+ * an ordered progression, and a spine makes "where am I" answerable at a glance
+ * instead of by counting rows. */
+.ui-gl-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+  padding-left: 0.85rem;
+}
+
+.ui-gl-ladder::before {
+  content: "";
+  position: absolute;
+  top: 0.6rem;
+  bottom: 0.6rem;
+  left: 0.22rem;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--ui-steel) 34%, transparent) 12%,
+    color-mix(in srgb, var(--ui-steel) 34%, transparent) 88%,
+    transparent
+  );
+}
+
+.ui-gl-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 11%, transparent);
+  border-left: 2px solid var(--holo-hue, var(--ui-steel));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-0) 48%, transparent);
+  box-shadow: -8px 0 20px -16px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
+}
+
+/* The spine node. */
+.ui-gl-stage::before {
+  content: "";
+  position: absolute;
+  top: 0.85rem;
+  left: -0.85rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--holo-hue, var(--ui-steel));
+  box-shadow: 0 0 12px -1px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 85%, transparent);
+}
+
+.ui-gl-stage[data-role="trust"] {
+  --holo-hue: var(--ui-accent);
+}
+.ui-gl-stage[data-role="discovery"] {
+  --holo-hue: var(--ui-analytical);
+}
+.ui-gl-stage[data-role="persuasion"] {
+  --holo-hue: var(--ui-gold);
+}
+.ui-gl-stage[data-role="objection"] {
+  --holo-hue: color-mix(in srgb, var(--ui-gold) 70%, var(--ui-danger));
+}
+.ui-gl-stage[data-role="closure"] {
+  --holo-hue: var(--ui-accent-bright);
+}
+.ui-gl-stage[data-role="reporting"] {
+  --holo-hue: var(--ui-steel);
+}
+
+/* A stage that is designed to elicit a secret is dashed as well as coloured. The
+ * operator should be able to see it in a peripheral glance, not by reading the badge. */
+.ui-gl-stage[data-captures="true"] {
+  border-style: dashed;
+  border-left-style: solid;
+}
+
+.ui-gl-stage-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.ui-gl-stage-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ui-text);
+}
+
+.ui-gl-stage-intent {
+  font-size: 0.74rem;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-stage-prompt {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--ui-text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ui-gl-stage-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.35rem 0.8rem;
+  margin: 0;
+  padding-top: 0.4rem;
+  border-top: 1px solid color-mix(in srgb, var(--ui-steel) 9%, transparent);
+}
+
+.ui-gl-stage-facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.ui-gl-stage-facts dt {
+  font-size: 0.6rem;
+  font-weight: 600;
+  font-variant: all-small-caps;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-stage-facts dd {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--ui-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.ui-gl-stage-checkin {
+  margin: 0;
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-techniques {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ── Simulator ────────────────────────────────────────────────────── */
+
+.ui-gl-textarea {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.6rem;
+  color: var(--ui-text);
+  background: color-mix(in srgb, var(--bg-0) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 16%, transparent);
+  border-radius: 7px;
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.ui-gl-textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--ui-accent) 50%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, var(--text-primary) 4%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--ui-accent) 12%, transparent);
+}
+
+/* The trace is a timeline: each utterance is an event with a state, and the left
+ * edge is where the state lives. `held` — the machine did not advance — is the one an
+ * author is looking for, so it gets amber and the most reach. */
+.ui-gl-trace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  padding-left: 0.85rem;
+}
+
+.ui-gl-trace::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 0.22rem;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--ui-accent) 34%, transparent) 10%,
+    color-mix(in srgb, var(--ui-accent) 34%, transparent) 90%,
+    transparent
+  );
+}
+
+.ui-gl-trace > li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 11%, transparent);
+  border-left: 2px solid var(--holo-hue, var(--ui-steel));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-0) 48%, transparent);
+  box-shadow: -8px 0 20px -16px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
+}
+
+.ui-gl-trace > li::before {
+  content: "";
+  position: absolute;
+  top: 0.8rem;
+  left: -0.85rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--holo-hue, var(--ui-steel));
+  box-shadow: 0 0 12px -1px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 85%, transparent);
+}
+
+.ui-gl-trace > li[data-held="true"] {
+  --holo-hue: var(--ui-gold);
+  border-style: dashed;
+  border-left-style: solid;
+}
+
+.ui-gl-trace > li[data-success="true"] {
+  --holo-hue: var(--ui-accent);
+}
+
+.ui-gl-trace > li[data-exited="true"] {
+  --holo-hue: var(--ui-danger);
+}
+
+.ui-gl-trace-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ui-gl-trace-utterance {
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ui-gl-trace-arrow {
+  font-size: 0.73rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-trace-next {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.45;
+  color: var(--ui-text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The twelve rungs, unlit and lit. */
+.ui-gl-rungs {
+  display: flex;
+  gap: 0.22rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-gl-rungs > li {
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-variant: all-small-caps;
+  letter-spacing: 0.08em;
+  padding: 0.18rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 12%, transparent);
+  border-radius: 4px;
+  color: var(--ui-text-muted);
+  background: transparent;
+}
+
+.ui-gl-rungs > li[data-reached="true"] {
+  border-color: color-mix(in srgb, var(--ui-accent) 34%, transparent);
+  color: var(--ui-text-secondary);
+  background: color-mix(in srgb, var(--ui-accent) 8%, transparent);
+}
+
+.ui-gl-rungs > li[data-current="true"] {
+  border-color: var(--ui-accent);
+  color: var(--ui-on-accent);
+  background: var(--ui-accent);
+  box-shadow: 0 0 20px -4px color-mix(in srgb, var(--ui-accent) 90%, transparent);
+}
+
+/* ── Calls and transcripts ────────────────────────────────────────── */
+
+.ui-ci-list-row[data-outcome="compromised"] {
+  border-left-color: var(--ui-danger);
+  box-shadow: -10px 0 22px -16px color-mix(in srgb, var(--ui-danger) 80%, transparent);
+}
+
+.ui-ci-list-row[data-outcome="abandoned"] {
+  border-left-color: var(--ui-gold);
+  box-shadow: -10px 0 22px -16px color-mix(in srgb, var(--ui-gold) 70%, transparent);
+}
+
+.ui-gl-complete {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.ui-gl-turns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 26rem;
+  overflow: auto;
+}
+
+.ui-gl-turns > li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 11%, transparent);
+  border-left: 2px solid var(--holo-hue, var(--ui-steel));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-0) 48%, transparent);
+  box-shadow: -8px 0 18px -16px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
+}
+
+.ui-gl-turns > li[data-role="user"],
+.ui-gl-turns > li[data-role="target"] {
+  --holo-hue: var(--ui-analytical);
+}
+
+.ui-gl-turns > li[data-role="assistant"],
+.ui-gl-turns > li[data-role="agent"] {
+  --holo-hue: var(--ui-accent);
+}
+
+.ui-gl-turns > li[data-role="operator"] {
+  --holo-hue: var(--ui-steel);
+  border-style: dashed;
+}
+
+.ui-gl-turn-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ui-gl-turn-role {
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-variant: all-small-caps;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-turn-text {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--ui-text);
+  overflow-wrap: anywhere;
+}
+
+.ui-gl-turn-empty {
+  font-size: 0.8rem;
+  color: var(--ui-text-muted);
+}
+
+/* ── Analytics ────────────────────────────────────────────────────── */
+
+.ui-gl-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-gl-bars > li {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ui-gl-bar-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant: all-small-caps;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-gl-bar-track {
+  display: block;
+  min-width: 0;
+  height: 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--bg-0) 55%, transparent);
+}
+
+.ui-gl-kinds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-gl-kinds > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--ui-gold) 22%, transparent);
+  border-radius: 5px;
+  font-size: 0.76rem;
+  color: var(--ui-text-secondary);
+  background: color-mix(in srgb, var(--ui-gold) 5%, transparent);
+}
+
+.op-value[data-muted="true"] {
+  opacity: 0.6;
+  font-style: italic;
+  text-shadow: none;
+}
+
+/* ── Scoped field overrides ───────────────────────────────────────── */
+
+/* Nested canvas: the department already drew a field, so GhostLine's is only a soft
+ * wash rather than a second grid. Two grids at the same scale read as moiré, and the
+ * operator is the one who has to live with it. */
+.ui-cicanvas[data-testid="gl-canvas"]::after {
+  opacity: 0.22;
+}

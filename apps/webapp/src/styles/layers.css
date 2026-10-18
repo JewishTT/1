@@ -6,6 +6,10 @@
  *
  * Load order:
  *   1. tokens     — one source of truth for colour/type/scale/density/motion
+ *   1b. holo      - the SpecOps department's holographic material layer (031).
+ *                   Implied by ci.css and ghostline.css rather than imported by a
+ *                   component: ghostline.css loads BEFORE ci.css, so a component-level
+ *                   import would make cascade order depend on the import graph.
  *   2. base       — reset + element defaults for UI 2.0 surfaces
  *   3. components — primitives (§60)
  *   4. shell      — AppShell (§5, §8)
@@ -26,6 +30,7 @@
  * tokens only — no raw hex — so both themes and any future theme inherit.
  */
 @import "./tokens/index.css";
+@import "./holo.css";
 @import "./tokens/legacy-bridge.css";
 @import "./base/index.css";
 @import "./components/index.css";

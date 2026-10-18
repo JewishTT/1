@@ -14,10 +14,20 @@ dependencies = [
     "bm25s>=0.2",
     "cognitive-shared",
     "duckdb>=1.0",
-    "giotto-tda>=0.6.1",
+    # gudhi is the TDA path that is actually called (tda/pipeline.py, tda/bridge.py).
     "gudhi>=3.10",
-    "numpy>=1.26",
+    # giotto-tda REMOVED 2026-10-16. It was declared but had zero imports anywhere in the
+    # tree -- not one `import giotto_tda`. Keeping it was not free: every giotto-tda release,
+    # including the current 0.6.2, hard-pins `scikit-learn==1.3.2`, which caps numpy at <2.0
+    # workspace-wide. That single unused declaration blocked river>=0.26 (needs numpy>=2.2.5),
+    # scikit-learn 1.9 and the Splink 4 stack. specs/030 §2.9 already recorded giotto-tda as
+    # "a disposition, not an adoption"; this is that disposition, executed.
+    # If a second TDA engine is ever adopted, it must not reintroduce a hard numpy<2 pin.
+    "numpy>=1.26,<3",
     "scipy>=1.13",
+    # h3_index.py binds to H3 v4's Python API; the major version is load-bearing because
+    # v4 changed the cell-resolution arguments and the string form of `__str__`.
+    "h3>=4.5,<5",
 ]
 
 [dependency-groups]

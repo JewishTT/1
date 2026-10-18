@@ -16,7 +16,7 @@ import trafilatura  # type: ignore[import-not-found]
 
 from extractors.language import decode_bytes, detect_language
 from extractors.types import ExtractionResult
-from parsers.registry import Finding, Segment
+from parsers.registry import Finding, OffsetSemantics, Segment
 
 
 @dataclass
@@ -87,21 +87,34 @@ class HtmlFullAdapter:
                     offset=offset,
                     kind="text",
                     meta={"parser": "trafilatura", "charset": encoding, "paragraph": i},
+                    # `_locate` returns a character index into ``text`` and -1 when the
+                    # paragraph was not found. That is the only semantics here that can be
+                    # rebased onto a character offset produced by the extractor.
+                    offset_semantics=(
+                        OffsetSemantics.DOCUMENT_CHAR if offset >= 0 else OffsetSemantics.UNSET
+                    ),
                 )
             )
         return segments
 
 
 def _locate(paragraph: str, text: str) -> int:
-    """Deterministic byte offset of a cleaned paragraph in the decoded text."""
+    """Character offset of a cleaned paragraph in the decoded text, or -1 if not found.
+
+    This returned ``len(text[:idx].encode("utf-8"))`` -- a *byte* offset -- which was then
+    added by ``extractors/lane.py`` to a *character* offset from the extractor. For any
+    paragraph preceded by non-ASCII text the two disagree, and the sum pointed at the wrong
+    place silently. It now returns the character index, matching what it is added to.
+
+    It also returned ``0`` when the paragraph could not be located, which is
+    indistinguishable from a genuine match at position 0. That is -1.
+    """
     probe = " ".join(paragraph.split()[:4])
     idx = text.find(probe)
     if idx < 0 and probe:
         token = probe.split()[0]
         idx = text.find(token)
-    if idx < 0:
-        return 0
-    return len(text[:idx].encode("utf-8"))
+    return idx
 
 
 def _to_text(artifact) -> str:

@@ -119,12 +119,56 @@ class TestObservationGate:
         assert topics.count("zero_layer") == 2
 
     def test_emitted_observation_is_content_addressed(self) -> None:
+        """**WP-C T043: the identity is derived, so a replay is a fixed point.**
+
+        The previous expectation was ``obs_a.observation_id != obs_b.observation_id``
+        with the comment "new immutable record". It was pinning a ``uuid4()`` that the
+        module's own docstring described as a content address — the docstring was
+        false, and this test made the falsehood look like a guarantee.
+
+        Immutability is not at stake in the change. The record is still frozen; it is
+        the *address* that is now a function of content rather than of arrival order.
+        Two harvests that produce the same candidates are one observation, and a
+        consumer deduplicating by id stops seeing phantom fresh evidence on every
+        replay.
+        """
         gate = ZeroLayerGate()
         seed = TypeDetector().detect("alice@example.com")
         obs_a = gate.emit(seed=seed, candidates=[], derived_seeds=[])
         obs_b = gate.emit(seed=seed, candidates=[], derived_seeds=[])
         assert obs_a.content_digest == obs_b.content_digest
-        assert obs_a.observation_id != obs_b.observation_id  # new immutable record
+        assert obs_a.observation_id == obs_b.observation_id
+
+    def test_different_harvests_get_different_ids(self) -> None:
+        """Derivation must still separate genuinely different observations."""
+        gate = ZeroLayerGate()
+        detector = TypeDetector()
+        one = gate.emit(seed=detector.detect("alice@example.com"), candidates=[], derived_seeds=[])
+        two = gate.emit(seed=detector.detect("bob@example.com"), candidates=[], derived_seeds=[])
+        assert one.observation_id != two.observation_id
+
+    def test_a_candidate_changes_the_identity(self) -> None:
+        """The address must move when the evidence moves, not only when the seed does."""
+        from zero.harvesters.contracts import ObservationCandidate
+
+        gate = ZeroLayerGate()
+        seed = TypeDetector().detect("alice@example.com")
+        bare = gate.emit(seed=seed, candidates=[], derived_seeds=[])
+        with_contact = gate.emit(
+            seed=seed,
+            candidates=[
+                ObservationCandidate(
+                    value="alice@example.com",
+                    kind="email",
+                    confidence=0.9,
+                    source_module="email_permutation",
+                    method="permutation",
+                    raw_fields={},
+                )
+            ],
+            derived_seeds=[],
+        )
+        assert bare.observation_id != with_contact.observation_id
 
     def test_immutability_enforcement(self) -> None:
         gate = ZeroLayerGate()

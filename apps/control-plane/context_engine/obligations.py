@@ -50,7 +50,21 @@ class Disposition(enum.StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class SaturationState:
-    """FR-052/053. Sufficiency, never effort."""
+    """FR-052/053. Sufficiency, never effort.
+
+    ``coverage_known`` and ``marginal_gain_known`` exist because the two halves of
+    this record are produced by two different layers and neither layer always knows
+    both. The fabric computes coverage, completeness and independence; an acquisition
+    outcome reports coverage delta and marginal gain; neither is a superset of the
+    other. Collapsing "not measured" into ``0.0`` would read as *measured and zero*,
+    and ``0.0 <= marginal_gain_threshold`` would then close an obligation on an
+    absence. An unknown therefore blocks saturation rather than satisfying it.
+
+    ``required_independent_sources`` and ``required_source_families`` default to 0,
+    meaning *no requirement was declared*. A caller that cannot justify an
+    independence threshold leaves them at 0 and does not claim independence; a caller
+    that measured it sets them and is held to it.
+    """
 
     coverage: float
     marginal_gain: float
@@ -59,6 +73,10 @@ class SaturationState:
     stopping_condition: str = ""
     coverage_threshold: float = 0.9
     marginal_gain_threshold: float = 0.05
+    coverage_known: bool = True
+    marginal_gain_known: bool = True
+    required_independent_sources: int = 0
+    required_source_families: int = 0
 
     def __post_init__(self) -> None:
         for name in ("coverage", "marginal_gain", "source_diversity_factor", "source_diversity"):
@@ -72,17 +90,55 @@ class SaturationState:
     @property
     def is_saturated(self) -> bool:
         return (
-            self.coverage >= self.coverage_threshold
+            self.coverage_known
+            and self.marginal_gain_known
+            and self.coverage >= self.coverage_threshold
             and self.marginal_gain <= self.marginal_gain_threshold
+            and self.distinct_sources >= self.required_independent_sources
+            and self.source_diversity >= self.required_source_families
         )
 
     def reason(self) -> str:
-        """FR-054: the system must be able to say *why* it considers this settled."""
+        """FR-054: the system must be able to say *why* it considers this settled.
+
+        A refusal names the ingredient that is missing. ``coverage=0.85`` on its own
+        is unreadable -- it does not say whether 0.85 is a measurement or a default,
+        nor whether something else was the blocker.
+        """
+        missing: list[str] = []
+        if not self.coverage_known:
+            missing.append("coverage_unmeasured")
+        elif self.coverage < self.coverage_threshold:
+            missing.append(
+                f"coverage={self.coverage:.2f}<{self.coverage_threshold}"
+            )
+        if not self.marginal_gain_known:
+            missing.append("marginal_gain_unmeasured")
+        elif self.marginal_gain > self.marginal_gain_threshold:
+            missing.append(
+                f"marginal_gain={self.marginal_gain:.3f}>{self.marginal_gain_threshold}"
+            )
+        if self.distinct_sources < self.required_independent_sources:
+            missing.append(
+                f"independent_sources={self.distinct_sources}"
+                f"<{self.required_independent_sources}"
+            )
+        if self.source_diversity < self.required_source_families:
+            missing.append(
+                f"source_families={self.source_diversity}<{self.required_source_families}"
+            )
+        verdict = "not_saturated" if missing else "saturated"
+        detail = "; ".join(missing) if missing else "all conditions met"
         return (
-            f"coverage={self.coverage:.2f}>={self.coverage_threshold} "
-            f"marginal_gain={self.marginal_gain:.3f}<={self.marginal_gain_threshold} "
+            f"{verdict}: {detail} "
+            f"coverage={self.coverage:.2f} known={self.coverage_known} "
+            f"marginal_gain={self.marginal_gain:.3f} known={self.marginal_gain_known} "
             f"distinct_sources={self.distinct_sources} diversity={self.source_diversity}"
-            + (f" stopping={self.stopping_condition}" if self.stopping_condition else "")
+            + (
+                f" stopping={self.stopping_condition}"
+                if self.stopping_condition
+                else ""
+            )
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -94,6 +150,10 @@ class SaturationState:
             "stopping_condition": self.stopping_condition,
             "coverage_threshold": self.coverage_threshold,
             "marginal_gain_threshold": self.marginal_gain_threshold,
+            "coverage_known": self.coverage_known,
+            "marginal_gain_known": self.marginal_gain_known,
+            "required_independent_sources": self.required_independent_sources,
+            "required_source_families": self.required_source_families,
         }
 
     @classmethod
@@ -106,6 +166,10 @@ class SaturationState:
             stopping_condition=payload.get("stopping_condition", ""),
             coverage_threshold=payload.get("coverage_threshold", 0.9),
             marginal_gain_threshold=payload.get("marginal_gain_threshold", 0.05),
+            coverage_known=bool(payload.get("coverage_known", True)),
+            marginal_gain_known=bool(payload.get("marginal_gain_known", True)),
+            required_independent_sources=int(payload.get("required_independent_sources", 0)),
+            required_source_families=int(payload.get("required_source_families", 0)),
         )
 
     def key(self) -> str:

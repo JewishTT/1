@@ -12,11 +12,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
-from uuid import uuid4
 
 from confluent_kafka import Consumer, KafkaError, KafkaException, Producer
 
 from config.settings import get_settings
+from domain.observation_identity import derive_event_id
 from events import event_envelope_pb2 as pb
 from events.dlq import DLQRecord, QuarantineStore
 from events.topics import TOPIC_QUARANTINE
@@ -46,8 +46,30 @@ def build_envelope(
     work_id: str | None = None,
     region_id: str | None = None,
 ) -> Envelope:
+    """Build an envelope.
+
+    ``event_id`` defaults to a *derived* address, not a random one. WP-C T044: this
+    used to be ``str(uuid4())``, and a contract test asserted that two builds of the
+    same envelope differ — which pinned the defect. Every consumer in the platform
+    dedups on ``event_id``; a default that is different on every call makes that
+    dedup silently useless for every producer that does not override it. A replay of
+    an unchanged event now reproduces its address.
+
+    An explicit ``event_id`` is still honoured, because the gate legitimately mints
+    one from §11's six components, which is a stricter material than the default.
+    """
     return Envelope(
-        event_id=event_id or str(uuid4()),
+        event_id=event_id
+        or derive_event_id(
+            event_type=event_type,
+            event_version=event_version,
+            producer=producer,
+            producer_version=producer_version,
+            payload=payload,
+            observation_id=observation_id or "",
+            entity_id=entity_id or "",
+            correlation_id=correlation_id or "",
+        ),
         event_type=event_type,
         event_version=event_version,
         investigation_id=investigation_id or "",
@@ -166,7 +188,7 @@ class IdempotentConsumer(ABC):
         *,
         deduplicator: Deduplicator | None = None,
         failure_publish: Callable[[str, bytes, str], None] | None = None,
-        quarantine: "QuarantineStore | None" = None,
+        quarantine: QuarantineStore | None = None,
     ) -> None:
         self._consumer = Consumer(
             {

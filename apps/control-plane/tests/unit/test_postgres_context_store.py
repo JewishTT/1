@@ -8,8 +8,10 @@ dict could never satisfy: **the context survives losing the connection**.
 from __future__ import annotations
 
 import os
+import socket
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 
@@ -30,7 +32,30 @@ DSN = os.environ.get(
     "postgresql+asyncpg://cognitive:cognitive@localhost:5432/cognitive",
 )
 
-pytestmark = pytest.mark.asyncio
+
+def _pg_reachable() -> bool:
+    """TCP-reachability probe, matching the idiom in apps/feedback/tests/test_frontier_loop.py."""
+    parsed = urlparse(DSN.replace("+asyncpg", ""))
+    host, port = (parsed.hostname or "localhost"), parsed.port or 5432
+    try:
+        with socket.create_connection((host, int(port)), timeout=3):
+            return True
+    except OSError:
+        return False
+
+
+# Without this guard all seven tests below failed on `EndpointConnectionError` whenever the
+# stack was down, which reports an environment condition as a product defect: the module's
+# whole claim is that a context survives losing its connection, and "no database was
+# listening" is not evidence that durability is broken.
+#
+# This is a BLOCKED report, not a pass. `pytest -rs` names the reason, and anything that
+# depends on durable-context verification inherits the block rather than inheriting a
+# green tick. Spec 030 SC-016: an inaccessible service is never reported as tested.
+pytestmark = [
+    pytest.mark.asyncio,
+    pytest.mark.skipif(not _pg_reachable(), reason="postgres unavailable"),
+]
 
 
 def _context(investigation_id: str = "INV-pg-1", question: str = "") -> InvestigationContext:

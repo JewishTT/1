@@ -137,10 +137,32 @@ class SourceConnector:
 
     The connector emits observations and stops. It never emits a mention, a candidate, a
     claim or an edge, and it holds no graph.
+
+    **WP-C T041: the connector now writes its evidence before it claims it.**
+
+    It previously built the ``observation.created`` event inline, carrying a
+    ``content_digest`` and no ``raw_ref``, and never touched an object store. Every
+    consumer of that event was unable to resolve it to bytes: the platform recorded
+    that something had been observed when it had only been claimed. With a ``gate``
+    injected, each page is ingested through the single observation gate and the event
+    returned is the gate's — which carries the raw reference the bytes were stored
+    under.
+
+    The gate is optional so this module stays importable and testable with no store and
+    no science layer. Without it the connector behaves exactly as it did, *including*
+    the defect, and :func:`events.evidence_store_guard.require_stored_evidence` will
+    refuse the result at publication. That is deliberate: a deployment that forgets to
+    wire the gate fails loudly instead of publishing unresolvable evidence.
     """
 
-    def __init__(self, executor: HttpSourceExecutor | None = None) -> None:
+    def __init__(
+        self,
+        executor: HttpSourceExecutor | None = None,
+        *,
+        gate: Any | None = None,
+    ) -> None:
         self.executor = executor or HttpSourceExecutor()
+        self.gate = gate
 
     def definition_for(self, source_id: str) -> SourceDefinition | None:
         definitions, _ = load_catalogue()
@@ -158,36 +180,84 @@ class SourceConnector:
             raise AcquisitionError("unknown_source", f"no definition for {task.source_id}")
         ceiling = page_count(definition.pagination)
         async for capture in self.executor.capture(definition, task.query):
-            event = {
+            event = await self._event_for(task, definition, capture, ceiling)
+            yield capture, event
+
+    async def _event_for(
+        self,
+        task: AcquisitionTask,
+        definition: SourceDefinition,
+        capture: CapturePage,
+        ceiling: int,
+    ) -> dict[str, Any]:
+        """The published event for one page, from the gate when one is wired.
+
+        The descriptive fields the connector has always supplied — page, ceiling,
+        query, parser, entity hints — are *merged onto* the gate's event rather than
+        replacing it. They describe the retrieval, not the evidence, and the gate
+        knows nothing about them. The merge keeps the gate's identity and raw
+        reference authoritative and treats everything the connector contributes as
+        annotation, which is what it is.
+        """
+        enrichment = {
+            "task_id": task.task_id,
+            "investigation_id": task.investigation_id,
+            "source_name": capture.source_name,
+            "category": definition.category,
+            "query": capture.query,
+            "page": capture.page,
+            "page_count": ceiling,
+            "url": capture.url,
+            "status": capture.status,
+            "content_type": capture.content_type,
+            "byte_length": capture.byte_length,
+            "retrieved_at": capture.retrieved_at,
+            "elapsed_s": round(capture.elapsed_s, 6),
+            "truncated": capture.truncated,
+            "parser": definition.parser,
+            "parser_is_identity": definition.parser_is_identity,
+            "applies_to": list(definition.applies_to),
+            "entity_hints": list(definition.entity_hints),
+            "contact": definition.contact,
+        }
+
+        if self.gate is None:
+            # No gate: the pre-WP-C shape, preserved so the module stays usable
+            # without a store. Publication is refused downstream by
+            # ``require_stored_evidence`` because there is no ``raw_ref``.
+            return {
                 "event_type": "observation.created",
                 "event_version": "1.0",
                 "event_id": observation_id(
                     task.source_id, task.query, capture.page, capture.content_digest
                 ),
-                "task_id": task.task_id,
                 "tenant_id": task.tenant_id,
-                "investigation_id": task.investigation_id,
                 "source_id": capture.source_id,
-                "source_name": capture.source_name,
-                "category": definition.category,
-                "query": capture.query,
-                "page": capture.page,
-                "page_count": ceiling,
-                "url": capture.url,
-                "status": capture.status,
-                "content_type": capture.content_type,
                 "content_digest": capture.content_digest,
-                "byte_length": capture.byte_length,
-                "retrieved_at": capture.retrieved_at,
-                "elapsed_s": round(capture.elapsed_s, 6),
-                "truncated": capture.truncated,
-                "parser": definition.parser,
-                "parser_is_identity": definition.parser_is_identity,
-                "applies_to": list(definition.applies_to),
-                "entity_hints": list(definition.entity_hints),
-                "contact": definition.contact,
+                **enrichment,
             }
-            yield capture, event
+
+        ingested = await self.gate.ingest(
+            body=capture.body,
+            uri=capture.url,
+            tenant_id=task.tenant_id,
+            investigation_id=task.investigation_id,
+            source_id=capture.source_id,
+            content_type=capture.content_type,
+            collector="source-connector",
+        )
+        return {
+            "event_type": "observation.created",
+            "event_version": "2.0",
+            "event_id": str(ingested.get("observation_id", "") or ""),
+            "observation_id": str(ingested.get("observation_id", "") or ""),
+            "tenant_id": task.tenant_id,
+            "source_id": capture.source_id,
+            "content_digest": capture.content_digest,
+            "raw_ref": str(ingested.get("raw_ref", "") or ""),
+            "lifecycle": str(ingested.get("status", "") or ""),
+            **enrichment,
+        }
 
     async def aclose(self) -> None:
         await self.executor.aclose()

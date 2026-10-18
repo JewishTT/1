@@ -279,6 +279,24 @@ def adapt_document(
         )
         mention_id = mint_mention_id(key)
 
+        # Spec 030 T059/T060. The span used to stop here: it went into the key, was hashed into
+        # ``mention_id``, and was then dropped. The only surviving trace was inside an
+        # irreversible digest, so a merge decided on this mention could not be shown to an
+        # analyst against the source. It is carried forward instead.
+        #
+        # ``unlocatable`` is a real state, not an error to paper over. ``extractors/lane.py``
+        # marks a mention unlocatable when its producing segment never declared a
+        # document-absolute offset, and guessing a number there would put provenance in the
+        # ground it is meant to establish.
+        if typed.span_resolved:
+            resolved_span: tuple[int, int] | None = (typed.offset, typed.end_offset)
+            resolved_semantics = "document_char"
+            resolved_reason = None
+        else:
+            resolved_span = None
+            resolved_semantics = "unlocated"
+            resolved_reason = typed.span_reason or "producing segment had no document-absolute offset"
+
         out.append(
             ResolutionMention(
                 mention_id=mention_id,
@@ -296,6 +314,10 @@ def adapt_document(
                 ontology_version=ONTOLOGY_VERSION,
                 normalization_version=NORMALIZATION_VERSION,
                 declared_type_refs=list(type_refs),
+                span=resolved_span,
+                segment_ref_for_span=segment_ref,
+                span_semantics=resolved_semantics,
+                span_reason=resolved_reason,
             )
         )
         canonical_by_mention[mention_id] = canonical

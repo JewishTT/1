@@ -28,6 +28,60 @@ class ParserLimitError(Exception):
     """Raised when an artifact exceeds parser limits and no quarantine sink is set."""
 
 
+class OffsetSemantics:
+    """What ``Segment.offset`` actually counts (spec 030 T058).
+
+    One integer field carried three incompatible meanings across the four extraction
+    adapters, and ``extractors/lane.py`` added it to character offsets without knowing
+    which it held. The measurements that forced this:
+
+    - ``parsers/plaintext.py:59``   emits ``offset=0``            (UNSET)
+    - ``parsers/registry.py:247``   emits ``offset=i`` from ``enumerate()``  (SEGMENT_INDEX)
+    - ``parsers/registry.py:268``   emits ``offset=i``                         (SEGMENT_INDEX)
+    - ``parsers/registry.py:302``   emits ``offset=len(segments)``             (SEGMENT_INDEX)
+    - ``parsers/registry.py:323+``  emit ``offset=0``                          (UNSET)
+    - ``parsers/html_full.py:83``    emits ``_locate(...)``                    (CHAR_IN_TEXT)
+    - ``parsers/structured.py:96``  emits ``_offset_of(...)`` + ``len(...encode("utf-8"))``
+                                                                          (BYTE_IN_TEXT)
+    - ``parsers/documents.py:189``  emits ``offset=0`` for the segment and
+                                    ``end_offset=len(value.encode("utf-8"))``  (UNSET / BYTE_LEN)
+
+    Adding a SEGMENT_INDEX or an UNSET to a character offset yields a plausible-looking
+    wrong number rather than an error, which is the specific failure mode the evidence-first
+    rule exists to prevent. The semantics are now declared and carried, so a caller can
+    refuse rather than fabricate (spec 030 contract 02 R2).
+    """
+
+    UNSET = "unset"
+    """The producer did not compute a position. Adding it is a no-op that hides the gap."""
+
+    SEGMENT_INDEX = "segment_index"
+    """Index of this segment within the producer's own segment list. Not a document position."""
+
+    CHAR_IN_TEXT = "char_in_text"
+    """Character index into the decoded text the producer was given."""
+
+    BYTE_IN_TEXT = "byte_in_text"
+    """Byte index into the encoded text the producer was given."""
+
+    DOCUMENT_CHAR = "document_char"
+    """Character index into the whole decoded artifact. The only semantics a document-wide
+    offset may be rebased onto."""
+
+    DOCUMENT_BYTE = "document_byte"
+    """Byte index into the whole raw artifact."""
+
+    REBASABLE = frozenset({DOCUMENT_CHAR, DOCUMENT_BYTE})
+    """Semantics that may legitimately be added to a segment-relative character offset.
+
+    Anything outside this set must not be added. ``Segment.rebase_to_document`` enforces it.
+    """
+
+    ALL = frozenset(
+        {UNSET, SEGMENT_INDEX, CHAR_IN_TEXT, BYTE_IN_TEXT, DOCUMENT_CHAR, DOCUMENT_BYTE}
+    )
+
+
 @dataclass
 class Segment:
     text: str
@@ -35,6 +89,32 @@ class Segment:
     lang_hint: str | None = None
     kind: str = "text"
     meta: dict[str, Any] = field(default_factory=dict)
+    offset_semantics: str = OffsetSemantics.UNSET
+    """Declared meaning of ``offset``. Defaults to UNSET so a producer that has not opted in
+    cannot be silently treated as document-absolute.
+
+    A consumer that needs a document-absolute position must check this rather than assume it.
+    ``offsets_known`` reports whether the position is usable at all.
+    """
+
+    @property
+    def offsets_known(self) -> bool:
+        """False when the producer never computed a position for this segment."""
+        return self.offset_semantics != OffsetSemantics.UNSET
+
+    def rebase_to_document(self, char_offset: int, end_char_offset: int | None = None) -> tuple[int | None, int | None]:
+        """Lift a segment-relative character offset to a document-relative one.
+
+        Returns ``(None, None)`` when this segment's position is unknown or is not a document
+        position. Callers must treat ``None`` as "position unresolved" and propagate it, not
+        coerce it to 0 -- a 0 offset is indistinguishable from a real position 0, which is
+        precisely how the defect stayed invisible.
+        """
+        if self.offset_semantics not in OffsetSemantics.REBASABLE:
+            return None, None
+        start = self.offset + char_offset
+        end = None if end_char_offset is None else self.offset + end_char_offset
+        return start, end
 
 
 @dataclass
@@ -244,7 +324,7 @@ class ParserRegistry:
         except Exception:  # noqa: BLE001 - parser isolation: one bad doc must not kill the pipeline
             return []
         return [
-            Segment(text=t, offset=i, kind="text") for i, (_, t) in enumerate(extractor.parts) if t
+            Segment(text=t, offset=i, kind="text", offset_semantics=OffsetSemantics.SEGMENT_INDEX) for i, (_, t) in enumerate(extractor.parts) if t
         ]
 
     def _parse_csv(self, body: bytes) -> list[Segment]:
@@ -270,6 +350,7 @@ class ParserRegistry:
                     offset=i,
                     kind="text",
                     meta=meta,
+                    offset_semantics=OffsetSemantics.SEGMENT_INDEX,
                 )
             )
         return segments
@@ -299,7 +380,7 @@ class ParserRegistry:
                     meta["title"] = title
                 if snippet:
                     segments.append(
-                        Segment(text=snippet, offset=len(segments), kind="text", meta=meta)
+                        Segment(text=snippet, offset=len(segments), kind="text", meta=meta, offset_semantics=OffsetSemantics.SEGMENT_INDEX)
                     )
         return segments if segments else self._parse_html(body)
 

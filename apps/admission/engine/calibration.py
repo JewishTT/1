@@ -44,6 +44,37 @@ class CalibrationProfile:
     # instead of minting a duplicate (ACCEPT_NEW).
     threshold_match: float = 0.8
 
+    @property
+    def is_calibrated(self) -> bool:
+        """Whether any threshold here may decide a merge on its own.
+
+        **WP-E T070.** This profile ships with ``version="UNCALIBRATED-v1"`` and
+        ``MediaProfile`` starts empty, so ``lookup`` falls back to these defaults for
+        every entity type nobody registered. The merge threshold among them —
+        ``0.8`` — is therefore a number with no derivation behind it, sitting in the
+        one place where being wrong silently fuses two different subjects and the
+        fusion becomes indistinguishable from a fact afterwards.
+
+        The distinction this property draws is not "is the version string pretty". It
+        is: *has anyone fitted this threshold against labelled pairs?* A profile
+        version that declares itself uncalibrated has not, regardless of how
+        plausible the numbers look.
+
+        ``"UNCALIBRATED"`` in either case means uncalibrated. Case-insensitivity is
+        deliberate: a profile that declares itself calibrated with different casing
+        should be a deliberate, reviewable act, not an accident of a string literal.
+        """
+        declared = str(self.version or "").strip().lower()
+        if not declared:
+            return False
+        return "uncalibrated" not in declared and "uncal" not in declared
+
+    def merge_bar(self) -> str:
+        """Why this profile may not decide a merge, in machine-readable form."""
+        if self.is_calibrated:
+            return ""
+        return f"calibration_undeclared:{self.version or 'unset'}"
+
 
 @dataclass
 class AdmissionInput:

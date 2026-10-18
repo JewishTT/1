@@ -94,6 +94,15 @@ def _load_projection_module(name: str) -> ModuleType:
 _mappings: ModuleType = _load_projection_module("mappings")
 _relevance: ModuleType = _load_projection_module("relevance")
 
+# The accelerated ranked core. Loaded opportunistically: `bm25s_backend` imports
+# bm25s inside a try/except and reports `available() == False` when the optional
+# dependency is missing, so a machine without bm25s gets the stdlib index and a
+# working search rather than an ImportError at import time.
+try:  # pragma: no cover - exercised by whichever core is installed
+    _bm25s_backend: ModuleType = _load_projection_module("bm25s_backend")
+except Exception:  # noqa: BLE001 - an unreadable/absent optional backend must not break search
+    _bm25s_backend = None
+
 #: The kinds the search projection can hold, from the projection's own mapping.
 #: A document of any other kind is unroutable and is refused rather than indexed
 #: under a name no index filter would match.
@@ -105,6 +114,27 @@ alias_name = _mappings.alias_name
 
 tokenize = _relevance.tokenize
 RankedInvertedIndex = _relevance.RankedInvertedIndex
+
+
+def default_ranked_index() -> Any:
+    """The best ranked index this environment can actually run.
+
+    `SearchProjectionStore` used to hardcode `RankedInvertedIndex()` here. That
+    made the bm25s core unreachable in production: `bm25s` was a declared
+    dependency, `BM25SRankedIndex` existed and had its own tests, and the only
+    way to reach it was to construct the store with an explicit `index=`. Every
+    real query went to the stdlib implementation regardless of what was
+    installed.
+
+    Preferring the accelerated core when it is genuinely usable is the point of
+    declaring it, and the fallback keeps the hermetic path working when bm25s is
+    absent.
+    """
+    if _bm25s_backend is not None:
+        factory = getattr(_bm25s_backend, "BM25SRankedIndex", None)
+        if factory is not None and factory.available():
+            return factory()
+    return RankedInvertedIndex()
 
 #: Result ceiling for one request. The planner slices to the caller's ``limit``
 #: after fusing, so this only bounds the work a single query can ask for.
@@ -320,7 +350,7 @@ class SearchProjectionStore:
 
     def __post_init__(self) -> None:
         if self.index is None:
-            self.index = RankedInvertedIndex()
+            self.index = default_ranked_index()
 
     def put(
         self,

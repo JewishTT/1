@@ -8,6 +8,7 @@ import { ForensicsPanel } from "./panels/ForensicsPanel";
 import { OperationsPanel } from "./panels/OperationsPanel";
 import { PhishingPanel } from "./panels/PhishingPanel";
 import { SocialPanel } from "./panels/SocialPanel";
+import { GhostlineCanvas } from "../ghostline/GhostlineCanvas";
 import type { CiPanel } from "./types";
 import "./ci.css";
 
@@ -35,13 +36,17 @@ const PANELS: ReadonlyArray<{ value: CiPanel; label: string; icon: IconName }> =
   { value: "detection", label: "Detection", icon: "view-findings" },
   { value: "counterintel", label: "Counterintel", icon: "view-objects" },
   { value: "social", label: "Social reaction", icon: "view-graph" },
+  // GhostLine (031): voice-borne social engineering. Last on the bar because it is
+  // the one panel whose output is a call placed to a person, and an operator should
+  // have read the phishing and detection panels before reaching it.
+  { value: "ghostline", label: "GhostLine", icon: "dot" },
 ];
 
 export function CICanvas({ initialPanel = "operations" }: { initialPanel?: CiPanel }) {
   const [panel, setPanel] = useState<CiPanel>(initialPanel);
 
   return (
-    <div className="ui-cicanvas" data-testid="ci-canvas" data-panel={panel}>
+    <div className="ui-cicanvas ui-holo-field" data-testid="ci-canvas" data-panel={panel}>
       <div className="ui-cicanvas-head">
         <Tabs
           items={PANELS}
@@ -61,6 +66,7 @@ export function CICanvas({ initialPanel = "operations" }: { initialPanel?: CiPan
         {panel === "detection" ? <DetectionPlaceholder /> : null}
         {panel === "counterintel" ? <CounterintelPanel /> : null}
         {panel === "social" ? <SocialPanel /> : null}
+        {panel === "ghostline" ? <GhostlineCanvas /> : null}
       </div>
     </div>
   );

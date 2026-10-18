@@ -16,6 +16,10 @@ async def run_cursor_materialization(*, tenant_id: str, entity_id: str, run_id: 
     from network.commoncrawl import CommonCrawlClient, crawl_badge
     from network.range_pull import HttpByteTransport, pull_warc_range
 
+    # Deferred with the rest: importing the reducer at module scope would make this
+    # module depend on the context engine's package layout, and this module is
+    # loaded by the Temporal worker in deployments that never construct a loop.
+    from context_engine.invariant_reducer import InvariantReducer
     from db.entity_stream import SqlEntityStreamRepository
     from db.materialization_cursor import SqlMaterializationCursorRepository
     from db.session import create_tables, make_session_factory
@@ -101,13 +105,51 @@ async def run_cursor_materialization(*, tenant_id: str, entity_id: str, run_id: 
             raise RuntimeError(f"Common Crawl partitions produced no captures: {counts}")
         publication_repo = SqlTemporalMaterializationRepository(session)
         previous = await publication_repo.current(tenant_id=tenant_id, entity_id=entity_id)
-        generation = int((previous or {}).get("projection_generation", 0)) + 1
+
+        # **WP-D T060: the revision is gated on the accumulated stream, not on the
+        # sweep having run.**
+        #
+        # This line used to read
+        #
+        #     generation = int((previous or {}).get("projection_generation", 0)) + 1
+        #
+        # which mints a new revision on every run whether or not anything changed.
+        # A re-run over an unchanged stream is not new knowledge, and publishing a
+        # new generation for it makes every consumer's history longer than the
+        # evidence justifies and makes "did anything move?" unanswerable by
+        # inspecting revisions.
+        #
+        # The comparison is over a digest of the whole accumulated stream, so the
+        # question asked is the right one: *does the knowledge state differ from what
+        # we last published?* Not *did this function get called again?*
+        #
+        # `InvariantReducer` already implements exactly this discipline and has 33
+        # tests; it had no caller. It is used here for its fold and its
+        # revision numbering, which are the same shape `from_entity_stream` produces
+        # so the digest below is comparable to the one that was published.
+        reducer = InvariantReducer(tenant_id=tenant_id, type_label="Domain")
+        reduced = reducer.reduce(records)
+        state_digest = reduced.invariant.integrity_digest
+        previous_digest = str((previous or {}).get("state_digest", "") or "")
+
+        if previous is not None and previous_digest and previous_digest == state_digest:
+            # Nothing moved. Republish nothing, renumber nothing, and say so.
+            generation = int((previous or {}).get("projection_generation", 0))
+        else:
+            generation = int((previous or {}).get("projection_generation", 0)) + 1
+
         history = materialize_history(
             records, tenant_id=tenant_id, entity_id=entity_id, projection_generation=generation
         )
-        await publication_repo.publish(history, run_id=run_id)
+        if previous is None or not previous_digest or previous_digest != state_digest:
+            await publication_repo.publish(history, run_id=run_id)
         persisted = await publication_repo.current(tenant_id=tenant_id, entity_id=entity_id)
         published_payload = persisted or history.publication.to_dict()
+        # The digest travels with the publication so the next sweep can answer
+        # "did anything move?" without re-deriving it. Without this the gate could
+        # only ever fire on its first comparison.
+        if published_payload is not None:
+            published_payload["state_digest"] = state_digest
         invariant = from_entity_stream(
             records, tenant_id=tenant_id, type_label="Domain", revision=generation
         )

@@ -81,11 +81,65 @@ class TestAcceptExisting:
         assert result.is_merge is True
         assert result.target_entity_id == "E-existing-1"
 
-    def test_high_scoring_match_merges_without_confirmation(self):
+    def test_a_high_score_alone_does_not_merge_without_calibration(self):
+        """**WP-E T070: this test's expectation is inverted, deliberately.**
+
+        It read ``match_score=0.95 → ACCEPT_EXISTING`` with no confirmation. That
+        cleared a bar of 0.8 out of a ``MediaProfile`` that starts empty, so the
+        profile in force was the default one whose own ``version`` field reads
+        ``"UNCALIBRATED-v1"``. The threshold was a number nobody fitted, applied in the
+        one place where being wrong fuses two subjects irreversibly.
+
+        0.95 is still a high score. What changed is that a score cannot *decide* on its
+        own while the profile declares it has no meaning. The candidate is still
+        admitted — as a new entity, carrying ``match_score`` and ``matched_entity_id``
+        for a reviewer — so nothing is lost, it is simply not fused silently.
+
+        ``test_a_calibrated_profile_restores_the_bar`` covers the other side: declare a
+        calibration and the threshold works again.
+        """
         result = decide(corroboration_score=0.8, matched_entity_id="E-1", match_score=0.95)
-        assert result.decision is AdmitDecision.ACCEPT_EXISTING
+        assert result.decision is AdmitDecision.ACCEPT_NEW
+        assert result.is_merge is False
+        assert result.target_entity_id is None
+        # The evidence for the merge is preserved on the decision, not discarded with
+        # the merge. A reviewer needs to see what was proposed.
         assert result.matched_entity_id == "E-1"
         assert result.match_score == 0.95
+        assert any("calibration_undeclared" in code for code in result.reason_codes), (
+            f"the withheld merge must name itself: {result.reason_codes}"
+        )
+
+    def test_a_calibrated_profile_restores_the_bar(self):
+        """Declaring a calibration is what re-enables the threshold, and nothing else."""
+        profiles = MediaProfile()
+        profiles.register(
+            CalibrationProfile(
+                entity_type="ipv4", threshold_match=0.8, version="ipv4-linked-v3"
+            )
+        )
+        result = AdmissionEngine(profiles).decide(
+            AdmissionInput(
+                candidate_id="c-cal",
+                entity_type="ipv4",
+                structural_score=0.2,
+                corroboration_score=0.8,
+                matched_entity_id="E-cal",
+                match_score=0.93,
+            )
+        )
+        assert result.decision is AdmitDecision.ACCEPT_EXISTING
+        assert result.is_merge is True
+        assert result.target_entity_id == "E-cal"
+        assert result.reason_codes == ["accept_existing_match"]
+
+    def test_a_confirmed_match_merges_even_with_no_calibration(self):
+        """A human looked at it. No threshold may overrule a reviewed decision."""
+        result = decide(
+            corroboration_score=0.8, matched_entity_id="E-1", match_score=0.1, match_confirmed=True
+        )
+        assert result.decision is AdmitDecision.ACCEPT_EXISTING
+        assert result.is_merge is True
 
     def test_low_scoring_unconfirmed_match_does_not_merge(self):
         result = decide(corroboration_score=0.8, matched_entity_id="E-1", match_score=0.4)
@@ -261,16 +315,33 @@ class TestIntakeQuarantine:
 
 
 class TestIntakeResolution:
-    def test_resolver_match_produces_accept_existing(self):
+    def test_a_resolver_score_alone_does_not_merge(self):
+        """**WP-E T070: an uncalibrated resolver score routes to review, not to merge.**
+
+        ``WarcIntake`` reaches the admission lane with no resolver-confirmed match, so
+        the merge decision rests entirely on ``threshold_match`` — which, with an empty
+        ``MediaProfile``, is 0.8 out of a profile that declares itself uncalibrated.
+        A resolver returning ``Match(score=0.93)`` is evidence *for* a merge, not a
+        decision to make one.
+
+        The candidate is still admitted as a new entity and still carries the
+        resolver's target for a reviewer. What it is not is fused silently on a
+        threshold nobody fitted.
+        """
         result = WarcIntake().run(
             [Doc(f"d{i}", f"https://h{i}.example/p") for i in range(2)],
             [claim("d0"), claim("d1")],
             resolver=lambda c: Match(entity_id="E-77", score=0.93),
         )
         decision = result.decisions[0]
-        assert decision.decision is AdmitDecision.ACCEPT_EXISTING
-        assert decision.target_entity_id == "E-77"
-        assert result.accepted_entities == ["E-77"]
+        assert decision.decision is AdmitDecision.ACCEPT_NEW
+        assert decision.is_merge is False
+        assert decision.matched_entity_id == "E-77", "the reviewer's evidence must survive"
+        assert any("calibration_undeclared" in code for code in decision.reason_codes)
+        assert result.accepted_entities != ["E-77"], (
+            "an uncalibrated score must not put the candidate into an existing entity's "
+            "accepted set"
+        )
 
     def test_resolver_returning_none_leaves_the_candidate_new(self):
         result = WarcIntake().run(

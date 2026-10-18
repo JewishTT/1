@@ -315,7 +315,13 @@ async def test_an_approved_action_is_recorded_as_an_attempt():
         ],
     )
     first = await lp.tick(c)
-    action_id = first.actions_proposed[0]
+    # Spec 030 FR-095. This used to read ``first.actions_proposed[0]``, which only worked
+    # because the loop put an *unapproved* action in that list as well as in
+    # ``awaiting_approval``. That was the defect, not the contract: ``actions_proposed`` is
+    # what a scheduler acts on, so listing a gated action there made the gate advisory. The
+    # id to approve is now read from the set that exists for that purpose.
+    assert first.awaiting_approval, "the proposer offered nothing to approve"
+    action_id = first.awaiting_approval[0]
     await lp.tick(c, approved_action_ids=[action_id])
     memory = await lp.engine.store.memory_for((((((await lp.engine.open_obligations(c.context_id))))))[0].obligation_id)
     assert any(entry.outcome == "approved" for entry in memory)

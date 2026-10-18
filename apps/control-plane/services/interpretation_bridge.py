@@ -43,6 +43,8 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Any
 
+from domain.observation_identity import ObservationIdentity
+
 from services.document_adapter import NORMALIZATION_VERSION, ONTOLOGY_VERSION
 
 log = logging.getLogger(__name__)
@@ -590,16 +592,35 @@ class InterpretationBridge:
 
 
 def observation_id_for(digest: str, tenant_id: str) -> str:
-    """A tenant-scoped observation id.
+    """A tenant-scoped observation id, delegated to the canonical derivation.
 
-    ``observations_pkey`` is on ``observation_id`` alone while the platform is multi-tenant,
-    so a content-addressed id derived from the body alone collides across tenants: the same
-    public page fetched for tenant A blocks tenant B with a primary-key violation, and the
-    existence probe -- which filters by tenant -- never finds the row to recognise it as a
-    retry. Including the tenant makes the id agree with the key that constrains it.
+    **WP-C T043.** This used to cut the address from ``f"{tenant_id}|{digest}"`` —
+    tenant and digest only. That is one of the four shadow derivations the audit
+    named, and it differs from
+    :mod:`domain.observation_identity` in a way that matters:
+
+    The canonical material is ``identity_schema | tenant | capture | locator |
+    record_digest``. Dropping the capture and the locator collapses two *distinct*
+    records that happen to carry identical bytes into one observation. Its own
+    docstring in ``observation_identity.py`` says so: "record A in stream X and
+    record A in stream Y can carry identical JSON and still be two different observed
+    occurrences".
+
+    The canonical material carries ``tenant_id`` too, so the primary-key collision
+    this function existed to prevent still cannot happen.
+
+    The capture and locator are synthesised here because this path has a body digest
+    and nothing else. That is an honest gap rather than a silent one: ``"capture"``
+    names the whole-record case, which is what this writer actually has. A future
+    record-level caller must pass its real locator (T043 follow-up).
     """
-    material = f"{tenant_id}|{digest}"
-    return "OBS-" + hashlib.sha256(material.encode("utf-8")).hexdigest()[:32]
+    identity = ObservationIdentity.for_record(
+        tenant_id=tenant_id,
+        capture_id="CAP-" + digest,
+        locator="capture",
+        record_digest=digest,
+    )
+    return identity.observation_id
 
 
 def referent_id_for(kind: str, canonical: str, *, tenant_id: str, scope_id: str) -> str:

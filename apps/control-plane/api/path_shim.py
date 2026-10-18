@@ -19,11 +19,21 @@ that is NOT guaranteed, and two member dirs collide on first-party names:
     requires the *parent* ``apps/`` dir on sys.path. Without it ``api.routes.
     entities`` cannot import and the app does not boot at all.
 
+``specops``
+    ``apps/specops`` is a plain source directory that is NOT a uv workspace
+    member, so nothing installs a ``specops`` distribution and no ``.pth`` claims
+    it. It resolves through the ``apps/`` entry below (the package directory
+    *is* ``apps/specops``, so it is its PARENT that belongs on the path). Every
+    ``api/routes/specops_*.py`` guards its donor import with ``except Exception``
+    and degrades to a 503, so if that entry ever went missing the department
+    would not fail loudly -- it would turn into six 503s that read as "the donor
+    is down" rather than "the package is not importable".
+
 This shim therefore re-orders sys.path deterministically, front to back:
-``apps/`` (namespace packages), ``apps/science`` (beats ``apps/projection`` for
-``tda``), ``apps/shared`` (``domain`` invariants). Importing it before the
-cross-app imports is what makes those imports resolve the same way under a bare
-interpreter, under pytest and under uvicorn.
+``apps/`` (namespace packages + ``specops``), ``apps/science`` (beats
+``apps/projection`` for ``tda``), ``apps/shared`` (``domain`` invariants).
+Importing it before the cross-app imports is what makes those imports resolve
+the same way under a bare interpreter, under pytest and under uvicorn.
 
 It lives inside the ``api`` package, not at the app root, on purpose: a
 top-level ``path_shim`` module would collide with ``apps/projection/path_shim``

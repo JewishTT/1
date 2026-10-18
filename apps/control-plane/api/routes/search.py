@@ -36,7 +36,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from api.auth import TenantContext, resolve_tenant
-from services.query_planner import AllBackendsFailed, QueryFilters, QueryPlanner
+from services.query_planner import (
+    SCORE_WEIGHTED,
+    AllBackendsFailed,
+    QueryFilters,
+    QueryPlanner,
+)
 from services.search_backends import (
     MAX_LIMIT,
     build_query_planner,
@@ -55,6 +60,7 @@ class SearchRequest(BaseModel):
     source_ids: list[str] = Field(default_factory=list)
     investigation_id: str | None = None
     limit: int = Field(default=20, ge=1, le=MAX_LIMIT)
+    fusion: str = SCORE_WEIGHTED
 
 
 def _filters(
@@ -92,8 +98,13 @@ async def _answer(
     tenant_id: str,
     filters: QueryFilters,
     limit: int,
+    fusion: str = SCORE_WEIGHTED,
 ) -> Any:
-    plan = planner.plan(query, filters=filters)
+    try:
+        plan = planner.plan(query, filters=filters, fusion=fusion)
+    except ValueError as exc:
+        # An unknown strategy is the caller's mistake, not a backend outage.
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     try:
         results = await planner.execute(plan, limit=limit)
     except AllBackendsFailed as exc:
@@ -128,6 +139,7 @@ async def search(
     temporal_from: str | None = None,
     temporal_to: str | None = None,
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = 20,
+    fusion: Annotated[str, Query(description="score-weighted | rank-fusion")] = SCORE_WEIGHTED,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
 ) -> Any:
     if not q:
@@ -145,6 +157,7 @@ async def search(
         tenant_id=ctx.tenant_id,
         filters=filters,
         limit=limit,
+        fusion=fusion,
     )
 
 
@@ -166,4 +179,5 @@ async def search_body(
         tenant_id=ctx.tenant_id,
         filters=filters,
         limit=body.limit,
+        fusion=body.fusion,
     )

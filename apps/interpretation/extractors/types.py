@@ -58,6 +58,31 @@ class TypedMention:
     evidence: dict[str, Any] = field(default_factory=dict)
     dictionary: str | None = None
     lang_pack: str | None = None
+    span_semantics: str = ""
+    """What ``offset``/``end_offset`` count (spec 030 contract 02 R2).
+
+    ``document_char`` -- a real document-relative character position.
+    ``unresolved``    -- the producing segment never declared a document-absolute position, so
+                        no honest number exists. ``offset``/``end_offset`` are ``-1`` and
+                        ``span_reason`` says why. Downstream must render this mention as
+                        ungrounded rather than substituting 0.
+
+    Left empty here and derived in ``__post_init__``: a mention carrying a negative offset
+    must never be able to claim it is resolved.
+    """
+
+    span_reason: str | None = None
+    """Why the position is unresolved. ``None`` when it is resolved."""
+
+    def __post_init__(self) -> None:
+        if not self.span_semantics:
+            self.span_semantics = "unresolved" if self.offset < 0 else "document_char"
+            if self.span_semantics == "unresolved" and self.span_reason is None:
+                self.span_reason = "negative offset without a declared position"
+
+    @property
+    def span_resolved(self) -> bool:
+        return self.span_semantics != "unresolved"
 
     def to_dict(self) -> dict[str, Any]:
         """Deterministic dict form: keys sorted, sub-models flattened."""
@@ -70,6 +95,8 @@ class TypedMention:
             "lang": self.lang,
             "source": self.source,
             "confidence": self.confidence,
+            "span_semantics": self.span_semantics,
+            "span_reason": self.span_reason,
             "evidence": _sorted_dict(self.evidence if self.evidence else {}),
         }
         if self.dictionary is not None:
@@ -125,6 +152,4 @@ class ExtractionResult:
 
 def _sorted_dict(data: dict[str, Any]) -> dict[str, Any]:
     """Deterministic nested dict sort: sorted keys, no duplicate values."""
-    return {
-        k: (_sorted_dict(v) if isinstance(v, dict) else v) for k, v in sorted(data.items())
-    }
+    return {k: (_sorted_dict(v) if isinstance(v, dict) else v) for k, v in sorted(data.items())}

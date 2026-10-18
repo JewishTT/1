@@ -58,6 +58,7 @@ from typing import Any, Protocol
 
 #: The lane names come from the shared topic catalog rather than being spelled
 #: here, so a rename cannot leave this module publishing to a topic nobody reads.
+from events.evidence_store_guard import UnstoredEvidenceRefusal, require_stored_evidence
 from events.topics import TOPIC_DLQ, TOPIC_QUARANTINE, topic_for
 from sources.connector import AcquisitionTask, SourceConnector
 from sources.executor import AcquisitionError
@@ -239,9 +240,17 @@ class AcquisitionWorker:
         completed: set[str] | None = None,
         runtimes: Mapping[str, Any] | None = None,
         config_dir: str | None = None,
+        store: Any | None = None,
     ) -> None:
         self.connector = connector or SourceConnector()
         self.sink = sink
+        #: Object store the producer is expected to have written through. Used only
+        #: to resolve a raw reference, never to write: the gate owns writes.
+        self.store = store
+        #: Observations refused for naming no evidence, in order. Counted rather than
+        #: dropped, so "zero yield" is distinguishable from "yield we refused to
+        #: publish" -- two very different facts about the platform's health.
+        self.unstored_observations: list[UnstoredEvidenceRefusal] = []
         #: Called as ``publish(topic, envelope, key=...)`` for each observation.
         #: Injectable so the worker can be driven without a broker.
         self.publish = publish
@@ -309,8 +318,26 @@ class AcquisitionWorker:
         failures: list[Failure] = []
         try:
             async for artifact in runtime.acquire(payload):
-                observation_id = str(getattr(artifact, "observation_id", "") or "")
-                if not observation_id:
+                # The artifact's observation id. Previously read as
+                # ``getattr(artifact, "observation_id", "") or ""``, and because
+                # ``AcquisitionArtifact`` has no such field the value was *always*
+                # empty, so every artifact a runtime produced hit the ``continue``
+                # below and was discarded with no counter. A runtime that worked
+                # perfectly reported zero yield, indistinguishable from a runtime
+                # that failed silently. The id is now derived from the digest the
+                # artifact actually carries.
+                digest = str(getattr(artifact, "content_hash", "") or "").strip()
+                observation_id = digest or str(getattr(artifact, "task_id", "") or "")
+                if not digest:
+                    # No content hash means no identity and no evidence reference.
+                    # Counted and routed, not dropped: this is a producer defect and
+                    # it must be visible as one.
+                    self.unstored_observations.append(
+                        UnstoredEvidenceRefusal(
+                            "observation_content_digest_missing",
+                            "runtime artifact carries no content hash",
+                        )
+                    )
                     continue
                 if observation_id in self.seen:
                     duplicates.append(observation_id)
@@ -323,9 +350,13 @@ class AcquisitionWorker:
                     "task_id": task.task_id,
                     "runtime_ref": task.runtime_ref,
                     "uri": str(getattr(artifact, "uri", "") or ""),
-                    "content_hash": str(getattr(artifact, "content_hash", "") or ""),
+                    "content_hash": digest,
+                    # Absent today. This is precisely the gap ``require_stored_evidence``
+                    # closes: the runtime path can name its bytes but not an address
+                    # for them, so the refusal fires until the runtime is routed
+                    # through the gate (WP-C T042).
                 }
-                self._publish_observation(observation)
+                await self._publish_observation(observation)
                 observations.append(observation)
         except Exception as exc:  # noqa: BLE001 - a runtime failure is a source failure
             failures.append(
@@ -418,7 +449,7 @@ class AcquisitionWorker:
                     duplicates.append(observation_id)
                     continue
 
-                self._publish_observation(event)
+                await self._publish_observation(event)
                 self.seen.add(observation_id)
                 observations.append(event)
         except AcquisitionError as exc:
@@ -439,15 +470,35 @@ class AcquisitionWorker:
             duplicates=tuple(duplicates),
         )
 
-    def _publish_observation(self, event: dict[str, Any]) -> None:
-        """Publish the connector's event verbatim.
+    async def _publish_observation(self, event: dict[str, Any]) -> None:
+        """Publish an observation event, or refuse it if it names no evidence.
 
-        The shape is the connector's, not this module's. If a field is missing
-        here it is missing for every other producer of `observation.created`
-        too, which is the point.
+        The refusal is the point. This worker previously published whatever the
+        connector handed it, verbatim and unchecked, and one producer that fed it
+        built the event without a ``raw_ref`` and without storing anything -- so the
+        platform published observations no consumer could resolve to bytes. Checking
+        here rather than at each producer means the next producer, or the next donor
+        adapter, inherits the check instead of the hole.
         """
         if self.publish is None:
             return
+
+        try:
+            await require_stored_evidence(event, store=getattr(self, "store", None))
+        except UnstoredEvidenceRefusal as refusal:
+            # Counted and routed, never dropped. A refusal that disappears is the
+            # same defect as a publication that should not have happened.
+            self.unstored_observations.append(refusal)
+            self._route(
+                classify_error(
+                    AcquisitionError(refusal.code, str(refusal.detail)),
+                    source_id=str(event.get("source_id", "") or ""),
+                    task_id=str(event.get("task_id", "") or ""),
+                ),
+                {},
+            )
+            return
+
         self.publish(
             topic_for(OBSERVATION_EVENT_TYPE),
             event,

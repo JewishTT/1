@@ -46,6 +46,7 @@ merge the two occurrences §34 separates.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from typing import Final
 
@@ -214,6 +215,58 @@ def event_id_for(
             "producer": producer,
             "producer_version": producer_version,
             "lifecycle": lifecycle,
+        }
+    )
+    return EVENT_PREFIX + digest128(material)
+
+
+def derive_event_id(
+    *,
+    event_type: str,
+    event_version: str,
+    producer: str,
+    producer_version: str,
+    payload: bytes,
+    observation_id: str = "",
+    entity_id: str = "",
+    correlation_id: str = "",
+) -> str:
+    """The default event address, derived from the event itself. §160, §11, §12.
+
+    **WP-C T044.** ``build_envelope`` previously defaulted ``event_id`` to
+    ``str(uuid4())``, and a contract test asserted that two builds of the same
+    envelope yield *different* ids — pinning the defect rather than the property.
+    A random default means redelivery is a new logical event for every producer that
+    does not override it, which is the opposite of what the consumer dedup on
+    ``event_id`` assumes it is buying.
+
+    The material is the event's own content: what it is, who produced it, at what
+    version, what it is about, and what it carries. A clock is deliberately absent —
+    replaying an unchanged event must reproduce the address even though
+    ``produced_at`` will differ, and putting the clock in would break exactly that.
+
+    ``subject_kind`` is explicit rather than inferred from which id happens to be
+    non-empty. Two events that differ only in *which* id they carry must not collide,
+    and a rule that silently treats "no observation id" and "no entity id" as the
+    same case is how that happens.
+    """
+    if observation_id:
+        subject_kind, subject = "observation", observation_id
+    elif entity_id:
+        subject_kind, subject = "entity", entity_id
+    elif correlation_id:
+        subject_kind, subject = "correlation", correlation_id
+    else:
+        subject_kind, subject = "payload_only", ""
+    material = canonical_material(
+        {
+            "event_type": event_type,
+            "event_version": event_version,
+            "producer": producer,
+            "producer_version": producer_version,
+            "subject_kind": subject_kind,
+            "subject": subject,
+            "payload_sha256": hashlib.sha256(payload or b"").hexdigest(),
         }
     )
     return EVENT_PREFIX + digest128(material)

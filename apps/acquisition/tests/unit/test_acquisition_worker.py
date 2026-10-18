@@ -37,7 +37,13 @@ pytestmark = pytest.mark.unit
 
 #: Fields whose value is a property of *this* fetch rather than of the shape.
 #: Two honest fetches of identical bytes must differ here and nowhere else.
-PER_FETCH_FIELDS = frozenset({"retrieved_at", "elapsed_s"})
+#:
+#: ``lifecycle`` joined this set under WP-C. It is the gate's classification of this
+#: fetch against what was already stored — ``created`` the first time, ``duplicate``
+#: after — so it is per-fetch by construction, not a per-shape property. Excluding it
+#: is correct; *silently* excluding it would not be, which is why the set is asserted
+#: explicitly rather than skipped.
+PER_FETCH_FIELDS = frozenset({"retrieved_at", "elapsed_s", "lifecycle"})
 
 
 
@@ -117,14 +123,27 @@ class Collector(SourceConnector):
     Only `definition_for` is overridden — the catalogue is not a test fixture.
     `collect` itself is the production method, so the event shape the worker
     publishes is the connector's own and not a copy written here.
+
+    **WP-C T041:** a gate is injected, because a deployment without one is now
+    refused at publication. Before this change the fixture ran gate-less and the
+    worker published events carrying no ``raw_ref`` — which is the defect the audit
+    found, reproduced here as a passing test. A fixture that only passes because it
+    omits the component under test is worse than no fixture.
     """
 
     def __init__(self, definition: SourceDefinition, transport) -> None:
+        from events.content_router import ContentRouter
+        from events.observation_gate import ObservationGate
         from sources.executor import HttpSourceExecutor
+        from storage.memory import MemoryObjectStore
 
         self.test_definition = definition
         self.transport = transport
-        super().__init__(executor=HttpSourceExecutor(client=transport))
+        self.store = MemoryObjectStore()
+        super().__init__(
+            executor=HttpSourceExecutor(client=transport),
+            gate=ObservationGate(store=self.store, router=ContentRouter()),
+        )
 
     def definition_for(self, source_id: str) -> SourceDefinition | None:
         if source_id == self.test_definition.source_id:
@@ -218,7 +237,7 @@ class TestObservationShapeIsTheConnectors:
         await worker.handle(envelope_for(t))
 
         # The connector is asked again, directly, for what it would emit alone.
-        direct = SourceConnector(executor=worker.connector.executor)
+        direct = SourceConnector(executor=worker.connector.executor, gate=worker.connector.gate)
         direct.definition_for = worker.connector.definition_for  # type: ignore[method-assign]
         expected = [event async for _capture, event in direct.collect(t)]
 
@@ -244,7 +263,7 @@ class TestObservationShapeIsTheConnectors:
         """The identity that makes replay idempotent does not move with the clock."""
         worker, _published, _sink, _t = make_worker([(200, b"body")])
         t = task()
-        direct = SourceConnector(executor=worker.connector.executor)
+        direct = SourceConnector(executor=worker.connector.executor, gate=worker.connector.gate)
         direct.definition_for = worker.connector.definition_for  # type: ignore[method-assign]
         first = [e async for _c, e in direct.collect(t)]
         second = [e async for _c, e in direct.collect(t)]
@@ -500,11 +519,38 @@ class TestIdempotencyUnderReplay:
         assert len(published) == 1
 
     async def test_a_different_query_is_a_different_observation(self) -> None:
-        """Idempotency must not collapse two genuinely different collections."""
+        """Two collections of identical bytes are one observation, not two.
+
+        **This test's expectation changed under WP-C and the change is intentional.**
+
+        Before WP-C the connector cut its observation id from
+        ``(source_id, query, page, content_digest)``, so two different queries over
+        the same bytes produced two ids — two observations of one payload. That
+        contradicted the canonical identity in ``domain/observation_identity.py``,
+        whose documented rule is that two fetches returning identical bytes are *one
+        payload, two publications*.
+
+        The audit named the connector's derivation as one of four shadow schemes that
+        disagree with the canonical one. Routing the connector through the gate means
+        the canonical rule now governs, so identical bytes yield identical ids and the
+        worker's replay set suppresses the second.
+
+        What is **not** yet true: the two acquisitions should still be distinguishable
+        at the task level — query "acme" and query "globex" are two different pieces of
+        investigative work over one piece of evidence. The worker currently dedups on
+        observation identity, which collapses those. Recorded as open task T053 rather
+        than asserted here, because claiming two publications would be false until the
+        worker separates acquisition identity from evidence identity.
+        """
         worker, published, _sink, _t = make_worker([(200, b"bytes")])
         await worker.handle(envelope_for(task(query="acme")))
         await worker.handle(envelope_for(task(query="globex")))
-        assert len(published) == 2
+
+        assert len(published) == 1, (
+            "identical bytes are one observation; the second acquisition must be "
+            "distinguished at the task level, not by minting a second observation id"
+        )
+        assert published[0][1]["content_digest"]
 
     async def test_a_failed_request_stays_replayable(self) -> None:
         """Constitution: rejected work is never auto-deleted, so it can be re-run."""

@@ -24,6 +24,11 @@ dependencies = [
     "pyahocorasick>=2.1",
     "charset-normalizer>=3.3",
     "pypdf>=4.3",
+    # Docling layout/model serialisation. `docling-core` (not `docling`) on purpose: it is the
+    # pure-core schema/serialisation layer with no torch pull-in, which is what lets the
+    # document operator share a contract with the interpretation stack without dragging a
+    # multi-GB model runtime into every install.
+    "docling-core>=2.101,<3",
     "python-docx>=1.1",
     "openpyxl>=3.1",
     "pillow>=10.4",

@@ -80,9 +80,29 @@ def extract_deterministic(
         if seg.kind != "text":
             continue
         for m in extractors.extract(seg.text, lang=seg.lang_hint):
-            m.offset += seg.offset
-            if m.end_offset:
-                m.end_offset += seg.offset
+            # Rebase the mention's segment-relative character offset onto the document.
+            #
+            # This line used to be ``m.offset += seg.offset``. That was wrong three ways and
+            # none of them raised: ``Segment.offset`` is SEGMENT_INDEX for the multipart, CSV
+            # and feed producers, 0 (unset) for plaintext, JSON and documents, CHAR_IN_TEXT
+            # for html_full and BYTE_IN_TEXT for structured. Adding any of those to a
+            # character offset yields a number that looks like a position and points nowhere.
+            # ``rebase_to_document`` now returns ``(None, None)`` unless the segment declared
+            # a document-absolute position, and the mention is marked unresolved rather than
+            # given a fabricated offset.
+            start, end = seg.rebase_to_document(m.offset, m.end_offset or None)
+            if start is None:
+                m.offset = -1
+                m.end_offset = -1
+                m.span_semantics = "unresolved"
+                m.span_reason = (
+                    f"segment offset semantics {seg.offset_semantics!r} are not document-absolute"
+                )
+            else:
+                m.offset = start
+                m.end_offset = -1 if end is None else end
+                m.span_semantics = "document_char"
+                m.span_reason = None
             merged.mentions.append(m)
 
     mentions = normalize_pass(merged.mentions, structured=structured_seed)

@@ -41,7 +41,11 @@ from context_engine.engine import (
     SatisfactionInput,
     TriggerKind,
 )
-from context_engine.obligations import KnowledgeType, SaturationState
+from context_engine.obligations import (
+    KnowledgeType,
+    ResearchObligation,
+    SaturationState,
+)
 
 
 class LoopStatus(enum.StrEnum):
@@ -283,6 +287,15 @@ class CognitiveLoop:
         #: The last pass's report, so a caller can inspect what the fabric concluded
         #: without re-running it. Not persisted here; the durable runner does that.
         self.last_fabric_report: Any | None = None
+        #: The last pass's saturation verdict, already translated into the engine's
+        #: vocabulary. Reset at the top of every tick: a stale verdict from a previous
+        #: pass would decide this pass's obligations, and a loop that consults its own
+        #: memory rather than the current evidence is precisely the failure mode this
+        #: field exists to prevent.
+        self._fabric_saturation: SaturationState | None = None
+        #: obligation id -> the basis it was re-evaluated on, so the stop reason can
+        #: report what was actually measured rather than a summary it invented.
+        self._evaluated_bases: dict[str, SaturationState] = {}
 
     # -- the tick ------------------------------------------------------------
 
@@ -299,6 +312,9 @@ class CognitiveLoop:
     ) -> LoopStep:
         """One pass. Returns everything it did, and why it stopped."""
         await self.engine.store.put_context(context)
+        # Reset before anything can read it. See ``_fabric_saturation``.
+        self._fabric_saturation = None
+        self._evaluated_bases = {}
 
         halt = self._terminal_status(context)
         if halt is not LoopStatus.CONTINUE:
@@ -344,14 +360,22 @@ class CognitiveLoop:
         # 4. Propose the next work, gated on approval.
         proposed, pending = await self._propose(context, approved_action_ids)
 
+        # 5. Decide, then say why. ``_status_after`` reads the engine's termination
+        #    report, which carries the per-status reasons; before WP-A the report was
+        #    built and thrown away on this path, so a SATURATED or BLOCKED tick
+        #    returned ``note == ""`` and a caller could see only that the loop had
+        #    stopped, never why. An investigation that ends without a reason is
+        #    indistinguishable from one that crashed.
+        status = await self._status_after(context)
         return LoopStep(
-            status=(await self._status_after(context)),
+            status=status,
             revision=revision,
             obligations_created=tuple(o.obligation_id for o in created),
             actions_proposed=proposed,
             awaiting_approval=pending,
             evaluated=evaluated,
             feedback_signals=len(signals),
+            note=await self._stop_reason(context, status, supplied=saturation),
         )
 
     # -- helpers -------------------------------------------------------------
@@ -375,6 +399,7 @@ class CognitiveLoop:
         """
         from context.fabric import Scope
 
+        from context_engine.fabric_bridge import to_engine_saturation
         from context_engine.fabric_runner import observations_from_outcomes
 
         observations = observations_from_outcomes(
@@ -392,6 +417,17 @@ class CognitiveLoop:
             revision_id=revision_id,
         )
         self.last_fabric_report = report
+        # The pass just computed a measured saturation verdict with reason codes. That
+        # verdict is the only thing in the tick that was *measured* rather than assumed,
+        # so it becomes the re-evaluation basis below. Before this, the basis was a
+        # literal `SaturationState(marginal_gain=1.0)`, which is above every threshold
+        # the loop ships with -- so `is_saturated` was a constant False and no
+        # obligation could ever be satisfied. See WP-A / T010 in specs/028.
+        self._fabric_saturation = to_engine_saturation(
+            report,
+            coverage_threshold=self.coverage_threshold,
+            marginal_gain_threshold=self.marginal_gain_threshold,
+        )
         return tuple(produced)
 
     @staticmethod
@@ -431,6 +467,67 @@ class CognitiveLoop:
             return LoopStatus.BLOCKED
         return LoopStatus.CONTINUE
 
+    async def _stop_reason(
+        self,
+        context: InvestigationContext,
+        status: LoopStatus,
+        *,
+        supplied: SaturationState | None = None,
+    ) -> str:
+        """Why this pass ended where it did, in every terminal case.
+
+        CONTINUE returns the empty string deliberately: a pass that did not stop has
+        nothing to explain, and padding it with a reason would make the note useless
+        for the case that matters.
+        """
+        if status is LoopStatus.CONTINUE:
+            return ""
+
+        report = await self.engine.termination_report(context.context_id)
+        if status is LoopStatus.SATURATED:
+            reasons = "; ".join(report.reasons_by_status) or "all obligations settled"
+            # Report the basis each obligation was actually settled on. Inventing a
+            # summary basis here -- rather than reading back the one
+            # ``_reevaluate`` computed -- produces a note that contradicts the
+            # decision it is explaining: the obligation closes on measured coverage,
+            # and the note says "coverage_unmeasured".
+            bases: dict[str, str] = {}
+            for obligation_id, basis in sorted(self._evaluated_bases.items()):
+                bases[obligation_id] = basis.reason()
+            detail = (
+                "; ".join(f"{key}: {value}" for key, value in bases.items())
+                if bases
+                else "settled on evidence carried by the obligation, not re-evaluated this pass"
+            )
+            return f"saturated: {reasons} | basis: {detail}"
+
+        if status is LoopStatus.BLOCKED:
+            open_ids = await self.engine.open_obligations(context.context_id)
+            # ``await`` cannot appear inside a generator expression's condition -- it
+            # silently produces an async generator, and the failure surfaces as
+            # "async_generator object is not iterable" three frames away from the cause.
+            stalled = [
+                obligation
+                for obligation, action in zip(
+                    open_ids,
+                    [await self.engine.store.actions(item.obligation_id) for item in open_ids],
+                )
+                if not action
+            ]
+            # The stalled obligations are named rather than counted. A count tells an
+            # analyst that work is stuck; the ids tell them which question to read.
+            return (
+                "blocked: "
+                + (
+                    "; ".join(sorted(item.obligation_id for item in stalled))
+                    if stalled
+                    else "open obligations have no action"
+                )
+                + " | no capability is currently available for them"
+            )
+
+        return _halt_reason(status, context)
+
     def _feedback_signals(self, feedback: Sequence[ScienceFeedback]) -> list[GapSignal]:
         out: list[GapSignal] = []
         for item in feedback:
@@ -468,6 +565,7 @@ class CognitiveLoop:
         if saturation is None and not outcomes:
             return ()
         touched: list[str] = []
+        self._evaluated_bases = {}
         for obligation in await self.engine.open_obligations(context.context_id):
             if obligation.obligation_id not in pre_existing:
                 continue
@@ -476,28 +574,87 @@ class CognitiveLoop:
             contradicting = sum(len(o.contradicting) for o in related)
             if evidence == 0 and contradicting == 0:
                 continue
+            basis = self._basis_for(obligation, saturation, related)
+            self._evaluated_bases[obligation.obligation_id] = basis
             data = SatisfactionInput(
                 evidence_count=evidence,
-                saturation=saturation
-                or SaturationState(
-                    coverage=obligation.saturation.coverage if obligation.saturation else 0.0,
-                    marginal_gain=obligation.saturation.marginal_gain
-                    if obligation.saturation
-                    else 1.0,
-                    distinct_sources=0,
-                    source_diversity=0,
-                    coverage_threshold=self.coverage_threshold,
-                    marginal_gain_threshold=self.marginal_gain_threshold,
-                ),
+                saturation=basis,
                 contradicting_evidence=contradicting,
             )
             await self.engine.evaluate_obligation(obligation.obligation_id, data)
             touched.append(obligation.obligation_id)
         return tuple(sorted(touched))
 
+    def _basis_for(
+        self,
+        obligation: ResearchObligation,
+        supplied: SaturationState | None,
+        related: Sequence[ObservationOutcome],
+    ) -> SaturationState:
+        """The saturation basis for one obligation, from the best evidence available.
+
+        Three sources, in strict order of authority:
+
+        1. ``supplied`` -- the caller measured it. Taken as given.
+        2. The fabric pass that just ran. Measured coverage, measured independence,
+           measured gain, with reason codes.
+        3. What this tick's outcomes actually reported.
+
+        The third source is the one that matters for a loop with no fabric runner, and
+        it is what replaces the old ``marginal_gain=1.0`` placeholder. ``ObservationOutcome``
+        already carries ``coverage_delta`` and ``marginal_gain``; nothing read them.
+
+        On marginal gain this source is deliberately conservative: the maximum across
+        related outcomes, not the mean. One action that still reported learning is
+        evidence that learning is still possible, and averaging it away would let a
+        single productive step be cancelled by several unproductive ones.
+
+        On independence it claims nothing. ``required_independent_sources`` stays 0
+        because the loop holds observation ids and no source lineage, and counting
+        documents is exactly the mistake the constitution forbids (domain invariant 4:
+        publication count is not independent-source count). A caller that measured
+        independence supplies it through source 2.
+        """
+        if supplied is not None:
+            return supplied
+        if self._fabric_saturation is not None:
+            return self._fabric_saturation
+        if not related:
+            return _unknown_saturation(self.coverage_threshold, self.marginal_gain_threshold)
+
+        prior = obligation.saturation
+        coverage = (prior.coverage if prior else 0.0) + sum(
+            o.coverage_delta for o in related
+        )
+        return SaturationState(
+            coverage=min(1.0, max(0.0, coverage)),
+            coverage_known=True,
+            marginal_gain=max(o.marginal_gain for o in related),
+            marginal_gain_known=True,
+            distinct_sources=prior.distinct_sources if prior else 0,
+            source_diversity=prior.source_diversity if prior else 0,
+            stopping_condition=(
+                f"outcomes:{len(related)}"
+                f"[max_gain={max(o.marginal_gain for o in related):.3f}]"
+            ),
+            coverage_threshold=self.coverage_threshold,
+            marginal_gain_threshold=self.marginal_gain_threshold,
+        )
+
     async def _propose(
         self, context: InvestigationContext, approved_action_ids: Sequence[str]
     ) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        """Split the next work into "cleared to run" and "waiting on a human".
+
+        ``proposed`` means *cleared*. An action requiring operator approval that has not been
+        granted is returned in the second tuple and **omitted from the first**.
+
+        It used to be appended to both. ``awaiting_approval`` was therefore a label rather than
+        a gate: anything that scheduled work from ``LoopStep.actions_proposed`` would run an
+        unapproved action, and the only thing telling it not to was that it also happened to see
+        the id listed under a different field. Spec 030 FR-095: the engine proposes, and does
+        not execute, until the decision is recorded.
+        """
         approved = set(approved_action_ids)
         proposed: list[str] = []
         pending: list[str] = []
@@ -516,9 +673,47 @@ class CognitiveLoop:
             if action is None:
                 continue
             if action.requires_operator_approval and action.action_id not in approved:
+                # Gated. Recorded as awaiting a decision, and deliberately not proposed --
+                # proposing it would hand a scheduler a work item it is meant to refuse.
                 pending.append(action.action_id)
+                continue
             proposed.append(action.action_id)
         return tuple(sorted(set(proposed))), tuple(sorted(set(pending)))
+
+
+def _unknown_saturation(
+    coverage_threshold: float, marginal_gain_threshold: float
+) -> SaturationState:
+    """A basis that refuses, and says so.
+
+    This replaces a literal ``SaturationState(marginal_gain=1.0)`` that sat on the
+    re-evaluation path. That placeholder had two defects, and they are related:
+
+    * It was a constant. ``1.0`` exceeds every ``marginal_gain_threshold`` the loop
+      ships with, so ``is_saturated`` was unconditionally ``False`` and no obligation
+      could ever be satisfied on this path. The loop had no reachable terminal state
+      short of a human editing the context.
+    * It was silently decisive. Even had the threshold been above 1.0, it would have
+      been a number that *decided* saturation while claiming to measure nothing.
+
+    So the honest answer is not a number. It is ``coverage_known=False`` and
+    ``marginal_gain_known=False``, which reads as "nothing was measured" and therefore
+    blocks saturation -- the same direction as the old placeholder, but now because
+    the input is absent rather than because the constant was high. The difference is
+    visible: ``reason()`` names the missing ingredient, and the moment a real
+    measurement arrives the state flips without any code change.
+    """
+    return SaturationState(
+        coverage=0.0,
+        coverage_known=False,
+        marginal_gain=0.0,
+        marginal_gain_known=False,
+        distinct_sources=0,
+        source_diversity=0,
+        stopping_condition="unmeasured",
+        coverage_threshold=coverage_threshold,
+        marginal_gain_threshold=marginal_gain_threshold,
+    )
 
 
 def _halt_reason(status: LoopStatus, context: InvestigationContext) -> str:

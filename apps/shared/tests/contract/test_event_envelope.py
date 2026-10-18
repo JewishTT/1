@@ -74,17 +74,69 @@ class TestEventEnvelopeContract:
         assert "T" in ts
         assert "Z" in ts
 
-    def test_event_id_is_default_uuid(self) -> None:
+    def test_event_id_is_derived_not_random(self) -> None:
+        """WP-C T044: two builds of the same envelope carry the same id.
+
+        **This assertion is inverted, and the previous one was wrong.**
+
+        It read ``assert env1.event_id != env2.event_id`` — that is, it asserted the
+        *defect*. The default was ``str(uuid4())``, so redelivery produced a new
+        logical event for every producer that did not override it, while every
+        consumer in the platform dedups on ``event_id``. The test made that behaviour
+        look intentional and therefore unfixable.
+
+        The default is now derived from the event's own content. A clock stays out of
+        the material, so a replay reproduces the address even though ``produced_at``
+        differs — which is the whole point.
+        """
         env1 = build_envelope(
             event_type="x", event_version="1", producer="t", producer_version="1", payload=b""
         )
         env2 = build_envelope(
             event_type="x", event_version="1", producer="t", producer_version="1", payload=b""
         )
-        assert env1.event_id != env2.event_id
+        assert env1.event_id == env2.event_id
+        assert env1.event_id.startswith("evt-")
+        assert len(env1.event_id) == len("evt-") + 32
+
+    def test_a_different_payload_is_a_different_event(self) -> None:
+        """Derivation must still separate genuinely different events."""
+        base = dict(
+            event_type="x", event_version="1", producer="t", producer_version="1"
+        )
+        one = build_envelope(**base, payload=b"a")
+        two = build_envelope(**base, payload=b"b")
+        assert one.event_id != two.event_id
+
+    def test_subject_kind_separates_events_that_differ_only_in_subject(self) -> None:
+        """An observation-scoped event must not collide with an entity-scoped one.
+
+        The material records *which* id it carries rather than inferring it from
+        whichever field happens to be non-empty. A rule that treats "no observation
+        id" and "no entity id" as the same case is exactly how two unrelated events
+        end up sharing an address.
+        """
+        base = dict(
+            event_type="x", event_version="1", producer="t", producer_version="1", payload=b""
+        )
+        observation_scoped = build_envelope(**base, observation_id="OBS-1")
+        entity_scoped = build_envelope(**base, entity_id="ENT-1")
+        assert observation_scoped.event_id != entity_scoped.event_id
+
+    def test_an_explicit_event_id_is_still_honoured(self) -> None:
+        """The gate legitimately mints one from §11's six components."""
+        env = build_envelope(
+            event_type="x",
+            event_version="1",
+            producer="t",
+            producer_version="1",
+            payload=b"",
+            event_id="evt-" + "a" * 32,
+        )
+        assert env.event_id == "evt-" + "a" * 32
 
     def test_correlation_and_causation_lineage(self) -> None:
-        root = build_envelope(
+        build_envelope(
             event_type="investigation.started",
             event_version="1",
             producer="api",

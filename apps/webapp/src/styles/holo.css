@@ -1,0 +1,349 @@
+/* Holographic deck — the shared material layer for the CI/SpecOps department.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * A DELIBERATE, OWNER-APPROVED RULE-BEND. Read this before "fixing" it.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `styles/tokens/color.css` states its own constraints: "FORBIDDEN by §3.3 and
+ * absent by construction: … neon glow, gradient text, glassmorphism, HUD reticles",
+ * and §93 says hierarchy is not carried by colour — "no glow, no colour explosion,
+ * no shadow-as-hierarchy, no decorative borders".
+ *
+ * This layer breaks two of those on purpose. The owner was shown the three
+ * candidate directions and chose this one (holographic deck) over the compliant
+ * mission-console. The bend is scoped as tightly as it can be:
+ *
+ *   BREAKS §3.3 "no neon glow / no glassmorphism" — surfaces are translucent with a
+ *     luminous edge, and glow is used as DEPTH SIGNAL, never as decoration: an edge
+ *     brightens for the surface that owns the operator's attention and stays quiet
+ *     everywhere else. A glowing border on every row would be noise; a glowing border
+ *     on the active instrument is information.
+ *
+ *   BREAKS §93 "hierarchy is not carried by colour / shadow" — depth is now carried
+ *     by an explicit three-step surface stack (base → surface-raised → holo) plus a
+ *     layered shadow, so the elevation is legible rather than implied.
+ *
+ * WHAT IS NOT BROKEN, because these are semantics rather than taste:
+ *
+ *   §57 / §92  the closed status vocabulary. Green is live, amber is
+ *              metadata/pending, red is failure. The palette may not be
+ *              re-tuned to make a panel prettier, and `toWorkStatus()` still maps
+ *              every unknown donor spelling to `Unknown`.
+ *   §59        one icon set. Nothing here adds a glyph.
+ *   §67        colour never carries meaning alone. Every luminous edge is paired with
+ *              a text label or a `data-*` attribute that says the same thing; the
+ *              glow is emphasis on an existing signal, never the signal itself.
+ *   §12        contrast. Translucency is layered over opaque tokens rather than
+ *              replacing them, so a light theme still resolves against its own ground.
+ *
+ * The motion here is three keyframes and nothing else: rise, sweep, pulse. All of
+ * them are disabled under `prefers-reduced-motion: no-preference` failing — i.e. they
+ * run only when the operator has not asked for less.
+ */
+
+/* ── Motion ─────────────────────────────────────────────────────────── */
+
+@keyframes holo-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A highlight travelling along a surface's top edge. The one place a gradient is
+ * allowed to move, because it reads as "this panel is live" rather than as chrome. */
+@keyframes holo-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes holo-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+/* Slow drift on the ambient field. Long enough that it reads as atmosphere rather
+ * than as an animation — anything under 20s starts to demand attention. */
+@keyframes holo-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -1.5%, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ui-holo-rise {
+    animation: holo-rise 420ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+  .ui-holo-sweep::after {
+    animation: holo-sweep 5.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  }
+  .ui-holo-live {
+    animation: holo-pulse 2.1s ease-in-out infinite;
+  }
+  .ui-holo-ambient {
+    animation: holo-drift 34s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-holo-rise,
+  .ui-holo-sweep::after,
+  .ui-holo-live,
+  .ui-holo-ambient {
+    animation: none !important;
+  }
+}
+
+/* ── The material ───────────────────────────────────────────────────── */
+
+/*
+ * A holographic surface. Four layers, in order:
+ *   1. a translucent fill so the field behind shows through faintly
+ *   2. an inset top highlight — the "pane catches the light" cue
+ *   3. a luminous 1px edge, green where the surface is live and steel otherwise
+ *   4. an outer shadow stack that gives it somewhere to sit
+ */
+.ui-holo {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-1) 78%, transparent) 0%,
+      color-mix(in srgb, var(--surface-0) 88%, transparent) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, var(--text-primary) 7%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ui-accent) 12%, transparent),
+    0 18px 38px -26px rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(9px) saturate(115%);
+  backdrop-filter: blur(9px) saturate(115%);
+}
+
+/* Luminous edge. `--holo-hue` is set per surface so a live panel glows green and a
+ * blocked one glows amber, without either of them inventing a new colour. */
+.ui-holo-edge {
+  --holo-hue: var(--ui-steel);
+  --holo-hue-alpha: 0.16;
+  border-color: color-mix(in srgb, var(--holo-hue) var(--holo-hue-alpha), transparent);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, var(--text-primary) 8%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--holo-hue) calc(var(--holo-hue-alpha) * 1.4), transparent),
+    0 0 18px -6px color-mix(in srgb, var(--holo-hue) 34%, transparent),
+    0 18px 38px -26px rgba(0, 0, 0, 0.9);
+}
+
+.ui-holo-edge[data-tone="live"] {
+  --holo-hue: var(--ui-accent);
+  --holo-hue-alpha: 0.3;
+}
+
+.ui-holo-edge[data-tone="warn"] {
+  --holo-hue: var(--ui-gold);
+  --holo-hue-alpha: 0.28;
+}
+
+.ui-holo-edge[data-tone="fail"] {
+  --holo-hue: var(--ui-danger);
+  --holo-hue-alpha: 0.3;
+}
+
+.ui-holo-edge[data-tone="info"] {
+  --holo-hue: var(--ui-analytical);
+  --holo-hue-alpha: 0.26;
+}
+
+/* The travelling highlight. A narrow skewed bar clipped to the top edge, so it reads
+ * as light passing over glass rather than as a progress bar. */
+.ui-holo-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.ui-holo-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 26%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--holo-hue, var(--ui-accent)) 85%, transparent),
+    transparent
+  );
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+/* Corner brackets — the one piece of chrome this department allows itself, and only on
+ * instrument cards. Drawn as two pseudo-elements so they cost no DOM nodes, and drawn
+ * on the corners an operator's eye lands on first. */
+.ui-holo-bracket {
+  position: relative;
+}
+
+.ui-holo-bracket::before,
+.ui-holo-bracket::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.ui-holo-bracket::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid var(--holo-hue, var(--ui-steel));
+  border-left: 1px solid var(--holo-hue, var(--ui-steel));
+  border-top-left-radius: 10px;
+}
+
+.ui-holo-bracket::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 1px solid var(--holo-hue, var(--ui-steel));
+  border-bottom: 1px solid var(--holo-hue, var(--ui-steel));
+  border-bottom-right-radius: 10px;
+}
+
+/* ── The ambient field ─────────────────────────────────────────────── */
+
+/*
+ * Scoped to the department canvas, never to `body`. This is the difference between a
+ * surface being re-skinned and the whole application getting a background: only the
+ * operator who has chosen to enter SpecOps pays for the two blurred blooms and the
+ * perspective grid behind it.
+ */
+.ui-holo-field {
+  position: relative;
+  isolation: isolate;
+}
+
+.ui-holo-field::before {
+  content: "";
+  position: absolute;
+  inset: -12% -6% -6% -6%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      52% 38% at 10% -4%,
+      color-mix(in srgb, var(--ui-accent) 30%, transparent) 0%,
+      transparent 68%
+    ),
+    radial-gradient(
+      48% 40% at 94% 104%,
+      color-mix(in srgb, var(--ui-analytical) 26%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      38% 30% at 62% 46%,
+      color-mix(in srgb, var(--ui-gold) 9%, transparent) 0%,
+      transparent 72%
+    );
+  filter: blur(54px);
+}
+
+.ui-holo-field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 1;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--ui-steel) 11%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ui-steel) 11%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(130% 100% at 50% 0%, #000 10%, transparent 72%);
+  -webkit-mask-image: radial-gradient(130% 100% at 50% 0%, #000 10%, transparent 72%);
+}
+
+/* ── Readouts ──────────────────────────────────────────────────────── */
+
+/* Big numerals. `font-variant-numeric: tabular-nums` so a column of readouts does not
+ * shimmer as its digits change — which on a 3Hz poll is the difference between an
+ * instrument and a novelty. */
+.ui-holo-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.ui-holo-readout-value {
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ui-text);
+  text-shadow: 0 0 22px color-mix(in srgb, var(--holo-hue, var(--ui-accent)) 30%, transparent);
+}
+
+.ui-holo-readout-label {
+  font-size: 0.62rem;
+  font-weight: 500;
+  font-variant: all-small-caps;
+  letter-spacing: 0.11em;
+  color: var(--ui-text-muted);
+  text-transform: uppercase;
+}
+
+/* A section heading. Small-caps plus tracking does the work that size alone would do
+ * at two weights of hierarchy, which keeps the visual weight budget for the readouts. */
+.ui-holo-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  font-variant: all-small-caps;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ui-text-secondary);
+}
+
+.ui-holo-heading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ui-accent) 26%, transparent),
+    transparent
+  );
+}
+
+/* ── Focus and selection, kept ahead of the glow ───────────────────── */
+
+.ui-holo :focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}

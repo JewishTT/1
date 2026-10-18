@@ -148,13 +148,29 @@ def test_the_loop_closes_hermetically() -> None:
 
     # The observation is content-addressed, so its id is recomputable from the
     # record alone — the property replay idempotency rests on.
-    from sources.connector import observation_id
+    #
+    # **WP-C T041:** the recomputation moved from the connector's shadow derivation
+    # to the canonical one. `sources/connector.observation_id` cut the address from
+    # `(source_id, query, page, digest)`, which made two *different queries* over the
+    # same bytes look like two observations — contradicting
+    # `domain/observation_identity.py`, whose documented rule is that two fetches
+    # returning identical bytes are one payload and two publications. The audit
+    # named this as one of four disagreeing derivations; the gate's is the canonical
+    # one, so the assertion below now uses it.
+    from domain.observation_identity import ObservationIdentity
 
     for _topic, event, _key in observations:
-        expected = observation_id(
-            event["source_id"], event["query"], event["page"], event["content_digest"]
+        assert event["raw_ref"], (
+            "every published observation must resolve to stored bytes (FR-014); "
+            "an event without a raw reference is refused, not published"
         )
-        assert event["event_id"] == expected
+        recomputed = ObservationIdentity.for_record(
+            tenant_id=event["tenant_id"],
+            capture_id="CAP-" + event["content_digest"],
+            locator="capture",
+            record_digest=event["content_digest"],
+        )
+        assert event["event_id"] == recomputed.observation_id
 
     # --- the circle replays as a fixed point --------------------------------
     replay = await_worker(worker, request_envelope)

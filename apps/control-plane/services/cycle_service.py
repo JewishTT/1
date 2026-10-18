@@ -62,6 +62,15 @@ class TickReport:
     feedback_signals: int = 0
     obligations: int = 0
     saturated: str = ""
+    #: The loop's own verdict for this pass, and the reason it stopped. Before WP-A the
+    #: only field carrying "did it finish" was ``saturated``, which was read from the
+    #: stored fabric report *after* the tick and therefore described the previous pass.
+    #: ``loop_status`` and ``stop_reason`` are populated from the step itself, so a
+    #: caller reading this report learns what this pass concluded and why -- which is
+    #: the difference between "the investigation finished" and "the investigation
+    #: finished, and here is the evidence threshold it reached".
+    loop_status: str = ""
+    stop_reason: str = ""
     #: Scope closure over the entity stream: entities, observations it can reach, and how
     #: much was read but could not be placed. ``None`` when the phase could not run -- which
     #: is different from an empty lattice, and reporting both as empty is how an
@@ -101,6 +110,8 @@ class TickReport:
             "obligations": self.obligations,
             "feedback_signals": self.feedback_signals,
             "saturated": self.saturated,
+            "loop_status": self.loop_status,
+            "stop_reason": self.stop_reason,
             "lattice": self.lattice,
             "gradient": self.gradient,
             "ok": self.ok,
@@ -459,11 +470,24 @@ class CycleService:
             report.feedback_signals = int(getattr(step, "feedback_signals", 0) or 0)
             report.revision = int(getattr(getattr(step, "revision", None), "revision", 0) or 0)
             report.obligations = len(getattr(step, "obligations_created", ()) or ())
+            # The loop's verdict and its reason, read off the step rather than
+            # recomputed. ``report.saturated`` used to be filled in *after* the tick
+            # from the stored fabric report's bare verdict string, so it described the
+            # previous pass and carried no reason at all. A tick that ended because it
+            # was satisfied and a tick that ended because it was stuck were the same
+            # value in the same field.
+            report.loop_status = str(getattr(getattr(step, "status", None), "value", "") or "")
+            report.stop_reason = str(getattr(step, "note", "") or "")
             report.phases.append(
                 PhaseResult(
                     "tick_context",
                     True,
-                    f"{report.feedback_signals} signals, {report.obligations} obligations",
+                    f"{report.feedback_signals} signals, {report.obligations} obligations"
+                    + (
+                        f", loop={report.loop_status}"
+                        if report.loop_status and report.loop_status != "continue"
+                        else ""
+                    ),
                 )
             )
         except Exception as exc:  # noqa: BLE001
@@ -489,7 +513,16 @@ class CycleService:
         try:
             fabric_report = await self._fabric_store.latest_report(context.context_id)
             saturation = (fabric_report or {}).get("saturation") or {}
-            report.saturated = str(saturation.get("verdict", "") or "")
+            verdict = str(saturation.get("verdict", "") or "")
+            # Only fill the legacy field when the loop itself had no verdict to give.
+            # The tick's own ``loop_status`` is authoritative and names the reason;
+            # overwriting it with the previous pass's fabric string would undo WP-A.
+            if verdict and report.loop_status in ("", "continue"):
+                report.saturated = verdict
+            elif verdict and report.loop_status != verdict:
+                report.saturated = f"{report.loop_status} (fabric pass: {verdict})"
+            else:
+                report.saturated = report.loop_status
         except Exception as exc:  # noqa: BLE001
             log.debug("no fabric report for %s: %s", context.context_id, exc)
 

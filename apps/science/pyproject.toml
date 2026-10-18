@@ -16,7 +16,11 @@ description = "Scientific intelligence fabric: calibrated claims, hypotheses, ca
 requires-python = ">=3.11"
 dependencies = [
     "cognitive-shared",
-    "numpy>=1.26",
+    "numpy>=1.26,<3",
+    # river_operator.py. River 0.26 is the version whose ADWIN API is read correctly:
+    # `update()` returns None and the verdict is on `.drift_detected`, which is exactly the
+    # mismatch that made the detector silently never fire. See _read_drift().
+    "river>=0.26,<0.27",
 ]
 
 [dependency-groups]

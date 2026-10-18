@@ -12,8 +12,13 @@ description = "Admission engine, entity resolution, calibration, source independ
 requires-python = ">=3.11"
 dependencies = [
     "cognitive-shared",
-    "numpy>=1.26",
+    # Splink needs a NumPy 1.26 floor and a scikit-learn; both are real runtime deps of
+    # splink_adapter, not optional extras. Pinned so a fresh resolve reproduces the
+    # environment the 20 adapter tests were actually run against.
+    "numpy>=1.26,<3",
+    "scikit-learn>=1.3",
     "scipy>=1.13",
+    "splink>=4.0.10,<5",
 ]
 
 [dependency-groups]
