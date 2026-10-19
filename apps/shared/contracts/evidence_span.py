@@ -883,6 +883,22 @@ SpanSelector = (
     | GeometrySpan | WarcRecordSpan | SourceLocatorSpan
 )
 
+#: Discriminator -> selector class, the inverse of :func:`_selector_form`.
+#:
+#: Kept beside the union it inverts so a new selector kind cannot be added to one and
+#: forgotten in the other: the round-trip test enumerates :class:`SelectorKind` and fails
+#: when a member has no entry here.
+_SELECTOR_CLASSES: dict[SelectorKind, type[Any]] = {
+    SelectorKind.CHAR_SPAN: CharSpan,
+    SelectorKind.PAGE_BOX: PageBoxSpan,
+    SelectorKind.TABLE_CELL: TableCellSpan,
+    SelectorKind.JSON_PATH: JsonPathSpan,
+    SelectorKind.TIME_RANGE: TimeRangeSpan,
+    SelectorKind.GEOMETRY: GeometrySpan,
+    SelectorKind.WARC_RECORD: WarcRecordSpan,
+    SelectorKind.SOURCE_LOCATOR: SourceLocatorSpan,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class EvidenceSpanRef:
@@ -1016,6 +1032,81 @@ class EvidenceSpanRef:
             "span_id": self.content_key(),
         }
 
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> EvidenceSpanRef:
+        """Rebuild a span from its stored form (the inverse of :meth:`as_dict`).
+
+        A finding's ``evidence_chain`` is stored as JSON, so the span has to survive a
+        write/read cycle. Before this method it did not: there was an ``as_dict`` and no
+        inverse, which made the contract *write-only* — a stored chain could not be turned
+        back into typed spans without a bespoke parser, and a bespoke parser is how five
+        field names drift.
+
+        Two refusals are deliberate:
+
+        * an unrecognised selector kind is an error, not a passthrough — the union is closed,
+          and a producer that did not opt in has no span;
+        * a ``span_id`` that disagrees with the recomputed content key is refused. The id is
+          derived, so a stored one that does not match its own content is a tampered or
+          migrated row, and the whole point of a content address is that it says so.
+        """
+        if not isinstance(payload, Mapping):
+            raise SpanContractError(
+                f"a stored span must be a mapping, got {type(payload).__name__}; there is no "
+                "integer form and no coercion"
+            )
+        selector_payload = payload.get("selector")
+        if not isinstance(selector_payload, Mapping) or len(selector_payload) != 1:
+            raise SpanContractError(
+                "selector must be a single-key mapping naming exactly one variant; a flattened "
+                "or multi-variant selector is a span whose meaning is ambiguous"
+            )
+        kind_text, raw_fields = next(iter(selector_payload.items()))
+        try:
+            kind = SelectorKind(kind_text)
+        except ValueError as exc:
+            raise SpanContractError(
+                f"unknown selector kind {kind_text!r}; the union is closed and a producer that "
+                "has not opted in gets no span"
+            ) from exc
+        if not isinstance(raw_fields, Mapping):
+            raise SpanContractError(f"selector {kind_text!r} payload must be a mapping")
+
+        kwargs: dict[str, Any] = {}
+        for key, value in raw_fields.items():
+            if isinstance(value, list):
+                value = tuple(value)
+            elif key == "locator" and isinstance(value, Mapping):
+                value = SourceLocator(**value)
+            kwargs[key] = value
+        selector = _SELECTOR_CLASSES[kind](**kwargs)
+
+        locator_payload = payload.get("source_locator") or {}
+        if not isinstance(locator_payload, Mapping):
+            raise SpanContractError("source_locator must be a mapping")
+
+        span = cls(
+            observation_ref=str(payload.get("observation_ref", "")),
+            blob_digest=str(payload.get("blob_digest", "")),
+            selector=selector,
+            source_locator=SourceLocator(
+                uri=str(locator_payload.get("uri", "")),
+                # ``None`` and ``""`` are different fragments, and the fragment is part
+                # of the content address. Coercing here rebuilt an equal-looking span
+                # whose ``span_id`` no longer matched its own content.
+                fragment=locator_payload.get("fragment"),
+            ),
+            selector_semantics_version=str(payload.get("selector_semantics_version", "")),
+        )
+        declared = payload.get("span_id")
+        if declared is not None and str(declared) != span.content_key():
+            raise SpanContractError(
+                "stored span_id does not match the span's own content; the row was edited or "
+                "migrated without re-addressing, and a content address that disagrees with its "
+                "content is not a citation"
+            )
+        return span
+
 
 @dataclass(frozen=True, slots=True)
 class BlobCheck:
@@ -1032,14 +1123,27 @@ class BlobCheck:
 
 
 def _selector_form(selector: SpanSelector) -> dict[str, Any]:
-    """The wire form: one key, the variant name, its own fields. Never flattened."""
+    """The wire form: one key, the variant name, its own fields. Never flattened.
+
+    Nested selector values are serialised too. A ``SourceLocatorSpan`` carries a
+    ``SourceLocator``, and leaving the dataclass in the payload made ``as_dict()``
+    un-serialisable for one of the eight kinds — a span that can be built, hashed and
+    compared but not stored is a span the platform cannot ground anything with.
+    """
     name = SelectorKind(selector.kind).value
     payload: dict[str, Any] = {}
     for field_info in _selector_fields(selector):
         if field_info.name == "kind":
             continue
         value = getattr(selector, field_info.name)
-        payload[field_info.name] = list(value) if isinstance(value, tuple) else value
+        if isinstance(value, tuple):
+            payload[field_info.name] = list(value)
+        elif dataclasses.is_dataclass(value) and not isinstance(value, type):
+            payload[field_info.name] = (
+                value.as_dict() if hasattr(value, "as_dict") else dataclasses.asdict(value)
+            )
+        else:
+            payload[field_info.name] = value
     return {name: payload}
 
 

@@ -1,0 +1,18 @@
+{
+  "identity_bypass": {
+    "apps/control-plane/services/interpretation_bridge.py": {
+      "reason": "The interpretation bridge mints an observation identity for an OperatorResult it just interpreted (lines 164, 190, 502, 617). That makes interpretation a second publication path: acquisition does not hand it an observation id, so the bridge cuts one itself.",
+      "exit": "The bridge receives the observation id from the acquisition path (the gate's publication) instead of minting one. When that lands, remove this entry and the ratchet tightens to the three declared authorities."
+    }
+  },
+  "row_writers": {
+    "apps/control-plane/services/interpretation_bridge.py": {
+      "reason": "Constructs a db.schema Observation row (line 247) after its own idempotency probe. It is careful about duplicates, but care is not the invariant: the row is created outside the gate, so the gate's lifecycle classification (created/changed/unchanged/duplicate) never runs for this path.",
+      "exit": "Route the bridge's persistence through the Observation Gate and delete the local Observation construction."
+    },
+    "apps/control-plane/services/pow_run.py": {
+      "reason": "Writes Observation rows (line 187) from a replayed stream, with a hard-coded source id and a module-level TENANT constant. It is a replay-time second writer: nothing stops it from disagreeing with the gate about lifecycle or tenancy.",
+      "exit": "Replay goes through the gate with the original source id and tenant from the task, or the module is retired."
+    }
+  }
+}

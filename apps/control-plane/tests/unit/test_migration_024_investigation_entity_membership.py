@@ -114,9 +114,16 @@ def test_024_is_appended_to_023_and_is_the_single_head() -> None:
     assert branched == [], f"the revision graph has a branch at {branched}"
 
     heads = sorted(rev for rev in revisions if rev not in children)
-    assert heads == ["024_investigation_entity_membership"], (
-        f"024 must be the only head, otherwise `alembic upgrade head` is ambiguous; "
+    # One head, always: two heads make ``alembic upgrade head`` ambiguous. The
+    # identity of the head advances whenever a later revision is appended, so it
+    # is asserted as a cardinality rather than pinned to this file's revision.
+    assert len(heads) == 1, (
+        f"exactly one head is required, otherwise `alembic upgrade head` is ambiguous; "
         f"got {heads}"
+    )
+    assert "024_investigation_entity_membership" in revisions, "024 must be present in the graph"
+    assert "024_investigation_entity_membership" not in heads, (
+        "024 must be appended to and superseded by a later revision, not left as the head"
     )
 
 

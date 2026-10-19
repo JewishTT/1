@@ -84,14 +84,24 @@ class TestDonorPatternApi:
             "/api/v1/entities",
             json={"canonical_identity": {"account": "Nimbus"}, "aliases": ["Nimbus", "nb-acc"]},
         )
-        assert resp.status_code == 200
+        # ``202 Accepted``, not ``200``: creation launches durable temporal
+        # materialization, and the contract is
+        # ``specs/015-worldline-reconstruction/contracts/api.md:21``. The entity
+        # itself is committed synchronously, which the reads below rely on.
+        assert resp.status_code == 202
         body = resp.json()
+        assert body["materialization"]["run_id"]
+        assert body["materialization"]["status"] in {"QUEUED", "DEFERRED"}
         assert body["event"] == "entity.created"
         entity = body["entity"]
         assert entity["entity_id"].startswith("ENT-")
         assert entity["canonical_identity"] == {"account": "Nimbus"}
         assert entity["current_state"]["version"] == 1
-        assert entity["evidence"] and entity["evidence"][0]["immutable"]
+        # No ``source_records`` were supplied, so there is nothing to cite yet:
+        # the evidence list is present and empty rather than fabricated. The
+        # immutable-evidence assertion belongs to a creation that does carry
+        # source records (see ``test_entity_view_projects_identity_invariant``).
+        assert entity["evidence"] == []
         assert entity["historical_versions"][0]["identity"] == {"account": "Nimbus"}
         # the new invariant is addressable right away
         assert client.get(f"/api/v1/entities/{entity['entity_id']}").status_code == 200

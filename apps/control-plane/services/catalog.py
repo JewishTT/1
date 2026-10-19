@@ -13,6 +13,8 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 
+from contracts.evidence_span import EvidenceSpanRef, SpanContractError
+
 
 @dataclass
 class EntityRecord:
@@ -44,6 +46,10 @@ class FindingRecord:
     observations: list[str] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
     status: str = "open"
+    #: The typed spans that ground this finding, as stored. Serialised
+    #: ``EvidenceSpanRef`` dicts, rehydrated on read so a citation is *checked* rather
+    #: than displayed: a chain that cannot be rebuilt is reported, not rendered.
+    evidence_chain: list[dict] = field(default_factory=list)
 
 
 class Catalog:
@@ -136,6 +142,7 @@ class Catalog:
         if record is None:
             return None
         observations = [self._observation(o) for o in record.observations if o]
+        chain = self._evidence_chain(record)
         return {
             "finding_id": record.finding_id,
             "status": record.status,
@@ -147,7 +154,40 @@ class Catalog:
             "observations": observations,
             "sources": record.sources,
             "evidence_resolves": all(o.get("immutable") for o in observations),
+            "evidence_chain": chain["spans"],
+            "evidence_chain_status": chain["status"],
+            "evidence_chain_problems": chain["problems"],
         }
+
+    @staticmethod
+    def _evidence_chain(record: FindingRecord) -> dict:
+        """Rehydrate the stored spans and say how far the chain can be trusted.
+
+        ``grounded`` requires at least one span and every entry rebuildable. A finding
+        with some rebuildable entries is ``partial`` and names what failed; a finding
+        with no spans is ``unresolved``, never ``grounded`` — an empty chain rendered as
+        a success is the failure FR-016 exists to prevent.
+
+        The stored form is what a writer persisted; this is the only place that turns it
+        back into a typed span, so a chain edited in the database fails here rather than
+        appearing as a citation nobody checked.
+        """
+        spans: list[dict] = []
+        problems: list[dict] = []
+        for index, entry in enumerate(record.evidence_chain or []):
+            try:
+                span = EvidenceSpanRef.from_dict(entry)
+            except SpanContractError as exc:
+                problems.append({"index": index, "reason": str(exc)})
+                continue
+            spans.append(span.as_dict())
+        if not spans:
+            status = "unresolved"
+        elif problems:
+            status = "partial"
+        else:
+            status = "grounded"
+        return {"status": status, "spans": spans, "problems": problems}
 
     def lineage(self, doc: str) -> list[dict]:
         """FR-032 walk: finding -> feature -> assertion -> evidence -> obs -> source."""

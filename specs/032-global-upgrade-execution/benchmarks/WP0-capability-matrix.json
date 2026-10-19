@@ -1,0 +1,656 @@
+[
+  {
+    "id": "artifact-sink",
+    "claim": "the one ingestion seam for every executor",
+    "module": "apps/acquisition/artifact_sink.py",
+    "exists": true,
+    "requirement": "FR-001..FR-005",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/acquisition/_prove_airbyte.py",
+      "apps/acquisition/_prove_searxng.py",
+      "apps/acquisition/_prove_tools.py",
+      "apps/control-plane/services/pow_run.py"
+    ],
+    "test_files": [
+      "apps/acquisition/tests/unit/test_acquisition_artifact_sink.py"
+    ],
+    "test_count": 19,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "observation-gate",
+    "claim": "capture/observation identity, lifecycle, publication",
+    "module": "apps/shared/events/observation_gate.py",
+    "exists": true,
+    "requirement": "FR-002..FR-005",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/acquisition/_prove_airbyte.py",
+      "apps/acquisition/_prove_searxng.py",
+      "apps/acquisition/_prove_tools.py",
+      "apps/control-plane/services/acquisition_loop.py",
+      "apps/control-plane/services/layer0_pipeline.py",
+      "apps/control-plane/services/pow_run.py"
+    ],
+    "test_files": [
+      "apps/acquisition/tests/integration/test_adapters_gate.py",
+      "apps/acquisition/tests/integration/test_engine_adapters_gate.py",
+      "apps/acquisition/tests/unit/test_acquisition_artifact_sink.py",
+      "apps/acquisition/tests/unit/test_acquisition_worker.py",
+      "apps/acquisition/tests/unit/test_replay_journal.py",
+      "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
+      "apps/control-plane/tests/integration/test_end_to_end_pipeline.py",
+      "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "apps/shared/tests/unit/test_acquisition_path.py",
+      "apps/shared/tests/unit/test_observation_gate_identity.py"
+    ],
+    "test_count": 48,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "observation-identity",
+    "claim": "deterministic capture/observation ids",
+    "module": "apps/shared/domain/observation_identity.py",
+    "exists": true,
+    "requirement": "FR-002",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/acquisition/artifact_sink.py",
+      "apps/control-plane/services/interpretation_bridge.py",
+      "apps/shared/domain/acquisition_artifact.py",
+      "apps/shared/events/kafka.py",
+      "apps/shared/events/observation_gate.py"
+    ],
+    "test_files": [
+      "apps/acquisition/tests/integration/test_loop_closed.py",
+      "apps/acquisition/tests/unit/test_acquisition_artifact_sink.py",
+      "apps/shared/tests/unit/test_observation_gate_identity.py",
+      "apps/shared/tests/unit/test_observation_identity.py"
+    ],
+    "test_count": 51,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "event-outbox",
+    "claim": "transactional publication",
+    "module": "apps/control-plane/db/materialization_outbox.py",
+    "exists": true,
+    "requirement": "FR-004",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/context_engine/engine.py",
+      "apps/control-plane/services/materialization_outbox_relay.py",
+      "apps/control-plane/services/temporal_materialization_dispatch.py"
+    ],
+    "test_files": [
+      "apps/control-plane/tests/integration/test_loop_closure.py"
+    ],
+    "test_count": 16,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "event-envelope",
+    "claim": "canonical event envelope",
+    "module": "apps/shared/events/kafka.py",
+    "exists": true,
+    "requirement": "FR-004",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/acquisition/_prove_airbyte.py",
+      "apps/acquisition/_prove_searxng.py",
+      "apps/acquisition/_prove_tools.py",
+      "apps/acquisition/dispatcher/scheduler.py",
+      "apps/acquisition/registry.py",
+      "apps/admission/engine/assertions.py",
+      "apps/admission/resolution/collective.py",
+      "apps/control-plane/api/routes/resolutions.py",
+      "apps/control-plane/context_engine/science_bridge.py",
+      "apps/control-plane/cp_domain/investigation.py",
+      "apps/control-plane/services/dispatcher.py",
+      "apps/control-plane/services/review.py",
+      "apps/interpretation/evidence/manifest.py",
+      "apps/projection/search/publisher.py",
+      "apps/science/_events.py",
+      "apps/science/experiments/registry.py",
+      "apps/science/experiments/reproduction.py",
+      "apps/science/store.py",
+      "apps/shared/domain/statement.py",
+      "apps/shared/domain/stream_events.py",
+      "apps/shared/events/fabric_events.py",
+      "apps/shared/events/observation_gate.py",
+      "apps/zero/zero/enrichment/feedback.py",
+      "apps/zero/zero/observation_gate.py"
+    ],
+    "test_files": [
+      "apps/acquisition/tests/integration/test_live_loop.py",
+      "apps/acquisition/tests/unit/test_acquisition_worker.py",
+      "apps/control-plane/tests/integration/test_end_to_end_pipeline.py",
+      "apps/science/tests/contract/test_science_seam_contract.py",
+      "apps/shared/tests/contract/test_event_envelope.py",
+      "apps/shared/tests/integration/test_redpanda_emission.py",
+      "apps/shared/tests/unit/test_idempotent_consumer.py"
+    ],
+    "test_count": 56,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "content-router",
+    "claim": "ref-only event routing",
+    "module": "apps/shared/events/content_router.py",
+    "exists": true,
+    "requirement": "FR-004",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/acquisition/_prove_airbyte.py",
+      "apps/acquisition/_prove_searxng.py",
+      "apps/acquisition/_prove_tools.py",
+      "apps/control-plane/services/layer0_pipeline.py",
+      "apps/control-plane/services/pow_run.py",
+      "apps/shared/events/observation_gate.py"
+    ],
+    "test_files": [
+      "apps/acquisition/tests/integration/test_adapters_gate.py",
+      "apps/acquisition/tests/integration/test_engine_adapters_gate.py",
+      "apps/acquisition/tests/unit/test_acquisition_worker.py",
+      "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
+      "apps/control-plane/tests/integration/test_end_to_end_pipeline.py",
+      "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "apps/shared/tests/unit/test_acquisition_path.py"
+    ],
+    "test_count": 23,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "durable-dlq",
+    "claim": "quarantine + replay",
+    "module": "apps/shared/events/dlq_durable.py",
+    "exists": true,
+    "requirement": "FR-012",
+    "status": "TEST_ONLY",
+    "production_importers": [],
+    "test_files": [
+      "apps/shared/tests/unit/test_dlq_durable.py"
+    ],
+    "test_count": 9,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "operator-result",
+    "claim": "universal operator envelope",
+    "module": "apps/shared/contracts/operator_result.py",
+    "exists": true,
+    "requirement": "FR-014",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/science/context/operators/contract_bridge.py"
+    ],
+    "test_files": [
+      "apps/science/tests/contract/test_operator_result_bridge.py",
+      "apps/shared/tests/contract/test_operator_result.py"
+    ],
+    "test_count": 61,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "evidence-span",
+    "claim": "typed span contract",
+    "module": "apps/shared/contracts/evidence_span.py",
+    "exists": true,
+    "requirement": "FR-016..FR-018",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/api/routes/findings.py",
+      "apps/control-plane/services/catalog.py",
+      "apps/shared/contracts/operator_result.py"
+    ],
+    "test_files": [
+      "apps/shared/tests/contract/test_evidence_span.py",
+      "apps/shared/tests/contract/test_evidence_span_roundtrip.py",
+      "apps/shared/tests/contract/test_operator_result.py"
+    ],
+    "test_count": 111,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "stage-outcome",
+    "claim": "closed outcome taxonomy",
+    "module": "apps/shared/contracts/stage_outcome.py",
+    "exists": true,
+    "requirement": "FR-012",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/context_engine/engine.py",
+      "apps/control-plane/context_engine/obligations.py",
+      "apps/science/context/operators/contract_bridge.py",
+      "apps/shared/contracts/operator_result.py"
+    ],
+    "test_files": [
+      "apps/control-plane/tests/integration/test_epistemic_roundtrip.py",
+      "apps/control-plane/tests/integration/test_loop_closure.py",
+      "apps/control-plane/tests/integration/test_observation_changes_next_action.py",
+      "apps/control-plane/tests/unit/test_action_memory.py",
+      "apps/science/tests/contract/test_operator_result_bridge.py",
+      "apps/shared/tests/contract/test_operator_result.py",
+      "apps/shared/tests/contract/test_stage_outcome.py"
+    ],
+    "test_count": 168,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "canonical-serialisation",
+    "claim": "deterministic digests",
+    "module": "apps/shared/contracts/canonical.py",
+    "exists": true,
+    "requirement": "FR-002",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/science/context/operators/contract_bridge.py",
+      "apps/shared/contracts/error_codes.py",
+      "apps/shared/contracts/evidence_span.py",
+      "apps/shared/contracts/operator_result.py",
+      "apps/shared/contracts/stage_outcome.py"
+    ],
+    "test_files": [
+      "apps/shared/tests/contract/test_error_codes.py",
+      "apps/shared/tests/contract/test_operator_result.py"
+    ],
+    "test_count": 105,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "projection-manifest",
+    "claim": "projection reproducibility record",
+    "module": "apps/shared/contracts/projection_manifest.py",
+    "exists": true,
+    "requirement": "FR-006",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/projection/search/projector.py"
+    ],
+    "test_files": [
+      "apps/projection/tests/contract/test_search_projection_manifest.py",
+      "apps/shared/tests/contract/test_projection_manifest.py"
+    ],
+    "test_count": 33,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "error-codes",
+    "claim": "stable machine-readable codes",
+    "module": "apps/shared/contracts/error_codes.py",
+    "exists": true,
+    "requirement": "FR-012",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/shared/contracts/operator_result.py",
+      "apps/shared/contracts/stage_outcome.py"
+    ],
+    "test_files": [
+      "apps/control-plane/tests/integration/test_epistemic_roundtrip.py",
+      "apps/shared/tests/contract/test_error_codes.py",
+      "apps/shared/tests/contract/test_operator_result.py",
+      "apps/shared/tests/contract/test_stage_outcome.py"
+    ],
+    "test_count": 188,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "graph-invariant",
+    "claim": "versioned relational invariant / worldline",
+    "module": "apps/shared/domain/graph_invariant.py",
+    "exists": true,
+    "requirement": "FR-026, FR-028",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/context_engine/dossier_store.py",
+      "apps/control-plane/context_engine/enrichment_service.py",
+      "apps/control-plane/context_engine/invariant_reducer.py",
+      "apps/control-plane/services/cc_cursor_materialization.py",
+      "apps/control-plane/services/interpretation_bridge.py",
+      "apps/control-plane/workflows/temporal_materialization.py",
+      "apps/projection/tda/bridge.py",
+      "apps/science/context/dossier.py"
+    ],
+    "test_files": [
+      "apps/control-plane/tests/unit/test_invariant_reducer.py",
+      "apps/science/tests/contract/test_dossier_contract.py",
+      "apps/shared/tests/unit/domain/test_graph_invariant.py"
+    ],
+    "test_count": 103,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "invariant-reducer",
+    "claim": "deterministic reduction from the accepted stream",
+    "module": "apps/control-plane/context_engine/invariant_reducer.py",
+    "exists": true,
+    "requirement": "FR-026",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/services/cc_cursor_materialization.py"
+    ],
+    "test_files": [
+      "apps/control-plane/tests/integration/test_observation_changes_next_action.py",
+      "apps/control-plane/tests/unit/test_digest_gated_revision.py",
+      "apps/control-plane/tests/unit/test_invariant_reducer.py"
+    ],
+    "test_count": 50,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "context-engine",
+    "claim": "research process kernel",
+    "module": "apps/control-plane/context_engine/engine.py",
+    "exists": true,
+    "requirement": "FR-046..FR-053",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/admission/independence/independence.py",
+      "apps/control-plane/api/routes/investigation_context.py",
+      "apps/control-plane/composition.py",
+      "apps/control-plane/context_engine/catalogue_bridge.py",
+      "apps/control-plane/context_engine/fabric_bridge.py",
+      "apps/control-plane/context_engine/fabric_runner.py",
+      "apps/control-plane/context_engine/loop.py"
+    ],
+    "test_files": [
+      "apps/admission/tests/contract/test_no_auto_merge.py",
+      "apps/admission/tests/contract/test_resolution_history.py",
+      "apps/admission/tests/test_admission.py",
+      "apps/admission/tests/test_claims.py",
+      "apps/admission/tests/test_effective_independence.py",
+      "apps/admission/tests/test_intake.py",
+      "apps/admission/tests/test_statement_consumer.py",
+      "apps/control-plane/tests/integration/test_closed_research_loop.py",
+      "apps/control-plane/tests/integration/test_loop_closure.py",
+      "apps/control-plane/tests/integration/test_observation_changes_next_action.py",
+      "apps/control-plane/tests/unit/test_action_memory.py",
+      "apps/control-plane/tests/unit/test_approval_gate.py",
+      "apps/control-plane/tests/unit/test_cognitive_loop.py",
+      "apps/control-plane/tests/unit/test_context_engine.py",
+      "apps/control-plane/tests/unit/test_context_termination_and_catalogue.py"
+    ],
+    "test_count": 205,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "context-store",
+    "claim": "durable context state",
+    "module": "apps/control-plane/context_engine/postgres_store.py",
+    "exists": true,
+    "requirement": "FR-046",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/api/routes/investigation_context.py",
+      "apps/control-plane/api/routes/investigations.py",
+      "apps/control-plane/composition.py"
+    ],
+    "test_files": [
+      "apps/control-plane/tests/unit/test_postgres_context_store.py"
+    ],
+    "test_count": 0,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "evidence-context",
+    "claim": "content-addressed interpretation frame",
+    "module": "apps/shared/domain/evidence_context.py",
+    "exists": true,
+    "requirement": "FR-019",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/semantic_path/execution.py",
+      "apps/shared/domain/relation_claim_material.py",
+      "apps/shared/semantic/regime.py",
+      "apps/shared/semantic/shacl.py",
+      "apps/shared/semantic/validation.py"
+    ],
+    "test_files": [
+      "apps/shared/tests/unit/test_evidence_context.py",
+      "apps/shared/tests/unit/test_relation_schema.py"
+    ],
+    "test_count": 54,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "identity-resolution",
+    "claim": "candidate generation and decisions",
+    "module": "apps/admission/resolution/candidate.py",
+    "exists": true,
+    "requirement": "FR-026..FR-028",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/admission/resolution/splink_adapter.py"
+    ],
+    "test_files": [
+      "apps/admission/tests/contract/test_no_auto_merge.py",
+      "apps/admission/tests/test_candidate.py",
+      "apps/admission/tests/unit/test_splink_adapter.py"
+    ],
+    "test_count": 59,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "conflict-detection",
+    "claim": "admission gate: comparability + conflict outcome",
+    "module": "apps/admission/engine/admission.py",
+    "exists": true,
+    "requirement": "FR-029..FR-034",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/services/capture_interpretation.py"
+    ],
+    "test_files": [
+      "apps/admission/tests/contract/test_no_auto_merge.py",
+      "apps/admission/tests/test_admission.py",
+      "apps/admission/tests/test_effective_independence.py",
+      "apps/admission/tests/test_intake.py"
+    ],
+    "test_count": 96,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "admission-decisions",
+    "claim": "the only committer of identity/claim decisions",
+    "module": "apps/admission/resolution/decision_store.py",
+    "exists": true,
+    "requirement": "FR-034",
+    "status": "TEST_ONLY",
+    "production_importers": [],
+    "test_files": [
+      "apps/admission/tests/contract/test_no_auto_merge.py",
+      "apps/admission/tests/contract/test_resolution_history.py",
+      "apps/admission/tests/unit/test_cluster_transitivity.py"
+    ],
+    "test_count": 73,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "websearch",
+    "claim": "entity-driven discovery",
+    "module": "apps/shared/websearch/discovery.py",
+    "exists": true,
+    "requirement": "FR-013",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/services/layer0_pipeline.py",
+      "apps/shared/websearch/__init__.py"
+    ],
+    "test_files": [
+      "apps/shared/tests/unit/websearch/test_websearch.py"
+    ],
+    "test_count": 11,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "temporal-filter",
+    "claim": "CURRENT / AS_OF / INTERVAL selection over dated facts",
+    "module": "apps/science/context/temporal_filter.py",
+    "exists": true,
+    "requirement": "FR-037",
+    "status": "TEST_ONLY",
+    "production_importers": [],
+    "test_files": [
+      "apps/science/tests/contract/test_temporal_filter.py"
+    ],
+    "test_count": 13,
+    "live_proven": "NOT_PROVEN",
+    "notes": "tested and deliberately unwired: no executor consumes the temporal clause yet"
+  },
+  {
+    "id": "badges",
+    "claim": "capability routing façade (public package surface)",
+    "module": "apps/control-plane/badges/__init__.py",
+    "exists": true,
+    "requirement": "FR-040",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/api/routes/fabric.py"
+    ],
+    "test_files": [
+      "apps/control-plane/tests/unit/test_badges_facade.py"
+    ],
+    "test_count": 8,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "donor-registry",
+    "claim": "FR-113 supply-chain record",
+    "module": "donors/registry.yaml",
+    "exists": true,
+    "requirement": "FR-038",
+    "status": "TEST_ONLY",
+    "production_importers": [],
+    "test_files": [
+      "apps/shared/tests/contract/test_donor_registry.py"
+    ],
+    "test_count": 24,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "layer-boundaries",
+    "claim": "cross-layer dependency guard",
+    "module": "apps/shared/tools/layer_boundaries.py",
+    "exists": true,
+    "requirement": "FR-006",
+    "status": "TEST_ONLY",
+    "production_importers": [],
+    "test_files": [
+      "apps/shared/tests/unit/test_layer_boundaries.py"
+    ],
+    "test_count": 9,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "interpretation-lane",
+    "claim": "reproducible extraction lane",
+    "module": "apps/interpretation/extractors/lane.py",
+    "exists": true,
+    "requirement": "FR-014",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/services/document_adapter.py",
+      "apps/control-plane/services/interpretation_bridge.py",
+      "apps/interpretation/extract_demo.py"
+    ],
+    "test_files": [
+      "apps/interpretation/tests/contract/test_documents.py",
+      "apps/interpretation/tests/contract/test_lang_parity.py",
+      "apps/interpretation/tests/contract/test_span_semantics.py",
+      "apps/interpretation/tests/test_deterministic_extraction.py"
+    ],
+    "test_count": 47,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "parser-registry",
+    "claim": "parser dispatch + offset semantics",
+    "module": "apps/interpretation/parsers/registry.py",
+    "exists": true,
+    "requirement": "FR-016",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/interpretation/extractors/lane.py",
+      "apps/interpretation/parsers/documents.py",
+      "apps/interpretation/parsers/html_full.py",
+      "apps/interpretation/parsers/ocr.py",
+      "apps/interpretation/parsers/plaintext.py",
+      "apps/interpretation/parsers/structured.py",
+      "apps/interpretation/pipeline.py",
+      "apps/shared/contracts/evidence_span.py"
+    ],
+    "test_files": [
+      "apps/acquisition/tests/test_connector_registry.py",
+      "apps/interpretation/tests/contract/test_span_semantics.py",
+      "apps/interpretation/tests/test_parser_adapter.py",
+      "apps/interpretation/tests/test_pipeline.py"
+    ],
+    "test_count": 65,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "projection-search",
+    "claim": "lexical serving projection",
+    "module": "apps/projection/search/index.py",
+    "exists": true,
+    "requirement": "FR-006",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/projection/search/indexer.py"
+    ],
+    "test_files": [
+      "apps/projection/tests/contract/test_search_projection_manifest.py",
+      "apps/projection/tests/test_projection.py",
+      "apps/projection/tests/test_tantivy_backend.py"
+    ],
+    "test_count": 33,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  },
+  {
+    "id": "projection-graph",
+    "claim": "graph serving projection",
+    "module": "apps/projection/graph/relation_store.py",
+    "exists": true,
+    "requirement": "FR-006",
+    "status": "WIRED_AND_TESTED",
+    "production_importers": [
+      "apps/control-plane/semantic_path/corpus.py",
+      "apps/control-plane/semantic_path/execution.py"
+    ],
+    "test_files": [
+      "apps/projection/tests/unit/test_relation_store.py"
+    ],
+    "test_count": 18,
+    "live_proven": "NOT_PROVEN",
+    "notes": ""
+  }
+]

@@ -311,10 +311,14 @@ def test_t062_the_api_path_is_reachable_in_both_directions() -> None:
     assert back.hops[-1].node_id == "sr-1"
     assert forward.hops[0].node_id == "cp-1"
     assert forward.hops[-1].node_id == "rel-1"
-    assert ("rel-1", *(hop.node_id for hop in back.hops)) == (
-        "sr-1",
-        *(reversed(tuple(hop.node_id for hop in forward.hops))),
-    )
+    # The same chain walked from both ends. Backward starts at the relation and
+    # ends at the source root; forward starts at the source root and ends at the
+    # relation. Stripping both endpoints from the forward walk and reversing what
+    # remains is exactly the backward hop sequence.
+    backward_nodes = tuple(hop.node_id for hop in back.hops)
+    forward_path = ["sr-1", *(hop.node_id for hop in forward.hops)]
+    forward_nodes = (*reversed(forward_path[1:-1]), "sr-1")
+    assert backward_nodes == forward_nodes
 
 
 def test_t062_the_candidate_hop_is_traversed_when_it_is_registered() -> None:

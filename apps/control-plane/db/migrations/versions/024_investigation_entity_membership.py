@@ -1,6 +1,6 @@
 """Investigation membership for entities (024).
 
-Revision ID: 024_entity_membership
+Revision ID: 024_investigation_entity_membership
 Revises: 023_derivation_enforcement
 
 Why this revision exists
@@ -61,7 +61,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 from alembic import op
 
-revision = "024_entity_membership"
+revision = "024_investigation_entity_membership"
 down_revision = "023_derivation_enforcement"
 branch_labels = None
 depends_on = None
@@ -71,7 +71,7 @@ depends_on = None
 #: type, and a database that already ran this revision cannot be re-run -- the same rule
 #: 023 states for the entity-type vocabulary it installs. ``db.schema`` holds the
 #: Python-side authority, and
-#: ``tests/unit/test_migration_024_entity_membership.py`` asserts the two
+#: ``tests/unit/test_migration_024_investigation_entity_membership.py`` asserts the two
 #: agree, which is the only way a deliberate duplication stays honest.
 MEMBERSHIP_BASIS_VALUES: tuple[str, ...] = (
     "EXPLICIT",

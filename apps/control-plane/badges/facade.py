@@ -151,14 +151,29 @@ class BadgeFacade:
         return self
 
     def from_adapters(self, registry=None) -> BadgeFacade:
-        """Seed from the acquisition adapter registry (lazy import, best effort)."""
+        """The canonical surface, with the adapter registry overlaid on it.
+
+        The registry is populated by adapter modules at *import time*, so within
+        one process its contents depend on which adapter modules earlier code
+        happened to import. Treating it as authoritative made this façade
+        order-dependent: a process that had imported only the Scrapy and WARC
+        adapters resolved ``etag`` to a capability gap, while a cold process
+        resolved it to the ``http`` engine -- the same query, two answers, decided
+        by import order.
+
+        Seeding the canonical execution-class surface first and letting adapters
+        only add to it makes the result stable. Adapters still contribute their
+        own capabilities and ``source_type``, which is what they are for; they no
+        longer get to *subtract* a canonical engine by being the only thing that
+        happened to be imported.
+        """
+        self.seed_defaults()
         if registry is None:
             try:
                 from adapters.registry import REGISTRY  # type: ignore[import-not-found]
             except ImportError:
-                return self.seed_defaults()
+                return self
             registry = REGISTRY
-        before = len(self)
         for source in registry:
             try:
                 self.register(
@@ -168,11 +183,6 @@ class BadgeFacade:
                 )
             except ValueError:
                 continue
-        if before == 0 and len(self) == 0:
-            # Adapters register on import; a cold process holds an empty registry.
-            # Best effort must still yield the canonical execution-class surface
-            # rather than an empty façade.
-            return self.seed_defaults()
         return self
 
     def match_by_badges(

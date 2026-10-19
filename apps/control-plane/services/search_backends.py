@@ -50,7 +50,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Protocol
 
-import path_shim  # noqa: F401 - keep apps/shared ahead of conflicting dirs
 from graph.abstraction import GraphNode, GraphStore, InMemoryGraphStore
 from graph.adjacency import adjacency_from_store
 from sqlalchemy import select

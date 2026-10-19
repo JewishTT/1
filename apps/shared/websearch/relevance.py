@@ -76,8 +76,12 @@ def entity_relevance_score(
     # Loose token overlap against the normalized identifier token list.
     tokens = identifiers_to_tokens(identifiers).split()
     if tokens:
-        title_toks = set(_TOKEN.findall(hit.title.lower()))
-        snip_toks = set(_TOKEN.findall(hit.snippet.lower()))
+        # A provider may return a non-string title/snippet (a numeric label, a
+        # missing field coerced to None). Coerce here rather than at the
+        # contract boundary: the hit is still usable evidence, and a single
+        # malformed field must not abort the whole discovery stream.
+        title_toks = set(_TOKEN.findall(str(hit.title).lower()))
+        snip_toks = set(_TOKEN.findall(str(hit.snippet).lower()))
         overlaps = sum(1 for t in tokens if t in title_toks)
         overlaps += sum(1 for t in tokens if t in snip_toks)
         exact_bonus += min(1.0, overlaps * 0.3)

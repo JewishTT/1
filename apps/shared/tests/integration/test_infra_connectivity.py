@@ -17,6 +17,7 @@ from __future__ import annotations
 import os
 import socket
 import sys
+import urllib.parse
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
@@ -86,11 +87,17 @@ def _broker_lists_topics(bootstrap: str) -> bool:
 
 
 def test_kafka_list_topics() -> None:
-    assert _broker_lists_topics(_KAFKA), f"kafka {_KAFKA} unreachable"
+    # Skip, not fail: this module's contract is that a bare machine stays green
+    # and only a full compose stack exercises the wiring. Redis and the HTTP
+    # services below already behave that way; an assertion here reported an
+    # absent broker as a code defect.
+    if not _broker_lists_topics(_KAFKA):
+        pytest.skip(f"kafka {_KAFKA} unavailable")
 
 
 def test_redpanda_list_topics() -> None:
-    assert _broker_lists_topics(_REDPANDA), f"redpanda {_REDPANDA} unreachable"
+    if not _broker_lists_topics(_REDPANDA):
+        pytest.skip(f"redpanda {_REDPANDA} unavailable")
 
 
 # --- MinIO --------------------------------------------------------------------
@@ -104,10 +111,24 @@ def _s3_available() -> bool:
         return False
 
 
+def _minio_reachable() -> bool:
+    parsed = urllib.parse.urlparse(_MINIO)
+    host = parsed.hostname or "localhost"
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    try:
+        with socket.create_connection((host, port), timeout=3):
+            return True
+    except OSError:
+        return False
+
+
 @pytest.mark.skipif(not _s3_available(), reason="aioboto3 missing")
 async def test_minio_put_get_delete_content_addressed_probe() -> None:
     import aioboto3
     import botocore
+
+    if not _minio_reachable():
+        pytest.skip(f"minio {_MINIO} unavailable")
 
     session = aioboto3.Session()
     key = "_conn_probe.bin"

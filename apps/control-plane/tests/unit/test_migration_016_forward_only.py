@@ -198,6 +198,22 @@ class _OpRecorder:
         #: column's type without changing its name, so it is the one operation a
         #: name-only comparison cannot see.
         self.altered_columns: list[tuple[str, str, object]] = []
+        #: Lazily created bind for :meth:`get_bind` -- see there.
+        self._bind: sa.Engine | None = None
+
+    def get_bind(self) -> sa.Engine:
+        """The connection a reconciling revision would inspect.
+
+        Revision 025 decides per object whether to create or to reconcile, by
+        reading the live schema through ``sa.inspect(op.get_bind())``. A replay
+        therefore needs a real bind, and the honest stand-in for "what this
+        revision would emit against a fresh database" is an in-memory SQLite
+        engine: it is empty, so every object takes its create branch and is
+        recorded, and nothing touches the network or a host database.
+        """
+        if self._bind is None:
+            self._bind = sa.create_engine("sqlite://")
+        return self._bind
 
     def create_table(self, name: str, *columns: sa.Column, **kwargs: object) -> None:
         self.calls.append(("create_table", (name,), dict(kwargs)))

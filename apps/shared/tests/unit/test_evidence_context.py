@@ -96,7 +96,14 @@ _CANONICAL_VALUES: tuple[Any, ...] = (
 
 #: The digest is a contract, not an implementation detail: the same frame must
 #: address to this id in a fresh process, from a store, and on a re-read.
-_CANONICAL_CONTEXT_ID = "CX-pending"
+#:
+#: Derived by ``domain.relation_identity.digest128`` over the canonical material
+#: of :data:`_CANONICAL_VALUES` minus ``context_id`` (FR-014, I-11). It was a
+#: ``"CX-pending"`` placeholder while the derivation was being written; the
+#: verification in ``EvidenceContext.__post_init__`` rejects a placeholder, so
+#: leaving it there tested a contract that no longer exists rather than the one
+#: the spec defines.
+_CANONICAL_CONTEXT_ID = "CX-f287a2a4411b5cd906bf451586d0a328"
 
 
 def _canonical_dict() -> dict[str, Any]:
@@ -107,6 +114,21 @@ def _canonical_dict() -> dict[str, Any]:
 def _frame(**overrides: Any) -> EvidenceContext:
     """One fully populated frame, built by keyword with a derived ``context_id``."""
     return EvidenceContext(**{**_canonical_dict(), **overrides})
+
+
+def _corrected(frame: EvidenceContext, **changes: Any) -> EvidenceContext:
+    """A new frame with ``changes`` applied and its ``context_id`` re-derived.
+
+    ``dataclasses.replace`` copies the old ``context_id`` along with the old
+    content, so it cannot express a correction: the copied id no longer
+    addresses the changed material and ``__post_init__`` rejects it by design.
+    A correction therefore clears the id first and lets the frame re-derive it —
+    which is the same rule the resolver applies when it registers a re-read row.
+    """
+    corrected = replace(frame, context_id="", **changes)
+    assert corrected.context_id != frame.context_id
+    assert corrected.context_id.startswith("CX-")
+    return corrected
 
 
 def _self_loop(frame: EvidenceContext) -> EvidenceContext:
@@ -135,7 +157,12 @@ def test_t031_keyword_and_positional_construction_agree_byte_for_byte() -> None:
     assert keyword.context_id.startswith("CX-")
     assert len(keyword.context_id) == 35
     assert keyword.context_id != _UNKNOWN
-    assert [getattr(positional, name) for name in _FIELD_ORDER] == list(_CANONICAL_VALUES)
+    # ``_CANONICAL_VALUES`` supplies the empty ``context_id`` sentinel; the frame
+    # derives and stores the content address, which is the behaviour under test.
+    assert [getattr(positional, name) for name in _FIELD_ORDER] == [
+        keyword.context_id,
+        *_CANONICAL_VALUES[1:],
+    ]
 
 
 def test_t031_candidate_order_and_duplication_canonicalise_to_one_id() -> None:
@@ -157,11 +184,14 @@ def test_t031_candidate_order_and_duplication_canonicalise_to_one_id() -> None:
 def test_t031_enum_text_and_a_record_round_trip_to_one_id() -> None:
     from_text = _frame(completeness="complete", trust_state="unverified")
     round_tripped = EvidenceContext.from_dict(_frame().to_dict())
+    # Slots 21 and 22 are the enum-typed fields; they are supplied here as their
+    # text form to prove the canonical material is identical either way.
     positional_text = EvidenceContext(
-        *_CANONICAL_VALUES[:-2],
+        *_CANONICAL_VALUES[:21],
         "complete",
         "unverified",
-        *_CANONICAL_VALUES[-1:],
+        _CANONICAL_VALUES[23],
+        _CANONICAL_VALUES[24],
     )
     assert from_text.context_id == _frame().context_id
     assert round_tripped == _frame()
@@ -190,7 +220,7 @@ def test_t031_one_changed_field_changes_the_id() -> None:
         ("observed_at", None),
         ("subject_candidate_ids", ("ENT-P1",)),
     ):
-        changed = replace(base, **{name: value})
+        changed = _corrected(base, **{name: value})
         assert changed.context_id != base.context_id, name
         assert changed.frame_fingerprint != base.frame_fingerprint, name
 
@@ -356,7 +386,9 @@ def test_t034_a_three_cycle_reports_the_whole_loop() -> None:
     assert len(path) == 4
     assert path[0] == path[-1]
     assert set(path) == set(parents)
-    for current, following in zip(path, path[1:], strict=True):
+    # Consecutive pairs: ``path[1:]`` is deliberately one shorter, so ``strict``
+    # would reject the very shortening this assertion depends on.
+    for current, following in zip(path, path[1:]):
         assert parents[current] == following
 
 
@@ -416,7 +448,7 @@ def test_t035_an_inverted_interval_is_rejected_with_a_stable_code() -> None:
 def test_t035_a_zero_width_and_a_half_open_interval_are_accepted() -> None:
     zero_width = _frame(valid_from=_FROM, valid_to=_FROM)
     assert zero_width.valid_from == zero_width.valid_to == _FROM
-    assert replace(zero_width, valid_to=_FROM + timedelta(days=1)).valid_to > _FROM
+    assert _corrected(zero_width, valid_to=_FROM + timedelta(days=1)).valid_to > _FROM
     assert _frame(valid_from=None, valid_to=_TO).valid_to == _TO
     assert _frame(valid_from=_FROM, valid_to=None).valid_to is None
     assert _frame().valid_to == _TO

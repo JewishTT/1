@@ -1,0 +1,392 @@
+[
+  {
+    "object": "raw artifact",
+    "schema_class": null,
+    "table": null,
+    "owner_app": null,
+    "writers": [],
+    "competing": false,
+    "status": "NO_TABLE_NAMED",
+    "note": "not a table: the raw bytes live in content-addressed object storage; the record that addresses them is the capture+observation pair"
+  },
+  {
+    "object": "capture",
+    "schema_class": null,
+    "table": null,
+    "owner_app": null,
+    "writers": [],
+    "competing": false,
+    "status": "NO_TABLE_NAMED",
+    "note": "not a table: the raw bytes live in content-addressed object storage; the record that addresses them is the capture+observation pair"
+  },
+  {
+    "object": "observation",
+    "schema_class": "Observation",
+    "table": "observations",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/control-plane/services/interpretation_bridge.py",
+        "lines": [
+          240,
+          241,
+          242
+        ],
+        "evidence": "select(ObservationRow).where("
+      },
+      {
+        "file": "apps/control-plane/services/pow_run.py",
+        "lines": [
+          180
+        ],
+        "evidence": "from db.schema import Entity, EntityVersion, Observation, RelationClaim"
+      },
+      {
+        "file": "apps/zero/zero/harvesters/url.py",
+        "lines": [
+          135
+        ],
+        "evidence": "candidates: list[ObservationCandidate] = []"
+      }
+    ],
+    "competing": true,
+    "status": "COMPETING_WRITERS",
+    "note": ""
+  },
+  {
+    "object": "mention",
+    "schema_class": "Mention",
+    "table": "mentions",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/interpretation/aggregation/candidates.py",
+        "lines": [
+          34,
+          63
+        ],
+        "evidence": "def add(self, mention: CanonicalMention, source_id: str) -> None:"
+      },
+      {
+        "file": "apps/interpretation/extractors/registry.py",
+        "lines": [
+          145
+        ],
+        "evidence": "out: list[Mention] = []"
+      }
+    ],
+    "competing": true,
+    "status": "COMPETING_WRITERS",
+    "note": ""
+  },
+  {
+    "object": "candidate",
+    "schema_class": "Candidate",
+    "table": "candidates",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/acquisition/adapters/discovery/contracts.py",
+        "lines": [
+          94
+        ],
+        "evidence": "out: list[Candidate] = []"
+      },
+      {
+        "file": "apps/admission/resolution/blocking.py",
+        "lines": [
+          80
+        ],
+        "evidence": "def strategies(self, rec: CandidateRecord) -> dict[str, set[str]]:"
+      },
+      {
+        "file": "apps/feedback/feedback/branch/source.py",
+        "lines": [
+          83
+        ],
+        "evidence": "candidates: list[FeedbackCandidate] = []"
+      },
+      {
+        "file": "apps/feedback/feedback/frontier.py",
+        "lines": [
+          64
+        ],
+        "evidence": "async def enqueue_candidate(self, candidate: FeedbackCandidate) -> bool:"
+      },
+      {
+        "file": "apps/interpretation/aggregation/candidates.py",
+        "lines": [
+          63,
+          67
+        ],
+        "evidence": "def add(self, mention: CanonicalMention, source_id: str, offset: int = 0) -> Candidate:"
+      },
+      {
+        "file": "apps/zero/zero/harvesters/url.py",
+        "lines": [
+          135
+        ],
+        "evidence": "candidates: list[ObservationCandidate] = []"
+      }
+    ],
+    "competing": true,
+    "status": "COMPETING_WRITERS",
+    "note": ""
+  },
+  {
+    "object": "entity",
+    "schema_class": "Entity",
+    "table": "entities",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/control-plane/api/routes/entities.py",
+        "lines": [
+          252,
+          255
+        ],
+        "evidence": "from db.schema import InvestigationEntityMembership"
+      },
+      {
+        "file": "apps/control-plane/api/routes/manual_assertions.py",
+        "lines": [
+          172
+        ],
+        "evidence": "existing = await session.get(Entity, entity_id)"
+      },
+      {
+        "file": "apps/control-plane/db/entity_stream.py",
+        "lines": [
+          182
+        ],
+        "evidence": "EntityStreamRow.observation_id.in_(wanted),"
+      },
+      {
+        "file": "apps/control-plane/services/interpretation_bridge.py",
+        "lines": [
+          281,
+          282
+        ],
+        "evidence": "EntityRow.entity_id == entity_id,"
+      },
+      {
+        "file": "apps/control-plane/services/pow_run.py",
+        "lines": [
+          180
+        ],
+        "evidence": "from db.schema import Entity, EntityVersion, Observation, RelationClaim"
+      },
+      {
+        "file": "apps/science/context/lattice.py",
+        "lines": [
+          435
+        ],
+        "evidence": "``LegalEntity``. That is a ``DERIVED`` closure and the operator says so, because the"
+      }
+    ],
+    "competing": true,
+    "status": "COMPETING_WRITERS",
+    "note": ""
+  },
+  {
+    "object": "entity version",
+    "schema_class": "EntityVersion",
+    "table": "entity_versions",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/control-plane/services/pow_run.py",
+        "lines": [
+          180
+        ],
+        "evidence": "from db.schema import Entity, EntityVersion, Observation, RelationClaim"
+      }
+    ],
+    "competing": false,
+    "status": "SINGLE_WRITER",
+    "note": ""
+  },
+  {
+    "object": "investigation membership",
+    "schema_class": "InvestigationEntityMembership",
+    "table": "investigation_entity_memberships",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/control-plane/api/routes/entities.py",
+        "lines": [
+          252,
+          255
+        ],
+        "evidence": "from db.schema import InvestigationEntityMembership"
+      }
+    ],
+    "competing": false,
+    "status": "SINGLE_WRITER",
+    "note": ""
+  },
+  {
+    "object": "assertion",
+    "schema_class": "Assertion",
+    "table": "assertions",
+    "owner_app": "control-plane",
+    "writers": [],
+    "competing": false,
+    "status": "NO_DIRECT_WRITER_FOUND",
+    "note": ""
+  },
+  {
+    "object": "evidence link",
+    "schema_class": "EvidenceLink",
+    "table": "evidence_links",
+    "owner_app": "control-plane",
+    "writers": [],
+    "competing": false,
+    "status": "NO_DIRECT_WRITER_FOUND",
+    "note": ""
+  },
+  {
+    "object": "admission decision",
+    "schema_class": "AdmissionDecisionRow",
+    "table": "admission_decisions",
+    "owner_app": "control-plane",
+    "writers": [],
+    "competing": false,
+    "status": "NO_DIRECT_WRITER_FOUND",
+    "note": ""
+  },
+  {
+    "object": "calibration profile",
+    "schema_class": "CalibrationProfile",
+    "table": "calibration_profiles",
+    "owner_app": "control-plane",
+    "writers": [],
+    "competing": false,
+    "status": "NO_DIRECT_WRITER_FOUND",
+    "note": ""
+  },
+  {
+    "object": "projection",
+    "schema_class": "Projection",
+    "table": "projections",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/control-plane/services/cycle_service.py",
+        "lines": [
+          287
+        ],
+        "evidence": "output=OutputProjection(),"
+      }
+    ],
+    "competing": false,
+    "status": "SINGLE_WRITER",
+    "note": ""
+  },
+  {
+    "object": "finding",
+    "schema_class": "Finding",
+    "table": "findings",
+    "owner_app": "control-plane",
+    "writers": [],
+    "competing": false,
+    "status": "NO_DIRECT_WRITER_FOUND",
+    "note": ""
+  },
+  {
+    "object": "audit log",
+    "schema_class": "AuditLog",
+    "table": "audit_logs",
+    "owner_app": "control-plane",
+    "writers": [],
+    "competing": false,
+    "status": "NO_DIRECT_WRITER_FOUND",
+    "note": ""
+  },
+  {
+    "object": "acquisition task",
+    "schema_class": "AcquisitionTask",
+    "table": "acquisition_tasks",
+    "owner_app": "control-plane",
+    "writers": [],
+    "competing": false,
+    "status": "NO_DIRECT_WRITER_FOUND",
+    "note": ""
+  },
+  {
+    "object": "frontier item",
+    "schema_class": "FrontierItem",
+    "table": "frontier_items",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/control-plane/services/frontier.py",
+        "lines": [
+          233,
+          427
+        ],
+        "evidence": "from db.schema import FrontierItem as Row"
+      },
+      {
+        "file": "apps/feedback/feedback/frontier.py",
+        "lines": [
+          65
+        ],
+        "evidence": "from db.schema import FrontierItem as Row"
+      }
+    ],
+    "competing": true,
+    "status": "COMPETING_WRITERS",
+    "note": ""
+  },
+  {
+    "object": "investigation",
+    "schema_class": "Investigation",
+    "table": "investigations",
+    "owner_app": "control-plane",
+    "writers": [
+      {
+        "file": "apps/control-plane/api/routes/entities.py",
+        "lines": [
+          252,
+          255
+        ],
+        "evidence": "from db.schema import InvestigationEntityMembership"
+      },
+      {
+        "file": "apps/control-plane/context_engine/engine.py",
+        "lines": [
+          1254
+        ],
+        "evidence": "state = InvestigationState.ACTIVE if created else context.state"
+      },
+      {
+        "file": "apps/control-plane/context_engine/postgres_store.py",
+        "lines": [
+          405
+        ],
+        "evidence": "async def put_context(self, context: InvestigationContext) -> None:"
+      },
+      {
+        "file": "apps/control-plane/db/investigation_store.py",
+        "lines": [
+          133
+        ],
+        "evidence": "async def create(self, investigation: Investigation) -> Investigation:"
+      }
+    ],
+    "competing": true,
+    "status": "COMPETING_WRITERS",
+    "note": ""
+  },
+  {
+    "object": "source",
+    "schema_class": "Source",
+    "table": "sources",
+    "owner_app": "control-plane",
+    "writers": [],
+    "competing": false,
+    "status": "NO_DIRECT_WRITER_FOUND",
+    "note": ""
+  }
+]

@@ -1118,7 +1118,11 @@ async def get_entity(
     enriched_timeline = []
     for entry in view.get("timeline", []):
         enriched = {**entry}
-        if first_seen and "observed_at" not in enriched:
+        # ``catalog._observation`` always emits the key, with ``None`` when the
+        # observation carries no time. Presence alone therefore says nothing: the
+        # anchor has to key on a *known* time, or every entry keeps a ``None`` and
+        # the deterministic clock never applies.
+        if first_seen and not enriched.get("observed_at"):
             enriched["observed_at"] = first_seen
         enriched_timeline.append(enriched)
     view = {**view, "timeline": enriched_timeline, "tenant_id": ctx.tenant_id}

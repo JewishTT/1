@@ -165,7 +165,16 @@ def entity_identifiers_to_queries(
         "geo": 8,
         "org": 9,
     }
-    ranked = sorted(ordered.values(), key=lambda q: (priority.get(q.intent, 99), q.weight))
+    # 3) Deterministic selection: intent priority first, then the insertion
+    #    order the builder produced. Insertion order is load-bearing — the name
+    #    is pushed first precisely so that it survives truncation, and among
+    #    entity-intent queries the exact quoted name must outrank its own
+    #    transliterated probe even though the probe carries a lower weight.
+    order = {text: index for index, text in enumerate(ordered)}
+    ranked = sorted(
+        ordered.values(),
+        key=lambda q: (priority.get(q.intent, 99), order[q.text]),
+    )
     return ranked[: max(1, max_queries)]
 
 

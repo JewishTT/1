@@ -1,7 +1,7 @@
 """Context graph persistence: nodes, edges, decisions (025).
 
 Revision ID: 025_context_graph
-Revises: 024_entity_membership
+Revises: 024_investigation_entity_membership
 
 What this revision adopts
 -------------------------
@@ -76,7 +76,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision = "025_context_graph"
-down_revision = "024_entity_membership"
+down_revision = "024_investigation_entity_membership"
 branch_labels = None
 depends_on = None
 
@@ -142,7 +142,7 @@ def _ensure_table(
             name,
             sa.PrimaryKeyConstraint(*primary_key),
             *columns,
-            *(sa.UniqueConstraint(cols, name=cname) for cname, cols in uniques),
+            *(sa.UniqueConstraint(*cols, name=cname) for cname, cols in uniques),
             *(sa.CheckConstraint(expr, name=cname) for cname, expr in checks),
         )
         for iname, icols in indexes:
