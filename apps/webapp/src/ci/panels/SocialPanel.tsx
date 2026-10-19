@@ -50,7 +50,11 @@ export function SocialPanel() {
       status={
         projection ? (
           <StatusChip
-            label={projection.phase_transition_risk.threshold_crossed ? "phase-transition risk" : "stable"}
+            label={
+              projection.phase_transition_risk.threshold_crossed
+                ? "phase-transition risk"
+                : "stable"
+            }
             tone={projection.phase_transition_risk.threshold_crossed ? "danger" : "accent"}
             testId="ci-social-risk"
           />
@@ -59,10 +63,32 @@ export function SocialPanel() {
       testId="ci-social-panel"
     >
       <div className="ui-ci-col">
-        <Input value={population} onChange={(e) => setPopulation(e.target.value)} aria-label="Population reference" data-testid="ci-population-input" />
-        <Input value={narrative} onChange={(e) => setNarrative(e.target.value)} placeholder="narrative / information shock" aria-label="Narrative input" data-testid="ci-narrative-input" />
-        <Input value={horizon} onChange={(e) => setHorizon(e.target.value)} aria-label="Horizon" data-testid="ci-horizon-input" />
-        <Button size="sm" icon="diagram" disabled={busy} onClick={() => void run()} data-testid="ci-run-projection">
+        <Input
+          value={population}
+          onChange={(e) => setPopulation(e.target.value)}
+          aria-label="Population reference"
+          data-testid="ci-population-input"
+        />
+        <Input
+          value={narrative}
+          onChange={(e) => setNarrative(e.target.value)}
+          placeholder="narrative / information shock"
+          aria-label="Narrative input"
+          data-testid="ci-narrative-input"
+        />
+        <Input
+          value={horizon}
+          onChange={(e) => setHorizon(e.target.value)}
+          aria-label="Horizon"
+          data-testid="ci-horizon-input"
+        />
+        <Button
+          size="sm"
+          icon="diagram"
+          disabled={busy}
+          onClick={() => void run()}
+          data-testid="ci-run-projection"
+        >
           Run projection
         </Button>
       </div>
@@ -71,17 +97,25 @@ export function SocialPanel() {
         <div className="ui-ci-col" data-testid="ci-projection">
           <div className="ui-ci-list-head">
             <span className="ui-pane-title">Projection {projection.projection_id}</span>
-            <StatusChip label={`confidence ${projection.confidence}`} tone={projection.confidence === "low" ? "gold" : "neutral"} testId="ci-social-confidence" />
+            <StatusChip
+              label={`confidence ${projection.confidence}`}
+              tone={projection.confidence === "low" ? "gold" : "neutral"}
+              testId="ci-social-confidence"
+            />
           </div>
           <TrajectorySpark rows={projection.trajectories} />
           <div className="ui-ci-metrics">
             <div className="ui-ci-metric">
               <span className="op-label">phase-transition indicator</span>
-              <span className="op-value">{projection.phase_transition_risk.indicator.toFixed(2)}</span>
+              <span className="op-value">
+                {projection.phase_transition_risk.indicator.toFixed(2)}
+              </span>
             </div>
             <div className="ui-ci-metric">
               <span className="op-label">threshold crossed</span>
-              <span className="op-value">{projection.phase_transition_risk.threshold_crossed ? "yes" : "no"}</span>
+              <span className="op-value">
+                {projection.phase_transition_risk.threshold_crossed ? "yes" : "no"}
+              </span>
             </div>
           </div>
           {projection.artifacts_ref ? (
@@ -110,8 +144,16 @@ function TrajectorySpark({ rows }: { rows: SocialProjectionRow["trajectories"] }
       {rows.map((r) => (
         <li key={r.t}>
           <span className="ui-id">t{r.t}</span>
-          <span className="ui-ci-bar" style={{ width: `${(r.reach / max) * 100}%` }} title={`reach ${r.reach}`} />
-          <span className="ui-ci-bar ui-ci-bar-alt" style={{ width: `${(r.polarization / max) * 100}%` }} title={`polarization ${r.polarization}`} />
+          <span
+            className="ui-ci-bar"
+            style={{ width: `${(r.reach / max) * 100}%` }}
+            title={`reach ${r.reach}`}
+          />
+          <span
+            className="ui-ci-bar ui-ci-bar-alt"
+            style={{ width: `${(r.polarization / max) * 100}%` }}
+            title={`polarization ${r.polarization}`}
+          />
         </li>
       ))}
     </ul>

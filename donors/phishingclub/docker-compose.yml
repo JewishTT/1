@@ -1,0 +1,178 @@
+# Phishing Club Development Environment
+# Standalone docker-compose for the public phishingclub repository
+
+services:
+  # Backend API
+  # Backend Phishing Server
+  # NOTICE - the backend is accessed on dev via. 8003 via. vite magic proxy
+  backend:
+    user: "1000:1000"
+    tty: true
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
+    # the acme certs are deleted because the acme server does not store the account
+    # and mouting them again would cause it to error because the account is not found
+    command: /bin/bash -c 'mkdir -p /app/.dev/certs/acme && rm -rf /app/.dev/certs/acme/* && air -c /app/.air.docker.toml'
+    volumes:
+      - ./backend:/app
+    environment:
+      - air_wd=/app
+      - air_conf=/app/.air.docker.toml
+      - TERM=xterm-256color
+    ports:
+      - 2345:2345 # debugger
+      - 80:8000 # HTTP phishing server
+      - 443:8001 # HTTPS phishing server
+      # HTTPS administration server - used for proxying requests to /api endpoints
+      - 8002:8002
+    # restart on-failure is so when the containers are started and the backend has not yet build
+    # the files, the backend will not fail compiling due to missing files to embed.
+    # this might be fixable by using a go build flag, as files for the frontend are fetched on
+    # at run time when in development mode.
+    restart: on-failure
+    networks:
+      - default
+
+  # Frontend Server
+  # NOTICE - the frontend proxys the backend ports via 8003
+  frontend:
+    ports:
+      - 8003:8003 # dev magic proxy vite thing
+    tty: true
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+    networks:
+      - default
+
+  # Database Administration
+  dbgate:
+    image: dbgate/dbgate:5.2.5@sha256:4db16a7232e21a466b46d3da450ec427250f94e4d37b6bcbdb95ee6a04c57888
+    environment:
+      CONNECTIONS: con1
+      LABEL_con1: SQLite
+      FILE_con1: /app/sqlite/db.sqlite3
+      ENGINE_con1: sqlite@dbgate-plugin-sqlite
+    restart: always
+    ports:
+      - 8101:3000
+    volumes:
+      - ./backend/.dev/:/app/sqlite/
+    networks:
+      - default
+    depends_on:
+      - backend
+
+  # Mailer - SMTP server for testing
+  # Mailpit for email testing and inspection
+  mailer:
+    image: axllent/mailpit@sha256:c076638db1e15662150be4fb62b8a6e96ef6ba5bde90c838a0239225854830f7
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - 8102:8025
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_ENABLE_SPAMASSASSIN: spamassassin:783
+    depends_on:
+      - spamassassin
+    networks:
+      - default
+
+  # SpamAssassin - Spam detection and scoring
+  spamassassin:
+    image: axllent/spamassassin@sha256:0f63db7dc13da87d1c0654ad0bf061f11dce521b1a94a299ede641bbdfe2b048
+    restart: unless-stopped
+    volumes:
+      - ./config/spamassassin/99_local_override.cf:/etc/mail/spamassassin/99_local_override.cf:ro
+    networks:
+      - default
+
+  # Pebble - ACME server for testing
+  # Used to test TLS certificate requesting via ACME
+  pebble:
+    image: ghcr.io/letsencrypt/pebble:2.8.0@sha256:d9080f68f6cb6af8d82134ab26de0aaaf312ac9cba42aecc6d3aede6cb63007b
+    command:
+      - -config
+      - /test/my-pebble-config.json
+      - -dnsserver
+      - 172.20.0.137:5353
+    ports:
+      - 8201:14000 # ACME port
+      - 8202:15000 # Management port
+      - 8203:8055 # pebble-challtestsr
+    environment:
+      - PEBBLE_VA_NOSLEEP=1
+    volumes:
+      - ./backend/acme/pebble-config.json:/test/my-pebble-config.json
+      - ./backend/acme/pebble.minica.pem:/test/certs/pebble.minica.pem
+    networks:
+      - default
+
+  # API Test Server - for testing API sender functionality
+  api-test-server:
+    build:
+      context: ./api-test-server/
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./api-test-server:/app
+    networks:
+      default:
+        ipv4_address: 172.20.0.135
+    ports:
+      - 8107:80
+
+  # Utils container with debugging tools
+  test:
+    image: arunvelsriram/utils@sha256:655ad18fd8d63526f17a28b4f795dccfeced41f8cde53e4ec48228b41cbc2586
+    command: ["tail", "-f", "/dev/null"]
+    networks:
+      - default
+
+  # mitmproxy - HTTP/HTTPS proxy for security research and debugging
+  # Web interface: http://localhost:8105 (check logs for auto-generated token) - Proxy available at 172.20.0.138:8080
+  # Use this IP in your Proxy configs: proxy: '172.20.0.138:8080'
+  mitmproxy:
+    image: mitmproxy/mitmproxy@sha256:743b6cdc817211d64bc269f5defacca8d14e76e647fc474e5c7244dbcb645141
+    command: mitmweb --web-host 0.0.0.0 --web-port 8080 --listen-port 8081 --no-web-open-browser --ssl-insecure
+    tty: true
+    ports:
+      - "8105:8080" # Web interface
+      - "8106:8081" # Proxy port (for external access)
+    volumes:
+      - mitmproxy_data:/home/mitmproxy/.mitmproxy
+    restart: unless-stopped
+    networks:
+      default:
+        ipv4_address: 172.20.0.138
+
+  # DNS Server for .test domain resolution
+  dns:
+    restart: always
+    image: strm/dnsmasq@sha256:dcf4c0aeb69ea6b9bca81314449d732ecd2ea021588d8a34d4be7c2304f89a39
+    volumes:
+      - ./docker/dnsmasq/startup.sh:/root/startup.sh
+    cap_add:
+      - NET_ADMIN
+    entrypoint: ["/bin/sh", "-c"]
+    depends_on:
+      - backend
+    command: ["chmod +x /root/startup.sh; /root/startup.sh"]
+    networks:
+      default:
+        ipv4_address: 172.20.0.137
+
+volumes:
+  mitmproxy_data:
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

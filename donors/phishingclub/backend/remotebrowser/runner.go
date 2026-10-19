@@ -1,0 +1,1723 @@
+package remotebrowser
+
+import (
+	"bytes"
+	"context"
+	"io"
+
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"syscall"
+	"time"
+
+	"go.uber.org/zap"
+
+	"github.com/dop251/goja"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
+	"github.com/go-rod/rod/lib/launcher/flags"
+	"github.com/go-rod/rod/lib/proto"
+
+	"github.com/phishingclub/phishingclub/embedded"
+)
+
+// Config holds browser connection and execution settings configurable by platform admins.
+type Config struct {
+	Mode       string   `json:"mode"`       // "local" or "remote"
+	Remote     string   `json:"remote"`     // DevTools WS URL (mode=remote)
+	Proxy      string   `json:"proxy"`      // socks5:// or http:// (mode=local)
+	Headless   bool     `json:"headless"`   // run Chrome in headless mode (mode=local)
+	Timeout    int      `json:"timeout"`    // ms, 0 = use DefaultTimeout
+	Lang       string   `json:"lang"`       // BCP 47 locale e.g. "en-US" (mode=local)
+	Timezone   string   `json:"timezone"`   // IANA timezone e.g. "Europe/Copenhagen" to match the exit network
+	ExtraFlags []string `json:"extraFlags"` // additional Chrome CLI flags e.g. ["--use-gl=egl"] (mode=local)
+}
+
+const DefaultTimeout = 60_000 // ms
+
+// DefaultChromiumUA is the fallback user-agent used when the real browser version
+// cannot be probed. It presents a Linux Chrome identity matching the host OS so
+// navigator.platform, the client hints, and every worker context stay consistent.
+// A Windows disguise cannot: navigator.platform is not overridable in worker and
+// service-worker contexts, so it always contradicts a Windows UA there. The major
+// version tracks the bundled Chromium (rod RevisionDefault); prefer the real,
+// probed version via detectChromeMajor at runtime.
+const DefaultChromiumUA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+
+// chromeVersionRe matches a full Chromium version like "128.0.6568.0".
+var chromeVersionRe = regexp.MustCompile(`(\d+)\.\d+\.\d+\.\d+`)
+
+// uaChromeMajorRe extracts the major version from a UA string ("Chrome/128...").
+var uaChromeMajorRe = regexp.MustCompile(`Chrome/(\d+)`)
+
+// detectChromeMajor runs `<bin> --version` and returns the major version, e.g.
+// "128" from "Chromium 128.0.6568.0". Returns "" when the binary cannot be probed;
+// the caller falls back to DefaultChromiumUA. Probing the real binary keeps the
+// spoofed UA version in lockstep with the engine, so a version cross-check cannot
+// catch a UA that claims a version the engine does not support.
+func detectChromeMajor(ctx context.Context, bin string) string {
+	c, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(c, bin, "--version").Output()
+	if err != nil {
+		return ""
+	}
+	if m := chromeVersionRe.FindStringSubmatch(string(out)); m != nil {
+		return m[1]
+	}
+	return ""
+}
+
+// linuxChromeUA builds a reduced Linux Chrome user-agent for the given major
+// version, matching Chrome's UA-reduction format (minor, build, and patch zeroed).
+func linuxChromeUA(major string) string {
+	return fmt.Sprintf(
+		"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s.0.0.0 Safari/537.36",
+		major)
+}
+
+// cleanHeadlessUA strips the "HeadlessChrome" token from a real user-agent so a
+// remote headless browser reports as ordinary Chrome. Used only in remote mode,
+// where a launch flag is not available.
+func cleanHeadlessUA(ua string) string {
+	return strings.ReplaceAll(ua, "HeadlessChrome", "Chrome")
+}
+
+// uaPlatform returns the navigator.platform value that matches ua's OS token.
+func uaPlatform(ua string) string {
+	switch {
+	case strings.Contains(ua, "Windows"):
+		return "Win32"
+	case strings.Contains(ua, "Macintosh"), strings.Contains(ua, "Mac OS"):
+		return "MacIntel"
+	default:
+		return "Linux x86_64"
+	}
+}
+
+// uaMetadata builds client-hint metadata (Sec-CH-UA / navigator.userAgentData)
+// consistent with ua's version and OS. Setting this alongside the UA string avoids
+// the empty-client-hints tell that a string-only override produces.
+func uaMetadata(ua string) *proto.EmulationUserAgentMetadata {
+	major := "128"
+	if m := uaChromeMajorRe.FindStringSubmatch(ua); m != nil {
+		major = m[1]
+	}
+	platform := "Linux"
+	switch {
+	case strings.Contains(ua, "Windows"):
+		platform = "Windows"
+	case strings.Contains(ua, "Macintosh"), strings.Contains(ua, "Mac OS"):
+		platform = "macOS"
+	}
+	return &proto.EmulationUserAgentMetadata{
+		Brands: []*proto.EmulationUserAgentBrandVersion{
+			{Brand: "Not;A=Brand", Version: "24"},
+			{Brand: "Chromium", Version: major},
+			{Brand: "Google Chrome", Version: major},
+		},
+		Platform:     platform,
+		Architecture: "x86",
+		Bitness:      "64",
+		Mobile:       false,
+	}
+}
+
+// applyRemoteIdentity aligns a remote browser's main-frame identity via CDP.
+// Remote mode cannot take a launch flag, so this strips any "HeadlessChrome" token
+// from the real UA and sets a matching platform and client-hint metadata. Worker
+// contexts of a remote browser inherit the remote's own process UA and are out of
+// our control here; operators should run a non-headless remote browser.
+func applyRemoteIdentity(page *rod.Page, customUA string, emitter *channelEmitter) {
+	ua := customUA
+	if ua == "" {
+		if ver, err := (proto.BrowserGetVersion{}).Call(page); err == nil {
+			ua = cleanHeadlessUA(ver.UserAgent)
+		}
+		if ua == "" {
+			ua = DefaultChromiumUA
+		}
+	}
+	override := &proto.NetworkSetUserAgentOverride{
+		UserAgent:         ua,
+		Platform:          uaPlatform(ua),
+		UserAgentMetadata: uaMetadata(ua),
+	}
+	if err := page.SetUserAgent(override); err != nil {
+		emitter.log(fmt.Sprintf("[session] warning: failed to set user-agent: %v", err))
+	}
+}
+
+// DefaultConfig returns a default config.
+func DefaultConfig() Config {
+	return Config{
+		Mode:    "local",
+		Timeout: DefaultTimeout,
+	}
+}
+
+// ParseConfig parses a JSON config string, returning defaults for empty input.
+func ParseConfig(raw string) (Config, error) {
+	cfg := DefaultConfig()
+	if raw == "" {
+		return cfg, nil
+	}
+	if err := json.Unmarshal([]byte(raw), &cfg); err != nil {
+		return cfg, err
+	}
+	if cfg.Timeout <= 0 {
+		cfg.Timeout = DefaultTimeout
+	}
+	if cfg.Mode != "remote" {
+		cfg.Remote = ""
+	}
+	return cfg, nil
+}
+
+// chromeEnv builds a minimal environment for the Chrome subprocess, plus any
+// overrides. Passing os.Environ() to Chrome leaks secrets into the renderer process.
+// Only variables Chrome actually needs are forwarded.
+func chromeEnv(overrides ...string) []string {
+	allowed := map[string]bool{
+		"HOME": true, "PATH": true, "USER": true, "LOGNAME": true,
+		"DISPLAY": true, "XAUTHORITY": true, "DBUS_SESSION_BUS_ADDRESS": true,
+		"FONTCONFIG_PATH": true, "FONTCONFIG_FILE": true,
+	}
+	var env []string
+	for _, kv := range os.Environ() {
+		key := kv
+		if i := strings.IndexByte(kv, '='); i >= 0 {
+			key = kv[:i]
+		}
+		if allowed[key] {
+			env = append(env, kv)
+		}
+	}
+	return append(env, overrides...)
+}
+
+// resolveBrowserRootDir returns the directory Rod uses to cache its auto-downloaded
+// Chromium. We use a path next to the running binary rather than $HOME/.cache
+func resolveBrowserRootDir() (string, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("cannot locate browser cache dir: %w", err)
+	}
+	return filepath.Join(filepath.Dir(execPath), "data", "browser"), nil
+}
+
+// xvfbScreen is the geometry of a session's private display. The recipient's real
+// viewport and screen metrics are applied over CDP after the page opens, so this
+// only has to be large enough to hold the browser window.
+const xvfbScreen = "1920x1080x24"
+
+// x11SocketDir is where X servers place their per display sockets. Xvfb does not
+// create it, so a bare container image where nothing else has made it would leave
+// the server unable to open a socket. Creating it here keeps headful working
+// without adding a step to every Dockerfile.
+const x11SocketDir = "/tmp/.X11-unix"
+
+// startPrivateDisplay launches an Xvfb dedicated to a single browser session and
+// returns its display name together with a stop function.
+//
+// Sessions get a display each instead of sharing one for two reasons. A dedicated
+// display means the browser window is the only window on it, so no two sessions
+// can compete for the foreground, which is what previously froze every session but
+// the most recent one. It also stops the accidental crossover a shared display
+// allows, where any client can read the windows and input of every other client
+// on it. This is not a boundary against a hostile escaped renderer: every browser
+// runs as the same user, so such code could reach a sibling display regardless.
+// That case is the already accepted remote browser RCE risk; guarding it would
+// need separate users or namespaces, not an X cookie, which the same user can read.
+//
+// Xvfb chooses the display number itself and reports it back on the descriptor
+// passed with -displayfd, so concurrent sessions never race for the same number.
+func startPrivateDisplay() (string, func(), error) {
+	// Best effort: usually already present. If creating it was actually needed
+	// and failed, the read below surfaces the concrete failure.
+	_ = os.MkdirAll(x11SocketDir, 0o777)
+
+	pr, pw, err := os.Pipe()
+	if err != nil {
+		return "", nil, err
+	}
+	cmd := exec.Command("Xvfb", "-displayfd", "3", "-screen", "0", xvfbScreen, "-nolisten", "tcp", "-noreset")
+	cmd.ExtraFiles = []*os.File{pw} // the child sees this as descriptor 3
+	if err := cmd.Start(); err != nil {
+		pr.Close() //nolint:errcheck
+		pw.Close() //nolint:errcheck
+		return "", nil, fmt.Errorf("xvfb start failed: %w", err)
+	}
+	// Xvfb owns the write end now. Dropping ours means a read returns instead of
+	// blocking if the server dies before reporting a display.
+	pw.Close() //nolint:errcheck
+
+	exited := make(chan error, 1)
+	go func() { exited <- cmd.Wait() }()
+
+	var stopOnce sync.Once
+	stop := func() {
+		stopOnce.Do(func() {
+			if cmd.Process != nil {
+				// SIGTERM first so Xvfb removes its own lock file and socket;
+				// SIGKILL would strand both and slowly litter /tmp.
+				cmd.Process.Signal(syscall.SIGTERM) //nolint:errcheck
+				select {
+				case <-exited:
+				case <-time.After(3 * time.Second):
+					cmd.Process.Kill() //nolint:errcheck
+					<-exited
+				}
+			}
+			pr.Close() //nolint:errcheck
+		})
+	}
+
+	pr.SetReadDeadline(time.Now().Add(10 * time.Second)) //nolint:errcheck
+	var out []byte
+	chunk := make([]byte, 16)
+	for !bytes.ContainsRune(out, '\n') && len(out) < 32 {
+		n, readErr := pr.Read(chunk)
+		if n > 0 {
+			out = append(out, chunk[:n]...)
+		}
+		if readErr != nil {
+			stop()
+			return "", nil, fmt.Errorf("xvfb did not report a display: %w", readErr)
+		}
+	}
+	num := strings.TrimSpace(string(out))
+	if num == "" {
+		stop()
+		return "", nil, errors.New("xvfb reported an empty display")
+	}
+	return ":" + num, stop, nil
+}
+
+// chromeSterrWriter is an io.Writer that fans Chrome stdout/stderr lines out to
+// the session emitter (when emitter != nil) and/or the app logger (when logger != nil).
+type chromeSterrWriter struct {
+	emitter *channelEmitter    // non-nil → forward to session event stream
+	logger  *zap.SugaredLogger // non-nil → forward to app debug log
+	buf     []byte
+}
+
+func (w *chromeSterrWriter) Write(p []byte) (int, error) {
+	w.buf = append(w.buf, p...)
+	for {
+		idx := bytes.IndexByte(w.buf, '\n')
+		if idx < 0 {
+			break
+		}
+		line := strings.TrimSpace(string(w.buf[:idx]))
+		w.buf = w.buf[idx+1:]
+		if line != "" {
+			if w.emitter != nil {
+				w.emitter.log("[chrome] " + line)
+			}
+			if w.logger != nil {
+				w.logger.Debugw(line, "source", "chrome")
+			}
+		}
+	}
+	return len(p), nil
+}
+
+// scriptStopError is thrown by stop() for a clean script exit with no error emitted.
+type scriptStopError struct{}
+
+func (scriptStopError) Error() string { return "script stopped" }
+
+// knownGoErrors maps substrings in a GoError message to a friendlier single line description.
+// Only Rod/CDP/network-specific errors belong here. context.Canceled and
+// context.DeadlineExceeded are handled earlier via errors.Is and never reach cleanGoError.
+var knownGoErrors = []struct {
+	substr  string
+	message string
+}{
+	{"connection refused", "browser connection refused, is Chrome running?"},
+	{"use of closed network connection", "browser connection closed unexpectedly"},
+	{"i/o timeout", "browser CDP connection timed out"},
+	{"EOF", "browser disconnected unexpectedly"},
+	{"Target closed", "browser tab was closed"},
+	{"page not found", "browser tab was closed"},
+}
+
+// cleanGoError returns a friendly single line message for common GoError strings,
+// stripping the "GoError: " prefix and JS stack trace. Unknown errors are returned
+// with the prefix stripped but the stack trace removed.
+func cleanGoError(s string) string {
+	// Strip leading "GoError: " prefix if present.
+	msg := strings.TrimPrefix(s, "GoError: ")
+	// Remove everything from the first newline (stack trace).
+	if idx := strings.IndexByte(msg, '\n'); idx >= 0 {
+		msg = msg[:idx]
+	}
+	// Map messages to friendly descriptions.
+	lower := strings.ToLower(msg)
+	for _, e := range knownGoErrors {
+		if strings.Contains(lower, e.substr) {
+			return e.message
+		}
+	}
+	return msg
+}
+
+// Runner executes a JS script against a Chrome instance and streams events
+// to the Events channel. The caller must close or drain Events after Run returns.
+type Runner struct {
+	Script string
+	Config Config
+	// ExecPath is the server-configured Chrome binary path (from config.json,
+	// not user-supplied). Empty = Rod auto-download.
+	ExecPath string
+	// Logger, when set, receives Chrome process stdout/stderr at debug level.
+	Logger   *zap.SugaredLogger
+	Events   chan RunEvent    // server → client
+	Incoming chan IncomingMsg // client → script (victim events / test injections)
+	// BrowserCh receives the *rod.Page as soon as newSession() spawns the browser.
+	// The caller reads this once to obtain the page for streaming.
+	BrowserCh chan *rod.Page
+	// LiveCh receives the *rod.Page when s.keepAlive() is called (kept for compat).
+	LiveCh chan *rod.Page
+	// StreamCh receives commands from s.stream(selector, name) / stop().
+	StreamCh chan StreamCmd
+	// keepAliveActive is set by s.keepAlive() so Run() parks after the script
+	// finishes, waiting for the operator to explicitly end the session.
+	keepAliveActive atomic.Bool
+	// Request describes the victim connection that started this session. The
+	// controller populates it before Run so the script can read it via request()
+	// before newSession(), for example to pick a proxy by country. Nil for
+	// operator test runs.
+	Request *RequestInfo
+	// RunScript invokes a saved Script by name in callable mode (input object in,
+	// returned object out), set by the controller when the Scripts feature is
+	// enabled. Nil means the feature is off and the runScript binding throws.
+	RunScript func(name string, input map[string]interface{}) (map[string]interface{}, error)
+}
+
+// RequestInfo is the victim request context exposed to the script via request().
+// It is filled by the caller (the controller) from the incoming connection.
+type RequestInfo struct {
+	IP             string            `json:"ip"`
+	Country        string            `json:"country"`
+	ASNs           []RequestASN      `json:"asns"`
+	JA4            string            `json:"ja4"`
+	UserAgent      string            `json:"userAgent"`
+	AcceptLanguage string            `json:"acceptLanguage"`
+	Headers        map[string]string `json:"headers"`
+}
+
+// RequestASN is one autonomous system the request IP belongs to.
+type RequestASN struct {
+	Number uint32 `json:"number"`
+	Name   string `json:"name"`
+}
+
+// requestToMap converts the request info into a plain map so goja exposes the
+// exact lowercase JS keys. A nil Request yields an empty shaped object so a
+// script reading request().country never hits undefined.
+func requestToMap(ri *RequestInfo) map[string]interface{} {
+	if ri == nil {
+		return map[string]interface{}{
+			"ip":             "",
+			"country":        "",
+			"asns":           []interface{}{},
+			"ja4":            "",
+			"userAgent":      "",
+			"acceptLanguage": "",
+			"headers":        map[string]interface{}{},
+		}
+	}
+	asns := make([]interface{}, 0, len(ri.ASNs))
+	for _, a := range ri.ASNs {
+		asns = append(asns, map[string]interface{}{"number": a.Number, "name": a.Name})
+	}
+	headers := make(map[string]interface{}, len(ri.Headers))
+	for k, v := range ri.Headers {
+		headers[k] = v
+	}
+	return map[string]interface{}{
+		"ip":             ri.IP,
+		"country":        ri.Country,
+		"asns":           asns,
+		"ja4":            ri.JA4,
+		"userAgent":      ri.UserAgent,
+		"acceptLanguage": ri.AcceptLanguage,
+		"headers":        headers,
+	}
+}
+
+// IncomingMsg is an event sent from the client into the running script.
+// Wire format: {"event": "credentials", "data": {"username": "...", "password": "..."}}
+type IncomingMsg struct {
+	Event string `json:"event"`
+	Data  any    `json:"data"`
+}
+
+// StreamCmd is sent on Runner.StreamCh when the script calls s.stream() or the returned stop().
+type StreamCmd struct {
+	Op       string    // "start" | "stop"
+	Selector string    // CSS selector (Op=start)
+	Name     string    // stream name
+	Page     *rod.Page // rod page (Op=start)
+	MaxFps   int       // 0 = unlimited
+	Quality  int       // JPEG re-encode quality 1-100; 0 = default (92)
+}
+
+// NewRunner creates a Runner with buffered event channels.
+func NewRunner(script string, cfg Config) *Runner {
+	return &Runner{
+		Script:    script,
+		Config:    cfg,
+		Events:    make(chan RunEvent, 256),
+		Incoming:  make(chan IncomingMsg, 256),
+		BrowserCh: make(chan *rod.Page, 1),
+		LiveCh:    make(chan *rod.Page, 1),
+		StreamCh:  make(chan StreamCmd, 16),
+	}
+}
+
+// Run executes the script. It blocks until the script finishes, the context is
+// cancelled, or the global timeout fires. The Events channel is closed when Run
+// returns.
+func (r *Runner) Run(ctx context.Context) error {
+	defer close(r.Events)
+	defer close(r.StreamCh)
+
+	emitter := newChannelEmitter(r.Events)
+
+	// Last resort recovery: rod can panic with nil-pointer dereferences inside goja
+	// native callbacks. Goja panics non-Value panics, which would crash the process.
+	// Catch anything that escapes vm.RunString so a broken script never takes down the server.
+	defer func() {
+		if rec := recover(); rec != nil {
+			emitter.errorf(fmt.Sprintf("internal error: %v", rec))
+		}
+	}()
+
+	timeout := time.Duration(r.Config.Timeout) * time.Millisecond
+	outerCtx := ctx // operator-level context; only cancelled explicitly
+	ctx, timeoutCancel := context.WithTimeout(outerCtx, timeout)
+	defer timeoutCancel()
+
+	vm := goja.New()
+
+	// Interrupt the JS VM on termination. Two cases:
+	//   DeadlineExceeded, real timeout: interrupt immediately.
+	//   Canceled        , either keepAlive() cancelled the script timeout to
+	//                      park the session, or the operator cancelled. Either
+	//                      way wait for the outer context so we only interrupt
+	//                      when the operator actually ends the session.
+	go func() {
+		<-ctx.Done()
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			vm.Interrupt(ctx.Err())
+			return
+		}
+		<-outerCtx.Done()
+		vm.Interrupt(outerCtx.Err())
+	}()
+
+	// vmArgStr returns "" for undefined/null instead of the string "undefined".
+	vmArgStr := func(v goja.Value) string {
+		if goja.IsUndefined(v) || goja.IsNull(v) {
+			return ""
+		}
+		return v.String()
+	}
+
+	vm.Set("stop", func(call goja.FunctionCall) goja.Value {
+		panic(vm.NewGoError(scriptStopError{}))
+	})
+
+	// request() returns the victim connection that started this session (IP,
+	// country, ASNs, JA4, headers). Available before newSession() so a script can
+	// gate or pick a proxy by country.
+	vm.Set("request", func(call goja.FunctionCall) goja.Value {
+		return vm.ToValue(requestToMap(r.Request))
+	})
+
+	// runScript(name, data) runs a saved Script by name, passing data as its
+	// input and returning the object the script returns. Synchronous (blocking).
+	// Useful for reusable snippets and talking to external services.
+	vm.Set("runScript", func(call goja.FunctionCall) goja.Value {
+		name := vmArgStr(call.Argument(0))
+		var input map[string]interface{}
+		if exp := call.Argument(1).Export(); exp != nil {
+			if m, ok := exp.(map[string]interface{}); ok {
+				input = m
+			}
+		}
+		if r.RunScript == nil {
+			panic(vm.NewTypeError("runScript is not available in this context"))
+		}
+		out, err := r.RunScript(name, input)
+		if err != nil {
+			panic(vm.NewGoError(err))
+		}
+		if out == nil {
+			return goja.Undefined()
+		}
+		return vm.ToValue(out)
+	})
+
+	vm.Set("emit", func(call goja.FunctionCall) goja.Value {
+		key := vmArgStr(call.Argument(0))
+		value := call.Argument(1).Export()
+		emitter.emit(key, value)
+		return goja.Undefined()
+	})
+
+	vm.Set("log", func(call goja.FunctionCall) goja.Value {
+		msg := vmArgStr(call.Argument(0))
+		if len(call.Arguments) > 1 && !goja.IsUndefined(call.Argument(1)) && !goja.IsNull(call.Argument(1)) {
+			emitter.scriptLog(msg, call.Argument(1).Export())
+		} else {
+			emitter.scriptLog(msg)
+		}
+		return goja.Undefined()
+	})
+
+	vm.Set("info", func(call goja.FunctionCall) goja.Value {
+		msg := vmArgStr(call.Argument(0))
+		emitter.info(msg)
+		return goja.Undefined()
+	})
+
+	vm.Set("submitData", func(call goja.FunctionCall) goja.Value {
+		data := call.Argument(0).Export()
+		emitter.submitData(data)
+		return goja.Undefined()
+	})
+
+	// eventQueue buffers events received by race() that didn't match any race condition,
+	// so they remain available for subsequent waitForEvent / waitForAny calls.
+	var eventQueue []IncomingMsg
+	enqueue := func(msg IncomingMsg) {
+		if len(eventQueue) < 512 {
+			eventQueue = append(eventQueue, msg)
+		}
+	}
+
+	// nextMatchingEvent returns the first event in eventQueue whose name is in keySet,
+	// removing it from the queue. Returns ok=false if no match is buffered.
+	nextMatchingEvent := func(keySet map[string]bool) (IncomingMsg, bool) {
+		for i, msg := range eventQueue {
+			if keySet[msg.Event] {
+				eventQueue = append(eventQueue[:i], eventQueue[i+1:]...)
+				return msg, true
+			}
+		}
+		return IncomingMsg{}, false
+	}
+
+	vm.Set("waitForEvent", func(call goja.FunctionCall) goja.Value {
+		key := vmArgStr(call.Argument(0))
+		emitter.log(fmt.Sprintf("[waitForEvent] waiting for %q", key))
+		ks := map[string]bool{key: true}
+		if msg, ok := nextMatchingEvent(ks); ok {
+			emitter.log(fmt.Sprintf("[waitForEvent] received %q (queued)", key))
+			return vm.ToValue(msg.Data)
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				panic(vm.NewGoError(ctx.Err()))
+			case msg := <-r.Incoming:
+				if msg.Event == key {
+					emitter.log(fmt.Sprintf("[waitForEvent] received %q", key))
+					return vm.ToValue(msg.Data)
+				}
+				enqueue(msg)
+			}
+		}
+	})
+
+	vm.Set("waitForAny", func(call goja.FunctionCall) goja.Value {
+		// waitForAny(["password", "username"]) or waitForAny("password", "username")
+		// Returns {event: "...", data: ...} for whichever arrives first.
+		keySet := make(map[string]bool)
+		if len(call.Arguments) == 1 {
+			if arr, ok := call.Argument(0).Export().([]interface{}); ok {
+				for _, v := range arr {
+					keySet[fmt.Sprintf("%v", v)] = true
+				}
+			} else {
+				keySet[vmArgStr(call.Argument(0))] = true
+			}
+		} else {
+			for _, a := range call.Arguments {
+				keySet[vmArgStr(a)] = true
+			}
+		}
+		if msg, ok := nextMatchingEvent(keySet); ok {
+			result := vm.NewObject()
+			result.Set("event", msg.Event)
+			result.Set("data", vm.ToValue(msg.Data))
+			return result
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				panic(vm.NewGoError(ctx.Err()))
+			case msg := <-r.Incoming:
+				if keySet[msg.Event] {
+					result := vm.NewObject()
+					result.Set("event", msg.Event)
+					result.Set("data", vm.ToValue(msg.Data))
+					return result
+				}
+				enqueue(msg)
+			}
+		}
+	})
+
+	// retry(max, fn) or retry({max, wait}, fn)
+	// fn receives a RetryContext and returns truthy to break (the value is returned),
+	// or false/undefined to retry. Returns null when all attempts are exhausted.
+	vm.Set("retry", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 2 {
+			panic(vm.NewTypeError("retry: expected (max, fn) or ({max, wait}, fn)"))
+		}
+
+		maxAttempts := 10
+		waitMs := 0
+
+		firstArg := call.Argument(0)
+		switch firstArg.Export().(type) {
+		case int64, float64, int, int32, int16, int8, uint, uint64, uint32, uint16, uint8:
+			maxAttempts = int(firstArg.ToInteger())
+		default:
+			obj := firstArg.ToObject(vm)
+			if mv := obj.Get("max"); mv != nil && !goja.IsUndefined(mv) && !goja.IsNull(mv) {
+				maxAttempts = int(mv.ToInteger())
+			}
+			if wv := obj.Get("wait"); wv != nil && !goja.IsUndefined(wv) && !goja.IsNull(wv) {
+				waitMs = int(wv.ToInteger())
+			}
+		}
+
+		fn, ok := goja.AssertFunction(call.Argument(1))
+		if !ok {
+			panic(vm.NewTypeError("retry: second argument must be a function"))
+		}
+
+		for attempt := 1; attempt <= maxAttempts; attempt++ {
+			loopCtx := vm.NewObject()
+			loopCtx.Set("attempt", attempt)
+			loopCtx.Set("max", maxAttempts)
+			loopCtx.Set("isFirst", attempt == 1)
+			loopCtx.Set("isLast", attempt == maxAttempts)
+
+			result, err := fn(goja.Undefined(), loopCtx)
+			if err != nil {
+				panic(err)
+			}
+
+			// explicit false → retry; any other truthy value (including true) → done
+			if !goja.IsNull(result) && !goja.IsUndefined(result) {
+				if b, isBool := result.Export().(bool); !isBool || b {
+					return result
+				}
+			}
+
+			if waitMs > 0 && attempt < maxAttempts {
+				timer := time.NewTimer(time.Duration(waitMs) * time.Millisecond)
+				select {
+				case <-ctx.Done():
+					timer.Stop()
+					panic(vm.NewGoError(ctx.Err()))
+				case <-timer.C:
+				}
+			}
+		}
+
+		return goja.Null()
+	})
+
+	// Note: withTimeout is intentionally NOT available at the top level because
+	// there is no page context to thread through. Use session.withTimeout(ms, fn) instead.
+
+	vm.Set("newSession", func(call goja.FunctionCall) goja.Value {
+		type sessionOpts struct {
+			Proxy        string
+			Remote       string
+			Headless     bool
+			IdleTimeout  int // ms; 0 = disabled
+			Debug        bool
+			ChromeDebug  bool
+			QueryTimeout int // ms; 0 = no timeout on read ops
+			UserAgent    string
+			Lang         string   // BCP 47 locale, e.g. "en-US" - sets --lang flag (local mode only)
+			Timezone     string   // IANA timezone, e.g. "Europe/Copenhagen" - overrides browser timezone
+			ExtraFlags   []string // additional Chrome CLI flags e.g. ["--use-gl=egl"] (local mode only)
+		}
+		opts := sessionOpts{
+			Headless:   r.Config.Headless,
+			Lang:       r.Config.Lang,
+			Timezone:   r.Config.Timezone,
+			ExtraFlags: r.Config.ExtraFlags,
+		}
+		if r.Config.Proxy != "" {
+			opts.Proxy = r.Config.Proxy
+		}
+		if r.Config.Mode == "remote" && r.Config.Remote != "" {
+			opts.Remote = r.Config.Remote
+		}
+
+		if len(call.Arguments) > 0 {
+			obj := call.Argument(0).ToObject(vm)
+			if obj != nil {
+				if v := obj.Get("proxy"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.Proxy = v.String()
+				}
+				if v := obj.Get("remote"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.Remote = v.String()
+				}
+				if v := obj.Get("headless"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.Headless = v.ToBoolean()
+				}
+				if v := obj.Get("idleTimeout"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.IdleTimeout = int(v.ToInteger())
+				}
+				if v := obj.Get("debug"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.Debug = v.ToBoolean()
+				}
+				if v := obj.Get("chromeDebug"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.ChromeDebug = v.ToBoolean()
+				}
+				if v := obj.Get("queryTimeout"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.QueryTimeout = int(v.ToInteger())
+				}
+				if v := obj.Get("userAgent"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.UserAgent = v.String()
+				}
+				if v := obj.Get("lang"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.Lang = v.String()
+				}
+				if v := obj.Get("timezone"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					opts.Timezone = v.String()
+				}
+				if v := obj.Get("extraFlags"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+					if arr, ok := v.Export().([]interface{}); ok {
+						for _, item := range arr {
+							if s, ok := item.(string); ok && s != "" {
+								opts.ExtraFlags = append(opts.ExtraFlags, s)
+							}
+						}
+					}
+				}
+			}
+		}
+
+		var browser *rod.Browser
+		var page *rod.Page
+		// launchUA is the identity applied in local mode via the --user-agent launch
+		// flag; it also drives the OS-appropriate WebGL renderer choice below.
+		var launchUA string
+
+		if opts.Remote != "" {
+			if opts.Proxy != "" {
+				emitter.log(fmt.Sprintf("[session] warning: proxy %q ignored for remote browser", opts.Proxy))
+			}
+			// ResolveURL normalises any of: bare port "9222", "http://host:9222",
+			// or a full "ws://..." URL to the actual DevTools WebSocket URL by
+			// fetching /json/version. Users don't need to copy the UUID manually.
+			wsURL, resolveErr := launcher.ResolveURL(opts.Remote)
+			if resolveErr != nil {
+				emitter.errorf(fmt.Sprintf("browser connect failed: cannot resolve remote URL %q: %v", opts.Remote, resolveErr))
+				return goja.Undefined()
+			}
+			emitter.log(fmt.Sprintf("[session] connecting to remote browser at %s", wsURL))
+			// NoDefaultDevice disables rod's default LaptopWithMDPIScreen emulation,
+			// which otherwise overrides every new page with a macOS Chrome 114 UA, an
+			// "en" Accept-Language, and a 1280x800 device-metrics override. Those
+			// contradict the real Linux platform, blank the client hints, and make the
+			// viewport exceed the screen. We manage identity ourselves instead.
+			browser = rod.New().ControlURL(wsURL).Context(outerCtx).NoDefaultDevice()
+			if connectErr := browser.Connect(); connectErr != nil {
+				emitter.errorf(fmt.Sprintf("browser connect failed: %v", connectErr))
+				return goja.Undefined()
+			}
+			// Every session runs in its own browser context. All sessions share one
+			// remote browser, so on the default context they would also share one
+			// cookie jar, one localStorage and one cache: a session captured for one
+			// recipient would be readable from the page of any other recipient
+			// running at the same time. A browser context keeps that storage separate
+			// and discards all of it when the context is disposed.
+			//
+			// DisposeOnDetach makes the browser drop the context when this control
+			// connection goes away, which covers the paths where the session ends
+			// without running its own cleanup: victim disconnect, script timeout,
+			// operator cancel, and a server crash.
+			ctxRes, ctxErr := (proto.TargetCreateBrowserContext{DisposeOnDetach: true}).Call(browser)
+			if ctxErr != nil {
+				// Do not close the browser here. It is shared with every other
+				// session and closing it would end all of them.
+				emitter.errorf(fmt.Sprintf("browser context create failed: %v", ctxErr))
+				return goja.Undefined()
+			}
+			// Rebind to the new context. rod carries BrowserContextID into every
+			// target it creates, and its Close disposes the context instead of the
+			// whole browser once the field is set, so from here on the shared remote
+			// browser is never closed by this session.
+			isolated := *browser
+			isolated.BrowserContextID = ctxRes.BrowserContextID
+			browser = &isolated
+			emitter.log(fmt.Sprintf("[session] isolated browser context %s", ctxRes.BrowserContextID))
+
+			var pageErr error
+			page, pageErr = browser.Page(proto.TargetCreateTarget{URL: "about:blank"})
+			if pageErr != nil {
+				emitter.errorf(fmt.Sprintf("page create failed: %v", pageErr))
+				browser.Close() //nolint:errcheck
+				return goja.Undefined()
+			}
+		} else {
+			rootDir, err := resolveBrowserRootDir()
+			if err != nil {
+				emitter.errorf(err.Error())
+				return goja.Undefined()
+			}
+			// Newer Chromium requires writable XDG dirs and a crash-dumps-dir at
+			// startup (see go-rod#1126). Use subdirs of the browser root so all
+			// Chrome-related data lives in one place.
+			crashDir := filepath.Join(rootDir, "crashes")
+			if err := os.MkdirAll(crashDir, 0755); err != nil {
+				emitter.log(fmt.Sprintf("[session] warning: could not create crash dir: %v", err))
+			}
+			if err := os.MkdirAll(filepath.Join(rootDir, "config"), 0755); err != nil {
+				emitter.log(fmt.Sprintf("[session] warning: could not create config dir: %v", err))
+			}
+			if err := os.MkdirAll(filepath.Join(rootDir, "cache"), 0755); err != nil {
+				emitter.log(fmt.Sprintf("[session] warning: could not create cache dir: %v", err))
+			}
+
+			var chromeLogger io.Writer = io.Discard
+			if opts.ChromeDebug || r.Logger != nil {
+				cw := &chromeSterrWriter{logger: r.Logger}
+				if opts.ChromeDebug {
+					cw.emitter = emitter
+				}
+				chromeLogger = cw
+			}
+			chromeVars := []string{
+				"XDG_CONFIG_HOME=" + filepath.Join(rootDir, "config"),
+				"XDG_CACHE_HOME=" + filepath.Join(rootDir, "cache"),
+			}
+			// Headful needs a display, and it has to be one this session alone owns.
+			if !opts.Headless {
+				display, stopDisplay, dispErr := startPrivateDisplay()
+				switch {
+				case dispErr == nil:
+					emitter.log(fmt.Sprintf("[session] private display %s", display))
+					go func() {
+						<-outerCtx.Done()
+						stopDisplay()
+					}()
+					// Appended last so it beats any DISPLAY inherited from the
+					// server process: the last value wins once the environment is
+					// deduplicated on the way to the browser.
+					chromeVars = append(chromeVars, "DISPLAY="+display)
+				case os.Getenv("DISPLAY") != "":
+					// A desktop session already has a display. Use it rather than
+					// failing, and say so, because it is shared with everything
+					// else drawing on that desktop.
+					emitter.log(fmt.Sprintf("[session] warning: no private display (%v), falling back to the shared %s", dispErr, os.Getenv("DISPLAY")))
+				default:
+					emitter.errorf(fmt.Sprintf("headful browser needs a display: %v", dispErr))
+					return goja.Undefined()
+				}
+			}
+			l := launcher.New().
+				Headless(opts.Headless).
+				Logger(chromeLogger).
+				Set("disable-crash-reporter").
+				Set("crash-dumps-dir", crashDir).
+				Set("disable-blink-features", "AutomationControlled").
+				Delete("enable-automation").
+				Env(chromeEnv(chromeVars...)...)
+
+			var binPath string
+			if r.ExecPath != "" {
+				binPath = r.ExecPath
+				emitter.log(fmt.Sprintf("[session] using browser: %s", binPath))
+				l = l.Bin(binPath)
+			} else {
+				b := launcher.NewBrowser()
+				b.RootDir = rootDir
+				binPath = b.BinPath()
+				if _, err := os.Stat(binPath); os.IsNotExist(err) {
+					if err := b.Download(); err != nil {
+						emitter.errorf(fmt.Sprintf("browser download failed: %v", err))
+						return goja.Undefined()
+					}
+				}
+				emitter.log(fmt.Sprintf("[session] using browser: %s", binPath))
+				l = l.Bin(binPath)
+			}
+
+			// Set the user-agent at the process level via the launch flag so every
+			// context (main frame, web workers, and service workers) reports the same
+			// identity. A page-level CDP override does not reach service workers, which
+			// then leak the real "HeadlessChrome" UA and the true OS and version. When
+			// no custom UA is given we present a Linux Chrome identity matching the host
+			// OS and the real engine version, so navigator.platform, the client hints,
+			// and the version stay consistent across every context.
+			launchUA = opts.UserAgent
+			if launchUA == "" {
+				if major := detectChromeMajor(outerCtx, binPath); major != "" {
+					launchUA = linuxChromeUA(major)
+				} else {
+					launchUA = DefaultChromiumUA
+				}
+			}
+			emitter.log(fmt.Sprintf("[session] using user-agent: %s", launchUA))
+			l = l.Set("user-agent", launchUA)
+
+			if opts.Proxy != "" {
+				emitter.log(fmt.Sprintf("[session] using proxy: %s", opts.Proxy))
+				l = l.Proxy(opts.Proxy).Set("proxy-bypass-list", "")
+			}
+			if opts.Lang != "" {
+				// Sets navigator.language, navigator.languages, and the Accept-Language
+				// HTTP header at the process level - consistent across main frame and
+				// Web Workers (unlike Page.addScriptToEvaluateOnNewDocument which only
+				// runs in the main frame).
+				emitter.log(fmt.Sprintf("[session] using lang: %s", opts.Lang))
+				l = l.Set("lang", opts.Lang).Set("accept-lang", opts.Lang)
+			}
+			for _, rawFlag := range opts.ExtraFlags {
+				rawFlag = strings.TrimSpace(rawFlag)
+				// "!--flag-name" removes a flag from the launcher (e.g. to strip a rod default).
+				if strings.HasPrefix(rawFlag, "!--") {
+					name := flags.Flag(strings.TrimPrefix(rawFlag, "!--"))
+					l = l.Delete(name)
+					emitter.log(fmt.Sprintf("[session] removed flag: --%s", string(name)))
+					continue
+				}
+				if !strings.HasPrefix(rawFlag, "--") {
+					continue
+				}
+				rawFlag = strings.TrimPrefix(rawFlag, "--")
+				parts := strings.SplitN(rawFlag, "=", 2)
+				key := flags.Flag(parts[0])
+				if len(parts) == 2 {
+					l = l.Set(key, parts[1])
+				} else {
+					l = l.Set(key)
+				}
+				emitter.log(fmt.Sprintf("[session] extra flag: --%s", parts[0]))
+			}
+			u, err := l.Launch()
+			if err != nil {
+				emitter.errorf(fmt.Sprintf("browser launch failed: %v", err))
+				return goja.Undefined()
+			}
+			// Kill and clean up Chrome when the session ends. Without this, stopping
+			// a run before s.close() is called leaves a zombie Chrome process (~200-300 MB).
+			go func() {
+				<-outerCtx.Done()
+				l.Kill()
+				l.Cleanup()
+			}()
+			// NoDefaultDevice disables rod's default LaptopWithMDPIScreen emulation
+			// (macOS Chrome 114 UA, "en" Accept-Language, 1280x800 device metrics),
+			// which would override the launch-flag identity on the window and make the
+			// viewport exceed the screen. We manage identity ourselves instead.
+			browser = rod.New().ControlURL(u).Context(outerCtx).NoDefaultDevice()
+			if err := browser.Connect(); err != nil {
+				emitter.errorf(fmt.Sprintf("browser connect failed: %v", err))
+				return goja.Undefined()
+			}
+			page, err = browser.Page(proto.TargetCreateTarget{URL: "about:blank"})
+			if err != nil {
+				emitter.errorf(fmt.Sprintf("page create failed: %v", err))
+				browser.Close() //nolint:errcheck
+				return goja.Undefined()
+			}
+			// ignore "debugger;" code lines explicitly
+			err = proto.DebuggerSetSkipAllPauses{Skip: true}.Call(page)
+			if err != nil {
+				emitter.errorf(fmt.Sprintf("skip debug failed: %v", err))
+				browser.Close() //nolint:errcheck
+				return goja.Undefined()
+			}
+			// Note: console.* are deliberately left native. Replacing them with noop
+			// functions (to suppress page logging) makes console.log.toString() non-native,
+			// which trips TamperedFunctions. The console is not captured anyway, we never
+			// enable the Runtime domain (see the opsec note in browser.go), so no page
+			// console output reaches the server regardless.
+		}
+
+		// Identity handling differs by mode:
+		//   local , the UA is already set via the --user-agent launch flag above,
+		//            which keeps every context (including service workers) consistent
+		//            and preserves Chrome's native client hints. No CDP override here.
+		//   remote, no launch flag is possible, so align the main frame via CDP:
+		//            fetch the real UA, strip any "HeadlessChrome" token, and set a
+		//            matching platform and client-hint metadata.
+		if opts.Remote != "" {
+			applyRemoteIdentity(page, opts.UserAgent, emitter)
+		}
+
+		// Headful Chrome ties a page's focus and render pipeline to the state of its
+		// operating system window, and one browser or one display can only ever have
+		// a single foreground window. Concurrent sessions would then fight over it:
+		// whichever page was raised last keeps rendering while the rest are treated
+		// as background, stop producing screencast frames, and report
+		// document.hasFocus() false. Focus emulation detaches the page from that
+		// window state, so every session renders and reads as focused at the same
+		// time. It also removes the unfocused window tell in headful mode.
+		if err := (proto.EmulationSetFocusEmulationEnabled{Enabled: true}).Call(page); err != nil {
+			emitter.log(fmt.Sprintf("[session] warning: focus emulation failed: %v", err))
+		}
+
+		// Timezone override keeps the navigator/Intl timezone aligned with the exit
+		// network's geolocation. Left to the operator because only they know the
+		// proxy/exit location; an unset value keeps the host timezone.
+		if opts.Timezone != "" {
+			if err := (proto.EmulationSetTimezoneOverride{TimezoneID: opts.Timezone}).Call(page); err != nil {
+				emitter.log(fmt.Sprintf("[session] warning: failed to set timezone %q: %v", opts.Timezone, err))
+			} else {
+				emitter.log(fmt.Sprintf("[session] using timezone: %s", opts.Timezone))
+			}
+		}
+
+		// Note: the software WebGL renderer (SwiftShader, from headless Chrome without a
+		// GPU) is intentionally NOT masked in JS. Overriding getParameter plus
+		// Function.prototype.toString to hide it trips TamperedFunctions, and a
+		// document-script override does not reach worker OffscreenCanvas contexts, so the
+		// window and workers report different renderers (hasInconsistentWorkerValues).
+		// Both are far stronger bot signals than SwiftShader itself. The correct fix is a
+		// real GPU at the browser level (headful + GPU, or an ANGLE GL backend), not JS.
+
+		// Signal the controller that a page is ready for streaming.
+		select {
+		case r.BrowserCh <- page:
+		default:
+		}
+
+		session := vm.NewObject()
+		RegisterBrowserBindings(vm, session, page, emitter, opts.Debug, opts.QueryTimeout)
+
+		session.Set("withTimeout", func(call goja.FunctionCall) goja.Value {
+			ms := call.Argument(0).ToInteger()
+			fn, ok := goja.AssertFunction(call.Argument(1))
+			if !ok {
+				panic(vm.NewTypeError("withTimeout: second argument must be a function"))
+			}
+			tCtx, tCancel := context.WithTimeout(page.GetContext(), time.Duration(ms)*time.Millisecond)
+			defer tCancel()
+			tPage := page.Context(tCtx)
+			tmpSession := vm.NewObject()
+			RegisterBrowserBindings(vm, tmpSession, tPage, nil, opts.Debug, opts.QueryTimeout)
+			_, err := fn(goja.Undefined(), tmpSession)
+			if err != nil {
+				// If our own timeout context expired, return false instead of
+				// propagating, lets callers branch without try/catch.
+				if tCtx.Err() != nil {
+					return vm.ToValue(false)
+				}
+				panic(err)
+			}
+			return vm.ToValue(true)
+		})
+
+		session.Set("close", func(call goja.FunctionCall) goja.Value {
+			emitter.log("[session] closing")
+			// Both branches call Close on the browser handle, and in remote mode
+			// that handle is bound to this session's browser context, so it
+			// disposes the context and its storage rather than the shared browser.
+			browser.Close() //nolint:errcheck
+			return goja.Undefined()
+		})
+
+		// keepAlive signals the caller that the page is available for operator
+		// takeover and cancels the script timeout so the parked session isn't
+		// killed after 60 s. It is intentionally non-blocking: the script
+		// continues after the call (so emit() calls after keepAlive() reach
+		// the victim). Run() parks itself after RunString returns.
+		session.Set("keepAlive", func(call goja.FunctionCall) goja.Value {
+			emitter.log("[session] keeping alive for remote takeover")
+			// Re-bind page to outerCtx before cancelling the timeout context.
+			// The browser was created with the timed ctx; if we cancel it first,
+			// page.GetContext() closes and StreamLiveSession fires "Session ended"
+			// before the operator even connects.
+			livePage := page.Context(outerCtx)
+			select {
+			case r.LiveCh <- livePage:
+			default:
+			}
+			emitter.sendMust(outerCtx, RunEvent{
+				Type: "keep_alive",
+				Time: time.Now().UTC().Format(time.RFC3339Nano),
+			})
+			r.keepAliveActive.Store(true)
+			timeoutCancel() // release script timeout, operator controls lifetime now
+			return goja.Undefined()
+		})
+
+		// Event-driven API: s.on(event, fn) + s.listen() + s.done()
+		// Built-in lifecycle events emitted by the server:
+		//   "disconnect", victim WebSocket connection dropped
+		//   "navigate"  , main frame navigated; data: { url: string }
+		handlers := map[string]goja.Callable{}
+		listenDone := make(chan struct{}, 1)
+
+		session.Set("on", func(call goja.FunctionCall) goja.Value {
+			event := call.Argument(0).String()
+			fn, ok := goja.AssertFunction(call.Argument(1))
+			if !ok {
+				panic(vm.NewTypeError("on: second argument must be a function"))
+			}
+			handlers[event] = fn
+			return goja.Undefined()
+		})
+
+		session.Set("done", func(call goja.FunctionCall) goja.Value {
+			select {
+			case listenDone <- struct{}{}:
+			default:
+			}
+			return goja.Undefined()
+		})
+
+		session.Set("listen", func(call goja.FunctionCall) goja.Value {
+			emitter.log("[session] listening for events")
+
+			var idleCh <-chan time.Time
+			var idleTimer *time.Timer
+			resetIdle := func() {
+				if opts.IdleTimeout > 0 {
+					if idleTimer != nil {
+						idleTimer.Stop()
+					}
+					idleTimer = time.NewTimer(time.Duration(opts.IdleTimeout) * time.Millisecond)
+					idleCh = idleTimer.C
+				}
+			}
+			defer func() {
+				if idleTimer != nil {
+					idleTimer.Stop()
+				}
+			}()
+			resetIdle()
+
+			for {
+				select {
+				case <-ctx.Done():
+					return goja.Undefined()
+				case <-listenDone:
+					return goja.Undefined()
+				case <-idleCh:
+					emitter.log(fmt.Sprintf("[session] idle timeout (%dms), closing", opts.IdleTimeout))
+					browser.Close() //nolint:errcheck
+					return goja.Undefined()
+				case msg := <-r.Incoming:
+					resetIdle()
+					fn, exists := handlers[msg.Event]
+					if !exists {
+						emitter.log(fmt.Sprintf("[session] no handler for %q, ignoring", msg.Event))
+						continue
+					}
+					if _, err := fn(goja.Undefined(), vm.ToValue(msg.Data)); err != nil {
+						panic(err)
+					}
+				}
+			}
+		})
+
+		// s.stream(selector, name), non-blocking; returns {stop()} to end the stream.
+		// The caller (controller) watches StreamCh to start/stop cropped frame forwarding.
+		streamDebug := opts.Debug // capture bool, not struct field, to match RegisterBrowserBindings pattern
+		session.Set("stream", func(call goja.FunctionCall) goja.Value {
+			selector := vmArgStr(call.Argument(0))
+			name := vmArgStr(call.Argument(1))
+			if selector == "" || name == "" {
+				panic(vm.NewTypeError("stream: selector and name are required"))
+			}
+			maxFps := 0
+			quality := 0
+			if len(call.Arguments) > 2 {
+				if obj := call.Argument(2).ToObject(vm); obj != nil {
+					if v := obj.Get("maxFps"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+						maxFps = int(v.ToInteger())
+					}
+					if v := obj.Get("quality"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+						quality = int(v.ToInteger())
+					}
+				}
+			}
+			if streamDebug {
+				emitter.log(fmt.Sprintf("[dbg] → stream %s as %q (maxFps=%d, quality=%d)", selector, name, maxFps, quality))
+			}
+			select {
+			case r.StreamCh <- StreamCmd{Op: "start", Selector: selector, Name: name, Page: page, MaxFps: maxFps, Quality: quality}:
+			default:
+				emitter.log(fmt.Sprintf("[stream] warning: StreamCh full, dropping start for %q", name))
+			}
+			if streamDebug {
+				emitter.log(fmt.Sprintf("[dbg] ✓ stream %s as %q started", selector, name))
+			}
+			stopObj := vm.NewObject()
+			stopped := false
+			stopObj.Set("stop", func(call goja.FunctionCall) goja.Value {
+				if !stopped {
+					stopped = true
+					if streamDebug {
+						emitter.log(fmt.Sprintf("[dbg] → stream stop %q", name))
+					}
+					select {
+					case r.StreamCh <- StreamCmd{Op: "stop", Name: name}:
+					default:
+						emitter.log(fmt.Sprintf("[stream] warning: StreamCh full, dropping stop for %q", name))
+					}
+					if streamDebug {
+						emitter.log(fmt.Sprintf("[dbg] ✓ stream stop %q", name))
+					}
+				}
+				return goja.Undefined()
+			})
+			return stopObj
+		})
+
+		session.Set("capture", func(call goja.FunctionCall) goja.Value {
+			// Options:
+			//   domains      []string  - filter cookies to these domains via CDP (e.g. ["google.com"])
+			//   cookieNames  []string  - only keep cookies with these names
+			//   localStorage    bool   - include localStorage (default true when no domains given)
+			//   sessionStorage  bool   - include sessionStorage (default true when no domains given)
+			var domains []string
+			var cookieNames []string
+			lsExplicit, ssExplicit := false, false
+			capLS := true
+			capSS := true
+
+			if len(call.Arguments) > 0 {
+				obj := call.Argument(0).ToObject(vm)
+				if obj != nil {
+					if v := obj.Get("domains"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+						if arr, ok := v.Export().([]any); ok {
+							for _, d := range arr {
+								domains = append(domains, fmt.Sprintf("%v", d))
+							}
+						}
+					}
+					if v := obj.Get("cookieNames"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+						if arr, ok := v.Export().([]any); ok {
+							for _, n := range arr {
+								cookieNames = append(cookieNames, fmt.Sprintf("%v", n))
+							}
+						}
+					}
+					if v := obj.Get("localStorage"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+						capLS = v.ToBoolean()
+						lsExplicit = true
+					}
+					if v := obj.Get("sessionStorage"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
+						capSS = v.ToBoolean()
+						ssExplicit = true
+					}
+				}
+			}
+
+			// When domains are specified, skip storage by default unless the caller explicitly opted in.
+			if len(domains) > 0 {
+				if !lsExplicit {
+					capLS = false
+				}
+				if !ssExplicit {
+					capSS = false
+				}
+			}
+
+			result := map[string]any{}
+
+			if len(domains) > 0 {
+				urls := make([]string, len(domains))
+				for i, d := range domains {
+					d = strings.TrimPrefix(d, ".")
+					if !strings.HasPrefix(d, "http") {
+						d = "https://" + d
+					}
+					urls[i] = d
+				}
+				res, err := proto.NetworkGetCookies{Urls: urls}.Call(page)
+				if err == nil {
+					cookies := res.Cookies
+					// Filter by name if requested.
+					if len(cookieNames) > 0 {
+						nameSet := make(map[string]bool, len(cookieNames))
+						for _, n := range cookieNames {
+							nameSet[n] = true
+						}
+						filtered := cookies[:0]
+						for _, c := range cookies {
+							if nameSet[c.Name] {
+								filtered = append(filtered, c)
+							}
+						}
+						cookies = filtered
+					}
+					result["cookies"] = cookies
+				} else {
+					emitter.log(fmt.Sprintf("[capture] cookies: %s", err))
+				}
+			} else {
+				res, err := proto.StorageGetCookies{}.Call(page)
+				if err == nil {
+					cookies := res.Cookies
+					// Filter by name if requested.
+					if len(cookieNames) > 0 {
+						nameSet := make(map[string]bool, len(cookieNames))
+						for _, n := range cookieNames {
+							nameSet[n] = true
+						}
+						filtered := cookies[:0]
+						for _, c := range cookies {
+							if nameSet[c.Name] {
+								filtered = append(filtered, c)
+							}
+						}
+						cookies = filtered
+					}
+					result["cookies"] = cookies
+				} else {
+					emitter.log(fmt.Sprintf("[capture] cookies: %s", err))
+				}
+			}
+
+			evalStorage := func(key string, storeName string) {
+				script := fmt.Sprintf(`() => (function(){try{var s=window[%q],o={};for(var i=0;i<s.length;i++){var k=s.key(i);o[k]=s.getItem(k);}return JSON.stringify(o);}catch(e){return "{}"}})()`, storeName)
+				res, err := page.Eval(script)
+				if err != nil {
+					emitter.log(fmt.Sprintf("[capture] %s: %s", key, err))
+					return
+				}
+				var data interface{}
+				if json.Unmarshal([]byte(res.Value.Str()), &data) == nil {
+					result[key] = data
+				}
+			}
+
+			if capLS {
+				evalStorage("localStorage", "localStorage")
+			}
+			if capSS {
+				evalStorage("sessionStorage", "sessionStorage")
+			}
+
+			emitter.capture(result)
+			return vm.ToValue(result)
+		})
+
+		// makeFrameSession builds a DOM-only sub-session bound to framePage.
+		// Exposes RegisterBrowserBindings + withTimeout + frame (for nested iframes).
+		var makeFrameSession func(framePage *rod.Page) goja.Value
+		makeFrameSession = func(framePage *rod.Page) goja.Value {
+			fs := vm.NewObject()
+			RegisterBrowserBindings(vm, fs, framePage, emitter, opts.Debug, opts.QueryTimeout)
+			fs.Set("withTimeout", func(call goja.FunctionCall) goja.Value {
+				ms := call.Argument(0).ToInteger()
+				fn, ok := goja.AssertFunction(call.Argument(1))
+				if !ok {
+					panic(vm.NewTypeError("withTimeout: second argument must be a function"))
+				}
+				tCtx, tCancel := context.WithTimeout(framePage.GetContext(), time.Duration(ms)*time.Millisecond)
+				defer tCancel()
+				tFramePage := framePage.Context(tCtx)
+				tmpFrame := vm.NewObject()
+				RegisterBrowserBindings(vm, tmpFrame, tFramePage, nil, opts.Debug, opts.QueryTimeout)
+				_, err := fn(goja.Undefined(), tmpFrame)
+				if err != nil {
+					if tCtx.Err() != nil {
+						return vm.ToValue(false)
+					}
+					panic(err)
+				}
+				return vm.ToValue(true)
+			})
+			fs.Set("frame", func(call goja.FunctionCall) goja.Value {
+				sel := vmArgStr(call.Argument(0))
+				if sel == "" {
+					panic(vm.NewTypeError("frame: selector is required"))
+				}
+				if opts.Debug {
+					emitter.log("[dbg] → frame " + sel)
+				}
+				el, err := framePage.Element(sel)
+				if err != nil {
+					emitter.log(fmt.Sprintf("[frame] %q not found: %v", sel, err))
+					return goja.Null()
+				}
+				nestedPage, err := el.Frame()
+				if err != nil {
+					emitter.log(fmt.Sprintf("[frame] %q frame resolve failed: %v", sel, err))
+					return goja.Null()
+				}
+				if opts.Debug {
+					emitter.log("[dbg] ✓ frame " + sel)
+				}
+				return makeFrameSession(nestedPage.Context(framePage.GetContext()))
+			})
+			return fs
+		}
+
+		session.Set("frame", func(call goja.FunctionCall) goja.Value {
+			sel := vmArgStr(call.Argument(0))
+			if sel == "" {
+				panic(vm.NewTypeError("frame: selector is required"))
+			}
+			if opts.Debug {
+				emitter.log("[dbg] → frame " + sel)
+			}
+			el, err := page.Element(sel)
+			if err != nil {
+				emitter.log(fmt.Sprintf("[frame] %q not found: %v", sel, err))
+				return goja.Null()
+			}
+			framePage, err := el.Frame()
+			if err != nil {
+				emitter.log(fmt.Sprintf("[frame] %q frame resolve failed: %v", sel, err))
+				return goja.Null()
+			}
+			if opts.Debug {
+				emitter.log("[dbg] ✓ frame " + sel)
+			}
+			return makeFrameSession(framePage.Context(page.GetContext()))
+		})
+
+		// raceDOMCondJS returns a JS function body that evaluates the given condition
+		// type against sel, returning the selector string on match or null otherwise.
+		raceDOMCondJS := func(condType, sel string) string {
+			q := fmt.Sprintf("document.querySelector(%q)", sel)
+			r := fmt.Sprintf("%q", sel)
+			switch condType {
+			case "visible":
+				return fmt.Sprintf(`()=>{var el=%s;if(!el)return null;var b=el.getBoundingClientRect();return(b.width!==0||b.height!==0)?%s:null}`, q, r)
+			case "ready":
+				return fmt.Sprintf(`()=>{var el=%s;if(!el)return null;var b=el.getBoundingClientRect();if(b.width===0&&b.height===0)return null;return el.disabled?null:%s}`, q, r)
+			case "enabled":
+				return fmt.Sprintf(`()=>{var el=%s;return(el&&!el.disabled)?%s:null}`, q, r)
+			case "notVisible":
+				return fmt.Sprintf(`()=>{var el=%s;if(!el)return %s;var b=el.getBoundingClientRect();return(b.width===0&&b.height===0)?%s:null}`, q, r, r)
+			case "notPresent":
+				return fmt.Sprintf(`()=>{return !%s?%s:null}`, q, r)
+			default: // "present"
+				return fmt.Sprintf(`()=>{return %s?%s:null}`, q, r)
+			}
+		}
+
+		// s.race(conditions) races DOM conditions, URL substrings, and incoming events
+		// simultaneously. condition keys: visible, ready, enabled, notVisible, notPresent,
+		// present (DOM), url (substring), event (name).
+		// Returns { key, value } for whichever condition fires first.
+		session.Set("race", func(call goja.FunctionCall) goja.Value {
+			if len(call.Arguments) == 0 {
+				panic(vm.NewTypeError("race: expected an object with named conditions"))
+			}
+			condObj := call.Argument(0).ToObject(vm)
+
+			type domCond struct{ key, selector, condJS string }
+			type urlCond struct {
+				key     string
+				match   func(string) bool
+				display string // for logging
+			}
+			type evtCond struct{ key, event string }
+
+			var doms []domCond
+			var urls []urlCond
+			var evts []evtCond
+			evtSet := map[string]string{}
+			var timeoutCh <-chan time.Time
+			var timeoutKey string
+
+			domTypes := []string{"visible", "ready", "enabled", "notVisible", "notPresent", "present"}
+
+			for _, k := range condObj.Keys() {
+				v := condObj.Get(k).ToObject(vm)
+				if v == nil {
+					continue
+				}
+				matched := false
+				for _, ct := range domTypes {
+					if sel := v.Get(ct); sel != nil && !goja.IsUndefined(sel) && !goja.IsNull(sel) {
+						doms = append(doms, domCond{k, sel.String(), raceDOMCondJS(ct, sel.String())})
+						matched = true
+						break
+					}
+				}
+				if matched {
+					continue
+				}
+				if u := v.Get("urlContains"); u != nil && !goja.IsUndefined(u) && !goja.IsNull(u) {
+					pat := u.String()
+					urls = append(urls, urlCond{k, func(s string) bool { return strings.Contains(s, pat) }, pat})
+				} else if u := v.Get("urlMatch"); u != nil && !goja.IsUndefined(u) && !goja.IsNull(u) {
+					re, ok := u.Export().(*regexp.Regexp)
+					if !ok {
+						panic(vm.NewTypeError("race: urlMatch value must be a RegExp"))
+					}
+					urls = append(urls, urlCond{k, re.MatchString, re.String()})
+				} else if e := v.Get("event"); e != nil && !goja.IsUndefined(e) && !goja.IsNull(e) {
+					evts = append(evts, evtCond{k, e.String()})
+					evtSet[e.String()] = k
+				} else if a := v.Get("after"); a != nil && !goja.IsUndefined(a) && !goja.IsNull(a) {
+					timeoutCh = time.After(time.Duration(a.ToInteger()) * time.Millisecond)
+					timeoutKey = k
+				}
+			}
+
+			makeResult := func(key string, value interface{}) goja.Value {
+				emitter.log(fmt.Sprintf("[race] matched %q = %v", key, value))
+				res := vm.NewObject()
+				res.Set("key", key)
+				res.Set("value", vm.ToValue(value))
+				return res
+			}
+
+			// Drain event queue before blocking
+			for i, msg := range eventQueue {
+				if key, ok := evtSet[msg.Event]; ok {
+					eventQueue = append(eventQueue[:i], eventQueue[i+1:]...)
+					return makeResult(key, msg.Data)
+				}
+			}
+
+			urlDisplays := make([]string, len(urls))
+			for i, u := range urls {
+				urlDisplays[i] = u.display
+			}
+			emitter.log(fmt.Sprintf("[race] waiting: doms=%d urls=%v events=%d", len(doms), urlDisplays, len(evts)))
+
+			ticker := time.NewTicker(100 * time.Millisecond)
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-ctx.Done():
+					panic(vm.NewGoError(ctx.Err()))
+
+				case <-timeoutCh:
+					return makeResult(timeoutKey, "timeout")
+
+				case msg := <-r.Incoming:
+					if key, matched := evtSet[msg.Event]; matched {
+						return makeResult(key, msg.Data)
+					}
+					enqueue(msg)
+
+				case <-ticker.C:
+					for _, d := range doms {
+						res, err := page.Eval(d.condJS)
+						if err != nil {
+							continue
+						}
+						if res.Value.Nil() {
+							continue
+						}
+						if s := res.Value.Str(); s != "" && s != "null" && s != "undefined" {
+							return makeResult(d.key, d.selector)
+						}
+					}
+					if len(urls) > 0 {
+						info, err := page.Info()
+						if err == nil {
+							for _, u := range urls {
+								if u.match(info.URL) {
+									return makeResult(u.key, info.URL)
+								}
+							}
+						}
+					}
+				}
+			}
+		})
+
+		return session
+	})
+
+	// Load the script prelude (state machine helpers) before the user script so
+	// its helpers are ready when the script calls newSession().
+	if _, perr := vm.RunString(embedded.RemoteBrowserPreludeJS); perr != nil {
+		emitter.log("[prelude] " + perr.Error())
+	}
+
+	_, err := vm.RunString("(function(){\n" + r.Script + "\n})()")
+	if err != nil {
+		// errors.Is/As traverse goja.Exception.Unwrap(), which extracts the Go error
+		// stored in the "value" property of a GoError object. Do NOT use
+		// ex.Value().Export().(error), that returns map[string]interface{} for JS
+		// objects and always fails the type assertion.
+		var stopErr scriptStopError
+		if errors.As(err, &stopErr) {
+			emitter.done()
+			return nil
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			// Check whether the *global* script timeout fired. If ctx.Err() is
+			// DeadlineExceeded, the outer context expired, surface a clear timeout
+			// message and send the session_timeout lifecycle event to the victim page.
+			// Otherwise this is a per-operation timeout (withTimeout, queryTimeout).
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				emitter.errorf(fmt.Sprintf("script timed out after %ds", r.Config.Timeout/1000))
+				emitter.emit("session_timeout", nil)
+			} else {
+				emitter.errorf("operation timed out")
+			}
+			emitter.done()
+			return nil
+		}
+		if errors.Is(err, context.Canceled) {
+			// Three distinct cancellation sources share this error value:
+			//   1. keepAlive() called timeoutCancel() → ctx canceled, outerCtx still live.
+			//      Any subsequent ctx.Done() select in race/waitFor/listen fires immediately
+			//      with context.Canceled, causing RunString to return here before the park
+			//      block below is ever reached. Park explicitly so the browser stays alive.
+			//   2. Operator or visitor ended the session → outerCtx canceled.
+			//      Emit session_closed so the victim page can react (e.g. redirect).
+			if r.keepAliveActive.Load() {
+				emitter.log("[session] script complete (after keepAlive), parked for operator takeover")
+				<-outerCtx.Done()
+				emitter.log("[session] keep-alive ended")
+				emitter.done()
+				return nil
+			}
+			emitter.emit("session_closed", nil)
+			emitter.done()
+			return nil
+		}
+		// Script-level error: surface the formatted exception.
+		var ex *goja.Exception
+		if errors.As(err, &ex) {
+			emitter.errorf(cleanGoError(ex.String()))
+			return fmt.Errorf("script error: %s", ex.String())
+		}
+		emitter.errorf(err.Error())
+		return err
+	}
+
+	// keepAlive() was called: script has finished but the browser must stay
+	// alive for operator takeover. Block here until the operator explicitly
+	// cancels the session (outerCtx), then emit done so the Events channel
+	// drains cleanly.
+	if r.keepAliveActive.Load() {
+		emitter.log("[session] script complete, parked for operator takeover")
+		<-outerCtx.Done()
+		emitter.log("[session] keep-alive ended")
+	}
+
+	emitter.done()
+	return nil
+}

@@ -1,0 +1,12 @@
+{
+  "evidence_id": "EV-0001",
+  "investigation_id": "INV-1",
+  "filename": "report.json",
+  "evidence_type": "json",
+  "sha256": "f9d86028c6e0d64e225186f96acb69338b2c59764df79162107f5c4bb34d1310",
+  "size_bytes": 8,
+  "imported_at": "2026-10-19T02:32:56.805353+00:00",
+  "source_path": "C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\pytest-of-tim\\pytest-7\\test_verify_true_and_tamper_de0\\report.json",
+  "stored_path": "evidence/EV-0001/original/report.json",
+  "source_modified_at": "2026-10-19T02:32:56.764587+00:00"
+}

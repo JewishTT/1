@@ -1,0 +1,12 @@
+{
+  "evidence_id": "EV-0001",
+  "investigation_id": "INV-1",
+  "filename": "capture.pcapng",
+  "evidence_type": "pcap",
+  "sha256": "f9d86028c6e0d64e225186f96acb69338b2c59764df79162107f5c4bb34d1310",
+  "size_bytes": 8,
+  "imported_at": "2026-10-19T00:59:59.529541+00:00",
+  "source_path": "C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\pytest-of-tim\\pytest-2\\test_infer_evidence_type0\\capture.pcapng",
+  "stored_path": "evidence/EV-0001/original/capture.pcapng",
+  "source_modified_at": "2026-10-19T00:59:59.337543+00:00"
+}

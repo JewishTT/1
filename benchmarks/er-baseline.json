@@ -1,0 +1,974 @@
+{
+  "command": ".venv\\Scripts\\python.exe benchmarks\\er_baseline.py",
+  "generated_at": "2026-10-19T01:14:24Z",
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "machine": "AMD64",
+    "matcher_module": "apps/zero/zero/resolution/fellegi_sunter.py",
+    "splink_consulted": false,
+    "note": "Splink is deliberately NOT run here; T105 is Phase 8 and this file must measure the current matcher only."
+  },
+  "corpus": {
+    "path": "bench/fixtures/global_upgrade/identity/pairs.jsonl",
+    "sha256": "e0cf42ea4697a6c80422196e611bda7f5bedf6d41558a9a8a0af4fdee134b853",
+    "pairs": 49,
+    "distinct_records": 84,
+    "labelled_non_ambiguous": 39,
+    "labels": {
+      "match": 22,
+      "non_match": 17,
+      "ambiguous": 10
+    },
+    "authored": 35,
+    "synthetic": 14,
+    "one_case_one_observation": "every pair is scored independently; no clustering, no union-find, no transitive closure"
+  },
+  "model": {
+    "fields": [
+      "name",
+      "email",
+      "phone",
+      "org"
+    ],
+    "lambda_prior": 0.01,
+    "max_iterations": 25,
+    "trained_on": "the corpus's own blocked pairs; no held-out split",
+    "level_priors_overridden": false,
+    "m": {
+      "name": {
+        "exact": 0.4558329405652594,
+        "soundex": 0.39465535794149154,
+        "jaro": 0.030425035387245124,
+        "else": 0.11908666610597302
+      },
+      "email": {
+        "exact": 0.9999999999635997,
+        "else": 3.6369818167455546e-11
+      },
+      "phone": {
+        "exact": 0.9999999999999695,
+        "else": 1.3763579312395184e-65
+      },
+      "org": {
+        "exact": 0.9117686539565476,
+        "tokens": 0.0605245090177654,
+        "else": 0.02770683702565628
+      }
+    },
+    "u": {
+      "name": {
+        "exact": 0.4995135467103649,
+        "soundex": 0.4707908432745544,
+        "jaro": 0.019212059481396756,
+        "else": 0.010483550533674058
+      },
+      "email": {
+        "exact": 0.011379036228009013,
+        "else": 0.9502279166347604
+      },
+      "phone": {
+        "exact": 0.030575559785164345,
+        "else": 0.9118348695089946
+      },
+      "org": {
+        "exact": 0.06796333082222403,
+        "tokens": 0.019330134932074715,
+        "else": 0.9127065342456915
+      }
+    },
+    "calibration_status": "UNCALIBRATED — no threshold fitted against held-out labels",
+    "clamped_m_estimates": {
+      "below_eps": [
+        "email/else=3.637e-11",
+        "phone/else=1.376e-65"
+      ],
+      "reported_at": "<= 1e-9, i.e. at or under the order of the module's own _EPS",
+      "eps": 1e-12,
+      "why_it_matters": "the m-step assigns near-zero match posterior to the non-match levels of email and phone, so m collapses to the order of the module's own _EPS and log2(m/u) is effectively computed against that floor. The floor is what puts non-match weights at about -86 bits: the separation on this corpus is an artefact of an under-determined training set (137 blocked pairs, almost all of them true matches), not evidence that the matcher separates real records."
+    }
+  },
+  "blocking": {
+    "key_fields": [
+      "email",
+      "phone",
+      "name"
+    ],
+    "records": 84,
+    "all_possible_pairs": 3486,
+    "candidate_pairs": 137,
+    "candidate_pair_reduction": 0.9607,
+    "candidate_pair_reduction_definition": "1 - blocked_pairs / (n*(n-1)/2) over distinct corpus records; blocking and scoring are separate stages and are reported separately",
+    "blocking_recall": 1.0,
+    "blocking_recall_n": 22,
+    "blocking_missed_by_blocking": []
+  },
+  "headline": {
+    "operating_point": "posterior > 0.5, i.e. weight > 0 bits (FellegiSunter.match threshold=0.0)",
+    "threshold_bits": 0.0,
+    "false_merge_rate": {
+      "n": 17,
+      "hits": 3,
+      "rate": 0.176471,
+      "pair_ids": [
+        "ID-A018",
+        "ID-A021",
+        "ID-S03"
+      ]
+    },
+    "false_non_match_rate": {
+      "n": 22,
+      "hits": 3,
+      "rate": 0.136364,
+      "pair_ids": [
+        "ID-A012",
+        "ID-A013",
+        "ID-A022"
+      ]
+    },
+    "pair_recall": {
+      "n": 22,
+      "hits": 19,
+      "rate": 0.863636,
+      "pair_ids": [
+        "ID-A001",
+        "ID-A002",
+        "ID-A003",
+        "ID-A004",
+        "ID-A005",
+        "ID-A006",
+        "ID-A007",
+        "ID-A008",
+        "ID-A009",
+        "ID-A010",
+        "ID-A011",
+        "ID-S01",
+        "ID-S02",
+        "ID-S04",
+        "ID-S05",
+        "ID-S06",
+        "ID-S09",
+        "ID-S11",
+        "ID-S12"
+      ]
+    },
+    "blocking_recall": {
+      "n": 22,
+      "hits": 22,
+      "rate": 1.0,
+      "pair_ids": [
+        "ID-A001",
+        "ID-A002",
+        "ID-A003",
+        "ID-A004",
+        "ID-A005",
+        "ID-A006",
+        "ID-A007",
+        "ID-A008",
+        "ID-A009",
+        "ID-A010",
+        "ID-A011",
+        "ID-A012",
+        "ID-A013",
+        "ID-A022",
+        "ID-S01",
+        "ID-S02",
+        "ID-S04",
+        "ID-S05",
+        "ID-S06",
+        "ID-S09",
+        "ID-S11",
+        "ID-S12"
+      ]
+    },
+    "precision_on_proposed": {
+      "n_proposed": 22,
+      "true_positive": 19,
+      "precision": 0.863636
+    }
+  },
+  "sweep": [
+    {
+      "threshold_bits": -86.260481,
+      "false_merge_rate": 0.941176,
+      "false_non_match_rate": 0.0,
+      "pair_recall": 1.0,
+      "precision": 0.578947,
+      "pairs_proposed": 38
+    },
+    {
+      "threshold_bits": -86.138007,
+      "false_merge_rate": 0.764706,
+      "false_non_match_rate": 0.0,
+      "pair_recall": 1.0,
+      "precision": 0.628571,
+      "pairs_proposed": 35
+    },
+    {
+      "threshold_bits": -82.500176,
+      "false_merge_rate": 0.588235,
+      "false_non_match_rate": 0.0,
+      "pair_recall": 1.0,
+      "precision": 0.6875,
+      "pairs_proposed": 32
+    },
+    {
+      "threshold_bits": -79.449502,
+      "false_merge_rate": 0.470588,
+      "false_non_match_rate": 0.0,
+      "pair_recall": 1.0,
+      "precision": 0.733333,
+      "pairs_proposed": 30
+    },
+    {
+      "threshold_bits": -77.472805,
+      "false_merge_rate": 0.411765,
+      "false_non_match_rate": 0.045455,
+      "pair_recall": 0.954545,
+      "precision": 0.75,
+      "pairs_proposed": 28
+    },
+    {
+      "threshold_bits": -77.35033,
+      "false_merge_rate": 0.352941,
+      "false_non_match_rate": 0.045455,
+      "pair_recall": 0.954545,
+      "precision": 0.777778,
+      "pairs_proposed": 27
+    },
+    {
+      "threshold_bits": -76.555065,
+      "false_merge_rate": 0.352941,
+      "false_non_match_rate": 0.045455,
+      "pair_recall": 0.954545,
+      "precision": 0.777778,
+      "pairs_proposed": 27
+    },
+    {
+      "threshold_bits": -75.811671,
+      "false_merge_rate": 0.294118,
+      "false_non_match_rate": 0.045455,
+      "pair_recall": 0.954545,
+      "precision": 0.807692,
+      "pairs_proposed": 26
+    },
+    {
+      "threshold_bits": -73.712499,
+      "false_merge_rate": 0.235294,
+      "false_non_match_rate": 0.045455,
+      "pair_recall": 0.954545,
+      "precision": 0.84,
+      "pairs_proposed": 25
+    },
+    {
+      "threshold_bits": -44.280451,
+      "false_merge_rate": 0.235294,
+      "false_non_match_rate": 0.090909,
+      "pair_recall": 0.909091,
+      "precision": 0.833333,
+      "pairs_proposed": 24
+    },
+    {
+      "threshold_bits": -32.711346,
+      "false_merge_rate": 0.176471,
+      "false_non_match_rate": 0.090909,
+      "pair_recall": 0.909091,
+      "precision": 0.869565,
+      "pairs_proposed": 23
+    },
+    {
+      "threshold_bits": -31.793606,
+      "false_merge_rate": 0.176471,
+      "false_non_match_rate": 0.136364,
+      "pair_recall": 0.863636,
+      "precision": 0.863636,
+      "pairs_proposed": 22
+    },
+    {
+      "threshold_bits": 0.0,
+      "false_merge_rate": 0.176471,
+      "false_non_match_rate": 0.136364,
+      "pair_recall": 0.863636,
+      "precision": 0.863636,
+      "pairs_proposed": 22
+    },
+    {
+      "threshold_bits": 3.323574,
+      "false_merge_rate": 0.176471,
+      "false_non_match_rate": 0.181818,
+      "pair_recall": 0.818182,
+      "precision": 0.857143,
+      "pairs_proposed": 21
+    },
+    {
+      "threshold_bits": 6.251773,
+      "false_merge_rate": 0.176471,
+      "false_non_match_rate": 0.227273,
+      "pair_recall": 0.772727,
+      "precision": 0.85,
+      "pairs_proposed": 20
+    },
+    {
+      "threshold_bits": 8.350945,
+      "false_merge_rate": 0.176471,
+      "false_non_match_rate": 0.545455,
+      "pair_recall": 0.454545,
+      "precision": 0.769231,
+      "pairs_proposed": 13
+    },
+    {
+      "threshold_bits": 8.473419,
+      "false_merge_rate": 0.058824,
+      "false_non_match_rate": 0.909091,
+      "pair_recall": 0.090909,
+      "precision": 0.666667,
+      "pairs_proposed": 3
+    },
+    {
+      "threshold_bits": 9.268685,
+      "false_merge_rate": 0.0,
+      "false_non_match_rate": 0.909091,
+      "pair_recall": 0.090909,
+      "precision": 1.0,
+      "pairs_proposed": 2
+    },
+    {
+      "threshold_bits": 10.012079,
+      "false_merge_rate": 0.0,
+      "false_non_match_rate": 0.954545,
+      "pair_recall": 0.045455,
+      "precision": 1.0,
+      "pairs_proposed": 1
+    },
+    {
+      "threshold_bits": 12.11125,
+      "false_merge_rate": 0.0,
+      "false_non_match_rate": 1.0,
+      "pair_recall": 0.0,
+      "precision": null,
+      "pairs_proposed": 0
+    }
+  ],
+  "measurements": [
+    {
+      "pair_id": "ID-A001",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-V01",
+      "record_b": "R-V02",
+      "weight_bits": 10.012079,
+      "posterior": 0.999033,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A002",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-A01",
+      "record_b": "R-A02",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A003",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-A01",
+      "record_b": "R-A03",
+      "weight_bits": 12.11125,
+      "posterior": 0.999774,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A004",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-L01",
+      "record_b": "R-L02",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A005",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-J01",
+      "record_b": "R-J02",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A006",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-S01",
+      "record_b": "R-S02",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A007",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-T01",
+      "record_b": "R-T02",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A008",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-H01",
+      "record_b": "R-H02",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A009",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-W01",
+      "record_b": "R-W02",
+      "weight_bits": 3.323574,
+      "posterior": 0.909185,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A010",
+      "label": "match",
+      "category": "transliteration_variant",
+      "provenance": "authored",
+      "record_a": "R-PP01",
+      "record_b": "R-PP02",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A011",
+      "label": "match",
+      "category": "company_alias",
+      "provenance": "authored",
+      "record_a": "R-C03",
+      "record_b": "R-C04",
+      "weight_bits": 6.251773,
+      "posterior": 0.987047,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A012",
+      "label": "match",
+      "category": "old_new_identifier",
+      "provenance": "authored",
+      "record_a": "R-C01",
+      "record_b": "R-C02",
+      "weight_bits": -44.280451,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A013",
+      "label": "match",
+      "category": "name_change",
+      "provenance": "authored",
+      "record_a": "R-M01",
+      "record_b": "R-M02",
+      "weight_bits": -31.793606,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A014",
+      "label": "non_match",
+      "category": "same_name_different_person",
+      "provenance": "authored",
+      "record_a": "R-V02",
+      "record_b": "R-V03",
+      "weight_bits": -86.138007,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A015",
+      "label": "non_match",
+      "category": "same_name_different_person",
+      "provenance": "authored",
+      "record_a": "R-A02",
+      "record_b": "R-A04",
+      "weight_bits": -86.138007,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A016",
+      "label": "non_match",
+      "category": "same_name_different_person",
+      "provenance": "authored",
+      "record_a": "R-M02",
+      "record_b": "R-M03",
+      "weight_bits": -77.472805,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A017",
+      "label": "non_match",
+      "category": "same_name_different_person",
+      "provenance": "authored",
+      "record_a": "R-PP01",
+      "record_b": "R-PP03",
+      "weight_bits": -86.138007,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A018",
+      "label": "non_match",
+      "category": "shared_address",
+      "provenance": "authored",
+      "record_a": "R-P01",
+      "record_b": "R-P02",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A019",
+      "label": "non_match",
+      "category": "shared_address",
+      "provenance": "authored",
+      "record_a": "R-C01",
+      "record_b": "R-C05",
+      "weight_bits": -86.260481,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A020",
+      "label": "non_match",
+      "category": "shared_address",
+      "provenance": "authored",
+      "record_a": "R-C05",
+      "record_b": "R-C06",
+      "weight_bits": -82.500176,
+      "posterior": 0.0,
+      "in_blocking": false
+    },
+    {
+      "pair_id": "ID-A021",
+      "label": "non_match",
+      "category": "conflicting_dates",
+      "provenance": "authored",
+      "record_a": "R-E01",
+      "record_b": "R-E03",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A022",
+      "label": "match",
+      "category": "old_new_identifier",
+      "provenance": "authored",
+      "record_a": "R-N01",
+      "record_b": "R-N02",
+      "weight_bits": -77.472805,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A023",
+      "label": "non_match",
+      "category": "incomplete_fields",
+      "provenance": "authored",
+      "record_a": "R-N01",
+      "record_b": "R-N03",
+      "weight_bits": -77.35033,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A024",
+      "label": "ambiguous",
+      "category": "ambiguous",
+      "provenance": "authored",
+      "record_a": "R-K01",
+      "record_b": "R-K02",
+      "weight_bits": -77.35033,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A025",
+      "label": "ambiguous",
+      "category": "ambiguous",
+      "provenance": "authored",
+      "record_a": "R-P03",
+      "record_b": "R-P04",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A026",
+      "label": "ambiguous",
+      "category": "ambiguous",
+      "provenance": "authored",
+      "record_a": "R-E01",
+      "record_b": "R-E02",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A027",
+      "label": "ambiguous",
+      "category": "ambiguous",
+      "provenance": "authored",
+      "record_a": "R-G01",
+      "record_b": "R-G02",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A028",
+      "label": "ambiguous",
+      "category": "ambiguous",
+      "provenance": "authored",
+      "record_a": "R-U01",
+      "record_b": "R-U02",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A029",
+      "label": "ambiguous",
+      "category": "ambiguous",
+      "provenance": "authored",
+      "record_a": "R-F01",
+      "record_b": "R-F02",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A030",
+      "label": "ambiguous",
+      "category": "ambiguous",
+      "provenance": "authored",
+      "record_a": "R-F01",
+      "record_b": "R-F03",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-A031",
+      "label": "ambiguous",
+      "category": "ambiguous",
+      "provenance": "authored",
+      "record_a": "R-R01",
+      "record_b": "R-R02",
+      "weight_bits": -76.555065,
+      "posterior": 0.0,
+      "in_blocking": false
+    },
+    {
+      "pair_id": "ID-A032",
+      "label": "non_match",
+      "category": "true_negative",
+      "provenance": "authored",
+      "record_a": "R-Z01",
+      "record_b": "R-Z02",
+      "weight_bits": -73.712499,
+      "posterior": 0.0,
+      "in_blocking": false
+    },
+    {
+      "pair_id": "ID-A033",
+      "label": "non_match",
+      "category": "true_negative",
+      "provenance": "authored",
+      "record_a": "R-Z03",
+      "record_b": "R-Z04",
+      "weight_bits": -82.500176,
+      "posterior": 0.0,
+      "in_blocking": false
+    },
+    {
+      "pair_id": "ID-A034",
+      "label": "non_match",
+      "category": "true_negative",
+      "provenance": "authored",
+      "record_a": "R-Z03",
+      "record_b": "R-H02",
+      "weight_bits": -75.811671,
+      "posterior": 0.0,
+      "in_blocking": false
+    },
+    {
+      "pair_id": "ID-A035",
+      "label": "non_match",
+      "category": "true_negative",
+      "provenance": "authored",
+      "record_a": "R-Z02",
+      "record_b": "R-C06",
+      "weight_bits": -82.500176,
+      "posterior": 0.0,
+      "in_blocking": false
+    },
+    {
+      "pair_id": "ID-S01",
+      "label": "match",
+      "category": "synthetic_identity",
+      "provenance": "synthetic",
+      "record_a": "R-S01A",
+      "record_b": "R-S01B",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S02",
+      "label": "match",
+      "category": "synthetic_name_particle_added",
+      "provenance": "synthetic",
+      "record_a": "R-S02A",
+      "record_b": "R-S02B",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S03",
+      "label": "non_match",
+      "category": "synthetic_character_transposition",
+      "provenance": "synthetic",
+      "record_a": "R-S03A",
+      "record_b": "R-S03B",
+      "weight_bits": 9.268685,
+      "posterior": 0.998381,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S04",
+      "label": "match",
+      "category": "synthetic_identity",
+      "provenance": "synthetic",
+      "record_a": "R-S04A",
+      "record_b": "R-S04B",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S05",
+      "label": "match",
+      "category": "synthetic_identity",
+      "provenance": "synthetic",
+      "record_a": "R-S05A",
+      "record_b": "R-S05B",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S06",
+      "label": "match",
+      "category": "synthetic_identity",
+      "provenance": "synthetic",
+      "record_a": "R-S06A",
+      "record_b": "R-S06B",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S07",
+      "label": "ambiguous",
+      "category": "synthetic_umlaut_variant",
+      "provenance": "synthetic",
+      "record_a": "R-S07A",
+      "record_b": "R-S07B",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S08",
+      "label": "non_match",
+      "category": "synthetic_truncation",
+      "provenance": "synthetic",
+      "record_a": "R-S08A",
+      "record_b": "R-S08B",
+      "weight_bits": -32.711346,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S09",
+      "label": "match",
+      "category": "synthetic_identity",
+      "provenance": "synthetic",
+      "record_a": "R-S09A",
+      "record_b": "R-S09B",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S10",
+      "label": "ambiguous",
+      "category": "synthetic_accent_variant",
+      "provenance": "synthetic",
+      "record_a": "R-S10A",
+      "record_b": "R-S10B",
+      "weight_bits": 8.350945,
+      "posterior": 0.996947,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S11",
+      "label": "match",
+      "category": "synthetic_identity",
+      "provenance": "synthetic",
+      "record_a": "R-S11A",
+      "record_b": "R-S11B",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S12",
+      "label": "match",
+      "category": "synthetic_identity",
+      "provenance": "synthetic",
+      "record_a": "R-S12A",
+      "record_b": "R-S12B",
+      "weight_bits": 8.473419,
+      "posterior": 0.997194,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S91",
+      "label": "non_match",
+      "category": "synthetic_true_negative",
+      "provenance": "synthetic",
+      "record_a": "R-S91A",
+      "record_b": "R-S91B",
+      "weight_bits": -79.449502,
+      "posterior": 0.0,
+      "in_blocking": true
+    },
+    {
+      "pair_id": "ID-S92",
+      "label": "non_match",
+      "category": "synthetic_true_negative",
+      "provenance": "synthetic",
+      "record_a": "R-S92A",
+      "record_b": "R-S92B",
+      "weight_bits": -79.449502,
+      "posterior": 0.0,
+      "in_blocking": true
+    }
+  ],
+  "calibration": {
+    "bins": [
+      {
+        "low": 0.0,
+        "high": 0.1,
+        "n": 17,
+        "mean_predicted": 0.0,
+        "observed_match_rate": 0.176471
+      },
+      {
+        "low": 0.9,
+        "high": 0.95,
+        "n": 1,
+        "mean_predicted": 0.909185,
+        "observed_match_rate": 1.0
+      },
+      {
+        "low": 0.95,
+        "high": 1.0000001,
+        "n": 21,
+        "mean_predicted": 0.996895,
+        "observed_match_rate": 0.857143
+      }
+    ],
+    "expected_calibration_error": 0.154503,
+    "brier_score": 0.153695,
+    "note": "Posterior is derived from the matcher's own weight; lambda is not updated by EM, so the prior stays at the constructor default of 0.01 and the posteriors are not prior-corrected."
+  },
+  "sensitivity": {
+    "configuration": "canonical fields + id_number + birth_date as text_field comparisons",
+    "is_canonical": false,
+    "false_merge_rate": 0.176471,
+    "false_merge_pair_ids": [
+      "ID-A018",
+      "ID-A021",
+      "ID-S03"
+    ],
+    "false_non_match_rate": 0.090909,
+    "false_non_match_pair_ids": [
+      "ID-A012",
+      "ID-A022"
+    ],
+    "pair_recall": 0.909091
+  },
+  "ambiguous_excluded": {
+    "count": 10,
+    "reason": "an ambiguous pair is excluded from both the match and the non-match denominators; counting it either way measures the label set, not the matcher",
+    "what_the_matcher_would_have_done": {
+      "above_headline": [
+        "ID-A025",
+        "ID-A026",
+        "ID-A027",
+        "ID-A028",
+        "ID-A029",
+        "ID-A030",
+        "ID-S07",
+        "ID-S10"
+      ],
+      "at_or_below_headline": [
+        "ID-A024",
+        "ID-A031"
+      ]
+    }
+  },
+  "not_measured": {
+    "population_false_merge_rate": "NOT MEASURED — the corpus is constructed, not sampled; prevalence and the difficulty mix of real records are unknown, so these rates describe this corpus and cannot be projected onto production data.",
+    "held_out_generalisation": "NOT MEASURED — the matcher is trained on the corpus's own blocked pairs; there is no held-out split, so every number here is in-sample.",
+    "performance_on_captured_data": "NOT MEASURED — no WARC corpus or captured record set exists in this repository to measure against; the corpus is hand-authored and template-generated.",
+    "non_latin_script_performance": "NOT MEASURED — one Han-script pair and several Latin-diacritic pairs; that is not enough to characterise the transliteration regime the matcher is weakest in.",
+    "comparison_against_splink": "NOT MEASURED — out of scope for T084; T105 is Phase 8 and running a second engine here would answer a question this phase is not chartered to answer.",
+    "throughput_or_cost": "reported below as wall-clock for this run only; it is not a throughput benchmark and must not be quoted as one.",
+    "confidence_intervals": "NOT MEASURED as intervals — with 22 positives and 17 negatives, a single flipped case moves the false-merge rate by 5.9 points and the false-non-match rate by 4.5 points. The rates are point estimates on a small corpus, not estimates with a stated error bar."
+  },
+  "timings": {
+    "blocking_seconds": 0.0226,
+    "fit_seconds": 0.369,
+    "scoring_seconds": 0.0103,
+    "total_seconds": 1.5967,
+    "records": 84.0,
+    "pairs_scored": 49.0
+  }
+}

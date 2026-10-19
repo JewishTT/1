@@ -1,0 +1,205 @@
+name: Release Build and Upload
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 1
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "HASH=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build frontend files
+        working-directory: frontend
+        run: |
+          sudo docker run --rm \
+          -v "$(pwd)":/app \
+          -w /app \
+          node@sha256:968df39aedcea65eeb078fb336ed7191baf48f972b4479711397108be0966920 `# node:22-alpine` \
+          sh -c "npm ci && npm run build-production"
+
+      - name: Move frontend build to backend
+        run: |
+          rm -rf backend/frontend/build
+          mkdir -p backend/frontend/build
+          cp -r frontend/build/* backend/frontend/build/
+
+      # no Go build cache here on purpose: release builds are infrequent and
+      # produce signed, published binaries. a clean from-scratch compile keeps
+      # attacker-influenceable cached objects out of the signing path.
+
+      - name: Build binaries for multiple architectures
+        run: |
+          mkdir -p build/amd64 build/arm64 /tmp/go-build-cache
+
+          # build amd64 binary — static musl so no glibc floor on target systems
+          sudo docker run --rm \
+          -v "$(pwd)":/app \
+          -v /tmp/go-build-cache:/root/.cache/go-build \
+          -w /app/backend \
+          golang@sha256:f86f1a6701e3dcc445fec097a42f78b758f15950ccf032c2d3e54e2754d32fdb `# golang:1.27.1-alpine linux/amd64` \
+          sh -c "apk add --no-cache gcc musl-dev && go build -trimpath \
+          -ldflags='-s -w -X github.com/phishingclub/phishingclub/version.hash=ph${{ steps.get_version.outputs.HASH }} -X github.com/phishingclub/phishingclub/version.version=${{ steps.get_version.outputs.VERSION }} -linkmode=external -extldflags=-static' \
+          -tags production -o ../build/amd64/phishingclub main.go"
+
+          # build arm64 binary — run natively under QEMU (already set up above)
+          sudo docker run --rm \
+          --platform linux/arm64 \
+          -v "$(pwd)":/app \
+          -v /tmp/go-build-cache:/root/.cache/go-build \
+          -w /app/backend \
+          golang@sha256:df4c4a0eeb85873e0122c6e2eb1b436f3131576f572505c1ea61954b00fa6460 `# golang:1.27.1-alpine linux/arm64` \
+          sh -c "apk add --no-cache gcc musl-dev && go build -trimpath \
+          -ldflags='-s -w -X github.com/phishingclub/phishingclub/version.hash=ph${{ steps.get_version.outputs.HASH }} -X github.com/phishingclub/phishingclub/version.version=${{ steps.get_version.outputs.VERSION }} -linkmode=external -extldflags=-static' \
+          -tags production -o ../build/arm64/phishingclub main.go"
+
+      - name: Fix build directory permissions
+        run: |
+          sudo chown -R $USER:$USER build/
+          chmod 755 build/
+          ls -la build/
+
+      - name: Sign binaries with Ed25519
+        run: |
+          # create directory for keys
+          mkdir -p /tmp/keys
+          chmod 700 /tmp/keys
+
+          # save both private keys from github secrets
+          echo "${{ secrets.SIGNKEY_1 }}" > /tmp/keys/private1.pem
+          echo "${{ secrets.SIGNKEY_2 }}" > /tmp/keys/private2.pem
+          chmod 600 /tmp/keys/private1.pem
+          chmod 600 /tmp/keys/private2.pem
+
+          # sign amd64 binary with primary key (key 1)
+          openssl pkeyutl -sign -inkey /tmp/keys/private1.pem \
+              -rawin -in build/amd64/phishingclub \
+              -out build/amd64/phishingclub.sig
+
+          # sign arm64 binary with primary key (key 1)
+          openssl pkeyutl -sign -inkey /tmp/keys/private1.pem \
+              -rawin -in build/arm64/phishingclub \
+              -out build/arm64/phishingclub.sig
+
+          # clean up keys
+          rm -rf /tmp/keys
+
+      - name: Create compressed packages with signatures
+        run: |
+          mkdir -p packages
+
+          # package amd64 binary with signature
+          tar -czf packages/phishingclub_${{ steps.get_version.outputs.VERSION }}_linux_amd64.tar.gz \
+              -C build/amd64 \
+              phishingclub \
+              phishingclub.sig
+
+          # package arm64 binary with signature
+          tar -czf packages/phishingclub_${{ steps.get_version.outputs.VERSION }}_linux_arm64.tar.gz \
+              -C build/arm64 \
+              phishingclub \
+              phishingclub.sig
+
+          # create legacy-named package (amd64) for backward compatibility with pre-arm versions
+          tar -czf packages/phishingclub_${{ steps.get_version.outputs.VERSION }}.tar.gz \
+              -C build/amd64 \
+              phishingclub \
+              phishingclub.sig
+
+      - name: Build and push multi-arch Docker image
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: ./Dockerfile.release
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ steps.get_version.outputs.VERSION }}
+          labels: |
+            org.opencontainers.image.title=PhishingClub ${{ steps.get_version.outputs.VERSION }}
+            org.opencontainers.image.description=PhishingClub production release image (linux/amd64, linux/arm64). Built from tag ${{ steps.get_version.outputs.TAG }}.
+            org.opencontainers.image.url=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.get_version.outputs.VERSION }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Extract release notes from RELEASE.md
+        id: get_release_notes
+        run: |
+          # extract the section for the current version from RELEASE.md
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+
+          # find the line containing the current version
+          START_LINE=$(grep -n "## \[$VERSION\]" RELEASE.md | cut -d: -f1)
+
+          if [ -z "$START_LINE" ]; then
+            echo "Could not find version $VERSION in RELEASE.md"
+            echo "NOTES=PhishingClub release ${{ steps.get_version.outputs.TAG }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # find the next version section (next line starting with ##)
+          NEXT_LINE=$(tail -n +$((START_LINE + 1)) RELEASE.md | grep -n "^## " | head -1 | cut -d: -f1)
+
+          if [ -z "$NEXT_LINE" ]; then
+            # no next section, take from start line to end of file
+            RELEASE_NOTES=$(tail -n +$START_LINE RELEASE.md)
+          else
+            # calculate end line
+            END_LINE=$((START_LINE + NEXT_LINE - 1))
+            RELEASE_NOTES=$(sed -n "${START_LINE},${END_LINE}p" RELEASE.md)
+          fi
+
+          # save to github output (escape newlines)
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.get_version.outputs.TAG }} \
+            ./packages/phishingclub_${{ steps.get_version.outputs.VERSION }}_linux_amd64.tar.gz \
+            ./packages/phishingclub_${{ steps.get_version.outputs.VERSION }}_linux_arm64.tar.gz \
+            ./packages/phishingclub_${{ steps.get_version.outputs.VERSION }}.tar.gz \
+            --title "PhishingClub ${{ steps.get_version.outputs.TAG }}" \
+            --notes "${{ steps.get_release_notes.outputs.NOTES }}"
+
+      - name: Notify about release
+        run: |
+          curl -H "Title: New release" -H "Tags: rocket" \
+               -d "phishingclub version ${{ steps.get_version.outputs.VERSION }} has been released on GitHub" \
+               "${{ secrets.NOTIFY_URL }}"

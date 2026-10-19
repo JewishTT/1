@@ -1,0 +1,1029 @@
+<script>
+	import { page } from '$app/stores';
+	import { api } from '$lib/api/apiProxy.js';
+	import { onMount } from 'svelte';
+	import { newTableURLParams } from '$lib/service/tableURLParams.js';
+	import { globalButtonDisabledAttributes } from '$lib/utils/form.js';
+	import Headline from '$lib/components/Headline.svelte';
+	import TextField from '$lib/components/TextField.svelte';
+	import TableRow from '$lib/components/table/TableRow.svelte';
+	import TableCell from '$lib/components/table/TableCell.svelte';
+	import TableUpdateButton from '$lib/components/table/TableUpdateButton.svelte';
+	import TableDeleteButton from '$lib/components/table/TableDeleteButton2.svelte';
+	import FormError from '$lib/components/FormError.svelte';
+	import { AppStateService } from '$lib/service/appState';
+	import TableCellAction from '$lib/components/table/TableCellAction.svelte';
+	import TableCellEmpty from '$lib/components/table/TableCellEmpty.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import BigButton from '$lib/components/BigButton.svelte';
+	import FormColumns from '$lib/components/FormColumns.svelte';
+	import FormColumn from '$lib/components/FormColumn.svelte';
+	import FormFooter from '$lib/components/FormFooter.svelte';
+	import Table from '$lib/components/table/Table.svelte';
+	import HeadTitle from '$lib/components/HeadTitle.svelte';
+	import { getModalText } from '$lib/utils/common';
+	import TableCopyButton from '$lib/components/table/TableCopyButton.svelte';
+	import { showIsLoading, hideIsLoading } from '$lib/store/loading.js';
+	import TableDropDownEllipsis from '$lib/components/table/TableDropDownEllipsis.svelte';
+	import DeleteAlert from '$lib/components/modal/DeleteAlert.svelte';
+	import TextareaField from '$lib/components/TextareaField.svelte';
+	import TableCellCheckbox from '$lib/components/table/TableCellCheckbox.svelte';
+	import BulkActionBar from '$lib/components/table/BulkActionBar.svelte';
+	import {
+		createTableSelection,
+		headerSelectionState,
+		runBulkDelete
+	} from '$lib/service/tableSelection.js';
+	import SimpleCodeEditor from '$lib/components/editor/SimpleCodeEditor.svelte';
+	import { addToast } from '$lib/store/toast';
+	import TableCellScope from '$lib/components/table/TableCellScope.svelte';
+	import TableViewButton from '$lib/components/table/TableViewButton.svelte';
+	import { BiMap } from '$lib/utils/maps';
+	import { fetchAllRows } from '$lib/utils/api-utils';
+	import TextFieldSelect from '$lib/components/TextFieldSelect.svelte';
+	import VimToggle from '$lib/components/editor/VimToggle.svelte';
+	import FormButton from '$lib/components/FormButton.svelte';
+
+	// services
+	const appStateService = AppStateService.instance;
+
+	// data
+	let form = null;
+	let contextCompanyID = null;
+	let oauthProviderMap = new BiMap({});
+	let formValues = {
+		name: '',
+		companyID: '',
+		apiKey: '',
+		customField1: '',
+		customField2: '',
+		customField3: '',
+		customField4: '',
+		oauthProvider: null,
+		requestMethod: '',
+		requestURL: '',
+		requestHeaders: '',
+		requestBody: '',
+		messageID: '',
+		expectedResponseStatusCode: null,
+		expectedResponseHeaders: null,
+		expectedResponseBody: null
+	};
+	let apiSenders = [];
+	let apiSendersHasNextPage = true;
+
+	// multi select
+	const selection = createTableSelection();
+	let isBulkDeleteAlertVisible = false;
+	const isRowDisabled = (s) => globalButtonDisabledAttributes(s, contextCompanyID).disabled;
+	$: selectablePageIds = apiSenders
+		.filter((s) => !globalButtonDisabledAttributes(s, contextCompanyID).disabled)
+		.map((s) => s.id);
+	$: headerState = headerSelectionState($selection, selectablePageIds);
+	$: showMultiSelect = apiSenders.length > 0;
+	const onClickBulkDelete = async () => {
+		await runBulkDelete({
+			ids: [...$selection],
+			deleteFn: api.apiSender.delete,
+			noun: 'API sender'
+		});
+		await refreshConfigurations();
+		return { success: true };
+	};
+	let modalError = '';
+	const tableURLParams = newTableURLParams();
+	let isModalVisible = false;
+	let isSubmitting = false;
+	let isTableLoading = false;
+	let modalMode = null;
+	let modalText = '';
+	let isDeleteAlertVisible = false;
+	let deleteValues = {
+		id: null,
+		name: null
+	};
+
+	// defined by response
+	let testResponse = {};
+
+	let isTestModalVisible = false;
+	let isTestSubmitting = false;
+	let selectedTestID = null;
+
+	// defaults mirror the backend test defaults, empty fields fall back to them
+	const testValuesDefault = () => ({
+		fromEmail: 'bob@enterprise.test',
+		fromName: 'Bob',
+		email: 'bob@enterprise.test',
+		firstName: 'Bob',
+		lastName: 'Test',
+		subject: 'Test Email Subject',
+		content: 'Hi {{.FirstName}},\n\nThis is a test email.\n\nBest,\nBob'
+	});
+	let testValues = testValuesDefault();
+
+	// optional recipient variables the user can add to a test on demand
+	const extraVariableDefs = [
+		{ key: 'phone', label: 'Phone', variable: '{{.Phone}}', value: '+1234567890' },
+		{
+			key: 'extraIdentifier',
+			label: 'Extra Identifier',
+			variable: '{{.ExtraIdentifier}}',
+			value: 'extra-test-identifier'
+		},
+		{ key: 'position', label: 'Position', variable: '{{.Position}}', value: 'Lead API Tester' },
+		{
+			key: 'department',
+			label: 'Department',
+			variable: '{{.Department}}',
+			value: 'Research and Development'
+		},
+		{ key: 'city', label: 'City', variable: '{{.City}}', value: 'Odin' },
+		{ key: 'country', label: 'Country', variable: '{{.Country}}', value: 'Denmark' },
+		{ key: 'misc', label: 'Misc', variable: '{{.Misc}}', value: 'This is a test recipient' }
+	];
+	let extraOverrides = [];
+	let selectedExtra = '';
+	// remembers an edited value so a removed variable keeps it when added again
+	let extraValueCache = {};
+	$: availableExtras = extraVariableDefs
+		.filter((d) => !extraOverrides.some((o) => o.key === d.key))
+		.map((d) => ({ value: d.key, label: d.label }));
+
+	/** @param {string} key */
+	const addExtra = (key) => {
+		const def = extraVariableDefs.find((d) => d.key === key);
+		if (!def || extraOverrides.some((o) => o.key === key)) {
+			return;
+		}
+		const value = key in extraValueCache ? extraValueCache[key] : def.value;
+		extraOverrides = [...extraOverrides, { ...def, value }];
+		selectedExtra = '';
+	};
+
+	/** @param {string} key */
+	const removeExtra = (key) => {
+		const existing = extraOverrides.find((o) => o.key === key);
+		if (existing) {
+			extraValueCache[key] = existing.value;
+		}
+		extraOverrides = extraOverrides.filter((o) => o.key !== key);
+	};
+
+	$: {
+		modalText = getModalText('api sender', modalMode);
+	}
+
+	// hook
+	onMount(() => {
+		if (appStateService.getContext()) {
+			contextCompanyID = appStateService.getContext().companyID;
+			formValues.companyID = contextCompanyID;
+		}
+
+		// load oauth providers
+		(async () => {
+			const oauthProviders = await fetchAllRows((options) => {
+				return api.oauthProvider.getAll(options, contextCompanyID);
+			});
+			oauthProviderMap = BiMap.FromArrayOfObjects(oauthProviders);
+		})();
+
+		refreshConfigurations();
+		tableURLParams.onChange(refreshConfigurations);
+		(async () => {
+			const editID = $page.url.searchParams.get('edit');
+			if (editID) {
+				await openEditModal(editID);
+			}
+		})();
+
+		return () => {
+			tableURLParams.unsubscribe();
+		};
+	});
+
+	// component logic
+	const refreshConfigurations = async () => {
+		try {
+			isTableLoading = true;
+			selection.clear();
+			const data = await getAPISenders();
+			apiSenders = data.rows;
+			apiSendersHasNextPage = data.hasNextPage;
+		} catch (e) {
+			addToast('Failed to get API senders', 'Error');
+			console.error(e);
+		} finally {
+			isTableLoading = false;
+		}
+	};
+
+	const getAPISenders = async () => {
+		try {
+			const res = await api.apiSender.getAllOverview(tableURLParams, contextCompanyID);
+			if (!res.success) {
+				throw res.error;
+			}
+			return res.data;
+		} catch (e) {
+			addToast('Failed to get API senders', 'Error');
+			console.error('failed to get API senders', e);
+		}
+		return [];
+	};
+
+	const onSubmit = async (event) => {
+		try {
+			isSubmitting = true;
+			const saveOnly = event?.detail?.saveOnly || false;
+			if (modalMode === 'create' || modalMode === 'copy') {
+				await onClickCreate();
+				return;
+			} else {
+				await onClickUpdate(saveOnly);
+				return;
+			}
+		} finally {
+			isSubmitting = false;
+		}
+	};
+
+	const onClickCreate = async () => {
+		try {
+			const res = await api.apiSender.create({
+				...formValues,
+				oauthProviderID: oauthProviderMap.byValueOrNull(formValues.oauthProvider)
+			});
+			if (!res.success) {
+				modalError = res.error;
+				return;
+			}
+			modalError = '';
+			addToast('Created API sender', 'Success');
+			closeCreateModal();
+			refreshConfigurations();
+		} catch (err) {
+			addToast('Failed to create  API sender', 'Error');
+			console.error('failed to create API sender:', err);
+		}
+	};
+
+	const onClickUpdate = async (saveOnly = false) => {
+		try {
+			const res = await api.apiSender.update({
+				...formValues,
+				oauthProviderID: oauthProviderMap.byValueOrNull(formValues.oauthProvider)
+			});
+			if (!res.success) {
+				modalError = res.error;
+				throw res.error;
+			}
+			modalError = '';
+			addToast(saveOnly ? 'API sender saved' : 'Updated API sender', 'Success');
+			if (!saveOnly) {
+				closeEditModal();
+				// only refresh the table when actually closing the modal
+				refreshConfigurations();
+			}
+		} catch (err) {
+			addToast('Failed to update API sender', 'Error');
+			console.error('failed to update API sender:', err);
+		}
+	};
+
+	const openDeleteAlert = async (apiSender) => {
+		isDeleteAlertVisible = true;
+		deleteValues.id = apiSender.id;
+		deleteValues.name = apiSender.name;
+	};
+
+	/** @param {string} id */
+	const onClickDelete = async (id) => {
+		const action = api.apiSender.delete(id);
+		action
+			.then((res) => {
+				if (res.success) {
+					refreshConfigurations();
+					return;
+				}
+				throw res.error;
+			})
+			.catch((e) => {
+				console.error('failed to delete API sender:', e);
+			});
+		return action;
+	};
+
+	const openCreateModal = () => {
+		modalMode = 'create';
+		isModalVisible = true;
+	};
+
+	const closeCreateModal = () => {
+		isModalVisible = false;
+		form.reset();
+		modalError = '';
+	};
+
+	/** @param {string} id */
+	const openEditModal = async (id) => {
+		modalMode = 'update';
+		try {
+			showIsLoading();
+			const apiSender = await api.apiSender.getByID(id);
+			if (!apiSender.success) {
+				throw apiSender.error;
+			}
+			const r = globalButtonDisabledAttributes(apiSender, contextCompanyID);
+			if (r.disabled) {
+				hideIsLoading();
+				return;
+			}
+			assignAPISender(apiSender.data);
+			isModalVisible = true;
+		} catch (e) {
+			addToast('Failed to get API sender', 'Error');
+			console.error('failed to get API sender:', e);
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	const openCopyModal = async (id) => {
+		modalMode = 'copy';
+		try {
+			showIsLoading();
+			const apiSender = await api.apiSender.getByID(id);
+			if (!apiSender.success) {
+				throw apiSender.error;
+			}
+			assignAPISender(apiSender.data);
+			isModalVisible = true;
+		} catch (e) {
+			addToast('Failed to get API sender', 'Error');
+			console.error('failed to get API sender:', e);
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	const assignAPISender = (apiSender) => {
+		formValues = apiSender;
+		formValues.oauthProvider = oauthProviderMap.byKey(apiSender.oauthProviderID);
+	};
+
+	const closeEditModal = () => {
+		isModalVisible = false;
+		form.reset();
+		modalError = '';
+	};
+
+	/** @param {string} id */
+	const openTestModal = (id) => {
+		selectedTestID = id;
+		testResponse = {};
+		testValues = testValuesDefault();
+		extraOverrides = [];
+		extraValueCache = {};
+		selectedExtra = '';
+		isTestModalVisible = true;
+	};
+
+	const runTest = async () => {
+		try {
+			isTestSubmitting = true;
+			const payload = { ...testValues };
+			for (const o of extraOverrides) {
+				payload[o.key] = o.value;
+			}
+			const res = await api.apiSender.test(selectedTestID, payload);
+			if (!res.success) {
+				const res2 = await api.apiSender.getByID(selectedTestID);
+				if (!res2.success) {
+					throw res2.error;
+				}
+				testResponse = { apiSender: res2.data, error: res.error };
+				return;
+			}
+			testResponse = res.data;
+		} catch (e) {
+			addToast('Failed to test API sender', 'Error');
+			console.error('failed to test API sender:', e);
+		} finally {
+			isTestSubmitting = false;
+		}
+	};
+
+	const closeTestModal = () => {
+		testResponse = {};
+		selectedTestID = null;
+		isTestModalVisible = false;
+	};
+
+	const headersToString = (headers) => {
+		if (!headers) {
+			return '';
+		}
+		// if headers is an array of {key, value} objects
+		if (Array.isArray(headers)) {
+			return headers.map((header) => `${header.key}: ${header.value}`).join('\n');
+		}
+		// if headers is an object
+		return Object.keys(headers)
+			.map((key) => `${key}: ${headers[key]}`)
+			.join('\n');
+	};
+</script>
+
+<HeadTitle title="API Senders" />
+<main>
+	<Headline docSlug="api-senders">API Senders</Headline>
+	<BigButton on:click={openCreateModal}>New API sender</BigButton>
+	<BulkActionBar
+		count={$selection.size}
+		noun="API sender"
+		on:delete={() => (isBulkDeleteAlertVisible = true)}
+		on:clear={() => selection.clear()}
+	/>
+	<Table
+		selectable
+		{headerState}
+		on:toggleAll={(e) => selection.setPageSelection(selectablePageIds, e.detail)}
+		columns={[
+			{ column: 'Name', size: 'large' },
+			...(contextCompanyID ? [{ column: 'Scope', size: 'small' }] : [])
+		]}
+		sortable={['Name', ...(contextCompanyID ? ['scope'] : [])]}
+		hasData={!!apiSenders.length}
+		hasNextPage={apiSendersHasNextPage}
+		plural="api senders"
+		pagination={tableURLParams}
+		isGhost={isTableLoading}
+	>
+		{#each apiSenders as apiSender}
+			<TableRow>
+				{#if showMultiSelect}
+					<TableCellCheckbox
+						checked={$selection.has(apiSender.id)}
+						disabled={isRowDisabled(apiSender)}
+						on:change={() => selection.toggle(apiSender.id)}
+					/>
+				{/if}
+				<TableCell>
+					<button
+						on:click={() => {
+							openEditModal(apiSender.id);
+						}}
+						{...globalButtonDisabledAttributes(apiSender, contextCompanyID)}
+						title={apiSender.name}
+						class="block w-full py-1 text-left"
+					>
+						{apiSender.name}
+					</button>
+				</TableCell>
+				{#if contextCompanyID}
+					<TableCellScope companyID={apiSender.companyID} />
+				{/if}
+				<TableCellEmpty />
+				<TableCellAction>
+					<TableDropDownEllipsis>
+						<TableUpdateButton
+							on:click={() => openEditModal(apiSender.id)}
+							{...globalButtonDisabledAttributes(apiSender, contextCompanyID)}
+						/>
+						<TableCopyButton
+							title={'Copy'}
+							on:click={() => openCopyModal(apiSender.id)}
+							{...globalButtonDisabledAttributes(apiSender, contextCompanyID)}
+						/>
+						<TableViewButton name="Perform test" on:click={() => openTestModal(apiSender.id)} />
+						<TableDeleteButton
+							on:click={() => openDeleteAlert(apiSender)}
+							{...globalButtonDisabledAttributes(apiSender, contextCompanyID)}
+						></TableDeleteButton>
+					</TableDropDownEllipsis>
+				</TableCellAction>
+			</TableRow>
+		{/each}
+	</Table>
+	<Modal headerText={modalText} visible={isModalVisible} onClose={closeCreateModal} {isSubmitting}>
+		<FormGrid on:submit={onSubmit} bind:bindTo={form} {isSubmitting} {modalMode}>
+			<FormColumns>
+				<FormColumn>
+					<!-- Basic Information Section -->
+					<div class="mb-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-600 w-full">
+						<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+							Basic Information
+						</h3>
+						<TextField
+							required
+							minLength={1}
+							maxLength={64}
+							bind:value={formValues.name}
+							placeholder="PhishingClub">Name</TextField
+						>
+					</div>
+
+					<!-- API Configuration Section -->
+					<div class="mb-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-600 w-full">
+						<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+							API Configuration
+						</h3>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div class="md:col-span-2">
+								<TextField
+									required
+									minLength={1}
+									maxLength={255}
+									type="url"
+									width="full"
+									bind:value={formValues.requestURL}
+									placeholder="https://api.example.com/v1/send">Request URL</TextField
+								>
+							</div>
+							<div>
+								<TextField
+									required
+									minLength={1}
+									maxLength={64}
+									bind:value={formValues.requestMethod}
+									placeholder="POST">Request Method</TextField
+								>
+							</div>
+							<div>
+								<TextField
+									bind:value={formValues.apiKey}
+									minLength={1}
+									maxLength={255}
+									optional={true}
+									toolTipText="Use as {'{{.APIKey}}'}"
+									placeholder="your-api-key">API Key</TextField
+								>
+							</div>
+							<div>
+								<TextFieldSelect
+									id="oauthProvider"
+									bind:value={formValues.oauthProvider}
+									options={oauthProviderMap.values()}
+									optional={true}
+									toolTipText="OAuth provider for token-based authentication. Access token available as {'{{.OAuthAccessToken}}'}"
+									>OAuth Provider (Optional)</TextFieldSelect
+								>
+							</div>
+						</div>
+					</div>
+
+					<!-- Headers and Body Section -->
+					<div class="mb-6 pt-4 pb-2 w-full">
+						<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+							Request Details
+						</h3>
+						<div class="space-y-5">
+							<TextareaField
+								optional={true}
+								height={'medium'}
+								fullWidth
+								bind:value={formValues.requestHeaders}
+								placeholder={`Content-Type: application/json
+Authorization: Bearer {{.APIKey}}
+X-Custom-Header: Hello Friend"
+								`}
+								toolTipText="Each header should be on a new line in the format 'key: value'"
+								>Request Headers</TextareaField
+							>
+							<div class="flex flex-col py-2 w-full">
+								<div class="flex items-center">
+									<p class="font-bold text-slate-600 dark:text-gray-300 py-2">Request Body</p>
+									<div class="bg-gray-100 dark:bg-gray-700 ml-2 px-2 rounded-md">
+										<p class="text-slate-600 dark:text-gray-300 text-xs">optional</p>
+									</div>
+								</div>
+								<SimpleCodeEditor
+									bind:value={formValues.requestBody}
+									height="medium"
+									language="json"
+									showVimToggle={true}
+									showExpandButton={false}
+									placeholder={`{
+  "to": "{{.Email}}",
+  "from": "{{.FromEmail}}",
+  "fromName": "{{.FromName}}",
+  "subject": "{{.Subject}}",
+  "body": "{{.Content}}",
+  "recipientInfo": {
+    "firstName": "{{.FirstName}}",
+    "lastName": "{{.LastName}}",
+    "email": "{{.Email}}",
+    "phone": "{{.Phone}}",
+    "position": "{{.Position}}",
+    "department": "{{.Department}}",
+    "city": "{{.City}}",
+    "country": "{{.Country}}",
+    "extraIdentifier": "{{.ExtraIdentifier}}",
+    "misc": "{{.Misc}}"
+  },
+  "campaignInfo": {
+    "url": "{{.URL}}",
+    "baseUrl": "{{.BaseURL}}",
+    "trackingUrl": "{{.TrackingURL}}",
+    "tracker": "{{.Tracker}}"
+  },
+  "apiSenderInfo": {
+    "apiKey": "{{.APIKey}}",
+    "customField1": "{{.CustomField1}}",
+    "customField2": "{{.CustomField2}}",
+    "customField3": "{{.CustomField3}}",
+    "customField4": "{{.CustomField4}}"
+  }
+}`}
+								/>
+							</div>
+						</div>
+					</div>
+
+					<!-- Response Validation Section -->
+					<div class="mb-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-600 w-full">
+						<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+							Response Validation
+						</h3>
+						<div class="space-y-5">
+							<div>
+								<TextField
+									toolTipText="The HTTP status code that indicates a successful request"
+									required
+									type="number"
+									width="small"
+									bind:value={formValues.expectedResponseStatusCode}
+									placeholder="200">Expected response code</TextField
+								>
+							</div>
+							<TextareaField
+								bind:value={formValues.expectedResponseHeaders}
+								height={'medium'}
+								fullWidth
+								minLength={1}
+								maxLength={4096}
+								optional
+								toolTipText="Headers must match, values must contain the expected value."
+								placeholder="X-Operation-Status: OK">Header matches</TextareaField
+							>
+							<TextareaField
+								minLength={1}
+								maxLength={4096}
+								height={'medium'}
+								fullWidth
+								optional
+								bind:value={formValues.expectedResponseBody}
+								defaultValue={null}
+								placeholder="message sent"
+								toolTipText="Text that should be present in the response body"
+								>Response contains</TextareaField
+							>
+						</div>
+					</div>
+
+					<!-- Custom Fields Section -->
+					<div class="pt-4 pb-2 w-full">
+						<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+							Custom Fields
+						</h3>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<TextField
+									bind:value={formValues.customField1}
+									minLength={1}
+									maxLength={255}
+									optional={true}
+									placeholder="Value 1"
+									toolTipText="Use as {'{{.CustomField1}}'}">Custom field 1</TextField
+								>
+							</div>
+							<div>
+								<TextField
+									bind:value={formValues.customField2}
+									minLength={1}
+									maxLength={255}
+									optional={true}
+									placeholder="Value 2"
+									toolTipText="Use as {'{{.CustomField2}}'}">Custom field 2</TextField
+								>
+							</div>
+							<div>
+								<TextField
+									bind:value={formValues.customField3}
+									minLength={1}
+									maxLength={255}
+									optional={true}
+									placeholder="Value 3"
+									toolTipText="Use as {'{{.CustomField3}}'}">Custom field 3</TextField
+								>
+							</div>
+							<div>
+								<TextField
+									bind:value={formValues.customField4}
+									minLength={1}
+									maxLength={255}
+									optional={true}
+									placeholder="Value 4"
+									toolTipText="Use as {'{{.CustomField4}}'}">Custom field 4</TextField
+								>
+							</div>
+						</div>
+					</div>
+				</FormColumn>
+			</FormColumns>
+			<FormError message={modalError} />
+			<FormFooter closeModal={closeCreateModal} {isSubmitting} />
+		</FormGrid>
+	</Modal>
+
+	<Modal headerText="API Sender Test" visible={isTestModalVisible} onClose={closeTestModal}>
+		<div
+			class="col-span-3 w-[800px] max-w-full overflow-y-auto px-6 py-4 space-y-6 select-text overflow-x-hidden"
+		>
+			<!-- Test values, empty fields fall back to the defaults -->
+			<form on:submit|preventDefault={runTest}>
+				<div class="pt-4 pb-2 w-full">
+					<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">Test values</h3>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<TextField
+							type="email"
+							width="full"
+							maxLength={254}
+							bind:value={testValues.fromEmail}
+							toolTipText={'Sent as {{.FromEmail}}'}
+							placeholder="bob@enterprise.test">From Email</TextField
+						>
+						<TextField
+							width="full"
+							maxLength={128}
+							bind:value={testValues.fromName}
+							toolTipText={'Sent as {{.FromName}}'}
+							placeholder="Bob">From Name</TextField
+						>
+						<TextField
+							type="email"
+							width="full"
+							maxLength={254}
+							bind:value={testValues.email}
+							toolTipText={'Sent as {{.Email}}'}
+							placeholder="bob@enterprise.test">Email</TextField
+						>
+						<TextField
+							width="full"
+							maxLength={127}
+							bind:value={testValues.firstName}
+							toolTipText={'Sent as {{.FirstName}}'}
+							placeholder="Bob">First Name</TextField
+						>
+						<TextField
+							width="full"
+							maxLength={127}
+							bind:value={testValues.lastName}
+							toolTipText={'Sent as {{.LastName}}'}
+							placeholder="Test">Last Name</TextField
+						>
+						<TextField
+							width="full"
+							maxLength={255}
+							bind:value={testValues.subject}
+							toolTipText={'Sent as {{.Subject}}'}
+							placeholder="Test Email Subject">Subject</TextField
+						>
+					</div>
+					<div class="mt-4">
+						<TextareaField
+							fullWidth
+							height={'medium'}
+							bind:value={testValues.content}
+							toolTipText={'Sent as {{.Content}}'}>Content</TextareaField
+						>
+					</div>
+					<!-- optional recipient variables added on demand -->
+					<div class="mt-4 space-y-3">
+						{#each extraOverrides as extra (extra.key)}
+							<div class="flex items-end gap-2">
+								<div class="flex-1">
+									<TextField
+										width="full"
+										maxLength={127}
+										bind:value={extra.value}
+										toolTipText={'Sent as ' + extra.variable}>{extra.label}</TextField
+									>
+								</div>
+								<button
+									type="button"
+									class="mb-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-red-600"
+									on:click={() => removeExtra(extra.key)}
+									aria-label={'Remove ' + extra.label}>Remove</button
+								>
+							</div>
+						{/each}
+						{#if availableExtras.length > 0}
+							<TextFieldSelect
+								id="addTestVariable"
+								placeholder="Add another variable..."
+								bind:value={selectedExtra}
+								options={availableExtras}
+								optional={true}
+								onSelect={addExtra}>Add variable</TextFieldSelect
+							>
+						{/if}
+					</div>
+					<div class="flex justify-end mt-4">
+						<FormButton isSubmitting={isTestSubmitting}>Run test</FormButton>
+					</div>
+				</div>
+			</form>
+			{#if testResponse.request || testResponse.error}
+				{#if !testResponse.error}
+				<!-- Successful Test -->
+				<div class="mb-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-600 w-full">
+					<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+						Request Details
+					</h3>
+					<div
+						class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600"
+					>
+						<div class="font-medium break-all">
+							{testResponse.apiSender?.requestMethod}
+							{testResponse?.request?.url}
+						</div>
+					</div>
+				</div>
+
+				<div class="mb-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-600 w-full">
+					<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+						Request Headers
+					</h3>
+					<div
+						class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+					>
+						<div
+							class="text-xs whitespace-pre-wrap break-all max-h-60 overflow-y-auto font-mono"
+							style="word-break: break-all; overflow-wrap: anywhere;"
+						>
+							{headersToString(testResponse.request?.headers) || 'No headers'}
+						</div>
+					</div>
+				</div>
+
+				<div class="pt-4 pb-2 w-full">
+					<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">Request Body</h3>
+					<div
+						class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+					>
+						<div
+							class="text-xs whitespace-pre-wrap break-all max-h-80 overflow-y-auto font-mono"
+							style="word-break: break-all; overflow-wrap: anywhere;"
+						>
+							{testResponse.request?.body || 'Empty body'}
+						</div>
+					</div>
+				</div>
+				<!-- response -->
+				<div class="mb-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-600 w-full">
+					<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+						Response Status
+					</h3>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div
+							class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+						>
+							<div class="text-sm font-medium mb-1">Received:</div>
+							<div
+								class={testResponse.response?.code ==
+								testResponse.apiSender?.expectedResponseStatusCode
+									? 'text-green-600 font-medium'
+									: 'text-red-600 font-medium'}
+							>
+								{testResponse.response?.code}
+							</div>
+						</div>
+						<div
+							class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+						>
+							<div class="text-sm font-medium mb-1">Expected:</div>
+							<div>{testResponse.apiSender?.expectedResponseStatusCode}</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="mb-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-600 w-full">
+					<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+						Response Headers
+					</h3>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div
+							class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+						>
+							<div class="text-sm font-medium mb-1">Received:</div>
+							<div
+								class="text-xs whitespace-pre-wrap break-all max-h-60 overflow-y-auto font-mono"
+								style="word-break: break-all; overflow-wrap: anywhere;"
+							>
+								{headersToString(testResponse.response?.headers) || 'No headers'}
+							</div>
+						</div>
+						<div
+							class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+						>
+							<div class="text-sm font-medium mb-1">Expected to contain:</div>
+							<div
+								class="text-xs whitespace-pre-wrap break-all max-h-60 overflow-y-auto font-mono"
+								style="word-break: break-all; overflow-wrap: anywhere;"
+							>
+								{testResponse.apiSender?.expectedResponseHeaders || 'No validation specified'}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="pt-4 pb-2 w-full">
+					<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">Response Body</h3>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div
+							class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+						>
+							<div class="text-sm font-medium mb-1">Received:</div>
+							<div
+								class="text-xs whitespace-pre-wrap break-all max-h-80 overflow-y-auto font-mono"
+								style="word-break: break-all; overflow-wrap: anywhere;"
+							>
+								{testResponse.response?.body || 'Empty response'}
+							</div>
+						</div>
+						<div
+							class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+						>
+							<div class="text-sm font-medium mb-1">Expected to contain:</div>
+							<div
+								class="text-xs whitespace-pre-wrap break-all max-h-80 overflow-y-auto font-mono"
+								style="word-break: break-all; overflow-wrap: anywhere;"
+							>
+								{testResponse.apiSender?.expectedResponseBody || 'No validation specified'}
+							</div>
+						</div>
+					</div>
+				</div>
+			{:else}
+				<!-- Error Case -->
+				<div class="mb-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-600 w-full">
+					<h3 class="text-base font-medium text-pc-darkblue dark:text-white mb-3">
+						Request Details
+					</h3>
+					<div
+						class="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+					>
+						<div class="font-medium break-all">
+							{testResponse.apiSender?.requestMethod}
+							{testResponse.apiSender?.requestURL}
+						</div>
+					</div>
+				</div>
+				<div class="pt-4 pb-2 w-full">
+					<h3 class="text-base font-medium text-red-600 mb-3">Error</h3>
+					<div class="p-4 bg-red-50 rounded-md border border-red-200 overflow-hidden">
+						<div class="text-red-600 whitespace-pre-wrap break-words">{testResponse.error}</div>
+					</div>
+				</div>
+				{/if}
+			{/if}
+
+			<!-- Footer with Close Button -->
+			<div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+				<div class="flex justify-end">
+					<button
+						type="button"
+						class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+						on:click={closeTestModal}
+					>
+						Close
+					</button>
+				</div>
+			</div>
+		</div>
+	</Modal>
+	<DeleteAlert
+		list={[
+			'Templates using this api sender will become unusable',
+			'Scheduled or active campaigns using this api sender will be closed'
+		]}
+		name={deleteValues.name}
+		onClick={() => onClickDelete(deleteValues.id)}
+		bind:isVisible={isDeleteAlertVisible}
+	></DeleteAlert>
+	<DeleteAlert
+		title="Delete API senders"
+		list={[
+			'Templates using these api senders will become unusable',
+			'Scheduled or active campaigns using these api senders will be closed'
+		]}
+		name={`${$selection.size} API sender${$selection.size === 1 ? '' : 's'}`}
+		onClick={onClickBulkDelete}
+		confirm
+		bind:isVisible={isBulkDeleteAlertVisible}
+	></DeleteAlert>
+</main>

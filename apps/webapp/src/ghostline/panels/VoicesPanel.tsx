@@ -113,19 +113,22 @@ export function VoicesPanel() {
     }
   }, [cloneName, sampleRef, file, load]);
 
-  const forget = useCallback(async (id: string) => {
-    setBusy(true);
-    setRefusal(null);
-    try {
-      await api.forgetGhostlineVoice(id);
-      setNote(`Forgot ${id}.`);
-      await load();
-    } catch (err) {
-      setRefusal(classify(err));
-    } finally {
-      setBusy(false);
-    }
-  }, [load]);
+  const forget = useCallback(
+    async (id: string) => {
+      setBusy(true);
+      setRefusal(null);
+      try {
+        await api.forgetGhostlineVoice(id);
+        setNote(`Forgot ${id}.`);
+        await load();
+      } catch (err) {
+        setRefusal(classify(err));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [load],
+  );
 
   return (
     <GlShell
@@ -147,9 +150,9 @@ export function VoicesPanel() {
         <div className="ui-ci-col">
           <span className="ui-pane-title">Register a premade voice</span>
           <p className="panel-note">
-            Cloning needs a paid ElevenLabs plan. On the free tier, pick a stock voice from
-            the provider&apos;s console and record its id here — the runtime speaks it
-            exactly as it would speak a clone.
+            Cloning needs a paid ElevenLabs plan. On the free tier, pick a stock voice from the
+            provider&apos;s console and record its id here — the runtime speaks it exactly as it
+            would speak a clone.
           </p>
           <Input
             label="Voice id"
@@ -210,13 +213,17 @@ export function VoicesPanel() {
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               data-testid="gl-clone-file"
             />
-            <span className="ui-field-hint">WAV or M4A, 25 MB cap. Uploading clears the field above.</span>
+            <span className="ui-field-hint">
+              WAV or M4A, 25 MB cap. Uploading clears the field above.
+            </span>
           </span>
           <div>
             <Button
               size="sm"
               icon="activity"
-              disabled={busy || cloneName.trim().length === 0 || (sampleRef.trim().length === 0 && !file)}
+              disabled={
+                busy || cloneName.trim().length === 0 || (sampleRef.trim().length === 0 && !file)
+              }
               onClick={() => void clone()}
               data-testid="gl-clone-voice"
             >
@@ -232,9 +239,7 @@ export function VoicesPanel() {
         {voices === null ? (
           <Empty>Loading…</Empty>
         ) : voices.length === 0 ? (
-          <Empty>
-            No voices yet. A runtime needs one before it can be started.
-          </Empty>
+          <Empty>No voices yet. A runtime needs one before it can be started.</Empty>
         ) : (
           <ul className="ui-ci-list" data-testid="gl-voice-list">
             {voices.map((voice) => (
@@ -244,7 +249,9 @@ export function VoicesPanel() {
                   <code className="ui-id">{voice.voiceId}</code>
                   <span className="ui-id">
                     {voice.sampleRef ? `sample ${voice.sampleRef}` : "no sample"}
-                    {voice.sampleBytes != null ? ` · ${Math.round(voice.sampleBytes / 1024)} KB` : ""}
+                    {voice.sampleBytes != null
+                      ? ` · ${Math.round(voice.sampleBytes / 1024)} KB`
+                      : ""}
                     {voice.notes ? ` · ${voice.notes}` : ""}
                   </span>
                 </div>
@@ -307,9 +314,17 @@ function classify(err: unknown): GlRefusal {
       return { kind: "setup", reason };
     }
     if (apiErr.status === 409) {
-      return { kind: "gate", code, reason: String((detail as { reason?: unknown }).reason ?? ""), rejected: [] };
+      return {
+        kind: "gate",
+        code,
+        reason: String((detail as { reason?: unknown }).reason ?? ""),
+        rejected: [],
+      };
     }
-    return { kind: "setup", reason: String((detail as { reason?: unknown }).reason ?? apiErr.message ?? "") };
+    return {
+      kind: "setup",
+      reason: String((detail as { reason?: unknown }).reason ?? apiErr.message ?? ""),
+    };
   }
   return { kind: "setup", reason: err instanceof Error ? err.message : String(err) };
 }

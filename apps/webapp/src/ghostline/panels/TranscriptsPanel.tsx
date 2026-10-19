@@ -59,20 +59,23 @@ export function TranscriptsPanel() {
     void load();
   }, [load]);
 
-  const open = useCallback(async (callId: string) => {
-    setSelected(callId);
-    setDetail(null);
-    try {
-      const res = await api.getGhostlineCall(callId);
-      setDetail(toCallRow(res.call, res.call.messages));
-      if (res.call.playbook_id) {
-        const match = playbooks.find((p) => p.playbookId === res.call.playbook_id);
-        setDraftStage(match ? (match.firstStage ?? "") : "");
+  const open = useCallback(
+    async (callId: string) => {
+      setSelected(callId);
+      setDetail(null);
+      try {
+        const res = await api.getGhostlineCall(callId);
+        setDetail(toCallRow(res.call, res.call.messages));
+        if (res.call.playbook_id) {
+          const match = playbooks.find((p) => p.playbookId === res.call.playbook_id);
+          setDraftStage(match ? (match.firstStage ?? "") : "");
+        }
+      } catch (err) {
+        setRefusal(classify(err));
       }
-    } catch (err) {
-      setRefusal(classify(err));
-    }
-  }, [playbooks]);
+    },
+    [playbooks],
+  );
 
   const append = useCallback(async () => {
     if (!selected) return;
@@ -140,7 +143,13 @@ export function TranscriptsPanel() {
                     </span>
                     <Chip
                       label={outcomeLabel(call.outcome)}
-                      tone={call.outcome === "compromised" ? "danger" : call.outcome ? "gold" : "neutral"}
+                      tone={
+                        call.outcome === "compromised"
+                          ? "danger"
+                          : call.outcome
+                            ? "gold"
+                            : "neutral"
+                      }
                     />
                   </button>
                 </li>
@@ -150,20 +159,32 @@ export function TranscriptsPanel() {
         </div>
 
         <div className="ui-ci-col">
-          <span className="ui-pane-title">{detail ? `Transcript ${detail.callId}` : "Transcript"}</span>
+          <span className="ui-pane-title">
+            {detail ? `Transcript ${detail.callId}` : "Transcript"}
+          </span>
           {detail ? (
             <>
               <div className="ui-ci-list-head">
-                <Chip label={`${detail.credentialsCaptured} credentials captured`} tone="neutral" testId="gl-detail-no-capture" />
+                <Chip
+                  label={`${detail.credentialsCaptured} credentials captured`}
+                  tone="neutral"
+                  testId="gl-detail-no-capture"
+                />
                 {detail.roeId ? <Chip label={`RoE ${detail.roeId}`} tone="gold" /> : null}
-                {detail.finalStage ? <Chip label={`ended at ${detail.finalStage}`} tone="analytical" /> : null}
+                {detail.finalStage ? (
+                  <Chip label={`ended at ${detail.finalStage}`} tone="analytical" />
+                ) : null}
               </div>
               <ol className="ui-gl-turns" data-testid="gl-turns">
                 {detail.messages.length === 0 ? (
                   <li className="ui-gl-turn-empty">No turns recorded.</li>
                 ) : (
                   detail.messages.map((message, index) => (
-                    <li key={`${message.timestamp}-${index}`} data-role={message.role} data-testid={`gl-turn-${index}`}>
+                    <li
+                      key={`${message.timestamp}-${index}`}
+                      data-role={message.role}
+                      data-testid={`gl-turn-${index}`}
+                    >
                       <div className="ui-gl-turn-head">
                         <span className="ui-gl-turn-role">{message.role}</span>
                         {message.stage ? <Chip label={message.stage} tone="analytical" /> : null}
@@ -175,8 +196,12 @@ export function TranscriptsPanel() {
                             testId={`gl-turn-redacted-${index}`}
                           />
                         ) : null}
-                        {message.triggerUsed ? <Chip label={message.triggerUsed} tone="neutral" /> : null}
-                        {message.objectionType ? <Chip label={`objection: ${message.objectionType}`} tone="gold" /> : null}
+                        {message.triggerUsed ? (
+                          <Chip label={message.triggerUsed} tone="neutral" />
+                        ) : null}
+                        {message.objectionType ? (
+                          <Chip label={`objection: ${message.objectionType}`} tone="gold" />
+                        ) : null}
                       </div>
                       <p className="ui-gl-turn-text">{message.content}</p>
                     </li>

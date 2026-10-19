@@ -52,33 +52,36 @@ export function EmulationPanel() {
     return () => window.clearInterval(id);
   }, [operation?.operation_id, operation?.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const launch = useCallback(
-    async (plan: CiPlanWire) => {
-      setBusy(true);
-      setNote(null);
-      try {
-        const res = await api.launchOperation({
-          plan_id: plan.plan_id,
-          lab_fixture: plan.lab_fixture,
-          roe_id: "roe-confirmed-by-supervisor",
-        });
-        setOperation(toOperationRow(res.operation));
-        setNote(`${plan.name} launched against ${plan.lab_fixture}`);
-      } catch (err) {
-        setOperation(null);
-        setNote(err instanceof Error ? err.message : String(err));
-      } finally {
-        setBusy(false);
-      }
-    },
-    [],
-  );
+  const launch = useCallback(async (plan: CiPlanWire) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      const res = await api.launchOperation({
+        plan_id: plan.plan_id,
+        lab_fixture: plan.lab_fixture,
+        roe_id: "roe-confirmed-by-supervisor",
+      });
+      setOperation(toOperationRow(res.operation));
+      setNote(`${plan.name} launched against ${plan.lab_fixture}`);
+    } catch (err) {
+      setOperation(null);
+      setNote(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
   return (
     <CiPanelShell
       title="Kill-chain emulation"
       scope="tenant-wide"
-      status={<StatusChip label={operation ? operation.state : "idle"} tone={operation?.state === "running" ? "accent" : "neutral"} testId="ci-emulation-status" />}
+      status={
+        <StatusChip
+          label={operation ? operation.state : "idle"}
+          tone={operation?.state === "running" ? "accent" : "neutral"}
+          testId="ci-emulation-status"
+        />
+      }
       testId="ci-emulation-panel"
     >
       {error ? <CiEmpty>Error: {error}</CiEmpty> : null}
@@ -90,7 +93,9 @@ export function EmulationPanel() {
         ) : plans.length === 0 ? (
           <NamedAbsence
             testId="ci-emulation-missing"
-            missing={["GET /specops/emulation/plans (no donor plan libraries served — caldera / ael / adversary_emulation_library not connected)"]}
+            missing={[
+              "GET /specops/emulation/plans (no donor plan libraries served — caldera / ael / adversary_emulation_library not connected)",
+            ]}
           />
         ) : (
           <ul className="ui-ci-list" data-testid="ci-emulation-plans">
@@ -99,7 +104,8 @@ export function EmulationPanel() {
                 <div className="ui-ci-list-main">
                   <strong>{p.name}</strong>
                   <span className="ui-id">
-                    {p.source_donor} · {p.target_techniques.join(", ") || "no techniques"} · lab: {p.lab_fixture}
+                    {p.source_donor} · {p.target_techniques.join(", ") || "no techniques"} · lab:{" "}
+                    {p.lab_fixture}
                   </span>
                 </div>
                 <Button
@@ -124,15 +130,31 @@ export function EmulationPanel() {
         <div className="ui-ci-col" data-testid="ci-operation">
           <div className="ui-ci-list-head">
             <span className="ui-pane-title">Operation {operation.operation_id}</span>
-            <StatusChip label={`RoE ${operation.roe_status}`} tone={operation.roe_status === "confirmed" ? "accent" : "gold"} />
-            {operation.halted_reason ? <StatusChip label={`halted: ${operation.halted_reason}`} tone="danger" /> : null}
+            <StatusChip
+              label={`RoE ${operation.roe_status}`}
+              tone={operation.roe_status === "confirmed" ? "accent" : "gold"}
+            />
+            {operation.halted_reason ? (
+              <StatusChip label={`halted: ${operation.halted_reason}`} tone="danger" />
+            ) : null}
           </div>
           <ul className="ui-ci-abilities" data-testid="ci-abilities">
             {operation.abilities.map((a) => (
-              <li key={a.ability_id} data-state={a.state} data-testid={`ci-ability-${a.ability_id}`}>
+              <li
+                key={a.ability_id}
+                data-state={a.state}
+                data-testid={`ci-ability-${a.ability_id}`}
+              >
                 <span className="ui-ci-ability-tech">{a.technique}</span>
-                <span className="ui-id">{a.tactic} · {a.executor}</span>
-                <StatusChip label={a.state} tone={a.state === "executed" ? "accent" : a.state === "failed" ? "danger" : "neutral"} />
+                <span className="ui-id">
+                  {a.tactic} · {a.executor}
+                </span>
+                <StatusChip
+                  label={a.state}
+                  tone={
+                    a.state === "executed" ? "accent" : a.state === "failed" ? "danger" : "neutral"
+                  }
+                />
               </li>
             ))}
           </ul>

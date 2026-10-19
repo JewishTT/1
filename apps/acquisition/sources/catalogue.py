@@ -168,6 +168,59 @@ class SourceDefinition:
     #: Passed through untouched so the runtime owns the meaning of its own config keys.
     runtime_config: Mapping[str, Any] = field(default_factory=dict, repr=False, compare=False)
     definition: Mapping[str, Any] = field(default_factory=dict, repr=False, compare=False)
+    #: FR-014: this source's declared ability to find a thing it was asked to look for,
+    #: as a fraction in [0, 1]. **``None`` means the source has never declared one**, and
+    #: that is the only safe default -- every one of the 145 sources that never says so
+    #: is genuinely unquantified, and a default of 1.0 would certify all of them as
+    #: exhaustive searches.
+    #:
+    #: The field exists because a zero-result from an undeclared source is
+    #: ``INFORMATIONAL_ONLY`` and may not become a qualified absence (contract 03 rule 2,
+    #: contract 07 ``DETECTION_POWER_UNKNOWN``). Without a place to *declare* the power,
+    #: the only way for a caller to reach a qualified absence is to write the number at
+    #: the point where it is trying to justify a negative finding -- which is the wrong
+    #: place for a measurement and the reason absences get manufactured.
+    #:
+    #: ``None`` is not the same as ``0.0``: a declared zero is a source that has said it
+    #: cannot see into this corpus, and a declared zero is informative in a way that an
+    #: unmeasured one is not.
+    detection_power: float | None = None
+    #: How ``detection_power`` was established. Absent alongside a ``None`` power; required
+    #: alongside a number, so a bare float is never read as a measurement (U3's rule about
+    #: numbers without semantics, applied to source declarations).
+    detection_power_method: str = ""
+
+    def __post_init__(self) -> None:
+        if self.detection_power is None:
+            if self.detection_power_method:
+                raise CatalogueError(
+                    "detection_power_without_value",
+                    f"{self.source_id} declares how its detection power was measured but not "
+                    "the value itself; a method with no number constrains nothing",
+                )
+            return
+        if not 0.0 <= float(self.detection_power) <= 1.0:
+            raise CatalogueError(
+                "detection_power_out_of_range",
+                f"{self.source_id} declares detection_power={self.detection_power!r}; a power "
+                "outside [0, 1] is not a measurement (FR-014)",
+            )
+        if not str(self.detection_power_method).strip():
+            raise CatalogueError(
+                "detection_power_without_method",
+                f"{self.source_id} declares detection_power={self.detection_power!r} with no "
+                "method. A number a reader cannot re-check is a number they cannot contest",
+            )
+
+    @property
+    def may_support_qualified_absence(self) -> bool:
+        """Whether a zero-result from this source can underwrite an absence claim.
+
+        False for every source that has not declared a detection power, with no
+        exceptions and no regard for how good its coverage looks. This is the single
+        check FR-014 turns on.
+        """
+        return self.detection_power is not None
 
     @property
     def is_runtime_backed(self) -> bool:
@@ -202,6 +255,14 @@ class SourceDefinition:
             # indistinguishable over HTTP.
             "runtime_ref": self.runtime_ref,
             "cost_class": self.cost_class,
+            # Present and possibly null so a consumer can tell "this source declares no
+            # detection power" from "the field was never populated" -- the first is a
+            # fact about the source and the second is a fact about the loader. Over HTTP
+            # the two are otherwise indistinguishable, and only the first is FR-014's
+            # subject.
+            "detection_power": self.detection_power,
+            "detection_power_method": self.detection_power_method,
+            "may_support_qualified_absence": self.may_support_qualified_absence,
         }
 
 
@@ -376,7 +437,24 @@ def load_source(path: Path) -> SourceDefinition:
         cost_class=str(raw.get("cost_class") or "cheap"),
         runtime_config=dict(raw.get("runtime_config") or {}),
         definition=dict(raw),
+        detection_power=_declared_detection_power(raw),
+        detection_power_method=str(raw.get("detection_power_method") or "").strip(),
     )
+
+
+def _declared_detection_power(raw: Mapping[str, Any]) -> float | None:
+    """Read a declared detection power, or ``None`` when there is not one.
+
+    ``None`` is the honest answer for every source whose definition does not declare
+    one, and it is deliberately not coerced to a number anywhere in this path: a source
+    that never said what it would have found has not said it, and the difference between
+    "declared zero" and "never declared" is the difference between a known blind spot and
+    an unmeasured one.
+    """
+    value = raw.get("detection_power")
+    if value is None or value == "":
+        return None
+    return float(value)
 
 
 def load_catalogue(

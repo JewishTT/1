@@ -68,7 +68,13 @@ export function PhishingPanel() {
     <CiPanelShell
       title="Phishing / SAT simulation"
       scope="tenant-wide"
-      status={<StatusChip label={campaign ? campaign.state : "draft"} tone={campaign?.state === "complete" ? "accent" : "neutral"} testId="ci-phishing-status" />}
+      status={
+        <StatusChip
+          label={campaign ? campaign.state : "draft"}
+          tone={campaign?.state === "complete" ? "accent" : "neutral"}
+          testId="ci-phishing-status"
+        />
+      }
       testId="ci-phishing-panel"
     >
       <div className="ui-ci-col">
@@ -81,7 +87,13 @@ export function PhishingPanel() {
           data-testid="ci-roster-input"
         />
         <span className="ui-id">{roster.length} target(s) · only these may be sent</span>
-        <Button size="sm" icon="plus" disabled={busy || roster.length === 0} onClick={() => void create()} data-testid="ci-create-campaign">
+        <Button
+          size="sm"
+          icon="plus"
+          disabled={busy || roster.length === 0}
+          onClick={() => void create()}
+          data-testid="ci-create-campaign"
+        >
           Create campaign
         </Button>
       </div>
@@ -90,8 +102,15 @@ export function PhishingPanel() {
         <div className="ui-ci-col" data-testid="ci-campaign">
           <div className="ui-ci-list-head">
             <span className="ui-pane-title">Campaign {campaign.campaign_id}</span>
-            <StatusChip label={`RoE ${campaign.roe_status}`} tone={campaign.roe_status === "confirmed" ? "accent" : "gold"} />
-            <StatusChip label={`${campaign.captured_credentials_count} credentials captured`} tone="neutral" testId="ci-no-capture" />
+            <StatusChip
+              label={`RoE ${campaign.roe_status}`}
+              tone={campaign.roe_status === "confirmed" ? "accent" : "gold"}
+            />
+            <StatusChip
+              label={`${campaign.captured_credentials_count} credentials captured`}
+              tone="neutral"
+              testId="ci-no-capture"
+            />
           </div>
           <div className="ui-ci-metrics" data-testid="ci-engagement">
             <Metric label="sent" value={campaign.engagement.sent} />
@@ -99,7 +118,13 @@ export function PhishingPanel() {
             <Metric label="clicked" value={campaign.engagement.clicked} />
             <Metric label="submitted" value={campaign.engagement.submitted} />
           </div>
-          <Button size="sm" icon="alert" disabled={busy} onClick={() => void launch()} data-testid="ci-launch-campaign">
+          <Button
+            size="sm"
+            icon="alert"
+            disabled={busy}
+            onClick={() => void launch()}
+            data-testid="ci-launch-campaign"
+          >
             Launch (RoE-gated)
           </Button>
         </div>

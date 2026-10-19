@@ -25,6 +25,7 @@ export type GlPanel =
   | "simulate"
   | "voices"
   | "dialer"
+  | "engagement"
   | "transcripts"
   | "analytics";
 
@@ -34,6 +35,7 @@ export const GL_PANELS: ReadonlyArray<GlPanel> = [
   "simulate",
   "voices",
   "dialer",
+  "engagement",
   "transcripts",
   "analytics",
 ];
@@ -89,12 +91,18 @@ export type GlRuntimeState = "stopped" | "blocked" | "running";
 
 /** A refusal from the rules-of-engagement gate, or a setup fact. Never both. */
 export type GlRefusal =
-  | { readonly kind: "gate"; readonly code: string; readonly reason: string; readonly rejected: readonly string[] }
+  | {
+      readonly kind: "gate";
+      readonly code: string;
+      readonly reason: string;
+      readonly rejected: readonly string[];
+    }
   | { readonly kind: "setup"; readonly reason: string }
   | { readonly kind: "absent"; readonly reason: string };
 
 /** A stage's role in the ladder, derived from where it sits and what it declares. */
-export type GlStageRole = "trust" | "discovery" | "persuasion" | "objection" | "closure" | "reporting";
+export type GlStageRole =
+  "trust" | "discovery" | "persuasion" | "objection" | "closure" | "reporting";
 
 export interface GlStageRow {
   readonly stage: string;

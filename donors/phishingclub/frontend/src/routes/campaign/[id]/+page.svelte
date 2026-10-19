@@ -1,0 +1,3797 @@
+<script>
+	import { page } from '$app/stores';
+	import { onMount, tick } from 'svelte';
+	import { api } from '$lib/api/apiProxy.js';
+	import Headline from '$lib/components/Headline.svelte';
+	import SubHeadline from '$lib/components/SubHeadline.svelte';
+	import { addToast } from '$lib/store/toast';
+	import { BiMap } from '$lib/utils/maps';
+	import { openIsolatedHtml } from '$lib/utils/safePreview.js';
+	import { fetchAllRows } from '$lib/utils/api-utils';
+	import { AppStateService } from '$lib/service/appState';
+	import ProxySvgIcon from '$lib/components/ProxySvgIcon.svelte';
+	import TableRow from '$lib/components/table/TableRow.svelte';
+	import TableCell from '$lib/components/table/TableCell.svelte';
+	import { formatWeekDays, formatTimeConstraint, timeFormat } from '$lib/utils/date.js';
+	import { defaultStartPage, newTableURLParams } from '$lib/service/tableURLParams.js';
+	import { getPerPagePreference } from '$lib/store/preferences.js';
+	import Table from '$lib/components/table/Table.svelte';
+	import TableCellEmpty from '$lib/components/table/TableCellEmpty.svelte';
+	import TableCellAction from '$lib/components/table/TableCellAction.svelte';
+	import TableUpdateButton from '$lib/components/table/TableUpdateButton.svelte';
+	import TableViewButton from '$lib/components/table/TableViewButton.svelte';
+	import Datetime from '$lib/components/Datetime.svelte';
+	import HeadTitle from '$lib/components/HeadTitle.svelte';
+	import { debounceTyping } from '$lib/utils/common';
+	import { showIsLoading, hideIsLoading } from '$lib/store/loading.js';
+	import { toEvent } from '$lib/utils/events';
+	import Modal from '$lib/components/Modal.svelte';
+	import TableDropDownEllipsis from '$lib/components/table/TableDropDownEllipsis.svelte';
+	import TableDropDownButton from '$lib/components/table/TableDropDownButton.svelte';
+	import TestLabel from '$lib/components/TestLabel.svelte';
+	import AutoRefresh from '$lib/components/AutoRefresh.svelte';
+	import { autoRefreshStore } from '$lib/store/autoRefresh';
+	import StatsCard from '$lib/components/StatsCard.svelte';
+	import Alert from '$lib/components/Alert.svelte';
+	import EventTimeline from '$lib/components/EventTimeline.svelte';
+	import CellCopy from '$lib/components/table/CopyCell.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import FormColumns from '$lib/components/FormColumns.svelte';
+	import FormColumn from '$lib/components/FormColumn.svelte';
+	import DeleteAlert from '$lib/components/modal/DeleteAlert.svelte';
+	import TableDeleteButton from '$lib/components/table/TableDeleteButton2.svelte';
+	import EventName from '$lib/components/table/EventName.svelte';
+	import { goto } from '$app/navigation';
+	import { globalButtonDisabledAttributes } from '$lib/utils/form';
+	import FileField from '$lib/components/FileField.svelte';
+	import ConditionalDisplay from '$lib/components/ConditionalDisplay.svelte';
+	import IconButton from '$lib/components/IconButton.svelte';
+	import papaparse from 'papaparse';
+	import FormFooter from '$lib/components/FormFooter.svelte';
+	import TextField from '$lib/components/TextField.svelte';
+	import FormError from '$lib/components/FormError.svelte';
+	import TextFieldSelect from '$lib/components/TextFieldSelect.svelte';
+	import { resourceContext } from '$lib/store/resourceContext';
+	import RemoteBrowserStream from '$lib/components/remote-browser/RemoteBrowserStream.svelte';
+	import LiveSessionBadgeDropdown from '$lib/components/remote-browser/LiveSessionBadgeDropdown.svelte';
+
+	// services
+	const appStateService = AppStateService.instance;
+
+	// bindings
+	let campaign = {
+		name: null,
+		created: null,
+		sendStartAt: null,
+		sendEndAt: null,
+		anonymizedAt: null,
+		dataAnonymizeAt: null,
+		dataAnonymizedAt: null,
+		closeAt: null,
+		closedAt: null,
+		template: null,
+		isTest: false,
+		hasCustomLureCodes: false,
+		lureURLMode: 'query',
+		constraintWeekDays: null,
+		constraintStartTime: null,
+		constraintEndTime: null,
+		saveSubmittedData: false,
+		saveBrowserMetadata: false,
+		isAnonymous: false,
+		isTraining: false,
+		scheduleAt: null,
+
+		allowDenyIDs: [],
+		webhookID: null,
+		webhooks: [],
+		scripts: [],
+		// groups by name, must be mapped to IDs before sending to the server
+		recipientGroups: [],
+		events: [],
+		eventTypesIDToNameMap: {},
+		notableEventName: '',
+		companyID: null,
+		company: null
+	};
+	// map of webhook id -> webhook name for display
+	let webhookMap = new BiMap({});
+	// map of script id -> script name for display
+	let scriptMap = new BiMap({});
+	let allowedFilter = null;
+	let campaignRecipients = [];
+	let campaignRecipientsHasNextPage = false;
+	let campaignEventsHasNextPage = false;
+	let recipientEventsRecipient = {
+		name: null,
+		id: null
+	};
+	let timelineEventsMap = new Map();
+	let timelineEvents = [];
+	let isTimelineGhost = true;
+	// the event timeline plots one point per scheduled send and per event; past a few
+	// thousand it has no value and loading them all is slow, so above this the graph is
+	// skipped and a message is shown. the recipient count is the cheap upfront signal;
+	// the event loader also caps as a secondary guard
+	const MAX_TIMELINE_POINTS = 5000;
+	let timelineTooLarge = false;
+	let recipientEvents = [];
+
+	// local state
+	let result = {
+		recipients: 0,
+		emailsSent: 0,
+		trackingPixelLoaded: 0,
+		websiteLoaded: 0,
+		submittedData: 0,
+		reported: 0,
+		trainingStarted: 0,
+		trainingCompleted: 0
+	};
+	// grouped outcome stats by position or department
+	let groupedStats = [];
+	let groupedBy = 'position';
+	// results by group is hidden by default and loaded on demand
+	let showGroupedStats = false;
+	let groupedStatsLoading = false;
+	// only offer results by group when recipients actually carry a position or
+	// department to group on; determined on the server so pagination cannot hide it
+	let hasGroupData = false;
+
+	// the outcomes shown for a group depend on whether it is a training campaign
+	const groupOutcomeMetrics = (r) =>
+		campaign.isTraining
+			? [r.clicked, r.trainingStarted, r.trainingCompleted]
+			: [r.clicked, r.submitted, r.reported];
+	// a withheld outcome comes back as a negative sentinel, and a group merged for
+	// being too small is flagged suppressed. track whether any row hides an outcome
+	// so the panel can explain the dashes rather than leaving them unexplained
+	$: groupedAnyRedacted = groupedStats.some(
+		(r) => r.suppressed || groupOutcomeMetrics(r).some((v) => v < 0)
+	);
+
+	const setHasGroupData = async () => {
+		try {
+			const res = await api.campaign.getHasGroupData($page.params.id);
+			hasGroupData = !!res.data?.hasGroupData;
+		} catch (e) {
+			console.error('failed to check group data', e);
+			hasGroupData = false;
+		}
+	};
+	// @ts-ignore
+	const recipientTableUrlParams = newTableURLParams({
+		prefix: 'recipient',
+		sortBy: 'send_at',
+		noScroll: true
+	});
+	// @ts-ignore
+	const eventsTableURLParams = newTableURLParams({
+		sortBy: 'created_at',
+		sortOrder: 'desc',
+		prefix: 'event',
+		noScroll: true
+	});
+	// @ts-ignore
+	const recipientEventsTableParams = newTableURLParams({
+		sortBy: 'created_at',
+		sortOrder: 'desc',
+		prefix: 'event',
+		noScroll: true
+	});
+	const debouncedRefreshRecipientEvents = debounceTyping(() => {
+		return setRecipientEvents(recipientEventsRecipient.id);
+	});
+	let contextCompanyID = null;
+	let recipientGroupMap = new BiMap({});
+	// self managed campaign are not scheduled for sending
+	let isSelfManaged = false;
+	let initialPageLoadComplete = false;
+	let isEventsModalVisible = false;
+	let isTemplateModalVisible = false;
+	let isEventTableLoading = false;
+	let isRecipientTableLoading = false;
+	let isCloseModalVisible = false;
+	let isAnonymizeModalVisible = false;
+	let isAnonymizeDataModalVisible = false;
+	let isSendMessageModalVisible = false;
+	let isSetAsSentModalVisible = false;
+	let isLureCodeModalVisible = false;
+	let isSessionSushiModalVisible = false;
+	let isTrackingPixelWarningVisible = false;
+	let isReportedCSVModalVisible = false;
+	let isReportedCSVSubmitting = false;
+	let isGenerateReportModalVisible = false;
+	let isReportPDFEnabled = false;
+	let reportedCSVFile = null;
+	let reportedCSVHeaders = [];
+	let reportedCSVPreview = [];
+	let reportedEmailColumn = '';
+	let reportedDateColumn = '';
+	let pendingEmailPreviewRecipient = null;
+	let storedCookieData = '';
+	let storedTokenData = '';
+	let isDeleteEventAlertVisible = false;
+	let deleteEventValues = {
+		id: null,
+		name: null,
+		eventName: null
+	};
+
+	// cleanup when modal is cancelled
+	$: if (!isTrackingPixelWarningVisible && pendingEmailPreviewRecipient) {
+		pendingEmailPreviewRecipient = null;
+	}
+	let sendMessageRecipient = null;
+	let setAsSentRecipient = null;
+	let lureCodeRecipient = null;
+	let lureCodeValue = '';
+	let lureCodeError = '';
+	/** set when the requested code is held by another recipient */
+	let lureCodeConflict = null;
+	let lureCodeSubmitting = false;
+	let lastPoll3399Nano = '';
+
+	// live remote browser sessions
+	/** @type {Map<string, {crID: string, campaignID: string, recipientID: string, createdAt: string, victimConnected: boolean, canStream: boolean}>} */
+	let liveSessions = new Map();
+	let liveSessionPollInterval = null;
+	let streamModalVisible = false;
+	let streamCRID = '';
+	let streamControlMode = false;
+	let streamEmail = '';
+	let isTerminateSessionAlertVisible = false;
+	let terminateSessionCRID = '';
+
+	// hooks
+	onMount(() => {
+		const context = appStateService.getContext();
+		if (context) {
+			contextCompanyID = context.companyID;
+		}
+
+		(async () => {
+			const pdfOpt = await api.option.get('report_pdf_enabled');
+			isReportPDFEnabled = pdfOpt.success && pdfOpt.data?.value === 'true';
+			await refresh();
+			if (isReportPDFEnabled) {
+				await loadReportDeliveryConfig();
+			}
+			recipientTableUrlParams.onChange(refreshRecipients);
+			eventsTableURLParams.onChange(refreshEvents);
+			initialPageLoadComplete = true;
+			// load graph data
+			await refreshRecipientsTimes();
+			await refreshCampaignEventsSince();
+		})();
+
+		// poll live sessions every 5 seconds
+		liveSessionPollInterval = setInterval(refreshLiveSessions, 5000);
+		refreshLiveSessions();
+
+		// cleanup resource context when leaving page
+		return () => {
+			recipientTableUrlParams.unsubscribe();
+			eventsTableURLParams.unsubscribe();
+			resourceContext.clear();
+			clearInterval(liveSessionPollInterval);
+		};
+	});
+
+	const refreshLiveSessions = async () => {
+		try {
+			const campaignID = $page.params.id;
+			const res = await api.remoteBrowser.getLiveSessions(campaignID);
+			if (!res.success) return;
+			const map = new Map();
+			for (const s of res.data ?? []) {
+				map.set(s.crID, s);
+			}
+			liveSessions = map;
+		} catch {
+			// network error during poll, silently skip this tick
+		}
+	};
+
+	const openStreamModal = (crID, control, recipientEmail = '') => {
+		streamCRID = crID;
+		streamControlMode = control;
+		streamEmail = recipientEmail;
+		streamModalVisible = true;
+	};
+
+	const openTerminateAlert = (crID) => {
+		terminateSessionCRID = crID;
+		isTerminateSessionAlertVisible = true;
+	};
+
+	const doTerminateSession = async () => {
+		const res = await api.remoteBrowser.closeLiveSession(terminateSessionCRID);
+		if (!res.success) {
+			return { success: false, error: 'Failed to terminate session' };
+		}
+		await refreshLiveSessions();
+		return { success: true };
+	};
+
+	const refresh = async (showLoading = true) => {
+		if (showLoading) {
+			showIsLoading();
+		}
+		const recipientGroups = await fetchAllRows((options) => {
+			return api.recipient.getAllGroups(options, contextCompanyID);
+		});
+		recipientGroupMap = BiMap.FromArrayOfObjects(recipientGroups);
+
+		await setResults();
+		await setEventType();
+		await setCampaign();
+		// after setCampaign so campaign.isAnonymous is known; a cheap flag, not the table
+		await setHasGroupData();
+		// results by group is loaded on demand, not here; keep it fresh only if already open
+		if (showGroupedStats) {
+			await setGroupedStats();
+		}
+		await refreshCampaignRecipients();
+		await getEvents();
+		await refreshCampaignEventsSince();
+		if (showLoading) {
+			hideIsLoading();
+		}
+	};
+
+	const setEventType = async () => {
+		try {
+			const res = await api.campaign.getAllEventTypes();
+			if (!res.success) {
+				addToast('Failed to load event types', 'Error');
+				console.error('failed to load event types', res.error);
+				return;
+			}
+			res.data.map((t) => (campaign.eventTypesIDToNameMap[t.id] = t.name));
+		} catch (e) {
+			addToast('Failed to load event types', 'Error');
+			console.error('failed to load event types', e);
+		}
+	};
+
+	// component logic
+	const setCampaign = async () => {
+		try {
+			const t = await getCampaign();
+			campaign.name = t.name;
+			campaign.createdAt = t.createdAt;
+			campaign.sendStartAt = t.sendStartAt;
+			campaign.sendEndAt = t.sendEndAt;
+			campaign.anonymizedAt = t.anonymizedAt;
+			campaign.anonymizeAt = t.anonymizeAt;
+			campaign.dataAnonymizedAt = t.dataAnonymizedAt;
+			campaign.dataAnonymizeAt = t.dataAnonymizeAt;
+			campaign.closeAt = t.closeAt;
+			campaign.closedAt = t.closedAt;
+			campaign.isTest = t.isTest;
+			campaign.isTraining = t.isTraining;
+			campaign.constraintWeekDays = t.constraintWeekDays;
+			campaign.constraintStartTime = t.constraintStartTime;
+			campaign.constraintEndTime = t.constraintEndTime;
+			campaign.saveSubmittedData = t.saveSubmittedData;
+			campaign.saveBrowserMetadata = t.saveBrowserMetadata;
+			campaign.isAnonymous = t.isAnonymous;
+			campaign.allowDeny = t.allowDeny;
+			campaign.denyPage = t.denyPage;
+			campaign.evasionPage = t.evasionPage;
+			campaign.webhookID = t.webhookID;
+			campaign.webhooks = t.webhooks ?? [];
+			campaign.scripts = t.scripts ?? [];
+			campaign.companyID = t.companyID;
+			campaign.company = t.company;
+
+			// load webhook names for display
+			try {
+				const allWebhooks = await fetchAllRows((options) => {
+					return api.webhook.getAll(options, campaign.companyID ?? null);
+				});
+				webhookMap = BiMap.FromArrayOfObjects(allWebhooks);
+			} catch (e) {
+				console.error('failed to load webhooks for display', e);
+			}
+
+			// load script names for display; the endpoint 404s when the feature is
+			// off, which the catch swallows so the view still renders
+			if (campaign.scripts.length) {
+				try {
+					const allScripts = await fetchAllRows((options) => {
+						return api.script.getAll(options, campaign.companyID ?? null);
+					});
+					scriptMap = BiMap.FromArrayOfObjects(allScripts);
+				} catch (e) {
+					console.error('failed to load scripts for display', e);
+				}
+			}
+
+			// if company exists but name is missing, fetch it
+			if (campaign.companyID && !campaign.company?.name) {
+				try {
+					const companyRes = await api.company.getByID(campaign.companyID);
+					if (companyRes.success && companyRes.data) {
+						campaign.company = companyRes.data;
+					}
+				} catch (e) {
+					console.error('failed to load company details', e);
+				}
+			}
+
+			// fetch the full template object
+			if (t.templateID) {
+				const templateRes = await api.campaignTemplate.getByID(t.templateID, true);
+				if (templateRes.success) {
+					campaign.template = templateRes.data;
+				}
+			}
+			campaign.recipientGroups = t.recipientGroupIDs.map((id) => recipientGroupMap.byKey(id));
+			campaign.notableEventName = t.notableEventName;
+			campaign.scheduleAt = t.scheduleAt ?? null;
+			// whether any recipient carries an operator set code. the recipient
+			// table is paginated, so it cannot be derived from the rows on screen
+			campaign.hasCustomLureCodes = !!t.hasCustomLureCodes;
+			campaign.lureURLMode = t.lureURLMode ?? 'query';
+			if (t.sendStartAt === null && t.sendEndAt === null) {
+				isSelfManaged = true;
+			}
+			if (campaign.allowDeny && campaign.allowDeny[0]) {
+				allowedFilter = campaign.allowDeny[0].allowed;
+			}
+
+			// set resource context for banner
+			resourceContext.setResource('campaign', campaign.companyID, campaign.company?.name);
+		} catch (e) {
+			addToast('Failed to load campaign', 'Error');
+			console.error('failed to load campaign', e);
+		}
+	};
+
+	const getCampaign = async () => {
+		try {
+			const res = await api.campaign.getByID($page.params.id);
+			if (!res.success) {
+				throw res.error;
+			}
+			return res.data;
+		} catch (e) {
+			addToast('Failed to load campaign', 'Error');
+			console.error('failed to load campaign', e);
+		}
+	};
+
+	/**
+	 * @param {string} recipientID
+	 */
+	const setRecipientEvents = async (recipientID) => {
+		try {
+			const res = await api.recipient.getEvents(
+				recipientID,
+				recipientEventsTableParams,
+				$page.params.id
+			);
+			if (res.success) {
+				recipientEvents = res.data.rows;
+				return;
+			}
+			throw res.error;
+		} catch (e) {
+			addToast('failed to load recipient events', 'Error');
+			console.error('failed to load recipient events', e);
+		}
+	};
+
+	const refreshRecipientsTimes = async () => {
+		// skip the timeline for large campaigns: the scheduled sends alone would exceed
+		// what the graph can usefully show
+		if (timelineTooLarge) {
+			return;
+		}
+		if ((result.recipients ?? 0) > MAX_TIMELINE_POINTS) {
+			timelineTooLarge = true;
+			return;
+		}
+		try {
+			/* does not implement the Result<T>
+			let rows = await fetchAllRows(
+				(options) => api.campaign.getAllCampaignRecipients($page.params.id, options),
+				{ ...defaultOptions, sortBy: 'created_at' }
+			);
+			*/
+			const res = await api.campaign.getAllCampaignRecipients($page.params.id, null);
+			if (!res.success) {
+				throw res.error;
+			}
+			const rawEvents = (res.data?.rows ?? [])
+				.filter((v) => v.sendAt)
+				.map((v) => ({
+					id: `sched_${v.id ?? v.recipient?.email + '_' + v.sendAt}`,
+					createdAt: v.sendAt,
+					eventName: 'campaign_recipient_scheduled',
+					recipient: v.recipient
+				}));
+			let schedChanged = false;
+			for (const e of rawEvents) {
+				if (!timelineEventsMap.has(e.id)) {
+					timelineEventsMap.set(e.id, e);
+					schedChanged = true;
+				}
+			}
+			if (schedChanged) timelineEvents = Array.from(timelineEventsMap.values());
+		} catch (e) {
+			addToast('failed to recipient schedule', 'Error');
+			console.error('failed to load recipient schedule', e);
+		}
+	};
+
+	const refreshCampaignEventsSince = async () => {
+		// skip the timeline for large campaigns (recipient count is the cheap signal)
+		if (timelineTooLarge) {
+			return;
+		}
+		if ((result.recipients ?? 0) > MAX_TIMELINE_POINTS) {
+			timelineTooLarge = true;
+			return;
+		}
+		try {
+			if (!lastPoll3399Nano?.length) {
+				lastPoll3399Nano = campaign.createdAt; // must be loaded before method is called
+			}
+			// bounded fetch: stop once the timeline would exceed the cap and disable the
+			// graph, rather than paging through tens of thousands of events
+			let rows = [];
+			const options = {
+				currentPage: 1,
+				perPage: 200,
+				sortBy: 'created_at',
+				sortOrder: 'asc',
+				search: ''
+			};
+			for (;;) {
+				const res = await api.campaign.getAllEventsByCampaignID(
+					$page.params.id,
+					options,
+					lastPoll3399Nano
+				);
+				if (res.data?.rows) {
+					rows = rows.concat(res.data.rows);
+				}
+				if (timelineEventsMap.size + rows.length > MAX_TIMELINE_POINTS) {
+					timelineTooLarge = true;
+					timelineEventsMap = new Map();
+					timelineEvents = [];
+					isTimelineGhost = false;
+					return;
+				}
+				if (!res.data?.hasNextPage) {
+					break;
+				}
+				options.currentPage += 1;
+			}
+			rows.forEach((v) => {
+				if (v.createdAt > lastPoll3399Nano) {
+					lastPoll3399Nano = v.createdAt;
+				}
+			});
+			rows = rows.map((v) => ({
+				...v,
+				eventName: campaign.eventTypesIDToNameMap[v.eventID]
+			}));
+
+			let evChanged = false;
+			for (const row of rows) {
+				const key = `ev_${row.id}`;
+				if (!timelineEventsMap.has(key)) {
+					timelineEventsMap.set(key, row);
+					evChanged = true;
+				}
+			}
+			if (evChanged) timelineEvents = Array.from(timelineEventsMap.values());
+			isTimelineGhost = false;
+
+			// Don't update campaign.events here - that should only happen via getEvents()
+		} catch (e) {
+			addToast('failed to load events', 'Error');
+			console.error('failed to load events since', e);
+		}
+	};
+
+	const setResults = async () => {
+		try {
+			const res = await api.campaign.getResultStats($page.params.id);
+			if (!res.success) {
+				throw res.error;
+			}
+			result.recipients = res.data.recipients;
+			result.emailsSent = res.data.emailsSent;
+			result.trackingPixelLoaded = res.data.trackingPixelLoaded;
+			result.websiteLoaded = res.data.clickedLink;
+			result.submittedData = res.data.submittedData;
+			result.reported = res.data.reported;
+			result.trainingStarted = res.data.trainingStarted;
+			result.trainingCompleted = res.data.trainingCompleted;
+		} catch (e) {
+			addToast('Failed to load campaign result stats', 'Error');
+			console.error('failed to load campaign result stats', e);
+		}
+	};
+
+	const setGroupedStats = async () => {
+		groupedStatsLoading = true;
+		try {
+			const res = await api.campaign.getGroupedResultStats($page.params.id, groupedBy);
+			if (!res.success) {
+				throw res.error;
+			}
+			groupedStats = res.data ?? [];
+		} catch (e) {
+			console.error('failed to load grouped stats', e);
+			// clear so a failed dimension switch cannot leave stale rows under the new header
+			groupedStats = [];
+		} finally {
+			groupedStatsLoading = false;
+		}
+	};
+
+	// reveal the results by group section and load it on demand
+	const showGroupedResults = async () => {
+		showGroupedStats = true;
+		await setGroupedStats();
+	};
+
+	/** @param {'position'|'department'} by */
+	const onChangeGroupedBy = async (by) => {
+		if (by === groupedBy) {
+			return;
+		}
+		groupedBy = by;
+		await setGroupedStats();
+	};
+
+	/** @param {string} campaignRecipientID */
+	const onClickCopyEmailContent = async (campaignRecipientID) => {
+		try {
+			const res = await api.campaign.getEmail(campaignRecipientID);
+			if (!res.success) {
+				throw res.error;
+			}
+			const blobText = new Blob([res.data], { type: 'text/plain' });
+			const blobHtml = new Blob([res.data], { type: 'text/html' });
+			const data = [
+				new ClipboardItem({
+					'text/plain': blobText,
+					'text/html': blobHtml
+				})
+			];
+			await navigator.clipboard.write(data);
+			addToast('Email content copied to clipboard', 'Success');
+		} catch (e) {
+			// handle missing template part
+			if (e.includes('has no')) {
+				addToast('Campaign template is incomplete', 'Error');
+			} else {
+				addToast('Failed to copy email content', 'Error');
+			}
+			console.error('failed to copy email content to clipboard', e);
+		}
+	};
+
+	/** @param {string} campaignRecipientID */
+	const onClickPreviewEmail = async (campaignRecipientID) => {
+		// always show warning modal
+		pendingEmailPreviewRecipient = campaignRecipientID;
+		isTrackingPixelWarningVisible = true;
+	};
+
+	/**
+	 * Confirm preview with tracking pixel warning acknowledged
+	 */
+	const onConfirmPreviewWithTracking = async () => {
+		if (!pendingEmailPreviewRecipient) {
+			return { success: false, error: 'No pending email preview' };
+		}
+
+		try {
+			const res = await api.campaign.getEmail(pendingEmailPreviewRecipient);
+			if (!res.success) {
+				throw res.error;
+			}
+
+			// open the rendered email isolated in a sandbox so its markup can
+			// not run script on the admin origin
+			openIsolatedHtml(res.data);
+
+			// clear pending recipient
+			pendingEmailPreviewRecipient = null;
+
+			return { success: true };
+		} catch (e) {
+			if (e.includes('has no')) {
+				addToast('Campaign template is incomplete', 'Error');
+			} else {
+				addToast('Failed to preview email', 'Error');
+			}
+			console.error('failed to preview email', e);
+			return { success: false, error: e };
+		}
+	};
+
+	/** @param {string} recipientID */
+	const openEventsModal = async (recipientID) => {
+		recipientEventsTableParams.onChange(debouncedRefreshRecipientEvents);
+		recipientEventsRecipient = {
+			name: null,
+			id: recipientID
+		};
+		try {
+			showIsLoading();
+			await setRecipientEvents(recipientID);
+			isEventsModalVisible = true;
+		} catch (e) {
+			addToast('Failed to get recipient events', 'Error');
+			console.error('failed to recipient events', e);
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	const closeEventsModal = () => {
+		recipientEventsTableParams.unsubscribe();
+		recipientEventsTableParams.search = '';
+		recipientEventsTableParams.page = defaultStartPage;
+		recipientEventsTableParams.perPage = getPerPagePreference();
+
+		recipientEvents = [];
+		recipientEventsRecipient = {
+			name: null,
+			id: null
+		};
+		isEventsModalVisible = false;
+	};
+
+	const openTemplateModal = async (id) => {
+		isTemplateModalVisible = true;
+	};
+
+	const closeTemplateModal = () => {
+		isTemplateModalVisible = false;
+	};
+
+	/** @param {string} campaignRecipientID */
+	const onClickCopyURL = async (campaignRecipientID) => {
+		try {
+			const res = await api.campaign.getURL(campaignRecipientID);
+			if (!res.success) {
+				throw res.error;
+			}
+			navigator.clipboard.writeText(res.data);
+			addToast('Landing page URL copied to clipboard', 'Success');
+		} catch (e) {
+			if (e.includes('has no')) {
+				addToast('Campaign template is incomplete', 'Error');
+			} else {
+				addToast('Failed to copy landing page URL to clipboard', 'Error');
+			}
+			console.error('failed to copy landing page URL to clipboard', e);
+		}
+	};
+
+	/** @param {string} campaignRecipientID @param {Object} recipient */
+	const onClickSetEmailSent = (campaignRecipientID, recipient) => {
+		showSetAsSentModal(campaignRecipientID, recipient);
+	};
+
+	const onConfirmSetAsSent = async () => {
+		try {
+			showIsLoading();
+			const res = await api.campaign.setEmailSent(setAsSentRecipient.id);
+			if (!res.success) {
+				throw res.error;
+			}
+			addToast('Email sent', 'Success');
+			await setCampaign();
+			await getEvents();
+			await refreshCampaignRecipients();
+			closeSetAsSentModal();
+			return { success: true };
+		} catch (e) {
+			addToast('Failed to set email sent', 'Error');
+			console.error('failed to set email sent', e);
+			throw e;
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	/** @param {string} campaignRecipientID @param {Object} recipient */
+	const showSendMessageModal = (campaignRecipientID, recipient) => {
+		// recipient is null for anonymous campaigns, where identity is stripped
+		if (!recipient) {
+			return;
+		}
+		sendMessageRecipient = {
+			id: campaignRecipientID,
+			name: `${recipient.firstName || ''} ${recipient.lastName || ''}`.trim(),
+			email: recipient.email
+		};
+		isSendMessageModalVisible = true;
+	};
+
+	const closeSendMessageModal = () => {
+		isSendMessageModalVisible = false;
+		sendMessageRecipient = null;
+	};
+
+	const LURE_CODE_MAX_LENGTH = 64;
+
+	const LURE_CODE_DISALLOWED = `/ \\ % ? # " ' < >`;
+
+	// mirrors lure.IsCandidate on the server. names the character that failed
+	// rather than restating every rule, which sits under the field.
+	/** @param {string} value @returns {string} empty when the value can be used */
+	const validateLureCode = (value) => {
+		if (!value) {
+			return 'Enter a lure URL.';
+		}
+		if (value.length > LURE_CODE_MAX_LENGTH) {
+			return `Too long: ${value.length} characters, the maximum is ${LURE_CODE_MAX_LENGTH}.`;
+		}
+		// a lone dot names a directory, which the browser resolves away before
+		// the request is sent, so it could never arrive back
+		if (value === '.') {
+			return 'Cannot be . on its own, a browser resolves that away.';
+		}
+		// a doubled dot anywhere makes the whole path unresolvable, so a code
+		// carrying one would be delivered and never work
+		if (value.includes('..')) {
+			return 'Cannot contain .. anywhere, the link would never resolve.';
+		}
+		const disallowed = value.match(/[/%?#\\"'<>]/);
+		if (disallowed) {
+			return `Cannot contain: ${disallowed[0]}`;
+		}
+		for (const character of value) {
+			const code = character.codePointAt(0) ?? 0;
+			if (code === 0x20) {
+				return 'Cannot contain spaces.';
+			}
+			if (code <= 0x20 || code === 0x7f) {
+				return 'Cannot contain tabs, line breaks or other control characters.';
+			}
+		}
+		return '';
+	};
+
+	// path the template puts in front of the code, used for the preview
+	$: campaignURLPath = (campaign?.template?.urlPath || '').replace(/\/$/, '');
+
+	// a path mode campaign gives every recipient a code, so the column is worth
+	// showing even before anyone sets one by hand
+	$: showLureCodeColumn = campaign.hasCustomLureCodes || campaign.lureURLMode === 'path';
+
+	/** @param {Object} recp */
+	const showLureCodeModal = (recp) => {
+		lureCodeRecipient = {
+			id: recp.id,
+			name: `${recp.recipient?.firstName || ''} ${recp.recipient?.lastName || ''}`.trim(),
+			email: recp.recipient?.email,
+			sentAt: recp.sentAt,
+			current: recp.lureCode || ''
+		};
+		lureCodeValue = recp.lureCode || '';
+		lureCodeError = '';
+		lureCodeConflict = null;
+		isLureCodeModalVisible = true;
+	};
+
+	const closeLureCodeModal = () => {
+		isLureCodeModalVisible = false;
+		lureCodeRecipient = null;
+		lureCodeValue = '';
+		lureCodeError = '';
+		lureCodeConflict = null;
+	};
+
+	/** @param {boolean} reclaim */
+	const submitLureCode = async (reclaim = false) => {
+		if (!lureCodeRecipient) {
+			return;
+		}
+		const invalid = validateLureCode(lureCodeValue);
+		if (invalid) {
+			lureCodeError = invalid;
+			return;
+		}
+		lureCodeSubmitting = true;
+		lureCodeError = '';
+		try {
+			const res = await api.campaign.setLureCode(lureCodeRecipient.id, lureCodeValue, reclaim);
+			if (!res.success) {
+				// 409 carries the campaign currently holding the code so the
+				// operator can decide whether to take it over
+				if (res.statusCode === 409) {
+					lureCodeConflict = res.data || {};
+					lureCodeError = res.error || 'Lure code is already in use';
+					return;
+				}
+				lureCodeError = res.error || 'Failed to set lure URL';
+				return;
+			}
+			addToast('Lure URL updated', 'Success');
+			closeLureCodeModal();
+			// the campaign carries what decides the lure URL column, so it reloads
+			// alongside the rows
+			await Promise.all([setCampaign(), refreshCampaignRecipients()]);
+		} catch (e) {
+			lureCodeError = 'Failed to set lure URL';
+			console.error('failed to set lure code', e);
+		} finally {
+			lureCodeSubmitting = false;
+		}
+	};
+
+	/** @param {string} campaignRecipientID @param {Object} recipient */
+	const showSetAsSentModal = (campaignRecipientID, recipient) => {
+		// recipient is null for anonymous campaigns, where identity is stripped
+		if (!recipient) {
+			return;
+		}
+		setAsSentRecipient = {
+			id: campaignRecipientID,
+			name: `${recipient.firstName || ''} ${recipient.lastName || ''}`.trim(),
+			email: recipient.email
+		};
+		isSetAsSentModalVisible = true;
+	};
+
+	const closeSetAsSentModal = () => {
+		isSetAsSentModalVisible = false;
+		setAsSentRecipient = null;
+	};
+
+	const onConfirmSendMessage = async () => {
+		try {
+			showIsLoading();
+			// Check if this is a resend before sending (sentAt is withheld for anonymous
+			// campaigns, which expose only the coarse `sent` flag)
+			const sendMessageRow = campaignRecipients.find((r) => r.id === sendMessageRecipient.id);
+			const isResend = sendMessageRow?.sentAt || sendMessageRow?.sent;
+			const res = await api.campaign.sendMessage(sendMessageRecipient.id);
+			if (!res.success) {
+				throw res.error;
+			}
+			addToast('Message Sent', 'Success');
+			await setCampaign();
+			await getEvents();
+			await refreshCampaignRecipients();
+			closeSendMessageModal();
+			return { success: true };
+		} catch (e) {
+			addToast(`Failed to send message}`, 'Error');
+			console.error(`failed to send message`, e);
+			throw e;
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	// reactive statement to clean up send message modal state when it closes
+	$: if (!isSendMessageModalVisible && sendMessageRecipient) {
+		sendMessageRecipient = null;
+	}
+
+	// reactive statement to clean up set as sent modal state when it closes
+	$: if (!isSetAsSentModalVisible && setAsSentRecipient) {
+		setAsSentRecipient = null;
+	}
+
+	const showCloseCampaignModal = () => {
+		isCloseModalVisible = true;
+	};
+
+	const closeCloseCampaignModal = () => {
+		isCloseModalVisible = false;
+	};
+
+	const showAnonymizeModal = () => {
+		isAnonymizeModalVisible = true;
+	};
+
+	const closeAnonymizeModal = () => {
+		isAnonymizeModalVisible = false;
+	};
+
+	const showAnonymizeDataModal = () => {
+		isAnonymizeDataModalVisible = true;
+	};
+
+	const closeAnonymizeDataModal = () => {
+		isAnonymizeDataModalVisible = false;
+	};
+
+	const closeSessionSushiModal = () => {
+		isSessionSushiModalVisible = false;
+		storedCookieData = '';
+		storedTokenData = '';
+	};
+
+	const onSessionSushiModalOk = () => {
+		closeSessionSushiModal();
+	};
+
+	/** @param {string} eventData @param {string} eventName */
+	const onClickCopyEventData = async (eventData, eventName) => {
+		try {
+			// remove emoji prefix before copying
+			let dataWithoutEmoji = eventData;
+			if (eventData.startsWith('🍪 ')) dataWithoutEmoji = eventData.substring(2);
+			else if (eventData.startsWith('🔑 ')) dataWithoutEmoji = eventData.substring(2);
+			await navigator.clipboard.writeText(dataWithoutEmoji);
+
+			if (eventName === 'campaign_recipient_submitted_data' && eventData.startsWith('🍪')) {
+				storedCookieData = eventData;
+				storedTokenData = '';
+				isSessionSushiModalVisible = true;
+			} else if (eventName === 'campaign_recipient_submitted_data' && eventData.startsWith('🔑')) {
+				storedTokenData = eventData;
+				storedCookieData = '';
+				isSessionSushiModalVisible = true;
+			}
+
+			addToast('Copied to clipboard', 'Success');
+		} catch (e) {
+			addToast('Failed to copy data to clipboard', 'Error');
+			console.error('failed to copy data to clipboard', e);
+		}
+	};
+
+	const onClickCopyCookies = async () => {
+		try {
+			// remove the cookie emoji prefix before copying
+			const dataWithoutEmoji = storedCookieData.startsWith('🍪 ')
+				? storedCookieData.substring(2)
+				: storedCookieData;
+			await navigator.clipboard.writeText(dataWithoutEmoji);
+			addToast('Copied to clipboard', 'Success');
+		} catch (e) {
+			addToast('Failed to copy cookie data', 'Error');
+			console.error('failed to copy cookie data', e);
+		}
+	};
+
+	const onClickCopyTokens = async () => {
+		try {
+			// remove the token emoji prefix before copying
+			const dataWithoutEmoji = storedTokenData.startsWith('🔑 ')
+				? storedTokenData.substring(2)
+				: storedTokenData;
+			await navigator.clipboard.writeText(dataWithoutEmoji);
+			addToast('Copied to clipboard', 'Success');
+		} catch (e) {
+			addToast('Failed to copy token data', 'Error');
+			console.error('failed to copy token data', e);
+		}
+	};
+
+	const openDeleteEventAlert = (event) => {
+		isDeleteEventAlertVisible = true;
+		deleteEventValues.id = event.id;
+		deleteEventValues.name = event.recipient?.email || 'anonymized';
+		const systemEventName = campaign.eventTypesIDToNameMap[event.eventID] || '';
+		deleteEventValues.eventName = toEvent(systemEventName).name || 'Unknown Event';
+	};
+
+	const onClickDeleteEvent = async (eventID) => {
+		try {
+			const res = await api.campaign.deleteEvent(eventID);
+			if (res.success) {
+				addToast('Event deleted', 'Success');
+				// refresh events, stats, and recipients table (for notable event update)
+				await getEvents();
+				await setResults();
+				await refreshRecipientsTimes();
+				await refreshCampaignRecipients();
+				// reset timeline and refetch all events (timeline only fetches new events incrementally)
+				timelineEventsMap = new Map();
+				timelineEvents = [];
+				lastPoll3399Nano = '';
+				await tick();
+				await refreshCampaignEventsSince();
+				// refresh recipient events modal if open
+				if (isEventsModalVisible && recipientEventsRecipient.id) {
+					await setRecipientEvents(recipientEventsRecipient.id);
+				}
+			}
+			return res;
+		} catch (e) {
+			addToast('Failed to delete event', 'Error');
+			console.error('failed to delete campaign event:', e);
+			throw e;
+		}
+	};
+
+	const onConfirmCloseCampaign = async (a) => {
+		let res;
+		try {
+			showIsLoading();
+			res = await api.campaign.close($page.params.id);
+			if (!res.success) {
+				throw res.error;
+			}
+			await setCampaign();
+			await getEvents();
+			await refreshCampaignRecipients();
+			addToast('Campaign closed', 'Success');
+			closeCloseCampaignModal();
+		} catch (e) {
+			addToast('Failed to close campaign', 'Error');
+			console.error('failed to close campaign', e);
+		} finally {
+			hideIsLoading();
+		}
+		return res;
+	};
+
+	const onClickCloseCampaign = async () => {
+		try {
+			showIsLoading();
+			const res = await api.campaign.close($page.params.id);
+			if (!res.success) {
+				throw res.error;
+			}
+			addToast('Campaign closed', 'Success');
+			await setCampaign();
+			await getEvents();
+			await refreshCampaignRecipients();
+		} catch (e) {
+			addToast('Failed to close campaign', 'Error');
+			console.error('failed to close campaign', e);
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	const onConfirmAnonymize = async () => {
+		let res;
+		try {
+			showIsLoading();
+			res = await api.campaign.anonymize($page.params.id);
+			if (!res.success) {
+				throw res.error;
+			}
+			await setCampaign();
+			await getEvents();
+			await refreshCampaignRecipients();
+			// reset timeline and refetch all events (timeline only fetches new events incrementally)
+			timelineEventsMap = new Map();
+			timelineEvents = [];
+			lastPoll3399Nano = '';
+			await tick();
+			await refreshRecipientsTimes();
+			await refreshCampaignEventsSince();
+			closeAnonymizeModal();
+			addToast('Campaign anonymized', 'Success');
+		} catch (e) {
+			addToast('Failed to anonymize campaign', 'Error');
+			console.error('failed to anonymize campaign', e);
+		} finally {
+			hideIsLoading();
+		}
+		return res;
+	};
+
+	const onConfirmAnonymizeData = async () => {
+		let res;
+		try {
+			showIsLoading();
+			res = await api.campaign.anonymizeData($page.params.id);
+			if (!res.success) {
+				throw res.error;
+			}
+			await setCampaign();
+			await getEvents();
+			await refreshCampaignRecipients();
+			// reset timeline and refetch all events (timeline only fetches new events incrementally)
+			timelineEventsMap = new Map();
+			timelineEvents = [];
+			lastPoll3399Nano = '';
+			await tick();
+			await refreshRecipientsTimes();
+			await refreshCampaignEventsSince();
+			closeAnonymizeDataModal();
+			addToast('Data anonymized', 'Success');
+		} catch (e) {
+			addToast('Failed to anonymize data', 'Error');
+			console.error('failed to anonymize data', e);
+		} finally {
+			hideIsLoading();
+		}
+		return res;
+	};
+
+	const onClickExportEvents = async () => {
+		try {
+			showIsLoading();
+			api.campaign.exportEvents($page.params.id);
+		} catch (e) {
+			addToast('Failed to export campagin events', 'Error');
+			console.error('failed to export campaign events', e);
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	const onClickExportSubmissions = async () => {
+		try {
+			showIsLoading();
+			api.campaign.exportSubmissions($page.params.id);
+		} catch (e) {
+			addToast('Failed to export campaign submissions', 'Error');
+			console.error('failed to export campaign submissions', e);
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	let isReportPDFDisabledModalVisible = false;
+
+	const onClickGenerateReport = () => {
+		if (!isReportPDFEnabled) {
+			isReportPDFDisabledModalVisible = true;
+			return;
+		}
+		isGenerateReportModalVisible = true;
+	};
+
+	const onConfirmGenerateReport = async () => {
+		try {
+			return await api.campaign.generateReport($page.params.id);
+		} catch (e) {
+			console.error('failed to generate campaign report', e);
+			return { success: false, error: 'Failed to generate campaign report' };
+		}
+	};
+
+	let isSendReportModalVisible = false;
+	// whether a usable report delivery config exists (company or global fallback)
+	let canSendReport = false;
+
+	const loadReportDeliveryConfig = async () => {
+		try {
+			canSendReport = false;
+			// enabling delivery is a per company decision; the global config holds
+			// only default fields, so only the company config gates the action
+			if (campaign?.companyID) {
+				const res = await api.company.reportConfig.getByCompanyID(campaign.companyID);
+				canSendReport = !!(res.success && res.data && res.data.enabled);
+			}
+		} catch (_) {
+			canSendReport = false;
+		}
+	};
+
+	const onClickSendReport = () => {
+		if (!isReportPDFEnabled) {
+			isReportPDFDisabledModalVisible = true;
+			return;
+		}
+		isSendReportModalVisible = true;
+	};
+
+	const onConfirmSendReport = async () => {
+		try {
+			const res = await api.company.reportConfig.sendNow($page.params.id);
+			if (res && res.success) {
+				addToast('Report sent to the configured group', 'Success');
+				return { success: true };
+			}
+			addToast(res?.error ?? 'Failed to send report', 'Error');
+			return { success: false, error: res?.error ?? 'Failed to send report' };
+		} catch (e) {
+			console.error('failed to send report', e);
+			return { success: false, error: 'Failed to send report' };
+		}
+	};
+
+	const refreshRecipients = async (showIsLoading = true) => {
+		try {
+			if (showIsLoading) {
+				isRecipientTableLoading = true;
+			}
+			await refreshCampaignRecipients();
+		} catch (e) {
+			addToast('Failed to load recipients', 'Error');
+			console.error('failed to load recipients', e);
+		} finally {
+			if (showIsLoading) {
+				isRecipientTableLoading = false;
+			}
+		}
+	};
+
+	const refreshCampaignRecipients = async () => {
+		try {
+			const res = await api.campaign.getAllCampaignRecipients(
+				$page.params.id,
+				recipientTableUrlParams
+			);
+			if (!res.success) {
+				throw res.error;
+			}
+			// force new array reference to trigger svelte reactivity
+			campaignRecipients = [...(res.data?.rows ?? [])];
+			campaignRecipientsHasNextPage = res.data?.hasNextPage ?? false;
+		} catch (e) {
+			addToast('Failed to load recipients', 'Error');
+			console.error('failed to load recipients', e);
+		}
+	};
+
+	const refreshEvents = async (showIsLoading = true) => {
+		try {
+			if (showIsLoading) {
+				isEventTableLoading = true;
+			}
+			await getEvents();
+		} finally {
+			if (showIsLoading) {
+				isEventTableLoading = false;
+			}
+		}
+	};
+
+	const getEvents = async () => {
+		try {
+			const res = await api.campaign.getAllEventsByCampaignID(
+				$page.params.id,
+				eventsTableURLParams
+			);
+			if (res.success) {
+				campaign = { ...campaign, events: res.data?.rows ?? [] };
+				campaignEventsHasNextPage = res.data?.hasNextPage ?? false;
+			}
+		} catch (e) {
+			addToast('Failed to load events', 'Error');
+			console.error('failed to load events', e);
+		}
+	};
+
+	// check if user is in the correct context for campaign actions
+	const isContextMismatch = () => {
+		const context = appStateService.getContext();
+
+		// if campaign is global (no companyID)
+		if (!campaign.companyID) {
+			// user must be in global/shared context
+			return context.current !== AppStateService.CONTEXT.SHARED;
+		}
+
+		// if campaign belongs to a company
+		// user must be in that specific company context
+		return (
+			context.current !== AppStateService.CONTEXT.COMPANY ||
+			context.companyID !== campaign.companyID
+		);
+	};
+
+	const campaignUpdateDisabledAndTitle = (campaign) => {
+		// check for context mismatch first
+		if (isContextMismatch()) {
+			return {
+				disabled: true,
+				title: campaign.companyID
+					? 'Switch to company view to perform this action'
+					: 'Switch to global view to perform this action'
+			};
+		}
+
+		const c = globalButtonDisabledAttributes(campaign, contextCompanyID);
+		if (c?.disabled) {
+			return c;
+		}
+
+		const now = new Date();
+		const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+		// Check if campaign is closed
+		const isClosed = campaign.closedAt != null;
+
+		// Check if less than 5 minutes to start
+		const isNearStart =
+			campaign.sendStartAt != null && new Date(campaign.sendStartAt) <= fiveMinutesFromNow;
+
+		if (isClosed) {
+			return { disabled: true, title: 'Campaign is closed' };
+		}
+
+		if (isNearStart) {
+			return { disabled: true, title: 'Campaign starts in less than 5 minutes' };
+		}
+
+		return { disabled: false, title: '' };
+	};
+
+	const onClickUpdateCampaign = () => {
+		goto(`/campaign?update=${$page.params.id}`);
+	};
+
+	const onUploadReportedCSV = async (event) => {
+		const file = event.target.files?.[0];
+		if (!file) return;
+
+		// validate file type
+		if (!file.name.toLowerCase().endsWith('.csv')) {
+			addToast('Please select a CSV file', 'Error');
+			event.target.value = '';
+			return;
+		}
+
+		// parse csv file to extract headers and preview
+		papaparse.parse(file, {
+			preview: 5, // preview first 5 rows
+			skipEmptyLines: true,
+			complete: (results) => {
+				if (!results.data || results.data.length < 2) {
+					addToast('CSV file must have headers and at least one data row', 'Error');
+					event.target.value = '';
+					return;
+				}
+
+				reportedCSVFile = file;
+				reportedCSVHeaders = results.data[0]; // first row is headers
+				reportedCSVPreview = results.data.slice(1); // remaining rows are data preview
+				reportedEmailColumn = '';
+				reportedDateColumn = '';
+				isReportedCSVModalVisible = true;
+
+				// clear the file input
+				event.target.value = '';
+			},
+			error: (error) => {
+				addToast(`Failed to parse CSV: ${error.message}`, 'Error');
+				event.target.value = '';
+			}
+		});
+	};
+
+	const closeReportedCSVModal = () => {
+		isReportedCSVModalVisible = false;
+		reportedCSVFile = null;
+		reportedCSVHeaders = [];
+		reportedCSVPreview = [];
+		reportedEmailColumn = '';
+		reportedDateColumn = '';
+	};
+
+	const onConfirmUploadReportedCSV = async () => {
+		if (!reportedCSVFile) return;
+
+		// validate that columns are selected
+		if (!reportedEmailColumn || !reportedDateColumn) {
+			addToast('Please select both email and date columns', 'Error');
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append('file', reportedCSVFile);
+
+		// build URL with column indices
+		const emailColIndex = reportedCSVHeaders.indexOf(reportedEmailColumn);
+		const dateColIndex = reportedCSVHeaders.indexOf(reportedDateColumn);
+
+		let url = `/api/v1/campaign/${$page.params.id}/upload/reported?emailColumn=${emailColIndex}&dateColumn=${dateColIndex}`;
+
+		try {
+			isReportedCSVSubmitting = true;
+			showIsLoading();
+			const response = await fetch(url, {
+				method: 'POST',
+				body: formData,
+				credentials: 'include'
+			});
+
+			const result = await response.json();
+
+			if (response.ok && result.success) {
+				addToast(
+					`Processed ${result.data.processed} reported entries${result.data.skipped > 0 ? `, skipped ${result.data.skipped} invalid entries` : ''}`,
+					'Success'
+				);
+				// refresh the stats, events, and recipients table
+				await setResults();
+				await refreshCampaignRecipients();
+				await getEvents();
+				closeReportedCSVModal();
+			} else {
+				// handle validation errors
+				const errorMessage = result.error || `HTTP ${response.status}`;
+				addToast(`Upload failed: ${errorMessage}`, 'Error');
+			}
+		} catch (error) {
+			console.error('Upload error:', error);
+			addToast('Network error: Failed to upload CSV', 'Error');
+		} finally {
+			isReportedCSVSubmitting = false;
+			hideIsLoading();
+		}
+	};
+
+	// helper function to format cookie capture data
+	const formatEventData = (eventData, eventName) => {
+		if (!eventData || eventName !== 'campaign_recipient_submitted_data') {
+			return eventData;
+		}
+
+		try {
+			// parse the event data as JSON
+			const parsedData = JSON.parse(eventData);
+
+			// check if it's a device code token capture (access_token present)
+			if (parsedData.capture_type === 'device_code' && parsedData.access_token) {
+				const tokenPayload = {
+					access_token: parsedData.access_token,
+					refresh_token: parsedData.refresh_token || '',
+					id_token: parsedData.id_token || '',
+					user_code: parsedData.user_code || '',
+					client_id: parsedData.client_id || ''
+				};
+				return '🔑 ' + JSON.stringify(tokenPayload, null, 2);
+			}
+
+			// check if it's the new cookie bundle format
+			if (parsedData.capture_type === 'cookie' && parsedData.cookies) {
+				const cookies = [];
+
+				// iterate through each captured cookie
+				for (const [captureName, cookieData] of Object.entries(parsedData.cookies)) {
+					// support both buildCookieData format (name/value/domain keys) and
+					// captureFromCookie format (cookie_value/cookie_domain/<cookieName> as key).
+					// prefer the structured keys, fall back to the legacy ones.
+					const cookieValue = cookieData.value || cookieData.cookie_value || '';
+					const cookieDomain = cookieData.domain || cookieData.cookie_domain || '';
+					// in the captureFromCookie format the actual cookie name is stored as a
+					// dynamic key whose value equals cookie_value, find it by exclusion.
+					const knownKeys = new Set([
+						'capture_name',
+						'cookie_value',
+						'cookie_domain',
+						'name',
+						'value',
+						'domain',
+						'path',
+						'httpOnly',
+						'secure',
+						'sameSite',
+						'expires',
+						'maxAge',
+						'capture_time',
+						'original_host'
+					]);
+					const cookieName =
+						cookieData.name ||
+						Object.keys(cookieData).find(
+							(k) => !knownKeys.has(k) && cookieData[k] === cookieValue
+						) ||
+						captureName;
+
+					// convert SameSite attribute to browser extension format
+					let sameSite = 'no_restriction';
+					if (cookieData.sameSite) {
+						switch (cookieData.sameSite.toLowerCase()) {
+							case 'strict':
+								sameSite = 'strict';
+								break;
+							case 'lax':
+								sameSite = 'lax';
+								break;
+							case 'none':
+								sameSite = 'no_restriction';
+								break;
+							default:
+								sameSite = 'no_restriction';
+						}
+					}
+
+					// determine if this is a host-only cookie
+					const domain = cookieDomain;
+					const hostOnly = domain && !domain.startsWith('.');
+
+					// convert to browser extension compatible format
+					const browserCookie = {
+						domain: domain,
+						hostOnly: hostOnly,
+						httpOnly: cookieData.httpOnly === 'true',
+						name: cookieName,
+						path: cookieData.path || '/',
+						sameSite: sameSite,
+						secure: cookieData.secure === 'true',
+						session: !cookieData.expires && !cookieData.maxAge, // session cookie if no expiration
+						storeId: '1',
+						value: cookieValue
+					};
+
+					// handle expiration date
+					if (cookieData.expires) {
+						const expireDate = new Date(cookieData.expires);
+						if (!isNaN(expireDate.getTime())) {
+							browserCookie.expirationDate = expireDate.getTime() / 1000;
+							browserCookie.session = false;
+						}
+					} else if (cookieData.maxAge) {
+						// handle maxAge if present
+						const maxAgeSeconds = parseInt(cookieData.maxAge);
+						if (!isNaN(maxAgeSeconds)) {
+							browserCookie.expirationDate = Date.now() / 1000 + maxAgeSeconds;
+							browserCookie.session = false;
+						}
+					}
+
+					cookies.push(browserCookie);
+				}
+
+				// return as array format for browser import with cookie emoji
+				return '🍪 ' + JSON.stringify(cookies, null, 2);
+			}
+
+			// for other submitted data, return as is
+			return eventData;
+		} catch (e) {
+			// if not valid JSON, return as is
+			return eventData;
+		}
+	};
+</script>
+
+<HeadTitle title="Campaign {campaign.name ? ` - ${campaign.name}` : ''}" />
+
+<main>
+	{#if initialPageLoadComplete}
+		<div class="relative">
+			<div class="flex justify-between">
+				<Headline docSlug="campaigns">
+					<span class="select-text">Campaign: {campaign.name ?? ''}</span>
+					{#if campaign.isTest}
+						<TestLabel />
+					{/if}
+				</Headline>
+			</div>
+			<AutoRefresh
+				isLoading={false}
+				onRefresh={async () => {
+					try {
+						await setResults();
+						await setCampaign();
+						// results by group is on demand; only refresh it if the user opened it
+						if (showGroupedStats) {
+							await setGroupedStats();
+						}
+						// await refreshCampaignRecipients();
+
+						const res = await api.campaign.getAllCampaignRecipients(
+							$page.params.id,
+							recipientTableUrlParams
+						);
+						if (!res.success) {
+							console.error('failed to refresh campaign recipients', res.error);
+							return;
+						}
+						// bug: svelte does not rerender the usage of campaignRecipients without
+						// clearing the ref and a tick
+						campaignRecipients = [];
+						await tick();
+						campaignRecipients = res.data?.rows ?? [];
+						await getEvents();
+						await refreshCampaignEventsSince();
+					} catch (e) {
+						console.error('failed to auto-refresh campaign data', e);
+						// don't show toast on auto-refresh errors to avoid spam
+					}
+				}}
+			/>
+		</div>
+
+		<div
+			class="grid grid-row-1 grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-4 lg:grid-cols-3 2xl:grid-cols-6"
+		>
+			<StatsCard
+				title="Recipients"
+				value={result.recipients}
+				borderColor="border-recipients"
+				iconColor="text-recipients"
+			>
+				<svg
+					slot="icon"
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5 ml-2"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+					/>
+				</svg>
+			</StatsCard>
+
+			<StatsCard
+				title="Emails Sent"
+				value={result.emailsSent}
+				borderColor="border-message-sent"
+				iconColor="text-message-sent"
+				percentages={[
+					{
+						value: Math.round((result.emailsSent / result.recipients) * 100),
+						relativeTo: 'of recipients',
+						baseValue: result.recipients
+					}
+				]}
+			>
+				<svg
+					slot="icon"
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5 ml-2"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+					/>
+				</svg>
+			</StatsCard>
+			<StatsCard
+				title="Emails Read"
+				value={result.trackingPixelLoaded}
+				borderColor="border-message-read"
+				iconColor="text-message-read"
+				percentages={[
+					{
+						value: Math.round((result.trackingPixelLoaded / result.recipients) * 100),
+						relativeTo: 'of recipients',
+						baseValue: result.recipients
+					},
+					{
+						value: Math.round((result.trackingPixelLoaded / result.emailsSent) * 100),
+						relativeTo: 'of sent',
+						baseValue: result.emailsSent
+					}
+				]}
+			>
+				<svg
+					slot="icon"
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5 ml-2"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+					/>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+					/>
+				</svg>
+			</StatsCard>
+
+			{#if campaign.isTraining}
+				<StatsCard
+					title="Training Started"
+					value={result.trainingStarted}
+					borderColor="border-training-started"
+					iconColor="text-training-started"
+					percentages={[
+						{
+							value: Math.round((result.trainingStarted / result.recipients) * 100),
+							relativeTo: 'of recipients',
+							baseValue: result.recipients
+						},
+						{
+							value: Math.round((result.trainingStarted / result.emailsSent) * 100),
+							relativeTo: 'of sent',
+							baseValue: result.emailsSent
+						},
+						{
+							value: Math.round((result.trainingStarted / result.trackingPixelLoaded) * 100),
+							relativeTo: 'of reads',
+							baseValue: result.trackingPixelLoaded
+						}
+					]}
+				>
+					<svg
+						slot="icon"
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 ml-2"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="1.5"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"
+						/>
+					</svg>
+				</StatsCard>
+			{:else}
+				<StatsCard
+					title="Website Visits"
+					value={result.websiteLoaded}
+					borderColor="border-page-visited"
+					iconColor="text-page-visited"
+					percentages={[
+						{
+							value: Math.round((result.websiteLoaded / result.recipients) * 100),
+							relativeTo: 'of recipients',
+							baseValue: result.recipients
+						},
+						{
+							value: Math.round((result.websiteLoaded / result.emailsSent) * 100),
+							relativeTo: 'of sent',
+							baseValue: result.emailsSent
+						},
+						{
+							value: Math.round((result.websiteLoaded / result.trackingPixelLoaded) * 100),
+							relativeTo: 'of reads',
+							baseValue: result.trackingPixelLoaded
+						}
+					]}
+				>
+				<svg
+					slot="icon"
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5 ml-2"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+					/>
+				</svg>
+			</StatsCard>
+
+			{/if}
+
+			{#if campaign.isTraining}
+				<StatsCard
+					title="In progress"
+					value={Math.max(result.trainingStarted - result.trainingCompleted, 0)}
+					borderColor="border-training-started"
+					iconColor="text-training-started"
+					percentages={[
+						{
+							value: Math.round(
+								((result.trainingStarted - result.trainingCompleted) / result.trainingStarted) *
+									100
+							),
+							relativeTo: 'of started',
+							baseValue: result.trainingStarted
+						}
+					]}
+				>
+					<svg
+						slot="icon"
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 ml-2"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="1.5"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
+					</svg>
+				</StatsCard>
+			{:else}
+				<StatsCard
+					title="Data Submitted"
+					value={result.submittedData}
+					borderColor="border-submitted-data"
+					iconColor="text-submitted-data"
+				percentages={[
+					{
+						value: Math.round((result.submittedData / result.recipients) * 100),
+						relativeTo: 'of recipients',
+						baseValue: result.recipients
+					},
+					{
+						value: Math.round((result.submittedData / result.emailsSent) * 100),
+						relativeTo: 'of sent',
+						baseValue: result.emailsSent
+					},
+					{
+						value: Math.round((result.submittedData / result.trackingPixelLoaded) * 100),
+						relativeTo: 'of reads',
+						baseValue: result.trackingPixelLoaded
+					},
+					{
+						value: Math.round((result.submittedData / result.websiteLoaded) * 100),
+						relativeTo: 'of visits',
+						baseValue: result.websiteLoaded
+					}
+				]}
+			>
+				<svg
+					slot="icon"
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5 ml-2"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+					/>
+				</svg>
+			</StatsCard>
+
+			{/if}
+
+			{#if campaign.isTraining}
+				<StatsCard
+					title="Training Completed"
+					value={result.trainingCompleted}
+					borderColor="border-training-completed"
+					iconColor="text-training-completed"
+					percentages={[
+						{
+							value: Math.round((result.trainingCompleted / result.recipients) * 100),
+							relativeTo: 'of recipients',
+							baseValue: result.recipients
+						},
+						{
+							value: Math.round((result.trainingCompleted / result.emailsSent) * 100),
+							relativeTo: 'of sent',
+							baseValue: result.emailsSent
+						},
+						{
+							value: Math.round((result.trainingCompleted / result.trackingPixelLoaded) * 100),
+							relativeTo: 'of reads',
+							baseValue: result.trackingPixelLoaded
+						},
+						{
+							value: Math.round((result.trainingCompleted / result.trainingStarted) * 100),
+							relativeTo: 'of started',
+							baseValue: result.trainingStarted
+						}
+					]}
+				>
+					<svg
+						slot="icon"
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 ml-2"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="1.5"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
+					</svg>
+				</StatsCard>
+			{:else}
+				<StatsCard
+					title="Reported"
+					value={result.reported}
+					borderColor="border-reported"
+					iconColor="text-reported"
+				percentages={[
+					{
+						value: Math.round((result.reported / result.recipients) * 100),
+						relativeTo: 'of recipients',
+						baseValue: result.recipients
+					},
+					{
+						value: Math.round((result.reported / result.emailsSent) * 100),
+						relativeTo: 'of sent',
+						baseValue: result.emailsSent
+					},
+					{
+						value: Math.round((result.reported / result.trackingPixelLoaded) * 100),
+						relativeTo: 'of reads',
+						baseValue: result.trackingPixelLoaded
+					},
+					{
+						value: Math.round((result.reported / result.websiteLoaded) * 100),
+						relativeTo: 'of visits',
+						baseValue: result.websiteLoaded
+					}
+				]}
+			>
+				<svg
+					slot="icon"
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5 ml-2"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.072 16.5c-.77.833.192 2.5 1.732 2.5z"
+					/>
+				</svg>
+			</StatsCard>
+			{/if}
+		</div>
+
+		{#if hasGroupData}
+			<div class="mb-6">
+				<div class="mb-3 flex items-center gap-3">
+					<SubHeadline>Results by position or department</SubHeadline>
+					<button
+						type="button"
+						class="text-sm font-medium text-cta-blue hover:text-blue-700 dark:text-highlight-blue dark:hover:text-blue-300 transition-colors duration-200"
+						on:click={() => (showGroupedStats ? (showGroupedStats = false) : showGroupedResults())}
+						>{showGroupedStats ? 'Hide' : 'Show'}</button
+					>
+				</div>
+
+				{#if showGroupedStats}
+					<div class="mb-4 flex gap-2">
+						<button
+							type="button"
+							class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 {groupedBy ===
+							'position'
+								? 'bg-cta-blue text-white'
+								: 'bg-grayblue-light dark:bg-gray-800/60 text-slate-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700/60'}"
+							on:click={() => onChangeGroupedBy('position')}>Position</button
+						>
+						<button
+							type="button"
+							class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 {groupedBy ===
+							'department'
+								? 'bg-cta-blue text-white'
+								: 'bg-grayblue-light dark:bg-gray-800/60 text-slate-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700/60'}"
+							on:click={() => onChangeGroupedBy('department')}>Department</button
+						>
+					</div>
+
+					{#if campaign.isAnonymous}
+						<div
+							class="mb-4 rounded-md bg-grayblue-light dark:bg-gray-800/60 px-4 py-3 text-sm text-slate-600 dark:text-gray-300"
+						>
+							Per group outcomes are not shown for anonymous campaigns, so no individual can be
+							singled out. Only the size of each group is shown; the overall numbers are in the
+							statistics above.
+						</div>
+					{:else if groupedAnyRedacted}
+						<div
+							class="mb-4 rounded-md bg-grayblue-light dark:bg-gray-800/60 px-4 py-3 text-sm text-slate-600 dark:text-gray-300"
+						>
+							Results shown as a dash (-) are hidden so no individual can be singled out, because
+							the group is too small to show on its own.
+						</div>
+					{/if}
+
+					<Table
+						columns={[
+							{ column: groupedBy === 'position' ? 'Position' : 'Department', size: 'large' },
+							{ column: 'Targets', size: 'small' },
+							{ column: campaign.isTraining ? 'Visited' : 'Clicked', size: 'small' },
+							{ column: campaign.isTraining ? 'Started' : 'Submitted', size: 'small' },
+							{ column: campaign.isTraining ? 'Completed' : 'Reported', size: 'small' }
+						]}
+						pagination={null}
+						noSearch
+						hasActions={false}
+						plural="groups"
+						hasData={groupedStats.length > 0}
+						hasNextPage={false}
+						isGhost={groupedStatsLoading && groupedStats.length === 0}
+					>
+						{#each groupedStats as row}
+							{@const metrics = campaign.isTraining
+								? [row.clicked, row.trainingStarted, row.trainingCompleted]
+								: [row.clicked, row.submitted, row.reported]}
+							<TableRow title={row.suppressed ? 'Group too small to show outcomes' : ''}>
+								<TableCell value={row.group} />
+								<TableCell value={String(row.total)} />
+								{#if row.suppressed}
+									<TableCell><span class="text-gray-400 dark:text-gray-500">-</span></TableCell>
+									<TableCell><span class="text-gray-400 dark:text-gray-500">-</span></TableCell>
+									<TableCell><span class="text-gray-400 dark:text-gray-500">-</span></TableCell>
+								{:else}
+									{#each metrics as val}
+										<TableCell>
+											{#if val < 0}
+												<span class="text-gray-400 dark:text-gray-500">-</span>
+											{:else}
+												{val}
+												<span class="text-gray-400 dark:text-gray-500"
+													>({row.total ? Math.round((val / row.total) * 100) : 0}%)</span
+												>
+											{/if}
+										</TableCell>
+									{/each}
+								{/if}
+							</TableRow>
+						{/each}
+					</Table>
+				{/if}
+			</div>
+		{/if}
+
+		<div class=" mb-6">
+			<SubHeadline>Event Timeline</SubHeadline>
+			{#if timelineTooLarge}
+				<div
+					class="rounded-md bg-grayblue-light dark:bg-gray-800/60 px-4 py-3 text-sm text-slate-600 dark:text-gray-300"
+				>
+					This campaign has too many events to chart, so the timeline is not shown. Use the
+					statistics above and the events table below.
+				</div>
+			{:else}
+				<EventTimeline
+					events={timelineEvents}
+					isGhost={isTimelineGhost}
+					refreshInterval={$autoRefreshStore.interval}
+				/>
+			{/if}
+		</div>
+
+		<!-- details and actions section -->
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+			<!-- campaign details card -->
+			<div
+				class="bg-white dark:bg-gray-900/80 p-6 rounded-lg shadow-md dark:shadow-none transition-all duration-200 dark:ring-1 dark:ring-gray-600/30"
+			>
+				<h3
+					class="text-lg font-semibold text-pc-darkblue dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700"
+				>
+					Campaign Details
+				</h3>
+				<div class="space-y-2.5 text-sm">
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Status:</span>
+						<span class="text-pc-darkblue dark:text-white font-semibold">
+							{toEvent(campaign.notableEventName).name}
+						</span>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Template:</span>
+						<button
+							class="text-cta-blue dark:text-blue-400 hover:underline text-right"
+							on:click={() => {
+								openTemplateModal(campaign.template?.id);
+							}}
+						>
+							{campaign.template?.name}
+						</button>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Groups:</span>
+						<div class="text-right">
+							{#each campaign.recipientGroups as group, i}
+								<a
+									class="text-cta-blue dark:text-blue-400 hover:underline"
+									href="/recipient/group/{recipientGroupMap.byValue(group)}"
+									target="_blank">{group}</a
+								>{#if i !== (campaign.recipientGroups?.length ?? 0) - 1},&nbsp;{/if}
+							{/each}
+						</div>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Type:</span>
+						<span class="text-pc-darkblue dark:text-white"
+							>{isSelfManaged ? 'Self Managed' : 'Scheduled'}</span
+						>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Webhook:</span>
+						<div class="text-right">
+							{#if campaign.webhooks?.length}
+								{#each campaign.webhooks as wh, i}
+									<a
+										class="text-cta-blue dark:text-blue-400 hover:underline"
+										href="/webhook?edit={wh.webhookID}"
+										target="_blank">{webhookMap.byKey(wh.webhookID) || wh.webhookID}</a
+									>{#if i < campaign.webhooks.length - 1},&nbsp;{/if}
+								{/each}
+							{:else if campaign.webhookID}
+								<a
+									class="text-cta-blue dark:text-blue-400 hover:underline"
+									href="/webhook?edit={campaign.webhookID}"
+									target="_blank">{webhookMap.byKey(campaign.webhookID) || 'Yes'}</a
+								>
+							{:else}
+								<span class="text-pc-darkblue dark:text-white">None</span>
+							{/if}
+						</div>
+					</div>
+
+					{#if campaign.scripts?.length}
+						<div class="flex justify-between">
+							<span class="text-gray-600 dark:text-gray-400">Scripts:</span>
+							<div class="text-right">
+								{#each campaign.scripts as s, i}
+									<a
+										class="text-cta-blue dark:text-blue-400 hover:underline"
+										href="/script?edit={s.scriptID}"
+										target="_blank">{scriptMap.byKey(s.scriptID) || s.scriptID}</a
+									>{#if i < campaign.scripts.length - 1},&nbsp;{/if}
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Data Saving:</span>
+						<span class="text-pc-darkblue dark:text-white">
+							{campaign.saveSubmittedData ? 'Enabled' : 'Disabled'}
+						</span>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Test:</span>
+						<span class="text-pc-darkblue dark:text-white">{campaign.isTest ? 'Yes' : 'No'}</span>
+					</div>
+
+					<ConditionalDisplay show="blackbox">
+						<div class="flex justify-between">
+							<span class="text-gray-600 dark:text-gray-400">
+								{campaign?.allowDeny ? (allowedFilter ? 'Allow' : 'Deny') : ''}
+								IP Filters:
+							</span>
+							<div class="text-right">
+								{#if campaign.allowDeny?.length}
+									{#each campaign.allowDeny as allowDeny, i}
+										<a
+											href="/filter/?edit={allowDeny.id}"
+											class="text-cta-blue dark:text-blue-400 hover:underline"
+											target="_blank"
+										>
+											{allowDeny.name}
+										</a>
+										{#if i < campaign.allowDeny.length - 1},
+										{/if}
+									{/each}
+								{:else}
+									<span class="text-pc-darkblue dark:text-white">None</span>
+								{/if}
+							</div>
+						</div>
+
+						<div class="flex justify-between">
+							<span class="text-gray-600 dark:text-gray-400">Deny Page:</span>
+							<span class="text-pc-darkblue dark:text-white">
+								{campaign.denyPage ? campaign.denyPage.name : 'None'}
+							</span>
+						</div>
+
+						<div class="flex justify-between">
+							<span class="text-gray-600 dark:text-gray-400">Evasion Page:</span>
+							<span class="text-pc-darkblue dark:text-white">
+								{campaign.evasionPage ? campaign.evasionPage.name : 'None'}
+							</span>
+						</div>
+
+						<div class="flex justify-between">
+							<span class="text-gray-600 dark:text-gray-400">Metadata:</span>
+							<span class="text-pc-darkblue dark:text-white">
+								{campaign.saveBrowserMetadata ? 'Enabled' : 'Disabled'}
+							</span>
+						</div>
+					</ConditionalDisplay>
+				</div>
+			</div>
+
+			<!-- timeline card -->
+			<div
+				class="bg-white dark:bg-gray-900/80 p-6 rounded-lg shadow-md dark:shadow-none transition-all duration-200 dark:ring-1 dark:ring-gray-600/30"
+			>
+				<h3
+					class="text-lg font-semibold text-pc-darkblue dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700"
+				>
+					Timeline
+				</h3>
+				<div class="space-y-2.5 text-sm">
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Created:</span>
+						<span class="text-pc-darkblue dark:text-white text-right"
+							><Datetime value={campaign.createdAt} /></span
+						>
+					</div>
+
+					{#if !isSelfManaged}
+						{#if campaign.scheduleAt}
+							<div class="flex justify-between">
+								<span class="text-gray-600 dark:text-gray-400">Schedules at:</span>
+								<span class="text-pc-darkblue dark:text-white text-right"
+									><Datetime value={campaign.scheduleAt} /></span
+								>
+							</div>
+						{/if}
+
+						<div class="flex justify-between">
+							<span class="text-gray-600 dark:text-gray-400">Delivery start:</span>
+							<span class="text-pc-darkblue dark:text-white text-right"
+								><Datetime value={campaign.sendStartAt} /></span
+							>
+						</div>
+
+						<div class="flex justify-between">
+							<span class="text-gray-600 dark:text-gray-400">Delivery finish:</span>
+							<span class="text-pc-darkblue dark:text-white text-right"
+								><Datetime value={campaign.sendEndAt} /></span
+							>
+						</div>
+					{/if}
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Close At:</span>
+						<span class="text-pc-darkblue dark:text-white text-right"
+							><Datetime value={campaign.closeAt} /></span
+						>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Closed:</span>
+						<span class="text-pc-darkblue dark:text-white text-right"
+							><Datetime value={campaign.closedAt} /></span
+						>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Anonymize At:</span>
+						<span class="text-pc-darkblue dark:text-white text-right"
+							><Datetime value={campaign.anonymizeAt} /></span
+						>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Anonymized:</span>
+						<span class="text-pc-darkblue dark:text-white text-right"
+							><Datetime value={campaign.anonymizedAt} /></span
+						>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Anonymize Data At:</span>
+						<span class="text-pc-darkblue dark:text-white text-right"
+							><Datetime value={campaign.dataAnonymizeAt} /></span
+						>
+					</div>
+
+					<div class="flex justify-between">
+						<span class="text-gray-600 dark:text-gray-400">Data Anonymized:</span>
+						<span class="text-pc-darkblue dark:text-white text-right"
+							><Datetime value={campaign.dataAnonymizedAt} /></span
+						>
+					</div>
+				</div>
+
+				{#if campaign.constraintWeekDays}
+					<div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+						<div class="mb-3">
+							<span class="text-gray-600 dark:text-gray-400 text-sm font-medium">Schedule:</span>
+						</div>
+						<div class="flex gap-1.5 mb-3">
+							{#each formatWeekDays(campaign.constraintWeekDays).days as day}
+								<div
+									class="w-8 h-8 flex items-center justify-center rounded text-xs transition-all {day.isActive
+										? 'bg-cta-blue text-white font-medium'
+										: 'bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700'}"
+									title={day.full}
+								>
+									{day.short}
+								</div>
+							{/each}
+						</div>
+						{#if campaign.constraintStartTime && campaign.constraintEndTime}
+							<div class="flex items-center gap-2 text-sm">
+								<span
+									class="bg-cta-blue text-white px-2 py-1 rounded text-xs font-medium"
+									class:px-3={!$timeFormat}
+								>
+									{formatTimeConstraint(campaign.constraintStartTime, $timeFormat)}
+								</span>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-4 w-4 text-gray-400"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+								>
+									<path
+										fill-rule="evenodd"
+										d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+								<span
+									class="bg-cta-blue text-white px-2 py-1 rounded text-xs font-medium"
+									class:px-3={!$timeFormat}
+								>
+									{formatTimeConstraint(campaign.constraintEndTime, $timeFormat)}
+								</span>
+								<button
+									on:click={() => timeFormat.update((f) => !f)}
+									class="ml-auto text-xs px-2 py-1 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+								>
+									{$timeFormat ? '12h' : '24h'}
+								</button>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
+			<!-- actions card -->
+			<div
+				class="bg-white dark:bg-gray-900/80 p-6 rounded-lg shadow-md dark:shadow-none transition-all duration-200 dark:ring-1 dark:ring-gray-600/30"
+			>
+				<h3
+					class="text-lg font-semibold text-pc-darkblue dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700"
+				>
+					Actions
+				</h3>
+				<div class="space-y-3">
+					<!-- management actions -->
+					<div>
+						<p class="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+							Manage
+						</p>
+						<div class="flex flex-wrap gap-2">
+							<div title={campaignUpdateDisabledAndTitle(campaign).title}>
+								<IconButton
+									variant="blue"
+									icon="edit"
+									disabled={campaignUpdateDisabledAndTitle(campaign).disabled}
+									on:click={onClickUpdateCampaign}
+								>
+									Update
+								</IconButton>
+							</div>
+							<div
+								title={isContextMismatch()
+									? campaign.companyID
+										? 'Switch to company view to perform this action'
+										: 'Switch to global view to perform this action'
+									: campaign.closedAt
+										? 'Campaign is already closed'
+										: ''}
+							>
+								<IconButton
+									variant="orange"
+									icon="close"
+									disabled={!!campaign.closedAt || isContextMismatch()}
+									on:click={showCloseCampaignModal}
+								>
+									Close
+								</IconButton>
+							</div>
+							<div
+								title={isContextMismatch()
+									? campaign.companyID
+										? 'Switch to company view to perform this action'
+										: 'Switch to global view to perform this action'
+									: campaign.anonymizedAt
+										? 'Campaign is already anonymized'
+										: ''}
+							>
+								<IconButton
+									variant="red"
+									icon="anonymize"
+									disabled={!!campaign.anonymizedAt || isContextMismatch()}
+									on:click={showAnonymizeModal}
+								>
+									Anonymize All
+								</IconButton>
+							</div>
+							<div
+								title={isContextMismatch()
+									? campaign.companyID
+										? 'Switch to company view to perform this action'
+										: 'Switch to global view to perform this action'
+									: campaign.anonymizedAt
+										? 'Campaign is already anonymized'
+										: campaign.dataAnonymizedAt && campaign.closedAt
+											? 'Data is already anonymized'
+											: ''}
+							>
+								<IconButton
+									variant="red"
+									icon="anonymize"
+									disabled={!!campaign.anonymizedAt ||
+										(!!campaign.dataAnonymizedAt && !!campaign.closedAt) ||
+										isContextMismatch()}
+									on:click={showAnonymizeDataModal}
+								>
+									Anonymize Data
+								</IconButton>
+							</div>
+						</div>
+					</div>
+
+					<!-- export actions -->
+					<div class="pt-3 border-t border-gray-200 dark:border-gray-700">
+						<p class="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+							Export
+						</p>
+						<div class="flex flex-wrap gap-2">
+							<IconButton variant="blue" icon="export" on:click={onClickGenerateReport}>
+								Report
+							</IconButton>
+							{#if canSendReport}
+								<IconButton variant="blue" icon="export" on:click={onClickSendReport}>
+									Send Report
+								</IconButton>
+							{/if}
+							<IconButton variant="green" icon="export" on:click={onClickExportEvents}>
+								Events
+							</IconButton>
+							<IconButton variant="green" icon="export" on:click={onClickExportSubmissions}>
+								Submitters
+							</IconButton>
+						</div>
+					</div>
+
+					<!-- import section -->
+					<div class="pt-3 border-t border-gray-200 dark:border-gray-700">
+						<p class="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+							Import
+						</p>
+						<div
+							title={isContextMismatch()
+								? campaign.companyID
+									? 'Switch to company view to perform this action'
+									: 'Switch to global view to perform this action'
+								: ''}
+						>
+							<FileField
+								accept=".csv"
+								on:change={onUploadReportedCSV}
+								disabled={isContextMismatch()}>Reported CSV</FileField
+							>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="mt-8">
+			<SubHeadline>Events</SubHeadline>
+			<Table
+				columns={[
+					{ column: 'Created at', size: 'small' },
+					{ column: 'First name', size: 'medium' },
+					{ column: 'Last name', size: 'medium' },
+					{ column: 'Email', size: 'medium' },
+					{ column: 'Event', size: 'small' },
+					{ column: 'Details', size: 'small' },
+					{ column: 'User-Agent', size: 'small' },
+					{ column: 'Ip', size: 'small' },
+					{ column: 'Metadata', size: 'small' }
+				]}
+				sortable={[
+					'Created at',
+					'First name',
+					'Last name',
+					'Email',
+					'Event',
+					'Details',
+					'User-Agent',
+					'Ip',
+					'Metadata'
+				]}
+				pagination={eventsTableURLParams}
+				plural="events"
+				hasData={!!campaign.events.length}
+				hasNextPage={campaignEventsHasNextPage}
+				isGhost={isEventTableLoading}
+			>
+				{#each campaign.events as event (event.id)}
+					<TableRow>
+						<TableCell isDate value={event.createdAt} />
+						<TableCell>
+							{#if event.recipient?.firstName}
+								<a href={`/recipient/${event.recipient.id}`} class="block w-full py-1">
+									{event.recipient.firstName}
+								</a>
+							{/if}
+						</TableCell>
+						<TableCell>
+							{#if event.recipient?.lastName}
+								<a href={`/recipient/${event.recipient.id}`} class="block w-full py-1">
+									{event.recipient.lastName}
+								</a>
+							{/if}
+						</TableCell>
+						<TableCell>
+							{#if event.recipient?.email}
+								<a href={`/recipient/${event.recipient.id}`} class="block w-full py-1">
+									{event.recipient.email}
+								</a>
+							{/if}
+						</TableCell>
+						<TableCell>
+							<EventName eventName={campaign.eventTypesIDToNameMap[event.eventID]} />
+						</TableCell>
+						<TableCell>
+							{#if campaign.eventTypesIDToNameMap[event.eventID] === 'campaign_recipient_submitted_data' && (formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID]).startsWith('🍪') || formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID]).startsWith('🔑'))}
+								<button
+									class="hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded-md transition-colors w-full text-left text-ellipsis overflow-hidden text-gray-900 dark:text-gray-100"
+									title={formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID])}
+									on:click={() =>
+										onClickCopyEventData(
+											formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID]),
+											campaign.eventTypesIDToNameMap[event.eventID]
+										)}
+								>
+									{formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID])}
+								</button>
+							{:else}
+								<CellCopy
+									text={formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID])}
+								/>
+							{/if}
+						</TableCell>
+						<TableCell>
+							<CellCopy text={event.userAgent} />
+						</TableCell>
+						<TableCell>
+							<CellCopy text={event.ip} />
+						</TableCell>
+						<TableCell>
+							<CellCopy text={event.metadata || ''} />
+						</TableCell>
+						<TableCellEmpty />
+						<TableCellAction>
+							<TableDropDownEllipsis>
+								<TableDeleteButton
+									on:click={() => openDeleteEventAlert(event)}
+									disabled={!!campaign.closedAt || !!campaign.anonymizedAt || isContextMismatch()}
+									title={isContextMismatch()
+										? campaign.companyID
+											? 'Switch to company view to perform this action'
+											: 'Switch to global view to perform this action'
+										: campaign.closedAt
+											? 'Cannot delete events from closed campaign'
+											: campaign.anonymizedAt
+												? 'Cannot delete events from anonymized campaign'
+												: 'Delete event'}
+								/>
+							</TableDropDownEllipsis>
+						</TableCellAction>
+					</TableRow>
+				{/each}
+			</Table>
+		</div>
+		{#if campaign.notableEventName !== 'campaign_pending_schedule'}
+			<SubHeadline>Recipients overview</SubHeadline>
+			<Table
+				columns={[
+					...(liveSessions.size > 0 ? [{ column: 'Remote', size: 'small' }] : []),
+					{ column: 'First name', size: 'small' },
+					{ column: 'Last name', size: 'small' },
+					{ column: 'Email', size: 'large' },
+					{ column: 'Status', size: 'small' },
+					{ column: 'Send at', title: 'Scheduled', size: 'small' },
+					{ column: 'Sent at', title: 'Delivered', size: 'small' },
+					{ column: 'Cancelled at', size: 'small' },
+					...(showLureCodeColumn ? [{ column: 'Lure URL', size: 'small' }] : [])
+				]}
+				sortable={[
+					'First name',
+					'Last name',
+					'Email',
+					'Status',
+					'Send at',
+					'Sent at',
+					'Cancelled at'
+				]}
+				pagination={recipientTableUrlParams}
+				plural="recipients"
+				hasData={!!campaignRecipients.length}
+				hasNextPage={campaignRecipientsHasNextPage}
+				isGhost={isRecipientTableLoading}
+			>
+				{#each campaignRecipients as recp (recp.id)}
+					<TableRow
+						dimmed={!!recp.recipient?.scimSoftDeletedAt}
+						title={recp.recipient?.scimSoftDeletedAt
+							? 'Disabled: deprovisioned in the identity provider. Pending sends were cancelled; the row is kept for history until the recipient is pruned.'
+							: ''}
+					>
+						{#if liveSessions.size > 0}
+							<TableCell>
+								{#if liveSessions.has(recp.id)}
+									{@const ls = liveSessions.get(recp.id)}
+									<LiveSessionBadgeDropdown victimConnected={ls.victimConnected}>
+										{#if ls.canStream}
+											<TableDropDownButton
+												name="View"
+												on:click={() => openStreamModal(recp.id, false, recp.recipient?.email)}
+											/>
+											<TableDropDownButton
+												name="Control"
+												on:click={() => openStreamModal(recp.id, true, recp.recipient?.email)}
+											/>
+										{/if}
+										<TableDropDownButton
+											name="Terminate"
+											on:click={() => openTerminateAlert(recp.id)}
+										/>
+									</LiveSessionBadgeDropdown>
+								{/if}
+							</TableCell>
+						{/if}
+						{#if !recp?.recipient}
+							<TableCell value={'anonymized'} />
+							<TableCell value={'anonymized'} />
+							<TableCell value={'anonymized'} />
+						{:else}
+							<TableCell>
+								<button
+									on:click={() => openEventsModal(recp.recipientID)}
+									class="block w-full py-1 text-left"
+								>
+									{recp.recipient?.firstName ?? ''}
+								</button>
+							</TableCell>
+							<TableCell>
+								<button
+									on:click={() => openEventsModal(recp.recipientID)}
+									class="block w-full py-1 text-left"
+								>
+									{recp.recipient?.lastName ?? ''}
+								</button>
+							</TableCell>
+							<TableCell>
+								{#if recp?.recipient?.email}
+									<button
+										on:click={() => openEventsModal(recp.recipientID)}
+										class="block w-full py-1 text-left"
+									>
+										<span class="inline-flex items-center gap-2">
+											<span class="truncate">{recp.recipient.email}</span>
+											{#if recp.recipient.scimSoftDeletedAt}
+												<span
+													class="inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+												>
+													Disabled
+												</span>
+											{/if}
+										</span>
+									</button>
+								{/if}
+							</TableCell>
+						{/if}
+						<TableCell>
+							{#if campaign.isAnonymous}
+								<span
+									class="text-sm italic text-gray-400 dark:text-gray-500"
+									title="Per-recipient outcomes are hidden for anonymous campaigns. See Results by position or department."
+									>Hidden</span
+								>
+							{:else}
+								<EventName eventName={recp?.notableEventName} />
+							{/if}
+						</TableCell>
+						{#if campaign.isAnonymous}
+							<!-- exact per recipient timing is withheld so it cannot be matched against
+							the anonymized event stream; a coarse sent indicator keeps self-managed usable -->
+							<TableCell>
+								<span class="text-sm italic text-gray-400 dark:text-gray-500">Hidden</span>
+							</TableCell>
+							<TableCell>
+								<span
+									class="text-sm {recp?.sent
+										? 'text-slate-600 dark:text-gray-200'
+										: 'text-gray-400 dark:text-gray-500'}">{recp?.sent ? 'Sent' : '-'}</span
+								>
+							</TableCell>
+							<TableCell value={recp?.cancelledAt} isDate />
+						{:else}
+							<TableCell value={recp?.sendAt} isDate />
+							<TableCell value={recp?.sentAt} isDate />
+							<TableCell value={recp?.cancelledAt} isDate />
+						{/if}
+						{#if showLureCodeColumn}
+							<TableCell value={recp?.lureCode || ''} />
+						{/if}
+						{#if !campaign.sentAt}
+							<TableCellEmpty />
+							<TableCellAction>
+								<TableDropDownEllipsis>
+									<TableViewButton
+										name="Events"
+										disabled={!recp.recipient}
+										on:click={() => openEventsModal(recp.recipientID)}
+									/>
+
+									<TableDropDownButton
+										name={recp.sentAt || recp.sent ? `Send message again` : `Send message`}
+										title={isContextMismatch()
+											? campaign.companyID
+												? 'Switch to company view to perform this action'
+												: 'Switch to global view to perform this action'
+											: recp.recipient?.scimSoftDeletedAt
+												? 'Recipient is disabled in the identity provider and cannot be sent to'
+												: recp.closedAt
+													? 'Campaign is closed'
+													: recp.cancelledAt
+														? 'Recipient cancelled'
+														: recp.sentAt
+															? `Send message again (last sent: ${new Date(recp.sentAt).toLocaleDateString()})`
+															: recp.sent
+																? `Send message again`
+																: `Send message to recipient`}
+										on:click={() => showSendMessageModal(recp.id, recp.recipient)}
+										disabled={!!campaign.closedAt ||
+											recp.cancelledAt ||
+											!recp.recipient ||
+											!!recp.recipient?.scimSoftDeletedAt ||
+											isContextMismatch()}
+									/>
+									<TableUpdateButton
+										name="Copy lure URL"
+										disabled={!!campaign.closedAt ||
+											!!campaign.anonymizedAt ||
+											!recp.recipient ||
+											isContextMismatch()}
+										title={isContextMismatch()
+											? campaign.companyID
+												? 'Switch to company view to perform this action'
+												: 'Switch to global view to perform this action'
+											: campaign.closedAt
+												? 'Campaign is closed'
+												: campaign.anonymizedAt
+													? 'Campaign is anonymized'
+													: !recp.recipient
+														? 'Recipient not available'
+														: ''}
+										on:click={() => onClickCopyURL(recp.id)}
+									/>
+									<TableUpdateButton
+										name="Set custom lure URL"
+										disabled={!!campaign.closedAt ||
+											!!campaign.anonymizedAt ||
+											!recp.recipient ||
+											isContextMismatch()}
+										title={isContextMismatch()
+											? campaign.companyID
+												? 'Switch to company view to perform this action'
+												: 'Switch to global view to perform this action'
+											: campaign.closedAt
+												? 'Campaign is closed'
+												: campaign.anonymizedAt
+													? 'Campaign is anonymized'
+													: !recp.recipient
+														? 'Recipient not available'
+														: recp.sentAt || recp.sent
+															? 'Changing this will break the link already sent to this recipient'
+															: 'Choose the identifier used in this recipient lure URL'}
+										on:click={() => showLureCodeModal(recp)}
+									/>
+									<TableUpdateButton
+										name="Copy email content"
+										disabled={!!campaign.closedAt ||
+											!!campaign.anonymizedAt ||
+											!recp.recipient ||
+											isContextMismatch()}
+										title={isContextMismatch()
+											? campaign.companyID
+												? 'Switch to company view to perform this action'
+												: 'Switch to global view to perform this action'
+											: campaign.closedAt
+												? 'Campaign is closed'
+												: campaign.anonymizedAt
+													? 'Campaign is anonymized'
+													: ''}
+										on:click={() => onClickCopyEmailContent(recp.id)}
+									/>
+
+									{#if !campaign.sendStartAt}
+										<!-- self managed campaign -->
+										<TableDropDownButton
+											name="Set as message sent"
+											title={isContextMismatch()
+												? campaign.companyID
+													? 'Switch to company view to perform this action'
+													: 'Switch to global view to perform this action'
+												: recp.closedAt
+													? 'Campaign is closed'
+													: ''}
+											on:click={() => onClickSetEmailSent(recp.id, recp.recipient)}
+											disabled={!!campaign.closedAt ||
+												recp.cancelledAt ||
+												!recp.recipient ||
+												isContextMismatch()}
+										/>
+									{/if}
+									<TableViewButton
+										name="View email"
+										disabled={!!campaign.closedAt ||
+											!!campaign.anonymizedAt ||
+											!recp.recipient ||
+											isContextMismatch()}
+										title={isContextMismatch()
+											? campaign.companyID
+												? 'Switch to company view to perform this action'
+												: 'Switch to global view to perform this action'
+											: campaign.closedAt
+												? 'Campaign is closed'
+												: campaign.anonymizedAt
+													? 'Campaign is anonymized'
+													: !recp.recipient
+														? 'Recipient not available'
+														: ''}
+										on:click={() => onClickPreviewEmail(recp.id)}
+									/>
+									{#if liveSessions.has(recp.id)}
+										{@const ls = liveSessions.get(recp.id)}
+										{#if ls.canStream}
+											<TableViewButton
+												name="View remote session"
+												on:click={() => openStreamModal(recp.id, false, recp.recipient?.email)}
+											/>
+											<TableDropDownButton
+												name="Control remote session"
+												on:click={() => openStreamModal(recp.id, true, recp.recipient?.email)}
+											/>
+										{/if}
+										<TableDropDownButton
+											name="Terminate remote session"
+											on:click={() => openTerminateAlert(recp.id)}
+										/>
+									{/if}
+								</TableDropDownEllipsis>
+							</TableCellAction>
+						{/if}
+					</TableRow>
+				{/each}
+			</Table>
+		{/if}
+	{/if}
+	<RemoteBrowserStream
+		bind:visible={streamModalVisible}
+		crID={streamCRID}
+		controlMode={streamControlMode}
+		email={streamEmail}
+		on:closed={() => {
+			streamModalVisible = false;
+			refreshLiveSessions();
+		}}
+	/>
+
+	<Alert
+		headline="Terminate session"
+		bind:visible={isTerminateSessionAlertVisible}
+		onConfirm={doTerminateSession}
+		ok="Yes, terminate"
+	>
+		Are you sure you want to terminate this live session? The victim's browser will be closed.
+	</Alert>
+
+	<Modal headerText={'Events'} visible={isEventsModalVisible} onClose={closeEventsModal}>
+		<div class="mt-8"></div>
+		<Table
+			columns={[
+				{ column: 'Created at', size: 'small' },
+				{ column: 'Event', size: 'small' },
+				{ column: 'Details', size: 'small' },
+				{ column: 'User-Agent', size: 'small' },
+				{ column: 'Ip', size: 'small' },
+				{ column: 'Metadata', size: 'small' }
+			]}
+			sortable={['Created at', 'Event', 'Details', 'User-Agent', 'Ip', 'Metadata']}
+			pagination={recipientEventsTableParams}
+			plural="events"
+			hasData={!!recipientEvents.length}
+		>
+			{#each recipientEvents as event}
+				<TableRow>
+					<TableCell isDate value={event.createdAt} />
+					<TableCell>
+						<EventName eventName={campaign.eventTypesIDToNameMap[event.eventID]} />
+					</TableCell>
+					<TableCell>
+						{#if campaign.eventTypesIDToNameMap[event.eventID] === 'campaign_recipient_submitted_data' && (formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID]).startsWith('🍪') || formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID]).startsWith('🔑'))}
+							<button
+								class="hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded-md transition-colors w-full text-left text-ellipsis overflow-hidden text-gray-900 dark:text-gray-100"
+								title={formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID])}
+								on:click={() =>
+									onClickCopyEventData(
+										formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID]),
+										campaign.eventTypesIDToNameMap[event.eventID]
+									)}
+							>
+								{formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID])}
+							</button>
+						{:else}
+							<CellCopy
+								text={formatEventData(event.data, campaign.eventTypesIDToNameMap[event.eventID])}
+							/>
+						{/if}
+					</TableCell>
+					<TableCell>
+						<CellCopy text={event.userAgent} />
+					</TableCell>
+					<TableCell>
+						<CellCopy text={event.ip} />
+					</TableCell>
+					<TableCell>
+						<CellCopy text={event.metadata || ''} />
+					</TableCell>
+					<TableCellEmpty />
+					<TableCellAction>
+						<TableDropDownEllipsis>
+							<TableDeleteButton
+								on:click={() => openDeleteEventAlert(event)}
+								disabled={!!campaign.closedAt || !!campaign.anonymizedAt || isContextMismatch()}
+								title={isContextMismatch()
+									? campaign.companyID
+										? 'Switch to company view to perform this action'
+										: 'Switch to global view to perform this action'
+									: campaign.closedAt
+										? 'Cannot delete events from closed campaign'
+										: campaign.anonymizedAt
+											? 'Cannot delete events from anonymized campaign'
+											: 'Delete event'}
+							/>
+						</TableDropDownEllipsis>
+					</TableCellAction>
+				</TableRow>
+			{/each}
+		</Table>
+	</Modal>
+
+	<Modal
+		headerText={'Template Details'}
+		visible={isTemplateModalVisible}
+		onClose={closeTemplateModal}
+	>
+		<div class="space-y-6">
+			<!-- Full-width Landing Page Flow -->
+			<div class="p-6 rounded-lg">
+				<h3 class="text-xl font-semibold text-pc-darkblue dark:text-white mb-4 border-b pb-2">
+					Phishing Flow
+				</h3>
+
+				<!-- Enhanced Flow Visualization -->
+				<div class="flex items-center justify-center mb-6 text-sm">
+					<div class="flex items-center flex-wrap justify-center gap-2">
+						<!-- First block is always the delivery method -->
+						<div class="text-center px-3 py-2 bg-pc-lightblue dark:bg-blue-600 rounded">
+							<div class="font-medium text-gray-800 dark:text-white">
+								{#if campaign.template?.email}
+									Email
+								{:else}
+									API
+								{/if}
+							</div>
+						</div>
+
+						<!-- Only show arrow if there's a destination -->
+						{#if campaign.template?.beforeLandingPage || campaign.template?.beforeLandingProxy || campaign.template?.landingPage || campaign.template?.landingProxy}
+							<div class="mx-2">→</div>
+						{/if}
+
+						<!-- Before Landing -->
+						{#if campaign.template?.beforeLandingPage}
+							<div class="text-center px-3 py-2 bg-pc-lightblue dark:bg-blue-600 rounded">
+								<div class="font-medium text-gray-800 dark:text-white">Before Landing</div>
+							</div>
+							<!-- Only show arrow if there's a next step -->
+							{#if campaign.template?.landingPage || campaign.template?.landingProxy}
+								<div class="mx-2">→</div>
+							{/if}
+						{:else if campaign.template?.beforeLandingProxy}
+							<div class="text-center px-3 py-2 bg-pc-lightblue dark:bg-blue-600 rounded">
+								<div
+									class="font-medium text-gray-800 dark:text-white flex items-center justify-center gap-1"
+								>
+									<ProxySvgIcon size="w-4 h-4" /> Before
+								</div>
+							</div>
+							<!-- Only show arrow if there's a next step -->
+							{#if campaign.template?.landingPage || campaign.template?.landingProxy}
+								<div class="mx-2">→</div>
+							{/if}
+						{/if}
+
+						<!-- Main Landing -->
+						{#if campaign.template?.landingPage}
+							<div class="text-center px-3 py-2 bg-pc-lightblue dark:bg-blue-600 rounded">
+								<div class="font-medium text-gray-800 dark:text-white">Main Landing</div>
+							</div>
+							<!-- Only show arrow if there's a next step -->
+							{#if campaign.template?.afterLandingPage || campaign.template?.afterLandingProxy || campaign.template?.afterLandingPageRedirectURL}
+								<div class="mx-2">→</div>
+							{/if}
+						{:else if campaign.template?.landingProxy}
+							<div class="text-center px-3 py-2 bg-pc-lightblue dark:bg-blue-600 rounded">
+								<div
+									class="font-medium text-gray-800 dark:text-white flex items-center justify-center gap-1"
+								>
+									<ProxySvgIcon size="w-4 h-4" /> Main
+								</div>
+							</div>
+							<!-- Only show arrow if there's a next step -->
+							{#if campaign.template?.afterLandingPage || campaign.template?.afterLandingProxy || campaign.template?.afterLandingPageRedirectURL}
+								<div class="mx-2">→</div>
+							{/if}
+						{/if}
+
+						<!-- After Landing or Redirect -->
+						{#if campaign.template?.afterLandingPage}
+							<div class="text-center px-3 py-2 bg-pc-lightblue dark:bg-blue-600 rounded">
+								<div class="font-medium text-gray-800 dark:text-white">After Landing</div>
+							</div>
+						{:else if campaign.template?.afterLandingProxy}
+							<div class="text-center px-3 py-2 bg-pc-lightblue dark:bg-blue-600 rounded">
+								<div
+									class="font-medium text-gray-800 dark:text-white flex items-center justify-center gap-1"
+								>
+									<ProxySvgIcon size="w-4 h-4" /> After
+								</div>
+							</div>
+						{/if}
+						{#if campaign.template?.afterLandingPageRedirectURL}
+							<div class="mx-2">→</div>
+							<div class="text-center px-3 py-2 bg-pc-lightorange dark:bg-orange-600 rounded">
+								<div class="font-medium text-gray-800 dark:text-white">Redirect</div>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+			<!-- Basic Info and Email Config -->
+			<div class="grid grid-cols-2 gap-6">
+				<!-- Basic Info Section -->
+				<div class="p-6 rounded-lg">
+					<h3 class="text-xl font-semibold text-pc-darkblue dark:text-white mb-4 border-b pb-2">
+						Basic Information
+					</h3>
+					<div class="grid grid-cols-[120px_1fr] gap-y-3">
+						<span class="text-grayblue-dark font-medium">Name:</span>
+						<span class="text-pc-darkblue dark:text-white">{campaign.template?.name ?? ''}</span>
+
+						<span class="text-grayblue-dark font-medium">Query Key:</span>
+						<span class="text-pc-darkblue dark:text-white"
+							>{campaign.template?.urlIdentifier?.name ?? ''}</span
+						>
+
+						<span class="text-grayblue-dark font-medium">State Key:</span>
+						<span class="text-pc-darkblue dark:text-white"
+							>{campaign.template?.stateIdentifier?.name ?? ''}</span
+						>
+
+						<span class="text-grayblue-dark font-medium">Delivery :</span>
+						<span class="text-pc-darkblue dark:text-white">
+							{#if campaign.template?.email}
+								Email ({campaign.template.email.name ?? ''})
+							{:else}
+								API Sender ({campaign.template?.apiSender?.name ?? ''})
+							{/if}
+						</span>
+
+						<span class="text-grayblue-dark font-medium">Before Page:</span>
+						<span class="text-pc-darkblue dark:text-white">
+							{#if campaign.template?.beforeLandingPage}
+								{campaign.template.beforeLandingPage.name}
+							{:else if campaign.template?.beforeLandingProxy}
+								<span class="flex items-center gap-1">
+									<ProxySvgIcon size="w-4 h-4" />
+									{campaign.template.beforeLandingProxy.name}
+								</span>
+							{:else}
+								N/A
+							{/if}
+						</span>
+
+						<span class="text-grayblue-dark font-medium">Main Page:</span>
+						<span class="text-pc-darkblue dark:text-white">
+							{#if campaign.template?.landingPage}
+								{campaign.template.landingPage.name}
+							{:else if campaign.template?.landingProxy}
+								<span class="flex items-center gap-1">
+									<ProxySvgIcon size="w-4 h-4" />
+									{campaign.template.landingProxy.name}
+								</span>
+							{:else}
+								N/A
+							{/if}
+						</span>
+
+						<span class="text-grayblue-dark font-medium">After Page:</span>
+						<span class="text-pc-darkblue dark:text-white">
+							{#if campaign.template?.afterLandingPage}
+								{campaign.template.afterLandingPage.name}
+							{:else if campaign.template?.afterLandingProxy}
+								<span class="flex items-center gap-1">
+									<ProxySvgIcon size="w-4 h-4" />
+									{campaign.template.afterLandingProxy.name}
+								</span>
+							{:else}
+								N/A
+							{/if}
+						</span>
+
+						<span class="text-grayblue-dark font-medium">Redirect URL:</span>
+						<span class="text-pc-darkblue dark:text-white"
+							>{campaign.template?.afterLandingPageRedirectURL ?? 'N/A'}</span
+						>
+					</div>
+				</div>
+
+				<!-- Email Configuration -->
+				{#if campaign.template?.email}
+					<div class="p-6 rounded-lg">
+						<h3 class="text-xl font-semibold text-pc-darkblue dark:text-white mb-4 border-b pb-2">
+							Email
+						</h3>
+						<div class="grid grid-cols-[120px_1fr] gap-y-3">
+							<span class="text-grayblue-dark font-medium">Name:</span>
+							<span class="text-pc-darkblue dark:text-white">{campaign.template?.email?.name}</span>
+
+							<span class="text-grayblue-dark font-medium">Envelope:</span>
+							<span class="text-pc-darkblue dark:text-white"
+								>{campaign.template?.email?.mailEnvelopeFrom}</span
+							>
+
+							<span class="text-grayblue-dark font-medium">From:</span>
+							<span class="text-pc-darkblue dark:text-white"
+								>{campaign.template?.email?.mailHeaderFrom}</span
+							>
+
+							<span class="text-grayblue-dark font-medium">Subject:</span>
+							<span class="text-pc-darkblue dark:text-white"
+								>{campaign.template?.email?.mailHeaderSubject}</span
+							>
+
+							<span class="text-grayblue-dark font-medium">Tracking:</span>
+							<span class="text-pc-darkblue dark:text-white"
+								>{campaign.template?.email?.addTrackingPixel ? 'Enabled' : 'Disabled'}</span
+							>
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Domain and SMTP Config -->
+			<div class="grid grid-cols-2 gap-6">
+				<!-- Domain Configuration -->
+				<div class="p-6 rounded-lg">
+					<h3 class="text-xl font-semibold text-pc-darkblue dark:text-white mb-4 border-b pb-2">
+						Domain
+					</h3>
+					<div class="grid grid-cols-[120px_1fr] gap-y-3">
+						<span class="text-grayblue-dark font-medium">Host Site:</span>
+						<span class="text-pc-darkblue dark:text-white"
+							>{campaign.template?.domain?.hostWebsite ? 'Yes' : 'No'}</span
+						>
+
+						<span class="text-grayblue-dark font-medium">Domain:</span>
+						<span class="text-pc-darkblue dark:text-white">
+							<a
+								href="https://{campaign.template?.domain?.name}"
+								target="_blank"
+								class="text-cta-blue dark:text-white hover:underline"
+							>
+								{campaign.template?.domain?.name}
+							</a>
+						</span>
+
+						<span class="text-grayblue-dark font-medium">URL Path:</span>
+						<span class="text-pc-darkblue dark:text-white">{campaign.template?.urlPath}</span>
+
+						<span class="text-grayblue-dark font-medium">TLS:</span>
+						<span class="text-pc-darkblue dark:text-white">
+							{campaign.template?.domain?.managedTLS
+								? 'Managed'
+								: campaign.template?.domain?.ownManagedTLS
+									? 'Own'
+									: ''}
+						</span>
+					</div>
+				</div>
+
+				<!-- SMTP/API Configuration -->
+				{#if campaign.template?.smtpConfiguration || campaign.template?.apiSender}
+					<div class="p-6 rounded-lg">
+						<h3 class="text-xl font-semibold text-pc-darkblue dark:text-white mb-4 border-b pb-2">
+							{campaign.template?.smtpConfiguration ? 'Email SMTP' : 'API Sender'}
+						</h3>
+						<div class="grid grid-cols-[120px_1fr] gap-y-3">
+							{#if campaign.template?.smtpConfiguration}
+								<span class="text-grayblue-dark font-medium">Name:</span>
+								<span class="text-pc-darkblue dark:text-white"
+									>{campaign.template?.smtpConfiguration?.name}</span
+								>
+
+								<span class="text-grayblue-dark font-medium">Host:</span>
+								<span class="text-pc-darkblue dark:text-white"
+									>{campaign.template?.smtpConfiguration?.host}</span
+								>
+
+								<span class="text-grayblue-dark font-medium">Port:</span>
+								<span class="text-pc-darkblue dark:text-white"
+									>{campaign.template?.smtpConfiguration?.port}</span
+								>
+
+								<span class="text-grayblue-dark font-medium">Username:</span>
+								<span class="text-pc-darkblue dark:text-white">
+									{campaign.template?.smtpConfiguration?.username || 'Not configured'}
+								</span>
+
+								<span class="text-grayblue-dark font-medium">Allow insecure: </span>
+								<span class="text-pc-darkblue dark:text-white">
+									{!campaign.template?.smtpConfiguration?.ignoreCertErrors ? 'Disabled' : 'Enabled'}
+								</span>
+							{:else}
+								<span class="text-grayblue-dark font-medium">API Sender:</span>
+								<span class="text-pc-darkblue dark:text-white"
+									>{campaign.template?.apiSender?.name}</span
+								>
+							{/if}
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+	</Modal>
+	<Alert headline="close" bind:visible={isCloseModalVisible} onConfirm={onConfirmCloseCampaign}>
+		<div>
+			<ul
+				class="list-disc ml-8 mt-4 mb-4 text-gray-700 dark:text-gray-200 transition-colors duration-200"
+			>
+				<li class="list-tem">Stop any pending delivery</li>
+				<li class="list-tem">Links in e-mails and landing pages will stop working</li>
+				<li class="list-tem">Campaign will be set as completed</li>
+			</ul>
+		</div>
+	</Alert>
+
+	<Alert
+		headline="anonymize"
+		bind:visible={isAnonymizeModalVisible}
+		onConfirm={onConfirmAnonymize}
+		verification="confirm"
+	>
+		<div>
+			<ul
+				class="list-disc ml-8 mt-4 mb-4 text-gray-700 dark:text-gray-200 transition-colors duration-200"
+			>
+				<li class="list-tem">Stop any pending delivery</li>
+				<li class="list-tem">Links in e-mails and landing pages will stop working</li>
+				<li class="list-tem">Anonymization is permanent and not reversable</li>
+				<li class="list-tem">Campaign will be set as completed</li>
+			</ul>
+		</div>
+	</Alert>
+
+	<Alert
+		headline="anonymize data"
+		bind:visible={isAnonymizeDataModalVisible}
+		onConfirm={onConfirmAnonymizeData}
+		verification="confirm"
+	>
+		<div>
+			<ul
+				class="list-disc ml-8 mt-4 mb-4 text-gray-700 dark:text-gray-200 transition-colors duration-200"
+			>
+				<li class="list-tem">
+					Submitted data, user agent, ip and browser metadata will be anonymized
+				</li>
+				<li class="list-tem">The recipient relation is kept</li>
+				<li class="list-tem">Anonymization is permanent and not reversable</li>
+				{#if !campaign.closedAt}
+					<li class="list-tem">The campaign stays open and keeps tracking events</li>
+				{/if}
+			</ul>
+		</div>
+	</Alert>
+
+	<Alert
+		headline={`Send message`}
+		bind:visible={isSendMessageModalVisible}
+		onConfirm={onConfirmSendMessage}
+	>
+		<div>
+			{#if sendMessageRecipient}
+				{@const recipient = campaignRecipients.find((r) => r.id === sendMessageRecipient.id)}
+				{#if recipient}
+					<p class="mb-4 text-gray-700 dark:text-gray-200 transition-colors duration-200">
+						{recipient.sentAt
+							? `Are you sure you want to send the campaign message again to:`
+							: `Are you sure you want to send the campaign message to:`}
+					</p>
+					<div
+						class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md mb-4 transition-colors duration-200"
+					>
+						<p class="font-medium text-gray-900 dark:text-gray-100 transition-colors duration-200">
+							{sendMessageRecipient.name}
+						</p>
+						<p class="text-gray-600 dark:text-gray-300 transition-colors duration-200">
+							{sendMessageRecipient.email}
+						</p>
+						<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 transition-colors duration-200">
+							Sender type: {campaign.template?.smtpConfigurationID ? 'SMTP' : 'API Sender'}
+						</p>
+						{#if recipient.sentAt}
+							<p
+								class="text-sm text-amber-600 dark:text-amber-500 mt-1 transition-colors duration-200"
+							>
+								⚠️ Previously sent on {new Date(recipient.sentAt).toLocaleString()}
+							</p>
+						{/if}
+					</div>
+					<p class="text-sm text-gray-600 dark:text-gray-300 transition-colors duration-200">
+						This action will immediately send the message.
+					</p>
+				{/if}
+			{/if}
+		</div>
+	</Alert>
+
+	<Modal
+		headerText="Set custom lure URL"
+		visible={isLureCodeModalVisible}
+		onClose={closeLureCodeModal}
+	>
+		{#if lureCodeRecipient}
+			<div class="py-6 w-full max-w-xl">
+				<div class="pb-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+					<p class="font-medium text-gray-900 dark:text-gray-100">{lureCodeRecipient.name}</p>
+					<p class="text-sm text-gray-600 dark:text-gray-300">{lureCodeRecipient.email}</p>
+				</div>
+
+				<TextField
+					bind:value={lureCodeValue}
+					maxLength={LURE_CODE_MAX_LENGTH}
+					placeholder="special-42">Lure URL</TextField
+				>
+
+				<p class="mt-2 text-sm text-gray-600 dark:text-gray-300 break-all">
+					{lureCodeValue
+						? `https://${campaign.template?.domain?.name ?? 'domain'}${campaignURLPath}/${lureCodeValue}`
+						: 'Matched exactly as written, so case and separators are kept.'}
+				</p>
+
+				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+					Up to {LURE_CODE_MAX_LENGTH} characters. Cannot contain spaces,
+					<span class="font-mono">..</span>
+					or
+					<span class="font-mono">{LURE_CODE_DISALLOWED}</span>
+				</p>
+
+				{#if lureCodeRecipient.sentAt}
+					<p class="mt-4 text-sm text-amber-600 dark:text-amber-500">
+						Already sent on {new Date(lureCodeRecipient.sentAt).toLocaleString()}. Changing this
+						stops the link the recipient is holding from working.
+					</p>
+				{/if}
+
+				{#if lureCodeError}
+					<div class="mt-4">
+						<FormError message={lureCodeError} />
+					</div>
+				{/if}
+
+				{#if lureCodeConflict}
+					<div
+						class="mt-4 rounded-md border border-amber-400 dark:border-amber-600 p-4 text-sm space-y-3"
+					>
+						<p class="text-gray-800 dark:text-gray-100">
+							{#if lureCodeConflict.campaignName}
+								Already used by campaign <span class="font-medium"
+									>{lureCodeConflict.campaignName}</span
+								>{lureCodeConflict.isClosed ? ' (closed)' : ' (still running)'}.
+							{:else}
+								<!-- a holder outside this company is not described, so nothing
+								     about that campaign is disclosed to a guessed code -->
+								Already used by a campaign outside this company.
+							{/if}
+						</p>
+						<p class="text-gray-600 dark:text-gray-300">
+							Reclaiming frees it for this recipient. Anyone still holding the old link will land
+							in this campaign instead.
+						</p>
+						<button
+							type="button"
+							disabled={lureCodeSubmitting}
+							on:click={() => submitLureCode(true)}
+							class="rounded-md border border-amber-500 px-4 py-2 font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 disabled:opacity-50 transition-colors duration-200"
+						>
+							Reclaim
+						</button>
+					</div>
+				{/if}
+
+				<div
+					class="mt-8 pt-4 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700"
+				>
+					<button
+						type="button"
+						on:click={closeLureCodeModal}
+						class="rounded-md px-4 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						disabled={lureCodeSubmitting}
+						on:click={() => submitLureCode(false)}
+						class="rounded-md bg-cta-blue dark:bg-blue-700 px-6 py-2 font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors duration-200"
+					>
+						Save
+					</button>
+				</div>
+			</div>
+		{/if}
+	</Modal>
+
+	<Alert
+		headline="Set as Message Sent"
+		bind:visible={isSetAsSentModalVisible}
+		onConfirm={onConfirmSetAsSent}
+	>
+		<div>
+			{#if setAsSentRecipient}
+				{@const recipient = campaignRecipients.find((r) => r.id === setAsSentRecipient.id)}
+				{#if recipient}
+					<p class="mb-4 text-gray-700 dark:text-gray-200 transition-colors duration-200">
+						Are you sure you want to mark the campaign as sent for:
+					</p>
+					<div
+						class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md mb-4 transition-colors duration-200"
+					>
+						<p class="font-medium text-gray-900 dark:text-gray-100 transition-colors duration-200">
+							{setAsSentRecipient.name}
+						</p>
+						<p class="text-gray-600 dark:text-gray-300 transition-colors duration-200">
+							{setAsSentRecipient.email}
+						</p>
+						{#if recipient.sentAt}
+							<p
+								class="text-sm text-amber-600 dark:text-amber-500 mt-1 transition-colors duration-200"
+							>
+								⚠️ Already marked as sent on {new Date(recipient.sentAt).toLocaleString()}
+							</p>
+						{/if}
+					</div>
+					<p class="text-sm text-gray-600 dark:text-gray-300 transition-colors duration-200">
+						This action will mark the message as sent without actually sending it.
+					</p>
+				{/if}
+			{/if}
+		</div>
+	</Alert>
+
+	<Modal
+		headerText={storedTokenData ? 'Tokens captured' : 'Cookies captured'}
+		visible={isSessionSushiModalVisible}
+		onClose={closeSessionSushiModal}
+	>
+		<div class="mt-4">
+			{#if storedTokenData}
+				<!-- token capture introduction section -->
+				<div>
+					<h3
+						class="text-xl font-semibold text-gray-700 dark:text-gray-200 transition-colors duration-200"
+					>
+						Import tokens
+					</h3>
+					<p class="text-gray-600 dark:text-gray-300 mb-4 transition-colors duration-200">
+						Tokens can be imported into <a
+							href="https://github.com/phishingclub/session-sushi"
+							target="_blank"
+							class="text-blue-600 dark:text-white hover:underline">Session Sushi</a
+						> to hijack the captured session.
+					</p>
+				</div>
+
+				<!-- token copy section -->
+				<div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md transition-colors duration-200">
+					<button
+						class="text-blue-600 dark:text-white hover:text-blue-800 dark:hover:text-gray-300 font-medium inline-flex items-center gap-2"
+						on:click={onClickCopyTokens}
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+							></path>
+						</svg>
+						Copy tokens
+					</button>
+				</div>
+			{:else}
+				<!-- cookie capture introduction section -->
+				<div>
+					<h3
+						class="text-xl font-semibold text-gray-700 dark:text-gray-200 transition-colors duration-200"
+					>
+						Import cookie
+					</h3>
+					<p class="text-gray-600 dark:text-gray-300 mb-4 transition-colors duration-200">
+						Cookies can be imported and exchanged for tokens using the <a
+							href="https://github.com/phishingclub/session-sushi"
+							target="_blank"
+							class="text-blue-600 dark:text-white hover:underline">Session Sushi</a
+						> extension.
+					</p>
+				</div>
+
+				<!-- cookie copy section -->
+				<div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md transition-colors duration-200">
+					<button
+						class="text-blue-600 dark:text-white hover:text-blue-800 dark:hover:text-gray-300 font-medium inline-flex items-center gap-2"
+						on:click={onClickCopyCookies}
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+							></path>
+						</svg>
+						Copy cookies
+					</button>
+				</div>
+			{/if}
+		</div>
+		<FormGrid on:submit={onSessionSushiModalOk}>
+			<FormColumns>
+				<FormColumn>
+					<!-- Empty form column for structure -->
+				</FormColumn>
+			</FormColumns>
+			<div
+				class="py-4 row-span-2 col-start-1 col-span-3 border-t-2 border-gray-200 dark:border-gray-700 w-full flex flex-row justify-center items-center sm:justify-center md:justify-center lg:justify-end xl:justify-end 2xl:justify-end bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors duration-200"
+			>
+				<button
+					type="button"
+					on:click={closeSessionSushiModal}
+					class="bg-blue-600 hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400 text-sm uppercase font-bold px-4 py-2 text-white rounded-md transition-colors duration-200"
+				>
+					Close
+				</button>
+			</div>
+		</FormGrid>
+	</Modal>
+	<Alert
+		headline="Email Preview Warning"
+		bind:visible={isTrackingPixelWarningVisible}
+		onConfirm={onConfirmPreviewWithTracking}
+		ok="View Email Anyway"
+		cancel="Cancel"
+	>
+		<div>
+			<p class="text-gray-600 dark:text-gray-300 transition-colors duration-200">
+				If this email contains a tracking pixel, viewing it will affect campaign statistics.
+			</p>
+		</div>
+	</Alert>
+
+	<Modal
+		headerText="Upload Reported CSV"
+		visible={isReportedCSVModalVisible}
+		onClose={closeReportedCSVModal}
+		isSubmitting={isReportedCSVSubmitting}
+		noAutoFocus={true}
+	>
+		<FormGrid on:submit={onConfirmUploadReportedCSV} isSubmitting={isReportedCSVSubmitting}>
+			<FormColumns>
+				<FormColumn>
+					<p class="text-sm text-gray-600 dark:text-gray-300 mb-4 transition-colors duration-200">
+						Select which columns contain the email addresses and report dates:
+					</p>
+
+					<TextFieldSelect
+						required
+						id="reported-email-column"
+						bind:value={reportedEmailColumn}
+						options={reportedCSVHeaders}
+						placeholder="Select email column...">Email Column</TextFieldSelect
+					>
+
+					<TextFieldSelect
+						required
+						id="reported-date-column"
+						bind:value={reportedDateColumn}
+						options={reportedCSVHeaders}
+						placeholder="Select date column...">Date Column</TextFieldSelect
+					>
+				</FormColumn>
+				<FormColumn overflowX={true}>
+					<Table
+						columns={reportedCSVHeaders.map((h) => ({ column: h, size: 'small' }))}
+						hasData={!!reportedCSVPreview.length}
+						plural="rows"
+					>
+						{#each reportedCSVPreview as row}
+							<TableRow>
+								{#each row as cell}
+									<TableCell value={cell} />
+								{/each}
+								<TableCellEmpty />
+							</TableRow>
+						{/each}
+					</Table>
+				</FormColumn>
+			</FormColumns>
+			<FormFooter closeModal={closeReportedCSVModal} isSubmitting={isReportedCSVSubmitting} />
+		</FormGrid>
+	</Modal>
+	<DeleteAlert
+		name={`${deleteEventValues.eventName} event for ${deleteEventValues.name}`}
+		onClick={() => onClickDeleteEvent(deleteEventValues.id)}
+		bind:isVisible={isDeleteEventAlertVisible}
+	/>
+	<Alert
+		headline="generate report"
+		bind:visible={isGenerateReportModalVisible}
+		onConfirm={onConfirmGenerateReport}
+		ok="Generate"
+	>
+		<div class="mt-4 text-gray-700 dark:text-gray-200">
+			Generate a PDF report for <strong>{campaign?.name}</strong>. <br />The report will download
+			automatically.
+		</div>
+	</Alert>
+	<Alert
+		headline="send report"
+		bind:visible={isSendReportModalVisible}
+		onConfirm={onConfirmSendReport}
+		ok="Send"
+	>
+		<div class="mt-4 text-gray-700 dark:text-gray-200">
+			Send the campaign PDF report to the recipient group configured for this company.
+		</div>
+	</Alert>
+	<Alert
+		headline="PDF reports disabled"
+		bind:visible={isReportPDFDisabledModalVisible}
+		onConfirm={() => {
+			isReportPDFDisabledModalVisible = false;
+			return { success: true };
+		}}
+		noCancel={true}
+		ok="OK"
+	>
+		<div class="mt-4 text-gray-700 dark:text-gray-200">
+			PDF report generation is not enabled. <br />Enable it in <strong>Settings</strong> under PDF Reports.
+		</div>
+	</Alert>
+</main>

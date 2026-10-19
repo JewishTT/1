@@ -315,9 +315,7 @@ export function dialReadiness(runtime: GlRuntimeRow): {
   if (runtime.state === "blocked") {
     return {
       ready: false,
-      reason:
-        runtime.blockers[0] ??
-        "the runtime is blocked; open Runtime to see what is missing",
+      reason: runtime.blockers[0] ?? "the runtime is blocked; open Runtime to see what is missing",
     };
   }
   return {

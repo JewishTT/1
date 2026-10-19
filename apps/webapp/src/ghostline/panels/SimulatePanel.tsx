@@ -92,9 +92,9 @@ export function SimulatePanel() {
       <Refusal refusal={refusal} testId="gl-sim-refusal" />
 
       <p className="panel-note">
-        Runs the donor&apos;s own <code>PlaybookRunner</code> over a scripted transcript.
-        Nothing is dialled and nothing is written to the ledger. One utterance per line, in
-        the order the target would say them.
+        Runs the donor&apos;s own <code>PlaybookRunner</code> over a scripted transcript. Nothing is
+        dialled and nothing is written to the ledger. One utterance per line, in the order the
+        target would say them.
       </p>
 
       <div className="ui-ci-col">
@@ -124,8 +124,8 @@ export function SimulatePanel() {
             data-testid="gl-sim-script"
           />
           <span className="ui-field-hint">
-            {utterances.length} utterance(s). Anything credential-shaped is redacted on the
-            way back out.
+            {utterances.length} utterance(s). Anything credential-shaped is redacted on the way back
+            out.
           </span>
         </span>
         <div>
@@ -155,7 +155,11 @@ export function SimulatePanel() {
               testId="gl-sim-no-capture"
             />
             {result.redactionKinds.length > 0 ? (
-              <Chip label={`redacted: ${result.redactionKinds.join(", ")}`} tone="gold" testId="gl-sim-kinds" />
+              <Chip
+                label={`redacted: ${result.redactionKinds.join(", ")}`}
+                tone="gold"
+                testId="gl-sim-kinds"
+              />
             ) : null}
           </div>
           {result.outcomeReason ? <p className="panel-note">{result.outcomeReason}</p> : null}
@@ -182,7 +186,9 @@ export function SimulatePanel() {
                     />
                   ) : null}
                   {step.matchedPattern ? <Chip label={step.matchedPattern} tone="accent" /> : null}
-                  {step.exited ? <Chip label="terminal" tone="danger" testId={`gl-sim-exit-${step.index}`} /> : null}
+                  {step.exited ? (
+                    <Chip label="terminal" tone="danger" testId={`gl-sim-exit-${step.index}`} />
+                  ) : null}
                 </div>
                 {step.nextLine ? <p className="ui-gl-trace-next">{step.nextLine}</p> : null}
               </li>
@@ -193,8 +199,8 @@ export function SimulatePanel() {
         </div>
       ) : (
         <Empty>
-          No run yet. {STAGE_LADDER.length} stages in the donor&apos;s taxonomy; a run shows
-          which of them this scenario actually reaches.
+          No run yet. {STAGE_LADDER.length} stages in the donor&apos;s taxonomy; a run shows which
+          of them this scenario actually reaches.
         </Empty>
       )}
     </GlShell>

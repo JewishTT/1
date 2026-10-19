@@ -1,0 +1,7191 @@
+package service
+
+import (
+	"bytes"
+	"context"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math/rand"
+	"net/url"
+	"os"
+	"path/filepath"
+
+	"slices"
+	"sort"
+	"strings"
+	"text/template"
+	"time"
+
+	go_errors "github.com/go-errors/errors"
+	"gopkg.in/yaml.v3"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/oapi-codegen/nullable"
+	"github.com/phishingclub/phishingclub/build"
+	"github.com/phishingclub/phishingclub/cache"
+	"github.com/phishingclub/phishingclub/data"
+	"github.com/phishingclub/phishingclub/database"
+	"github.com/phishingclub/phishingclub/errs"
+	"github.com/phishingclub/phishingclub/log"
+	"github.com/phishingclub/phishingclub/lure"
+	"github.com/phishingclub/phishingclub/model"
+	"github.com/phishingclub/phishingclub/remotebrowser"
+	"github.com/phishingclub/phishingclub/repository"
+	"github.com/phishingclub/phishingclub/script"
+	"github.com/phishingclub/phishingclub/utils"
+	"github.com/phishingclub/phishingclub/validate"
+	"github.com/phishingclub/phishingclub/vo"
+	"github.com/wneessen/go-mail"
+	"gorm.io/gorm"
+)
+
+// Campaign is the Campaign service
+type Campaign struct {
+	Common
+	LureCodeService               *LureCode
+	CampaignRepository            *repository.Campaign
+	CampaignRecipientRepository   *repository.CampaignRecipient
+	RecipientRepository           *repository.Recipient
+	RecipientGroupRepository      *repository.RecipientGroup
+	AllowDenyRepository           *repository.AllowDeny
+	WebhookRepository             *repository.Webhook
+	ScriptRepository              *repository.Script
+	ScriptDispatcher              *script.Dispatcher
+	CampaignTemplateService       *CampaignTemplate
+	TemplateService               *Template
+	DomainService                 *Domain
+	RecipientService              *Recipient
+	MailService                   *Email
+	APISenderService              *APISender
+	SMTPConfigService             *SMTPConfiguration
+	WebhookService                *Webhook
+	MicrosoftDeviceCodeRepository *repository.MicrosoftDeviceCode
+	AttachmentPath                string
+	RemoteBrowserService          *RemoteBrowser
+	ReportTemplateRepository      *repository.ReportTemplate
+	CompanyReportConfigRepository *repository.CompanyReportConfig
+	ReportSendLogRepository       *repository.ReportSendLog
+	OptionService                 *Option
+	RemoteBrowserExecPath         string
+	TrustedProxies                []string
+}
+
+// Create creates a new campaign
+func (c *Campaign) Create(
+	ctx context.Context,
+	session *model.Session,
+	campaign *model.Campaign,
+) (*uuid.UUID, error) {
+	ae := NewAuditEvent("Campaign.Create", session)
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return nil, errs.ErrAuthorizationFailed
+	}
+	if len(campaign.RecipientGroupIDs) == 0 {
+		return nil, validate.WrapErrorWithField(errors.New("no groups provided"), "Recipient Groups")
+	}
+
+	// handle backward compatibility: convert old single webhook to new array format
+	if campaign.WebhookID.IsSpecified() && !campaign.WebhookID.IsNull() {
+		webhookID := campaign.WebhookID.MustGet()
+		// set default values for old fields if not specified
+		if !campaign.WebhookIncludeData.IsSpecified() {
+			campaign.WebhookIncludeData.Set(model.WebhookDataLevelFull)
+		}
+		if !campaign.WebhookEvents.IsSpecified() {
+			campaign.WebhookEvents.Set(0)
+		}
+		// convert to new array format
+		webhookConfig := &model.CampaignWebhook{
+			WebhookID:          nullable.NewNullableWithValue(webhookID),
+			WebhookIncludeData: campaign.WebhookIncludeData,
+			WebhookEvents:      campaign.WebhookEvents,
+		}
+		campaign.Webhooks.Set([]*model.CampaignWebhook{webhookConfig})
+		// clear old fields
+		campaign.WebhookID.SetNull()
+	}
+
+	// validate new webhooks array
+	if campaign.Webhooks.IsSpecified() && !campaign.Webhooks.IsNull() {
+		webhooks := campaign.Webhooks.MustGet()
+		for _, wh := range webhooks {
+			if err := wh.Validate(); err != nil {
+				return nil, errs.Wrap(err)
+			}
+		}
+	}
+	// if the schedule type is scheduled, set the start time to start of day and end to the end of the last day
+	if campaign.ConstraintWeekDays.IsSpecified() && !campaign.ConstraintWeekDays.IsNull() {
+		if err := campaign.ValidateSendTimesSet(); err != nil {
+			return nil, errs.Wrap(err)
+		}
+		if err := c.updateSchedulesCampaignStartAndEndDates(campaign); err != nil {
+			return nil, errs.Wrap(err)
+		}
+	}
+	// late-schedule (indicated by a non-null schedule_at) is not compatible with self-managed campaigns
+	if campaign.ScheduleAt.IsSpecified() && !campaign.ScheduleAt.IsNull() {
+		if campaign.IsSelfManaged() {
+			return nil, validate.WrapErrorWithField(
+				errors.New("late scheduling is not available for self-managed campaigns"),
+				"scheduleAt",
+			)
+		}
+		// scheduleAt must be in the future
+		scheduleAt := campaign.ScheduleAt.MustGet()
+		if !scheduleAt.After(time.Now().UTC()) {
+			return nil, validate.WrapErrorWithField(
+				errors.New("schedule time must be in the future"),
+				"scheduleAt",
+			)
+		}
+		// send_start_at must be more than 24h after schedule_at
+		if campaign.SendStartAt.IsSpecified() && !campaign.SendStartAt.IsNull() {
+			sendStartAt := campaign.SendStartAt.MustGet()
+			if sendStartAt.Sub(scheduleAt) < 24*time.Hour {
+				return nil, validate.WrapErrorWithField(
+					errors.New("send start must be at least 24 hours after the schedule-at time"),
+					"scheduleAt",
+				)
+			}
+		}
+	}
+	// validate
+	if err := campaign.Validate(); err != nil {
+		return nil, errs.Wrap(err)
+	}
+	// check the template is usable
+	templateID := campaign.TemplateID.MustGet()
+	cTemplate, err := c.CampaignTemplateService.GetByID(
+		ctx,
+		session,
+		&templateID,
+		&repository.CampaignTemplateOption{
+			UsableOnly: true,
+		},
+	)
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+	if cTemplate == nil {
+		return nil, errors.New("attempted to create campaign with unusable template")
+	}
+	// the training nature is owned by the template, never the client. Set it from
+	// the template so the campaign row carries it from creation, before any
+	// schedule snapshot, and a crafted request cannot flip it.
+	isTrainingTemplate := false
+	if v, err := cTemplate.IsTraining.Get(); err == nil {
+		isTrainingTemplate = v
+	}
+	campaign.IsTraining = nullable.NewNullableWithValue(isTrainingTemplate)
+	// check uniqueness
+	var companyID *uuid.UUID
+	if cid, err := campaign.CompanyID.Get(); err == nil {
+		companyID = &cid
+	}
+	name := campaign.Name.MustGet()
+	isOK, err := repository.CheckNameIsUnique(
+		ctx,
+		c.CampaignRepository.DB,
+		"campaigns",
+		name.String(),
+		companyID,
+		nil,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to check campaign uniqueness", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	if !isOK {
+		c.Logger.Debugw("campaign name is already taken", "error", name.String())
+		return nil, validate.WrapErrorWithField(errors.New("is not unique"), "name")
+	}
+	// validate allow deny list selections
+	if err := c.validateAllowDenyIsSameTypeByIDs(ctx, campaign); err != nil {
+		return nil, errs.Wrap(err)
+	}
+	// check there is atleast one valid group
+	// and remove any empty groups
+	validGroups := []*uuid.UUID{}
+	for _, groupID := range campaign.RecipientGroupIDs.MustGet() {
+		count, err := c.RecipientGroupRepository.GetRecipientCount(ctx, groupID)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		if count > 0 {
+			validGroups = append(validGroups, groupID)
+		}
+	}
+	if len(validGroups) == 0 {
+		return nil, errs.NewValidationError(
+			errors.New("Selected groups have no recipients"),
+		)
+	}
+	campaign.RecipientGroupIDs.Set(validGroups)
+	// save
+	id, err := c.CampaignRepository.Insert(ctx, campaign)
+	if err != nil {
+		c.Logger.Errorw("failed to create campaign", "error", err)
+		return nil, errs.Wrap(err)
+	}
+
+	// save webhook configurations if present
+	if campaign.Webhooks.IsSpecified() && !campaign.Webhooks.IsNull() {
+		webhooks := campaign.Webhooks.MustGet()
+		if len(webhooks) > 0 {
+			err = c.CampaignRepository.AddWebhooks(ctx, id, webhooks)
+			if err != nil {
+				c.Logger.Errorw("failed to add webhooks to campaign", "error", err)
+				return nil, errs.Wrap(err)
+			}
+		}
+	}
+
+	// save script configurations if present
+	if campaign.Scripts.IsSpecified() && !campaign.Scripts.IsNull() {
+		scripts := campaign.Scripts.MustGet()
+		if len(scripts) > 0 {
+			// validate before AddScripts so a missing scriptID fails as a clean
+			// error instead of panicking on the MustGet inside the repository
+			for _, ca := range scripts {
+				if ca == nil {
+					return nil, errs.Wrap(errors.New("script entry cannot be null"))
+				}
+				if err := ca.Validate(); err != nil {
+					return nil, errs.Wrap(err)
+				}
+			}
+			err = c.CampaignRepository.AddScripts(ctx, id, scripts)
+			if err != nil {
+				c.Logger.Errorw("failed to add scripts to campaign", "error", err)
+				return nil, errs.Wrap(err)
+			}
+		}
+	}
+
+	createdCampaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		id,
+		&repository.CampaignOption{
+			WithRecipientGroups: true,
+			WithAllowDeny:       true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	if createdCampaign.ScheduleAt.IsSpecified() && !createdCampaign.ScheduleAt.IsNull() {
+		// Late-scheduling: persist jitter to the DB so the task runner can apply it
+		// when schedule() is called hours later. The in-memory copy on createdCampaign
+		// is set too so setMostNotableCampaignEvent's UpdateByID writes the columns.
+		createdCampaign.JitterMin = campaign.JitterMin
+		createdCampaign.JitterMax = campaign.JitterMax
+		err = c.setMostNotableCampaignEvent(ctx, createdCampaign, data.EVENT_CAMPAIGN_PENDING_SCHEDULE)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+	} else {
+		// Immediate scheduling: jitter lives in memory only for this call, never written to DB.
+		createdCampaign.JitterMin = campaign.JitterMin
+		createdCampaign.JitterMax = campaign.JitterMax
+		err = c.schedule(ctx, session, createdCampaign)
+		if err != nil {
+			c.Logger.Errorw("failed to schedule campaign", "error", err)
+			// TODO we should delete the campaign as it was not scheduled
+			return nil, errs.Wrap(err)
+		}
+	}
+	ae.Details["id"] = id.String()
+	c.AuditLogAuthorized(ae)
+	return id, nil
+}
+
+// schedule campaign schedules the campaign
+// this is a service method that does not perform auth, use with consideration
+// applyJitter applies random jitter to a time based on jitter min/max in minutes
+// if min is negative of max (symmetric), uses uniform distribution from min to max
+// e.g., min=-10, max=10 means randomly offset anywhere from -10 to +10 minutes
+// clamps the result to stay within startBound and endBound
+func applyJitter(baseTime time.Time, jitterMin, jitterMax int, startBound, endBound time.Time) time.Time {
+	if jitterMin == 0 && jitterMax == 0 {
+		return baseTime
+	}
+
+	var randomJitter int
+
+	// check if symmetric jitter (min = -max)
+	if jitterMin == -jitterMax {
+		// symmetric: uniform distribution from -max to +max
+		randomJitter = rand.Intn(2*jitterMax+1) - jitterMax
+	} else {
+		// asymmetric: generate random jitter between min and max
+		jitterRange := jitterMax - jitterMin
+		if jitterRange > 0 {
+			randomJitter = jitterMin + rand.Intn(jitterRange+1)
+		} else {
+			randomJitter = jitterMin
+		}
+	}
+
+	jitteredTime := baseTime.Add(time.Duration(randomJitter) * time.Minute)
+
+	// clamp to campaign bounds
+	if jitteredTime.Before(startBound) {
+		return startBound
+	}
+	if jitteredTime.After(endBound) {
+		return endBound
+	}
+
+	return jitteredTime
+}
+
+// lureCodeAllocator hands out codes drawn up front for one schedule run. A
+// campaign not using codes gets an empty allocator, so its recipients keep
+// resolving by campaign recipient UUID alone.
+type lureCodeAllocator struct {
+	codes []lure.Code
+	next  int
+	state lureCodeAllocatorState
+}
+
+// lureCodeAllocatorState carries what a redraw needs.
+type lureCodeAllocatorState struct {
+	// false for a query mode campaign, which separates wanting no codes from a
+	// batch that ran short
+	enabled   bool
+	algorithm lure.Algorithm
+	length    int
+}
+
+// applyTo sets the next unused code on a recipient.
+//
+// Over drawing is harmless, an uninserted code is never claimed. Running short
+// is not: the recipient would fall back to a query URL in a campaign whose point
+// is the path form. The batch covers the worst case, so a shortfall is a bug.
+func (a *lureCodeAllocator) applyTo(campaignRecipient *model.CampaignRecipient) error {
+	var display nullable.Nullable[string]
+	display.SetNull()
+	if a != nil && a.state.enabled {
+		if a.next >= len(a.codes) {
+			return errs.Wrap(errors.New(
+				"ran out of allocated lure codes while scheduling this campaign",
+			))
+		}
+		display = nullable.NewNullableWithValue(a.codes[a.next].Display)
+		a.next++
+	}
+	campaignRecipient.LureCode = display
+	return nil
+}
+
+// newLureCodeAllocator draws every code a schedule run needs in one batch.
+func (c *Campaign) newLureCodeAllocator(
+	ctx context.Context,
+	campaign *model.Campaign,
+	count int,
+) (*lureCodeAllocator, error) {
+	if !campaign.UsesLureCodePath() || count <= 0 || c.LureCodeService == nil {
+		return &lureCodeAllocator{}, nil
+	}
+	_, algorithm, length := campaign.LureSettings()
+	codes, err := c.LureCodeService.AllocateBatch(ctx, algorithm, length, count)
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+	return &lureCodeAllocator{
+		codes: codes,
+		state: lureCodeAllocatorState{
+			enabled:   true,
+			algorithm: algorithm,
+			length:    length,
+		},
+	}, nil
+}
+
+// lureCodeInsertRetries bounds the redraws on insert. Allocation checks a code
+// is free, but the insert lands later, so a concurrent schedule run or an
+// operator setting a custom code can claim it in between.
+const lureCodeInsertRetries = 3
+
+// isLureCodeConflict reports whether an insert failed because the code was taken
+// between allocation and insert.
+//
+// Error translation is off on the gorm session, so a duplicate key does not
+// surface as gorm.ErrDuplicatedKey. Matching the message instead is narrowed to
+// this column so an unrelated constraint is never swallowed and retried.
+func isLureCodeConflict(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+	message := err.Error()
+	return strings.Contains(message, "UNIQUE constraint failed") &&
+		strings.Contains(message, "campaign_recipients.lure_code")
+}
+
+// insertScheduledRecipient inserts one scheduled recipient, redrawing its code if
+// it was claimed between allocation and insert. The loop has no transaction to
+// roll back, so a losing race would otherwise abort a half written schedule.
+// campaignAnonymous reports whether a campaign is anonymous, failing closed: if the
+// flag cannot be read it returns true so identity is protected rather than exposed.
+func campaignAnonymous(campaign *model.Campaign) bool {
+	if campaign == nil {
+		return true
+	}
+	isAnon, err := campaign.IsAnonymous.Get()
+	if err != nil {
+		return true
+	}
+	return isAnon
+}
+
+// applyAnonymousSnapshot assigns the stable random pseudonym and snapshots the
+// grouping attributes onto a campaign recipient for an anonymous campaign; it does
+// nothing for a normal campaign.
+func (c *Campaign) applyAnonymousSnapshot(
+	campaign *model.Campaign,
+	campaignRecipient *model.CampaignRecipient,
+	recipient *model.Recipient,
+) {
+	if !campaignAnonymous(campaign) {
+		return
+	}
+	campaignRecipient.AnonymizedID = nullable.NewNullableWithValue(uuid.New())
+	position := ""
+	if v, err := recipient.Position.Get(); err == nil {
+		position = v.String()
+	}
+	department := ""
+	if v, err := recipient.Department.Get(); err == nil {
+		department = v.String()
+	}
+	campaignRecipient.Position = nullable.NewNullableWithValue(position)
+	campaignRecipient.Department = nullable.NewNullableWithValue(department)
+}
+
+// anonymizeEventForRecipient strips identity from an event and stamps the recipient's
+// pseudonym. It fails closed: with a pseudonym it always strips and stamps it;
+// without one it strips (uncounted) only for an anonymous campaign, and does
+// nothing for a normal campaign.
+func anonymizeEventForRecipient(isAnonymous bool, campaignRecipient *model.CampaignRecipient, event *model.CampaignEvent) {
+	// a pseudonym is present only on anonymous campaigns: strip identity and stamp it
+	if campaignRecipient != nil {
+		if aid, err := campaignRecipient.AnonymizedID.Get(); err == nil {
+			event.Anonymize(&aid)
+			return
+		}
+	}
+	// no pseudonym: strip (uncounted) only when the campaign is anonymous
+	if isAnonymous {
+		event.Anonymize(nil)
+	}
+}
+
+func (c *Campaign) insertScheduledRecipient(
+	ctx context.Context,
+	allocator *lureCodeAllocator,
+	campaignRecipient *model.CampaignRecipient,
+) error {
+	for attempt := 0; ; attempt++ {
+		_, err := c.CampaignRecipientRepository.Insert(ctx, campaignRecipient)
+		if err == nil {
+			return nil
+		}
+		if attempt >= lureCodeInsertRetries ||
+			!isLureCodeConflict(err) ||
+			allocator == nil ||
+			!allocator.state.enabled ||
+			c.LureCodeService == nil {
+			return errs.Wrap(err)
+		}
+		c.Logger.Infow("lure code was claimed between allocation and insert, redrawing",
+			"attempt", attempt+1,
+		)
+		codes, drawErr := c.LureCodeService.AllocateBatch(
+			ctx,
+			allocator.state.algorithm,
+			allocator.state.length,
+			1,
+		)
+		if drawErr != nil || len(codes) == 0 {
+			return errs.Wrap(err)
+		}
+		campaignRecipient.LureCode = nullable.NewNullableWithValue(codes[0].Display)
+	}
+}
+
+// insertScheduledRecipients writes the materialized campaign recipients. With no
+// lure codes it inserts them in one transaction so the rows share a single fsync;
+// per row autocommit is fsync bound and made a large campaign exceed the server
+// write timeout during create. Lure code campaigns keep the per row path, because a
+// code redraw on a conflict runs on a second connection and would block on the
+// transaction's own write lock.
+func (c *Campaign) insertScheduledRecipients(
+	ctx context.Context,
+	allocator *lureCodeAllocator,
+	campaignRecipients []*model.CampaignRecipient,
+) error {
+	if allocator != nil && allocator.state.enabled {
+		for _, cr := range campaignRecipients {
+			if err := c.insertScheduledRecipient(ctx, allocator, cr); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return c.CampaignRecipientRepository.DB.Transaction(func(tx *gorm.DB) error {
+		txRepo := &repository.CampaignRecipient{DB: tx}
+		for _, cr := range campaignRecipients {
+			if _, err := txRepo.Insert(ctx, cr); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// snapshotLureSettings copies the template's lure URL settings and training flag
+// onto the campaign while it still holds no recipients.
+//
+// A campaign holding recipients has links out that resolve through those rows,
+// so reading the template again could hand a new recipient a different URL form
+// than the ones already delivered. That is the self managed case, where a
+// reschedule keeps existing recipients. A non self managed reschedule deletes
+// them all first and so does read the template again, which is safe because its
+// recipients are recreated with new IDs and the old links die either way.
+//
+// Nothing here is fatal, so a lure setting cannot stop a campaign scheduling. A
+// template that could not be read leaves the snapshot unwritten rather than
+// settling on the defaults, because the write closes the question for good and a
+// transient error would otherwise mark a path mode campaign as query mode with
+// no way back while it holds recipients.
+func (c *Campaign) snapshotLureSettings(
+	ctx context.Context,
+	session *model.Session,
+	campaign *model.Campaign,
+) {
+	campaignID, err := campaign.ID.Get()
+	if err != nil {
+		return
+	}
+	hasRecipients, err := c.CampaignRecipientRepository.HasRecipientsByCampaignID(
+		ctx,
+		&campaignID,
+	)
+	if err != nil {
+		// leaving the settings alone keeps the campaign consistent with whatever
+		// its recipients already resolve through
+		c.Logger.Errorw("failed to check for existing recipients, keeping lure settings",
+			"error", err,
+		)
+		return
+	}
+	if hasRecipients {
+		return
+	}
+
+	mode := data.LureURLModeQuery
+	algorithm := string(lure.DefaultAlgorithm)
+	length := lure.DefaultLength
+	isTraining := false
+
+	templateID, err := campaign.TemplateID.Get()
+	if err != nil {
+		// the template is gone, so the defaults below would be a guess that
+		// overwrites a snapshot taken while the template still existed
+		c.Logger.Errorw("campaign has no template, leaving the snapshot unwritten",
+			"campaignID", campaignID.String(),
+		)
+		return
+	}
+	cTemplate, err := c.CampaignTemplateService.GetByID(
+		ctx,
+		session,
+		&templateID,
+		&repository.CampaignTemplateOption{},
+	)
+	if err != nil || cTemplate == nil {
+		c.Logger.Errorw("could not read lure settings from template, leaving the snapshot unwritten",
+			"campaignID", campaignID.String(),
+			"templateID", templateID.String(),
+			"error", err,
+		)
+		return
+	}
+	if v, err := cTemplate.LureURLMode.Get(); err == nil && data.IsValidLureURLMode(v) {
+		mode = v
+	}
+	if v, err := cTemplate.LureCodeAlgo.Get(); err == nil && lure.IsValidAlgorithm(lure.Algorithm(v)) {
+		algorithm = v
+	}
+	if v, err := cTemplate.LureCodeLength.Get(); err == nil && v >= lure.MinLength && v <= lure.MaxLength {
+		length = v
+	}
+	if v, err := cTemplate.IsTraining.Get(); err == nil {
+		isTraining = v
+	}
+	campaign.LureURLMode = nullable.NewNullableWithValue(mode)
+	campaign.LureCodeAlgo = nullable.NewNullableWithValue(algorithm)
+	campaign.LureCodeLength = nullable.NewNullableWithValue(length)
+	campaign.IsTraining = nullable.NewNullableWithValue(isTraining)
+
+	if err := c.CampaignRepository.SetLureSettingsByID(
+		ctx,
+		&campaignID,
+		mode,
+		algorithm,
+		length,
+		isTraining,
+	); err != nil {
+		// the in memory campaign still carries them, so this run allocates
+		// correctly even unpersisted
+		c.Logger.Errorw("failed to persist lure settings snapshot", "error", err)
+	}
+}
+
+func (c *Campaign) schedule(
+	ctx context.Context,
+	session *model.Session,
+	campaign *model.Campaign,
+) error {
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.Logger.Errorw("failed to create campaign", "error", err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return errs.ErrAuthorizationFailed
+	}
+	// settle the lure settings before any row is written, so every recipient in
+	// this run is allocated under the same rules
+	c.snapshotLureSettings(ctx, session, campaign)
+
+	// get all recipients and remove duplicates
+	recipients := []*model.Recipient{}
+	dubMap := map[string]bool{}
+	if campaign.RecipientGroupIDs.IsSpecified() && !campaign.RecipientGroupIDs.IsNull() {
+		for _, groupID := range campaign.RecipientGroupIDs.MustGet() {
+			group, err := c.RecipientGroupRepository.GetByID(
+				ctx,
+				groupID,
+				&repository.RecipientGroupOption{},
+			)
+			if err != nil {
+				c.Logger.Errorw("failed to get recipient group by id", "error", err)
+				return errs.Wrap(err)
+			}
+
+			var recps []*model.Recipient
+			// dynamic groups resolve members via their filter query at schedule time
+			isDynamic := group.IsDynamic.IsSpecified() && !group.IsDynamic.IsNull() && group.IsDynamic.MustGet()
+			if isDynamic {
+				result, err := c.RecipientGroupRepository.GetRecipientsByGroupID(
+					ctx,
+					groupID,
+					&repository.RecipientOption{ExcludeSoftDeleted: true},
+				)
+				if err != nil {
+					c.Logger.Errorw("failed to get dynamic group recipients", "error", err)
+					return errs.Wrap(err)
+				}
+				recps = result.Rows
+			} else {
+				// static groups: reload with recipients preloaded from the junction table
+				groupWithRecipients, err := c.RecipientGroupRepository.GetByID(
+					ctx,
+					groupID,
+					&repository.RecipientGroupOption{
+						WithRecipients: true,
+					},
+				)
+				if err != nil {
+					c.Logger.Errorw("failed to get recipient group recipients", "error", err)
+					return errs.Wrap(err)
+				}
+				recps = groupWithRecipients.Recipients
+				if recps == nil {
+					c.Logger.Error("recipient group did not load recipients")
+					return errors.New("recipient group did not load recipients")
+				}
+			}
+
+			// exclude SCIM soft-deleted recipients (pending prune) from targeting
+			activeRecps := make([]*model.Recipient, 0, len(recps))
+			for _, recp := range recps {
+				if recp.ScimSoftDeletedAt != nil {
+					continue
+				}
+				activeRecps = append(activeRecps, recp)
+			}
+			recps = activeRecps
+
+			// collect all and remove duplicates
+			for _, recp := range recps {
+				id := recp.ID.MustGet().String()
+				if _, ok := dubMap[id]; ok {
+					continue
+				}
+				dubMap[id] = true
+				recipients = append(recipients, recp)
+			}
+		}
+	}
+	// handle self managed campaign
+	// if this is a self-managed campaign, we must not remove existing
+	// campaign-recipients when rescheduling as this would give them new IDs
+	// which would mean previous sent links will not work anymore.
+	// instead we must only add new recipients and remove the ones that are no longer in the recipient groups
+	if campaign.IsSelfManaged() {
+		if err := campaign.ValidateNoSendTimesSet(); err != nil {
+			return errs.Wrap(err)
+		}
+		// sort by email when self managed
+		sort.Slice(recipients, func(a, b int) bool {
+			if v, err := recipients[a].Email.Get(); err == nil {
+				if v2, err := recipients[b].Email.Get(); err == nil {
+					return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+				}
+			}
+			return false
+		})
+		campaignID := campaign.ID.MustGet()
+		// remove campaign-recipients that are not supplied in a re-schedule
+		recipientIDs := make([]*uuid.UUID, len(recipients))
+		for i, recp := range recipients {
+			rid := recp.ID.MustGet()
+			recipientIDs[i] = &rid
+		}
+		// enough for the worst case where every supplied recipient is new, unused
+		// draws are discarded. before the delete below, so an exhausted code space
+		// leaves the schedule untouched rather than half applied.
+		allocator, err := c.newLureCodeAllocator(ctx, campaign, len(recipients))
+		if err != nil {
+			return errs.Wrap(err)
+		}
+		// c.Logger.Debugw("keeping recpient IDs", recipientIDs)
+		err = c.CampaignRecipientRepository.DeleteRecipientsNotIn(
+			ctx,
+			&campaignID,
+			recipientIDs,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to delete campaign recipients", "error", err)
+			return errs.Wrap(err)
+		}
+		// insert campaign-recipients that are not already in the schedule
+		campaignRecipients := make([]*model.CampaignRecipient, len(recipients))
+		for i, recipient := range recipients {
+			// check if already exists
+			rid := recipient.ID.MustGet()
+			_, err := c.CampaignRecipientRepository.GetByCampaignAndRecipientID(
+				ctx,
+				&campaignID,
+				&rid,
+				&repository.CampaignRecipientOption{},
+			)
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				c.Logger.Errorw("failed to get campaign recipient by campaign and recipient id",
+					"error", err,
+				)
+				return errs.Wrap(err)
+			}
+			// if exists, skip it
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			recpID := nullable.NewNullableWithValue(recipient.ID.MustGet())
+			campaignRecipients[i] = &model.CampaignRecipient{
+				RecipientID: recpID,
+				CampaignID:  nullable.NewNullableWithValue(campaignID),
+				SelfManaged: nullable.NewNullableWithValue(true),
+			}
+			c.applyAnonymousSnapshot(campaign, campaignRecipients[i], recipient)
+			if err := allocator.applyTo(campaignRecipients[i]); err != nil {
+				c.Logger.Errorw("failed to allocate lure code", "error", err)
+				return err
+			}
+			// save campaign-recipient
+			err = c.insertScheduledRecipient(ctx, allocator, campaignRecipients[i])
+			if err != nil {
+				c.Logger.Errorw("failed to create campaign", "error", err)
+				return errs.Wrap(err)
+			}
+		}
+		err = c.setMostNotableCampaignEvent(
+			ctx,
+			campaign,
+			data.EVENT_CAMPAIGN_SELF_MANAGED,
+		)
+		if err != nil {
+			// err is logged in method call
+			return errs.Wrap(err)
+		}
+
+		return nil
+	}
+	if err := campaign.ValidateSendTimesSet(); err != nil {
+		return errs.Wrap(err)
+	}
+	// set schedule with a even spread between startAt and end time
+	startAt := campaign.SendStartAt.MustGet()
+	endAt := campaign.SendEndAt.MustGet()
+	recipientsCount := len(recipients)
+	// no recipients, no schedule
+	if recipientsCount == 0 {
+		return fmt.Errorf("no recipients to schedule")
+	}
+	campaignRecipients := make([]*model.CampaignRecipient, recipientsCount)
+	// sort the recipients by the selected sort field and order
+	sortOrder := campaign.SortOrder.MustGet().String()
+	sortField := campaign.SortField.MustGet().String()
+	recipients = sortRecipients(recipients, sortOrder, sortField)
+	// schedule the emails
+	if recipientsCount == 0 {
+		return fmt.Errorf("no recipients to schedule for '%s'", campaign.Name.MustGet())
+	}
+	scheduledEvent := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_SCHEDULED]
+
+	// before any row is written, so an exhausted code space fails before the
+	// campaign is half scheduled
+	allocator, err := c.newLureCodeAllocator(ctx, campaign, recipientsCount)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	// get jitter values if specified
+	jitterMin := 0
+	jitterMax := 0
+	if campaign.JitterMin.IsSpecified() && !campaign.JitterMin.IsNull() {
+		jitterMin = campaign.JitterMin.MustGet()
+	}
+	if campaign.JitterMax.IsSpecified() && !campaign.JitterMax.IsNull() {
+		jitterMax = campaign.JitterMax.MustGet()
+	}
+	c.Logger.Debugw("scheduling campaign with jitter",
+		"campaignName", campaign.Name.MustGet(),
+		"jitterMin", jitterMin,
+		"jitterMax", jitterMax,
+	)
+
+	// handle single recipient
+	if recipientsCount == 1 {
+		recpID := nullable.NewNullableWithValue(recipients[0].ID.MustGet())
+		campaignID := nullable.NewNullableWithValue(campaign.ID.MustGet())
+		jitteredStartAt := applyJitter(startAt, jitterMin, jitterMax, startAt, endAt)
+		campaignRecipient := &model.CampaignRecipient{
+			RecipientID:    recpID,
+			CampaignID:     campaignID,
+			SendAt:         nullable.NewNullableWithValue(jitteredStartAt),
+			NotableEventID: nullable.NewNullableWithValue(*scheduledEvent),
+		}
+		c.applyAnonymousSnapshot(campaign, campaignRecipient, recipients[0])
+		if err := allocator.applyTo(campaignRecipient); err != nil {
+			c.Logger.Errorw("failed to allocate lure code", "error", err)
+			return err
+		}
+		err := c.insertScheduledRecipient(ctx, allocator, campaignRecipient)
+		if err != nil {
+			c.Logger.Errorw("failed to create campaign", "error", err)
+			return errs.Wrap(err)
+		}
+		err = c.setMostNotableCampaignEvent(
+			ctx,
+			campaign,
+			data.EVENT_CAMPAIGN_SCHEDULED,
+		)
+		if err != nil {
+			// err is logged in method call
+			return errs.Wrap(err)
+		}
+		return nil
+	}
+	// handle delivery schedule with specific week days
+	// it is when there a start and end date, specific weekdays and times ranges to send in.
+	if campaign.ConstraintWeekDays.IsSpecified() && !campaign.ConstraintWeekDays.IsNull() {
+		c.Logger.Debugw("schedule campaign with contraints",
+			"campaignName", campaign.Name.MustGet(),
+		)
+		campaignDuration := time.Duration(0)
+		// first we calculate the diff, so we know the offset for we need to push between each in range moment
+		currentDate := startAt
+		toFind := campaign.ConstraintWeekDays.MustGet().AsSlice()
+		// iterate over each day in the period
+		for currentDate.Before(endAt) || currentDate.Equal(endAt) {
+			// check if the current day is in the week days
+			if slices.Contains(toFind, int(currentDate.Weekday())) {
+				// calculate the number of minutes the campaigns spans on this week day
+				dayStartTime := campaign.ConstraintStartTime.MustGet()
+				dayEndTime := campaign.ConstraintEndTime.MustGet()
+				diff := dayStartTime.DiffMinutes(dayEndTime)
+				campaignDuration += diff
+
+			}
+			currentDate = currentDate.AddDate(0, 0, 1)
+		}
+		//  interval is the minutes between each recipient schedule
+		//interval := int(campaignDuration.Minutes()) / (recipientsCount - 1) // -1 as the first send it placed at the start time
+		interval := time.Duration(campaignDuration.Nanoseconds() / int64(recipientsCount-1))
+		dayStartTime := campaign.ConstraintStartTime.MustGet()
+		dayEndTime := campaign.ConstraintEndTime.MustGet()
+		// schedule each recipient
+		// iterate through the time again and progess on each interval until all recipients are set
+		currentDate = startAt
+		c.Logger.Debugw("campaign interval", "interval", interval)
+		for currentDate.Before(endAt) || currentDate.Equal(endAt) {
+			c.Logger.Debugw("schedule check date", "currentDate", currentDate)
+			// check if the current day is in the week days
+			if slices.Contains(toFind, int(currentDate.Weekday())) {
+				c.Logger.Debugw("scheduling date", "currentDate", currentDate)
+				// iterate over the hours in the day and jump each interval
+				// if over the end time, break and skip to next day, saving the surplus of interval minutes
+				// to be added to next send
+				dayConstraintStart := currentDate.Truncate(24 * time.Hour).Add(dayStartTime.Minutes())
+				dayConstraintEnd := currentDate.Truncate(24 * time.Hour).Add(dayEndTime.Minutes())
+				currentDayStart := dayConstraintStart
+				for currentDayStart.Before(dayConstraintEnd) || currentDayStart.Equal(dayConstraintEnd) {
+					c.Logger.Debugw("scheduling date at", "currentDayStart", currentDayStart)
+					// check if we have any recipients left
+					if len(recipients) == 0 {
+						break
+					}
+					// get the next recipient
+					recipient := recipients[0]
+					recipients = recipients[1:]
+					// apply jitter to send time, clamped to daily constraint bounds
+					jitteredTime := applyJitter(currentDayStart, jitterMin, jitterMax, dayConstraintStart, dayConstraintEnd)
+					// save
+					campaignRecipient := &model.CampaignRecipient{
+						RecipientID:    recipient.ID,
+						CampaignID:     campaign.ID,
+						SendAt:         nullable.NewNullableWithValue(jitteredTime),
+						NotableEventID: nullable.NewNullableWithValue(*scheduledEvent),
+					}
+					c.applyAnonymousSnapshot(campaign, campaignRecipient, recipient)
+					if err := allocator.applyTo(campaignRecipient); err != nil {
+						c.Logger.Errorw("failed to allocate lure code", "error", err)
+						return err
+					}
+					err := c.insertScheduledRecipient(ctx, allocator, campaignRecipient)
+					if err != nil {
+						c.Logger.Errorw("failed to create campaign", "error", err)
+						return errs.Wrap(err)
+					}
+					// check if we are over the end time
+					currentDayStart = currentDayStart.Add(interval * time.Duration(1))
+
+				}
+			}
+			// check the next day within the start and end date range
+			currentDate = currentDate.AddDate(0, 0, 1)
+		}
+		err = c.setMostNotableCampaignEvent(
+			ctx,
+			campaign,
+			data.EVENT_CAMPAIGN_SCHEDULED,
+		)
+		if err != nil {
+			// err is logged in method call
+			return errs.Wrap(err)
+		}
+
+		return nil
+	}
+
+	// handle basic delivery schedule
+	// it is when there is no constraints, equal distribution between start and end datetime
+	campaignDuration := endAt.Sub(startAt)
+	// Calculate interval between emails
+	// TODO make this work in minutes
+	interval := time.Duration(campaignDuration.Nanoseconds() / int64(recipientsCount-1))
+	for i, recipient := range recipients {
+		// calculate base time from original schedule, not previous jittered time
+		baseTime := startAt.Add(time.Duration(i) * interval)
+		// apply jitter to send time
+		jitteredSentAt := applyJitter(baseTime, jitterMin, jitterMax, startAt, endAt)
+		// todo perhaps this array is unnecesssary
+		//recpID := recipient.ID.MustGet()
+		//campaignID := campaign.ID.MustGet()
+		campaignRecipients[i] = &model.CampaignRecipient{
+			RecipientID:    recipient.ID,
+			CampaignID:     campaign.ID,
+			SendAt:         nullable.NewNullableWithValue(jitteredSentAt),
+			NotableEventID: nullable.NewNullableWithValue(*scheduledEvent),
+		}
+		c.applyAnonymousSnapshot(campaign, campaignRecipients[i], recipient)
+		if err := allocator.applyTo(campaignRecipients[i]); err != nil {
+			c.Logger.Errorw("failed to allocate lure code", "error", err)
+			return err
+		}
+	}
+	// insert all rows in one transaction so a large campaign does not exceed the
+	// server write timeout from per row fsyncs
+	if err = c.insertScheduledRecipients(ctx, allocator, campaignRecipients); err != nil {
+		c.Logger.Errorw("failed to create campaign", "error", err)
+		return errs.Wrap(err)
+	}
+	err = c.setMostNotableCampaignEvent(
+		ctx,
+		campaign,
+		data.EVENT_CAMPAIGN_SCHEDULED,
+	)
+	if err != nil {
+		// err is logged in method call
+		return errs.Wrap(err)
+	}
+	return nil
+}
+
+// sortRecipients sorts the recipients by the selected sort field and order
+func sortRecipients(recipients []*model.Recipient, sortOrder, sortField string) []*model.Recipient {
+	switch sortOrder {
+	case "random":
+		sort.Slice(recipients, func(i, j int) bool {
+			// return a random bool
+			// #nosec
+			return rand.Float32() < 0.5
+		})
+	case "desc":
+		sort.Slice(recipients, func(a, b int) bool {
+			// TODO implements the rest of the fields
+			switch sortField {
+			case "email":
+				if v, err := recipients[a].Email.Get(); err == nil {
+					if v2, err := recipients[b].Email.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "first_name":
+				if v, err := recipients[a].FirstName.Get(); err == nil {
+					if v2, err := recipients[b].FirstName.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "last_name":
+				if v, err := recipients[a].LastName.Get(); err == nil {
+					if v2, err := recipients[b].LastName.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "phone":
+				if v, err := recipients[a].Phone.Get(); err == nil {
+					if v2, err := recipients[b].Phone.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "position":
+				if v, err := recipients[a].Position.Get(); err == nil {
+					if v2, err := recipients[b].Position.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "department":
+				if v, err := recipients[a].Department.Get(); err == nil {
+					if v2, err := recipients[b].Department.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "city":
+				if v, err := recipients[a].City.Get(); err == nil {
+					if v2, err := recipients[b].City.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "country":
+				if v, err := recipients[a].Country.Get(); err == nil {
+					if v2, err := recipients[b].Country.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "misc":
+				if v, err := recipients[a].Misc.Get(); err == nil {
+					if v2, err := recipients[b].Misc.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "extraID":
+				if v, err := recipients[a].ExtraIdentifier.Get(); err == nil {
+					if v2, err := recipients[b].ExtraIdentifier.Get(); err == nil {
+						return strings.ToLower(v.String()) > strings.ToLower(v2.String())
+					}
+				}
+				return false
+			default:
+				panic("unknown sort field")
+			}
+		})
+	case "asc":
+		sort.Slice(recipients, func(a, b int) bool {
+			switch sortField {
+			case "email":
+				if v, err := recipients[a].Email.Get(); err == nil {
+					if v2, err := recipients[b].Email.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "firstName":
+				if v, err := recipients[a].FirstName.Get(); err == nil {
+					if v2, err := recipients[b].FirstName.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "lastName":
+				if v, err := recipients[a].LastName.Get(); err == nil {
+					if v2, err := recipients[b].LastName.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "phone":
+				if v, err := recipients[a].Phone.Get(); err == nil {
+					if v2, err := recipients[b].Phone.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "position":
+				if v, err := recipients[a].Position.Get(); err == nil {
+					if v2, err := recipients[b].Position.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "department":
+				if v, err := recipients[a].Department.Get(); err == nil {
+					if v2, err := recipients[b].Department.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "city":
+				if v, err := recipients[a].City.Get(); err == nil {
+					if v2, err := recipients[b].City.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "country":
+				if v, err := recipients[a].Country.Get(); err == nil {
+					if v2, err := recipients[b].Country.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "misc":
+				if v, err := recipients[a].Misc.Get(); err == nil {
+					if v2, err := recipients[b].Misc.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			case "extraID":
+				if v, err := recipients[a].ExtraIdentifier.Get(); err == nil {
+					if v2, err := recipients[b].ExtraIdentifier.Get(); err == nil {
+						return strings.ToLower(v.String()) < strings.ToLower(v2.String())
+					}
+				}
+				return false
+			default:
+				panic("unknown sort field")
+			}
+		})
+	}
+	return recipients
+}
+
+// GetByID gets a campaign by its id
+func (c *Campaign) GetByID(
+	ctx context.Context,
+	session *model.Session,
+	id *uuid.UUID,
+	options *repository.CampaignOption,
+) (*model.Campaign, error) {
+	ae := NewAuditEvent("Campaign.GetById", session)
+	ae.Details["id"] = id.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return nil, errs.ErrAuthorizationFailed
+	}
+	campaign, err := c.CampaignRepository.GetByID(ctx, id, options)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	// the recipient table is paginated, so this cannot be derived from one page
+	hasCustom, err := c.CampaignRecipientRepository.HasCustomLureCodesByCampaignID(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to check for custom lure codes", "error", err)
+	} else {
+		campaign.HasCustomLureCodes = hasCustom
+	}
+	// no audit on read
+	return campaign, nil
+}
+
+// GetByName gets a campaign by its name
+func (c *Campaign) GetByName(
+	ctx context.Context,
+	session *model.Session,
+	name string,
+	companyID *uuid.UUID,
+	options *repository.CampaignOption,
+) (*model.Campaign, error) {
+	ae := NewAuditEvent("Campaign.GetByName", session)
+	ae.Details["name"] = name
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return nil, errs.ErrAuthorizationFailed
+	}
+	campaign, err := c.CampaignRepository.GetByNameAndCompanyID(ctx, name, companyID, options)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by name", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	// no audit on read
+	return campaign, nil
+}
+
+// GetByCompanyID gets a campaigns by it company id
+func (c *Campaign) GetByCompanyID(
+	ctx context.Context,
+	session *model.Session,
+	companyID *uuid.UUID,
+	options *repository.CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	ae := NewAuditEvent("Campaign.GetByCompanyID", session)
+	if companyID != nil {
+		ae.Details["companyId"] = companyID.String()
+	}
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return result, errs.ErrAuthorizationFailed
+	}
+	result, err = c.CampaignRepository.GetAllByCompanyID(ctx, companyID, options)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaigns by company id", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	// no audit on read
+	return result, nil
+}
+
+// GetStats gets stats for a campaign
+// if no company id is given it retrieves stats for global including all companies
+func (c *Campaign) GetStats(
+	ctx context.Context,
+	session *model.Session,
+	companyID *uuid.UUID,
+	includeTestCampaigns bool,
+) (*model.CampaignsStatView, error) {
+	ae := NewAuditEvent("Campaign.GetStats", session)
+	if companyID != nil {
+		ae.Details["companyID"] = companyID.String()
+	}
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return nil, errs.ErrAuthorizationFailed
+	}
+	// get stats
+	active, err := c.CampaignRepository.GetActiveCount(ctx, companyID, includeTestCampaigns)
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+	upcoming, err := c.CampaignRepository.GetUpcomingCount(ctx, companyID, includeTestCampaigns)
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+	finished, err := c.CampaignRepository.GetFinishedCount(ctx, companyID, includeTestCampaigns)
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+	return &model.CampaignsStatView{
+		Active:   active,
+		Upcoming: upcoming,
+		Finished: finished,
+	}, nil
+}
+
+// GetResultStats gets results stats for a campaign
+func (c *Campaign) GetResultStats(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+) (*model.CampaignResultView, error) {
+	ae := NewAuditEvent("Campaign.GetResultStats", session)
+	ae.Details["campaignId"] = campaignID.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return nil, errs.ErrAuthorizationFailed
+	}
+	// get stats
+	stats, err := c.CampaignRepository.GetResultStats(ctx, campaignID)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign results statistics", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	// no audit on read
+	return stats, nil
+}
+
+// anonymityGroupFloor is the smallest group whose outcome counts are shown; groups
+// below it are merged so a lone recipient's outcome cannot be read.
+const anonymityGroupFloor = 3
+
+// OTHER_GROUP_LABEL is the bucket name for merged small groups.
+const OTHER_GROUP_LABEL = "Other (small)"
+
+// GetGroupedResultStats returns outcome counts grouped by a recipient attribute,
+// suppressing any group smaller than the anonymity floor. Only anonymous campaigns
+// snapshot the grouping attributes, so a normal campaign returns an empty result.
+func (c *Campaign) GetGroupedResultStats(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+	groupColumn string,
+) ([]model.CampaignGroupStat, error) {
+	ae := NewAuditEvent("Campaign.GetGroupedResultStats", session)
+	ae.Details["campaignId"] = campaignID.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return nil, errs.ErrAuthorizationFailed
+	}
+	// the position/department breakdown is available for every campaign that has
+	// the data, matching the report. the grouping value falls back to the
+	// recipient's live attribute when there is no snapshot, so a normal campaign
+	// groups by the recipient's position/department.
+	isAnon, err := c.CampaignRepository.IsAnonymousByID(ctx, campaignID)
+	if err != nil {
+		c.Logger.Errorw("failed to check campaign anonymity for grouped stats", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	// anonymous and anonymized campaigns show group sizes only, with per group
+	// outcomes withheld; normal and training campaigns show the outcomes.
+	isAnonymized, err := c.CampaignRepository.IsAnonymizedByID(ctx, campaignID)
+	if err != nil {
+		c.Logger.Errorw("failed to check campaign anonymized flag for grouped stats", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	stats, err := c.CampaignRepository.GetGroupedResultStats(ctx, campaignID, groupColumn)
+	if err != nil {
+		c.Logger.Errorw("failed to get grouped result stats", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	// no audit on read
+	return suppressSmallGroups(stats, isAnon || isAnonymized), nil
+}
+
+// HasGroupData reports whether the campaign's recipients carry any position or
+// department, so the UI can decide whether to offer the grouped breakdown.
+func (c *Campaign) HasGroupData(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+) (bool, error) {
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return false, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return false, errs.ErrAuthorizationFailed
+	}
+	return c.CampaignRepository.HasGroupDataByCampaignID(ctx, campaignID)
+}
+
+// hasNamedGroups reports whether any group has a real attribute value rather than
+// the "(unspecified)" or Other placeholder.
+func hasNamedGroups(stats []model.CampaignGroupStat) bool {
+	for _, g := range stats {
+		if g.Group != "(unspecified)" && g.Group != OTHER_GROUP_LABEL {
+			return true
+		}
+	}
+	return false
+}
+
+// suppressSmallGroups merges groups below the floor into an "Other" bucket, then
+// absorbs the smallest shown groups until that bucket also reaches the floor, so a
+// small group cannot be recovered by subtracting the shown groups from the total.
+// When hideOutcomes is set (anonymized campaigns) every per group outcome is withheld
+// and only the group sizes are shown: publishing per group outcomes alongside the
+// campaign wide totals lets a shown or dashed column be back solved to an
+// individual's result, so anonymized campaigns expose group sizes only. Normal and
+// training campaigns keep exact counts.
+func suppressSmallGroups(stats []model.CampaignGroupStat, hideOutcomes bool) []model.CampaignGroupStat {
+	shown := []model.CampaignGroupStat{}
+	var other model.CampaignGroupStat
+	other.Group = OTHER_GROUP_LABEL
+	addToOther := func(g model.CampaignGroupStat) {
+		other.Total += g.Total
+		other.Clicked += g.Clicked
+		other.Submitted += g.Submitted
+		other.Reported += g.Reported
+		other.TrainingStarted += g.TrainingStarted
+		other.TrainingCompleted += g.TrainingCompleted
+	}
+	for _, g := range stats {
+		if g.Total >= anonymityGroupFloor {
+			shown = append(shown, g)
+		} else {
+			addToOther(g)
+		}
+	}
+	// smallest shown first, so absorbing to reach the floor sacrifices the least detail
+	sort.Slice(shown, func(i, j int) bool { return shown[i].Total < shown[j].Total })
+	for other.Total > 0 && other.Total < anonymityGroupFloor && len(shown) > 0 {
+		addToOther(shown[0])
+		shown = shown[1:]
+	}
+	if other.Total > 0 {
+		// only possible when the whole campaign has fewer than `floor` people, where
+		// the campaign wide aggregate is unavoidable anyway; withhold the breakdown.
+		if other.Total < anonymityGroupFloor {
+			other.Clicked = 0
+			other.Submitted = 0
+			other.Reported = 0
+			other.TrainingStarted = 0
+			other.TrainingCompleted = 0
+			other.Suppressed = true
+		}
+		shown = append(shown, other)
+	}
+	if hideOutcomes {
+		// anonymized campaigns show group sizes only; -1 renders as a dash
+		for i := range shown {
+			if !shown[i].Suppressed {
+				shown[i].Clicked = -1
+				shown[i].Submitted = -1
+				shown[i].Reported = -1
+				shown[i].TrainingStarted = -1
+				shown[i].TrainingCompleted = -1
+			}
+		}
+	}
+	return shown
+}
+
+// GetRecipientsByCampaignID gets all recipients for a campaign
+func (c *Campaign) GetRecipientsByCampaignID(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+	options *repository.CampaignRecipientOption,
+) (*model.Result[model.CampaignRecipient], error) {
+	ae := NewAuditEvent("Campaign.GetRecipientsByCampaignID", session)
+	ae.Details["campaignId"] = campaignID.String()
+	result := model.NewEmptyResult[model.CampaignRecipient]()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return nil, errs.ErrAuthorizationFailed
+	}
+	// an anonymous campaign keeps identity but withholds each outcome and timing
+	// (below). force an identity neutral order first so those withheld values cannot
+	// be read back from the row order. fail closed: on error, treat as anonymous.
+	isAnon, err := c.CampaignRepository.IsAnonymousByID(ctx, campaignID)
+	if err != nil {
+		c.Logger.Errorw("failed to check campaign anonymity before returning recipients", "error", err)
+		isAnon = true
+	}
+	if isAnon {
+		options.OrderBy = "recipients.first_name"
+		// search matches every allowed column, including the outcome and timing
+		// columns withheld from the response, so it could filter the named list by
+		// who clicked or when. clear it so only the sort is available, on a neutral
+		// column.
+		options.Search = ""
+	} else if options.OrderBy == "" {
+		options.OrderBy = "campaign_recipients.sent_at"
+	}
+	result, err = c.CampaignRecipientRepository.GetByCampaignID(
+		ctx,
+		campaignID,
+		options,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get recipients by campaign id", "error", err)
+		return result, errs.Wrap(err)
+	}
+	if isAnon {
+		for _, row := range result.Rows {
+			row.NotableEventID.SetNull()
+			row.NotableEventName = ""
+			// replace exact timing with a coarse sent indicator
+			row.Sent = row.SentAt.IsSpecified() && !row.SentAt.IsNull()
+			row.SendAt.SetNull()
+			row.SentAt.SetNull()
+			row.LastAttemptAt.SetNull()
+			row.CancelledAt.SetNull()
+		}
+	}
+	// no audit on read
+	return result, nil
+}
+
+// GetAllEvents gets all events across campaigns
+func (c *Campaign) GetAllEvents(
+	ctx context.Context,
+	session *model.Session,
+	companyID *uuid.UUID,
+	queryArgs *vo.QueryArgs,
+	includeTestCampaigns bool,
+) (*model.Result[model.CampaignEvent], error) {
+	result := model.NewEmptyResult[model.CampaignEvent]()
+	ae := NewAuditEvent("Campaign.GetAllEvents", session)
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return result, errs.ErrAuthorizationFailed
+	}
+	result, err = c.CampaignRepository.GetAllEvents(
+		ctx,
+		companyID,
+		&repository.CampaignEventAllOption{
+			QueryArgs:            queryArgs,
+			WithUser:             true,
+			WithCampaign:         true,
+			IncludeTestCampaigns: includeTestCampaigns,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get all events", "error", err)
+		return result, errs.Wrap(err)
+	}
+	// no audit on read
+	return result, nil
+}
+
+// GetEventsByCampaignID gets all events for a campaign
+func (c *Campaign) GetEventsByCampaignID(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+	queryArgs *vo.QueryArgs,
+	since *time.Time,
+	eventTypeIDs []string,
+) (*model.Result[model.CampaignEvent], error) {
+	result := model.NewEmptyResult[model.CampaignEvent]()
+	ae := NewAuditEvent("Campaign.GetEventsByCampaignID", session)
+	ae.Details["campaignId"] = campaignID.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return result, errs.ErrAuthorizationFailed
+	}
+	result, err = c.CampaignRepository.GetEventsByCampaignID(
+		ctx,
+		campaignID,
+		&repository.CampaignEventOption{
+			QueryArgs:    queryArgs,
+			WithUser:     true,
+			EventTypeIDs: eventTypeIDs,
+		},
+		since,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get events by campaign id", "error", err)
+		return result, errs.Wrap(err)
+	}
+	// no audit on read
+	return result, nil
+}
+
+// GetAll gets all campaigns using pagination
+func (c *Campaign) GetAll(
+	ctx context.Context,
+	session *model.Session,
+	companyID *uuid.UUID,
+	options *repository.CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	ae := NewAuditEvent("Campaign.GetAll", session)
+	if companyID != nil {
+		ae.Details["companyID"] = companyID.String()
+	}
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return result, errs.ErrAuthorizationFailed
+	}
+	result, err = c.CampaignRepository.GetAll(
+		ctx,
+		companyID,
+		options,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get all campaigns", "error", err)
+		return result, errs.Wrap(err)
+	}
+	// no audit on read
+	return result, nil
+}
+
+// GetAllWithinDates gets all campaigns active, scheduled or self managed within dates
+func (c *Campaign) GetAllWithinDates(
+	ctx context.Context,
+	session *model.Session,
+	startDate time.Time,
+	endDate time.Time,
+	companyID *uuid.UUID,
+	options *repository.CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	ae := NewAuditEvent("Campaign.GetAllWithinDates", session)
+	if companyID != nil {
+		ae.Details["companyID"] = companyID.String()
+	}
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return result, errs.ErrAuthorizationFailed
+	}
+	result, err = c.CampaignRepository.GetAllCampaignWithinDates(
+		ctx,
+		companyID,
+		startDate,
+		endDate,
+		options,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get all campaigns between dates", "error", err)
+		return result, errs.Wrap(err)
+	}
+	// no audit on read
+	return result, nil
+}
+
+// GetAllActive gets all active campaigns using pagination
+func (c *Campaign) GetAllActive(
+	ctx context.Context,
+	session *model.Session,
+	companyID *uuid.UUID,
+	options *repository.CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	ae := NewAuditEvent("Campaign.GetAllActive", session)
+	if companyID != nil {
+		ae.Details["companyID"] = companyID.String()
+	}
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return result, errs.ErrAuthorizationFailed
+	}
+	result, err = c.CampaignRepository.GetAllActive(
+		ctx,
+		companyID,
+		options,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get all active campaigns", "error", err)
+		return result, errs.Wrap(err)
+	}
+	// no audit on read
+	return result, nil
+}
+
+// GetAllUpcoming gets all upcoming campaigns using pagination
+func (c *Campaign) GetAllUpcoming(
+	ctx context.Context,
+	session *model.Session,
+	companyID *uuid.UUID,
+	options *repository.CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	ae := NewAuditEvent("Campaign.GetAllUpcoming", session)
+	if companyID != nil {
+		ae.Details["companyId"] = companyID.String()
+	}
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return result, errs.ErrAuthorizationFailed
+	}
+	result, err = c.CampaignRepository.GetAllUpcoming(
+		ctx,
+		companyID,
+		options,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get all upcoming campaigns", "error", err)
+		return result, errs.Wrap(err)
+	}
+	// no audit on read
+	return result, nil
+}
+
+// GetAllFinished gets all finished campaigns using pagination
+func (c *Campaign) GetAllFinished(
+	ctx context.Context,
+	session *model.Session,
+	companyID *uuid.UUID,
+	options *repository.CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	ae := NewAuditEvent("Campaign.GetAllFinished", session)
+	if companyID != nil {
+		ae.Details["companyId"] = companyID.String()
+	}
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return result, errs.ErrAuthorizationFailed
+	}
+	result, err = c.CampaignRepository.GetAllFinished(
+		ctx,
+		companyID,
+		options,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get all finished campaigns", "error", err)
+		return result, errs.Wrap(err)
+	}
+	// no audit on read
+	return result, nil
+}
+
+// SaveTrackingPixelLoaded saves the tracking pixel event for a campaign recipient
+// no permissions to check - this endpoint is public
+// only a campaign recipient id is required
+func (c *Campaign) SaveTrackingPixelLoaded(
+	ctx *gin.Context,
+	campaignRecipientID *uuid.UUID,
+) error {
+	// get the campaign campaignRecipient
+	campaignRecipient, err := c.CampaignRecipientRepository.GetByCampaignRecipientID(
+		ctx.Request.Context(),
+		campaignRecipientID,
+	)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Logger.Debugw("campaign recipient not found for tracking pixel", "campaign_recipient_id", campaignRecipientID.String())
+			return err
+		}
+		c.Logger.Errorw("failed to get campaign recipient by id", "error", err)
+		return errs.Wrap(err)
+	}
+	// an anonymized campaign recipient has no recipient id, which happens for a
+	// closed anonymous campaign whose link was severed. these public endpoints can
+	// be hit long after close from a token in a delivered email, so return quietly
+	// rather than dereferencing a null id.
+	if campaignRecipient.RecipientID.IsNull() {
+		c.Logger.Debugw("skipping tracking pixel event: recipient is anonymized", "campaignRecipientID", campaignRecipientID.String())
+		return nil
+	}
+	recipientID := campaignRecipient.RecipientID.MustGet()
+	campaignID := campaignRecipient.CampaignID.MustGet()
+
+	// do not record events for SCIM-disabled (deprovisioned) recipients
+	if recipient, rErr := c.RecipientRepository.GetByID(ctx.Request.Context(), &recipientID, &repository.RecipientOption{}); rErr == nil && recipient.ScimSoftDeletedAt != nil {
+		c.Logger.Debugw("skipping tracking pixel event: recipient is scim-disabled", "campaignRecipientID", campaignRecipientID.String())
+		return nil
+	}
+
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		&campaignID,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	// do not record events for closed campaigns
+	if !campaign.IsActive() {
+		c.Logger.Debugw("skipping tracking pixel event: campaign is closed", "campaignID", campaignID.String())
+		return nil
+	}
+	trackingPixelLoadedEventID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_READ]
+	newEventID := uuid.New()
+	ip := vo.NewOptionalString64Must(utils.ExtractClientIP(ctx.Request, c.TrustedProxies))
+	ua := ctx.Request.UserAgent()
+	if len(ua) > 255 {
+		ua = strings.TrimSpace(ua[:255])
+	}
+	userAgent := vo.NewOptionalString255Must(ua)
+	// extract metadata (ja4, platform, accept-language)
+	metadata := model.ExtractCampaignEventMetadata(ctx, campaign)
+	campaignEvent := &model.CampaignEvent{
+		ID:          &newEventID,
+		CampaignID:  &campaignID,
+		RecipientID: &recipientID,
+		IP:          ip,
+		UserAgent:   userAgent,
+		EventID:     trackingPixelLoadedEventID,
+		Data:        vo.NewEmptyOptionalString1MB(),
+		Metadata:    metadata,
+	}
+	anonymizeEventForRecipient(campaignAnonymous(campaign), campaignRecipient, campaignEvent)
+	err = c.CampaignRepository.SaveEvent(ctx, campaignEvent)
+	if err != nil {
+		c.Logger.Errorw("failed to save tracking pixel loaded event", "error", err)
+		return errs.Wrap(err)
+	}
+	// handle most notable event
+	err = c.SetNotableCampaignRecipientEvent(
+		ctx,
+		campaignRecipient,
+		data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_READ,
+	)
+	if err != nil {
+		// logging was done in the previous call
+		return errs.Wrap(err)
+	}
+	// handle webhooks
+	err = c.HandleWebhooks(
+		ctx,
+		&campaignID,
+		&recipientID,
+		data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_READ,
+		nil,
+	)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	return nil
+}
+
+// SaveRecipientReported records that a recipient reported the phishing message for
+// their campaign. It resolves the campaign recipient from the same token used by the
+// tracking pixel, ignores closed campaigns and SCIM-disabled recipients, and
+// de-duplicates so repeated reports do not create multiple events. The reported
+// count is unauthenticated on purpose: it is served on an unguessable path and only
+// ever marks a positive outcome for a recipient that is already part of the campaign.
+func (c *Campaign) SaveRecipientReported(
+	ctx *gin.Context,
+	campaignRecipientID *uuid.UUID,
+) error {
+	// resolve the campaign recipient from the token
+	campaignRecipient, err := c.CampaignRecipientRepository.GetByCampaignRecipientID(
+		ctx.Request.Context(),
+		campaignRecipientID,
+	)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.Logger.Debugw("campaign recipient not found for report", "campaign_recipient_id", campaignRecipientID.String())
+			return err
+		}
+		c.Logger.Errorw("failed to get campaign recipient by id", "error", err)
+		return errs.Wrap(err)
+	}
+	// an anonymized campaign recipient has no recipient id, which happens for a
+	// closed anonymous campaign whose link was severed. this public endpoint can be
+	// hit long after close from a token in a delivered email, so return quietly
+	// rather than dereferencing a null id.
+	if campaignRecipient.RecipientID.IsNull() {
+		c.Logger.Debugw("skipping report event: recipient is anonymized", "campaignRecipientID", campaignRecipientID.String())
+		return nil
+	}
+	recipientID := campaignRecipient.RecipientID.MustGet()
+	campaignID := campaignRecipient.CampaignID.MustGet()
+
+	// do not record events for SCIM-disabled (deprovisioned) recipients
+	if recipient, rErr := c.RecipientRepository.GetByID(ctx.Request.Context(), &recipientID, &repository.RecipientOption{}); rErr == nil && recipient.ScimSoftDeletedAt != nil {
+		c.Logger.Debugw("skipping report event: recipient is scim-disabled", "campaignRecipientID", campaignRecipientID.String())
+		return nil
+	}
+
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		&campaignID,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	// do not record events for closed campaigns
+	if !campaign.IsActive() {
+		c.Logger.Debugw("skipping report event: campaign is closed", "campaignID", campaignID.String())
+		return nil
+	}
+
+	reportedEventID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_REPORTED]
+
+	// de-duplicate: a recipient that already reported is not recorded again so a
+	// button that fires more than once does not spam the timeline. an anonymous
+	// campaign's events carry the pseudonym rather than a recipient id, so dedup on
+	// that instead.
+	var alreadyReported bool
+	if aid, aErr := campaignRecipient.AnonymizedID.Get(); aErr == nil {
+		alreadyReported, err = c.CampaignRepository.HasEventByAnonymizedID(ctx.Request.Context(), &campaignID, &aid, reportedEventID)
+	} else {
+		alreadyReported, err = c.CampaignRepository.HasEvent(ctx.Request.Context(), &campaignID, &recipientID, reportedEventID)
+	}
+	if err != nil {
+		c.Logger.Errorw("failed to check existing reported event", "error", err)
+		return errs.Wrap(err)
+	}
+	if alreadyReported {
+		c.Logger.Debugw("recipient already reported", "campaignRecipientID", campaignRecipientID.String())
+		return nil
+	}
+
+	newEventID := uuid.New()
+	ip := vo.NewOptionalString64Must(utils.ExtractClientIP(ctx.Request, c.TrustedProxies))
+	ua := ctx.Request.UserAgent()
+	if len(ua) > 255 {
+		ua = strings.TrimSpace(ua[:255])
+	}
+	userAgent := vo.NewOptionalString255Must(ua)
+	metadata := model.ExtractCampaignEventMetadata(ctx, campaign)
+	campaignEvent := &model.CampaignEvent{
+		ID:          &newEventID,
+		CampaignID:  &campaignID,
+		RecipientID: &recipientID,
+		IP:          ip,
+		UserAgent:   userAgent,
+		EventID:     reportedEventID,
+		Data:        vo.NewEmptyOptionalString1MB(),
+		Metadata:    metadata,
+	}
+	anonymizeEventForRecipient(campaignAnonymous(campaign), campaignRecipient, campaignEvent)
+	err = c.CampaignRepository.SaveEvent(ctx, campaignEvent)
+	if err != nil {
+		c.Logger.Errorw("failed to save reported event", "error", err)
+		return errs.Wrap(err)
+	}
+	// handle most notable event
+	err = c.SetNotableCampaignRecipientEvent(
+		ctx,
+		campaignRecipient,
+		data.EVENT_CAMPAIGN_RECIPIENT_REPORTED,
+	)
+	if err != nil {
+		// logging was done in the previous call
+		return errs.Wrap(err)
+	}
+	// handle webhooks
+	err = c.HandleWebhooks(
+		ctx,
+		&campaignID,
+		&recipientID,
+		data.EVENT_CAMPAIGN_RECIPIENT_REPORTED,
+		nil,
+	)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	return nil
+}
+
+// UpdateByID updates a campaign by id
+func (c *Campaign) UpdateByID(
+	ctx context.Context,
+	session *model.Session,
+	id *uuid.UUID,
+	incoming *model.Campaign,
+) error {
+	ae := NewAuditEvent("Campaign.UpdateById", session)
+	ae.Details["id"] = id.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	if len(incoming.RecipientGroupIDs) == 0 {
+		return validate.WrapErrorWithField(errors.New("no groups provided"), "Recipient Groups")
+	}
+	// if the schedule type is scheduled, set the start time to start of day and end to the end of the last day
+	if incoming.ConstraintWeekDays.IsSpecified() && !incoming.ConstraintWeekDays.IsNull() {
+		if err := incoming.ValidateScheduledTimes(); err != nil {
+			return errs.Wrap(err)
+		}
+		if err := c.updateSchedulesCampaignStartAndEndDates(incoming); err != nil {
+			return errs.Wrap(err)
+		}
+	}
+	// validate allow deny list selections
+	if err := c.validateAllowDenyIsSameTypeByIDs(ctx, incoming); err != nil {
+		return errs.Wrap(err)
+	}
+	// get campaign and change the values
+	current, err := c.CampaignRepository.GetByID(
+		ctx,
+		id,
+		&repository.CampaignOption{
+			WithRecipientGroups: true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	// check if the campaign is within the allowed time frame for editing
+	// we allow editing up until 5 minutes before the campaigns start time
+	if sendStartAt, err := current.SendStartAt.Get(); err == nil {
+		nowPlus5 := time.Now().Add(5 * time.Minute)
+		// c.Logger.Debugw("now (+5min): %s campaign: %s", nowPlus5.String(), sendStartAt.String())
+		if nowPlus5.After(sendStartAt) {
+			c.Logger.Debugw(
+				"campaign too close to start to edit",
+				"campaignID", current.ID.MustGet().String(),
+				"nowPlus5", nowPlus5,
+				"sendStartAt", sendStartAt,
+			)
+			return validate.WrapErrorWithField(
+				errors.New("Campaign already started or too close to start time"),
+				"Not allowed",
+			)
+		}
+	}
+
+	// update the values
+	if v, err := incoming.Name.Get(); err == nil {
+		// check uniqueness
+		var companyID *uuid.UUID
+		if cid, err := incoming.CompanyID.Get(); err == nil {
+			companyID = &cid
+		}
+		name := incoming.Name.MustGet()
+		isOK, err := repository.CheckNameIsUnique(
+			ctx,
+			c.CampaignRepository.DB,
+			"campaigns",
+			name.String(),
+			companyID,
+			id,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to check campaign uniqueness", "error", err)
+			return errs.Wrap(err)
+		}
+		if !isOK {
+			c.Logger.Debugw("campaign name not unique", "name", name.String())
+			return validate.WrapErrorWithField(errors.New("is not unique"), "name")
+		}
+
+		current.Name.Set(v)
+	}
+	// update values
+	if v, err := incoming.SaveSubmittedData.Get(); err == nil {
+		current.SaveSubmittedData.Set(v)
+	}
+	if v, err := incoming.SaveBrowserMetadata.Get(); err == nil {
+		current.SaveBrowserMetadata.Set(v)
+	}
+	if v, err := incoming.IsAnonymous.Get(); err == nil {
+		// anonymity cannot change once recipients are materialized: pseudonyms are
+		// assigned at materialization, and a self managed campaign is not otherwise
+		// edit locked, so a late flip to anonymous would leave already recorded events
+		// carrying identity. block the change once any recipient exists.
+		currentAnon := campaignAnonymous(current)
+		if v != currentAnon {
+			hasRecipients, hErr := c.CampaignRecipientRepository.HasRecipientsByCampaignID(ctx, id)
+			if hErr != nil {
+				c.Logger.Errorw("failed to check recipients before changing anonymity", "error", hErr)
+				return errs.Wrap(hErr)
+			}
+			if hasRecipients {
+				return validate.WrapErrorWithField(
+					errors.New("anonymous mode cannot be changed after recipients are added"),
+					"isAnonymous",
+				)
+			}
+		}
+		current.IsAnonymous.Set(v)
+	}
+	if v, err := incoming.IsTest.Get(); err == nil {
+		current.IsTest.Set(v)
+	}
+	if v, err := incoming.Obfuscate.Get(); err == nil {
+		current.Obfuscate.Set(v)
+	}
+	// deprecated: webhookIncludeData and webhookEvents on the campaign root are not
+	// written back - they are only read for backward-compat in HandleWebhooks.
+	// per-webhook settings are managed via the webhooks array and campaign_webhooks table.
+	if v, err := incoming.TemplateID.Get(); err == nil {
+		current.TemplateID.Set(v)
+	}
+	if v, err := incoming.SortField.Get(); err == nil {
+		current.SortField.Set(v)
+	}
+	if v, err := incoming.SortOrder.Get(); err == nil {
+		current.SortOrder.Set(v)
+	}
+	if v, err := incoming.SendStartAt.Get(); err == nil {
+		current.SendStartAt.Set(v.Truncate(time.Minute))
+	}
+	if v, err := incoming.SendEndAt.Get(); err == nil {
+		current.SendEndAt.Set(v.Truncate(time.Minute))
+	}
+	if v, err := incoming.ConstraintWeekDays.Get(); err == nil {
+		current.ConstraintWeekDays.Set(v)
+	}
+	if v, err := incoming.ConstraintStartTime.Get(); err == nil {
+		current.ConstraintStartTime.Set(v)
+	}
+	if v, err := incoming.ConstraintEndTime.Get(); err == nil {
+		current.ConstraintEndTime.Set(v)
+	}
+	if v, err := incoming.CloseAt.Get(); err == nil {
+		current.CloseAt.Set(v.Truncate(time.Minute))
+	}
+	if v, err := incoming.AnonymizeAt.Get(); err == nil {
+		current.AnonymizeAt.Set(v.Truncate(time.Minute))
+	}
+	if v, err := incoming.DataAnonymizeAt.Get(); err == nil {
+		current.DataAnonymizeAt.Set(v.Truncate(time.Minute))
+	}
+	if v, err := incoming.ClosedAt.Get(); err == nil {
+		current.ClosedAt.Set(v.Truncate(time.Minute))
+	}
+	if v, err := incoming.AnonymizedAt.Get(); err == nil {
+		current.AnonymizedAt.Set(v.Truncate(time.Minute))
+	}
+	if v, err := incoming.DataAnonymizedAt.Get(); err == nil {
+		current.DataAnonymizedAt.Set(v.Truncate(time.Minute))
+	}
+	if v, err := incoming.ScheduleAt.Get(); err == nil {
+		current.ScheduleAt.Set(v)
+	} else if incoming.ScheduleAt.IsSpecified() {
+		// incoming was explicitly null, clear the scheduled time, reverting to immediate scheduling
+		current.ScheduleAt.SetNull()
+		// also clear any persisted jitter, it was stored for late-scheduling and is no longer needed
+		current.JitterMin.SetNull()
+		current.JitterMax.SetNull()
+	}
+	if v, err := incoming.RecipientGroupIDs.Get(); err == nil {
+		current.RecipientGroupIDs.Set(v)
+	}
+	// handle backward compatibility: convert old single webhook to new array format
+	if incoming.WebhookID.IsSpecified() && !incoming.WebhookID.IsNull() {
+		webhookID := incoming.WebhookID.MustGet()
+		// set default values for old fields if not specified
+		webhookIncludeData := model.WebhookDataLevelFull
+		if incoming.WebhookIncludeData.IsSpecified() && !incoming.WebhookIncludeData.IsNull() {
+			webhookIncludeData = incoming.WebhookIncludeData.MustGet()
+		}
+		webhookEvents := 0
+		if incoming.WebhookEvents.IsSpecified() && !incoming.WebhookEvents.IsNull() {
+			webhookEvents = incoming.WebhookEvents.MustGet()
+		}
+		// convert to new array format
+		webhookConfig := &model.CampaignWebhook{
+			WebhookID:          nullable.NewNullableWithValue(webhookID),
+			WebhookIncludeData: nullable.NewNullableWithValue(webhookIncludeData),
+			WebhookEvents:      nullable.NewNullableWithValue(webhookEvents),
+		}
+		incoming.Webhooks.Set([]*model.CampaignWebhook{webhookConfig})
+		// clear old fields
+		incoming.WebhookID.SetNull()
+	}
+
+	// handle new webhooks array
+	if incoming.Webhooks.IsSpecified() {
+		// always clear the deprecated webhook_id column when the new format is used
+		// so the legacy fallback in HandleWebhooks never reads a stale value
+		current.WebhookID.SetNull()
+		if incoming.Webhooks.IsNull() || len(incoming.Webhooks.MustGet()) == 0 {
+			current.Webhooks.SetNull()
+		} else {
+			webhooks := incoming.Webhooks.MustGet()
+			// validate each webhook
+			for _, wh := range webhooks {
+				if err := wh.Validate(); err != nil {
+					return errs.Wrap(err)
+				}
+			}
+			current.Webhooks.Set(webhooks)
+		}
+	}
+
+	// handle scripts array, mirroring webhooks
+	if incoming.Scripts.IsSpecified() {
+		if incoming.Scripts.IsNull() || len(incoming.Scripts.MustGet()) == 0 {
+			current.Scripts.SetNull()
+		} else {
+			scripts := incoming.Scripts.MustGet()
+			for _, ca := range scripts {
+				if ca == nil {
+					return errs.Wrap(errors.New("script entry cannot be null"))
+				}
+				if err := ca.Validate(); err != nil {
+					return errs.Wrap(err)
+				}
+			}
+			current.Scripts.Set(scripts)
+		}
+	}
+
+	// check there is atleast one valid group
+	// and remove any empty groups
+	validGroups := []*uuid.UUID{}
+	for _, groupID := range current.RecipientGroupIDs.MustGet() {
+		count, err := c.RecipientGroupRepository.GetRecipientCount(ctx, groupID)
+		if err != nil {
+			return errs.Wrap(err)
+		}
+		if count > 0 {
+			validGroups = append(validGroups, groupID)
+		}
+	}
+	if len(validGroups) == 0 {
+		return errs.NewValidationError(
+			errors.New("Selected groups have no recipients"),
+		)
+	}
+	// overwrite the allow / deny
+	current.AllowDenyIDs = incoming.AllowDenyIDs
+	if _, err := current.AllowDenyIDs.Get(); err == nil {
+		if incoming.DenyPageID.IsSpecified() {
+			if incoming.DenyPageID.IsNull() {
+				current.DenyPageID.SetNull()
+			} else {
+				current.DenyPageID.Set(incoming.DenyPageID.MustGet())
+			}
+		}
+
+	}
+
+	// handle evasion page ID
+	if incoming.EvasionPageID.IsSpecified() {
+		if incoming.EvasionPageID.IsNull() {
+			current.EvasionPageID.SetNull()
+		} else {
+			current.EvasionPageID.Set(incoming.EvasionPageID.MustGet())
+		}
+	}
+	// late-schedule (indicated by a non-null schedule_at) is not compatible with self-managed campaigns
+	if current.ScheduleAt.IsSpecified() && !current.ScheduleAt.IsNull() {
+		if current.IsSelfManaged() {
+			return validate.WrapErrorWithField(
+				errors.New("late scheduling is not available for self-managed campaigns"),
+				"scheduleAt",
+			)
+		}
+		// reject scheduleAt if the campaign has already moved past pending_schedule,
+		// at that point recipients have been resolved and scheduling is done; there is
+		// nothing meaningful for a new scheduleAt to do and it would revert the campaign
+		// back to pending_schedule state unexpectedly.
+		if currentNotableEventID, err := current.NotableEventID.Get(); err == nil {
+			if currentEventName, ok := cache.EventNameByID[currentNotableEventID.String()]; ok {
+				if cache.IsMoreNotableCampaignRecipientEvent(currentEventName, data.EVENT_CAMPAIGN_PENDING_SCHEDULE) {
+					return validate.WrapErrorWithField(
+						errors.New("scheduleAt cannot be set on a campaign that has already been scheduled"),
+						"scheduleAt",
+					)
+				}
+			}
+		}
+		// scheduleAt must be in the future
+		scheduleAt := current.ScheduleAt.MustGet()
+		if !scheduleAt.After(time.Now().UTC()) {
+			return validate.WrapErrorWithField(
+				errors.New("schedule time must be in the future"),
+				"scheduleAt",
+			)
+		}
+		// send_start_at must be more than 24h after schedule_at
+		if current.SendStartAt.IsSpecified() && !current.SendStartAt.IsNull() {
+			sendStartAt := current.SendStartAt.MustGet()
+			if sendStartAt.Sub(scheduleAt) < 24*time.Hour {
+				return validate.WrapErrorWithField(
+					errors.New("send start must be at least 24 hours after the schedule-at time"),
+					"scheduleAt",
+				)
+			}
+		}
+	}
+	// validate and update
+	if err := current.Validate(); err != nil {
+		return errs.Wrap(err)
+	}
+	err = c.CampaignRepository.UpdateByID(ctx, id, current)
+	if err != nil {
+		c.Logger.Errorw("failed to update campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+
+	// update webhook configurations
+	if current.Webhooks.IsSpecified() {
+		// remove all existing webhooks
+		err = c.CampaignRepository.RemoveWebhooksByCampaignID(ctx, id)
+		if err != nil {
+			c.Logger.Errorw("failed to remove webhooks from campaign", "error", err)
+			return errs.Wrap(err)
+		}
+		// add new webhooks if present
+		if !current.Webhooks.IsNull() {
+			webhooks := current.Webhooks.MustGet()
+			if len(webhooks) > 0 {
+				err = c.CampaignRepository.AddWebhooks(ctx, id, webhooks)
+				if err != nil {
+					c.Logger.Errorw("failed to add webhooks to campaign", "error", err)
+					return errs.Wrap(err)
+				}
+			}
+		}
+	}
+
+	// update script configurations
+	if current.Scripts.IsSpecified() {
+		// remove all existing scripts
+		err = c.CampaignRepository.RemoveScriptsByCampaignID(ctx, id)
+		if err != nil {
+			c.Logger.Errorw("failed to remove scripts from campaign", "error", err)
+			return errs.Wrap(err)
+		}
+		// add new scripts if present
+		if !current.Scripts.IsNull() {
+			scripts := current.Scripts.MustGet()
+			if len(scripts) > 0 {
+				err = c.CampaignRepository.AddScripts(ctx, id, scripts)
+				if err != nil {
+					c.Logger.Errorw("failed to add scripts to campaign", "error", err)
+					return errs.Wrap(err)
+				}
+			}
+		}
+	}
+	// re-schedule the campaign
+	// TODO should this all be in the schedule method
+	// remove all existing schedules if the campaign is not self-managed
+	if !incoming.IsSelfManaged() {
+		err = c.CampaignRecipientRepository.DeleteByCampaigID(
+			ctx,
+			id,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to remove recipient groups", "error", err)
+			return errs.Wrap(err)
+		}
+		err = c.CampaignRepository.RemoveCampaignRecipientGroups(
+			ctx,
+			id,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to remove campaignrecipient groups", "error", err)
+			return errs.Wrap(err)
+		}
+	} else {
+		// if self managed remove only the campaign recipients groups
+		err = c.CampaignRepository.RemoveCampaignRecipientGroups(
+			ctx,
+			id,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to remove recipient groups", "error", err)
+			return errs.Wrap(err)
+		}
+	}
+	if incoming.RecipientGroupIDs.IsSpecified() && !incoming.RecipientGroupIDs.IsNull() {
+		recipientGroupIDs := incoming.RecipientGroupIDs.MustGet()
+		err = c.CampaignRepository.AddRecipientGroups(
+			ctx,
+			id,
+			recipientGroupIDs,
+		)
+	}
+	if err != nil {
+		c.Logger.Errorw("failed to add recipient groups", "error", err)
+		return errs.Wrap(err)
+	}
+	if current.ScheduleAt.IsSpecified() && !current.ScheduleAt.IsNull() {
+		// Late-scheduling: persist jitter to the DB so the task runner can apply it
+		// when schedule() is called hours later. Only overwrite jitter when the incoming
+		// payload explicitly specifies it, unspecified means "leave existing value alone".
+		if incoming.JitterMin.IsSpecified() {
+			current.JitterMin = incoming.JitterMin
+			current.JitterMax = incoming.JitterMax
+		}
+		err = c.setMostNotableCampaignEvent(ctx, current, data.EVENT_CAMPAIGN_PENDING_SCHEDULE)
+		if err != nil {
+			return errs.Wrap(err)
+		}
+	} else {
+		// Immediate scheduling: jitter lives in memory only for this call, never written to DB.
+		current.JitterMin = incoming.JitterMin
+		current.JitterMax = incoming.JitterMax
+		err = c.schedule(ctx, session, current)
+		if err != nil {
+			c.Logger.Errorw("failed to re-schedule campaign", "error", err)
+			return errs.Wrap(err)
+		}
+	}
+	c.AuditLogAuthorized(ae)
+	return nil
+}
+
+// validateAllowDenyIsSameType checks if the allow and deny lists are of the same type
+// allow and deny are mutually exclusive
+func (c *Campaign) validateAllowDenyIsSameTypeByIDs(
+	ctx context.Context,
+	campaign *model.Campaign,
+) error {
+	if campaign.AllowDenyIDs.IsSpecified() && !campaign.AllowDenyIDs.IsNull() {
+		allowDenyIDs := campaign.AllowDenyIDs.MustGet()
+		if len(allowDenyIDs) == 0 {
+			return nil
+		}
+		isAllowList := false
+		for i, id := range allowDenyIDs {
+			entry, err := c.AllowDenyRepository.GetByID(ctx, id, &repository.AllowDenyOption{})
+			if err != nil {
+				c.Logger.Errorw("failed to get allow deny by id", "error", err)
+			}
+			allowed := entry.Allowed.MustGet()
+			if i == 0 {
+				isAllowList = allowed
+				continue
+			}
+			if isAllowList != allowed {
+				return validate.WrapErrorWithField(errors.New("allow and deny list are mutually exclusive"), "allowDenyIDs")
+			}
+		}
+	}
+	return nil
+}
+
+// updateSchedulesCampaignStartAndEndDates updates the schedules for a campaign
+// it uses the first and last selected weekday and along with sending times to adjust
+// the start and end of the campaign
+func (c *Campaign) updateSchedulesCampaignStartAndEndDates(
+	campaign *model.Campaign,
+) error {
+	// get the first and last selected weekday
+	campaignWeekDays := campaign.ConstraintWeekDays.MustGet().AsSlice()
+	startAt := campaign.SendStartAt.MustGet()
+	endAt := campaign.SendEndAt.MustGet()
+	startTime := campaign.ConstraintStartTime.MustGet()
+	endTime := campaign.ConstraintEndTime.MustGet()
+	// find the first day and start time of sending
+	currentDate := startAt
+	startFound := false
+	startDay := time.Time{}
+	lastDay := time.Time{}
+	for currentDate.Before(endAt) || currentDate.Equal(endAt) {
+		if slices.Contains(campaignWeekDays, int(currentDate.Weekday())) {
+			if !startFound {
+				startDay = currentDate
+				startFound = true
+			}
+			lastDay = currentDate
+		}
+		currentDate = currentDate.AddDate(0, 0, 1)
+	}
+	campaign.SendStartAt.Set(startDay.Truncate(24 * time.Hour).Add(startTime.Minutes()))
+	campaign.SendEndAt.Set(lastDay.Truncate(24 * time.Hour).Add(endTime.Minutes()))
+	return nil
+}
+
+// DeleteByID deletes a campaign by id
+func (c *Campaign) DeleteByID(
+	ctx context.Context,
+	session *model.Session,
+	id *uuid.UUID,
+) error {
+	ae := NewAuditEvent("Campaign.DeleteById", session)
+	ae.Details["id"] = id.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	// delete all campaign-webhook junction records
+	err = c.CampaignRepository.RemoveWebhooksByCampaignID(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to delete campaign webhooks by campaign id", "error", err)
+		return errs.Wrap(err)
+	}
+	// delete all campaign-script junction records
+	err = c.CampaignRepository.RemoveScriptsByCampaignID(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to delete campaign scripts by campaign id", "error", err)
+		return errs.Wrap(err)
+	}
+	// delete all microsoft device codes for the campaign
+	if err = c.MicrosoftDeviceCodeRepository.DeleteByCampaignID(ctx, id); err != nil {
+		c.Logger.Errorw("failed to delete microsoft device codes by campaign id", "error", err)
+		return errs.Wrap(err)
+	}
+	// delete all campaign-allowDeny relations to the campaign
+	err = c.CampaignRepository.RemoveAllowDenyListsByCampaignID(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to delete campaign allow deny by campaign id", "error", err)
+		return errs.Wrap(err)
+	}
+	// remove all related events
+	err = c.CampaignRepository.DeleteEventsByCampaignID(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to delete campaign events by campaign id", "error", err)
+		return errs.Wrap(err)
+	}
+	// delete the relation between the campaign and the recipient groups
+	err = c.CampaignRepository.RemoveCampaignRecipientGroups(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to delete campaign recipient groups by campaign id",
+			"campaignID", id.String(),
+			"error", err,
+		)
+		return errs.Wrap(err)
+	}
+	err = c.CampaignRecipientRepository.DeleteByCampaigID(
+		ctx,
+		id,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to remove recipient groups", "error", err)
+		return errs.Wrap(err)
+	}
+	// delete campaign
+	err = c.CampaignRepository.DeleteByID(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to delete campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	if c.RemoteBrowserService != nil {
+		c.RemoteBrowserService.TerminateByCampaignID(*id)
+	}
+	c.AuditLogAuthorized(ae)
+	return nil
+}
+
+// DeleteEventByID deletes a single campaign event by its ID
+// only allows deletion on open campaigns (not closed)
+// recalculates the notable event if the deleted event was the notable one
+func (c *Campaign) DeleteEventByID(
+	ctx context.Context,
+	session *model.Session,
+	eventID *uuid.UUID,
+) error {
+	ae := NewAuditEvent("Campaign.DeleteEventByID", session)
+	ae.Details["eventID"] = eventID.String()
+
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+
+	// get the event to be deleted
+	event, err := c.CampaignRepository.GetEventByID(ctx, eventID)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign event by id", "error", err, "eventID", eventID.String())
+		return errs.Wrap(err)
+	}
+
+	ae.Details["campaignID"] = event.CampaignID.String()
+	if event.RecipientID != nil {
+		ae.Details["recipientID"] = event.RecipientID.String()
+	}
+
+	// get the campaign to check if it's closed
+	campaign, err := c.CampaignRepository.GetByID(ctx, event.CampaignID, &repository.CampaignOption{})
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign", "error", err, "campaignID", event.CampaignID.String())
+		return errs.Wrap(err)
+	}
+
+	// check if campaign is closed
+	if campaign.ClosedAt.IsSpecified() && !campaign.ClosedAt.IsNull() {
+		c.Logger.Debugw("cannot delete event from closed campaign",
+			"campaignID", event.CampaignID.String(),
+			"eventID", eventID.String(),
+		)
+		return errs.ErrCampaignAlreadyClosed
+	}
+
+	// get the campaign recipient to recalculate notable event after deletion
+	var campaignRecipient *model.CampaignRecipient
+
+	if event.RecipientID != nil {
+		campaignRecipient, err = c.CampaignRecipientRepository.GetByCampaignAndRecipientID(
+			ctx,
+			event.CampaignID,
+			event.RecipientID,
+			&repository.CampaignRecipientOption{},
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to get campaign recipient",
+				"error", err,
+				"campaignID", event.CampaignID.String(),
+				"recipientID", event.RecipientID.String(),
+			)
+			return errs.Wrap(err)
+		}
+	}
+
+	// delete the event
+	err = c.CampaignRepository.DeleteEventByID(ctx, eventID)
+	if err != nil {
+		c.Logger.Errorw("failed to delete campaign event", "error", err, "eventID", eventID.String())
+		return errs.Wrap(err)
+	}
+
+	// recalculate notable event after deleting an event for this recipient
+	if campaignRecipient != nil {
+		campaignRecipientID, err := campaignRecipient.ID.Get()
+		if err != nil {
+			c.Logger.Errorw("campaign recipient has no ID, skipping notable event update",
+				"error", err,
+				"campaignID", event.CampaignID.String(),
+			)
+		} else {
+			mostNotableEventTypeID, err := c.CampaignRepository.GetMostNotableEventForRecipient(
+				ctx,
+				event.CampaignID,
+				event.RecipientID,
+				eventID,
+			)
+			if err != nil {
+				c.Logger.Errorw("failed to get most notable event for recipient",
+					"error", err,
+					"campaignID", event.CampaignID.String(),
+					"recipientID", event.RecipientID.String(),
+				)
+			} else {
+				err = c.CampaignRecipientRepository.UpdateNotableEventByID(ctx, &campaignRecipientID, mostNotableEventTypeID)
+				if err != nil {
+					c.Logger.Errorw("failed to update campaign recipient notable event",
+						"error", err,
+						"campaignRecipientID", campaignRecipientID.String(),
+					)
+				}
+			}
+		}
+	}
+
+	c.AuditLogAuthorized(ae)
+	return nil
+}
+
+// SendNextBatch sends the next batch of emails
+// atm this is only audit logged on auth failures
+func (c *Campaign) SendNextBatch(
+	ctx context.Context,
+	session *model.Session,
+) error {
+	ae := NewAuditEvent("Campaign.SendNextBatch", session)
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	// get next batch
+	campaignRecipients, err := c.CampaignRecipientRepository.GetUnsendRecipientsForSending(
+		ctx,
+		1000, // limit
+		&repository.CampaignRecipientOption{
+			WithRecipient: true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get next batch", "error", err)
+		return errs.Wrap(err)
+	}
+	// group campaignrecipients by campaign so if it is send via SMTP we can reuse
+	// the connection
+	campaignMap := map[string][]*model.CampaignRecipient{}
+	for _, campaignRecipient := range campaignRecipients {
+		campaignID := campaignRecipient.CampaignID.MustGet().String()
+		campaignMap[campaignID] = append(campaignMap[campaignID], campaignRecipient)
+	}
+	// iterate each campaign and send the messages
+	for campaignID, campaignRecipients := range campaignMap {
+		err = c.sendCampaignMessages(ctx, session, campaignID, campaignRecipients)
+		if err != nil {
+			c.Logger.Errorw("failed to send campaign messages", "error", err)
+			continue
+		}
+	}
+
+	return errs.Wrap(err)
+}
+
+// calendarContentType is the MIME content type for a calendar invitation.
+// Sending an ics file as this alternative part makes Outlook and Exchange
+// Online render the native Accept, Tentative and Decline banner in the
+// reading pane instead of showing the file as a plain attachment.
+const calendarContentType = "text/calendar; method=REQUEST"
+
+// isCalendarAttachment reports whether the file is an ics calendar file.
+// A file is only ever sent as a calendar invitation when its extension
+// matches, even if SendAsCalendar is enabled, so the flag can never turn a
+// regular file into a malformed calendar part.
+func isCalendarAttachment(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	return ext == ".ics" || ext == ".ical"
+}
+
+func (c *Campaign) sendCampaignMessages(
+	ctx context.Context,
+	session *model.Session,
+	cid string,
+	campaignRecipients []*model.CampaignRecipient,
+) error {
+	campaignID := uuid.MustParse(cid)
+	// fetch the campaign to ensure that it is still active and to fetch details for sending
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		&campaignID,
+		&repository.CampaignOption{
+			WithCampaignTemplate: false,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id",
+			"campaignID", campaignID,
+			"error", err,
+		)
+		return errs.Wrap(err)
+	}
+	// check if the campaign has been close while sending is being processed
+	if !campaign.IsActive() {
+		c.Logger.Debugw("campaign is not active",
+			"campaignID", campaign.ID.MustGet().String(),
+		)
+		return errors.New("skipping send, campaign is not active")
+	}
+	// fetch the campaign cTemplate to get the sender and message to send
+	templateID, err := campaign.TemplateID.Get()
+	if err != nil {
+		c.Logger.Infow("campaign has no template", "error", err)
+		return errs.Wrap(errors.New("skipping send, campaign has no template"))
+	}
+	cTemplate, err := c.CampaignTemplateService.GetByID(
+		ctx,
+		session,
+		&templateID,
+		&repository.CampaignTemplateOption{
+			WithDomain:             true,
+			WithSMTPConfiguration:  true,
+			WithAPISender:          true,
+			WithIdentifier:         true,
+			WithBeforeLandingProxy: true,
+			WithLandingProxy:       true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign template by id", "error", err)
+		closeErr := c.closeCampaign(
+			ctx,
+			session,
+			&campaignID,
+			campaign,
+			"failed get email",
+		)
+		return errs.Wrap(errors.Join(err, closeErr))
+	}
+	// domain
+	domain := cTemplate.Domain
+	if domain == nil {
+		// if the domain has been removed from the campaign template used in this campaign, close the campaign
+		closeErr := c.closeCampaign(
+			ctx,
+			session,
+			&campaignID,
+			campaign,
+			"Campaign does not have a domain relation",
+		)
+		if closeErr != nil {
+			return errs.Wrap(errors.Join(err, closeErr))
+		}
+		c.Logger.Warnw("Running campaign does not have a domain relation - cancelling campaign",
+			"campaignID", campaignID.String(),
+		)
+		return nil
+	}
+	// get email details
+	emailID, err := cTemplate.EmailID.Get()
+	if err != nil {
+		c.Logger.Warnw("Running campaign does not have a email relation - cancelling campaign",
+			"campaignID", campaignID.String(),
+		)
+		// if the email relation has been removed from the campaign template used in this campagin, close the campaign
+		closeErr := c.closeCampaign(
+			ctx,
+			session,
+			&campaignID,
+			campaign,
+			"Campaign does not have a email relation",
+		)
+		if closeErr != nil {
+			return errs.Wrap(errors.Join(err, closeErr))
+		}
+		return nil
+	}
+	// get campaign's company context for attachment filtering
+	var campaignCompanyID *uuid.UUID
+	if campaign.CompanyID.IsSpecified() && !campaign.CompanyID.IsNull() {
+		companyID := campaign.CompanyID.MustGet()
+		campaignCompanyID = &companyID
+	}
+
+	email, err := c.MailService.GetByID(
+		ctx,
+		session,
+		&emailID,
+		campaignCompanyID,
+	)
+	if err != nil {
+		closeErr := c.closeCampaign(
+			ctx,
+			session,
+			&campaignID,
+			campaign,
+			"failed get email",
+		)
+		return errs.Wrap(errors.Join(err, closeErr))
+	}
+	content, err := email.Content.Get()
+	if err != nil {
+		// if mail templates fails to parse, close the campaign
+		closeErr := c.closeCampaign(
+			ctx,
+			session,
+			&campaignID,
+			campaign,
+			"failed get email content",
+		)
+		return errs.Wrap(errors.Join(err, closeErr))
+	}
+	// validate the template is parseable before entering the per recipient loop.
+	// the actual per recipient execution uses TemplateFuncsWithDeviceCode so that
+	// {{MicrosoftDeviceCode}} / {{MicrosoftDeviceCodeURL}} resolve correctly.
+	t := template.New("email")
+	t = t.Funcs(c.TemplateService.TemplateFuncsWithCompany(ctx, campaignCompanyID))
+	_, err = t.Parse(content.String())
+	if err != nil {
+		// if mail templates fails to parse, close the campaign
+		closeErr := c.closeCampaign(
+			ctx,
+			session,
+			&campaignID,
+			campaign,
+			"failed to parse the template",
+		)
+		return errs.Wrap(errors.Join(err, closeErr))
+	}
+	// check if sending is API or SMTP
+	isSmtpCampaign := cTemplate.SMTPConfigurationID.IsSpecified() && !cTemplate.SMTPConfigurationID.IsNull()
+	isAPISenderCampaign := cTemplate.APISenderID.IsSpecified() && !cTemplate.APISenderID.IsNull()
+	// close the campaign
+	if !isSmtpCampaign && !isAPISenderCampaign {
+		c.Logger.Warnw("Running campaign does not have a SMTP or API sender relation - cancelling campaign",
+			"campaignID", campaignID.String(),
+		)
+		// if there is no smtp config or api sender, then one of them has been removed from the campaigns template
+		return c.closeCampaign(
+			ctx,
+			session,
+			&campaignID,
+			campaign,
+			"Campaign does not have a either an SMTP configuration or an API Sender",
+		)
+	}
+	if isAPISenderCampaign {
+		// send via API
+		for _, campaignRecipient := range campaignRecipients {
+			// update the last attempt at timestamp so we do not accidently try sending the same
+			// email again if a panic or error happens in a 3. party lib.
+			campaignRecipientID := campaignRecipient.ID.MustGet()
+			campaignRecipient.LastAttemptAt = nullable.NewNullableWithValue(time.Now())
+			err := c.CampaignRecipientRepository.UpdateByID(
+				ctx,
+				&campaignRecipientID,
+				campaignRecipient,
+			)
+			if err != nil {
+				c.Logger.Errorw("CRITICAL - failed to update last attempted at - aborting",
+					"error", err,
+				)
+				return errs.Wrap(
+					fmt.Errorf("failed to update last attempted at: %s \nThis is critical for sending, aborting...", err),
+				)
+			}
+			// generate custom campaign URL if first page is MITM
+			recipientID := campaignRecipient.ID.MustGet()
+			customCampaignURL, urlErr := c.GetLandingPageURLByCampaignRecipientID(ctx, session, &recipientID)
+			if urlErr != nil {
+				c.Logger.Errorw("failed to get campaign url for API sender", "error", urlErr)
+				customCampaignURL = ""
+			}
+
+			// send via API with custom URL (domain and template stay the same for assets)
+			err = c.APISenderService.SendWithCustomURL(
+				ctx,
+				session,
+				cTemplate,
+				campaignRecipient,
+				domain,
+				content.String(),
+				email,
+				customCampaignURL,
+				campaignCompanyID,
+				campaignID,
+			)
+			if err != nil {
+				c.Logger.Errorw("failed to send message via. API", "error", err)
+			}
+			err = c.saveSendingResult(
+				ctx,
+				campaignRecipient,
+				err,
+			)
+			if err != nil {
+				c.Logger.Errorw("failed to save sending result", "error", err)
+				return errs.Wrap(err)
+			}
+		}
+		err = c.setMostNotableCampaignEvent(
+			ctx,
+			campaign,
+			data.EVENT_CAMPAIGN_ACTIVE,
+		)
+		if err != nil {
+			// err is logged in method call
+			return errs.Wrap(err)
+		}
+		return nil
+	}
+	if !isSmtpCampaign {
+		c.Logger.Error("no sender configuration found")
+		return errors.New("no sender configuration found")
+	}
+	// get the SMTP configuration
+	smtpConfigID, err := cTemplate.SMTPConfigurationID.Get()
+	if err != nil {
+		c.Logger.Infow(
+			"failed to get SMTP configuration from template - template no longer usable",
+			"smtpConfigID", smtpConfigID,
+		)
+		return errs.Wrap(err)
+	}
+	smtpConfig, err := c.SMTPConfigService.GetByID(
+		ctx,
+		session,
+		&smtpConfigID,
+		&repository.SMTPConfigurationOption{
+			WithHeaders: true,
+		},
+	)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.Logger.Errorw("smtp configuration did not load", "error", err)
+		return errs.Wrap(err)
+	}
+	smtpPort, err := smtpConfig.Port.Get()
+	if err != nil {
+		c.Logger.Errorw("failed to get smtp port", "error", err)
+		return errs.Wrap(err)
+	}
+	smtpHost, err := smtpConfig.Host.Get()
+	if err != nil {
+		c.Logger.Errorw("failed to get smtp host", "error", err)
+		return errs.Wrap(err)
+	}
+	smtpIgnoreCertErrors, err := smtpConfig.IgnoreCertErrors.Get()
+	if err != nil {
+		c.Logger.Errorw("failed to get smtp ignore cert errors", "error", err)
+		return errs.Wrap(err)
+	}
+	emailOptions := []mail.Option{
+		mail.WithPort(smtpPort.Int()),
+		mail.WithTLSConfig(
+			&tls.Config{
+				ServerName: smtpHost.String(),
+				// #nosec
+				InsecureSkipVerify: smtpIgnoreCertErrors,
+				// MinVersion:         tls.VersionTLS12,
+			},
+		),
+	}
+	// port 465 speaks implicit TLS (SMTPS): the connection is wrapped in
+	// TLS on connect instead of being upgraded later via STARTTLS. go-mail
+	// ignores the TLS policy while SSL is on.
+	if smtpPort.Int() == 465 {
+		emailOptions = append(emailOptions, mail.WithSSL())
+	}
+	// use a custom HELO/EHLO hostname when set, otherwise go-mail
+	// falls back to the machine hostname
+	if helo, err := smtpConfig.Helo.Get(); err == nil {
+		if h := helo.String(); len(h) > 0 {
+			emailOptions = append(emailOptions, mail.WithHELO(h))
+		}
+	}
+	// setup authentication if provided
+	username, err := smtpConfig.Username.Get()
+	if err != nil {
+		c.Logger.Errorw("failed to get smtp username", "error", err)
+		return errs.Wrap(err)
+	}
+	password, err := smtpConfig.Password.Get()
+	if err != nil {
+		c.Logger.Errorw("failed to get smtp password", "error", err)
+		return errs.Wrap(err)
+	}
+	if un := username.String(); len(un) > 0 {
+		emailOptions = append(
+			emailOptions,
+			mail.WithUsername(
+				un,
+			),
+		)
+		if pw := password.String(); len(pw) > 0 {
+			emailOptions = append(
+				emailOptions,
+				mail.WithPassword(
+					pw,
+				),
+			)
+		}
+	}
+	// prepare all messages
+	messageOptions := []mail.MsgOption{
+		mail.WithNoDefaultUserAgent(),
+	}
+	// create maps between recipients and messages
+	// and prepare all messages
+	messages := []*mail.Msg{}
+	mailToCampaignRecipient := make(map[string]*model.CampaignRecipient, len(campaignRecipients))
+	for _, campaignRecipient := range campaignRecipients {
+		// update the last attempt at timestamp so we do not accidently try sending the same
+		// email again if a panic or error happens in a 3. party lib.
+		campaignRecipientID := campaignRecipient.ID.MustGet()
+		campaignRecipient.LastAttemptAt = nullable.NewNullableWithValue(time.Now())
+		err := c.CampaignRecipientRepository.UpdateByID(
+			ctx,
+			&campaignRecipientID,
+			campaignRecipient,
+		)
+		if err != nil {
+			c.Logger.Errorw("CRITICAL - failed to update last attempted at - aborting",
+				"error", err,
+			)
+			return fmt.Errorf("failed to update last attempted at: %s \nThis is critical for sending, aborting...", err)
+		}
+		m := mail.NewMsg(messageOptions...)
+		/* TODO at the moment the mail envelope from is a email, so it can not be empty by definition
+		if envelopefrom.string() == "" {
+			// extract the email only from mail.mailheaderfrom
+			// and use that as the envelope from
+			// this is a fallback if the envelope from is not set
+			address, err := netmail.parseaddress(email.mailheaderfrom)
+			if err != nil {
+				c.logger.errorw("failed to parse mail header 'from'", "error", err)
+				return false,errs.Wrap(err)
+			}
+			err = m.envelopefrom(address.address)
+			if err != nil {
+				c.logger.errorw("failed to set envelope from", "error", err)
+				return false,errs.Wrap(err)
+			}
+		} else {
+			err = m.envelopefrom(email.mailenvelopefrom)
+			if err != nil {
+				c.logger.errorw("failed to set envelope from", "error", err)
+				return false,errs.Wrap(err)
+			}
+		}
+		*/
+		err = m.EnvelopeFrom(email.MailEnvelopeFrom.MustGet().String())
+		if err != nil {
+			c.Logger.Errorw("failed to set envelope from", "error", err)
+			return errs.Wrap(err)
+		}
+		// message id from the sending domain so the host is not leaked
+		setMessageIDFromAddress(m, email.MailEnvelopeFrom.MustGet().String())
+		// headers
+		err = m.From(email.MailHeaderFrom.MustGet().String())
+		if err != nil {
+			c.Logger.Errorw("failed to set mail header 'From'", "error", err)
+			return errs.Wrap(err)
+		}
+		// handle a race where the recipient has been removed/anonymized
+		if campaignRecipient.Recipient == nil {
+			crid := campaignRecipient.ID.MustGet()
+			err := c.CampaignRecipientRepository.Cancel(
+				ctx,
+				[]*uuid.UUID{&crid},
+			)
+			if err != nil {
+				return errors.New("Missing recipient from campaign recipient")
+			}
+			c.Logger.Info("A campaign recipient had no recipient - cancelled - this can happend in rare race conditions or curruption bugs")
+			continue
+		}
+		recpEmail := campaignRecipient.Recipient.Email.MustGet().String()
+		err = m.To(recpEmail)
+		if err != nil {
+			c.Logger.Errorw("failed to set mail header 'To'", "error", err)
+			return errs.Wrap(err)
+		}
+		// store a map between recipient email and message
+		// so we can later save the sending result
+		mailToCampaignRecipient[m.GetToString()[0]] = campaignRecipient
+
+		urlIdentifier := cTemplate.URLIdentifier
+		if urlIdentifier == nil {
+			c.Logger.Error("url identifier is MUST be loaded for the campaign template")
+			return fmt.Errorf("url identifier is MUST be loaded for the campaign template")
+		}
+
+		// get template domain for assets and tracking pixel
+		domainName, err := domain.Name.Get()
+		if err != nil {
+			c.Logger.Errorw("failed to get domain name", "error", err)
+			return errs.Wrap(err)
+		}
+		urlPath := cTemplate.URLPath.MustGet().String()
+
+		// generate custom campaign URL if first page is MITM
+		recipientID := campaignRecipient.ID.MustGet()
+		customCampaignURL, err := c.GetLandingPageURLByCampaignRecipientID(ctx, session, &recipientID)
+		if err != nil {
+			c.Logger.Errorw("failed to get campaign url", "error", err)
+			return errs.Wrap(err)
+		}
+
+		t := c.TemplateService.CreateMail(
+			ctx,
+			domainName.String(),
+			urlIdentifier.Name.MustGet(),
+			urlPath,
+			campaignRecipient,
+			email,
+			nil,
+			campaignCompanyID,
+			NewFlowContext(cTemplate, campaignID),
+		)
+
+		// the only builder that knows about proxy first pages and path mode codes
+		(*t)["URL"] = customCampaignURL
+
+		// build per recipient template funcs so that {{MicrosoftDeviceCode}} resolves
+		// to a real device code for this campaign recipient.
+		// use the actual recipient id (not the campaign recipient row id) so the
+		// lookup key matches what the landing page path uses.
+		actualRecipientID := campaignRecipient.RecipientID.MustGet()
+		recipientDeviceFuncs := c.TemplateService.TemplateFuncsWithDeviceCode(ctx, &campaignID, &actualRecipientID)
+
+		// custom headers support the same per recipient variables as the subject and body
+		applyCustomSMTPHeaders(m, smtpConfig.Headers, t, recipientDeviceFuncs, c.Logger)
+
+		// process subject through template
+		subjectTemplate, err := template.New("subject").Funcs(recipientDeviceFuncs).Parse(email.MailHeaderSubject.MustGet().String())
+		if err != nil {
+			c.Logger.Errorw("failed to parse subject template", "error", err)
+			return errs.Wrap(err)
+		}
+		var subjectBuffer bytes.Buffer
+		err = subjectTemplate.Execute(&subjectBuffer, t)
+		if err != nil {
+			c.Logger.Errorw("failed to execute subject template", "error", err)
+			return errs.Wrap(err)
+		}
+		m.Subject(subjectBuffer.String())
+
+		// re-parse the body template per recipient so device code funcs are bound
+		// to the correct recipient id
+		recipientMailTmpl, err := template.New("email").Funcs(recipientDeviceFuncs).Parse(content.String())
+		if err != nil {
+			c.Logger.Errorw("failed to parse per recipient mail template", "error", err)
+			return errs.Wrap(err)
+		}
+		var bodyBuffer bytes.Buffer
+		err = recipientMailTmpl.Execute(&bodyBuffer, t)
+		if err != nil {
+			c.Logger.Errorw("failed to execute mail template", "error", err)
+			return errs.Wrap(err)
+		}
+		m.SetBodyString("text/html", bodyBuffer.String())
+		// attachments
+		attachments := email.Attachments
+		for _, emailAttachment := range attachments {
+			attachment := emailAttachment.Attachment
+			p, err := c.MailService.AttachmentService.GetPath(attachment)
+			if err != nil {
+				return fmt.Errorf("failed to get attachment path: %s", err)
+			}
+
+			// check if attachment should be inline (for cid: references)
+			if emailAttachment.IsInline {
+				// inline attachment - embedded in email body, can be referenced via cid:filename
+				if !attachment.EmbeddedContent.MustGet() {
+					// simple inline image - no template processing needed
+					m.EmbedFile(p.String())
+				} else {
+					// inline image with template processing
+					attachmentContent, err := os.ReadFile(p.String())
+					if err != nil {
+						return errs.Wrap(err)
+					}
+					// setup attachment for executing as email template
+					attachmentAsEmail := model.Email{
+						ID:                email.ID,
+						CreatedAt:         email.CreatedAt,
+						UpdatedAt:         email.UpdatedAt,
+						Name:              email.Name,
+						MailEnvelopeFrom:  email.MailEnvelopeFrom,
+						MailHeaderFrom:    email.MailHeaderFrom,
+						MailHeaderSubject: email.MailHeaderSubject,
+						Content:           email.Content,
+						AddTrackingPixel:  email.AddTrackingPixel,
+						CompanyID:         email.CompanyID,
+						Attachments:       email.Attachments,
+						Company:           email.Company,
+					}
+					attachmentAsEmail.Content = nullable.NewNullableWithValue(
+						*vo.NewUnsafeOptionalString1MB(string(attachmentContent)),
+					)
+					// generate custom campaign URL for attachment
+					recipientID := campaignRecipient.ID.MustGet()
+					customCampaignURL, err := c.GetLandingPageURLByCampaignRecipientID(ctx, session, &recipientID)
+					if err != nil {
+						c.Logger.Errorw("failed to get campaign url for attachment", "error", err)
+						return errs.Wrap(err)
+					}
+
+					attachmentStr, err := c.TemplateService.CreateMailBodyWithCustomURLAndRecipient(
+						ctx,
+						urlIdentifier.Name.MustGet(),
+						urlPath,
+						domain,
+						campaignRecipient,
+						&attachmentAsEmail,
+						nil,
+						customCampaignURL,
+						campaignCompanyID,
+						&campaignID,
+						&actualRecipientID,
+						NewFlowContext(cTemplate, campaignID),
+					)
+					if err != nil {
+						return errs.Wrap(fmt.Errorf("failed to setup attachment with embedded content: %s", err))
+					}
+					// use EmbedReader for inline images - sets Content-Disposition: inline and Content-ID header
+					// the filename becomes the Content-ID, so use <img src="cid:filename.jpg"> in HTML
+					m.EmbedReader(
+						filepath.Base(p.String()),
+						strings.NewReader(attachmentStr),
+					)
+				}
+			} else if !attachment.EmbeddedContent.MustGet() {
+				if attachment.SendAsCalendar.MustGet() && isCalendarAttachment(p.String()) {
+					// calendar invitation parsed natively by Outlook, raw file content
+					icsContent, err := os.ReadFile(p.String())
+					if err != nil {
+						return fmt.Errorf("failed to read calendar file: %s", err)
+					}
+					m.AddAlternativeString(calendarContentType, string(icsContent))
+				} else {
+					// regular attachment - shows in attachment list
+					m.AttachFile(p.String())
+				}
+			} else {
+				// regular attachment with template processing
+				attachmentContent, err := os.ReadFile(p.String())
+				if err != nil {
+					return errs.Wrap(err)
+				}
+				// setup attachment for executing as email template
+				attachmentAsEmail := model.Email{
+					ID:                email.ID,
+					CreatedAt:         email.CreatedAt,
+					UpdatedAt:         email.UpdatedAt,
+					Name:              email.Name,
+					MailEnvelopeFrom:  email.MailEnvelopeFrom,
+					MailHeaderFrom:    email.MailHeaderFrom,
+					MailHeaderSubject: email.MailHeaderSubject,
+					Content:           email.Content,
+					AddTrackingPixel:  email.AddTrackingPixel,
+					CompanyID:         email.CompanyID,
+					Attachments:       email.Attachments,
+					Company:           email.Company,
+				}
+				attachmentAsEmail.Content = nullable.NewNullableWithValue(
+					*vo.NewUnsafeOptionalString1MB(string(attachmentContent)),
+				)
+				// generate custom campaign URL for attachment
+				attachmentRecipientID := campaignRecipient.ID.MustGet()
+				customCampaignURL, err := c.GetLandingPageURLByCampaignRecipientID(ctx, session, &attachmentRecipientID)
+				if err != nil {
+					c.Logger.Errorw("failed to get campaign url for attachment", "error", err)
+					return errs.Wrap(err)
+				}
+
+				attachmentStr, err := c.TemplateService.CreateMailBodyWithCustomURLAndRecipient(
+					ctx,
+					urlIdentifier.Name.MustGet(),
+					urlPath,
+					domain,
+					campaignRecipient,
+					&attachmentAsEmail,
+					nil,
+					customCampaignURL,
+					campaignCompanyID,
+					&campaignID,
+					&actualRecipientID,
+					NewFlowContext(cTemplate, campaignID),
+				)
+				if err != nil {
+					return errs.Wrap(fmt.Errorf("failed to setup attachment with embedded content: %s", err))
+				}
+				if attachment.SendAsCalendar.MustGet() && isCalendarAttachment(p.String()) {
+					// calendar invitation parsed natively by Outlook, with rendered variables
+					m.AddAlternativeString(calendarContentType, attachmentStr)
+				} else {
+					m.AttachReadSeeker(
+						filepath.Base(p.String()),
+						strings.NewReader(attachmentStr),
+					)
+				}
+			}
+		}
+		messages = append(messages, m)
+	}
+
+	// send the messages
+	// the client sends all the messages and ensure that all messages are sent
+	// in the same connection
+	var mc *mail.Client
+
+	// Try different authentication methods based on configuration
+	// If username is provided, use authentication; otherwise try without auth first
+	if un := username.String(); len(un) > 0 {
+		// Try CRAM-MD5 first when credentials are provided
+		emailOptionsCRAM5 := append(emailOptions, mail.WithSMTPAuth(mail.SMTPAuthCramMD5))
+		mc, _ = mail.NewClient(smtpHost.String(), emailOptionsCRAM5...)
+		mc.SetLogger(log.NewGoMailLoggerAdapter(c.Logger))
+		mc.SetDebugLog(true)
+		if build.Flags.Production {
+			mc.SetTLSPolicy(mail.TLSMandatory)
+		} else {
+			mc.SetTLSPolicy(mail.TLSOpportunistic)
+		}
+		err = mc.DialAndSendWithContext(ctx, messages...)
+
+		// Check if it's an authentication error and try PLAIN auth
+		if err != nil && (strings.Contains(err.Error(), "535 ") ||
+			strings.Contains(err.Error(), "534 ") ||
+			strings.Contains(err.Error(), "538 ") ||
+			strings.Contains(err.Error(), "CRAM-MD5") ||
+			strings.Contains(err.Error(), "authentication failed")) {
+			c.Logger.Debugf("CRAM-MD5 authentication failed, trying PLAIN auth", "error", err)
+			emailOptionsBasic := emailOptions
+			emailOptionsBasic = append(emailOptions, mail.WithSMTPAuth(mail.SMTPAuthPlain))
+			mc, _ = mail.NewClient(smtpHost.String(), emailOptionsBasic...)
+			mc.SetLogger(log.NewGoMailLoggerAdapter(c.Logger))
+			mc.SetDebugLog(true)
+			if build.Flags.Production {
+				mc.SetTLSPolicy(mail.TLSMandatory)
+			} else {
+				mc.SetTLSPolicy(mail.TLSOpportunistic)
+			}
+			err = mc.DialAndSendWithContext(ctx, messages...)
+		}
+	} else {
+		// No credentials provided, try without authentication (e.g., local postfix)
+		mc, _ = mail.NewClient(smtpHost.String(), emailOptions...)
+		mc.SetLogger(log.NewGoMailLoggerAdapter(c.Logger))
+		mc.SetDebugLog(true)
+		if build.Flags.Production {
+			mc.SetTLSPolicy(mail.TLSMandatory)
+		} else {
+			mc.SetTLSPolicy(mail.TLSOpportunistic)
+		}
+		err = mc.DialAndSendWithContext(ctx, messages...)
+
+		// If no-auth fails and we get an auth-related error, log it appropriately
+		if err != nil && (strings.Contains(err.Error(), "530 ") ||
+			strings.Contains(err.Error(), "535 ") ||
+			strings.Contains(err.Error(), "authentication required") ||
+			strings.Contains(err.Error(), "AUTH")) {
+			c.Logger.Warnw("Server requires authentication but no credentials provided", "error", err)
+		}
+	}
+	if err != nil {
+		c.Logger.Errorw("failed to send test email", "error", err)
+	}
+	// check each message if has been sent and save the result for each
+	for _, m := range messages {
+		var sendError error = nil
+		if m.HasSendError() {
+			sendError = m.SendError()
+		}
+		// deref 0 as only a single recipient in each mail
+		to := m.GetToString()[0]
+		campaignRecipient := mailToCampaignRecipient[to]
+		err := c.saveSendingResult(
+			ctx,
+			campaignRecipient,
+			sendError,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to save sending result", "error", err)
+		}
+	}
+	// check if most notable event
+	err = c.setMostNotableCampaignEvent(
+		ctx,
+		campaign,
+		data.EVENT_CAMPAIGN_ACTIVE,
+	)
+	if err != nil {
+		// err is logged in method call
+		return errs.Wrap(err)
+	}
+	return nil
+}
+
+// saveSendingResult saves a result from a send campaign atttempts
+func (c *Campaign) saveSendingResult(
+	ctx context.Context,
+	campaignRecipient *model.CampaignRecipient,
+	sendError error,
+) error {
+	if sendError == nil {
+		campaignRecipient.SentAt = nullable.NewNullableWithValue(time.Now())
+	}
+	campaignRecipientID := campaignRecipient.ID.MustGet()
+	err := c.CampaignRecipientRepository.UpdateByID(
+		ctx,
+		&campaignRecipientID,
+		campaignRecipient,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to update campaign recipient by id", "error", err)
+	}
+	// persist the event
+	id := uuid.New()
+	eventName := data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_SENT
+	if sendError != nil {
+		eventName = data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_FAILED
+	}
+	eventID := cache.EventIDByName[eventName]
+	data := vo.NewEmptyOptionalString1MB()
+	if sendError != nil {
+		data, err = vo.NewOptionalString1MB(sendError.Error())
+		if err != nil {
+			return errs.Wrap(fmt.Errorf("failed to create reason: %s", err))
+		}
+	}
+	campaignID := campaignRecipient.CampaignID.MustGet()
+	recipientID := campaignRecipient.RecipientID.MustGet()
+	campaignEvent := &model.CampaignEvent{
+		ID:          &id,
+		CampaignID:  &campaignID,
+		RecipientID: &recipientID,
+		IP:          vo.NewOptionalString64Must(""),
+		UserAgent:   vo.NewOptionalString255Must(""),
+		EventID:     eventID,
+		Data:        data,
+		Metadata:    vo.NewEmptyOptionalString1MB(),
+	}
+	// a send failure reason can contain the recipient address, so an anonymous
+	// campaign must not keep it. Anonymize blanks the data along with identity. a real
+	// anonymous recipient always carries a pseudonym here (assigned at materialization),
+	// and the helper strips on that regardless of the flag; the flag only covers the
+	// unexpected case where a pseudonym is missing, so on a lookup error default to not
+	// anonymous to avoid stripping a normal campaign's send event.
+	sendIsAnon, anonErr := c.CampaignRepository.IsAnonymousByID(ctx, &campaignID)
+	if anonErr != nil {
+		c.Logger.Errorw("failed to check campaign anonymity for send result event", "error", anonErr)
+		sendIsAnon = false
+	}
+	anonymizeEventForRecipient(sendIsAnon, campaignRecipient, campaignEvent)
+	err = c.CampaignRepository.SaveEvent(ctx, campaignEvent)
+	if err != nil {
+		return fmt.Errorf("failed to save event: %s", err)
+	}
+	// handle most notable event
+	err = c.SetNotableCampaignRecipientEvent(
+		ctx,
+		campaignRecipient,
+		cache.EventNameByID[eventID.String()],
+	)
+	if err != nil {
+		// logging was done in the previous call
+		return errs.Wrap(err)
+	}
+	// handle webhooks
+	err = c.HandleWebhooks(
+		ctx,
+		&campaignID,
+		&recipientID,
+		eventName,
+		nil,
+	)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	return nil
+}
+
+// saveEventCampaignClose saves an event about closing a campaign
+func (c *Campaign) saveEventCampaignClose(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	reason string,
+) error {
+	// persist the event
+	id := uuid.New()
+	r, err := vo.NewOptionalString1MB(reason)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	campaignEvent := &model.CampaignEvent{
+		ID:          &id,
+		CampaignID:  campaignID,
+		RecipientID: nil,
+		IP:          vo.NewOptionalString64Must(""),
+		UserAgent:   vo.NewOptionalString255Must(""),
+		EventID:     cache.EventIDByName[data.EVENT_CAMPAIGN_CLOSED],
+		Data:        r,
+		Metadata:    vo.NewEmptyOptionalString1MB(),
+	}
+	err = c.CampaignRepository.SaveEvent(ctx, campaignEvent)
+	if err != nil {
+		return fmt.Errorf("failed to save event: %s", err)
+	}
+	// handle webhooks
+	err = c.HandleWebhooks(
+		ctx,
+		campaignID,
+		nil,
+		data.EVENT_CAMPAIGN_CLOSED,
+		nil,
+	)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	return nil
+}
+
+// HandleCloseCampaigns closes campaigns that are past their end time
+func (c *Campaign) HandleCloseCampaigns(
+	ctx context.Context,
+	session *model.Session,
+) error {
+	ae := NewAuditEvent("Campaign.HandleCloseCampaigns", session)
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	// get all campaigns that are past their end time
+	// and not yet closed
+	campaigns, err := c.CampaignRepository.GetAllReadyToClose(
+		ctx,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get closed campaigns", "error", err)
+		return errs.Wrap(err)
+	}
+	// close the campaigns
+	closedCampaignIDs := []string{}
+	for _, campaign := range campaigns.Rows {
+		campaignID := campaign.ID.MustGet()
+		closedCampaignIDs = append(closedCampaignIDs, campaignID.String())
+		c.Logger.Debugw("closing campaign with id", "campaignID", campaignID)
+		var err error
+		// if there is no campaign template closing is due to missing template
+		campaignTemplateID, err := campaign.TemplateID.Get()
+		if err != nil {
+			err = c.closeCampaign(
+				ctx,
+				session,
+				&campaignID,
+				campaign,
+				"Campaign closed due to missing campaign template",
+			)
+			c.handleCloseError(err, &campaignID)
+			return errs.Wrap(err)
+		}
+		// check if the template is unusable
+		cTemplate, err := c.CampaignTemplateService.GetByID(
+			ctx,
+			session,
+			&campaignTemplateID,
+			&repository.CampaignTemplateOption{},
+		)
+		if cTemplate == nil || err != nil {
+			err = c.closeCampaign(
+				ctx,
+				session,
+				&campaignID,
+				campaign,
+				"Campaign closed due to unusable template",
+			)
+			c.handleCloseError(err, &campaignID)
+			return errs.Wrap(err)
+		}
+		err = c.closeCampaign(
+			ctx,
+			session,
+			&campaignID,
+			campaign,
+			"Campaign closed due to over close time",
+		)
+	}
+	if len(closedCampaignIDs) > 0 {
+		ae.Details["closedCampaignIds"] = closedCampaignIDs
+		c.AuditLogAuthorized(ae)
+	}
+	return nil
+}
+
+func (c *Campaign) handleCloseError(err error, campaignID *uuid.UUID) {
+	if err != nil && !errors.Is(err, errs.ErrCampaignAlreadyClosed) {
+		c.Logger.Errorw("failed to close campaign by id", "error", err)
+		return
+	}
+	if go_errors.Is(err, errs.ErrCampaignAlreadyClosed) {
+		c.Logger.Debugw("campaign already closed", "error", err)
+		return
+	}
+	c.Logger.Debugw("closed campaign with id", "campaignID", campaignID)
+}
+
+// HandleAnonymizeCampaigns anonymizes campaigns are ready for anonymization
+func (c *Campaign) HandleAnonymizeCampaigns(
+	ctx context.Context,
+	session *model.Session,
+) error {
+	ae := NewAuditEvent("Campaign.HandleAnonymizeCampaigns", session)
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	// get all campaigns that are past their end time
+	// and not yet closed
+	campaigns, err := c.CampaignRepository.GetReadyToAnonymize(
+		ctx,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get ready to anonymize campaigns", "error", err)
+		return errs.Wrap(err)
+	}
+	// close and anonymize the campaigns
+	affectedIds := []string{}
+	for _, campaign := range campaigns.Rows {
+		campaignID := campaign.ID.MustGet()
+		affectedIds = append(affectedIds, campaignID.String())
+		c.Logger.Debugw("anonymizing campaign with id", "campaignID", campaignID)
+		err = c.AnonymizeByID(ctx, session, &campaignID)
+
+		if err != nil && !errors.Is(err, errs.ErrCampaignAlreadyClosed) {
+			c.Logger.Errorw("failed to anonymize campaign by id", "error", err)
+			continue
+		}
+		if errors.Is(err, errs.ErrCampaignAlreadyAnonymized) {
+			c.Logger.Debugw("campaign already anonymized", "error", err)
+			continue
+		}
+		c.Logger.Debugw("anonymized campaign with id", "campaignID", campaignID)
+	}
+	if len(affectedIds) > 0 {
+		ae.Details["anonymizedCampaignIds"] = affectedIds
+		c.AuditLogAuthorized(ae)
+	}
+	return nil
+}
+
+// HandleDataAnonymizeCampaigns anonymizes the submitted data of campaigns that
+// are ready for data anonymization
+func (c *Campaign) HandleDataAnonymizeCampaigns(
+	ctx context.Context,
+	session *model.Session,
+) error {
+	ae := NewAuditEvent("Campaign.HandleDataAnonymizeCampaigns", session)
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	// get all campaigns that are ready to have their submitted data anonymized
+	campaigns, err := c.CampaignRepository.GetReadyToDataAnonymize(
+		ctx,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get ready to data anonymize campaigns", "error", err)
+		return errs.Wrap(err)
+	}
+	// anonymize the submitted data of the campaigns
+	affectedIds := []string{}
+	for _, campaign := range campaigns.Rows {
+		campaignID := campaign.ID.MustGet()
+		affectedIds = append(affectedIds, campaignID.String())
+		c.Logger.Debugw("anonymizing campaign data with id", "campaignID", campaignID)
+		err = c.AnonymizeDataByID(ctx, session, &campaignID)
+		if errors.Is(err, errs.ErrCampaignDataAlreadyAnonymized) {
+			c.Logger.Debugw("campaign data already anonymized", "error", err)
+			continue
+		}
+		if err != nil {
+			c.Logger.Errorw("failed to anonymize campaign data by id", "error", err)
+			continue
+		}
+		c.Logger.Debugw("anonymized campaign data with id", "campaignID", campaignID)
+	}
+	if len(affectedIds) > 0 {
+		ae.Details["dataAnonymizedCampaignIds"] = affectedIds
+		c.AuditLogAuthorized(ae)
+	}
+	return nil
+}
+
+// SchedulePendingCampaigns is called by the task runner. It finds all campaigns
+// whose schedule_at time has passed and triggers schedule() for each.
+func (c *Campaign) SchedulePendingCampaigns(
+	ctx context.Context,
+	session *model.Session,
+) error {
+	ae := NewAuditEvent("Campaign.SchedulePendingCampaigns", session)
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	pending, err := c.CampaignRepository.GetReadyToLateSchedule(
+		ctx,
+		&repository.CampaignOption{
+			WithRecipientGroups: true,
+			WithAllowDeny:       true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaigns ready for late scheduling", "error", err)
+		return errs.Wrap(err)
+	}
+	for _, campaign := range pending.Rows {
+		campaignID := campaign.ID.MustGet()
+		// Clear schedule_at BEFORE calling schedule() so that a concurrent task runner tick
+		// or a second server instance cannot pick up the same campaign and double-schedule it.
+		// If schedule() subsequently fails the campaign will remain in pending_schedule state
+		// with a null schedule_at; an operator can re-set schedule_at to retry.
+		clearScheduleAt := model.Campaign{}
+		clearScheduleAt.ScheduleAt.SetNull()
+		if err := c.CampaignRepository.UpdateByID(ctx, &campaignID, &clearScheduleAt); err != nil {
+			c.Logger.Errorw("failed to clear schedule_at before late-scheduling, skipping campaign", "campaignID", campaignID, "error", err)
+			// skip this campaign, better to retry next tick than to risk a double-schedule
+			continue
+		}
+		// Jitter is loaded from the DB columns (persisted at creation/update time).
+		if err := c.schedule(ctx, session, campaign); err != nil {
+			c.Logger.Errorw("failed to late-schedule campaign", "campaignID", campaignID, "error", err)
+			// continue to next, don't abort the whole run
+			continue
+		}
+		// Clear persisted jitter now that scheduling is done, it is no longer needed.
+		clearJitter := model.Campaign{}
+		clearJitter.JitterMin.SetNull()
+		clearJitter.JitterMax.SetNull()
+		if err := c.CampaignRepository.UpdateByID(ctx, &campaignID, &clearJitter); err != nil {
+			c.Logger.Errorw("failed to clear jitter after late-scheduling", "campaignID", campaignID, "error", err)
+			// non-fatal, jitter columns being non-null is harmless after scheduling
+		}
+		c.Logger.Infow("late-scheduled campaign", "campaignID", campaignID)
+	}
+	return nil
+}
+
+// CloseCampaignByID closes a campaign by id
+// DeleteDeviceCodesByCampaignID deletes all device codes for a campaign so every recipient
+// gets a fresh code (and picks up any proxy change) on their next page visit.
+func (c *Campaign) DeleteDeviceCodesByCampaignID(
+	ctx context.Context,
+	session *model.Session,
+	id *uuid.UUID,
+) error {
+	ae := NewAuditEvent("Campaign.DeleteDeviceCodesByCampaignID", session)
+	ae.Details["id"] = id.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.Wrap(errs.ErrAuthorizationFailed)
+	}
+	if c.MicrosoftDeviceCodeRepository == nil {
+		return nil
+	}
+	if err := c.MicrosoftDeviceCodeRepository.DeleteByCampaignID(ctx, id); err != nil {
+		c.Logger.Errorw("failed to delete device codes for campaign", "error", err, "campaignID", id.String())
+		return errs.Wrap(err)
+	}
+	c.AuditLogAuthorized(ae)
+	return nil
+}
+
+func (c *Campaign) CloseCampaignByID(
+	ctx context.Context,
+	session *model.Session,
+	id *uuid.UUID,
+) error {
+	ae := NewAuditEvent("Campaign.CloseCampaignByID", session)
+	ae.Details["id"] = id.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.Wrap(errs.ErrAuthorizationFailed)
+	}
+	// get the campaign
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		id,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id: %s", err)
+		return errs.Wrap(err)
+	}
+	err = c.closeCampaign(ctx, session, id, campaign, "Manually closed")
+	if err != nil {
+		c.Logger.Errorw("failed to close campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	c.AuditLogAuthorized(ae)
+	return nil
+}
+
+// closeCampaign closes a campaign
+func (c *Campaign) closeCampaign(
+	ctx context.Context,
+	session *model.Session,
+	id *uuid.UUID,
+	campaign *model.Campaign,
+	reason string,
+) error {
+	if campaign == nil {
+		return errs.NewCustomError(errors.New("campaign is nil"))
+	}
+	c.Logger.Debugw("closing campaign with id", "id", id.String())
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return errs.ErrAuthorizationFailed
+	}
+	// find all recipients that are not sent and cancel them for this campaign
+	campaignRecipients, err := c.CampaignRecipientRepository.GetUnsendRecipients(
+		ctx,
+		id,
+		repository.NO_LIMIT,
+		&repository.CampaignRecipientOption{},
+	)
+	c.Logger.Debugw("found unsent recipients to cancel for campaign", "count", len(campaignRecipients), "campaignID", id.String())
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.Logger.Errorw("failed to get unsent recipients", "error", err)
+		return errs.Wrap(err)
+	}
+	campaignRecipientUUIDs := []*uuid.UUID{}
+	for _, cr := range campaignRecipients {
+		campaignRecipientID := cr.ID.MustGet()
+		campaignRecipientUUIDs = append(campaignRecipientUUIDs, &campaignRecipientID)
+	}
+	err = c.CampaignRecipientRepository.Cancel(ctx, campaignRecipientUUIDs)
+	if err != nil {
+		c.Logger.Errorw("failed to cancel recipients", "error", err)
+		return errs.Wrap(err)
+	}
+	if c.RemoteBrowserService != nil {
+		c.RemoteBrowserService.TerminateByCampaignID(*id)
+	}
+	err = campaign.Closed()
+	if go_errors.Is(err, errs.ErrCampaignAlreadyClosed) {
+		c.Logger.Debugw("campaign already closed", "error", err)
+		return errs.Wrap(err)
+	}
+	if err != nil {
+		c.Logger.Errorw("failed to close campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	err = c.CampaignRepository.UpdateByID(ctx, id, campaign)
+	if err != nil {
+		c.Logger.Errorw("failed to close campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	err = c.saveEventCampaignClose(
+		ctx,
+		id,
+		reason,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to save event about closing campaign", "error", err)
+	}
+	err = c.setMostNotableCampaignEvent(
+		ctx,
+		campaign,
+		data.EVENT_CAMPAIGN_CLOSED,
+	)
+	if err != nil {
+		// err is logged in method call
+		return errs.Wrap(err)
+	}
+
+	// Generate campaign statistics when closing (skip test campaigns)
+	if !campaign.IsTest.MustGet() {
+		c.Logger.Debugf("generating campaign statistics", "campaignID", id.String())
+		err = c.GenerateCampaignStats(ctx, session, id)
+		if err != nil {
+			c.Logger.Errorw("failed to generate campaign statistics", "error", err, "campaignID", id.String())
+			// Don't fail the close operation if stats generation fails
+		} else {
+			c.Logger.Debugf("successfully generated campaign statistics", "campaignID", id.String())
+		}
+	} else {
+		c.Logger.Debugf("skipping stats generation for test campaign", "campaignID", id.String())
+	}
+
+	// delete all microsoft device codes for this campaign, the important data is already
+	// saved in the campaign events
+	if c.MicrosoftDeviceCodeRepository != nil {
+		if err := c.MicrosoftDeviceCodeRepository.DeleteByCampaignID(ctx, id); err != nil {
+			c.Logger.Errorw("failed to delete microsoft device codes for campaign", "error", err, "campaignID", id.String())
+			// non-fatal, continue
+		}
+	}
+
+	// an anonymous campaign severs its recipient relation at close so no identity is
+	// retained after it ends. best effort here; the anonymize sweep (GetReadyToAnonymize)
+	// is the fallback that retries if this fails. skip if already anonymized, e.g. when
+	// AnonymizeByID drove this close.
+	if campaignAnonymous(campaign) {
+		alreadyAnonymized := campaign.AnonymizedAt.IsSpecified() && !campaign.AnonymizedAt.IsNull()
+		if !alreadyAnonymized {
+			if err := c.anonymizeCampaignRecipients(ctx, id); err != nil {
+				c.Logger.Errorw("failed to anonymize recipients at close, sweep will retry", "error", err, "campaignID", id.String())
+			}
+		}
+	}
+
+	// automatic report delivery when the company has opted in (skip test campaigns).
+	// rendering the PDF and sending mail can take seconds, so it runs in the
+	// background with its own context to avoid blocking the close path and the
+	// sender loop. failures are logged and a panic is recovered so it can never
+	// crash the process.
+	if !campaign.IsTest.MustGet() {
+		reportCampaignID := *id
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					c.Logger.Errorw("recovered from panic during automatic report delivery", "panic", r, "campaignID", reportCampaignID.String())
+				}
+			}()
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			if err := c.SendCampaignReport(bgCtx, session, &reportCampaignID, false); err != nil {
+				c.Logger.Errorw("failed to send automatic campaign report", "error", err, "campaignID", reportCampaignID.String())
+			}
+		}()
+	}
+
+	return nil
+}
+
+// GetCampaignEmailBody returns the rendered email for a self managed campaign recipient
+func (c *Campaign) GetCampaignEmailBody(
+	ctx context.Context,
+	session *model.Session,
+	campaignRecipientID *uuid.UUID,
+) (string, error) {
+	ae := NewAuditEvent("Campaign.GetCampaignEmailBody", session)
+	ae.Details["campaignRecipientId"] = campaignRecipientID.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return "", errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return "", errs.ErrAuthorizationFailed
+	}
+	// check recipient is in a active campaign
+	campaignRecipient, err := c.CampaignRecipientRepository.GetByID(
+		ctx,
+		campaignRecipientID,
+		&repository.CampaignRecipientOption{
+			WithRecipient: true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign recipient by id", "error", err)
+		return "", errs.Wrap(err)
+	}
+	if campaignRecipient.RecipientID.IsNull() {
+		return "", errs.NewCustomError(
+			errors.New("recipient is anonymized"),
+		)
+	}
+	campaignID := campaignRecipient.CampaignID.MustGet()
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		&campaignID,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return "", errs.Wrap(err)
+	}
+	templateID, err := campaign.TemplateID.Get()
+	if err != nil {
+		c.Logger.Errorw("failed to get template from campaign, has no template", "error", err)
+		return "", errs.Wrap(err)
+	}
+	cTemplate, err := c.CampaignTemplateService.GetByID(
+		ctx,
+		session,
+		&templateID,
+		&repository.CampaignTemplateOption{
+			WithIdentifier:         true,
+			WithBeforeLandingProxy: true,
+			WithLandingProxy:       true,
+		},
+	)
+	emailID, err := cTemplate.EmailID.Get()
+	if err != nil {
+		c.Logger.Infow("failed email from template - template ID", "templateID", templateID)
+		return "", errs.NewValidationError(
+			errors.New("Campaign template has no email"),
+		)
+	}
+	// get the email
+	// get campaign's company context for attachment filtering
+	var campaignCompanyID *uuid.UUID
+	if campaign.CompanyID.IsSpecified() && !campaign.CompanyID.IsNull() {
+		companyID := campaign.CompanyID.MustGet()
+		campaignCompanyID = &companyID
+	}
+
+	email, err := c.MailService.GetByID(
+		ctx,
+		session,
+		&emailID,
+		campaignCompanyID,
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get message by id", "error", err)
+		return "", errs.Wrap(err)
+	}
+	urlIdentifier := cTemplate.URLIdentifier
+	if urlIdentifier == nil {
+		return "", errors.New("url identifier is nil")
+	}
+
+	// get template domain for assets and tracking pixel
+	domainID, err := cTemplate.DomainID.Get()
+	if err != nil {
+		c.Logger.Infow("failed domain from template - template ID", "templateID", templateID)
+		return "", errs.NewValidationError(
+			errors.New("Campaign template has no domain"),
+		)
+	}
+	domain, err := c.DomainService.GetByID(
+		ctx,
+		session,
+		&domainID,
+		&repository.DomainOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get domain by id", "error", err)
+		return "", errs.Wrap(err)
+	}
+	urlPath := cTemplate.URLPath.MustGet().String()
+
+	// generate custom campaign URL if first page is MITM
+	customCampaignURL, err := c.GetLandingPageURLByCampaignRecipientID(ctx, session, campaignRecipientID)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign url", "error", err)
+		return "", errs.Wrap(err)
+	}
+
+	// no audit on read
+	return c.TemplateService.CreateMailBodyWithCustomURL(
+		ctx,
+		urlIdentifier.Name.MustGet(),
+		urlPath,
+		domain,
+		campaignRecipient,
+		email,
+		nil, // no api sender for preview
+		customCampaignURL,
+		campaignCompanyID,
+	)
+}
+
+// GetLandingPageURLByCampaignRecipientID generates the lure URL for a campaign recipient.
+// if the first page in the campaign flow is a mitm proxy, the url goes directly to the
+// mitm domain instead of redirecting through the template domain.
+func (c *Campaign) GetLandingPageURLByCampaignRecipientID(
+	ctx context.Context,
+	session *model.Session,
+	campaignRecipientID *uuid.UUID,
+) (string, error) {
+	ae := NewAuditEvent("Campaign.GetLandingPageURLByCampaignRecipientID", session)
+	ae.Details["campaignRecipientId"] = campaignRecipientID.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return "", errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return "", errs.ErrAuthorizationFailed
+	}
+	campaignRecipient, err := c.CampaignRecipientRepository.GetByID(
+		ctx,
+		campaignRecipientID,
+		&repository.CampaignRecipientOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign recipient by id", "error", err)
+		return "", errs.Wrap(err)
+	}
+	campaignID := campaignRecipient.CampaignID.MustGet()
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		&campaignID,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return "", errs.Wrap(err)
+	}
+	templateID, err := campaign.TemplateID.Get()
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign template, campaign has no template", "error", err)
+		return "", errs.Wrap(err)
+	}
+	cTemplate, err := c.CampaignTemplateService.GetByID(
+		ctx,
+		session,
+		&templateID,
+		&repository.CampaignTemplateOption{
+			WithIdentifier:         true,
+			WithBeforeLandingProxy: true,
+			WithLandingProxy:       true,
+		},
+	)
+	// determine if we should use mitm domain for first page
+	var baseURL string
+	var urlPath string
+	idIdentifier := cTemplate.URLIdentifier.Name.MustGet()
+
+	// check if first page is a mitm proxy
+	firstPageProxy := c.getFirstPageProxy(cTemplate)
+	if firstPageProxy != nil {
+		// get the phishing domain for this proxy
+		phishingDomain, err := c.getPhishingDomainForProxy(ctx, firstPageProxy)
+		if err != nil {
+			c.Logger.Errorw("failed to get phishing domain for first page proxy", "error", err)
+			// fallback to template domain
+			firstPageProxy = nil
+		} else {
+			// use phishing domain directly
+			baseURL = "https://" + phishingDomain
+			// use template url path if set, otherwise root, the real start url path is an
+			// internal proxy detail and must never appear in a lure url sent to a victim
+			if templateURLPath, err := cTemplate.URLPath.Get(); err == nil && templateURLPath.String() != "" {
+				urlPath = templateURLPath.String()
+			} else {
+				urlPath = "/"
+			}
+		}
+	}
+
+	if firstPageProxy == nil {
+		// use template domain (current behavior)
+		domainID, err := cTemplate.DomainID.Get()
+		if err != nil {
+			c.Logger.Infow("failed email from template - template ID", "templateID", templateID)
+			return "", errs.NewValidationError(
+				errors.New("Campaign template has no email"),
+			)
+		}
+		domain, err := c.DomainService.GetByID(
+			ctx,
+			session,
+			&domainID,
+			&repository.DomainOption{},
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to get domain by id", err)
+			return "", errs.Wrap(err)
+		}
+		urlPath = cTemplate.URLPath.MustGet().String()
+		baseURL = "https://" + domain.Name.MustGet().String()
+	}
+
+	// build final url
+	// no audit on read
+	return BuildLureURL(baseURL, urlPath, idIdentifier, campaignRecipient), nil
+}
+
+// BuildLureURL assembles the URL delivered to a recipient.
+//
+// Holding a code is signal enough for the path form without consulting the
+// campaign: a generated code exists only for a path mode campaign, and an
+// operator set code is a deliberate request for that exact link. A recipient
+// with no code gets the query form carrying the campaign recipient UUID.
+func BuildLureURL(
+	baseURL string,
+	urlPath string,
+	urlIdentifier string,
+	campaignRecipient *model.CampaignRecipient,
+) string {
+	if code, err := campaignRecipient.LureCode.Get(); err == nil && code != "" {
+		return strings.TrimSuffix(baseURL+urlPath, "/") + "/" + code
+	}
+	return fmt.Sprintf(
+		"%s%s?%s=%s",
+		baseURL,
+		urlPath,
+		urlIdentifier,
+		campaignRecipient.ID.MustGet().String(),
+	)
+}
+
+// getFirstPageProxy returns the proxy for the first page in the campaign flow
+// returns nil if the first page is not a proxy
+func (c *Campaign) getFirstPageProxy(template *model.CampaignTemplate) *model.Proxy {
+	if template.BeforeLandingPageID.IsNull() != true {
+		return nil
+	}
+	if template.BeforeLandingProxyID.IsNull() != true {
+		return template.BeforeLandingProxy
+	}
+	if template.LandingPageID.IsNull() != true {
+		return nil
+	}
+	if template.LandingProxyID.IsNull() != true {
+		return template.LandingProxy
+	}
+	if template.AfterLandingPageID.IsNull() != true {
+		return nil
+	}
+	if template.AfterLandingProxyID.IsNull() != true {
+		return template.AfterLandingProxy
+	}
+	return nil
+}
+
+// getPhishingDomainForProxy finds the phishing domain that maps to the proxy's start url
+func (c *Campaign) getPhishingDomainForProxy(ctx context.Context, proxy *model.Proxy) (string, error) {
+	startURL, err := proxy.StartURL.Get()
+	if err != nil {
+		return "", fmt.Errorf("failed to get start url from proxy: %w", err)
+	}
+
+	proxyConfig, err := proxy.ProxyConfig.Get()
+	if err != nil {
+		return "", fmt.Errorf("failed to get proxy config: %w", err)
+	}
+
+	// parse the proxy configuration to find domain mappings
+	var rawConfig map[string]interface{}
+	err = yaml.Unmarshal([]byte(proxyConfig.String()), &rawConfig)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse proxy config yaml: %w", err)
+	}
+
+	// parse the start URL to get the target domain
+	parsedStartURL, err := url.Parse(startURL.String())
+	if err != nil {
+		return "", fmt.Errorf("failed to parse start url: %w", err)
+	}
+	startDomain := parsedStartURL.Host
+
+	// find the phishing domain mapping for the start URL domain
+	for originalHost, domainData := range rawConfig {
+		if originalHost == "proxy" || originalHost == "global" {
+			continue
+		}
+		if originalHost == startDomain {
+			if domainMap, ok := domainData.(map[string]interface{}); ok {
+				if to, exists := domainMap["to"]; exists {
+					if toStr, ok := to.(string); ok {
+						return toStr, nil
+					}
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no phishing domain mapping found for start url domain: %s", startDomain)
+}
+
+// SetSentAtByCampaignRecipientID sets the sent at time for a recipient
+// ErrLureCodeTaken is returned when the code is already claimed by a recipient
+// whose code has not been released.
+var ErrLureCodeTaken = errors.New("lure code is already in use")
+
+// companyIDsEqual reports whether two optional company references point at the
+// same company, treating both unset as the global scope.
+func companyIDsEqual(a nullable.Nullable[uuid.UUID], b nullable.Nullable[uuid.UUID]) bool {
+	aID, aErr := a.Get()
+	bID, bErr := b.Get()
+	if aErr != nil && bErr != nil {
+		return true
+	}
+	if aErr != nil || bErr != nil {
+		return false
+	}
+	return aID == bID
+}
+
+// LureCodeConflict describes who currently holds a requested code, so the
+// operator can decide whether to reclaim it.
+type LureCodeConflict struct {
+	CampaignID   string `json:"campaignID"`
+	CampaignName string `json:"campaignName"`
+	IsClosed     bool   `json:"isClosed"`
+}
+
+// SetLureCodeByCampaignRecipientID assigns an operator chosen code to a single
+// recipient.
+//
+// A custom code has close to no entropy, so anyone guessing it reaches the
+// landing page rendered for that recipient. That is the trade for a link that
+// has to be read aloud or typed, and why this is a per recipient action rather
+// than a campaign wide setting.
+//
+// A code held by another recipient fails with a conflict describing the owner.
+// Passing reclaim releases that older code first, so anyone still holding the
+// old link resolves into this campaign instead.
+func (c *Campaign) SetLureCodeByCampaignRecipientID(
+	ctx context.Context,
+	session *model.Session,
+	campaignRecipientID *uuid.UUID,
+	code string,
+	reclaim bool,
+) (*LureCodeConflict, error) {
+	ae := NewAuditEvent("Campaign.SetLureCodeByCampaignRecipientID", session)
+	ae.Details["campaignRecipientId"] = campaignRecipientID.String()
+	ae.Details["lureCode"] = code
+	ae.Details["reclaim"] = fmt.Sprintf("%t", reclaim)
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return nil, errs.ErrAuthorizationFailed
+	}
+	if !lure.IsValidCustom(code) {
+		return nil, errs.NewValidationError(
+			go_errors.Errorf(
+				"lure URL must be 1 to %d characters, cannot be . or contain .. and cannot contain spaces or %s",
+				lure.MaxCustomLength,
+				lure.DisallowedCustomCharacters,
+			),
+		)
+	}
+	campaignRecipient, err := c.CampaignRecipientRepository.GetByID(
+		ctx,
+		campaignRecipientID,
+		&repository.CampaignRecipientOption{
+			WithCampaign: true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign recipient by id", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	campaign := campaignRecipient.Campaign
+	if campaign == nil || !campaign.IsActive() {
+		return nil, errs.NewValidationError(errors.New("campaign is closed"))
+	}
+	if _, err := campaignRecipient.RecipientID.Get(); err != nil {
+		return nil, errs.NewValidationError(errors.New("recipient is not available"))
+	}
+
+	newCode := lure.NewCustomCode(code)
+	// the same code again is a no op rather than a self conflict
+	if current, err := campaignRecipient.LureCode.Get(); err == nil && current == newCode.Display {
+		c.AuditLogAuthorized(ae)
+		return nil, nil
+	}
+
+	holder, err := c.CampaignRecipientRepository.GetActiveByLureCode(ctx, newCode.Display)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.Logger.Errorw("failed to check lure code owner", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	if holder != nil {
+		conflict := &LureCodeConflict{}
+		if holder.Campaign != nil {
+			// codes are unique instance wide, so the holder may belong to another
+			// company. naming it would disclose that company's campaign to someone
+			// who only guessed a code, so only a shared company gets details.
+			if companyIDsEqual(campaign.CompanyID, holder.Campaign.CompanyID) {
+				holderCampaignID := holder.Campaign.ID.MustGet()
+				conflict.CampaignID = holderCampaignID.String()
+				if name, err := holder.Campaign.Name.Get(); err == nil {
+					conflict.CampaignName = name.String()
+				}
+				conflict.IsClosed = !holder.Campaign.IsActive()
+			}
+		}
+		if !reclaim {
+			return conflict, ErrLureCodeTaken
+		}
+		holderID := holder.ID.MustGet()
+		if err := c.CampaignRecipientRepository.ReleaseLureCodeByID(ctx, &holderID); err != nil {
+			c.Logger.Errorw("failed to release lure code from previous owner", "error", err)
+			return nil, errs.Wrap(err)
+		}
+		ae.Details["reclaimedFromCampaignRecipientId"] = holderID.String()
+	}
+
+	if err := c.CampaignRecipientRepository.SetLureCodeByID(
+		ctx,
+		campaignRecipientID,
+		newCode.Display,
+	); err != nil {
+		c.Logger.Errorw("failed to set lure code", "error", err)
+		return nil, errs.Wrap(err)
+	}
+	c.AuditLogAuthorized(ae)
+	return nil, nil
+}
+
+func (c *Campaign) SetSentAtByCampaignRecipientID(
+	ctx context.Context,
+	session *model.Session,
+	campaignRecipientID *uuid.UUID,
+) error {
+	ae := NewAuditEvent("Campaign.SetSentAtByCampaignRecipientID", session)
+	ae.Details["campaignRecipientId"] = campaignRecipientID.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	// get campaignRecipient
+	campaignRecipient, err := c.CampaignRecipientRepository.GetByID(
+		ctx,
+		campaignRecipientID,
+		&repository.CampaignRecipientOption{
+			WithCampaign: true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign recipient by id", "error", err)
+		return errs.Wrap(err)
+	}
+	campaign := campaignRecipient.Campaign
+	// check if the campaign recipient is in a active campaign
+	if !campaign.IsActive() {
+		c.Logger.Debugw("failed to cancel campaign recipient by id: campaign is inactive",
+			"campaignID", campaign.ID.MustGet().String(),
+		)
+		return errors.New("campaign is inactive")
+	}
+
+	if !campaignRecipient.CancelledAt.IsNull() &&
+		campaignRecipient.CancelledAt.MustGet().Before(time.Now()) {
+		c.Logger.Debugw("failed to cancel campaign recipient by id: already cancelled",
+			"campaignrecipientID", campaignRecipientID.String(),
+		)
+		return errors.New("campaign recipient already cancelled")
+	}
+	campaignRecipient.SentAt = nullable.NewNullableWithValue(time.Now())
+	err = c.CampaignRecipientRepository.UpdateByID(
+		ctx,
+		campaignRecipientID,
+		campaignRecipient,
+	)
+	if err != nil {
+		c.Logger.Errorw("wailed to cancel campaign recipient by recipient id", "error", err)
+		return errs.Wrap(err)
+	}
+	// create an event for the sent email
+	id := uuid.New()
+	campaignID := campaignRecipient.CampaignID.MustGet()
+	recipientID := campaignRecipient.RecipientID.MustGet()
+
+	details := vo.NewOptionalString1MBMust("manually set as sent")
+	campaignEvent := &model.CampaignEvent{
+		ID:          &id,
+		CampaignID:  &campaignID,
+		RecipientID: &recipientID,
+		IP:          vo.NewOptionalString64Must(""),
+		UserAgent:   vo.NewOptionalString255Must(""),
+		EventID:     cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_SENT],
+		Data:        details,
+		Metadata:    vo.NewEmptyOptionalString1MB(),
+	}
+	anonymizeEventForRecipient(campaignAnonymous(campaign), campaignRecipient, campaignEvent)
+
+	err = c.CampaignRepository.SaveEvent(ctx, campaignEvent)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	c.AuditLogAuthorized(ae)
+	// handle webhooks
+	err = c.HandleWebhooks(
+		ctx,
+		&campaignID,
+		&recipientID,
+		data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_SENT,
+		nil,
+	)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	return nil
+}
+
+// HandleWebhooks handles multiple webhooks for a campaign event
+func (c *Campaign) HandleWebhooks(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	recipientID *uuid.UUID,
+	eventName string,
+	capturedData map[string]interface{},
+) error {
+	// run scripts from the same seam so every event that fires a webhook can
+	// also run a script. Skipped when this call originates from a script
+	// write back, which breaks the emitEvent recursion. Script failures never
+	// fail the webhook path.
+	if !isScriptOrigin(ctx) {
+		if err := c.handleScripts(ctx, campaignID, recipientID, eventName, capturedData); err != nil {
+			c.Logger.Errorw("failed to handle scripts", "error", err)
+		}
+	}
+
+	// get campaign webhooks from junction table
+	webhooks, err := c.CampaignRepository.GetCampaignWebhooks(ctx, campaignID)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign webhooks", "error", err)
+		return errs.Wrap(err)
+	}
+
+	// if no webhooks in new format, check for old single webhook (backward compatibility)
+	if len(webhooks) == 0 {
+		campaign, err := c.CampaignRepository.GetByID(ctx, campaignID, &repository.CampaignOption{})
+		if err != nil {
+			return errs.Wrap(err)
+		}
+		// check if old webhook_id is set
+		if campaign.WebhookID.IsSpecified() && !campaign.WebhookID.IsNull() {
+			webhookID := campaign.WebhookID.MustGet()
+			// use old webhook fields for backward compatibility
+			webhookIncludeData := model.WebhookDataLevelFull
+			if level, err := campaign.WebhookIncludeData.Get(); err == nil {
+				webhookIncludeData = level
+			}
+			webhookEvents := 0
+			if events, err := campaign.WebhookEvents.Get(); err == nil {
+				webhookEvents = events
+			}
+			webhooks = []*model.CampaignWebhook{{
+				WebhookID:          nullable.NewNullableWithValue(webhookID),
+				WebhookIncludeData: nullable.NewNullableWithValue(webhookIncludeData),
+				WebhookEvents:      nullable.NewNullableWithValue(webhookEvents),
+			}}
+		}
+	}
+
+	if len(webhooks) == 0 {
+		return nil
+	}
+
+	// get campaign name once for all webhooks
+	campaignName, err := c.CampaignRepository.GetNameByID(ctx, campaignID)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	// an anonymous campaign must never send identity or captured data off box, so
+	// the effective webhook level is capped and email and data are withheld
+	// regardless of each webhook's configured level.
+	isAnon, err := c.CampaignRepository.IsAnonymousByID(ctx, campaignID)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	// an anonymous campaign must not push per recipient events to a webhook: even
+	// without identity, one delivery per recipient action at its exact instant
+	// reinstates the timing the recipient view deliberately coarsens, which in a
+	// small campaign can single out who acted. campaign level events (recipientID
+	// nil, e.g. campaign closed) still fire.
+	if isAnon && recipientID != nil {
+		return nil
+	}
+
+	// get email once for all webhooks
+	var email *vo.Email
+	if recipientID != nil && !isAnon {
+		email, err = c.RecipientRepository.GetEmailByID(ctx, recipientID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.Wrap(err)
+		}
+	}
+
+	// batch-fetch all webhook details in one query to avoid N+1 db calls
+	webhookIDs := make([]*uuid.UUID, 0, len(webhooks))
+	for _, wc := range webhooks {
+		id := wc.WebhookID.MustGet()
+		webhookIDs = append(webhookIDs, &id)
+	}
+	webhookDetails, err := c.WebhookRepository.GetByIDs(ctx, webhookIDs)
+	if err != nil {
+		c.Logger.Errorw("failed to batch-fetch webhook details", "error", err)
+		return errs.Wrap(err)
+	}
+	// index fetched webhooks by id for O(1) lookup inside the loop
+	webhookByID := make(map[string]*model.Webhook, len(webhookDetails))
+	for _, wd := range webhookDetails {
+		webhookByID[wd.ID.MustGet().String()] = wd
+	}
+
+	// send to each configured webhook
+	for _, webhookConfig := range webhooks {
+		webhookID := webhookConfig.WebhookID.MustGet()
+		webhookEvents := webhookConfig.GetWebhookEventsOrDefault()
+		dataLevel := webhookConfig.GetWebhookIncludeDataOrDefault()
+		// cap the level for an anonymous campaign: basic still names the campaign
+		// but carries no email and no captured data; full would leak both.
+		if isAnon && dataLevel == model.WebhookDataLevelFull {
+			dataLevel = model.WebhookDataLevelBasic
+		}
+
+		// check if this event should trigger this webhook
+		if !model.IsWebhookEventEnabled(webhookEvents, eventName) {
+			continue
+		}
+
+		webhook, ok := webhookByID[webhookID.String()]
+		if !ok {
+			c.Logger.Errorw("webhook not found in batch result", "webhookID", webhookID.String())
+			continue
+		}
+
+		now := time.Now()
+		webhookReq := WebhookRequest{
+			Time:  &now,
+			Event: eventName,
+		}
+
+		// apply data level filters
+		switch dataLevel {
+		case model.WebhookDataLevelNone:
+			// only time and event - no campaign name, no email, no data
+		case model.WebhookDataLevelBasic:
+			// include campaign name but no email or captured data
+			webhookReq.CampaignName = campaignName
+		case model.WebhookDataLevelFull:
+			// include everything
+			webhookReq.CampaignName = campaignName
+			webhookReq.Data = capturedData
+			if email != nil {
+				webhookReq.Email = email.String()
+			}
+		}
+
+		// use context.Background() so a cancelled request context does not
+		// abort the send - the goroutine outlives the originating request
+		go func(wh *model.Webhook, req *WebhookRequest) {
+			c.Logger.Debugw("sending webhook", "url", wh.URL.MustGet().String())
+			_, err := c.WebhookService.Send(context.Background(), wh, req)
+			if err != nil {
+				c.Logger.Errorw("failed to send webhook", "error", err)
+			}
+			c.Logger.Debugw("sending webhook completed", "url", wh.URL.MustGet().String())
+		}(webhook, &webhookReq)
+	}
+
+	return nil
+}
+
+// HandleWebhook handles a single webhook (deprecated - kept for backward compatibility)
+func (c *Campaign) HandleWebhook(
+	ctx context.Context,
+	webhookID *uuid.UUID,
+	campaignID *uuid.UUID,
+	recipientID *uuid.UUID,
+	eventName string,
+	capturedData map[string]interface{},
+) error {
+	// for backward compatibility, delegate to HandleWebhooks
+	return c.HandleWebhooks(ctx, campaignID, recipientID, eventName, capturedData)
+}
+
+// scriptOriginKey marks a context whose event came from a script
+// write back, so HandleWebhooks does not run scripts again for it.
+type scriptOriginKey struct{}
+
+func withScriptOrigin(ctx context.Context) context.Context {
+	return context.WithValue(ctx, scriptOriginKey{}, true)
+}
+
+func isScriptOrigin(ctx context.Context) bool {
+	v, _ := ctx.Value(scriptOriginKey{}).(bool)
+	return v
+}
+
+// handleScripts enqueues scripts subscribed to a campaign event.
+// It mirrors the webhook gating: the same event bitmask, the same none/basic/full
+// data level, the same anonymization guard (no per recipient dispatch for an
+// anonymous campaign, full capped to basic). The payload is filtered here so a
+// script never receives more than its configuration and the campaign's anonymity
+// allow.
+func (c *Campaign) handleScripts(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	recipientID *uuid.UUID,
+	eventName string,
+	capturedData map[string]interface{},
+) error {
+	// feature disabled: no dispatcher wired
+	if c.ScriptDispatcher == nil {
+		return nil
+	}
+	scripts, err := c.CampaignRepository.GetCampaignScripts(ctx, campaignID)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	if len(scripts) == 0 {
+		return nil
+	}
+
+	isAnon, err := c.CampaignRepository.IsAnonymousByID(ctx, campaignID)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	// same privacy rule as webhooks: an anonymous campaign must not push per
+	// recipient events, the exact timing can single out who acted. Campaign level
+	// events (recipientID nil) still run.
+	if isAnon && recipientID != nil {
+		return nil
+	}
+
+	campaignName, err := c.CampaignRepository.GetNameByID(ctx, campaignID)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	var email string
+	if recipientID != nil && !isAnon {
+		if e, err := c.RecipientRepository.GetEmailByID(ctx, recipientID); err == nil && e != nil {
+			email = e.String()
+		}
+	}
+
+	// batch fetch the scripts in one query
+	scriptIDs := make([]*uuid.UUID, 0, len(scripts))
+	for _, ac := range scripts {
+		id := ac.ScriptID.MustGet()
+		scriptIDs = append(scriptIDs, &id)
+	}
+	details, err := c.ScriptRepository.GetByIDs(ctx, scriptIDs)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	byID := make(map[string]*model.Script, len(details))
+	for _, d := range details {
+		byID[d.ID.MustGet().String()] = d
+	}
+
+	for _, ac := range scripts {
+		scriptID := ac.ScriptID.MustGet()
+		events := ac.GetScriptEventsOrDefault()
+		if !model.IsWebhookEventEnabled(events, eventName) {
+			continue
+		}
+		detail, ok := byID[scriptID.String()]
+		if !ok {
+			continue
+		}
+		source, err := detail.Script.Get()
+		if err != nil {
+			continue
+		}
+
+		dataLevel := ac.GetScriptIncludeDataOrDefault()
+		// cap the level for an anonymous campaign, matching webhooks
+		if isAnon && dataLevel == model.WebhookDataLevelFull {
+			dataLevel = model.WebhookDataLevelBasic
+		}
+
+		evCtx := script.EventContext{
+			CampaignID: campaignID.String(),
+			Event:      eventName,
+		}
+		if recipientID != nil {
+			evCtx.RecipientID = recipientID.String()
+		}
+		switch dataLevel {
+		case model.WebhookDataLevelNone:
+			// only the event name
+		case model.WebhookDataLevelBasic:
+			evCtx.CampaignName = campaignName
+		case model.WebhookDataLevelFull:
+			evCtx.CampaignName = campaignName
+			evCtx.Data = capturedData
+			evCtx.Email = email
+		}
+
+		// bind the write back callback to this campaign and recipient so a script
+		// cannot target another recipient or company
+		cid := *campaignID
+		var rid *uuid.UUID
+		if recipientID != nil {
+			r := *recipientID
+			rid = &r
+		}
+		aid := scriptID.String()
+		job := script.Job{
+			ScriptID: aid,
+			Script:   source.String(),
+			Event:    evCtx,
+			Emit: func(name string, d map[string]interface{}) error {
+				// bound the write back so a stuck database cannot pin the worker
+				// slot indefinitely (the run itself is already out of band)
+				emitCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+				return c.emitScriptEvent(emitCtx, &cid, rid, name, d)
+			},
+		}
+		if !c.ScriptDispatcher.Enqueue(job) {
+			c.Logger.Warnw("script job dropped, queue full",
+				"campaignID", cid.String(),
+				"scriptID", aid,
+				"event", eventName,
+			)
+		}
+	}
+
+	return nil
+}
+
+// emitScriptEvent creates a campaign event from a script. It
+// funnels through the same chokepoint as native capture: submitted data is
+// stored only when the campaign allows it, the event is anonymized for an
+// anonymous campaign, and webhooks fire while scripts do not (the context
+// origin flag breaks the emitEvent recursion).
+func (c *Campaign) emitScriptEvent(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	recipientID *uuid.UUID,
+	eventName string,
+	dataMap map[string]interface{},
+) error {
+	eventID, ok := cache.EventIDByName[eventName]
+	if !ok {
+		return errs.Wrap(errors.New("unknown script event name"))
+	}
+	// defense in depth: a script may only author its own data events, never
+	// fabricate a server-detected outcome. The script binding enforces this too.
+	if eventName != data.EVENT_CAMPAIGN_RECIPIENT_SUBMITTED_DATA &&
+		eventName != data.EVENT_CAMPAIGN_RECIPIENT_INFO {
+		return errs.Wrap(errors.New("script may not create event: " + eventName))
+	}
+	campaign, err := c.CampaignRepository.GetByID(ctx, campaignID, &repository.CampaignOption{})
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	if !campaign.IsActive() {
+		return nil
+	}
+
+	// load the campaign recipient so the event can be anonymized against its
+	// pseudonym when the campaign is anonymous
+	var campaignRecipient *model.CampaignRecipient
+	if recipientID != nil {
+		campaignRecipient, err = c.CampaignRecipientRepository.GetByCampaignAndRecipientID(
+			ctx,
+			campaignID,
+			recipientID,
+			&repository.CampaignRecipientOption{},
+		)
+		if err != nil {
+			return errs.Wrap(err)
+		}
+	}
+
+	// store submitted data only when the campaign is configured to keep it,
+	// matching the native capture paths. Anonymization strips it regardless.
+	dataVO := vo.NewEmptyOptionalString1MB()
+	saveData := false
+	if sd, err := campaign.SaveSubmittedData.Get(); err == nil && sd {
+		saveData = true
+	}
+	if saveData && len(dataMap) > 0 {
+		b, err := json.Marshal(dataMap)
+		if err != nil {
+			return errs.Wrap(err)
+		}
+		// script controlled data: use the non panicking constructor so a payload
+		// over the 1MB cap fails as a clean error, not a panic
+		d, err := vo.NewOptionalString1MB(string(b))
+		if err != nil {
+			return errs.Wrap(err)
+		}
+		dataVO = d
+	}
+
+	newEventID := uuid.New()
+	campaignEvent := &model.CampaignEvent{
+		ID:          &newEventID,
+		CampaignID:  campaignID,
+		RecipientID: recipientID,
+		IP:          vo.NewEmptyOptionalString64(),
+		UserAgent:   vo.NewEmptyOptionalString255(),
+		EventID:     eventID,
+		Data:        dataVO,
+	}
+	anonymizeEventForRecipient(campaignAnonymous(campaign), campaignRecipient, campaignEvent)
+	if err := c.CampaignRepository.SaveEvent(ctx, campaignEvent); err != nil {
+		return errs.Wrap(err)
+	}
+
+	// fire webhooks for the new event, but not scripts: the origin flag makes
+	// HandleWebhooks skip the script dispatch so a script cannot loop.
+	return c.HandleWebhooks(withScriptOrigin(ctx), campaignID, recipientID, eventName, dataMap)
+}
+
+// anonymizeCampaignRecipients severs the recipient relation for a campaign and
+// finalizes anonymization. Each recipient keeps its existing pseudonym (an
+// anonymous campaign assigned one at materialization) or is given a fresh one and
+// has its events rewritten (a normal campaign anonymized at close). Lure codes are
+// released, recipient group links dropped, recipient ids removed, and anonymized_at
+// stamped. The campaign must already be closed. Safe to run more than once: a
+// second run finds recipient ids already null and skips them.
+func (c *Campaign) anonymizeCampaignRecipients(ctx context.Context, id *uuid.UUID) error {
+	campaignRecipientsResult, err := c.CampaignRecipientRepository.GetByCampaignID(
+		ctx,
+		id,
+		&repository.CampaignRecipientOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign recipients by campaign id", "error", err)
+		return errs.Wrap(err)
+	}
+	for _, cr := range campaignRecipientsResult.Rows {
+		if cr.RecipientID.IsNull() {
+			c.Logger.Debug("skipping anonymization of campaign recipient without recipient")
+			continue
+		}
+		recipientID := cr.RecipientID.MustGet()
+		campaignID, err := cr.CampaignID.Get()
+		if err != nil {
+			c.Logger.Debug("Recipient removed or anonymized, skipping in anonymization")
+			continue
+		}
+		// an anonymous campaign already assigned a stable pseudonym at
+		// materialization and its events already carry it. keep that id, only
+		// release the lure code and sever the recipient link below. rewriting
+		// events would fail to match, since they hold no recipient id, and
+		// regenerating the id would orphan the events already written.
+		if existing, err := cr.AnonymizedID.Get(); err == nil {
+			if err := c.CampaignRecipientRepository.Anonymize(ctx, &campaignID, &recipientID, &existing); err != nil {
+				c.Logger.Errorw("failed to finalize anonymous campaign recipient", "error", err)
+				return errs.Wrap(err)
+			}
+			continue
+		}
+		// add anonymized ID to each campaign recipient
+		anonymizedID := uuid.New()
+		cr.AnonymizedID = nullable.NewNullableWithValue(anonymizedID)
+		err = c.CampaignRecipientRepository.Anonymize(ctx, &campaignID, &recipientID, &anonymizedID)
+		if err != nil {
+			c.Logger.Errorw("failed to add anonymized ID to campaign recipient", "error", err)
+			return errs.Wrap(err)
+		}
+		// anonymize events and assign each anonymized ID so the events can still be tracked
+		err = c.CampaignRepository.AnonymizeCampaignEvent(
+			ctx,
+			&campaignID,
+			&recipientID,
+			&anonymizedID,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to anonymize campaign event", "error", err)
+			return errs.Wrap(err)
+		}
+	}
+	// delete the relation between the campaign and the recipient groups
+	err = c.CampaignRepository.RemoveCampaignRecipientGroups(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to delete campaign recipient groups by campaign id", "error", err)
+		return errs.Wrap(err)
+	}
+	// remove the recipient ID from the campaign recipient so only the anomymized ID is left
+	err = c.CampaignRecipientRepository.RemoveRecipientIDByCampaignID(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to remove recipient ID from campaign recipients", "error", err)
+		return errs.Wrap(err)
+	}
+	// finally add a timestamp to the campaign to indicate when it was anonymized
+	if err := c.CampaignRepository.AddAnonymizedAt(ctx, id); err != nil {
+		c.Logger.Errorw("failed to add anonymized at to campaign", "error", err)
+		return errs.Wrap(err)
+	}
+	return nil
+}
+
+// AnonymizeByID anonymizes a campaign including the events
+func (c *Campaign) AnonymizeByID(
+	ctx context.Context,
+	session *model.Session,
+	id *uuid.UUID,
+) error {
+	ae := NewAuditEvent("Campaign.AnonymizeByID", session)
+	ae.Details["id"] = id.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return errs.ErrAuthorizationFailed
+	}
+	// get campaign to check it exists and etc
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		id,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	// check if campaign is active, cause then it should be closed before continueing
+	if campaign.IsActive() {
+		err = c.closeCampaign(
+			ctx,
+			session,
+			id,
+			campaign,
+			"campaign is not active",
+		)
+	}
+	if err != nil {
+		c.Logger.Errorw("failed to close campaign by id before anonymization", "error", err)
+		return errs.Wrap(err)
+	}
+	if err := c.anonymizeCampaignRecipients(ctx, id); err != nil {
+		return errs.Wrap(err)
+	}
+	c.AuditLogAuthorized(ae)
+
+	return nil
+}
+
+// AnonymizeDataByID anonymizes the submitted data, user agent, ip address and
+// browser metadata of a campaign while keeping the recipient relation intact
+func (c *Campaign) AnonymizeDataByID(
+	ctx context.Context,
+	session *model.Session,
+	id *uuid.UUID,
+) error {
+	ae := NewAuditEvent("Campaign.AnonymizeDataByID", session)
+	ae.Details["id"] = id.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	// get campaign to check it exists and its anonymization state
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		id,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+	// a fully anonymized campaign has already had its data scrubbed
+	if campaign.AnonymizedAt.IsSpecified() && !campaign.AnonymizedAt.IsNull() {
+		return errs.Wrap(errs.ErrCampaignAlreadyAnonymized)
+	}
+	// once the campaign is closed and its data is anonymized there is no new
+	// data to scrub, while it is open it can be re-run to scrub newer events
+	isClosed := campaign.ClosedAt.IsSpecified() && !campaign.ClosedAt.IsNull()
+	isDataAnonymized := campaign.DataAnonymizedAt.IsSpecified() && !campaign.DataAnonymizedAt.IsNull()
+	if isClosed && isDataAnonymized {
+		return errs.Wrap(errs.ErrCampaignDataAlreadyAnonymized)
+	}
+	// scrub the submitted data, user agent, ip and browser metadata of all events
+	// while keeping the recipient relation intact
+	err = c.CampaignRepository.AnonymizeCampaignEventData(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to anonymize campaign event data", "error", err)
+		return errs.Wrap(err)
+	}
+	// add a timestamp to the campaign to indicate when the data was anonymized
+	err = c.CampaignRepository.AddDataAnonymizedAt(ctx, id)
+	if err != nil {
+		c.Logger.Errorw("failed to add data anonymized at to campaign", "error", err)
+		return errs.Wrap(err)
+	}
+	c.AuditLogAuthorized(ae)
+
+	return nil
+}
+
+// SendEmailByCampaignRecipientID sends an email to a specific campaign recipient
+// Multiple sends to the same recipient are allowed to support retry scenarios and follow-ups.
+func (c *Campaign) SendEmailByCampaignRecipientID(
+	ctx context.Context,
+	session *model.Session,
+	campaignRecipientID *uuid.UUID,
+) error {
+	ae := NewAuditEvent("Campaign.SendEmailByCampaignRecipientID", session)
+	ae.Details["campaignRecipientId"] = campaignRecipientID.String()
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+
+	// get campaign recipient
+	campaignRecipient, err := c.CampaignRecipientRepository.GetByID(
+		ctx,
+		campaignRecipientID,
+		&repository.CampaignRecipientOption{
+			WithRecipient: true,
+			WithCampaign:  true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign recipient by id", "error", err)
+		return errs.Wrap(err)
+	}
+
+	campaign := campaignRecipient.Campaign
+	if campaign == nil {
+		return errors.New("campaign recipient has no campaign loaded")
+	}
+
+	// check if campaign is active
+	if !campaign.IsActive() {
+		return errors.New("campaign is not active")
+	}
+
+	// check if recipient exists (not anonymized)
+	if campaignRecipient.Recipient == nil {
+		return errors.New("recipient is anonymized or deleted")
+	}
+
+	// do not send to a SCIM-disabled (deprovisioned) recipient, even manually
+	if campaignRecipient.Recipient.ScimSoftDeletedAt != nil {
+		return errors.New("recipient is disabled in the identity provider and cannot be sent to")
+	}
+
+	// check if cancelled
+	if !campaignRecipient.CancelledAt.IsNull() {
+		return errors.New("recipient has been cancelled")
+	}
+
+	campaignID := campaign.ID.MustGet()
+
+	// add resend information to audit log
+	isResend := !campaignRecipient.SentAt.IsNull()
+	ae.Details["isResend"] = isResend
+	if isResend {
+		ae.Details["previouslySentAt"] = campaignRecipient.SentAt.MustGet().Format(time.RFC3339)
+	}
+
+	// send the email using existing logic from sendCampaignMessages
+	err = c.sendSingleCampaignMessage(ctx, session, &campaignID, campaignRecipient)
+	if err != nil {
+		// the failure is already logged in the campaign event with reason
+		c.Logger.Warnw("failed to send campaign message", "reason", err)
+		// don't wrap error, return as-is so controller can handle it as bad request
+		return errs.Wrap(err)
+	}
+
+	c.AuditLogAuthorized(ae)
+	return nil
+}
+
+// sendSingleCampaignMessage sends an email to a single campaign recipient
+func (c *Campaign) sendSingleCampaignMessage(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+	campaignRecipient *model.CampaignRecipient,
+) error {
+	// get campaign template details - similar logic from sendCampaignMessages
+	campaign, err := c.CampaignRepository.GetByID(
+		ctx,
+		campaignID,
+		&repository.CampaignOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return errs.Wrap(err)
+	}
+
+	templateID, err := campaign.TemplateID.Get()
+	if err != nil {
+		return errors.New("campaign has no template")
+	}
+
+	cTemplate, err := c.CampaignTemplateService.GetByID(
+		ctx,
+		session,
+		&templateID,
+		&repository.CampaignTemplateOption{
+			WithDomain:             true,
+			WithSMTPConfiguration:  true,
+			WithAPISender:          true,
+			WithIdentifier:         true,
+			WithBeforeLandingProxy: true,
+			WithLandingProxy:       true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign template by id", "error", err)
+		return errs.Wrap(err)
+	}
+
+	// check domain
+	domain := cTemplate.Domain
+	if domain == nil {
+		return errors.New("campaign template has no domain")
+	}
+
+	// get email details
+	emailID, err := cTemplate.EmailID.Get()
+	if err != nil {
+		return errors.New("campaign template has no email")
+	}
+
+	// get campaign's company context for attachment filtering
+	var campaignCompanyID *uuid.UUID
+	if campaign.CompanyID.IsSpecified() && !campaign.CompanyID.IsNull() {
+		companyID := campaign.CompanyID.MustGet()
+		campaignCompanyID = &companyID
+	}
+
+	email, err := c.MailService.GetByID(ctx, session, &emailID, campaignCompanyID)
+	if err != nil {
+		c.Logger.Errorw("failed to get email by id", "error", err)
+		return errs.Wrap(err)
+	}
+
+	// update last attempt timestamp
+	campaignRecipientID := campaignRecipient.ID.MustGet()
+	campaignRecipient.LastAttemptAt = nullable.NewNullableWithValue(time.Now())
+	err = c.CampaignRecipientRepository.UpdateByID(ctx, &campaignRecipientID, campaignRecipient)
+	if err != nil {
+		c.Logger.Errorw("failed to update last attempted at", "error", err)
+		return errs.Wrap(err)
+	}
+
+	// prepare template for rendering
+	content, err := email.Content.Get()
+	if err != nil {
+		return errors.New("failed to get email content")
+	}
+
+	// validate parseability with company funcs; execution uses per recipient device code funcs
+	t := template.New("email")
+	t = t.Funcs(c.TemplateService.TemplateFuncsWithCompany(ctx, campaignCompanyID))
+	_, err = t.Parse(content.String())
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	// check sending method
+	isSmtpCampaign := cTemplate.SMTPConfigurationID.IsSpecified() && !cTemplate.SMTPConfigurationID.IsNull()
+	isAPISenderCampaign := cTemplate.APISenderID.IsSpecified() && !cTemplate.APISenderID.IsNull()
+
+	if !isSmtpCampaign && !isAPISenderCampaign {
+		return errors.New("campaign template has no SMTP configuration or API sender")
+	}
+
+	if isAPISenderCampaign {
+		// generate custom campaign URL if first page is MITM
+		recipientID := campaignRecipient.ID.MustGet()
+		customCampaignURL, urlErr := c.GetLandingPageURLByCampaignRecipientID(ctx, session, &recipientID)
+		if urlErr != nil {
+			c.Logger.Errorw("failed to get campaign url for API sender", "error", urlErr)
+			customCampaignURL = ""
+		}
+
+		// send via API with custom URL (domain and template stay the same for assets).
+		// SendWithCustomURL derives the recipient id from campaignRecipient.ID internally,
+		// so fix that by passing the actual recipient id via a wrapper that sets it correctly.
+		// the actual recipient id is extracted inside APISenderService from campaignRecipient.RecipientID.
+		err = c.APISenderService.SendWithCustomURL(
+			ctx,
+			session,
+			cTemplate,
+			campaignRecipient,
+			domain,
+			content.String(),
+			email,
+			customCampaignURL,
+			campaignCompanyID,
+			*campaignID,
+		)
+	} else {
+		// send via SMTP
+		err = c.sendSingleEmailSMTP(ctx, session, cTemplate, campaignRecipient, domain, content.String(), email, campaignCompanyID, *campaignID)
+	}
+
+	// save sending result
+	saveErr := c.saveSendingResult(ctx, campaignRecipient, err)
+	if saveErr != nil {
+		c.Logger.Errorw("failed to save sending result", "error", saveErr)
+		return errs.Wrap(saveErr)
+	}
+
+	// if there was a sending error, log it as info since it's expected (e.g., invalid recipient)
+	if err != nil {
+		c.Logger.Infow("campaign message delivery failed", "reason", err.Error())
+	}
+
+	return err
+}
+
+// sendSingleEmailSMTP sends an email to a single recipient via SMTP
+func (c *Campaign) sendSingleEmailSMTP(
+	ctx context.Context,
+	session *model.Session,
+	cTemplate *model.CampaignTemplate,
+	campaignRecipient *model.CampaignRecipient,
+	domain *model.Domain,
+	emailContent string,
+	email *model.Email,
+	campaignCompanyID *uuid.UUID,
+	campaignID uuid.UUID,
+) error {
+	// get SMTP configuration
+	smtpConfigID, err := cTemplate.SMTPConfigurationID.Get()
+	if err != nil {
+		return errors.New("failed to get SMTP configuration from template")
+	}
+
+	smtpConfig, err := c.SMTPConfigService.GetByID(
+		ctx,
+		session, // use the actual session passed to the method
+		&smtpConfigID,
+		&repository.SMTPConfigurationOption{
+			WithHeaders: true,
+		},
+	)
+	if err != nil {
+		c.Logger.Errorw("smtp configuration did not load", "error", err)
+		return errs.Wrap(err)
+	}
+
+	smtpPort, err := smtpConfig.Port.Get()
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	smtpHost, err := smtpConfig.Host.Get()
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	smtpIgnoreCertErrors, err := smtpConfig.IgnoreCertErrors.Get()
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	// setup SMTP client options
+	emailOptions := []mail.Option{
+		mail.WithPort(smtpPort.Int()),
+		mail.WithTLSConfig(
+			&tls.Config{
+				ServerName:         smtpHost.String(),
+				InsecureSkipVerify: smtpIgnoreCertErrors,
+			},
+		),
+	}
+
+	// port 465 speaks implicit TLS (SMTPS): the connection is wrapped in
+	// TLS on connect instead of being upgraded later via STARTTLS. go-mail
+	// ignores the TLS policy while SSL is on.
+	if smtpPort.Int() == 465 {
+		emailOptions = append(emailOptions, mail.WithSSL())
+	}
+
+	// use a custom HELO/EHLO hostname when set, otherwise go-mail
+	// falls back to the machine hostname
+	if helo, err := smtpConfig.Helo.Get(); err == nil {
+		if h := helo.String(); len(h) > 0 {
+			emailOptions = append(emailOptions, mail.WithHELO(h))
+		}
+	}
+
+	// setup authentication if provided
+	username, err := smtpConfig.Username.Get()
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	password, err := smtpConfig.Password.Get()
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	if un := username.String(); len(un) > 0 {
+		emailOptions = append(emailOptions, mail.WithUsername(un))
+		if pw := password.String(); len(pw) > 0 {
+			emailOptions = append(emailOptions, mail.WithPassword(pw))
+		}
+	}
+
+	// create message
+	messageOptions := []mail.MsgOption{
+		mail.WithNoDefaultUserAgent(),
+	}
+	m := mail.NewMsg(messageOptions...)
+
+	// set envelope from
+	err = m.EnvelopeFrom(email.MailEnvelopeFrom.MustGet().String())
+	if err != nil {
+		c.Logger.Errorw("failed to set envelope from", "error", err)
+		return errs.Wrap(err)
+	}
+	// message id from the sending domain so the host is not leaked
+	setMessageIDFromAddress(m, email.MailEnvelopeFrom.MustGet().String())
+
+	// set headers
+	err = m.From(email.MailHeaderFrom.MustGet().String())
+	if err != nil {
+		c.Logger.Errorw("failed to set mail header 'From'", "error", err)
+		return errs.Wrap(err)
+	}
+
+	recpEmail := campaignRecipient.Recipient.Email.MustGet().String()
+	err = m.To(recpEmail)
+	if err != nil {
+		c.Logger.Errorw("failed to set mail header 'To'", "error", err)
+		return errs.Wrap(err)
+	}
+
+	// build per recipient template funcs so that {{MicrosoftDeviceCode}} resolves correctly.
+	// use the actual recipient id (not the campaign recipient row id) so the
+	// lookup key matches what the landing page path uses.
+	recipientID := campaignRecipient.ID.MustGet()
+	actualRecipientID := campaignRecipient.RecipientID.MustGet()
+	recipientDeviceFuncs := c.TemplateService.TemplateFuncsWithDeviceCode(ctx, &campaignID, &actualRecipientID)
+
+	// setup template variables
+	urlIdentifier := cTemplate.URLIdentifier
+	if urlIdentifier == nil {
+		return errors.New("url identifier must be loaded for the campaign template")
+	}
+
+	// get template domain for assets and tracking pixel
+	domainName, err := domain.Name.Get()
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	urlPath := cTemplate.URLPath.MustGet().String()
+
+	// generate custom campaign URL if first page is MITM
+	customCampaignURL, err := c.GetLandingPageURLByCampaignRecipientID(ctx, session, &recipientID)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign url", "error", err)
+		return errs.Wrap(err)
+	}
+
+	t := c.TemplateService.CreateMail(
+		ctx,
+		domainName.String(),
+		urlIdentifier.Name.MustGet(),
+		urlPath,
+		campaignRecipient,
+		email,
+		nil,
+		campaignCompanyID,
+		NewFlowContext(cTemplate, campaignID),
+	)
+
+	// the only builder that knows about proxy first pages and path mode codes
+	(*t)["URL"] = customCampaignURL
+
+	// custom headers support the same per recipient variables as the subject and body
+	applyCustomSMTPHeaders(m, smtpConfig.Headers, t, recipientDeviceFuncs, c.Logger)
+
+	// process subject through template
+	subjectTemplate, err := template.New("subject").Funcs(recipientDeviceFuncs).Parse(email.MailHeaderSubject.MustGet().String())
+	if err != nil {
+		c.Logger.Errorw("failed to parse subject template", "error", err)
+		return errs.Wrap(err)
+	}
+	var subjectBuffer bytes.Buffer
+	err = subjectTemplate.Execute(&subjectBuffer, t)
+	if err != nil {
+		c.Logger.Errorw("failed to execute subject template", "error", err)
+		return errs.Wrap(err)
+	}
+	m.Subject(subjectBuffer.String())
+
+	// parse and execute body with per recipient device code funcs
+	recipientMailTmpl, err := template.New("email").Funcs(recipientDeviceFuncs).Parse(emailContent)
+	if err != nil {
+		c.Logger.Errorw("failed to parse per recipient mail template", "error", err)
+		return errs.Wrap(err)
+	}
+	var bodyBuffer bytes.Buffer
+	err = recipientMailTmpl.Execute(&bodyBuffer, t)
+	if err != nil {
+		c.Logger.Errorw("failed to execute mail template", "error", err)
+		return errs.Wrap(err)
+	}
+	m.SetBodyString("text/html", bodyBuffer.String())
+
+	// handle attachments
+	attachments := email.Attachments
+	for _, emailAttachment := range attachments {
+		attachment := emailAttachment.Attachment
+		p, err := c.MailService.AttachmentService.GetPath(attachment)
+		if err != nil {
+			return fmt.Errorf("failed to get attachment path: %s", err)
+		}
+
+		// check if attachment should be inline (for cid: references)
+		if emailAttachment.IsInline {
+			// inline attachment - embedded in email body, can be referenced via cid:filename
+			if !attachment.EmbeddedContent.MustGet() {
+				// simple inline image - no template processing needed
+				m.EmbedFile(p.String())
+			} else {
+				// inline image with template processing
+				attachmentContent, err := os.ReadFile(p.String())
+				if err != nil {
+					return errs.Wrap(err)
+				}
+				// setup attachment for executing as email template
+				attachmentAsEmail := model.Email{
+					ID:                email.ID,
+					CreatedAt:         email.CreatedAt,
+					UpdatedAt:         email.UpdatedAt,
+					Name:              email.Name,
+					MailEnvelopeFrom:  email.MailEnvelopeFrom,
+					MailHeaderFrom:    email.MailHeaderFrom,
+					MailHeaderSubject: email.MailHeaderSubject,
+					Content:           email.Content,
+					AddTrackingPixel:  email.AddTrackingPixel,
+					CompanyID:         email.CompanyID,
+					Attachments:       email.Attachments,
+					Company:           email.Company,
+				}
+				attachmentAsEmail.Content = nullable.NewNullableWithValue(
+					*vo.NewUnsafeOptionalString1MB(string(attachmentContent)),
+				)
+				// generate custom campaign URL for attachment
+				recipientID := campaignRecipient.ID.MustGet()
+				customCampaignURL, err := c.GetLandingPageURLByCampaignRecipientID(ctx, session, &recipientID)
+				if err != nil {
+					c.Logger.Errorw("failed to get campaign url for attachment", "error", err)
+					return errs.Wrap(err)
+				}
+
+				attachmentStr, err := c.TemplateService.CreateMailBodyWithCustomURLAndRecipient(
+					ctx,
+					urlIdentifier.Name.MustGet(),
+					urlPath,
+					domain,
+					campaignRecipient,
+					&attachmentAsEmail,
+					nil,
+					customCampaignURL,
+					campaignCompanyID,
+					&campaignID,
+					&actualRecipientID,
+					NewFlowContext(cTemplate, campaignID),
+				)
+				if err != nil {
+					return errs.Wrap(fmt.Errorf("failed to setup attachment with embedded content: %s", err))
+				}
+				// use EmbedReader for inline images - sets Content-Disposition: inline and Content-ID header
+				// the filename becomes the Content-ID, so use <img src="cid:filename.jpg"> in HTML
+				m.EmbedReader(
+					filepath.Base(p.String()),
+					strings.NewReader(attachmentStr),
+				)
+			}
+		} else if !attachment.EmbeddedContent.MustGet() {
+			if attachment.SendAsCalendar.MustGet() && isCalendarAttachment(p.String()) {
+				// calendar invitation parsed natively by Outlook, raw file content
+				icsContent, err := os.ReadFile(p.String())
+				if err != nil {
+					return fmt.Errorf("failed to read calendar file: %s", err)
+				}
+				m.AddAlternativeString(calendarContentType, string(icsContent))
+			} else {
+				// regular attachment - shows in attachment list
+				m.AttachFile(p.String())
+			}
+		} else {
+			// regular attachment with template processing
+			attachmentContent, err := os.ReadFile(p.String())
+			if err != nil {
+				return errs.Wrap(err)
+			}
+			// setup attachment for executing as email template
+			attachmentAsEmail := model.Email{
+				ID:                email.ID,
+				CreatedAt:         email.CreatedAt,
+				UpdatedAt:         email.UpdatedAt,
+				Name:              email.Name,
+				MailEnvelopeFrom:  email.MailEnvelopeFrom,
+				MailHeaderFrom:    email.MailHeaderFrom,
+				MailHeaderSubject: email.MailHeaderSubject,
+				Content:           email.Content,
+				AddTrackingPixel:  email.AddTrackingPixel,
+				CompanyID:         email.CompanyID,
+				Attachments:       email.Attachments,
+				Company:           email.Company,
+			}
+			attachmentAsEmail.Content = nullable.NewNullableWithValue(
+				*vo.NewUnsafeOptionalString1MB(string(attachmentContent)),
+			)
+			// generate custom campaign URL for attachment
+			recipientID := campaignRecipient.ID.MustGet()
+			customCampaignURL, err := c.GetLandingPageURLByCampaignRecipientID(ctx, session, &recipientID)
+			if err != nil {
+				c.Logger.Errorw("failed to get campaign url for attachment", "error", err)
+				return errs.Wrap(err)
+			}
+
+			attachmentStr, err := c.TemplateService.CreateMailBodyWithCustomURLAndRecipient(
+				ctx,
+				urlIdentifier.Name.MustGet(),
+				urlPath,
+				domain,
+				campaignRecipient,
+				&attachmentAsEmail,
+				nil,
+				customCampaignURL,
+				campaignCompanyID,
+				&campaignID,
+				&actualRecipientID,
+				NewFlowContext(cTemplate, campaignID),
+			)
+			if err != nil {
+				return errs.Wrap(fmt.Errorf("failed to setup attachment with embedded content: %s", err))
+			}
+			if attachment.SendAsCalendar.MustGet() && isCalendarAttachment(p.String()) {
+				// calendar invitation parsed natively by Outlook, with rendered variables
+				m.AddAlternativeString(calendarContentType, attachmentStr)
+			} else {
+				m.AttachReadSeeker(
+					filepath.Base(p.String()),
+					strings.NewReader(attachmentStr),
+				)
+			}
+		}
+	}
+
+	// send the email
+	var mc *mail.Client
+
+	// try different authentication methods
+	if un := username.String(); len(un) > 0 {
+		// try CRAM-MD5 first when credentials are provided
+		emailOptionsCRAM5 := append(emailOptions, mail.WithSMTPAuth(mail.SMTPAuthCramMD5))
+		mc, _ = mail.NewClient(smtpHost.String(), emailOptionsCRAM5...)
+		mc.SetLogger(log.NewGoMailLoggerAdapter(c.Logger))
+		mc.SetDebugLog(true)
+		if build.Flags.Production {
+			mc.SetTLSPolicy(mail.TLSMandatory)
+		} else {
+			mc.SetTLSPolicy(mail.TLSOpportunistic)
+		}
+		err = mc.DialAndSendWithContext(ctx, m)
+
+		// check if it's an authentication error and try PLAIN auth
+		if err != nil && (strings.Contains(err.Error(), "535 ") ||
+			strings.Contains(err.Error(), "534 ") ||
+			strings.Contains(err.Error(), "538 ") ||
+			strings.Contains(err.Error(), "CRAM-MD5") ||
+			strings.Contains(err.Error(), "authentication failed")) {
+			c.Logger.Debugf("CRAM-MD5 authentication failed, trying PLAIN auth", "error", err)
+			emailOptionsBasic := emailOptions
+			emailOptionsBasic = append(emailOptions, mail.WithSMTPAuth(mail.SMTPAuthPlain))
+			mc, _ = mail.NewClient(smtpHost.String(), emailOptionsBasic...)
+			mc.SetLogger(log.NewGoMailLoggerAdapter(c.Logger))
+			mc.SetDebugLog(true)
+			if build.Flags.Production {
+				mc.SetTLSPolicy(mail.TLSMandatory)
+			} else {
+				mc.SetTLSPolicy(mail.TLSOpportunistic)
+			}
+			err = mc.DialAndSendWithContext(ctx, m)
+		}
+	} else {
+		// no credentials provided, try without authentication
+		mc, _ = mail.NewClient(smtpHost.String(), emailOptions...)
+		mc.SetLogger(log.NewGoMailLoggerAdapter(c.Logger))
+		mc.SetDebugLog(true)
+		if build.Flags.Production {
+			mc.SetTLSPolicy(mail.TLSMandatory)
+		} else {
+			mc.SetTLSPolicy(mail.TLSOpportunistic)
+		}
+		err = mc.DialAndSendWithContext(ctx, m)
+
+		// if no-auth fails and we get an auth-related error, log it appropriately
+		if err != nil && (strings.Contains(err.Error(), "530 ") ||
+			strings.Contains(err.Error(), "535 ") ||
+			strings.Contains(err.Error(), "authentication required") ||
+			strings.Contains(err.Error(), "AUTH")) {
+			c.Logger.Warnw("Server requires authentication but no credentials provided", "error", err)
+		}
+	}
+
+	if err != nil {
+		c.Logger.Errorw("failed to send email", "error", err)
+		return errs.Wrap(err)
+	}
+
+	return nil
+}
+
+// SetNotableCampaignEvent checks and update if most notable event for a campaign
+func (c *Campaign) setMostNotableCampaignEvent(
+	ctx context.Context,
+	campaign *model.Campaign,
+	eventName string,
+) error {
+	currentEventID, _ := campaign.NotableEventID.Get()
+	notableEventID, _ := cache.EventIDByName[eventName]
+	if cache.IsMoreNotableCampaignRecipientEventID(
+		&currentEventID,
+		notableEventID,
+	) {
+		campaign.NotableEventID.Set(*notableEventID)
+		cid := campaign.ID.MustGet()
+		err := c.CampaignRepository.UpdateByID(
+			ctx,
+			&cid,
+			campaign,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to update notable campaign event", "error", err)
+			return errs.Wrap(err)
+		}
+	}
+	return nil
+}
+
+// SetNotableCampaignRecipientEvent checks and update if most notable event for campaign recipient
+func (c *Campaign) SetNotableCampaignRecipientEvent(
+	ctx context.Context,
+	campaignRecipient *model.CampaignRecipient,
+	eventName string,
+) error {
+	currentNotableEventID, _ := campaignRecipient.NotableEventID.Get()
+	notableEventID, _ := cache.EventIDByName[eventName]
+	if cache.IsMoreNotableCampaignRecipientEventID(
+		&currentNotableEventID,
+		notableEventID,
+	) {
+		campaignRecipient.NotableEventID.Set(*notableEventID)
+		crid := campaignRecipient.ID.MustGet()
+		err := c.CampaignRecipientRepository.UpdateByID(
+			ctx,
+			&crid,
+			campaignRecipient,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to save updating notable campaign recipient event", "error", err)
+			return errs.Wrap(err)
+		}
+	}
+	return nil
+}
+
+// GenerateCampaignStats generates and stores campaign statistics when a campaign is closed
+func (c *Campaign) GenerateCampaignStats(ctx context.Context, session *model.Session, campaignID *uuid.UUID) error {
+	c.Logger.Debugw("starting campaign stats generation", "campaignID", campaignID.String())
+
+	// Check if stats already exist for this campaign to prevent duplicates
+	existingStats, err := c.CampaignRepository.GetCampaignStats(ctx, campaignID)
+	if err == nil && existingStats != nil {
+		c.Logger.Debugw("campaign stats already exist, skipping generation", "campaignID", campaignID.String())
+		return nil
+	}
+	// Continue if record not found or table doesn't exist (which is expected for new stats)
+	c.Logger.Debugw("no existing stats found, proceeding with generation", "campaignID", campaignID.String(), "checkError", err)
+
+	// Get the campaign without joins to avoid SQL ambiguity
+	campaign, err := c.CampaignRepository.GetByID(ctx, campaignID, &repository.CampaignOption{})
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign for stats", "error", err, "campaignID", campaignID.String())
+		return errs.Wrap(err)
+	}
+
+	campaignName := campaign.Name.MustGet().String()
+	c.Logger.Debugf("retrieved campaign for stats", "campaignID", campaignID.String(), "campaignName", campaignName)
+
+	// Get campaign result stats (existing method)
+	resultStats, err := c.CampaignRepository.GetResultStats(ctx, campaignID)
+	if err != nil {
+		c.Logger.Errorw("failed to get result stats", "error", err, "campaignID", campaignID.String())
+		return errs.Wrap(err)
+	}
+	c.Logger.Debugf("retrieved result stats", "campaignID", campaignID.String(), "recipients", resultStats.Recipients)
+
+	// Determine campaign type
+	campaignType := "scheduled"
+	if campaign.SendStartAt == nil && campaign.SendEndAt == nil {
+		campaignType = "self-managed"
+	}
+
+	isTrainingCampaign := false
+	if v, err := campaign.IsTraining.Get(); err == nil {
+		isTrainingCampaign = v
+	}
+
+	// Get template name with proper session
+	templateName := ""
+	templateID := campaign.TemplateID.MustGet()
+	template, err := c.CampaignTemplateService.GetByID(ctx, session, &templateID, &repository.CampaignTemplateOption{})
+	if err == nil && template != nil && !template.Name.IsNull() {
+		templateName = template.Name.MustGet().String()
+	}
+
+	// Create time pointers
+	now := time.Now()
+
+	var companyID *uuid.UUID
+	if !campaign.CompanyID.IsNull() {
+		id := campaign.CompanyID.MustGet()
+		companyID = &id
+	}
+	// companyID can be nil for global campaigns
+
+	var sendStartAt *time.Time
+	if !campaign.SendStartAt.IsNull() {
+		t := campaign.SendStartAt.MustGet()
+		sendStartAt = &t
+	}
+
+	var sendEndAt *time.Time
+	if !campaign.SendEndAt.IsNull() {
+		t := campaign.SendEndAt.MustGet()
+		sendEndAt = &t
+	}
+
+	var closedAt *time.Time
+	if !campaign.ClosedAt.IsNull() {
+		t := campaign.ClosedAt.MustGet()
+		closedAt = &t
+	}
+
+	// Create campaign stats record
+	id := uuid.New()
+	stats := &database.CampaignStats{
+		ID:                  &id,
+		CampaignID:          campaignID,
+		CampaignName:        campaignName,
+		CompanyID:           companyID,
+		CampaignStartDate:   sendStartAt,
+		CampaignEndDate:     sendEndAt,
+		CampaignClosedAt:    closedAt,
+		TotalRecipients:     int(resultStats.Recipients),
+		TotalEvents:         0, // Will be calculated from events
+		EmailsSent:          int(resultStats.EmailsSent),
+		TrackingPixelLoaded: int(resultStats.TrackingPixelLoaded),
+		WebsiteVisits:       int(resultStats.WebsiteLoaded),
+		DataSubmissions:     int(resultStats.SubmittedData),
+		Reported:            int(resultStats.Reported),
+		TrainingStarted:     int(resultStats.TrainingStarted),
+		TrainingCompleted:   int(resultStats.TrainingCompleted),
+
+		TemplateName: templateName,
+		CampaignType: campaignType,
+		IsTraining:   isTrainingCampaign,
+		CreatedAt:    &now,
+		UpdatedAt:    &now,
+	}
+
+	// Insert the stats
+	c.Logger.Debugf("inserting campaign stats", "campaignID", campaignID.String(), "statsID", stats.ID.String())
+	err = c.CampaignRepository.InsertCampaignStats(ctx, stats)
+	if err != nil {
+		c.Logger.Errorw("failed to insert campaign stats", "error", err, "campaignID", campaignID.String())
+		return errs.Wrap(err)
+	}
+
+	c.Logger.Debugf("successfully inserted campaign stats", "campaignID", campaignID.String(), "statsID", stats.ID.String())
+	return nil
+}
+
+// GetCampaignStats retrieves campaign statistics by campaign ID
+func (c *Campaign) GetCampaignStats(ctx context.Context, session *model.Session, campaignID *uuid.UUID) (*database.CampaignStats, error) {
+	// Check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return nil, errs.ErrAuthorizationFailed
+	}
+
+	return c.CampaignRepository.GetCampaignStats(ctx, campaignID)
+}
+
+// GetAllCampaignStats retrieves all campaign statistics
+func (c *Campaign) GetAllCampaignStats(ctx context.Context, session *model.Session, companyID *uuid.UUID) (*model.Result[database.CampaignStats], error) {
+	result := model.NewEmptyResult[database.CampaignStats]()
+
+	// Check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return result, errs.ErrAuthorizationFailed
+	}
+
+	// Get the data
+	stats, err := c.CampaignRepository.GetAllCampaignStats(ctx, companyID)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+
+	// Convert to result format with pointers
+	rows := make([]*database.CampaignStats, len(stats))
+	for i := range stats {
+		rows[i] = &stats[i]
+	}
+
+	result.Rows = rows
+	result.HasNextPage = false
+
+	return result, nil
+}
+
+// CreateManualCampaignStats creates campaign statistics manually without requiring a campaign
+func (c *Campaign) CreateManualCampaignStats(ctx context.Context, session *model.Session, req *database.CampaignStats) (*database.CampaignStats, error) {
+	// Check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return nil, errs.ErrAuthorizationFailed
+	}
+
+	// Set up the stats record
+	id := uuid.New()
+	now := time.Now()
+
+	// Set required fields
+	req.ID = &id
+	req.CreatedAt = &now
+	req.UpdatedAt = &now
+	req.CampaignID = nil // No campaign reference for manual stats
+
+	// Calculate total events
+	req.TotalEvents = req.EmailsSent + req.TrackingPixelLoaded + req.WebsiteVisits + req.DataSubmissions + req.Reported
+
+	// Insert the stats
+	c.Logger.Debugf("inserting manual campaign stats", "statsID", req.ID.String())
+	err = c.CampaignRepository.InsertCampaignStats(ctx, req)
+	if err != nil {
+		c.Logger.Errorw("failed to insert manual campaign stats", "error", err, "statsID", req.ID.String())
+		return nil, errs.Wrap(err)
+	}
+
+	c.Logger.Debugf("successfully inserted manual campaign stats", "statsID", req.ID.String())
+	return req, nil
+}
+
+// GetManualCampaignStats retrieves manual campaign statistics (those without campaignID)
+func (c *Campaign) GetManualCampaignStats(ctx context.Context, session *model.Session, companyID *uuid.UUID) (*model.Result[database.CampaignStats], error) {
+	result := model.NewEmptyResult[database.CampaignStats]()
+
+	// Check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return result, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return result, errs.ErrAuthorizationFailed
+	}
+
+	// Get manual stats (those with null campaignID)
+	stats, err := c.CampaignRepository.GetManualCampaignStats(ctx, companyID)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+
+	// Convert to result format with pointers
+	rows := make([]*database.CampaignStats, len(stats))
+	for i := range stats {
+		rows[i] = &stats[i]
+	}
+
+	result.Rows = rows
+	result.HasNextPage = false
+
+	return result, nil
+}
+
+// UpdateManualCampaignStats updates manual campaign statistics
+func (c *Campaign) UpdateManualCampaignStats(ctx context.Context, session *model.Session, req *database.CampaignStats) (*database.CampaignStats, error) {
+	// Check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return nil, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return nil, errs.ErrAuthorizationFailed
+	}
+
+	// Get existing stats to ensure it's manual (no campaignID)
+	existingStats, err := c.CampaignRepository.GetCampaignStatsByID(ctx, req.ID)
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+
+	// Ensure this is a manual stat (no campaignID)
+	if existingStats.CampaignID != nil {
+		return nil, errs.Wrap(errors.New("cannot update system-generated campaign stats"))
+	}
+
+	// Set updated timestamp
+	now := time.Now()
+	req.UpdatedAt = &now
+	req.CampaignID = nil // Ensure it remains manual
+
+	// Calculate total events
+	req.TotalEvents = req.EmailsSent + req.TrackingPixelLoaded + req.WebsiteVisits + req.DataSubmissions + req.Reported
+
+	// Prepare update data
+	updateData := map[string]interface{}{
+		"updated_at":            req.UpdatedAt,
+		"campaign_name":         req.CampaignName,
+		"company_id":            req.CompanyID,
+		"campaign_start_date":   req.CampaignStartDate,
+		"campaign_end_date":     req.CampaignEndDate,
+		"campaign_closed_at":    req.CampaignClosedAt,
+		"total_recipients":      req.TotalRecipients,
+		"total_events":          req.TotalEvents,
+		"emails_sent":           req.EmailsSent,
+		"tracking_pixel_loaded": req.TrackingPixelLoaded,
+		"website_visits":        req.WebsiteVisits,
+		"data_submissions":      req.DataSubmissions,
+		"reported":              req.Reported,
+		"template_name":         req.TemplateName,
+		"campaign_type":         req.CampaignType,
+	}
+
+	// Update the stats
+	err = c.CampaignRepository.UpdateCampaignStats(ctx, req.ID, updateData)
+	if err != nil {
+		c.Logger.Errorw("failed to update manual campaign stats", "error", err, "statsID", req.ID.String())
+		return nil, errs.Wrap(err)
+	}
+
+	c.Logger.Debugf("successfully updated manual campaign stats", "statsID", req.ID.String())
+	return req, nil
+}
+
+// DeleteManualCampaignStats deletes manual campaign statistics by ID
+func (c *Campaign) DeleteManualCampaignStats(ctx context.Context, session *model.Session, statsID *uuid.UUID) error {
+	// Check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return errs.Wrap(err)
+	}
+	if !isAuthorized {
+		return errs.ErrAuthorizationFailed
+	}
+
+	// Get existing stats to ensure it's manual (no campaignID)
+	existingStats, err := c.CampaignRepository.GetCampaignStatsByID(ctx, statsID)
+	if err != nil {
+		return errs.Wrap(err)
+	}
+
+	// Ensure this is a manual stat (no campaignID)
+	if existingStats.CampaignID != nil {
+		return errs.Wrap(errors.New("cannot delete system-generated campaign stats"))
+	}
+
+	// Delete the stats
+	err = c.CampaignRepository.DeleteCampaignStatsByID(ctx, statsID)
+	if err != nil {
+		c.Logger.Errorw("failed to delete manual campaign stats", "error", err, "statsID", statsID.String())
+		return errs.Wrap(err)
+	}
+
+	c.Logger.Debugf("successfully deleted manual campaign stats", "statsID", statsID.String())
+	return nil
+}
+
+// ProcessReportedCSV processes a CSV file with reported recipients
+func (c *Campaign) ProcessReportedCSV(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+	records [][]string,
+	emailColumnIndex int,
+	dateColumnIndex int,
+) (int, int, error) {
+	ae := NewAuditEvent("Campaign.ProcessReportedCSV", session)
+	ae.Details["campaignID"] = campaignID.String()
+
+	// check permissions
+	isAuthorized, err := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if err != nil && !errors.Is(err, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(err)
+		return 0, 0, errs.Wrap(err)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return 0, 0, errs.ErrAuthorizationFailed
+	}
+
+	// get campaign to check it exists and get details
+	campaign, err := c.CampaignRepository.GetByID(ctx, campaignID, &repository.CampaignOption{})
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign by id", "error", err)
+		return 0, 0, errs.Wrap(err)
+	}
+
+	if len(records) < 2 {
+		return 0, 0, errs.NewValidationError(errors.New("CSV must have at least a header row and one data row"))
+	}
+
+	// validate column indices
+	if emailColumnIndex < 0 || emailColumnIndex >= len(records[0]) {
+		c.Logger.Errorw("invalid email column index", "index", emailColumnIndex, "columnCount", len(records[0]))
+		return 0, 0, errs.NewValidationError(errors.New("invalid email column index"))
+	}
+	if dateColumnIndex < 0 || dateColumnIndex >= len(records[0]) {
+		c.Logger.Errorw("invalid date column index", "index", dateColumnIndex, "columnCount", len(records[0]))
+		return 0, 0, errs.NewValidationError(errors.New("invalid date column index"))
+	}
+
+	reportedByIndex := emailColumnIndex
+	dateReportedIndex := dateColumnIndex
+
+	c.Logger.Infow("processing CSV columns", "emailColumn", reportedByIndex, "dateColumn", dateReportedIndex)
+
+	processed := 0
+	skipped := 0
+	reportedEventID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_REPORTED]
+
+	// process each row
+	for i, record := range records[1:] { // skip header
+		if len(record) <= reportedByIndex || len(record) <= dateReportedIndex {
+			skipped++
+			c.Logger.Debugw("skipping row with insufficient columns", "row", i+2)
+			continue
+		}
+
+		reportedByEmail := strings.TrimSpace(record[reportedByIndex])
+		dateReported := strings.TrimSpace(record[dateReportedIndex])
+
+		if reportedByEmail == "" {
+			skipped++
+			c.Logger.Debugw("skipping row with empty email", "row", i+2)
+			continue
+		}
+		// parse date - try multiple formats and handle timezone
+		var parsedDate time.Time
+		dateFormats := []string{
+			// iso 8601 with fractional seconds (microsoft format)
+			"2006-01-02T15:04:05.999999999Z",
+			"2006-01-02T15:04:05.999999999-07:00",
+			"2006-01-02T15:04:05.999999999+02:00",
+			"2006-01-02T15:04:05.999999999+01:00",
+			// iso 8601 without fractional seconds
+			"2006-01-02T15:04:05Z",
+			"2006-01-02T15:04:05-07:00",
+			"2006-01-02T15:04:05+02:00",
+			"2006-01-02T15:04:05+01:00",
+			"2006-01-02T15:04:05",
+			// other common formats
+			"2006-01-02 15:04:05",
+			"2006-01-02",
+			"01/02/2006 15:04:05",
+			"01/02/2006",
+			"02-01-2006 15:04:05",
+			"02-01-2006",
+			"2006/01/02 15:04:05",
+			"2006/01/02",
+		}
+
+		dateParseError := true
+		for _, format := range dateFormats {
+			if pd, err := time.Parse(format, dateReported); err == nil {
+				parsedDate = pd
+				dateParseError = false
+				break
+			}
+		}
+
+		if dateParseError {
+			skipped++
+			c.Logger.Debugw("skipping row with invalid date format", "row", i+2, "date", dateReported, "tried_formats", dateFormats)
+			continue
+		}
+
+		c.Logger.Debugw("processing row", "row", i+2, "email", reportedByEmail, "date", parsedDate)
+
+		// find recipient by email in this campaign
+		emailVO, err := vo.NewEmail(reportedByEmail)
+		if err != nil {
+			skipped++
+			c.Logger.Debugw("invalid email format", "email", reportedByEmail, "row", i+2)
+			continue
+		}
+
+		// Get campaign to check company context
+		companyID, _ := campaign.CompanyID.Get()
+		var companyPtr *uuid.UUID
+		if companyID != uuid.Nil {
+			companyPtr = &companyID
+		}
+
+		recipient, err := c.RecipientService.GetByEmail(ctx, session, emailVO, companyPtr)
+		if err != nil {
+			skipped++
+			c.Logger.Debugw("recipient not found for email", "email", reportedByEmail, "row", i+2)
+			continue
+		}
+
+		recipientID := recipient.ID.MustGet()
+
+		// check if recipient is part of this campaign
+		campaignRecipient, err := c.CampaignRecipientRepository.GetByCampaignAndRecipientID(
+			ctx,
+			campaignID,
+			&recipientID,
+			&repository.CampaignRecipientOption{},
+		)
+		if err != nil {
+			skipped++
+			c.Logger.Debugw("recipient not part of campaign", "email", reportedByEmail, "campaignID", campaignID.String(), "row", i+2)
+			continue
+		}
+
+		// check if already reported (to avoid duplicates). an anonymous campaign's
+		// events carry the pseudonym rather than a recipient id, so dedup on that.
+		alreadyReported := false
+		if aid, aErr := campaignRecipient.AnonymizedID.Get(); aErr == nil {
+			alreadyReported, err = c.CampaignRepository.HasEventByAnonymizedID(ctx, campaignID, &aid, reportedEventID)
+			if err != nil {
+				c.Logger.Errorw("failed to check existing reported event", "error", err)
+				skipped++
+				continue
+			}
+		} else {
+			existingEvent, gErr := c.CampaignRepository.GetEventsByCampaignID(
+				ctx,
+				campaignID,
+				&repository.CampaignEventOption{
+					QueryArgs: &vo.QueryArgs{
+						Limit: 1,
+					},
+					EventTypeIDs: []string{reportedEventID.String()},
+				},
+				nil,
+			)
+			if gErr == nil && existingEvent != nil {
+				for _, event := range existingEvent.Rows {
+					if event.RecipientID != nil && *event.RecipientID == recipientID {
+						alreadyReported = true
+						break
+					}
+				}
+			}
+		}
+
+		if alreadyReported {
+			skipped++
+			c.Logger.Debugw("recipient already reported", "email", reportedByEmail, "campaignID", campaignID.String())
+			continue
+		}
+
+		// create campaign event for reported
+		eventID := uuid.New()
+
+		campaignEvent := &model.CampaignEvent{
+			ID:          &eventID,
+			CampaignID:  campaignID,
+			RecipientID: &recipientID,
+			IP:          vo.NewEmptyOptionalString64(),
+			UserAgent:   vo.NewEmptyOptionalString255(),
+			EventID:     reportedEventID,
+			Data:        vo.NewEmptyOptionalString1MB(),
+			Metadata:    vo.NewEmptyOptionalString1MB(),
+		}
+		anonymizeEventForRecipient(campaignAnonymous(campaign), campaignRecipient, campaignEvent)
+
+		// save the event with custom timestamp
+		err = c.saveReportedEvent(campaignEvent, parsedDate)
+		if err != nil {
+			c.Logger.Errorw("failed to save reported event", "error", err, "email", reportedByEmail)
+			skipped++
+			continue
+		}
+
+		// update most notable event for campaign recipient
+		err = c.SetNotableCampaignRecipientEvent(
+			ctx,
+			campaignRecipient,
+			data.EVENT_CAMPAIGN_RECIPIENT_REPORTED,
+		)
+		if err != nil {
+			c.Logger.Errorw("failed to update notable event", "error", err)
+		}
+
+		processed++
+	}
+
+	ae.Details["processed"] = processed
+	ae.Details["skipped"] = skipped
+	c.AuditLogAuthorized(ae)
+
+	return processed, skipped, nil
+}
+
+// saveReportedEvent saves a reported event with custom timestamp
+func (c *Campaign) saveReportedEvent(
+	campaignEvent *model.CampaignEvent,
+	customTime time.Time,
+) error {
+	row := map[string]any{
+		"id":          campaignEvent.ID.String(),
+		"event_id":    campaignEvent.EventID.String(),
+		"campaign_id": campaignEvent.CampaignID.String(),
+		"ip_address":  campaignEvent.IP.String(),
+		"user_agent":  campaignEvent.UserAgent.String(),
+		"data":        campaignEvent.Data.String(),
+		"created_at":  utils.RFC3339UTC(customTime),
+		"updated_at":  utils.NowRFC3339UTC(),
+	}
+	if campaignEvent.RecipientID != nil {
+		row["recipient_id"] = campaignEvent.RecipientID.String()
+	}
+	if campaignEvent.AnonymizedID != nil {
+		row["anonymized_id"] = campaignEvent.AnonymizedID.String()
+	}
+
+	res := c.CampaignRepository.DB.Model(&database.CampaignEvent{}).Create(row)
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// BuildReportHTML renders a report HTML string for a campaign using the resolved
+// report template (company-specific, then global, then built-in default).
+func (c *Campaign) BuildReportHTML(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+) (htmlContent string, campaignName string, err error) {
+	html, _, name, err := c.buildReportHTMLWithData(ctx, session, campaignID)
+	return html, name, err
+}
+
+// buildReportHTMLWithData renders the report HTML and also returns the report data
+// context, so callers like the delivery email can render with the same variables
+// and template functions the report template uses.
+func (c *Campaign) buildReportHTMLWithData(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+) (htmlContent string, reportData *model.ReportData, campaignName string, err error) {
+	ae := NewAuditEvent("Campaign.BuildReportHTML", session)
+	ae.Details["campaignId"] = campaignID.String()
+	isAuthorized, authErr := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if authErr != nil && !errors.Is(authErr, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(authErr)
+		return "", nil, "", errs.Wrap(authErr)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return "", nil, "", errs.ErrAuthorizationFailed
+	}
+
+	campaign, err := c.CampaignRepository.GetByID(ctx, campaignID, &repository.CampaignOption{WithCompany: true})
+	if err != nil {
+		return "", nil, "", errs.Wrap(err)
+	}
+
+	stats, err := c.CampaignRepository.GetResultStats(ctx, campaignID)
+	if err != nil {
+		c.Logger.Errorw("failed to get campaign result stats for report", "error", err)
+		return "", nil, "", errs.Wrap(err)
+	}
+
+	var companyID *uuid.UUID
+	if cid, cErr := campaign.CompanyID.Get(); cErr == nil {
+		companyID = &cid
+	}
+
+	isTrainingCampaign := false
+	if v, err := campaign.IsTraining.Get(); err == nil {
+		isTrainingCampaign = v
+	}
+
+	reportTmpl, tmplErr := c.ReportTemplateRepository.GetForCampaign(ctx, companyID, isTrainingCampaign)
+	if tmplErr != nil {
+		c.Logger.Errorw("failed to fetch report template", "error", tmplErr)
+		return "", nil, "", errs.Wrap(tmplErr)
+	}
+	templateContentVO, cErr := reportTmpl.Content.Get()
+	if cErr != nil {
+		return "", nil, "", errs.Wrap(cErr)
+	}
+	templateContent := templateContentVO.String()
+
+	name := ""
+	if n, nErr := campaign.Name.Get(); nErr == nil {
+		name = n.String()
+	}
+	companyName := ""
+	if campaign.Company != nil {
+		if n, nErr := campaign.Company.Name.Get(); nErr == nil {
+			companyName = n.String()
+		}
+	}
+
+	// the per recipient table exposes identity, so it is omitted for an anonymous
+	// campaign (even while live, before the anonymization sweep sets AnonymizedAt)
+	// and for any campaign that has already been anonymized.
+	var recipients []model.ReportRecipient
+	isAnon := campaignAnonymous(campaign)
+	isAnonymized := campaign.AnonymizedAt.IsSpecified() && !campaign.AnonymizedAt.IsNull()
+	if !isAnon && !isAnonymized {
+		recipients, err = c.CampaignRepository.GetReportRecipients(ctx, campaignID)
+		if err != nil {
+			c.Logger.Warnw("failed to get report recipients, continuing without detail table", "error", err)
+			recipients = nil
+		}
+	}
+
+	// breakdown for every campaign. default to department when present, else
+	// position; both dimensions are exposed so a template can render either.
+	var groups, departmentGroups, positionGroups []model.CampaignGroupStat
+	groupsBy := "Department"
+	if raw, gErr := c.CampaignRepository.GetGroupedResultStats(ctx, campaignID, "department"); gErr != nil {
+		c.Logger.Warnw("failed to get department grouped stats for report", "error", gErr)
+	} else {
+		departmentGroups = suppressSmallGroups(raw, isAnon || isAnonymized)
+	}
+	if raw, gErr := c.CampaignRepository.GetGroupedResultStats(ctx, campaignID, "position"); gErr != nil {
+		c.Logger.Warnw("failed to get position grouped stats for report", "error", gErr)
+	} else {
+		positionGroups = suppressSmallGroups(raw, isAnon || isAnonymized)
+	}
+	if hasNamedGroups(departmentGroups) {
+		groups, groupsBy = departmentGroups, "Department"
+	} else if hasNamedGroups(positionGroups) {
+		groups, groupsBy = positionGroups, "Position"
+	} else {
+		// the recipients carry no department or position, so there is nothing to
+		// group by. leave the default breakdown empty so the report omits the group
+		// page rather than showing a single unlabeled bucket.
+		groups = nil
+	}
+
+	rd := buildReportData(name, companyName, campaign, stats, recipients, groups, groupsBy, departmentGroups, positionGroups)
+
+	var buf bytes.Buffer
+	tmpl, err := template.New("report").Funcs(TemplateFuncs()).Parse(templateContent)
+	if err != nil {
+		c.Logger.Errorw("failed to parse report template", "error", err)
+		return "", nil, "", errs.Wrap(err)
+	}
+	// the report HTML is rendered by a browser, so escape untrusted strings; the
+	// raw rd is returned for plain text consumers such as the email subject.
+	if err := tmpl.Execute(&buf, htmlEscapeReportData(rd)); err != nil {
+		c.Logger.Errorw("failed to execute report template", "error", err)
+		return "", nil, "", errs.Wrap(err)
+	}
+	// no audit on read
+	return buf.String(), rd, name, nil
+}
+
+const defaultReportEmailSubject = "Campaign report: {{.CampaignName}}"
+const defaultReportEmailBody = "<p>The {{if .IsTraining}}awareness training{{else}}phishing simulation{{end}} report for <strong>{{.CampaignName}}</strong> is attached.</p>"
+
+// renderReportEmailField renders a report email subject or body template with the
+// given data. on a parse or execute error it logs and falls back to the default
+// template so delivery is never blocked by a malformed custom template.
+func renderReportEmailField(c *Campaign, tmplStr string, fallback string, data any) string {
+	render := func(s string) (string, error) {
+		t, err := template.New("reportEmail").Funcs(TemplateFuncs()).Parse(s)
+		if err != nil {
+			return "", err
+		}
+		var b bytes.Buffer
+		if err := t.Execute(&b, data); err != nil {
+			return "", err
+		}
+		return b.String(), nil
+	}
+	out, err := render(tmplStr)
+	if err != nil {
+		c.Logger.Warnw("failed to render report email template, using default", "error", err)
+		if out, err = render(fallback); err != nil {
+			return ""
+		}
+	}
+	return out
+}
+
+// sanitizeReportFilename removes characters that are unsafe in filenames
+func sanitizeReportFilename(name string) string {
+	replacer := strings.NewReplacer(
+		"/", "-", "\\", "-", ":", "-", "*", "-",
+		"?", "-", "\"", "-", "<", "-", ">", "-", "|", "-",
+	)
+	safe := strings.TrimSpace(replacer.Replace(name))
+	if safe == "" {
+		return "campaign"
+	}
+	return safe
+}
+
+// resolveEffectiveReportConfig merges a company config with the global default
+// config. the enabled and send-on-finish decisions always come from the company
+// config; each delivery field uses the company value when set, otherwise the
+// global default.
+func resolveEffectiveReportConfig(company, global *model.CompanyReportConfig) *model.CompanyReportConfig {
+	uuidSet := func(v nullable.Nullable[uuid.UUID]) bool { return v.IsSpecified() && !v.IsNull() }
+	emailSet := func(v nullable.Nullable[vo.Email]) bool { return v.IsSpecified() && !v.IsNull() }
+	strSet := func(v nullable.Nullable[string]) bool {
+		return v.IsSpecified() && !v.IsNull() && strings.TrimSpace(v.MustGet()) != ""
+	}
+
+	eff := &model.CompanyReportConfig{
+		Enabled:             company.Enabled,
+		SendOnFinish:        company.SendOnFinish,
+		RecipientGroupID:    company.RecipientGroupID,
+		SMTPConfigurationID: company.SMTPConfigurationID,
+		SenderEmail:         company.SenderEmail,
+		EmailSubject:        company.EmailSubject,
+		EmailBody:           company.EmailBody,
+	}
+	if global == nil {
+		return eff
+	}
+	if !uuidSet(eff.RecipientGroupID) {
+		eff.RecipientGroupID = global.RecipientGroupID
+	}
+	if !uuidSet(eff.SMTPConfigurationID) {
+		eff.SMTPConfigurationID = global.SMTPConfigurationID
+	}
+	if !emailSet(eff.SenderEmail) {
+		eff.SenderEmail = global.SenderEmail
+	}
+	if !strSet(eff.EmailSubject) {
+		eff.EmailSubject = global.EmailSubject
+	}
+	if !strSet(eff.EmailBody) {
+		eff.EmailBody = global.EmailBody
+	}
+	return eff
+}
+
+// SendCampaignReport renders the campaign report PDF and emails it to the
+// company's configured recipient group using the configured SMTP. when onDemand
+// is false the send is treated as the automatic on close delivery and silently
+// skips when the company has not enabled it; when onDemand is true the caller
+// receives an error explaining why delivery is not possible.
+func (c *Campaign) SendCampaignReport(
+	ctx context.Context,
+	session *model.Session,
+	campaignID *uuid.UUID,
+	onDemand bool,
+) error {
+	ae := NewAuditEvent("Campaign.SendCampaignReport", session)
+	ae.Details["campaignId"] = campaignID.String()
+	isAuthorized, authErr := IsAuthorized(session, data.PERMISSION_ALLOW_GLOBAL)
+	if authErr != nil && !errors.Is(authErr, errs.ErrAuthorizationFailed) {
+		c.LogAuthError(authErr)
+		return errs.Wrap(authErr)
+	}
+	if !isAuthorized {
+		c.AuditLogNotAuthorized(ae)
+		return errs.ErrAuthorizationFailed
+	}
+	// global PDF report generation must be enabled
+	opt, _ := c.OptionService.GetOptionWithoutAuth(ctx, data.OptionKeyReportPDFEnabled)
+	if opt == nil || opt.Value.String() != "true" {
+		if onDemand {
+			return errs.NewCustomError(errors.New("PDF report generation is not enabled"))
+		}
+		return nil
+	}
+	// load the campaign to resolve its company
+	campaign, err := c.CampaignRepository.GetByID(ctx, campaignID, &repository.CampaignOption{WithCompany: true})
+	if err != nil {
+		return errs.Wrap(err)
+	}
+	var companyIDPtr *uuid.UUID
+	if cid, cErr := campaign.CompanyID.Get(); cErr == nil {
+		companyIDPtr = &cid
+	}
+	// the enable decision is per company: the company must have its own config
+	companyConfig, err := c.CompanyReportConfigRepository.GetByCompanyID(ctx, companyIDPtr)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if onDemand {
+				return errs.NewCustomError(errors.New("report delivery is not configured for this company"))
+			}
+			return nil
+		}
+		return errs.Wrap(err)
+	}
+	if !companyConfig.Enabled {
+		if onDemand {
+			return errs.NewCustomError(errors.New("report delivery is not enabled for this company"))
+		}
+		return nil
+	}
+	// for the automatic path the company must have opted into on close delivery
+	if !onDemand && !companyConfig.SendOnFinish {
+		return nil
+	}
+	// committed to attempting delivery from here: audit the outcome on every path
+	deliveryOutcome := "failed"
+	defer func() {
+		ae.Details["outcome"] = deliveryOutcome
+		ae.Details["onDemand"] = onDemand
+		c.AuditLogAuthorized(ae)
+	}()
+	// the global config supplies default delivery fields the company has not set
+	var globalConfig *model.CompanyReportConfig
+	if g, gErr := c.CompanyReportConfigRepository.GetByCompanyID(ctx, nil); gErr == nil {
+		globalConfig = g
+	} else if !errors.Is(gErr, gorm.ErrRecordNotFound) {
+		return errs.Wrap(gErr)
+	}
+	config := resolveEffectiveReportConfig(companyConfig, globalConfig)
+
+	trigger := "on_finish"
+	if onDemand {
+		trigger = "on_demand"
+	}
+	campaignName := ""
+	if n, nErr := campaign.Name.Get(); nErr == nil {
+		campaignName = n.String()
+	}
+	// filled in once the effective config is validated and resolved; the log
+	// closure reads them by reference so it can record partial failures too
+	groupName := ""
+	senderEmailStr := ""
+	// writeReportSendLog records the outcome of this delivery attempt. logging must
+	// never break delivery, so its own failure is only logged.
+	writeReportSendLog := func(status string, recipients []string, sendErr error) {
+		errMsg := ""
+		if sendErr != nil {
+			errMsg = sendErr.Error()
+		}
+		logRow := &model.ReportSendLog{
+			CompanyID:      nullableUUIDPtr(companyIDPtr),
+			CampaignID:     nullable.NewNullableWithValue(*campaignID),
+			CampaignName:   campaignName,
+			GroupName:      groupName,
+			Trigger:        trigger,
+			Status:         status,
+			RecipientCount: len(recipients),
+			Recipients:     strings.Join(recipients, ", "),
+			SenderEmail:    senderEmailStr,
+			ErrorMessage:   errMsg,
+		}
+		if _, logErr := c.ReportSendLogRepository.Insert(ctx, logRow); logErr != nil {
+			c.Logger.Errorw("failed to write report send log", "error", logErr, "campaignID", campaignID.String())
+		}
+	}
+
+	// the effective config must be complete enough to deliver
+	if err := config.Validate(); err != nil {
+		writeReportSendLog("failed", nil, err)
+		if onDemand {
+			return errs.Wrap(err)
+		}
+		c.Logger.Warnw("skipping automatic report delivery, config incomplete", "error", err, "campaignID", campaignID.String())
+		return nil
+	}
+	configID := companyConfig.ID.MustGet()
+	groupID := config.RecipientGroupID.MustGet()
+	smtpConfigID := config.SMTPConfigurationID.MustGet()
+	senderEmail := config.SenderEmail.MustGet()
+	senderEmailStr = senderEmail.String()
+
+	// resolve the recipient group name now so the log keeps it even if the group is
+	// deleted later. an empty name means the group no longer exists.
+	if group, gErr := c.RecipientGroupRepository.GetByID(ctx, &groupID, &repository.RecipientGroupOption{}); gErr == nil && group != nil {
+		if n, nErr := group.Name.Get(); nErr == nil {
+			groupName = n.String()
+		}
+	}
+
+	// build the report and render it to PDF
+	htmlContent, reportData, _, err := c.buildReportHTMLWithData(ctx, session, campaignID)
+	if err != nil {
+		writeReportSendLog("failed", nil, fmt.Errorf("failed to build report: %w", err))
+		return errs.Wrap(err)
+	}
+	pdfBytes, err := remotebrowser.RenderHTMLToPDF(ctx, htmlContent, c.RemoteBrowserExecPath)
+	if err != nil {
+		c.Logger.Errorw("failed to render report PDF", "error", err)
+		writeReportSendLog("failed", nil, fmt.Errorf("failed to render report PDF: %w", err))
+		if onDemand {
+			return errs.NewCustomError(fmt.Errorf("could not generate the report PDF: %w", err))
+		}
+		return errs.Wrap(err)
+	}
+	// load the smtp configuration to send through
+	smtpConfig, err := c.SMTPConfigService.GetByID(
+		ctx,
+		session,
+		&smtpConfigID,
+		&repository.SMTPConfigurationOption{WithHeaders: true},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to load smtp configuration for report", "error", err)
+		writeReportSendLog("failed", nil, fmt.Errorf("smtp configuration unavailable: %w", err))
+		return errs.Wrap(err)
+	}
+	// resolve the recipients of the group; the group may have been deleted
+	recipientResult, err := c.RecipientGroupRepository.GetRecipientsByGroupID(
+		ctx,
+		&groupID,
+		&repository.RecipientOption{},
+	)
+	if err != nil {
+		c.Logger.Errorw("failed to get report recipients", "error", err)
+		writeReportSendLog("failed", nil, errors.New("the configured recipient group is unavailable"))
+		if onDemand {
+			return errs.NewCustomError(errors.New("the configured recipient group is unavailable, it may have been deleted"))
+		}
+		return nil
+	}
+	toEmails := []string{}
+	for _, r := range recipientResult.Rows {
+		if email, eErr := r.Email.Get(); eErr == nil {
+			toEmails = append(toEmails, email.String())
+		}
+	}
+	if len(toEmails) == 0 {
+		writeReportSendLog("failed", nil, errors.New("the recipient group has no recipients"))
+		if onDemand {
+			return errs.NewCustomError(errors.New("the selected recipient group has no recipients"))
+		}
+		c.Logger.Warnw("skipping report delivery, recipient group is empty", "groupID", groupID.String())
+		return nil
+	}
+	// build the report email with the PDF attached
+	filename := fmt.Sprintf("report-%s.pdf", sanitizeReportFilename(campaignName))
+	m := mail.NewMsg(mail.WithNoDefaultUserAgent())
+	if err := m.EnvelopeFrom(senderEmail.String()); err != nil {
+		if onDemand {
+			return errs.NewCustomError(fmt.Errorf("the report sender email address is invalid: %w", err))
+		}
+		return errs.Wrap(err)
+	}
+	// message id from the sending domain so the host is not leaked
+	setMessageIDFromAddress(m, senderEmail.String())
+	if err := m.From(senderEmail.String()); err != nil {
+		if onDemand {
+			return errs.NewCustomError(fmt.Errorf("the report sender email address is invalid: %w", err))
+		}
+		return errs.Wrap(err)
+	}
+	if err := m.To(toEmails...); err != nil {
+		if onDemand {
+			return errs.NewCustomError(fmt.Errorf("a report recipient email address is invalid: %w", err))
+		}
+		return errs.Wrap(err)
+	}
+	// report delivery has no phishing recipient context, so custom headers are sent
+	// verbatim but still sanitized against header injection
+	applyCustomSMTPHeaders(m, smtpConfig.Headers, nil, nil, c.Logger)
+	// the subject and body are configurable and support the same variables and
+	// template functions as the report template (e.g. {{.CompanyName}},
+	// {{.CampaignName}}, dates and stats), with defaults when empty
+	subjectTmpl := defaultReportEmailSubject
+	if config.EmailSubject.IsSpecified() && !config.EmailSubject.IsNull() {
+		if v := config.EmailSubject.MustGet(); strings.TrimSpace(v) != "" {
+			subjectTmpl = v
+		}
+	}
+	bodyTmpl := defaultReportEmailBody
+	if config.EmailBody.IsSpecified() && !config.EmailBody.IsNull() {
+		if v := config.EmailBody.MustGet(); strings.TrimSpace(v) != "" {
+			bodyTmpl = v
+		}
+	}
+	// the subject is a plain text mail header, so it uses the raw data; the body is
+	// text/html, so it uses the escaped data like the report itself.
+	subject := renderReportEmailField(c, subjectTmpl, defaultReportEmailSubject, reportData)
+	body := renderReportEmailField(c, bodyTmpl, defaultReportEmailBody, htmlEscapeReportData(reportData))
+	m.Subject(subject)
+	m.SetBodyString("text/html", body)
+	if err := m.AttachReader(filename, bytes.NewReader(pdfBytes)); err != nil {
+		return errs.Wrap(err)
+	}
+	if err := c.SMTPConfigService.SendMessages(ctx, smtpConfig, m); err != nil {
+		c.Logger.Errorw("failed to send report email", "error", err)
+		writeReportSendLog("failed", toEmails, err)
+		if onDemand {
+			return errs.NewCustomError(fmt.Errorf("could not send the report email, check the SMTP configuration: %w", err))
+		}
+		return errs.Wrap(err)
+	}
+	writeReportSendLog("sent", toEmails, nil)
+	deliveryOutcome = "sent"
+	ae.Details["recipients"] = len(toEmails)
+	// record when the report was last delivered; the audit event is emitted by the
+	// deferred outcome handler
+	if err := c.CompanyReportConfigRepository.UpdateLastSentAt(ctx, &configID); err != nil {
+		c.Logger.Errorw("failed to update report last sent at", "error", err, "campaignID", campaignID.String())
+	}
+
+	return nil
+}
+
+// nullableUUIDPtr converts a possibly nil uuid pointer into a nullable value
+func nullableUUIDPtr(id *uuid.UUID) nullable.Nullable[uuid.UUID] {
+	if id == nil {
+		return nullable.NewNullNullable[uuid.UUID]()
+	}
+	return nullable.NewNullableWithValue(*id)
+}
+
+func buildReportData(
+	campaignName string,
+	companyName string,
+	campaign *model.Campaign,
+	stats *model.CampaignResultView,
+	recipients []model.ReportRecipient,
+	groups []model.CampaignGroupStat,
+	groupsBy string,
+	departmentGroups []model.CampaignGroupStat,
+	positionGroups []model.CampaignGroupStat,
+) *model.ReportData {
+	isTrainingReport := false
+	if v, err := campaign.IsTraining.Get(); err == nil {
+		isTrainingReport = v
+	}
+	total := stats.Recipients
+	rate := func(count int64) float64 {
+		if total == 0 {
+			return 0
+		}
+		return float64(count) / float64(total) * 100
+	}
+	pct := func(count int64) string {
+		return fmt.Sprintf("%.0f", rate(count))
+	}
+	relPct := func(numerator, denominator int64) string {
+		if denominator == 0 {
+			return "0"
+		}
+		return fmt.Sprintf("%.0f", float64(numerator)/float64(denominator)*100)
+	}
+	formatDate := func(t *time.Time) string {
+		if t == nil {
+			return ""
+		}
+		return t.Format("2006-01-02")
+	}
+	var startDate, endDate, closedAt string
+	if v, err := campaign.SendStartAt.Get(); err == nil {
+		startDate = formatDate(&v)
+	}
+	if v, err := campaign.SendEndAt.Get(); err == nil {
+		endDate = formatDate(&v)
+	}
+	if v, err := campaign.ClosedAt.Get(); err == nil {
+		closedAt = formatDate(&v)
+	}
+	return &model.ReportData{
+		CampaignName:           campaignName,
+		CompanyName:            companyName,
+		ReportDate:             time.Now().Format("January 2, 2006"),
+		CampaignStartDate:      startDate,
+		CampaignEndDate:        endDate,
+		CampaignClosedAt:       closedAt,
+		TotalTargets:           stats.Recipients,
+		EmailsSent:             stats.EmailsSent,
+		EmailsOpened:           stats.TrackingPixelLoaded,
+		ResultClicked:          stats.WebsiteLoaded,
+		ResultSubmitted:        stats.SubmittedData,
+		ResultReported:         stats.Reported,
+		ResultClickedPercent:   pct(stats.WebsiteLoaded),
+		ResultSubmittedPercent: pct(stats.SubmittedData),
+		ResultReportedPercent:  pct(stats.Reported),
+		SentRate:               rate(stats.EmailsSent),
+		OpenRate:               rate(stats.TrackingPixelLoaded),
+		ClickRate:              rate(stats.WebsiteLoaded),
+		SubmitRate:             rate(stats.SubmittedData),
+		ReportRate:             rate(stats.Reported),
+		OpenedOfSent:           relPct(stats.TrackingPixelLoaded, stats.EmailsSent),
+		ClickedOfOpened:        relPct(stats.WebsiteLoaded, stats.TrackingPixelLoaded),
+		SubmittedOfClicked:     relPct(stats.SubmittedData, stats.WebsiteLoaded),
+
+		IsTraining:               isTrainingReport,
+		TrainingStarted:          stats.TrainingStarted,
+		TrainingCompleted:        stats.TrainingCompleted,
+		TrainingStartedPercent:   pct(stats.TrainingStarted),
+		TrainingCompletedPercent: pct(stats.TrainingCompleted),
+		TrainingStartedRate:      rate(stats.TrainingStarted),
+		TrainingCompletedRate:    rate(stats.TrainingCompleted),
+		StartedOfOpened:          relPct(stats.TrainingStarted, stats.TrackingPixelLoaded),
+		CompletedOfStarted:       relPct(stats.TrainingCompleted, stats.TrainingStarted),
+
+		Recipients:       recipients,
+		GroupsBy:         groupsBy,
+		Groups:           toReportGroupStats(groups),
+		DepartmentGroups: toReportGroupStats(departmentGroups),
+		PositionGroups:   toReportGroupStats(positionGroups),
+	}
+}
+
+// toReportGroupStats converts raw grouped counts to report rows with the
+// percentage of each group that clicked, submitted and reported, already formatted.
+func toReportGroupStats(groups []model.CampaignGroupStat) []model.ReportGroupStat {
+	groupPct := func(count, total int) string {
+		if count < 0 || total == 0 {
+			return "" // withheld (homogeneous) or n/a
+		}
+		return fmt.Sprintf("%.0f", float64(count)/float64(total)*100)
+	}
+	out := make([]model.ReportGroupStat, 0, len(groups))
+	for _, g := range groups {
+		out = append(out, model.ReportGroupStat{
+			Group:                    g.Group,
+			Total:                    g.Total,
+			Clicked:                  g.Clicked,
+			ClickedPercent:           groupPct(g.Clicked, g.Total),
+			Submitted:                g.Submitted,
+			SubmittedPercent:         groupPct(g.Submitted, g.Total),
+			Reported:                 g.Reported,
+			ReportedPercent:          groupPct(g.Reported, g.Total),
+			TrainingStarted:          g.TrainingStarted,
+			TrainingStartedPercent:   groupPct(g.TrainingStarted, g.Total),
+			TrainingCompleted:        g.TrainingCompleted,
+			TrainingCompletedPercent: groupPct(g.TrainingCompleted, g.Total),
+			Suppressed:               g.Suppressed,
+		})
+	}
+	return out
+}
+
+// htmlEscapeReportData returns a copy of the report data with the externally
+// supplied strings HTML escaped, for the HTML contexts (the rendered report and
+// the html email body). text/template does not escape values, so this stops
+// untrusted recipient fields (CSV, manual, or SCIM) and operator entered names
+// from being interpreted as markup by the browser. The original is returned
+// unescaped for plain text contexts such as the email subject header.
+func htmlEscapeReportData(rd *model.ReportData) *model.ReportData {
+	if rd == nil {
+		return nil
+	}
+	cp := *rd
+	cp.CampaignName = template.HTMLEscapeString(rd.CampaignName)
+	cp.CompanyName = template.HTMLEscapeString(rd.CompanyName)
+	cp.Recipients = make([]model.ReportRecipient, len(rd.Recipients))
+	for i, r := range rd.Recipients {
+		r.FirstName = template.HTMLEscapeString(r.FirstName)
+		r.LastName = template.HTMLEscapeString(r.LastName)
+		r.Email = template.HTMLEscapeString(r.Email)
+		r.Department = template.HTMLEscapeString(r.Department)
+		r.Position = template.HTMLEscapeString(r.Position)
+		cp.Recipients[i] = r
+	}
+	cp.GroupsBy = template.HTMLEscapeString(rd.GroupsBy)
+	escapeGroups := func(in []model.ReportGroupStat) []model.ReportGroupStat {
+		out := make([]model.ReportGroupStat, len(in))
+		for i, g := range in {
+			g.Group = template.HTMLEscapeString(g.Group)
+			out[i] = g
+		}
+		return out
+	}
+	cp.Groups = escapeGroups(rd.Groups)
+	cp.DepartmentGroups = escapeGroups(rd.DepartmentGroups)
+	cp.PositionGroups = escapeGroups(rd.PositionGroups)
+	return &cp
+}

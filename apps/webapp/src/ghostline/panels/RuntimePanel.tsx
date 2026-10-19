@@ -4,9 +4,25 @@ import { Button } from "../../ui/Button";
 import { Input, Select } from "../../ui/Input";
 import { api } from "../../lib/api";
 import type { GlStatusWire, GlVoiceWire } from "../../lib/api";
-import { Chip, classify, GlShell, Missing, ProviderList, Refusal, RuntimeDot, fromStatus } from "../panelParts";
+import {
+  Chip,
+  classify,
+  GlShell,
+  Missing,
+  ProviderList,
+  Refusal,
+  RuntimeDot,
+  fromStatus,
+} from "../panelParts";
 import { dialReadiness } from "../model";
-import type { GlPanel, GlPlaybookRow, GlProviderRow, GlRefusal, GlRuntimeRow, GlVoiceRow } from "../types";
+import type {
+  GlPanel,
+  GlPlaybookRow,
+  GlProviderRow,
+  GlRefusal,
+  GlRuntimeRow,
+  GlVoiceRow,
+} from "../types";
 import { toPlaybookRow, toVoiceRow } from "../model";
 
 /**
@@ -157,7 +173,9 @@ export function RuntimePanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => 
           <div className="ui-gl-provenance-side">
             <strong data-testid="gl-donor-id">{status?.donor.donor_id ?? "—"}</strong>
             <span className="ui-id">
-              {status ? `${status.donor.license} · ${status.donor.present ? "vendored" : "absent"}` : "loading"}
+              {status
+                ? `${status.donor.license} · ${status.donor.present ? "vendored" : "absent"}`
+                : "loading"}
             </span>
             {status?.donor.repo ? (
               <a
@@ -170,22 +188,22 @@ export function RuntimePanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => 
                 {status.donor.repo}
               </a>
             ) : null}
-            <code className="ui-id">{status?.donor.root ?? ""}</code>
+            <code className="ui-id" title={status?.donor.root ?? ""}>
+              {status?.donor.root ?? ""}
+            </code>
           </div>
           <div className="ui-gl-provenance-side">
             <span className="op-label">what runs here</span>
             <span className="ui-id">
-              the donor&apos;s stage engine — taxonomy, playbook schema, transition runner,
-              mu-law codec, Twilio frame protocol — unmodified and imported from the vendor
-              tree.
+              the donor&apos;s stage engine — taxonomy, playbook schema, transition runner, mu-law
+              codec, Twilio frame protocol — unmodified and imported from the vendor tree.
             </span>
           </div>
           <div className="ui-gl-provenance-side">
             <span className="op-label">what needs a key</span>
             <span className="ui-id">
               Twilio (PSTN), Deepgram (STT), ElevenLabs (TTS + cloning), a tunnel, and the
-              persuasion model. Each needs a package and a credential; none is installed
-              by default.
+              persuasion model. Each needs a package and a credential; none is installed by default.
             </span>
           </div>
         </div>

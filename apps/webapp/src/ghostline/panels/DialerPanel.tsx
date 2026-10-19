@@ -4,9 +4,25 @@ import { Button } from "../../ui/Button";
 import { Input, Select } from "../../ui/Input";
 import { api } from "../../lib/api";
 import type { GlStatusWire } from "../../lib/api";
-import { Chip, classify, Empty, GlShell, ProviderList, Refusal, RuntimeDot, fromStatus } from "../panelParts";
+import {
+  Chip,
+  classify,
+  Empty,
+  GlShell,
+  ProviderList,
+  Refusal,
+  RuntimeDot,
+  fromStatus,
+} from "../panelParts";
 import { dialReadiness, outcomeLabel, toCallRow, toPlaybookRow, toVoiceRow } from "../model";
-import type { GlCallRow, GlPanel, GlPlaybookRow, GlRefusal, GlRuntimeRow, GlVoiceRow } from "../types";
+import type {
+  GlCallRow,
+  GlPanel,
+  GlPlaybookRow,
+  GlRefusal,
+  GlRuntimeRow,
+  GlVoiceRow,
+} from "../types";
 
 /**
  * Dialer panel (Feature 031) — the donor's `call` verb.
@@ -78,8 +94,7 @@ export function DialerPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => v
   }, [load]);
 
   const { providers, runtime } = useMemo(
-    () =>
-      status ? fromStatus(status) : { providers: [], runtime: null as GlRuntimeRow | null },
+    () => (status ? fromStatus(status) : { providers: [], runtime: null as GlRuntimeRow | null }),
     [status],
   );
 
@@ -153,7 +168,12 @@ export function DialerPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => v
         <div className="ui-gl-refusal" data-kind="setup" data-testid="gl-dialer-not-ready">
           <Chip label="not ready to dial" tone="gold" />
           <span className="ui-gl-refusal-reason">{readiness.reason}</span>
-          <Button size="sm" icon="activity" onClick={() => onNavigate?.("runtime")} data-testid="gl-goto-runtime">
+          <Button
+            size="sm"
+            icon="activity"
+            onClick={() => onNavigate?.("runtime")}
+            data-testid="gl-goto-runtime"
+          >
             Open the runtime
           </Button>
         </div>
@@ -227,8 +247,8 @@ export function DialerPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => v
               data-testid="gl-roster"
             />
             <span className="ui-field-hint">
-              {roster.length} approved target(s). A number outside this list is refused before
-              it reaches the provider.
+              {roster.length} approved target(s). A number outside this list is refused before it
+              reaches the provider.
             </span>
           </span>
           {target && !onRoster ? (
@@ -241,7 +261,13 @@ export function DialerPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => v
               variant="primary"
               size="sm"
               icon="activity"
-              disabled={busy || !readiness.ready || !e164Valid || roeId.trim().length === 0 || roster.length === 0}
+              disabled={
+                busy ||
+                !readiness.ready ||
+                !e164Valid ||
+                roeId.trim().length === 0 ||
+                roster.length === 0
+              }
               onClick={() => void dial()}
               data-testid="gl-dial"
             >
@@ -264,7 +290,11 @@ export function DialerPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => v
         ) : (
           <ul className="ui-ci-list" data-testid="gl-call-list">
             {calls.map((call) => (
-              <li key={call.callId} className="ui-ci-list-row" data-outcome={call.outcome ?? "none"}>
+              <li
+                key={call.callId}
+                className="ui-ci-list-row"
+                data-outcome={call.outcome ?? "none"}
+              >
                 <div className="ui-ci-list-main">
                   <strong>{call.target}</strong>
                   <code className="ui-id">{call.sid ?? call.callId}</code>
@@ -275,7 +305,9 @@ export function DialerPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => v
                 </div>
                 <Chip
                   label={outcomeLabel(call.outcome)}
-                  tone={call.outcome === "compromised" ? "danger" : call.outcome ? "gold" : "neutral"}
+                  tone={
+                    call.outcome === "compromised" ? "danger" : call.outcome ? "gold" : "neutral"
+                  }
                   testId={`gl-call-outcome-${call.callId}`}
                 />
                 {call.outcome === null ? (
@@ -306,10 +338,13 @@ export function DialerPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) => v
 
       <div className="ui-ci-col">
         <span className="ui-pane-title">What the platform will dial with</span>
-        <ProviderList providers={providers.filter((p) => p.name !== "tunnel")} testId="gl-dialer-providers" />
+        <ProviderList
+          providers={providers.filter((p) => p.name !== "tunnel")}
+          testId="gl-dialer-providers"
+        />
         <span className="ui-id">
-          {voices.length} voice(s) registered · {playbooks.filter((p) => p.valid).length} playbook(s)
-          loadable
+          {voices.length} voice(s) registered · {playbooks.filter((p) => p.valid).length}{" "}
+          playbook(s) loadable
         </span>
       </div>
 

@@ -53,7 +53,14 @@ export function CounterintelPanel() {
           aria-label="Subject id"
           data-testid="ci-subject-input"
         />
-        <button type="button" className="ui-btn" data-size="sm" disabled={busy} onClick={() => void load()} data-testid="ci-subject-load">
+        <button
+          type="button"
+          className="ui-btn"
+          data-size="sm"
+          disabled={busy}
+          onClick={() => void load()}
+          data-testid="ci-subject-load"
+        >
           Open subject
         </button>
       </div>
@@ -66,10 +73,16 @@ export function CounterintelPanel() {
           </div>
           <ul className="ui-ci-invariants" data-testid="ci-invariants">
             {subject.invariants.map((inv) => (
-              <li key={inv.kind} data-supported={inv.supported} data-testid={`ci-invariant-${inv.kind}`}>
+              <li
+                key={inv.kind}
+                data-supported={inv.supported}
+                data-testid={`ci-invariant-${inv.kind}`}
+              >
                 <span className="ui-ci-invariant-kind">{inv.kind}</span>
                 <span className="ui-ci-invariant-value">{inv.value}</span>
-                {inv.confidence != null ? <span className="ui-id">confidence {inv.confidence.toFixed(2)}</span> : null}
+                {inv.confidence != null ? (
+                  <span className="ui-id">confidence {inv.confidence.toFixed(2)}</span>
+                ) : null}
                 <StatusChip
                   label={inv.supported ? `${inv.evidence_refs.length} evidence` : "unsupported"}
                   tone={inv.supported ? "accent" : "gold"}
@@ -90,7 +103,9 @@ export function CounterintelPanel() {
       ) : null}
       <NamedAbsence
         testId="ci-counterintel-missing"
-        missing={["GET /specops/counterintel/subjects/{id} (cognitive operators not yet wired — CognitiveAttack / DIMA / io-coordinated-replies)"]}
+        missing={[
+          "GET /specops/counterintel/subjects/{id} (cognitive operators not yet wired — CognitiveAttack / DIMA / io-coordinated-replies)",
+        ]}
       />
     </CiPanelShell>
   );

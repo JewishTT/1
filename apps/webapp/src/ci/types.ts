@@ -105,11 +105,7 @@ export interface CampaignRow {
 /* ── Counterintelligence (US4) ───────────────────────────────────────── */
 
 export type InvariantKind =
-  | "belief-state"
-  | "narrative-position"
-  | "bias-profile"
-  | "coordination-signature"
-  | "phase-state";
+  "belief-state" | "narrative-position" | "bias-profile" | "coordination-signature" | "phase-state";
 
 export interface SubjectInvariantRow {
   readonly kind: InvariantKind;

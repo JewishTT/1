@@ -47,7 +47,14 @@ export function ForensicsPanel() {
           aria-label="Operation id"
           data-testid="ci-forensics-op-input"
         />
-        <button type="button" className="ui-btn" data-size="sm" disabled={busy} onClick={() => void run()} data-testid="ci-forensics-run">
+        <button
+          type="button"
+          className="ui-btn"
+          data-size="sm"
+          disabled={busy}
+          onClick={() => void run()}
+          data-testid="ci-forensics-run"
+        >
           Compare expected vs actual
         </button>
       </div>
@@ -60,7 +67,9 @@ export function ForensicsPanel() {
                 <div className="ui-ci-list-main">
                   <strong>{c.technique}</strong>
                   <span className="ui-id">expected: {c.expected}</span>
-                  <span className="ui-id">actual: {c.actual.length > 0 ? c.actual.join(", ") : "—"}</span>
+                  <span className="ui-id">
+                    actual: {c.actual.length > 0 ? c.actual.join(", ") : "—"}
+                  </span>
                 </div>
                 <StatusChip
                   label={c.status === "gap" ? "detection gap" : "corroborated"}
@@ -76,7 +85,10 @@ export function ForensicsPanel() {
               {forensics.coverage.map((c) => (
                 <li key={c.technique} data-covered={c.covered}>
                   <span>{c.technique}</span>
-                  <StatusChip label={c.covered ? "covered" : "gap"} tone={c.covered ? "accent" : "danger"} />
+                  <StatusChip
+                    label={c.covered ? "covered" : "gap"}
+                    tone={c.covered ? "accent" : "danger"}
+                  />
                 </li>
               ))}
             </ul>

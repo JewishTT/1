@@ -46,6 +46,7 @@ from api.routes import (
     search_rebuild,
     specops_counterintel,
     specops_emulation,
+    specops_engagement,
     specops_forensics,
     specops_ghostline,
     specops_phishing,
@@ -137,6 +138,10 @@ app.include_router(specops_counterintel.router, prefix="/api/v1")
 app.include_router(specops_social.router, prefix="/api/v1")
 # APT forensics (027, US6): expected vs actual telemetry, gaps, derived coverage.
 app.include_router(specops_forensics.router, prefix="/api/v1")
+# Engagement fabric (032): one lifecycle for every channel. The email channel (phishing)
+# and the voice channel (GhostLine) both report into this log, which is what makes the
+# cross-campaign subject view possible for the first time in the department.
+app.include_router(specops_engagement.router, prefix="/api/v1")
 # GhostLine (031): the donor's voice-borne social-engineering pipeline. Mounted here
 # rather than in its own process because it is gated by the same RoE sign-off as
 # phishing and emulation -- a dial is a send, and the gate has to be the same gate.

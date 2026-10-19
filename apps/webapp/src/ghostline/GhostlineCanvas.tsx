@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import type { GlStatusWire } from "../lib/api";
 import { AnalyticsPanel } from "./panels/AnalyticsPanel";
 import { DialerPanel } from "./panels/DialerPanel";
+import { EngagementPanel } from "./panels/EngagementPanel";
 import { PlaybooksPanel } from "./panels/PlaybooksPanel";
 import { RuntimePanel } from "./panels/RuntimePanel";
 import { SimulatePanel } from "./panels/SimulatePanel";
@@ -53,6 +54,7 @@ const PANELS: ReadonlyArray<{ value: GlPanel; label: string; icon: IconName }> =
   { value: "simulate", label: "Simulator", icon: "diagram" },
   { value: "voices", label: "Voices", icon: "dot" },
   { value: "dialer", label: "Dialler", icon: "alert" },
+  { value: "engagement", label: "Engagement", icon: "view-graph" },
   { value: "transcripts", label: "Transcripts", icon: "view-evidence" },
   { value: "analytics", label: "Analytics", icon: "view-analysis" },
 ];
@@ -172,6 +174,7 @@ export function GhostlineCanvas({ initialPanel = "runtime" }: { initialPanel?: G
         {panel === "simulate" ? <SimulatePanel /> : null}
         {panel === "voices" ? <VoicesPanel /> : null}
         {panel === "dialer" ? <DialerPanel onNavigate={setPanel} /> : null}
+        {panel === "engagement" ? <EngagementPanel /> : null}
         {panel === "transcripts" ? <TranscriptsPanel /> : null}
         {panel === "analytics" ? <AnalyticsPanel /> : null}
       </div>

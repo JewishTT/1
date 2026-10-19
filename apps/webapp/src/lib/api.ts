@@ -79,7 +79,12 @@ export interface EntityView {
   relationships: Array<Record<string, string>>;
   supporting_assertions: string[];
   evidence: Array<{ evidence_id: string; observation_id: string; immutable: boolean }>;
-  timeline: Array<{ observation_id: string; uri: string; immutable: boolean; observed_at?: string }>;
+  timeline: Array<{
+    observation_id: string;
+    uri: string;
+    immutable: boolean;
+    observed_at?: string;
+  }>;
   structural_signals: Array<Record<string, unknown>>;
   correlations?: Correlation[];
   map_points?: Array<{ lat: number; lon: number; label?: string }>;
@@ -129,7 +134,6 @@ export interface TemporalMaterializationHealth {
   runs: Array<Record<string, unknown>>;
   tenant_id: string;
 }
-
 
 /** One normalized Common Crawl capture observation (L1 extract output). */
 export interface CcTemporalityCapture {
@@ -351,10 +355,14 @@ export const api = {
 
   /** Correlation edges for an entity (T020, FR-004) — no merge implied. */
   getTemporalHistory(entityId: string): Promise<TemporalHistoryView> {
-    return request<TemporalHistoryView>(`/entities/${encodeURIComponent(entityId)}/temporal-history/current`);
+    return request<TemporalHistoryView>(
+      `/entities/${encodeURIComponent(entityId)}/temporal-history/current`,
+    );
   },
 
-  getTemporalFeatures(entityId: string): Promise<{ features: TemporalFeatureView[]; source_cut: { cut_id: string } }> {
+  getTemporalFeatures(
+    entityId: string,
+  ): Promise<{ features: TemporalFeatureView[]; source_cut: { cut_id: string } }> {
     return request(`/entities/${encodeURIComponent(entityId)}/temporal-features`);
   },
 
@@ -362,11 +370,15 @@ export const api = {
     return request<TemporalMaterializationHealth>("/temporal-materializations/health");
   },
 
-  getEntityInvariant(entityId: string): Promise<{ entity_id: string; invariant: Record<string, unknown> }> {
+  getEntityInvariant(
+    entityId: string,
+  ): Promise<{ entity_id: string; invariant: Record<string, unknown> }> {
     return request(`/entities/${encodeURIComponent(entityId)}/invariant`);
   },
 
-  getEntityStream(entityId: string): Promise<{ entity_id: string; records: Array<Record<string, unknown>> }> {
+  getEntityStream(
+    entityId: string,
+  ): Promise<{ entity_id: string; records: Array<Record<string, unknown>> }> {
     return request(`/entities/${encodeURIComponent(entityId)}/stream`);
   },
 
@@ -728,9 +740,11 @@ export const api = {
   },
 
   /** Launch an operation. Blocked (409 RoEError) without a confirmed roe_id. */
-  launchOperation(body: { plan_id: string; lab_fixture: string; roe_id: string }): Promise<
-    CiEnvelope<{ operation: CiOperationWire }>
-  > {
+  launchOperation(body: {
+    plan_id: string;
+    lab_fixture: string;
+    roe_id: string;
+  }): Promise<CiEnvelope<{ operation: CiOperationWire }>> {
     return request("/specops/emulation/operations", { method: "POST", body: JSON.stringify(body) });
   },
 
@@ -853,7 +867,9 @@ export const api = {
 
   /** Forget a voice. 409 while a running runtime is pinned to it. */
   forgetGhostlineVoice(voiceId: string): Promise<CiEnvelope<{ removed: string }>> {
-    return request(`/specops/ghostline/voices/${encodeURIComponent(voiceId)}`, { method: "DELETE" });
+    return request(`/specops/ghostline/voices/${encodeURIComponent(voiceId)}`, {
+      method: "DELETE",
+    });
   },
 
   /** Bring the runtime up (the donor CLI's `serve`). 424 with named blockers. */
@@ -862,7 +878,10 @@ export const api = {
     playbook_id: string;
     port?: number | null;
   }): Promise<CiEnvelope<{ runtime: GlRuntimeWire }>> {
-    return request("/specops/ghostline/runtime/start", { method: "POST", body: JSON.stringify(body) });
+    return request("/specops/ghostline/runtime/start", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   },
 
   /** Tear the runtime down and close the tunnel. Idempotent. */
@@ -924,7 +943,9 @@ export const api = {
   },
 
   /** Stage distribution, outcome split, campaign rollups. */
-  ghostlineAnalytics(campaign?: string | null): Promise<CiEnvelope<{ analytics: GlAnalyticsWire }>> {
+  ghostlineAnalytics(
+    campaign?: string | null,
+  ): Promise<CiEnvelope<{ analytics: GlAnalyticsWire }>> {
     const query = campaign ? `?campaign=${encodeURIComponent(campaign)}` : "";
     return request(`/specops/ghostline/analytics${query}`);
   },
@@ -937,6 +958,59 @@ export const api = {
     const params = new URLSearchParams({ format });
     if (campaign) params.set("campaign", campaign);
     return request(`/specops/ghostline/analytics/export?${params.toString()}`);
+  },
+
+  // ── Engagement fabric (Feature 032) ───────────────────────────────────────
+  // One lifecycle for every channel. The email and voice channels both report into
+  // this log, which is what makes the cross-campaign subject view answerable at all.
+  // Two tracks are returned — the adversarial funnel and training compliance — and
+  // never merged; see `GlCampaignFunnelWire`.
+
+  /** The closed event vocabulary, the ladder, and what was refused from the donor. */
+  engagementTaxonomy(): Promise<CiEnvelope<GlTaxonomyWire>> {
+    return request("/specops/engagement/taxonomy");
+  },
+
+  /** The whole board: per-campaign funnels plus cross-campaign subject profiles. */
+  engagementBoard(): Promise<CiEnvelope<{ projection: GlBoardWire }>> {
+    return request("/specops/engagement/board");
+  },
+
+  /** One campaign's funnel, its events, and its subjects. */
+  engagementCampaign(campaignId: string): Promise<CiEnvelope<GlCampaignWire>> {
+    return request(`/specops/engagement/campaigns/${encodeURIComponent(campaignId)}`);
+  },
+
+  /** The cross-channel event timeline, most recent first. */
+  engagementTimeline(limit = 100): Promise<CiEnvelope<{ events: GlEngagementEventWire[] }>> {
+    return request(`/specops/engagement/timeline?limit=${limit}`);
+  },
+
+  /** Every subject across every campaign. */
+  engagementSubjects(): Promise<CiEnvelope<{ subjects: GlSubjectWire[] }>> {
+    return request("/specops/engagement/subjects");
+  },
+
+  /** Record an event. 422 PayloadRefused for a credential-bearing payload. */
+  recordEngagementEvent(body: {
+    campaign_id: string;
+    channel: string;
+    kind: string;
+    subject_ref?: string | null;
+    metadata?: Record<string, unknown>;
+    anonymized?: boolean;
+  }): Promise<CiEnvelope<{ event: GlEngagementEventWire }>> {
+    return request("/specops/engagement/events", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  /** Strip identity from a campaign's events, keeping the counts exact. */
+  anonymizeEngagementCampaign(
+    campaignId: string,
+  ): Promise<CiEnvelope<{ campaign_id: string; anonymized: number }>> {
+    return request("/specops/engagement/anonymize", {
+      method: "POST",
+      body: JSON.stringify({ campaign_id: campaignId }),
+    });
   },
 };
 
@@ -1051,7 +1125,6 @@ export interface CiForensicsWire {
   }>;
   gaps: Array<{ gap_id: string; ability_id: string; expected_telemetry: string }>;
 }
-
 
 // ── GhostLine wire types (Feature 031) ────────────────────────────────────────
 // The shapes /api/v1/specops/ghostline/* serves (contracts/ghostline-api.md). They
@@ -1312,4 +1385,89 @@ export interface GlExportWire {
   format: string;
   filename: string;
   payload: string | Record<string, unknown>;
+}
+
+// ── Engagement fabric wire types (Feature 032) ─────────────────────────────────
+// Note the shape of a campaign: `reached` (the adversarial ladder) and `training` are
+// SEPARATE fields, and there is no combined one. That is the donor's best idea
+// reproduced structurally rather than by convention — there is simply nowhere for a
+// meaningless merged score to be rendered from.
+
+export interface GlEventDefinitionWire {
+  kind: string;
+  track: "phishing" | "training" | "lifecycle";
+  stage: number;
+  display: string;
+  credential_bearing: boolean;
+}
+
+export interface GlFunnelStageWire {
+  key: string;
+  stage: number;
+  intent: string;
+}
+
+export interface GlTaxonomyWire {
+  events: GlEventDefinitionWire[];
+  stages: GlFunnelStageWire[];
+  dont_heritage: string[];
+  log_path: string;
+}
+
+export interface GlEngagementEventWire {
+  event_id: string;
+  campaign_id: string;
+  channel: string;
+  kind: string;
+  display: string;
+  occurred_at: string;
+  /** null once the campaign has been anonymised. */
+  subject_ref: string | null;
+  /** Stable pseudonym — this is what keeps linkage after anonymisation. */
+  pseudonym: string | null;
+  stage: number;
+  track: string;
+  metadata: Record<string, unknown>;
+  ip: string | null;
+  user_agent: string | null;
+  anonymized: boolean;
+}
+
+export interface GlCampaignFunnelWire {
+  campaign_id: string;
+  channels: string[];
+  /** stage key -> subject count, each subject at its DEEPEST position only. */
+  reached: Record<string, number>;
+  subject_count: number;
+  event_count: number;
+  event_counts: Record<string, number>;
+  /** The training track. Never added into `reached`. */
+  training: { assigned: number; completed: number };
+  resisted: number;
+}
+
+export interface GlSubjectWire {
+  subject_ref: string | null;
+  pseudonym: string | null;
+  deepest_stage: number;
+  campaigns: string[];
+  channels: string[];
+  events: number;
+  repeat_engaged: number;
+  conceded_campaigns: string[];
+  resisted_campaigns: string[];
+  trainings_completed: number;
+}
+
+export interface GlBoardWire {
+  campaigns: GlCampaignFunnelWire[];
+  subjects: GlSubjectWire[];
+  outcome_split: Record<string, number>;
+  stages: GlFunnelStageWire[];
+  missing: string[];
+}
+
+export interface GlCampaignWire {
+  campaign: GlCampaignFunnelWire;
+  events: GlEngagementEventWire[];
 }

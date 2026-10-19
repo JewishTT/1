@@ -1,0 +1,172 @@
+{"payload":{"country":"CN","domain":"alibaba.com","kind":"company","name":"Alibaba"},"term":"Alibaba"}
+{"payload":{"country":"CN","domain":"alibaba.com","kind":"company","name":"Alibaba"},"term":"Alibaba Group"}
+{"payload":{"country":"US","domain":"google.com","kind":"company","name":"Google"},"term":"Alphabet"}
+{"payload":{"country":"US","domain":"amazon.com","kind":"company","name":"Amazon"},"term":"Amazon"}
+{"payload":{"country":"US","domain":"amazon.com","kind":"company","name":"Amazon"},"term":"Amazon.com"}
+{"payload":{"country":"US","domain":"apple.com","kind":"company","name":"Apple"},"term":"Apple"}
+{"payload":{"country":"US","domain":"apple.com","kind":"company","name":"Apple"},"term":"Apple Inc."}
+{"payload":{"country":"DE","domain":"lufthansa.com","kind":"company","name":"Lufthansa"},"term":"Deutsche Lufthansa AG"}
+{"payload":{"country":"US","domain":"meta.com","kind":"company","name":"Meta"},"term":"Facebook"}
+{"payload":{"country":"US","domain":"google.com","kind":"company","name":"Google"},"term":"Google"}
+{"payload":{"country":"CN","domain":"huawei.com","kind":"company","name":"Huawei"},"term":"Huawei"}
+{"payload":{"country":"CN","domain":"huawei.com","kind":"company","name":"Huawei"},"term":"Huawei Technologies"}
+{"payload":{"country":"US","domain":"ibm.com","kind":"company","name":"IBM"},"term":"IBM"}
+{"payload":{"country":"US","domain":"intel.com","kind":"company","name":"Intel"},"term":"Intel"}
+{"payload":{"country":"US","domain":"intel.com","kind":"company","name":"Intel"},"term":"Intel Corporation"}
+{"payload":{"country":"US","domain":"ibm.com","kind":"company","name":"IBM"},"term":"International Business Machines"}
+{"payload":{"country":"RU","domain":"kaspersky.ru","kind":"company","name":"Лаборатория Касперского"},"term":"Kaspersky"}
+{"payload":{"country":"DE","domain":"lufthansa.com","kind":"company","name":"Lufthansa"},"term":"Lufthansa"}
+{"payload":{"country":"RU","domain":"vk.company","kind":"company","name":"Mail.ru Group"},"term":"Mail.ru Group"}
+{"payload":{"country":"US","domain":"meta.com","kind":"company","name":"Meta"},"term":"Meta"}
+{"payload":{"country":"US","domain":"meta.com","kind":"company","name":"Meta"},"term":"Meta Platforms"}
+{"payload":{"country":"US","domain":"microsoft.com","kind":"company","name":"Microsoft"},"term":"Microsoft"}
+{"payload":{"country":"US","domain":"microsoft.com","kind":"company","name":"Microsoft"},"term":"Microsoft Corporation"}
+{"payload":{"country":"US","domain":"openai.com","kind":"company","name":"OpenAI"},"term":"OpenAI"}
+{"payload":{"country":"US","domain":"openai.com","kind":"company","name":"OpenAI"},"term":"OpenAI Inc."}
+{"payload":{"country":"RU","domain":"wildberries.ru","kind":"company","name":"Wildberries"},"term":"Ozon"}
+{"payload":{"country":"RU","domain":"sberbank-cib.ru","kind":"company","name":"Sberbank CIB"},"term":"Sberbank CIB"}
+{"payload":{"country":"DE","domain":"siemens.com","kind":"company","name":"Siemens"},"term":"Siemens"}
+{"payload":{"country":"DE","domain":"siemens.com","kind":"company","name":"Siemens"},"term":"Siemens AG"}
+{"payload":{"country":"RU","domain":"tinkoff.ru","kind":"company","name":"Tinkoff"},"term":"Tinkoff"}
+{"payload":{"country":"RU","domain":"vk.company","kind":"company","name":"Mail.ru Group"},"term":"VK Company"}
+{"payload":{"country":"DE","domain":"volkswagen.com","kind":"company","name":"Volkswagen"},"term":"Volkswagen"}
+{"payload":{"country":"DE","domain":"volkswagen.com","kind":"company","name":"Volkswagen"},"term":"Volkswagen AG"}
+{"payload":{"country":"RU","domain":"wildberries.ru","kind":"company","name":"Wildberries"},"term":"Wildberries"}
+{"payload":{"country":"RU","domain":"yandex.ru","kind":"company","name":"Яндекс"},"term":"Yandex"}
+{"payload":{"country":"CN","domain":"alibaba.com","kind":"company","name":"Alibaba"},"term":"alibaba"}
+{"payload":{"country":"CN","domain":"alibaba.com","kind":"company","name":"Alibaba"},"term":"alibaba group"}
+{"payload":{"country":"US","domain":"google.com","kind":"company","name":"Google"},"term":"alphabet"}
+{"payload":{"country":"US","domain":"amazon.com","kind":"company","name":"Amazon"},"term":"amazon"}
+{"payload":{"country":"US","domain":"amazon.com","kind":"company","name":"Amazon"},"term":"amazon.com"}
+{"payload":{"country":"US","domain":"apple.com","kind":"company","name":"Apple"},"term":"apple"}
+{"payload":{"country":"US","domain":"apple.com","kind":"company","name":"Apple"},"term":"apple inc."}
+{"payload":{"country":"DE","domain":"lufthansa.com","kind":"company","name":"Lufthansa"},"term":"deutsche lufthansa ag"}
+{"payload":{"country":"US","domain":"meta.com","kind":"company","name":"Meta"},"term":"facebook"}
+{"payload":{"country":"US","domain":"google.com","kind":"company","name":"Google"},"term":"google"}
+{"payload":{"country":"CN","domain":"huawei.com","kind":"company","name":"Huawei"},"term":"huawei"}
+{"payload":{"country":"CN","domain":"huawei.com","kind":"company","name":"Huawei"},"term":"huawei technologies"}
+{"payload":{"country":"US","domain":"ibm.com","kind":"company","name":"IBM"},"term":"ibm"}
+{"payload":{"country":"US","domain":"intel.com","kind":"company","name":"Intel"},"term":"intel"}
+{"payload":{"country":"US","domain":"intel.com","kind":"company","name":"Intel"},"term":"intel corporation"}
+{"payload":{"country":"US","domain":"ibm.com","kind":"company","name":"IBM"},"term":"international business machines"}
+{"payload":{"country":"RU","domain":"kaspersky.ru","kind":"company","name":"Лаборатория Касперского"},"term":"kaspersky"}
+{"payload":{"country":"DE","domain":"lufthansa.com","kind":"company","name":"Lufthansa"},"term":"lufthansa"}
+{"payload":{"country":"RU","domain":"vk.company","kind":"company","name":"Mail.ru Group"},"term":"mail.ru group"}
+{"payload":{"country":"US","domain":"meta.com","kind":"company","name":"Meta"},"term":"meta"}
+{"payload":{"country":"US","domain":"meta.com","kind":"company","name":"Meta"},"term":"meta platforms"}
+{"payload":{"country":"US","domain":"microsoft.com","kind":"company","name":"Microsoft"},"term":"microsoft"}
+{"payload":{"country":"US","domain":"microsoft.com","kind":"company","name":"Microsoft"},"term":"microsoft corporation"}
+{"payload":{"country":"US","domain":"openai.com","kind":"company","name":"OpenAI"},"term":"openai"}
+{"payload":{"country":"US","domain":"openai.com","kind":"company","name":"OpenAI"},"term":"openai inc."}
+{"payload":{"country":"RU","domain":"wildberries.ru","kind":"company","name":"Wildberries"},"term":"ozon"}
+{"payload":{"country":"RU","domain":"sberbank-cib.ru","kind":"company","name":"Sberbank CIB"},"term":"sberbank cib"}
+{"payload":{"country":"DE","domain":"siemens.com","kind":"company","name":"Siemens"},"term":"siemens"}
+{"payload":{"country":"DE","domain":"siemens.com","kind":"company","name":"Siemens"},"term":"siemens ag"}
+{"payload":{"country":"RU","domain":"tinkoff.ru","kind":"company","name":"Tinkoff"},"term":"tinkoff"}
+{"payload":{"country":"RU","domain":"vk.company","kind":"company","name":"Mail.ru Group"},"term":"vk company"}
+{"payload":{"country":"DE","domain":"volkswagen.com","kind":"company","name":"Volkswagen"},"term":"volkswagen"}
+{"payload":{"country":"DE","domain":"volkswagen.com","kind":"company","name":"Volkswagen"},"term":"volkswagen ag"}
+{"payload":{"country":"RU","domain":"wildberries.ru","kind":"company","name":"Wildberries"},"term":"wildberries"}
+{"payload":{"country":"RU","domain":"yandex.ru","kind":"company","name":"Яндекс"},"term":"yandex"}
+{"payload":{"country":"RU","domain":"ras.ru","kind":"company","name":"Академия Наук"},"term":"Академией Наук"}
+{"payload":{"country":"RU","domain":"ras.ru","kind":"company","name":"Академия Наук"},"term":"Академии Наук"}
+{"payload":{"country":"RU","domain":"ras.ru","kind":"company","name":"Академия Наук"},"term":"Академию Наук"}
+{"payload":{"country":"RU","domain":"ras.ru","kind":"company","name":"Академия Наук"},"term":"Академия Наук"}
+{"payload":{"country":"CN","domain":"alibaba.com","kind":"company","name":"Alibaba"},"term":"Алибаба"}
+{"payload":{"country":"US","domain":"amazon.com","kind":"company","name":"Amazon"},"term":"Амазон"}
+{"payload":{"country":"RU","domain":"aeroflot.ru","kind":"company","name":"Аэрофлот"},"term":"Аэрофлот"}
+{"payload":{"country":"RU","domain":"aeroflot.ru","kind":"company","name":"Аэрофлот"},"term":"Аэрофлота"}
+{"payload":{"country":"RU","domain":"wildberries.ru","kind":"company","name":"Wildberries"},"term":"Вайлдберриз"}
+{"payload":{"country":"RU","domain":"rostec.ru","kind":"company","name":"Ростех"},"term":"ГК Ростех"}
+{"payload":{"country":"RU","domain":"gazprom.ru","kind":"company","name":"Газпром"},"term":"Газпром"}
+{"payload":{"country":"RU","domain":"gazprom.ru","kind":"company","name":"Газпром"},"term":"Газпрома"}
+{"payload":{"country":"RU","domain":"gazprom.ru","kind":"company","name":"Газпром"},"term":"Газпроме"}
+{"payload":{"country":"US","domain":"google.com","kind":"company","name":"Google"},"term":"Гугл"}
+{"payload":{"country":"RU","domain":"kpfu.ru","kind":"company","name":"Казанский федеральный университет"},"term":"КФУ"}
+{"payload":{"country":"RU","domain":"kpfu.ru","kind":"company","name":"Казанский федеральный университет"},"term":"Казанский федеральный университет"}
+{"payload":{"country":"RU","domain":"kpfu.ru","kind":"company","name":"Казанский федеральный университет"},"term":"Казанского федерального университета"}
+{"payload":{"country":"RU","domain":"kpfu.ru","kind":"company","name":"Казанский федеральный университет"},"term":"Казанском федеральном университете"}
+{"payload":{"country":"RU","domain":"kaspersky.ru","kind":"company","name":"Лаборатория Касперского"},"term":"Лаборатории Касперского"}
+{"payload":{"country":"RU","domain":"kaspersky.ru","kind":"company","name":"Лаборатория Касперского"},"term":"Лаборатория Касперского"}
+{"payload":{"country":"DE","domain":"lufthansa.com","kind":"company","name":"Lufthansa"},"term":"Люфтганза"}
+{"payload":{"country":"RU","domain":"msu.ru","kind":"company","name":"Московский государственный университет"},"term":"МГУ"}
+{"payload":{"country":"US","domain":"microsoft.com","kind":"company","name":"Microsoft"},"term":"Майкрософт"}
+{"payload":{"country":"RU","domain":"vk.company","kind":"company","name":"Mail.ru Group"},"term":"Мейл.ру"}
+{"payload":{"country":"RU","domain":"msu.ru","kind":"company","name":"Московский государственный университет"},"term":"Московский государственный университет"}
+{"payload":{"country":"RU","domain":"msu.ru","kind":"company","name":"Московский государственный университет"},"term":"Московского государственного университета"}
+{"payload":{"country":"RU","domain":"rosneft.ru","kind":"company","name":"Роснефть"},"term":"НК Роснефть"}
+{"payload":{"country":"RU","domain":"rzd.ru","kind":"company","name":"РЖД"},"term":"ОАО РЖД"}
+{"payload":{"country":"RU","domain":"aeroflot.ru","kind":"company","name":"Аэрофлот"},"term":"ПАО Аэрофлот"}
+{"payload":{"country":"RU","domain":"gazprom.ru","kind":"company","name":"Газпром"},"term":"ПАО Газпром"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"ПАО Сбербанк"}
+{"payload":{"country":"RU","domain":"rzd.ru","kind":"company","name":"РЖД"},"term":"РЖД"}
+{"payload":{"country":"RU","domain":"rosneft.ru","kind":"company","name":"Роснефть"},"term":"Роснефти"}
+{"payload":{"country":"RU","domain":"rosneft.ru","kind":"company","name":"Роснефть"},"term":"Роснефть"}
+{"payload":{"country":"RU","domain":"rzd.ru","kind":"company","name":"РЖД"},"term":"Российские железные дороги"}
+{"payload":{"country":"RU","domain":"rostec.ru","kind":"company","name":"Ростех"},"term":"Ростех"}
+{"payload":{"country":"RU","domain":"rostec.ru","kind":"company","name":"Ростех"},"term":"Ростеха"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"Сбер"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"Сбербанк"}
+{"payload":{"country":"RU","domain":"sberbank-cib.ru","kind":"company","name":"Sberbank CIB"},"term":"Сбербанк CIB"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"Сбербанка"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"Сбербанке"}
+{"payload":{"country":"DE","domain":"siemens.com","kind":"company","name":"Siemens"},"term":"Сименс"}
+{"payload":{"country":"RU","domain":"tinkoff.ru","kind":"company","name":"Tinkoff"},"term":"Тинькофф"}
+{"payload":{"country":"RU","domain":"tinkoff.ru","kind":"company","name":"Tinkoff"},"term":"Тинькофф Банк"}
+{"payload":{"country":"DE","domain":"volkswagen.com","kind":"company","name":"Volkswagen"},"term":"Фольксваген"}
+{"payload":{"country":"CN","domain":"huawei.com","kind":"company","name":"Huawei"},"term":"Хуавэй"}
+{"payload":{"country":"US","domain":"apple.com","kind":"company","name":"Apple"},"term":"Эпл"}
+{"payload":{"country":"RU","domain":"yandex.ru","kind":"company","name":"Яндекс"},"term":"Яндекс"}
+{"payload":{"country":"RU","domain":"yandex.ru","kind":"company","name":"Яндекс"},"term":"Яндекса"}
+{"payload":{"country":"RU","domain":"yandex.ru","kind":"company","name":"Яндекс"},"term":"Яндексе"}
+{"payload":{"country":"RU","domain":"ras.ru","kind":"company","name":"Академия Наук"},"term":"академией наук"}
+{"payload":{"country":"RU","domain":"ras.ru","kind":"company","name":"Академия Наук"},"term":"академии наук"}
+{"payload":{"country":"RU","domain":"ras.ru","kind":"company","name":"Академия Наук"},"term":"академию наук"}
+{"payload":{"country":"RU","domain":"ras.ru","kind":"company","name":"Академия Наук"},"term":"академия наук"}
+{"payload":{"country":"CN","domain":"alibaba.com","kind":"company","name":"Alibaba"},"term":"алибаба"}
+{"payload":{"country":"US","domain":"amazon.com","kind":"company","name":"Amazon"},"term":"амазон"}
+{"payload":{"country":"RU","domain":"aeroflot.ru","kind":"company","name":"Аэрофлот"},"term":"аэрофлот"}
+{"payload":{"country":"RU","domain":"aeroflot.ru","kind":"company","name":"Аэрофлот"},"term":"аэрофлота"}
+{"payload":{"country":"RU","domain":"wildberries.ru","kind":"company","name":"Wildberries"},"term":"вайлдберриз"}
+{"payload":{"country":"RU","domain":"gazprom.ru","kind":"company","name":"Газпром"},"term":"газпром"}
+{"payload":{"country":"RU","domain":"gazprom.ru","kind":"company","name":"Газпром"},"term":"газпрома"}
+{"payload":{"country":"RU","domain":"gazprom.ru","kind":"company","name":"Газпром"},"term":"газпроме"}
+{"payload":{"country":"RU","domain":"rostec.ru","kind":"company","name":"Ростех"},"term":"гк ростех"}
+{"payload":{"country":"US","domain":"google.com","kind":"company","name":"Google"},"term":"гугл"}
+{"payload":{"country":"RU","domain":"kpfu.ru","kind":"company","name":"Казанский федеральный университет"},"term":"казанский федеральный университет"}
+{"payload":{"country":"RU","domain":"kpfu.ru","kind":"company","name":"Казанский федеральный университет"},"term":"казанского федерального университета"}
+{"payload":{"country":"RU","domain":"kpfu.ru","kind":"company","name":"Казанский федеральный университет"},"term":"казанском федеральном университете"}
+{"payload":{"country":"RU","domain":"kpfu.ru","kind":"company","name":"Казанский федеральный университет"},"term":"кфу"}
+{"payload":{"country":"RU","domain":"kaspersky.ru","kind":"company","name":"Лаборатория Касперского"},"term":"лаборатории касперского"}
+{"payload":{"country":"RU","domain":"kaspersky.ru","kind":"company","name":"Лаборатория Касперского"},"term":"лаборатория касперского"}
+{"payload":{"country":"DE","domain":"lufthansa.com","kind":"company","name":"Lufthansa"},"term":"люфтганза"}
+{"payload":{"country":"US","domain":"microsoft.com","kind":"company","name":"Microsoft"},"term":"майкрософт"}
+{"payload":{"country":"RU","domain":"msu.ru","kind":"company","name":"Московский государственный университет"},"term":"мгу"}
+{"payload":{"country":"RU","domain":"vk.company","kind":"company","name":"Mail.ru Group"},"term":"мейл.ру"}
+{"payload":{"country":"RU","domain":"msu.ru","kind":"company","name":"Московский государственный университет"},"term":"московский государственный университет"}
+{"payload":{"country":"RU","domain":"msu.ru","kind":"company","name":"Московский государственный университет"},"term":"московского государственного университета"}
+{"payload":{"country":"RU","domain":"rosneft.ru","kind":"company","name":"Роснефть"},"term":"нк роснефть"}
+{"payload":{"country":"RU","domain":"rzd.ru","kind":"company","name":"РЖД"},"term":"оао ржд"}
+{"payload":{"country":"RU","domain":"aeroflot.ru","kind":"company","name":"Аэрофлот"},"term":"пао аэрофлот"}
+{"payload":{"country":"RU","domain":"gazprom.ru","kind":"company","name":"Газпром"},"term":"пао газпром"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"пао сбербанк"}
+{"payload":{"country":"RU","domain":"rzd.ru","kind":"company","name":"РЖД"},"term":"ржд"}
+{"payload":{"country":"RU","domain":"rosneft.ru","kind":"company","name":"Роснефть"},"term":"роснефти"}
+{"payload":{"country":"RU","domain":"rosneft.ru","kind":"company","name":"Роснефть"},"term":"роснефть"}
+{"payload":{"country":"RU","domain":"rzd.ru","kind":"company","name":"РЖД"},"term":"российские железные дороги"}
+{"payload":{"country":"RU","domain":"rostec.ru","kind":"company","name":"Ростех"},"term":"ростех"}
+{"payload":{"country":"RU","domain":"rostec.ru","kind":"company","name":"Ростех"},"term":"ростеха"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"сбер"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"сбербанк"}
+{"payload":{"country":"RU","domain":"sberbank-cib.ru","kind":"company","name":"Sberbank CIB"},"term":"сбербанк cib"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"сбербанка"}
+{"payload":{"country":"RU","domain":"sberbank.ru","kind":"company","name":"Сбербанк"},"term":"сбербанке"}
+{"payload":{"country":"DE","domain":"siemens.com","kind":"company","name":"Siemens"},"term":"сименс"}
+{"payload":{"country":"RU","domain":"tinkoff.ru","kind":"company","name":"Tinkoff"},"term":"тинькофф"}
+{"payload":{"country":"RU","domain":"tinkoff.ru","kind":"company","name":"Tinkoff"},"term":"тинькофф банк"}
+{"payload":{"country":"DE","domain":"volkswagen.com","kind":"company","name":"Volkswagen"},"term":"фольксваген"}
+{"payload":{"country":"CN","domain":"huawei.com","kind":"company","name":"Huawei"},"term":"хуавэй"}
+{"payload":{"country":"US","domain":"apple.com","kind":"company","name":"Apple"},"term":"эпл"}
+{"payload":{"country":"RU","domain":"yandex.ru","kind":"company","name":"Яндекс"},"term":"яндекс"}
+{"payload":{"country":"RU","domain":"yandex.ru","kind":"company","name":"Яндекс"},"term":"яндекса"}
+{"payload":{"country":"RU","domain":"yandex.ru","kind":"company","name":"Яндекс"},"term":"яндексе"}

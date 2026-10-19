@@ -1,0 +1,671 @@
+package model
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/go-errors/errors"
+
+	"github.com/google/uuid"
+	"github.com/oapi-codegen/nullable"
+	"github.com/phishingclub/phishingclub/data"
+	"github.com/phishingclub/phishingclub/errs"
+	"github.com/phishingclub/phishingclub/lure"
+	"github.com/phishingclub/phishingclub/utils"
+	"github.com/phishingclub/phishingclub/validate"
+	"github.com/phishingclub/phishingclub/vo"
+)
+
+// Campaign is a phishing Campaign entity
+type Campaign struct {
+	ID                  nullable.Nullable[uuid.UUID]                 `json:"id"`
+	CreatedAt           *time.Time                                   `json:"createdAt"`
+	UpdatedAt           *time.Time                                   `json:"updatedAt"`
+	CloseAt             nullable.Nullable[time.Time]                 `json:"closeAt"`
+	ClosedAt            nullable.Nullable[time.Time]                 `json:"closedAt"`
+	AnonymizeAt         nullable.Nullable[time.Time]                 `json:"anonymizeAt"`
+	AnonymizedAt        nullable.Nullable[time.Time]                 `json:"anonymizedAt"`
+	DataAnonymizeAt     nullable.Nullable[time.Time]                 `json:"dataAnonymizeAt"`
+	DataAnonymizedAt    nullable.Nullable[time.Time]                 `json:"dataAnonymizedAt"`
+	SortField           nullable.Nullable[vo.CampaignSortField]      `json:"sortField"`
+	SortOrder           nullable.Nullable[vo.CampaignSendingOrder]   `json:"sortOrder"`
+	SendStartAt         nullable.Nullable[time.Time]                 `json:"sendStartAt"`
+	SendEndAt           nullable.Nullable[time.Time]                 `json:"sendEndAt"`
+	ScheduleAt          nullable.Nullable[time.Time]                 `json:"scheduleAt"`
+	ConstraintWeekDays  nullable.Nullable[vo.CampaignWeekDays]       `json:"constraintWeekDays"`
+	ConstraintStartTime nullable.Nullable[vo.CampaignTimeConstraint] `json:"constraintStartTime"`
+	ConstraintEndTime   nullable.Nullable[vo.CampaignTimeConstraint] `json:"constraintEndTime"`
+
+	// jitter is persisted to the database only when ScheduleAt is set (late-scheduling),
+	// so the task runner can apply it when schedule() is called hours later.
+	// For immediately-scheduled campaigns jitter lives in memory only and is never written to the DB.
+	JitterMin nullable.Nullable[int] `json:"jitterMin,omitempty"`
+	JitterMax nullable.Nullable[int] `json:"jitterMax,omitempty"`
+
+	Name nullable.Nullable[vo.String64] `json:"name"`
+
+	SaveSubmittedData   nullable.Nullable[bool] `json:"saveSubmittedData"`
+	SaveBrowserMetadata nullable.Nullable[bool] `json:"saveBrowserMetadata"`
+	// IsAnonymous marks a campaign that records events against a stable pseudonym
+	// instead of the recipient, never storing identity or submitted data. Validate
+	// forbids enabling data collection alongside it, and it cannot be changed once
+	// recipients exist.
+	IsAnonymous nullable.Nullable[bool] `json:"isAnonymous"`
+	IsTest      nullable.Nullable[bool] `json:"isTest"`
+	Obfuscate   nullable.Nullable[bool] `json:"obfuscate"`
+	// IsTraining is snapshotted from the template; read-only in campaign requests.
+	IsTraining nullable.Nullable[bool] `json:"isTraining"`
+	// deprecated: use Webhooks array instead for multiple webhooks with per-webhook settings
+	WebhookIncludeData nullable.Nullable[string]    `json:"webhookIncludeData,omitempty"`
+	WebhookEvents      nullable.Nullable[int]       `json:"webhookEvents,omitempty"`
+	WebhookID          nullable.Nullable[uuid.UUID] `json:"webhookID,omitempty"`
+
+	TemplateID        nullable.Nullable[uuid.UUID]    `json:"templateID"`
+	Template          *CampaignTemplate               `json:"template"`
+	CompanyID         nullable.Nullable[uuid.UUID]    `json:"companyID"`
+	Company           *Company                        `json:"company"`
+	RecipientGroups   []*RecipientGroup               `json:"recipientGroups"`
+	RecipientGroupIDs nullable.Nullable[[]*uuid.UUID] `json:"recipientGroupIDs,omitempty"`
+	AllowDeny         []*AllowDeny                    `json:"allowDeny"`
+	AllowDenyIDs      nullable.Nullable[[]*uuid.UUID] `json:"allowDenyIDs,omitempty"`
+	DenyPageID        nullable.Nullable[uuid.UUID]    `json:"denyPageID,omitempty"`
+	DenyPage          *Page                           `json:"denyPage"`
+	EvasionPageID     nullable.Nullable[uuid.UUID]    `json:"evasionPageID,omitempty"`
+	EvasionPage       *Page                           `json:"evasionPage"`
+
+	// webhooks configuration with per-webhook settings
+	Webhooks nullable.Nullable[[]*CampaignWebhook] `json:"webhooks,omitempty"`
+
+	// scripts configuration with per-script settings.
+	// attached to a campaign the same way webhooks are.
+	Scripts nullable.Nullable[[]*CampaignScript] `json:"scripts,omitempty"`
+
+	// snapshotted from the campaign template while the campaign holds no
+	// recipients. read only, see ToDBMap.
+	LureURLMode    nullable.Nullable[string] `json:"lureURLMode"`
+	LureCodeAlgo   nullable.Nullable[string] `json:"lureCodeAlgo"`
+	LureCodeLength nullable.Nullable[int]    `json:"lureCodeLength"`
+
+	// HasCustomLureCodes decides whether the recipient table shows the code
+	// column, which pagination makes impossible to derive from one page.
+	HasCustomLureCodes bool `json:"hasCustomLureCodes"`
+
+	// must not be set by a user
+	NotableEventID   nullable.Nullable[uuid.UUID] `json:"notableEventID"`
+	NotableEventName string                       `json:"notableEventName"`
+}
+
+// Validate checks if the campaign has a valid state
+const (
+	WebhookDataLevelNone  = "none"
+	WebhookDataLevelBasic = "basic"
+	WebhookDataLevelFull  = "full"
+)
+
+// WebhookEventsToBinary converts array of event names to bitwise int
+func WebhookEventsToBinary(events []string) int {
+	if len(events) == 0 {
+		return 0 // 0 means all events
+	}
+	binary := 0
+	for _, event := range events {
+		if bit, ok := data.WebhookEventToBit[event]; ok {
+			binary |= bit
+		}
+	}
+	return binary
+}
+
+// WebhookEventsFromBinary converts bitwise int to array of event names
+func WebhookEventsFromBinary(binary int) []string {
+	if binary == 0 {
+		return []string{} // empty array means all events
+	}
+	events := []string{}
+	for eventName, bit := range data.WebhookEventToBit {
+		if binary&bit != 0 {
+			events = append(events, eventName)
+		}
+	}
+	return events
+}
+
+// IsWebhookEventEnabled checks if an event should trigger webhook
+func IsWebhookEventEnabled(webhookEvents int, eventName string) bool {
+	// 0 means all events enabled (backward compatible)
+	if webhookEvents == 0 {
+		return true
+	}
+	// check if the event bit is set
+	if bit, ok := data.WebhookEventToBit[eventName]; ok {
+		return webhookEvents&bit != 0
+	}
+	return false
+}
+
+func (c *Campaign) Validate() error {
+	if err := validate.NullableFieldRequired("name", c.Name); err != nil {
+		return err
+	}
+	if err := validate.NullableFieldRequired("sortField", c.SortField); err != nil {
+		return err
+	}
+	if err := validate.NullableFieldRequired("sortOrder", c.SortOrder); err != nil {
+		return err
+	}
+	// an anonymous campaign must never capture identifying data. enforce it here
+	// so a crafted request cannot enable collection on an anonymous campaign,
+	// independent of what the UI sends.
+	if v, err := c.IsAnonymous.Get(); err == nil && v {
+		if sd, err := c.SaveSubmittedData.Get(); err == nil && sd {
+			return validate.WrapErrorWithField(errors.New("submitted data cannot be saved on an anonymous campaign"), "saveSubmittedData")
+		}
+		if bm, err := c.SaveBrowserMetadata.Get(); err == nil && bm {
+			return validate.WrapErrorWithField(errors.New("browser metadata cannot be saved on an anonymous campaign"), "saveBrowserMetadata")
+		}
+	}
+	// if a start or end is set, then end must be equal or after the start
+	if c.SendStartAt.IsSpecified() && !c.SendStartAt.IsNull() || (c.SendEndAt.IsSpecified() && !c.SendEndAt.IsNull()) {
+		if err := validate.NullableFieldRequired("sendStartAt", c.SendStartAt); err != nil {
+			return err
+		}
+		if err := validate.NullableFieldRequired("sendEndAt", c.SendEndAt); err != nil {
+			return err
+		}
+		if c.SendEndAt.MustGet().Before(c.SendStartAt.MustGet()) {
+			return validate.WrapErrorWithField(errors.New("send end time must be after start time"), "sendEndAt")
+		}
+	}
+	if err := validate.NullableFieldRequired("templateID", c.TemplateID); err != nil {
+		return err
+	}
+	if err := validate.NullableFieldRequired("RecipientGroupIDs", c.RecipientGroupIDs); err != nil {
+		return err
+	}
+	if len(c.RecipientGroupIDs.MustGet()) == 0 {
+		return validate.WrapErrorWithField(errors.New("must have at least one recipient group"), "RecipientGroupIDs")
+	}
+	if err := c.ValidateEvasionAndDenyPages(); err != nil {
+		return err
+	}
+
+	// if ConstraintWeekDays or ConstraintStartTime or ConstraintEndTime is set, then this is a 'scheduled type'
+	// this requires that all fields are set and that end time is equal or after start time
+	if (c.ConstraintWeekDays.IsSpecified() && !c.ConstraintWeekDays.IsNull()) ||
+		(c.ConstraintStartTime.IsSpecified() && !c.ConstraintStartTime.IsNull()) ||
+		(c.ConstraintEndTime.IsSpecified() && !c.ConstraintEndTime.IsNull()) {
+		// check required fields are set
+		if err := c.ValidateSendTimesSet(); err != nil {
+			return err
+		}
+		if err := validate.NullableFieldRequired("ConstraintWeekDays", c.ConstraintWeekDays); err != nil {
+			return err
+		}
+		if c.ConstraintWeekDays.MustGet().Count() == 0 {
+			return validate.WrapErrorWithField(errors.New("must have at least one day selected"), "ConstraintWeekDays")
+		}
+		if err := validate.NullableFieldRequired("ConstraintStartTime", c.ConstraintStartTime); err != nil {
+			return err
+		}
+		if err := validate.NullableFieldRequired("ConstraintEndTime", c.ConstraintEndTime); err != nil {
+			return err
+		}
+		// check that times and days are valid
+		constraintStartTime := c.ConstraintStartTime.MustGet()
+		constraintEndTime := c.ConstraintEndTime.MustGet()
+		if constraintStartTime.IsAfter(constraintEndTime) {
+			return validate.WrapErrorWithField(errors.New("constraint end time must be after start time"), "ConstraintEndTime")
+		}
+		if constraintStartTime.IsEqual(constraintEndTime) {
+			return validate.WrapErrorWithField(errors.New("constraint end time must be after start time"), "ConstraintEndTime")
+		}
+		startAt := c.SendStartAt.MustGet()
+		endAt := c.SendEndAt.MustGet()
+		//  check that selected weekdays are within the start and end date
+		isWithin := c.ConstraintWeekDays.MustGet().IsWithin(&startAt, &endAt)
+		if !isWithin {
+			return validate.WrapErrorWithField(
+				fmt.Errorf(
+					"constraint week days must be within the start (%s) and end date (%s)",
+					startAt.Format("2006-01-02"),
+					endAt.Format("2006-01-02"),
+				),
+				"ConstraintWeekDays",
+			)
+		}
+	}
+	// ensure closeAt and anonymize is correctly set after other dates if set
+	if c.CloseAt.IsSpecified() && !c.CloseAt.IsNull() {
+		closeAt := c.CloseAt.MustGet()
+		if v, err := c.SendEndAt.Get(); err == nil {
+			if closeAt.Before(v) {
+				return validate.WrapErrorWithField(errors.New("close at must be after end date"), "CloseAt")
+			}
+		}
+	}
+	if c.AnonymizeAt.IsSpecified() && !c.AnonymizeAt.IsNull() {
+		anonymizeAt := c.AnonymizeAt.MustGet()
+		if v, err := c.CloseAt.Get(); err == nil {
+			if anonymizeAt.Before(v) {
+				return validate.WrapErrorWithField(errors.New("anonymize at must be after close date"), "AnonymizeAt")
+			}
+		}
+		if v, err := c.SendEndAt.Get(); err == nil {
+			if anonymizeAt.Before(v) {
+				return validate.WrapErrorWithField(errors.New("anonymize at must be after end date"), "AnonymizeAt")
+			}
+		}
+		if v, err := c.SendStartAt.Get(); err == nil {
+			if anonymizeAt.Before(v) {
+				return validate.WrapErrorWithField(errors.New("anonymize at must be after start date"), "AnonymizeAt")
+			}
+		}
+	}
+	if c.DataAnonymizeAt.IsSpecified() && !c.DataAnonymizeAt.IsNull() {
+		dataAnonymizeAt := c.DataAnonymizeAt.MustGet()
+		if v, err := c.CloseAt.Get(); err == nil {
+			if dataAnonymizeAt.Before(v) {
+				return validate.WrapErrorWithField(errors.New("anonymize submitted data at must be after close date"), "DataAnonymizeAt")
+			}
+		}
+		if v, err := c.SendEndAt.Get(); err == nil {
+			if dataAnonymizeAt.Before(v) {
+				return validate.WrapErrorWithField(errors.New("anonymize submitted data at must be after end date"), "DataAnonymizeAt")
+			}
+		}
+		if v, err := c.SendStartAt.Get(); err == nil {
+			if dataAnonymizeAt.Before(v) {
+				return validate.WrapErrorWithField(errors.New("anonymize submitted data at must be after start date"), "DataAnonymizeAt")
+			}
+		}
+	}
+	// validate jitter values if specified
+	// negative values are allowed for asymmetric jitter (e.g., -10 to 20 means send 10 min early to 20 min late)
+	jitterMinSpecified := c.JitterMin.IsSpecified() && !c.JitterMin.IsNull()
+	jitterMaxSpecified := c.JitterMax.IsSpecified() && !c.JitterMax.IsNull()
+
+	// both must be specified together or both unspecified
+	if jitterMinSpecified != jitterMaxSpecified {
+		return validate.WrapErrorWithField(errors.New("jitter min and max must both be specified or both be unspecified"), "jitter")
+	}
+
+	if jitterMinSpecified && jitterMaxSpecified {
+		jitterMin := c.JitterMin.MustGet()
+		jitterMax := c.JitterMax.MustGet()
+		if jitterMax < jitterMin {
+			return validate.WrapErrorWithField(errors.New("jitter max must be greater than or equal to jitter min"), "jitterMax")
+		}
+		// validate jitter doesn't exceed campaign duration
+		if c.SendStartAt.IsSpecified() && !c.SendStartAt.IsNull() && c.SendEndAt.IsSpecified() && !c.SendEndAt.IsNull() {
+			startAt := c.SendStartAt.MustGet()
+			endAt := c.SendEndAt.MustGet()
+			campaignDuration := endAt.Sub(startAt)
+
+			// check if max jitter (positive) could push beyond end time
+			maxJitterDuration := time.Duration(jitterMax) * time.Minute
+			if maxJitterDuration > campaignDuration {
+				return validate.WrapErrorWithField(
+					errors.New("jitter max cannot exceed campaign duration"),
+					"jitterMax",
+				)
+			}
+
+			// check if min jitter (negative) could push before start time
+			minJitterDuration := time.Duration(jitterMin) * time.Minute
+			if minJitterDuration < -campaignDuration {
+				return validate.WrapErrorWithField(
+					errors.New("jitter min cannot exceed campaign duration"),
+					"jitterMin",
+				)
+			}
+		}
+	}
+	// must not be set from api consumers
+	if c.NotableEventID.IsSpecified() && !c.NotableEventID.IsNull() {
+		c.NotableEventID.SetNull()
+	}
+
+	// validate webhookIncludeData enum
+	if c.WebhookIncludeData.IsSpecified() {
+		if level, err := c.WebhookIncludeData.Get(); err == nil {
+			if level != WebhookDataLevelNone &&
+				level != WebhookDataLevelBasic &&
+				level != WebhookDataLevelFull {
+				return validate.WrapErrorWithField(
+					errors.New("must be 'none', 'basic', or 'full'"),
+					"webhookIncludeData",
+				)
+			}
+		}
+	}
+
+	// validate webhookEvents is non-negative
+	if c.WebhookEvents.IsSpecified() && !c.WebhookEvents.IsNull() {
+		if events, err := c.WebhookEvents.Get(); err == nil {
+			if events < 0 {
+				return validate.WrapErrorWithField(
+					errors.New("must be non-negative"),
+					"webhookEvents",
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+// ValidateSendTimesSet checks that the send start and end times are set
+func (c *Campaign) ValidateSendTimesSet() error {
+	if err := validate.NullableFieldRequired("sendStartAt", c.SendStartAt); err != nil {
+		return err
+	}
+	if err := validate.NullableFieldRequired("sendEndAt", c.SendEndAt); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ValidateScheduledType checks times related to a scheduled type campaign
+func (c *Campaign) ValidateScheduledTimes() error {
+	if err := c.ValidateSendTimesSet(); err != nil {
+		return err
+	}
+	if err := validate.NullableFieldRequired("ConstraintWeekDays", c.ConstraintWeekDays); err != nil {
+		return err
+	}
+	if err := validate.NullableFieldRequired("ConstraintStartTime", c.ConstraintStartTime); err != nil {
+		return err
+	}
+	if err := validate.NullableFieldRequired("ConstraintEndTime", c.ConstraintEndTime); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ValidateNoSendTimesSet checks that the send start and end times are not set
+func (c *Campaign) ValidateNoSendTimesSet() error {
+	if c.SendStartAt.IsSpecified() && !c.SendStartAt.IsNull() {
+		return validate.WrapErrorWithField(errors.New("send start time must not be set"), "sendStartAt")
+	}
+	if c.SendEndAt.IsSpecified() && !c.SendEndAt.IsNull() {
+		return validate.WrapErrorWithField(errors.New("send end time must not be set"), "sendEndAt")
+	}
+	return nil
+}
+
+// ValidateEvasionAndDenyPages checks evasion page and deny page requirements
+func (c *Campaign) ValidateEvasionAndDenyPages() error {
+	// if evasion page is set, deny page must also be set
+	if c.EvasionPageID.IsSpecified() && !c.EvasionPageID.IsNull() {
+		if !c.DenyPageID.IsSpecified() || c.DenyPageID.IsNull() {
+			return validate.WrapErrorWithField(errors.New("evasion page requires a deny page to be set"), "evasionPage")
+		}
+	}
+
+	// if allow/deny IDs are set (IP filtering), deny page must be set
+	if c.AllowDenyIDs.IsSpecified() && !c.AllowDenyIDs.IsNull() && len(c.AllowDenyIDs.MustGet()) > 0 {
+		if !c.DenyPageID.IsSpecified() || c.DenyPageID.IsNull() {
+			return validate.WrapErrorWithField(errors.New("IP filtering requires a deny page to be set"), "denyPage")
+		}
+	}
+
+	return nil
+}
+
+// ToDBMap converts the fields that can be stored or updated to a map
+// if the value is nullable and not set, it is not included
+// if the value is nullable and set, it is included, if it is null, it is set to nil
+func (c *Campaign) ToDBMap() map[string]any {
+	m := map[string]any{}
+	if c.Name.IsSpecified() {
+		m["name"] = nil
+		if v, err := c.Name.Get(); err == nil {
+			m["name"] = v.String()
+		}
+	}
+	if c.SortField.IsSpecified() {
+		m["sort_field"] = nil
+		if v, err := c.SortField.Get(); err == nil {
+			m["sort_field"] = v.String()
+		}
+	}
+	if c.SortOrder.IsSpecified() {
+		m["sort_order"] = nil
+		if v, err := c.SortOrder.Get(); err == nil {
+			m["sort_order"] = v.String()
+		}
+	}
+	if c.SendStartAt.IsSpecified() {
+		m["send_start_at"] = nil
+		if v, err := c.SendStartAt.Get(); err == nil {
+			m["send_start_at"] = utils.RFC3339UTC(v)
+		}
+	}
+	if c.ConstraintWeekDays.IsSpecified() {
+		m["constraint_week_days"] = nil
+		if v, err := c.ConstraintWeekDays.Get(); err == nil {
+			m["constraint_week_days"] = v.Int()
+		}
+	}
+	if c.ConstraintStartTime.IsSpecified() {
+		m["constraint_start_time"] = nil
+		if v, err := c.ConstraintStartTime.Get(); err == nil {
+			m["constraint_start_time"] = v.String()
+		}
+	}
+	if c.ConstraintEndTime.IsSpecified() {
+		m["constraint_end_time"] = nil
+		if v, err := c.ConstraintEndTime.Get(); err == nil {
+			m["constraint_end_time"] = v.String()
+		}
+	}
+	if c.SendEndAt.IsSpecified() {
+		m["send_end_at"] = nil
+		if v, err := c.SendEndAt.Get(); err == nil {
+			m["send_end_at"] = utils.RFC3339UTC(v)
+		}
+	}
+	if c.ScheduleAt.IsSpecified() {
+		m["schedule_at"] = nil
+		if v, err := c.ScheduleAt.Get(); err == nil {
+			m["schedule_at"] = utils.RFC3339UTC(v)
+		}
+	}
+	if c.CloseAt.IsSpecified() {
+		m["close_at"] = nil
+		if v, err := c.CloseAt.Get(); err == nil {
+			m["close_at"] = utils.RFC3339UTC(v)
+		}
+	}
+	if c.ClosedAt.IsSpecified() {
+		m["closed_at"] = nil
+		if v, err := c.ClosedAt.Get(); err == nil {
+			m["closed_at"] = utils.RFC3339UTC(v)
+		}
+	}
+	if c.AnonymizeAt.IsSpecified() {
+		m["anonymize_at"] = nil
+		if v, err := c.AnonymizeAt.Get(); err == nil {
+			m["anonymize_at"] = utils.RFC3339UTC(v)
+		}
+	}
+	if c.DataAnonymizeAt.IsSpecified() {
+		m["data_anonymize_at"] = nil
+		if v, err := c.DataAnonymizeAt.Get(); err == nil {
+			m["data_anonymize_at"] = utils.RFC3339UTC(v)
+		}
+	}
+	if c.IsTraining.IsSpecified() {
+		m["is_training"] = false
+		if v, err := c.IsTraining.Get(); err == nil {
+			m["is_training"] = v
+		}
+	}
+	if c.SaveSubmittedData.IsSpecified() {
+		m["save_submitted_data"] = false
+		if v, err := c.SaveSubmittedData.Get(); err == nil {
+			m["save_submitted_data"] = v
+		}
+	}
+	if c.SaveBrowserMetadata.IsSpecified() {
+		m["save_browser_metadata"] = false
+		if v, err := c.SaveBrowserMetadata.Get(); err == nil {
+			m["save_browser_metadata"] = v
+		}
+	}
+	if c.IsTest.IsSpecified() {
+		m["is_test"] = false
+		if v, err := c.IsTest.Get(); err == nil {
+			m["is_test"] = v
+		}
+	}
+	if c.IsAnonymous.IsSpecified() {
+		m["is_anonymous"] = false
+		if v, err := c.IsAnonymous.Get(); err == nil {
+			m["is_anonymous"] = v
+		}
+	}
+	if c.Obfuscate.IsSpecified() {
+		m["obfuscate"] = false
+		if v, err := c.Obfuscate.Get(); err == nil {
+			m["obfuscate"] = v
+		}
+	}
+	if c.WebhookIncludeData.IsSpecified() {
+		m["webhook_include_data"] = WebhookDataLevelFull
+		if v, err := c.WebhookIncludeData.Get(); err == nil {
+			m["webhook_include_data"] = v
+		}
+	}
+	if c.WebhookEvents.IsSpecified() {
+		m["webhook_events"] = 0
+		if v, err := c.WebhookEvents.Get(); err == nil {
+			m["webhook_events"] = v
+		}
+	}
+	if c.TemplateID.IsSpecified() {
+		m["campaign_template_id"] = nil
+		if v, err := c.TemplateID.Get(); err == nil {
+			m["campaign_template_id"] = v.String()
+		}
+	}
+	if c.CompanyID.IsSpecified() {
+		if c.CompanyID.IsNull() {
+			m["company_id"] = nil
+		} else {
+			m["company_id"] = c.CompanyID.MustGet()
+		}
+	}
+	if c.DenyPageID.IsSpecified() {
+		m["deny_page_id"] = nil
+		if v, err := c.DenyPageID.Get(); err == nil {
+			m["deny_page_id"] = v.String()
+		}
+	}
+	if c.EvasionPageID.IsSpecified() {
+		m["evasion_page_id"] = nil
+		if v, err := c.EvasionPageID.Get(); err == nil {
+			m["evasion_page_id"] = v.String()
+		}
+	}
+	if c.WebhookID.IsSpecified() {
+		m["webhook_id"] = nil
+		if v, err := c.WebhookID.Get(); err == nil {
+			m["webhook_id"] = v.String()
+		}
+	}
+	if v, err := c.NotableEventID.Get(); err == nil {
+		m["notable_event_id"] = v.String()
+	}
+	if c.JitterMin.IsSpecified() {
+		m["jitter_min"] = nil
+		if v, err := c.JitterMin.Get(); err == nil {
+			m["jitter_min"] = v
+		}
+	}
+	if c.JitterMax.IsSpecified() {
+		m["jitter_max"] = nil
+		if v, err := c.JitterMax.Get(); err == nil {
+			m["jitter_max"] = v
+		}
+	}
+	// the lure settings are left out. a create or update request carries whatever
+	// a caller put in those fields, so the snapshot is written only by
+	// SetLureSettingsByID, from the template, at the first schedule.
+
+	return m
+}
+
+// LureSettings returns the snapshotted lure URL settings, falling back to the
+// defaults for campaigns created before the columns existed.
+//
+// Each value is rechecked rather than trusted, so anything unusable becomes a
+// default here instead of failing the schedule during allocation.
+func (c *Campaign) LureSettings() (mode string, algorithm lure.Algorithm, length int) {
+	mode = data.LureURLModeQuery
+	algorithm = lure.DefaultAlgorithm
+	length = lure.DefaultLength
+	if v, err := c.LureURLMode.Get(); err == nil && data.IsValidLureURLMode(v) {
+		mode = v
+	}
+	if v, err := c.LureCodeAlgo.Get(); err == nil && lure.IsValidAlgorithm(lure.Algorithm(v)) {
+		algorithm = lure.Algorithm(v)
+	}
+	if v, err := c.LureCodeLength.Get(); err == nil && v >= lure.MinLength && v <= lure.MaxLength {
+		length = v
+	}
+	return mode, algorithm, length
+}
+
+// UsesLureCodePath reports whether this campaign's lure URLs carry the recipient
+// as a path segment.
+func (c *Campaign) UsesLureCodePath() bool {
+	mode, _, _ := c.LureSettings()
+	return mode == data.LureURLModePath
+}
+
+// Close sets the close at timestamp to now
+// dont confuse with method Closed
+func (c *Campaign) Close() error {
+	if c.ClosedAt.IsSpecified() && !c.ClosedAt.IsNull() {
+		return errs.ErrCampaignAlreadyClosed
+	}
+	if c.CloseAt.IsSpecified() && !c.CloseAt.IsNull() {
+		return errs.ErrCampaignAlreadySetToClose
+	}
+	c.CloseAt.Set(time.Now().UTC())
+	return nil
+}
+
+// Closed sets the closed at timestamp to now
+// dont confuse with method Close
+func (c *Campaign) Closed() error {
+	if c.ClosedAt.IsSpecified() && !c.ClosedAt.IsNull() {
+		return errs.ErrCampaignAlreadyClosed
+	}
+	c.ClosedAt.Set(time.Now().UTC())
+	return nil
+}
+
+// Anonymize sets the anonymized at timestamp
+func (c *Campaign) Anonymize() error {
+	if c.AnonymizedAt.IsSpecified() && !c.AnonymizedAt.IsNull() {
+		return errs.ErrCampaignAlreadyAnonymized
+	}
+	c.AnonymizedAt.Set(time.Now().UTC())
+	return nil
+}
+
+// IsActive returns true if the campaign is active
+func (c *Campaign) IsActive() bool {
+	now := time.Now()
+	if c.ClosedAt.IsSpecified() && !c.ClosedAt.IsNull() && c.ClosedAt.MustGet().Before(now) {
+		return false
+	}
+	return true
+}
+
+// IsSelfManaged returns true if the campaign is self managed
+func (c *Campaign) IsSelfManaged() bool {
+	return c.SendStartAt.IsSpecified() && c.SendStartAt.IsNull() && c.SendEndAt.IsSpecified() && c.SendEndAt.IsNull()
+}

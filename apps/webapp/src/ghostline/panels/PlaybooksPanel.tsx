@@ -115,14 +115,21 @@ export function PlaybooksPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) =
                         {row.author ? ` · ${row.author}` : ""}
                       </span>
                       {!row.valid ? (
-                        <span className="ui-gl-invalid" data-testid={`gl-invalid-${row.playbookId}`}>
+                        <span
+                          className="ui-gl-invalid"
+                          data-testid={`gl-invalid-${row.playbookId}`}
+                        >
                           rejected: {row.invalidReason}
                         </span>
                       ) : null}
                     </span>
                     <span className="ui-gl-techniques">
                       {row.techniques.map((t) => (
-                        <Badge key={t.id} tone="analytical" title={`${t.reason} (${row.mappingSource})`}>
+                        <Badge
+                          key={t.id}
+                          tone="analytical"
+                          title={`${t.reason} (${row.mappingSource})`}
+                        >
                           {t.id}
                         </Badge>
                       ))}
@@ -136,7 +143,8 @@ export function PlaybooksPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) =
             <Missing
               testId="gl-playbooks-invalid"
               items={Object.entries(invalid).map(
-                ([id, reason]) => `playbook ${id} was rejected by the donor's validator — ${reason}`,
+                ([id, reason]) =>
+                  `playbook ${id} was rejected by the donor's validator — ${reason}`,
               )}
             />
           ) : null}
@@ -144,9 +152,7 @@ export function PlaybooksPanel({ onNavigate }: { onNavigate?: (panel: GlPanel) =
         </div>
 
         <div className="ui-ci-col">
-          <span className="ui-pane-title">
-            {detail ? detail.name : "Stage ladder"}
-          </span>
+          <span className="ui-pane-title">{detail ? detail.name : "Stage ladder"}</span>
           {detail ? (
             <>
               {detail.description ? <p className="panel-note">{detail.description}</p> : null}
@@ -190,7 +196,11 @@ function StageCard({ stage }: { stage: GlStageRow }) {
         {stage.persona ? <Chip label={stage.persona} tone="analytical" /> : null}
         {stage.branching ? (
           <Chip
-            label={stage.gotoOnSuccess ? `on match → ${stage.gotoOnSuccess}` : `on fail → ${stage.gotoOnFail}`}
+            label={
+              stage.gotoOnSuccess
+                ? `on match → ${stage.gotoOnSuccess}`
+                : `on fail → ${stage.gotoOnFail}`
+            }
             tone="gold"
             title="This stage declares a branch, so the ladder is not a straight line."
             testId={`gl-branch-${stage.stage}`}
@@ -206,7 +216,11 @@ function StageCard({ stage }: { stage: GlStageRow }) {
         ) : null}
       </header>
 
-      {stage.prompt ? <p className="ui-gl-stage-prompt">{stage.prompt}</p> : <Empty>No prompt.</Empty>}
+      {stage.prompt ? (
+        <p className="ui-gl-stage-prompt">{stage.prompt}</p>
+      ) : (
+        <Empty>No prompt.</Empty>
+      )}
 
       <dl className="ui-gl-stage-facts">
         <div>
@@ -235,7 +249,9 @@ function StageCard({ stage }: { stage: GlStageRow }) {
         </div>
       </dl>
 
-      {stage.checkinLine ? <p className="ui-gl-stage-checkin">on silence: “{stage.checkinLine}”</p> : null}
+      {stage.checkinLine ? (
+        <p className="ui-gl-stage-checkin">on silence: “{stage.checkinLine}”</p>
+      ) : null}
     </article>
   );
 }

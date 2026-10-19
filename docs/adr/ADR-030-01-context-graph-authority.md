@@ -39,11 +39,32 @@ obligation is supported by that observation" — is process bookkeeping. Treatin
 it carried the authority of the first is the specific failure ADR-0027's Principle IV warns about,
 and it is the failure that produces a graph which looks authoritative and is not.
 
-**[MEASURED]** A second live risk sits alongside this one. `neo4j` 5.21 is a declared dependency of
-`apps/control-plane` with **no matching configuration variable** in `.env.example`
-(`research.md §1.3`; `plan.md §Technical Context`). The driver is installed, the service is
-unconfigured. ADR-0027 makes Neo4j a projection; an unconfigured projection driver is a live
-foot-gun for exactly the "library installed ≠ service available" mistake.
+**[MEASURED]** A second live risk sits alongside this one, and the feature documents misdescribe it.
+`research.md:84` records Neo4j as *"(no env var found) — neo4j driver declared but no connection
+variable"*, and `tasks.md` T008 repeats it as *"no matching configuration variable in `.env.example`"*.
+**That claim is false against the current tree.** `neo4j>=5.21` is declared at
+`apps/control-plane/pyproject.toml:27`; `.env.example:37-40` declares `NEO4J_URI`, `NEO4J_USER` and
+`NEO4J_PASSWORD`; and `apps/shared/config/settings.py:70-72` binds `neo4j_uri`, `neo4j_user` and
+`neo4j_password` with defaults matching those values exactly. The variables were already present at
+commit `608c3ad8`, the commit the feature documents were written against, so this is a measurement
+error in the source documents rather than a later repair. It is flagged for correction at T014 and is
+**not** restated here.
+
+The real defect is narrower and is what `research.md:388` was reaching for. The configuration is
+declared and **nothing consumes it**: `Neo4jGraphStore.__init__` at
+`apps/projection/graph/neo4j.py:24-27` takes an **injected** driver and raises
+`RuntimeError("Neo4jGraphStore requires a neo4j.Driver instance")` when none is supplied. A search of
+`apps/`, `bench/` and `tools/` for `graph.Driver`, `neo4j.Driver`, `import neo4j` and
+`Neo4jGraphStore(` returns **no production construction at all** — the only instantiations are
+`apps/projection/tests/unit/test_neo4j_relation_write.py:70` and
+`apps/projection/tests/test_projection.py:199`, both passing a `FakeDriver` or bypassing `__init__`.
+`deploy/specops/lab/docker-compose.yml` declares no `neo4j` service.
+
+So the failure mode is real but it is not "unconfigured". It is **declared-but-unconsumed**: a
+declared dependency, three declared environment variables, a bound settings class, a tested adapter —
+and no production path that ever constructs a driver. ADR-0027 makes Neo4j a projection, so this is
+the "library installed ≠ service available" mistake with one more layer: here the service is neither
+available *nor* reachable, and a reader of `.env.example` has every reason to believe otherwise.
 
 ## Decision
 
@@ -94,9 +115,11 @@ decision*, adopted *as a scope limit*. The kind-level split (D1/D2) is decidable
 kinds have genuinely different semantics. The field-level map is not, so D5 names it rather than
 pretending to it.
 
-**D — Also declare Neo4j's configuration defect resolved here.** Rejected. It is a code/config
-defect, not an architecture decision, and it belongs to T127, which already owns it. An ADR that
-fixes a port is an ADR that stops being an ADR.
+**D — Also declare Neo4j's consumption defect resolved here.** Rejected. It is a wiring and
+deployment defect, not an architecture decision, and it belongs to T127, which already owns
+`deploy/specops/lab/docker-compose.yml` and `.env.example` reconciliation. An ADR that wires a
+driver is an ADR that stops being an ADR. The measured defect is recorded above so T127 inherits a
+correct statement of it rather than the feature documents' incorrect one.
 
 ## Consequences
 
@@ -116,8 +139,9 @@ fixes a port is an ADR that stops being an ADR.
   always ambiguous, and the ambiguity was going to surface as a bug rather than as a design note.
 - D5 is currently unenforced because T008 has not produced the field map. Until it does, a reviewer
   is the only check. This is a real gap, recorded rather than papered over.
-- Neo4j remains declared-but-unconfigured until T127. A driver with no configuration variable is
-  dead code that looks live.
+- Neo4j remains declared-and-unconsumed until T127. The dependency, the three environment variables
+  and the settings binding all exist and all look correct; what does not exist is any production path
+  that constructs a driver. That is harder to notice than a missing variable, not easier.
 
 **Not changed**
 
@@ -133,8 +157,10 @@ fixes a port is an ADR that stops being an ADR.
 - [ ] No code path writes a real-world entity relation into the Context Graph as process state; the
       relation exists as a projection of a canonical claim carrying `recorded_at`.
 - [ ] A repository search finds no `apps/context-engine/` directory.
-- [ ] `neo4j` appears in `apps/control-plane/pyproject.toml` with a matching configuration variable
-      in `.env.example`, or is removed (T127).
+- [ ] Exactly one of the two states holds, and which one is recorded: either a production call site
+      constructs a `neo4j.Driver` from `settings.neo4j_*`, or the dependency is removed from
+      `apps/control-plane/pyproject.toml:27` (T127). The current state — declared, configured, bound
+      and unconstructed — satisfies neither and is the defect.
 - [ ] T008's ownership map exists and names exactly one writer per field.
 
 ## Open
@@ -142,3 +168,12 @@ fixes a port is an ADR that stops being an ADR.
 - **D5 is unenforced until T008** (`current-state-audit.md §4`, authoritative-store ownership map)
   lands. The field-level authority map does not exist; `current-state-audit.md §3–§6` records T008 as
   `[ ]`. This ADR decides the principle, not the map, and does not invent the map.
+- **Two feature documents assert a Neo4j configuration defect that does not exist, and the
+  correction is not mine to make.** `research.md:84` and `tasks.md` T008 both record Neo4j as having
+  no connection variable. `.env.example:37-40` and `apps/shared/config/settings.py:70-72` contradict
+  that. **T014** owns *"reconcile `specs/024`… and `docs/README.md` against the executing commit…
+  correct historical claims that conflict with code rather than copying them forward"*, and this is
+  such a claim. This ADR records the measured state and does not edit documents it does not own.
+  Note that the corrected finding is *more* serious than the one it replaces — nothing constructs a
+  driver, which a reader of `.env.example` cannot see — so the correction should not be treated as
+  downgrading the item.

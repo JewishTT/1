@@ -16,9 +16,11 @@ from __future__ import annotations
 
 import enum
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
 
-from domain.investigation_context import ContextRevision, InvestigationContext
+from domain.investigation_context import ContextEngineError, ContextRevision, InvestigationContext
 
 from context_engine.obligations import (
     ActionMemoryEntry,
@@ -33,6 +35,157 @@ class StoreDurability(enum.StrEnum):
 
     MEMORY = "memory"
     DURABLE = "durable"
+
+
+#: The change kinds the context engine publishes. Closed, because an open-ended stream of
+#: "context happened" is an event log nobody subscribes to.
+CHANGE_KINDS: tuple[str, ...] = (
+    "obligation.created",
+    "obligation.transitioned",
+    "action.proposed",
+    "decision.recorded",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ContextChange:
+    """One obligation / action / decision change, on its way out of the engine (T051).
+
+    Carries its own causal identifiers -- tenant, context, subject, revision -- because a
+    downstream consumer that has to join against the context store to find out which
+    investigation a change belongs to has already lost the ordering guarantee the
+    outbox exists to provide.
+    """
+
+    kind: str
+    tenant_id: str
+    context_id: str
+    subject_id: str
+    revision_id: str = ""
+    payload: Mapping[str, Any] = None  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        if self.kind not in CHANGE_KINDS:
+            raise ContextEngineError(
+                "change_kind_unknown",
+                f"{self.kind!r} is not one of {CHANGE_KINDS}; an undeclared change kind is a "
+                "second publication vocabulary, and there is exactly one",
+            )
+        for name in ("tenant_id", "context_id", "subject_id"):
+            if not str(getattr(self, name)).strip():
+                raise ContextEngineError(
+                    "change_scope_missing",
+                    f"a context change must name its {name}; an unscoped change is "
+                    "undeliverable and, worse, readable by the wrong tenant (FR-090)",
+                )
+        object.__setattr__(self, "payload", dict(self.payload or {}))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "kind": self.kind,
+            "tenant_id": self.tenant_id,
+            "context_id": self.context_id,
+            "subject_id": self.subject_id,
+            "revision_id": self.revision_id,
+            "payload": dict(self.payload),
+        }
+
+
+class ChangePublisher(ABC):
+    """The **single** publication seam for obligation / action / decision changes (T051).
+
+    One interface, one implementation in production. The engine holds exactly one of
+    these and routes every obligation, action and decision change through it; there is no
+    second queue behind it, no fire-and-forget append, and no "log it in the decision
+    recorder instead" fallback. :func:`context_engine.engine.assert_publication_is_single`
+    checks that mechanically.
+
+    Concrete implementations:
+
+    * :class:`InMemoryChangePublisher` -- the reference, matching a memory-durability
+      store. Correct within a process, loses everything on exit.
+    * :class:`SqlOutboxChangePublisher` -- binds to the repository's existing
+      ``db.materialization_outbox.SqlMaterializationOutbox``. Transactional-outbox
+      semantics, already built and already reviewed; the context engine adds a binding,
+      not a broker.
+    """
+
+    @abstractmethod
+    async def publish(self, change: ContextChange) -> None: ...
+
+    async def publish_all(self, changes: list[ContextChange] | tuple[ContextChange, ...]) -> None:
+        for change in changes:
+            await self.publish(change)
+
+
+class InMemoryChangePublisher(ChangePublisher):
+    """Reference publisher. Mirrors the store: right in-process, gone on exit."""
+
+    def __init__(self) -> None:
+        self.published: list[ContextChange] = []
+
+    async def publish(self, change: ContextChange) -> None:
+        self.published.append(change)
+
+    def kinds(self) -> tuple[str, ...]:
+        return tuple(change.kind for change in self.published)
+
+
+class SqlOutboxChangePublisher(ChangePublisher):
+    """Binds context changes to the **existing** ``materialization_outbox`` (T051).
+
+    Not a new table and not a new queue. ``SqlMaterializationOutbox`` already provides the
+    transactionally-safe hand-off, the ready-claim and the retry accounting; this class
+    only maps a :class:`ContextChange` onto its ``enqueue`` call. Its idempotency key is
+    ``(tenant_id, run_id)``, so the change is addressed by the revision that produced it
+    and re-publishing the same revision is a no-op at the outbox rather than a duplicate
+    delivery -- which is FR-065, enforced by the table's unique index rather than by
+    anything written here.
+
+    The outbox parameter is typed structurally so ``context_engine`` does not have to
+    import ``db`` at module load. :func:`outbox_enqueue_contract` states the shape it
+    needs and is asserted against the real class in the tests.
+    """
+
+    #: ``enqueue``'s keyword-only signature, restated so a mismatch is caught here rather
+    #: than at the first publish.
+    WORKFLOW_PREFIX = "context-engine"
+
+    def __init__(self, outbox: Any, *, workflow_prefix: str = "") -> None:
+        if not callable(getattr(outbox, "enqueue", None)):
+            raise ContextEngineError(
+                "outbox_not_enqueueable",
+                "the change publisher binds to SqlMaterializationOutbox; the object "
+                f"supplied has no enqueue() ({type(outbox).__name__}), so this would be a "
+                "second publication path with a different name",
+            )
+        self.outbox = outbox
+        self.workflow_prefix = workflow_prefix or self.WORKFLOW_PREFIX
+
+    async def publish(self, change: ContextChange) -> None:
+        await self.outbox.enqueue(
+            tenant_id=change.tenant_id,
+            entity_id=change.subject_id,
+            run_id=change.revision_id or change.context_id,
+            workflow_id=f"{self.workflow_prefix}.{change.kind}",
+            identity={
+                "kind": change.kind,
+                "context_id": change.context_id,
+                "subject_id": change.subject_id,
+                "revision_id": change.revision_id,
+                **dict(change.payload),
+            },
+        )
+
+
+def outbox_enqueue_contract() -> tuple[str, ...]:
+    """The parameter names ``SqlOutboxChangePublisher`` relies on.
+
+    Returned rather than imported so the assertion can be made against the real
+    ``SqlMaterializationOutbox`` from a test that has the database package on its path,
+    while ``store.py`` itself stays free of it.
+    """
+    return ("tenant_id", "entity_id", "run_id", "workflow_id", "identity")
 
 
 class ContextStore(ABC):
@@ -216,8 +369,14 @@ class ReplayResult:
 
 
 __all__ = [
+    "CHANGE_KINDS",
+    "ChangePublisher",
+    "ContextChange",
     "ContextStore",
+    "InMemoryChangePublisher",
     "InMemoryContextStore",
     "ReplayResult",
+    "SqlOutboxChangePublisher",
     "StoreDurability",
+    "outbox_enqueue_contract",
 ]

@@ -91,4 +91,22 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
+
+  // Node-run scripts under `scripts/` — screenshot harnesses, maintenance tools.
+  // They are ESM `.mjs` running in Node, so they get Node globals; without this they
+  // fall through to `js.configs.recommended` and every `process` reference is a
+  // `no-undef` error, which is noise rather than a finding.
+  //
+  // Browser globals are declared alongside because a Playwright harness does not only
+  // run in Node: every `page.evaluate` callback is compiled and linted here but
+  // executes inside the page. Declaring both is the honest description of the file
+  // rather than a suppression comment.
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
 );

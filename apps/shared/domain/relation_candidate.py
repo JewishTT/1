@@ -130,7 +130,11 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
-from domain.predicate_hypothesis import PredicateHypothesis
+from domain.predicate_hypothesis import (
+    PredicateHypothesis,
+    PredicateRaw,
+    PredicateResolutionState,
+)
 from domain.predicate_signature import (
     ArgumentSlot,
     ParticipantBinding,
@@ -1229,6 +1233,67 @@ class RelationCandidate:
         ``ARBITRATION`` §3 exists to end: a structural disagreement is not a denial.
         """
         return self.assembly_state in CONFLICTING_ASSEMBLY_STATES
+
+    @property
+    def predicate_raw(self) -> PredicateRaw:
+        """The predicate label with its span, as the observation gave it (FR-013).
+
+        A **property, not a field**, and that is the whole design decision. A field would
+        have to be classified by :func:`verify_candidate_field_partition`, and every
+        available classification is wrong:
+
+        * as identity material it would re-key every stored ``CAND-``/``CNDR-`` id;
+        * as revision material it enters ``candidate_id`` and forks every candidate;
+        * as mutable projection metadata it would weaken the guarantee that two candidates
+          sharing a ``candidate_id`` differ *only* in ``confidence``.
+
+        None of those is a change this model needs. :attr:`relation_surface`,
+        :attr:`predicate_hypothesis` and :attr:`trigger_span` are already revision
+        material, so every input here is already inside the address and this is a pure
+        projection of it. Deriving rather than storing is also what makes FR-013's rule
+        unbreakable: the label cannot go missing from the address while being present in
+        the record, because the record computes it from address material.
+
+        The span is filled in from :attr:`trigger_span` -- the cue phrase the extractor
+        actually matched. When there is no trigger span the label travels alone rather
+        than borrowing some other field's location, which would be a fabricated citation.
+        """
+        raw = self.predicate_hypothesis.predicate_raw
+        if raw.has_span or self.trigger_span is None:
+            return raw
+        return PredicateRaw(
+            label=raw.label,
+            origin=raw.origin,
+            span_ref=self.trigger_span.segment_ref,
+            char_start=self.trigger_span.start,
+            char_end=self.trigger_span.end,
+        )
+
+    @property
+    def predicate_is_unknown(self) -> bool:
+        """Whether the vocabulary reaches on this predicate at all.
+
+        The question a consumer must be able to ask without inspecting three fields, and
+        the one whose answer must never be inferred from an absent operator ref: an
+        absent ref is also what a *typed* relation looks like before this module derived
+        one, so "no ref" alone is not an answer.
+        """
+        return self.predicate_hypothesis.resolution_state is PredicateResolutionState.UNKNOWN
+
+    def predicate_raw_payload(self) -> dict[str, Any]:
+        """The wire form for projection, API and UI. Label, origin and span together.
+
+        A separate call rather than a ``to_dict`` because this dataclass has no single
+        serialiser -- its consumers serialise different subsets -- and adding one would
+        imply a canonical form that does not exist. What does exist is that a reader of a
+        relation needs the predicate, and this is what they get.
+        """
+        return {
+            **self.predicate_raw.to_dict(),
+            "resolution_state": str(self.predicate_hypothesis.resolution_state),
+            "is_unknown": self.predicate_is_unknown,
+            "candidate_id": self.candidate_id,
+        }
 
     @property
     def content_hash(self) -> str:

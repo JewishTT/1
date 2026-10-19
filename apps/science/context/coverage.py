@@ -27,6 +27,18 @@ declared coverage, and **unknown detection power means ``INFORMATIONAL_ONLY``
 always**. Without that, an unsuccessful search would silently become evidence of
 absence, which is the single most common way an investigation manufactures a
 negative finding.
+
+Two additions, both extending rather than replacing:
+
+* :class:`DetectionPower` gives a source the ability to *declare* what it would have
+  found. §13A stores a power per absence; nothing upstream said where that number came
+  from, so a caller could write any number it liked at the point of maximum
+  temptation. This moves the declaration to the source, where declaring it is a
+  statement about the source rather than about the conclusion.
+* :func:`assert_states_absence` is contract 07 R4's gate. The envelope type upstream
+  refuses to be *built* without status/coverage/provenance/limitations; this refuses
+  to let a *populated* payload through without them, which is the version that
+  survives review because there is no empty list to draw the eye.
 """
 
 from __future__ import annotations
@@ -241,6 +253,126 @@ class AbsenceAdmissibility(enum.StrEnum):
 
     NEGATIVE_EVIDENCE = "negative_evidence"
     INFORMATIONAL_ONLY = "informational_only"
+
+
+# -- FR-014: declared or unknown detection power -------------------------------
+
+
+class DetectionPowerBasis(enum.StrEnum):
+    """Where a source's detection power came from, or that nobody declared it.
+
+    ``UNDECLARED`` is a *value*, not a missing field. A source that has never said
+    what it would have found is a fact about that source, and it has consequences that
+    are different every time -- it may not contribute negative support, and any
+    zero-result from it is informational only. Leaving the field empty would make
+    "not declared" and "declared as zero" the same value, and a source that
+    demonstrably cannot see into a paywalled corpus must never read as one that
+    looked there and found nothing.
+
+    The two declared bases differ in what they mean. ``MEASURED`` is a number somebody
+    produced by a stated method; ``DECLARED`` is a source's own claim, which is weaker
+    evidence and is labelled as such rather than presented as a measurement.
+    """
+
+    UNDECLARED = "undeclared"
+    DECLARED = "declared"
+    MEASURED = "measured"
+
+
+@dataclass(frozen=True, slots=True)
+class DetectionPower:
+    """A source's declared ability to find a thing it was asked to look for.
+
+    Three states, held apart, because FR-014's rule turns on which one you have:
+
+    * ``None`` / :attr:`DetectionPowerBasis.UNDECLARED` -- nobody said. Every zero-result
+      from this source is ``INFORMATIONAL_ONLY`` and no absence claim may be made.
+    * a value with ``DECLARED`` -- the source says it would have found it. Absence claims
+      become possible; the claim is attributed to the source, not to the platform.
+    * a value with ``MEASURED`` -- somebody measured it. Strongest, and still only ever
+      grounds an absence for the query shape it was measured on.
+
+    :attr:`method` is required for a declared or measured power. A power with no stated
+    method is a number a reader cannot check or contest, which is the same defect as a
+    probability without semantics (obligation U3).
+    """
+
+    value: float | None = None
+    basis: DetectionPowerBasis = DetectionPowerBasis.UNDECLARED
+    method: str = ""
+    source_id: str = ""
+    applies_to_query_kind: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "basis", DetectionPowerBasis(self.basis))
+        if self.value is None:
+            if self.basis is not DetectionPowerBasis.UNDECLARED:
+                raise ValueError(
+                    f"detection_power basis is {self.basis.value!r} but no value was given; "
+                    "a declared power without a number is a claim about nothing"
+                )
+            return
+        if not 0.0 <= self.value <= 1.0:
+            raise ValueError(f"detection power must be in [0, 1], got {self.value}")
+        if not self.method.strip():
+            raise ValueError(
+                "a declared or measured detection power must name the method that produced "
+                "it; a number with no method is a number a reader cannot check (FR-014)"
+            )
+
+    @classmethod
+    def undeclared(cls, source_id: str = "") -> DetectionPower:
+        """The honest default: nobody has said what this source would have found."""
+        return cls(source_id=source_id)
+
+    @property
+    def is_declared(self) -> bool:
+        return self.value is not None
+
+    @property
+    def may_support_absence(self) -> bool:
+        """Whether this source can underwrite a qualified absence at all.
+
+        False for every undeclared source, without exception and regardless of how
+        good the coverage was. This is the single check the whole user story turns on.
+        """
+        return self.is_declared
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "source_id": self.source_id,
+            "detection_power": self.value,
+            "basis": self.basis.value,
+            "method": self.method,
+            "applies_to_query_kind": self.applies_to_query_kind,
+            "may_support_absence": self.may_support_absence,
+        }
+
+
+def detection_power_from_definition(
+    definition: Any,
+    *,
+    method: str = "source catalogue declaration",
+) -> DetectionPower:
+    """Read a source's detection power off whatever ``SourceDefinition`` it is.
+
+    Written against the attribute rather than the class because there are two
+    ``SourceDefinition`` types in the tree -- the acquisition catalogue's and the
+    context-engine bridge's -- and the rule FR-014 imposes is the same for both: an
+    absent or non-numeric attribute is ``UNDECLARED``, never a default of 1.0. A
+    default of 1.0 here would make every source in the catalogue a certified
+    exhaustive search, which is the exact failure this exists to prevent.
+    """
+    raw = getattr(definition, "detection_power", None)
+    source_id = str(getattr(definition, "source_id", "") or getattr(definition, "name", "") or "")
+    if raw is None or raw == "":
+        return DetectionPower.undeclared(source_id)
+    return DetectionPower(
+        value=float(raw),
+        basis=DetectionPowerBasis.MEASURED,
+        method=method,
+        source_id=source_id,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -567,3 +699,47 @@ def independence_obstruction(assessment: IndependenceAssessment):
             member for group in assessment.groups for member in group.members
         ),
     )
+
+
+# -- contract 07 R4 / T075: a bare ``[]`` is never the answer ------------------
+#
+# Contract 07 R4 names five situations a bare ``[]`` cannot tell apart: no candidates,
+# provider unavailable, query unsupported, budget truncated, policy blocked. Each is a
+# different state of the world and they need opposite client behaviour, so the
+# difference has to travel *with* the response rather than being inferred from its
+# emptiness.
+#
+# ``contracts.error_codes.EmptyStateEnvelope`` already refuses to be built without
+# status, coverage, provenance and limitations. What is missing, and what lives here,
+# is the other half: a check that a *populated* response carries the same four, because
+# a response with candidates and no coverage statement is a response that cannot say
+# what it did not cover -- which is the more common way the omission happens, since
+# there is no obviously empty payload to prompt a second look.
+
+
+class BareEmptyResultError(ValueError):
+    """An empty or coverage-free result set was about to leave this module."""
+
+
+def assert_states_absence(payload: dict[str, Any]) -> dict[str, Any]:
+    """R4 gate for any dict-shaped result payload: never bare, never coverage-free.
+
+    Returns the payload unchanged when it satisfies R4, and raises otherwise. Both
+    directions are checked: a bare ``[]``/``{}`` and a populated response that omits
+    ``coverage`` are the same defect with different camouflage.
+    """
+    for key in ("status", "coverage", "provenance", "limitations"):
+        if key not in payload:
+            raise BareEmptyResultError(
+                f"a result payload must carry {key!r} even when it is not empty; a bare list "
+                "does not distinguish no-candidates from provider-unavailable from "
+                "query-unsupported from budget-truncated from policy-blocked (contract 07 R4)"
+            )
+        value = payload[key]
+        if value is None or (isinstance(value, str | tuple | list | dict) and not value):
+            raise BareEmptyResultError(
+                f"result payload {key!r} is present but empty, which is the R4 violation in "
+                "the form that survives review: 'we included the field' is not the same "
+                "claim as 'the field says something' (contract 07 R4)"
+            )
+    return payload

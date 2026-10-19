@@ -1,0 +1,2849 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/oapi-codegen/nullable"
+	"github.com/phishingclub/phishingclub/cache"
+	"github.com/phishingclub/phishingclub/data"
+	"github.com/phishingclub/phishingclub/database"
+	"github.com/phishingclub/phishingclub/errs"
+	"github.com/phishingclub/phishingclub/model"
+	"github.com/phishingclub/phishingclub/utils"
+	"github.com/phishingclub/phishingclub/vo"
+	"gorm.io/gorm"
+)
+
+var allowedCampaignColumns = []string{
+	TableColumn(database.CAMPAIGN_TABLE, "created_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "updated_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "close_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "closed_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "anonymize_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "anonymized_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "data_anonymize_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "data_anonymized_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "send_start_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "send_end_at"),
+	TableColumn(database.CAMPAIGN_TABLE, "notable_event_id"),
+	TableColumn(database.CAMPAIGN_TABLE, "name"),
+	TableColumn(database.CAMPAIGN_TEMPLATE_TABLE, "name"),
+}
+
+var allowedCampaginEventColumns = []string{
+	TableColumn(database.CAMPAIGN_EVENT_TABLE, "created_at"),
+	TableColumn(database.CAMPAIGN_EVENT_TABLE, "updated_at"),
+	TableColumn(database.CAMPAIGN_EVENT_TABLE, "ip_address"),
+	TableColumn(database.CAMPAIGN_EVENT_TABLE, "user_agent"),
+	TableColumn(database.CAMPAIGN_EVENT_TABLE, "data"),
+}
+
+var allowedCampaginEventViewColumns = utils.MergeStringSlices(
+	allowedCampaginEventColumns,
+	[]string{
+		TableColumn(database.RECIPIENT_TABLE, "email"),
+		TableColumn(database.RECIPIENT_TABLE, "first_name"),
+		TableColumn(database.RECIPIENT_TABLE, "last_name"),
+		TableColumn(database.EVENT_TABLE, "name"),
+	})
+
+// CampaignOption is options for preloading
+type CampaignOption struct {
+	*vo.QueryArgs
+
+	WithCompany             bool
+	WithCampaignTemplate    bool
+	WithRecipientGroups     bool
+	WithRecipientGroupCount bool
+	WithAllowDeny           bool
+	WithDenyPage            bool
+	WithEvasionPage         bool
+	WithWebhooks            bool
+	WithScripts             bool
+	IncludeTestCampaigns    bool
+}
+
+// CampaignEventOption is options for preloading
+type CampaignEventOption struct {
+	*vo.QueryArgs
+	WithCampaign bool
+	WithUser     bool
+	EventTypeIDs []string
+}
+
+// CampaignEventAllOption is options for preloading events across all campaigns
+type CampaignEventAllOption struct {
+	*vo.QueryArgs
+	WithCampaign         bool
+	WithUser             bool
+	IncludeTestCampaigns bool
+}
+
+// Campaign is a Campaign repository
+type Campaign struct {
+	DB *gorm.DB
+}
+
+// applyTestCampaignFilter conditionally applies the is_test filter based on options
+func (r *Campaign) applyTestCampaignFilter(db *gorm.DB, options *CampaignOption) *gorm.DB {
+	if !options.IncludeTestCampaigns {
+		db = db.Where("is_test = false")
+	}
+	return db
+}
+
+// load preloads the campaign repository
+func (r *Campaign) load(db *gorm.DB, options *CampaignOption) *gorm.DB {
+	if options.WithCompany {
+		db = db.Preload("Company")
+	}
+	if options.WithCampaignTemplate {
+		db = db.Joins(LeftJoinOn(
+			database.CAMPAIGN_TABLE,
+			"campaign_template_id",
+			database.CAMPAIGN_TEMPLATE_TABLE,
+			"id",
+		))
+	}
+	if options.WithRecipientGroups {
+		db = db.Preload("RecipientGroups")
+	}
+	if options.WithAllowDeny {
+		db = db.Preload("AllowDeny")
+	}
+	if options.WithDenyPage {
+		db = db.Preload("DenyPage")
+	}
+	if options.WithEvasionPage {
+		db = db.Preload("EvasionPage")
+	}
+	// WithWebhooks is handled post-query via GetCampaignWebhooks
+	// because the junction table stores extra columns (include_data, events)
+	// that GORM many2many preload cannot populate into model.CampaignWebhook
+	return db
+}
+
+// preloadEventRecipient preloads the event user
+func (r *Campaign) preloadEventRecipient(db *gorm.DB, options *CampaignEventOption) *gorm.DB {
+	if options.WithUser {
+		db = db.Preload("Recipient", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "first_name", "last_name", "email")
+		})
+	}
+	if options.WithCampaign {
+		db = db.Preload("Campaign", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "name", "company_id").Preload("Company")
+		})
+	}
+	return db
+}
+
+// preloadAllEventRecipient preloads the event user for all events queries
+func (r *Campaign) preloadAllEventRecipient(db *gorm.DB, options *CampaignEventAllOption) *gorm.DB {
+	if options.WithUser {
+		db = db.Preload("Recipient", func(db *gorm.DB) *gorm.DB {
+			return db
+		})
+	}
+	if options.WithCampaign {
+		db = db.Preload("Campaign.Company")
+	}
+	return db
+}
+
+// joinEvent joins the event table with the campaign event table
+func (r *Campaign) joinEvent(db *gorm.DB) *gorm.DB {
+	return db.Joins(LeftJoinOn(
+		database.CAMPAIGN_EVENT_TABLE,
+		"event_id",
+		database.EVENT_TABLE,
+		"id",
+	))
+}
+
+// Insert inserts a new campaign
+func (r *Campaign) Insert(
+	ctx context.Context,
+	campaign *model.Campaign,
+) (*uuid.UUID, error) {
+	id := uuid.New()
+	row := campaign.ToDBMap()
+	row["id"] = id
+	AddTimestamps(row)
+
+	res := r.DB.Model(&database.Campaign{}).Create(row)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	err := r.AddRecipientGroups(ctx, &id, campaign.RecipientGroupIDs.MustGet())
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+
+	if allowDeny, err := campaign.AllowDenyIDs.Get(); err == nil && len(allowDeny) > 0 {
+		err = r.AddAllowDenyLists(ctx, &id, allowDeny)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+	}
+	return &id, nil
+}
+
+// Add recipient groups to campaign
+func (r *Campaign) AddRecipientGroups(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	recipientGroupIDs []*uuid.UUID,
+) error {
+	batch := []database.CampaignRecipientGroup{}
+	for _, id := range recipientGroupIDs {
+		batch = append(batch, database.CampaignRecipientGroup{
+			CampaignID:       campaignID,
+			RecipientGroupID: id,
+		})
+	}
+	res := r.DB.Create(&batch)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// GetAllDenyByCampaignID gets all deny lists by campaign id
+// not paginated
+func (r *Campaign) GetAllDenyByCampaignID(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) ([]*model.AllowDeny, error) {
+	allowDeny := []*model.AllowDeny{}
+	var dbAllowDeny []database.AllowDeny
+	res := r.DB.
+		Model(&database.AllowDeny{}).
+		Joins("LEFT JOIN campaign_allow_denies ON campaign_allow_denies.allow_deny_id = allow_denies.id").
+		Where("campaign_id = ?", campaignID).
+		Find(&dbAllowDeny)
+
+	if res.Error != nil {
+		return allowDeny, res.Error
+	}
+	for _, dbAllowDeny := range dbAllowDeny {
+		allowDeny = append(allowDeny, ToAllowDeny(&dbAllowDeny))
+	}
+	return allowDeny, nil
+}
+
+// AddAllowDenyLists allow/block lists to campaign
+func (r *Campaign) AddAllowDenyLists(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	allowDenyIDs []*uuid.UUID,
+) error {
+	batch := []database.CampaignAllowDeny{}
+	for _, id := range allowDenyIDs {
+		batch = append(batch, database.CampaignAllowDeny{
+			CampaignID:  campaignID,
+			AllowDenyID: id,
+		})
+	}
+	res := r.DB.Create(&batch)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// AddWebhooks adds webhooks to campaign with per-webhook configuration
+func (r *Campaign) AddWebhooks(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	webhooks []*model.CampaignWebhook,
+) error {
+	batch := []database.CampaignWebhook{}
+	// deduplicate by webhook id to prevent unique constraint violations
+	seen := map[string]struct{}{}
+	for _, wh := range webhooks {
+		webhookID := wh.WebhookID.MustGet()
+		key := webhookID.String()
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		batch = append(batch, database.CampaignWebhook{
+			CampaignID:         campaignID,
+			WebhookID:          &webhookID,
+			WebhookIncludeData: wh.GetWebhookIncludeDataOrDefault(),
+			WebhookEvents:      wh.GetWebhookEventsOrDefault(),
+		})
+	}
+	if len(batch) == 0 {
+		return nil
+	}
+	res := r.DB.Create(&batch)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveWebhooksByCampaignID removes all webhooks from a campaign
+func (r *Campaign) RemoveWebhooksByCampaignID(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("campaign_id = ?", campaignID).
+		Delete(&database.CampaignWebhook{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// GetCampaignWebhooks fetches webhook configurations for a campaign from junction table
+func (r *Campaign) GetCampaignWebhooks(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) ([]*model.CampaignWebhook, error) {
+	var rows []database.CampaignWebhook
+	res := r.DB.
+		Where("campaign_id = ?", campaignID.String()).
+		Find(&rows)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	webhooks := []*model.CampaignWebhook{}
+	for _, row := range rows {
+		if row.WebhookID == nil {
+			continue
+		}
+		wh := &model.CampaignWebhook{
+			WebhookID:          nullable.NewNullableWithValue(*row.WebhookID),
+			WebhookIncludeData: nullable.NewNullableWithValue(row.WebhookIncludeData),
+			WebhookEvents:      nullable.NewNullableWithValue(row.WebhookEvents),
+		}
+		webhooks = append(webhooks, wh)
+	}
+
+	return webhooks, nil
+}
+
+// GetByWebhookID gets campaigns by webhook ID
+// not paginated
+func (r *Campaign) GetByWebhookID(
+	ctx context.Context,
+	webhookID *uuid.UUID,
+) ([]*model.Campaign, error) {
+	rows := []*database.Campaign{}
+	models := []*model.Campaign{}
+
+	// use a map to deduplicate campaign IDs collected from both the junction
+	// table and the legacy webhook_id column - after migration a campaign will
+	// appear in both sources, so deduplication is required before the final query
+	seen := map[string]struct{}{}
+
+	// get from junction table
+	var junctionRows []database.CampaignWebhook
+	r.DB.Where("webhook_id = ?", webhookID.String()).Find(&junctionRows)
+	for _, row := range junctionRows {
+		if row.CampaignID != nil {
+			seen[row.CampaignID.String()] = struct{}{}
+		}
+	}
+
+	// get from old webhook_id field (backward compatibility)
+	var oldRows []*database.Campaign
+	r.DB.Where("webhook_id = ?", webhookID.String()).Find(&oldRows)
+	for _, row := range oldRows {
+		if row.ID != nil {
+			seen[row.ID.String()] = struct{}{}
+		}
+	}
+
+	if len(seen) == 0 {
+		return models, nil
+	}
+
+	campaignIDs := make([]string, 0, len(seen))
+	for id := range seen {
+		campaignIDs = append(campaignIDs, id)
+	}
+
+	res := r.DB.
+		Where("id IN ?", campaignIDs).
+		Find(&rows)
+
+	if res.Error != nil {
+		return models, res.Error
+	}
+	for _, row := range rows {
+		c, err := ToCampaign(row)
+		if err != nil {
+			return models, errs.Wrap(err)
+		}
+		models = append(models, c)
+	}
+	return models, nil
+}
+
+// GetByTemplateID gets campaigns by template ID
+// not paginated
+func (r *Campaign) GetByAllowDenyID(
+	ctx context.Context,
+	allowDenyID *uuid.UUID,
+) ([]*model.Campaign, error) {
+	rows := []*database.Campaign{}
+	models := []*model.Campaign{}
+	db := r.DB.InnerJoins(
+		LeftJoinOn(
+			database.CAMPAIGN_TABLE,
+			"id",
+			database.CAMPAIGN_ALLOW_DENY_TABLE,
+			"campaign_id",
+		),
+	)
+	res := db.
+		Where(
+			fmt.Sprintf(
+				"%s = ?",
+				TableColumn(
+					database.CAMPAIGN_ALLOW_DENY_TABLE,
+					"allow_deny_id",
+				),
+			),
+			allowDenyID.String(),
+		).
+		Find(&rows)
+
+	if res.Error != nil {
+		return models, res.Error
+	}
+	for _, row := range rows {
+		c, err := ToCampaign(row)
+		if err != nil {
+			return models, errs.Wrap(err)
+		}
+		models = append(models, c)
+	}
+	return models, nil
+}
+
+// GetByTemplateIDs gets campaigns by template IDs
+// not paginated
+func (r *Campaign) GetByTemplateIDs(
+	ctx context.Context,
+	templateIDs []*uuid.UUID,
+) ([]*model.Campaign, error) {
+	rows := []*database.Campaign{}
+	models := []*model.Campaign{}
+	res := r.DB.
+		Where(
+			"campaign_template_id IN ?",
+			UUIDsToStrings(templateIDs),
+		).
+		Find(&rows)
+
+	if res.Error != nil {
+		return models, res.Error
+	}
+	for _, row := range rows {
+		c, err := ToCampaign(row)
+		if err != nil {
+			return models, errs.Wrap(err)
+		}
+		models = append(models, c)
+	}
+	return models, nil
+}
+
+// RemoveWebhookFromJunctionByWebhookID removes all campaign_webhooks rows for a given webhook id
+// must be called before deleting a webhook to avoid orphaned junction rows
+func (r *Campaign) RemoveWebhookFromJunctionByWebhookID(
+	ctx context.Context,
+	webhookID *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("webhook_id = ?", webhookID.String()).
+		Delete(&database.CampaignWebhook{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// AddScripts adds scripts to a campaign with per script configuration
+func (r *Campaign) AddScripts(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	scripts []*model.CampaignScript,
+) error {
+	batch := []database.CampaignScript{}
+	// deduplicate by script id to prevent unique constraint violations
+	seen := map[string]struct{}{}
+	for _, ca := range scripts {
+		scriptID := ca.ScriptID.MustGet()
+		key := scriptID.String()
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		batch = append(batch, database.CampaignScript{
+			CampaignID:        campaignID,
+			ScriptID:          &scriptID,
+			ScriptIncludeData: ca.GetScriptIncludeDataOrDefault(),
+			ScriptEvents:      ca.GetScriptEventsOrDefault(),
+		})
+	}
+	if len(batch) == 0 {
+		return nil
+	}
+	res := r.DB.Create(&batch)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveScriptsByCampaignID removes all scripts from a campaign
+func (r *Campaign) RemoveScriptsByCampaignID(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("campaign_id = ?", campaignID).
+		Delete(&database.CampaignScript{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// GetCampaignScripts fetches script configurations for a campaign from the junction table
+func (r *Campaign) GetCampaignScripts(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) ([]*model.CampaignScript, error) {
+	var rows []database.CampaignScript
+	res := r.DB.
+		Where("campaign_id = ?", campaignID.String()).
+		Find(&rows)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	scripts := []*model.CampaignScript{}
+	for _, row := range rows {
+		if row.ScriptID == nil {
+			continue
+		}
+		ca := &model.CampaignScript{
+			ScriptID:          nullable.NewNullableWithValue(*row.ScriptID),
+			ScriptIncludeData: nullable.NewNullableWithValue(row.ScriptIncludeData),
+			ScriptEvents:      nullable.NewNullableWithValue(row.ScriptEvents),
+		}
+		scripts = append(scripts, ca)
+	}
+
+	return scripts, nil
+}
+
+// RemoveScriptFromJunctionByScriptID removes all campaign_scripts rows for a given script id
+// must be called before deleting a script to avoid orphaned junction rows
+func (r *Campaign) RemoveScriptFromJunctionByScriptID(
+	ctx context.Context,
+	scriptID *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("script_id = ?", scriptID.String()).
+		Delete(&database.CampaignScript{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveWebhookByCampaignIDs removes the webhook from campaigns by ids
+func (r *Campaign) RemoveWebhookByCampaignIDs(
+	ctx context.Context,
+	campaignIDs []*uuid.UUID,
+) error {
+	if len(campaignIDs) == 0 {
+		return nil
+	}
+	row := map[string]interface{}{}
+	ids := UUIDsToStrings(campaignIDs)
+	AddUpdatedAt(row)
+	row["webhook_id"] = nil
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where("id IN ?", ids).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveDenyPageByCampaignIDs remove the deny page from the campaign IDs
+func (r *Campaign) RemoveDenyPageByCampaignIDs(
+	ctx context.Context,
+	campaignIDs []*uuid.UUID,
+) error {
+	row := map[string]interface{}{}
+	ids := UUIDsToStrings(campaignIDs)
+	AddUpdatedAt(row)
+	row["deny_page_id"] = nil
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where("id IN ?", ids).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveDenyPageByDenyPageIDs removes deny page id from campaigns by page idsj
+func (r *Campaign) RemoveDenyPageByDenyPageIDs(
+	ctx context.Context,
+	campaignIDs []*uuid.UUID,
+) error {
+	row := map[string]interface{}{}
+	ids := UUIDsToStrings(campaignIDs)
+	AddUpdatedAt(row)
+	row["deny_page_id"] = nil
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where("deny_page_id IN ?", ids).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveAllowDenyListsByID removes allow/block lists from campaign by allow deny list id
+func (r *Campaign) RemoveAllowDenyListsByID(
+	ctx context.Context,
+	id *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("allow_deny_id = ?", id).
+		Delete(&database.CampaignAllowDeny{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveAllowDenyListsByCampaignID removes allow/block lists from campaign
+func (r *Campaign) RemoveAllowDenyListsByCampaignID(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("campaign_id = ?", campaignID).
+		Delete(&database.CampaignAllowDeny{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// GetRecipientGroupCount gets the count of recipient groups
+func (r *Campaign) GetRecipientGroupCount(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) (int, error) {
+	var count int64
+	res := r.DB.
+		Model(&database.CampaignRecipientGroup{}).
+		Where("campaign_id = ?", campaignID).
+		Count(&count)
+
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return int(count), nil
+}
+
+// GetAllActive gets the active campaigns
+func (r *Campaign) GetAllActive(
+	ctx context.Context,
+	companyID *uuid.UUID,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	if companyID != nil {
+		db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	}
+
+	if strings.Contains(options.QueryArgs.OrderBy, "send_start_at") {
+		db = db.Order("send_start_at IS NULL DESC")
+	}
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaignColumns...)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	// Apply test campaign filter based on options
+	db = r.applyTestCampaignFilter(db, options)
+
+	var dbCampaigns []database.Campaign
+	res := db.
+		Where(
+			"((send_start_at <= ? OR send_start_at IS NULL) AND closed_at IS NULL)",
+			utils.NowRFC3339UTC(),
+		).
+		Find(&dbCampaigns)
+
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(
+		db,
+		database.CAMPAIGN_TABLE,
+		options.QueryArgs,
+		allowedCampaignColumns...,
+	)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return result, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// GetAllUpcoming gets the upcoming campaigns
+func (r *Campaign) GetAllUpcoming(
+	ctx context.Context,
+	companyID *uuid.UUID,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	if companyID != nil {
+		db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	}
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaignColumns...)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	// Apply test campaign filter based on options
+	db = r.applyTestCampaignFilter(db, options)
+
+	var dbCampaigns []database.Campaign
+	res := db.
+		Where("((send_start_at > ?) AND closed_at IS NULL)", utils.NowRFC3339UTC()).
+		Find(&dbCampaigns)
+
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(
+		db,
+		database.CAMPAIGN_TABLE,
+		options.QueryArgs,
+		allowedCampaignColumns...,
+	)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// GetAllFinished gets the finished campaigns
+func (r *Campaign) GetAllFinished(
+	ctx context.Context,
+	companyID *uuid.UUID,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	if companyID != nil {
+		db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	}
+	if strings.Contains(options.QueryArgs.OrderBy, "send_start_at") {
+		db = db.Order("send_start_at IS NULL DESC")
+	}
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaignColumns...)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	// Apply test campaign filter based on options
+	db = r.applyTestCampaignFilter(db, options)
+
+	var dbCampaigns []database.Campaign
+	res := db.
+		Where("closed_at IS NOT NULL").
+		Find(&dbCampaigns)
+
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(
+		db,
+		database.CAMPAIGN_TABLE,
+		options.QueryArgs,
+		allowedCampaignColumns...,
+	)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// GetAllEvents gets all campaign events across campaigns
+func (r *Campaign) GetAllEvents(
+	ctx context.Context,
+	companyID *uuid.UUID,
+	options *CampaignEventAllOption,
+) (*model.Result[model.CampaignEvent], error) {
+	result := model.NewEmptyResult[model.CampaignEvent]()
+	db := r.preloadAllEventRecipient(r.DB, options)
+	db = r.joinEvent(db)
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaginEventViewColumns...)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	var dbCampaignEvents []database.CampaignEvent
+	db = db.
+		Joins(LeftJoinOn(
+			database.CAMPAIGN_EVENT_TABLE,
+			"recipient_id",
+			database.RECIPIENT_TABLE,
+			"id",
+		)).
+		Joins(LeftJoinOn(
+			database.CAMPAIGN_EVENT_TABLE,
+			"campaign_id",
+			database.CAMPAIGN_TABLE,
+			"id",
+		))
+
+	// filter by company if in company context
+	if companyID != nil {
+		db = db.Where(TableColumn(database.CAMPAIGN_TABLE, "company_id")+" = ?", companyID)
+	}
+
+	// filter test campaigns if not included
+	if !options.IncludeTestCampaigns {
+		db = db.Where(TableColumn(database.CAMPAIGN_TABLE, "is_test")+" = ?", false)
+	}
+
+	res := db.Find(&dbCampaignEvents)
+
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(
+		db,
+		database.CAMPAIGN_TABLE,
+		options.QueryArgs,
+		allowedCampaginEventViewColumns...,
+	)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaignEvent := range dbCampaignEvents {
+		c, err := ToCampaignEvent(&dbCampaignEvent)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, c)
+	}
+	return result, nil
+}
+
+// GetEventsByCampaignID gets all campaign events by campaign id
+func (r *Campaign) GetEventsByCampaignID(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	options *CampaignEventOption,
+	since *time.Time,
+) (*model.Result[model.CampaignEvent], error) {
+	result := model.NewEmptyResult[model.CampaignEvent]()
+	db := r.preloadEventRecipient(r.DB, options)
+	db = r.joinEvent(db)
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaginEventViewColumns...)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	var dbCampaignEvents []database.CampaignEvent
+	db = db.
+		Joins(LeftJoinOn(
+			database.CAMPAIGN_EVENT_TABLE,
+			"recipient_id",
+			database.RECIPIENT_TABLE,
+			"id",
+		)).
+		Where("campaign_id = ?", campaignID)
+
+	if since != nil {
+		db = db.Where(
+			TableColumn(database.CAMPAIGN_EVENT_TABLE, "created_at")+" > ?",
+			utils.RFC3339UTC(*since),
+		)
+	}
+
+	if len(options.EventTypeIDs) > 0 {
+		db = db.Where(
+			TableColumn(database.CAMPAIGN_EVENT_TABLE, "event_id")+" IN ?",
+			options.EventTypeIDs,
+		)
+	}
+
+	res := db.Find(&dbCampaignEvents)
+
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(
+		db,
+		database.CAMPAIGN_TABLE,
+		options.QueryArgs,
+		allowedCampaginEventViewColumns...,
+	)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaignEvent := range dbCampaignEvents {
+		c, err := ToCampaignEvent(&dbCampaignEvent)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, c)
+	}
+	return result, nil
+}
+
+// GetCampaignCountByTemplateID gets the count of campaigns by template id
+func (r *Campaign) GetCampaignCountByTemplateID(
+	ctx context.Context,
+	templateID *uuid.UUID,
+) (int, error) {
+	var count int64
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where("campaign_template_id = ?", templateID).
+		Count(&count)
+
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return int(count), nil
+}
+
+// GetResultStats gets the read, clicked and submitted data grouped per recipient
+// or by anon id if anonymized data
+func (r *Campaign) GetResultStats(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) (*model.CampaignResultView, error) {
+	stats := &model.CampaignResultView{}
+
+	// get recipients count for campaign. each campaign_recipients row is one person
+	// and carries a recipient_id, an anonymized_id, or both (an anonymous campaign
+	// holds both while live so it can still send). counting rows avoids the double
+	// count a UNION of the two id columns would produce for a live anonymous campaign.
+	res := r.DB.Raw(`
+    SELECT COUNT(*)
+    FROM campaign_recipients
+    WHERE campaign_id = ?
+    AND (recipient_id IS NOT NULL OR anonymized_id IS NOT NULL)
+    `, campaignID).Scan(&stats.Recipients)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	// get sent email count
+	res = r.DB.Raw(`
+    SELECT COUNT(*) FROM (
+        SELECT DISTINCT recipient_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND recipient_id IS NOT NULL
+        AND event_id = ?
+        UNION
+        SELECT DISTINCT anonymized_id
+        FROM campaign_events
+        WHERE campaign_id = ? AND anonymized_id IS NOT NULL
+        AND event_id = ?
+    ) as unique_ids
+`,
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_SENT],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_SENT],
+	).Scan(&stats.EmailsSent)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	// get unique tracking pixels loaded
+	res = r.DB.Raw(`
+    SELECT COUNT(*) FROM (
+        SELECT DISTINCT recipient_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND recipient_id IS NOT NULL
+        UNION
+        SELECT DISTINCT anonymized_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ? AND anonymized_id IS NOT NULL
+    ) as unique_ids
+`,
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_READ],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_MESSAGE_READ],
+	).Scan(&stats.TrackingPixelLoaded)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	// Get any phishing page loaded distinct by recipent and campaign
+	res = r.DB.Raw(`
+    SELECT COUNT(*) FROM (
+        SELECT DISTINCT recipient_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id IN (?, ?, ?)
+        AND recipient_id IS NOT NULL
+        UNION
+        SELECT DISTINCT anonymized_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id IN (?, ?, ?)
+        AND anonymized_id IS NOT NULL
+    ) as unique_ids
+`,
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_BEFORE_PAGE_VISITED],
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_PAGE_VISITED],
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_AFTER_PAGE_VISITED],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_BEFORE_PAGE_VISITED],
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_PAGE_VISITED],
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_AFTER_PAGE_VISITED],
+	).Scan(&stats.WebsiteLoaded)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	// Get unique submits
+	res = r.DB.Raw(`
+    SELECT COUNT(*) FROM (
+        SELECT DISTINCT recipient_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND recipient_id IS NOT NULL
+        UNION
+        SELECT DISTINCT anonymized_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND anonymized_id IS NOT NULL
+    ) as unique_ids
+`,
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_SUBMITTED_DATA],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_SUBMITTED_DATA],
+	).Scan(&stats.SubmittedData)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	// Get unique reported
+	res = r.DB.Raw(`
+    SELECT COUNT(*) FROM (
+        SELECT DISTINCT recipient_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND recipient_id IS NOT NULL
+        UNION
+        SELECT DISTINCT anonymized_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND anonymized_id IS NOT NULL
+    ) as unique_ids
+`,
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_REPORTED],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_REPORTED],
+	).Scan(&stats.Reported)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	// the training funnel exists for training campaigns only, a phishing campaign
+	// emits no training events so the counts below would scan for rows that
+	// cannot be there
+	var isTraining bool
+	res = r.DB.Raw(`
+    SELECT is_training
+    FROM campaigns
+    WHERE id = ?
+`,
+		campaignID,
+	).Scan(&isTraining)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if !isTraining {
+		return stats, nil
+	}
+
+	res = r.DB.Raw(`
+    SELECT COUNT(*) FROM (
+        SELECT DISTINCT recipient_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND recipient_id IS NOT NULL
+        UNION
+        SELECT DISTINCT anonymized_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND anonymized_id IS NOT NULL
+    ) as unique_ids
+`,
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_TRAINING_STARTED],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_TRAINING_STARTED],
+	).Scan(&stats.TrainingStarted)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	res = r.DB.Raw(`
+    SELECT COUNT(*) FROM (
+        SELECT DISTINCT recipient_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND recipient_id IS NOT NULL
+        UNION
+        SELECT DISTINCT anonymized_id
+        FROM campaign_events
+        WHERE campaign_id = ?
+        AND event_id = ?
+        AND anonymized_id IS NOT NULL
+    ) as unique_ids
+`,
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_TRAINING_COMPLETED],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_TRAINING_COMPLETED],
+	).Scan(&stats.TrainingCompleted)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return stats, nil
+}
+
+// GetAll gets all campaigns with pagination
+func (r *Campaign) GetAll(
+	ctx context.Context,
+	companyID *uuid.UUID,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	if companyID == nil {
+		db = whereCompanyIsNull(db, database.CAMPAIGN_TABLE)
+	} else {
+		db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	}
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaignColumns...)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	// apply test campaign filter based on options
+	db = r.applyTestCampaignFilter(db, options)
+
+	var dbCampaigns []database.Campaign
+	res := db.Find(&dbCampaigns)
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(
+		db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaignColumns...,
+	)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// GetAllCampaignWithinDates gets all campaigns that are active or scheduled within two dates, including the dates themself.
+// if no company id is set, it retrieves all contexts
+func (r *Campaign) GetAllCampaignWithinDates(
+	ctx context.Context,
+	companyID *uuid.UUID,
+	startDate time.Time,
+	endDate time.Time,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+
+	// Handle company ID filter
+	/*
+		if companyID == nil {
+			db = whereCompanyIsNull(db, database.CAMPAIGN_TABLE)
+		} else {
+			db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+		}
+	*/
+	if companyID != nil {
+		db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	}
+
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaignColumns...)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+
+	var dbCampaigns []database.Campaign
+
+	// Apply test campaign filter based on options
+	db = r.applyTestCampaignFilter(db, options)
+
+	// Query campaigns that:
+	// 1. Are self-managed (no send_start_at)
+	// 2. Start within the date range
+	res := db.Where(
+		"(send_start_at IS NULL) OR "+ // self managed
+			"(send_start_at BETWEEN ? AND ?)", // is within time
+		utils.RFC3339UTC(startDate),
+		utils.RFC3339UTC(endDate),
+	).Find(&dbCampaigns)
+
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(
+		db,
+		database.CAMPAIGN_TABLE,
+		options.QueryArgs,
+		allowedCampaignColumns...,
+	)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return result, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+
+	return result, nil
+}
+
+// GetAllByCompanyID gets all campaigns with pagination by company id
+func (r *Campaign) GetAllByCompanyID(
+	ctx context.Context,
+	companyID *uuid.UUID,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaignColumns...)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	var dbCampaigns []database.Campaign
+	res := db.Find(&dbCampaigns)
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(
+		db, database.CAMPAIGN_TABLE, options.QueryArgs, allowedCampaignColumns...,
+	)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// GetByID gets a campaign by id
+func (r *Campaign) GetByID(
+	ctx context.Context,
+	id *uuid.UUID,
+	options *CampaignOption,
+) (*model.Campaign, error) {
+	db := r.load(r.DB, options)
+	var dbCampaign database.Campaign
+	res := db.
+		Where("campaigns.id = ?", id.String()).
+		First(&dbCampaign)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	campaign, err := ToCampaign(&dbCampaign)
+	if err != nil {
+		return nil, err
+	}
+	if options.WithWebhooks {
+		webhooks, err := r.GetCampaignWebhooks(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		campaign.Webhooks = nullable.NewNullableWithValue(webhooks)
+	}
+	if options.WithScripts {
+		scripts, err := r.GetCampaignScripts(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		campaign.Scripts = nullable.NewNullableWithValue(scripts)
+	}
+	return campaign, nil
+}
+
+// GetNameByID gets a campaign name by id
+func (r *Campaign) GetNameByID(
+	ctx context.Context,
+	id *uuid.UUID,
+) (string, error) {
+	var dbCampaign database.Campaign
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Select("name").
+		Where("id = ?", id).
+		First(&dbCampaign)
+
+	if res.Error != nil {
+		return "", res.Error
+	}
+	return dbCampaign.Name, nil
+}
+
+// IsAnonymousByID reads only the anonymity flag for a campaign.
+func (r *Campaign) IsAnonymousByID(
+	ctx context.Context,
+	id *uuid.UUID,
+) (bool, error) {
+	var dbCampaign database.Campaign
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Select("is_anonymous").
+		Where("id = ?", id).
+		First(&dbCampaign)
+
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return dbCampaign.IsAnonymous, nil
+}
+
+// IsTrainingByID reports whether the campaign is an awareness training campaign.
+func (r *Campaign) IsTrainingByID(
+	ctx context.Context,
+	id *uuid.UUID,
+) (bool, error) {
+	var dbCampaign database.Campaign
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Select("is_training").
+		Where("id = ?", id).
+		First(&dbCampaign)
+
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return dbCampaign.IsTraining, nil
+}
+
+// IsAnonymizedByID reports whether the campaign has been anonymized after the fact,
+// i.e. its AnonymizedAt timestamp is set.
+func (r *Campaign) IsAnonymizedByID(
+	ctx context.Context,
+	id *uuid.UUID,
+) (bool, error) {
+	var dbCampaign database.Campaign
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Select("anonymized_at").
+		Where("id = ?", id).
+		First(&dbCampaign)
+
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return dbCampaign.AnonymizedAt != nil, nil
+}
+
+// IsAnonymousByCampaignRecipientID reports whether the campaign owning a campaign
+// recipient is anonymous. found is false when the id matches no campaign recipient.
+func (r *Campaign) IsAnonymousByCampaignRecipientID(
+	ctx context.Context,
+	campaignRecipientID *uuid.UUID,
+) (isAnon bool, found bool, err error) {
+	var out []bool
+	res := r.DB.WithContext(ctx).Raw(`
+		SELECT c.is_anonymous
+		FROM campaign_recipients cr
+		JOIN campaigns c ON c.id = cr.campaign_id
+		WHERE cr.id = ?
+		LIMIT 1`, campaignRecipientID).Scan(&out)
+	if res.Error != nil {
+		return false, false, res.Error
+	}
+	if len(out) == 0 {
+		return false, false, nil
+	}
+	return out[0], true, nil
+}
+
+// HasGroupDataByCampaignID reports whether any recipient carries a position or
+// department, i.e. whether a grouped breakdown has anything to show.
+func (r *Campaign) HasGroupDataByCampaignID(
+	ctx context.Context,
+	id *uuid.UUID,
+) (bool, error) {
+	// check the snapshot columns and, since they are set only for anonymous
+	// campaigns, the recipient's own position/department too
+	var count int64
+	res := r.DB.WithContext(ctx).Raw(`
+		SELECT COUNT(*) FROM (
+			SELECT 1 FROM campaign_recipients cr
+			LEFT JOIN recipients r ON r.id = cr.recipient_id
+			WHERE cr.campaign_id = ? AND (
+				cr.position <> '' OR cr.department <> ''
+				OR COALESCE(r.position, '') <> '' OR COALESCE(r.department, '') <> ''
+			)
+			LIMIT 1
+		) AS x`, id).Scan(&count)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return count > 0, nil
+}
+
+// GetByNameAndCompanyID gets a campaign by name and company id
+func (r *Campaign) GetByNameAndCompanyID(
+	ctx context.Context,
+	name string,
+	companyID *uuid.UUID,
+	options *CampaignOption,
+) (*model.Campaign, error) {
+	db := r.load(r.DB, options)
+	db = withCompanyIncludingNullContext(db, companyID, database.CAMPAIGN_TABLE)
+	var dbCampaign database.Campaign
+	res := db.
+		Where(
+			fmt.Sprintf(
+				"%s = ?",
+				TableColumn(database.CAMPAIGN_TABLE, "name"),
+			),
+			name,
+		).
+		First(&dbCampaign)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return ToCampaign(&dbCampaign)
+}
+
+// GetWebhookIDByCampaignID gets a webhook id by campaign id
+func (r *Campaign) GetWebhookIDByCampaignID(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) (*uuid.UUID, error) {
+	var campaign database.Campaign
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Select("webhook_id").
+		Where("id = ?", campaignID.String()).
+		First(&campaign)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return campaign.WebhookID, nil
+}
+
+// GetAllReadyToClose gets all campaigns that are ready to close
+func (r *Campaign) GetAllReadyToClose(
+	ctx context.Context,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	var dbCampaigns []database.Campaign
+	res := db.
+		Where("close_at <= ? AND closed_at IS NULL", utils.NowRFC3339UTC()).
+		Find(&dbCampaigns)
+
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(db, database.CAMPAIGN_TABLE, options.QueryArgs)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// GetReadyToAnonymize gets all campaigns that are ready to be anonymized
+func (r *Campaign) GetReadyToAnonymize(
+	ctx context.Context,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	// a campaign is ready to anonymize when its scheduled anonymize_at has passed,
+	// or when it is anonymous and closed: an anonymous campaign always severs its
+	// recipient relation at close, and this is the fallback that guarantees it even
+	// if the inline anonymize at close time failed. either way anonymized_at must be
+	// unset so a campaign that is already anonymized is never reprocessed.
+	var dbCampaigns []database.Campaign
+	now := utils.NowRFC3339UTC()
+	res := db.
+		Where("anonymized_at IS NULL").
+		Where("(anonymize_at <= ?) OR (is_anonymous = ? AND closed_at IS NOT NULL)", now, true).
+		Find(&dbCampaigns)
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(db, database.CAMPAIGN_TABLE, options.QueryArgs)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// GetReadyToDataAnonymize gets all campaigns that are ready to have their
+// submitted data anonymized while keeping the recipient relation intact.
+// Fully anonymized campaigns are excluded as their data is already scrubbed.
+func (r *Campaign) GetReadyToDataAnonymize(
+	ctx context.Context,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	var dbCampaigns []database.Campaign
+	res := db.
+		Where("data_anonymize_at <= ? AND data_anonymized_at IS NULL AND anonymized_at IS NULL", utils.NowRFC3339UTC()).
+		Find(&dbCampaigns)
+	if res.Error != nil {
+		return result, res.Error
+	}
+
+	hasNextPage, err := useHasNextPage(db, database.CAMPAIGN_TABLE, options.QueryArgs)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// GetReadyToLateSchedule returns campaigns where schedule_at <= now and
+// the campaign has not yet been scheduled (notable event is still pending_schedule).
+func (r *Campaign) GetReadyToLateSchedule(
+	ctx context.Context,
+	options *CampaignOption,
+) (*model.Result[model.Campaign], error) {
+	result := model.NewEmptyResult[model.Campaign]()
+	db := r.load(r.DB, options)
+	db, err := useQuery(db, database.CAMPAIGN_TABLE, options.QueryArgs)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	pendingEventID := cache.EventIDByName[data.EVENT_CAMPAIGN_PENDING_SCHEDULE]
+	var dbCampaigns []database.Campaign
+	res := db.
+		Where("schedule_at <= ? AND notable_event_id = ?", utils.NowRFC3339UTC(), pendingEventID).
+		Find(&dbCampaigns)
+	if res.Error != nil {
+		return result, res.Error
+	}
+	hasNextPage, err := useHasNextPage(db, database.CAMPAIGN_TABLE, options.QueryArgs)
+	if err != nil {
+		return result, errs.Wrap(err)
+	}
+	result.HasNextPage = hasNextPage
+	for _, dbCampaign := range dbCampaigns {
+		campaign, err := ToCampaign(&dbCampaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		result.Rows = append(result.Rows, campaign)
+	}
+	return result, nil
+}
+
+// SaveEvent saves a campaign event
+func (r *Campaign) SaveEvent(
+	ctx context.Context,
+	campaignEvent *model.CampaignEvent,
+) error {
+	row := map[string]any{
+		"id":          campaignEvent.ID.String(),
+		"event_id":    campaignEvent.EventID.String(),
+		"campaign_id": campaignEvent.CampaignID.String(),
+		"ip_address":  campaignEvent.IP.String(),
+		"user_agent":  campaignEvent.UserAgent.String(),
+		"data":        campaignEvent.Data.String(),
+		"metadata": func() string {
+			if campaignEvent.Metadata == nil {
+				return ""
+			}
+			return campaignEvent.Metadata.String()
+		}(),
+	}
+	if campaignEvent.RecipientID != nil {
+		row["recipient_id"] = campaignEvent.RecipientID.String()
+	}
+	if campaignEvent.AnonymizedID != nil {
+		row["anonymized_id"] = campaignEvent.AnonymizedID.String()
+	}
+	AddTimestamps(row)
+	res := r.DB.Model(&database.CampaignEvent{}).Create(row)
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// HasMessageReadEvent checks if a recipient has a MESSAGE_READ event for a campaign
+// returns true if the recipient has already opened the email (or has a synthetic event)
+func (r *Campaign) HasMessageReadEvent(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	recipientID *uuid.UUID,
+	messageReadEventID *uuid.UUID,
+) (bool, error) {
+	var count int64
+
+	query := r.DB.Model(&database.CampaignEvent{}).
+		Where("campaign_id = ? AND event_id = ?", campaignID, messageReadEventID)
+
+	if recipientID != nil {
+		query = query.Where("recipient_id = ?", recipientID)
+	}
+
+	res := query.Count(&count)
+	if res.Error != nil {
+		return false, res.Error
+	}
+
+	return count > 0, nil
+}
+
+// HasEvent reports whether an event of the given type exists for the campaign,
+// optionally scoped to a single recipient.
+func (r *Campaign) HasEvent(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	recipientID *uuid.UUID,
+	eventID *uuid.UUID,
+) (bool, error) {
+	var count int64
+
+	query := r.DB.Model(&database.CampaignEvent{}).
+		Where("campaign_id = ? AND event_id = ?", campaignID, eventID)
+
+	if recipientID != nil {
+		query = query.Where("recipient_id = ?", recipientID)
+	}
+
+	res := query.Count(&count)
+	if res.Error != nil {
+		return false, res.Error
+	}
+
+	return count > 0, nil
+}
+
+// HasEventByAnonymizedID reports whether an event of the given type already exists
+// for a pseudonym in a campaign. Used to deduplicate events on anonymous campaigns,
+// whose events carry no recipient id.
+func (r *Campaign) HasEventByAnonymizedID(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	anonymizedID *uuid.UUID,
+	eventID *uuid.UUID,
+) (bool, error) {
+	var count int64
+	res := r.DB.Model(&database.CampaignEvent{}).
+		Where("campaign_id = ? AND event_id = ? AND anonymized_id = ?", campaignID, eventID, anonymizedID).
+		Count(&count)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return count > 0, nil
+}
+
+// SetLureSettingsByID writes the lure URL settings taken from the campaign
+// template. The only path that writes them, because a create or update request
+// carries whatever a caller put in those fields and they must come from the
+// template instead.
+func (r *Campaign) SetLureSettingsByID(
+	ctx context.Context,
+	id *uuid.UUID,
+	mode string,
+	algorithm string,
+	length int,
+	isTraining bool,
+) error {
+	row := map[string]any{
+		"lure_url_mode":    mode,
+		"lure_code_algo":   algorithm,
+		"lure_code_length": length,
+		"is_training":      isTraining,
+	}
+	AddUpdatedAt(row)
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where("id = ?", id).
+		Updates(row)
+
+	return res.Error
+}
+
+// UpdateByID updates a campaign by id
+// does not update the campaign recipient groups and campaign recipients
+func (r *Campaign) UpdateByID(
+	ctx context.Context,
+	id *uuid.UUID,
+	campaign *model.Campaign,
+) error {
+	row := campaign.ToDBMap()
+	AddUpdatedAt(row)
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where("id = ?", id).
+		Updates(row)
+
+	if allowDeny, err := campaign.AllowDenyIDs.Get(); err == nil {
+		denyLen := len(allowDeny)
+		err = r.RemoveAllowDenyListsByCampaignID(ctx, id)
+		if err != nil {
+			return err
+		}
+		if denyLen > 0 {
+			err = r.AddAllowDenyLists(ctx, id, allowDeny)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveCampaignRecipientGroups removes all recipient groups from a campaign
+func (r *Campaign) RemoveCampaignRecipientGroups(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("campaign_id = ?", campaignID).
+		Delete(&database.CampaignRecipientGroup{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveCampaignRecipientGroupByGroupID removes a group from a campaign
+func (r *Campaign) RemoveCampaignRecipientGroupByGroupID(
+	ctx context.Context,
+	recipientGroupID *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("recipient_group_id = ?", recipientGroupID).
+		Delete(&database.CampaignRecipientGroup{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// RemoveCampaignTemplateIDFromCampaigns removes campaign template id from all
+// campaign that use it.
+func (r *Campaign) RemoveCampaignTemplateIDFromCampaigns(
+	ctx context.Context,
+	campaignTemplateID *uuid.UUID,
+) error {
+	row := map[string]interface{}{}
+	AddUpdatedAt(row)
+	row["campaign_template_id"] = nil
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where(
+			fmt.Sprintf(
+				"%s = ?",
+				TableColumn(database.CAMPAIGN_TABLE, "campaign_template_id"),
+			),
+			campaignTemplateID.String(),
+		).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// DeleteByID deletes a campaign by id including its stats
+func (r *Campaign) DeleteByID(
+	ctx context.Context,
+	id *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("id = ?", id).
+		Delete(&database.Campaign{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return r.DeleteCampaignStats(ctx, id)
+}
+
+// DeleteEventsByCampaignID deletes all events by campaign id
+func (r *Campaign) DeleteEventsByCampaignID(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) error {
+	res := r.DB.
+		Where("campaign_id = ?", campaignID).
+		Delete(&database.CampaignEvent{})
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// GetEventByID gets a campaign event by its id
+func (r *Campaign) GetEventByID(
+	ctx context.Context,
+	eventID *uuid.UUID,
+) (*database.CampaignEvent, error) {
+	var event database.CampaignEvent
+	res := r.DB.WithContext(ctx).
+		Where("id = ?", eventID).
+		First(&event)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return &event, nil
+}
+
+// DeleteEventByID deletes a campaign event by its id
+func (r *Campaign) DeleteEventByID(
+	ctx context.Context,
+	eventID *uuid.UUID,
+) error {
+	res := r.DB.WithContext(ctx).
+		Where("id = ?", eventID).
+		Delete(&database.CampaignEvent{})
+	return res.Error
+}
+
+// GetMostNotableEventForRecipient finds the most notable event for a recipient in a campaign
+// excludes the specified event id (the one being deleted)
+func (r *Campaign) GetMostNotableEventForRecipient(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	recipientID *uuid.UUID,
+	excludeEventID *uuid.UUID,
+) (*uuid.UUID, error) {
+	var events []database.CampaignEvent
+	query := r.DB.WithContext(ctx).
+		Where("campaign_id = ?", campaignID).
+		Where("id != ?", excludeEventID)
+
+	// handle both regular and anonymized recipients
+	if recipientID != nil {
+		query = query.Where("recipient_id = ?", recipientID)
+	}
+
+	res := query.Find(&events)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	if len(events) == 0 {
+		return nil, nil
+	}
+
+	// find the most notable event using priority
+	var mostNotableEventID *uuid.UUID
+	highestPriority := -1
+
+	for _, event := range events {
+		if event.EventID == nil {
+			continue
+		}
+		priority := cache.GetEventPriority(event.EventID)
+		if priority > highestPriority {
+			highestPriority = priority
+			mostNotableEventID = event.EventID
+		}
+	}
+
+	return mostNotableEventID, nil
+}
+
+// AddAnonymizedAt adds an anonymized at time to a campaign
+func (r *Campaign) AddAnonymizedAt(
+	ctx context.Context,
+	id *uuid.UUID,
+) error {
+	row := map[string]interface{}{
+		"anonymized_at": utils.NowRFC3339UTC(),
+	}
+	AddUpdatedAt(row)
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where("id = ?", id).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// AddDataAnonymizedAt adds a data anonymized at time to a campaign
+func (r *Campaign) AddDataAnonymizedAt(
+	ctx context.Context,
+	id *uuid.UUID,
+) error {
+	row := map[string]interface{}{
+		"data_anonymized_at": utils.NowRFC3339UTC(),
+	}
+	AddUpdatedAt(row)
+	res := r.DB.
+		Model(&database.Campaign{}).
+		Where("id = ?", id).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// AnonymizeCampaignEventData anonymizes the submitted data, user agent, ip
+// address and browser metadata of all events in a campaign while keeping the
+// recipient relation intact
+func (r *Campaign) AnonymizeCampaignEventData(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) error {
+	row := map[string]any{
+		"user_agent": "anonymized",
+		"ip_address": nil,
+		"data":       "anonymized",
+		"metadata":   "",
+	}
+	AddUpdatedAt(row)
+	res := r.DB.
+		Model(&database.CampaignEvent{}).
+		Where("campaign_id = ?", campaignID).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// AnonymizeCampaignEvent anonymizes a campaign event
+func (r *Campaign) AnonymizeCampaignEvent(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	recipientID *uuid.UUID,
+	anonymizedID *uuid.UUID,
+) error {
+	row := map[string]any{
+		"recipient_id":  nil,
+		"anonymized_id": anonymizedID.String(),
+		"user_agent":    "anonymized",
+		"ip_address":    nil,
+		"data":          "anonymized",
+	}
+	AddUpdatedAt(row)
+	res := r.DB.
+		Model(&database.CampaignEvent{}).
+		Where("campaign_id = ? AND recipient_id = ?", campaignID, recipientID).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// AnonymizeCampaignEventsByRecipientID anonymizes campaign events by recipient ID
+func (r *Campaign) AnonymizeCampaignEventsByRecipientID(
+	ctx context.Context,
+	recipientID *uuid.UUID,
+	anonymizedID *uuid.UUID,
+) error {
+	row := map[string]interface{}{
+		"recipient_id":  nil,
+		"anonymized_id": anonymizedID,
+		"user_agent":    "anonymized",
+		"ip_address":    nil,
+		"data":          "anonymized",
+	}
+	AddUpdatedAt(row)
+	res := r.DB.
+		Model(&database.CampaignEvent{}).
+		Where("recipient_id = ?", recipientID).
+		Updates(row)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+// GetActiveCount get the number running campaigns
+// if no company ID is selected it gets the global count including all companies
+func (r *Campaign) GetActiveCount(ctx context.Context, companyID *uuid.UUID, includeTestCampaigns bool) (int64, error) {
+	var c int64
+	db := r.DB
+	if companyID != nil {
+		db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	}
+
+	whereClause := "((send_start_at <= ? OR send_start_at IS NULL) AND closed_at IS NULL)"
+	if !includeTestCampaigns {
+		whereClause += " AND is_test = false"
+	}
+
+	res := db.
+		Model(&database.Campaign{}).
+		Where(whereClause, utils.NowRFC3339UTC()).
+		Count(&c)
+
+	return c, res.Error
+}
+
+// GetUpcomingCount get the upcoming campaign count
+// if no company ID is selected it gets the global count including all companies
+func (r *Campaign) GetUpcomingCount(ctx context.Context, companyID *uuid.UUID, includeTestCampaigns bool) (int64, error) {
+	var c int64
+	db := r.DB
+	if companyID != nil {
+		db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	}
+
+	whereClause := "((send_start_at > ?) AND closed_at IS NULL)"
+	if !includeTestCampaigns {
+		whereClause += " AND is_test = false"
+	}
+
+	res := db.
+		Model(&database.Campaign{}).
+		Where(whereClause, utils.NowRFC3339UTC()).
+		Count(&c)
+
+	return c, res.Error
+}
+
+// GetFinishedCount get the finished campaign count
+// if no company ID is selected it gets the global count including all companies
+func (r *Campaign) GetFinishedCount(ctx context.Context, companyID *uuid.UUID, includeTestCampaigns bool) (int64, error) {
+	var c int64
+	db := r.DB
+	if companyID != nil {
+		db = whereCompany(db, database.CAMPAIGN_TABLE, companyID)
+	}
+
+	whereClause := "closed_at IS NOT NULL"
+	if !includeTestCampaigns {
+		whereClause += " AND is_test = false"
+	}
+
+	res := db.
+		Model(&database.Campaign{}).
+		Where(whereClause).
+		Count(&c)
+
+	return c, res.Error
+}
+
+func ToCampaign(row *database.Campaign) (*model.Campaign, error) {
+	id := nullable.NewNullableWithValue(*row.ID)
+	companyID := nullable.NewNullNullable[uuid.UUID]()
+	if row.CompanyID != nil {
+		companyID.Set(*row.CompanyID)
+	}
+	var company *model.Company
+	if row.Company != nil {
+		company = ToCompany(row.Company)
+	}
+	name := nullable.NewNullableWithValue(*vo.NewString64Must(row.Name))
+	var closeAt nullable.Nullable[time.Time]
+	closeAt.SetNull()
+	if row.CloseAt != nil {
+		closeAt = nullable.NewNullableWithValue(*row.CloseAt)
+	}
+	var closedAt nullable.Nullable[time.Time]
+	closedAt.SetNull()
+	if row.ClosedAt != nil {
+		closedAt = nullable.NewNullableWithValue(*row.ClosedAt)
+	}
+	var sortField nullable.Nullable[vo.CampaignSortField]
+	if row.SortField != "" {
+		sf, err := vo.NewCampaignSortField(row.SortField)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		sortField = nullable.NewNullableWithValue(*sf)
+	}
+	var sortOrder nullable.Nullable[vo.CampaignSendingOrder]
+	if row.SortOrder != "" {
+		so, err := vo.NewCampaignSendingOrder(row.SortOrder)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		sortOrder = nullable.NewNullableWithValue(*so)
+	}
+	var sendStartAt nullable.Nullable[time.Time]
+	if row.SendStartAt != nil {
+		sendStartAt = nullable.NewNullableWithValue(*row.SendStartAt)
+	} else {
+		sendStartAt.SetNull()
+	}
+	var sendEndAt nullable.Nullable[time.Time]
+	if row.SendEndAt != nil {
+		sendEndAt = nullable.NewNullableWithValue(*row.SendEndAt)
+	} else {
+		sendEndAt.SetNull()
+	}
+	var scheduleAt nullable.Nullable[time.Time]
+	if row.ScheduleAt != nil {
+		scheduleAt = nullable.NewNullableWithValue(*row.ScheduleAt)
+	} else {
+		scheduleAt.SetNull()
+	}
+	var jitterMin nullable.Nullable[int]
+	if row.JitterMin != nil {
+		jitterMin = nullable.NewNullableWithValue(*row.JitterMin)
+	} else {
+		jitterMin.SetNull()
+	}
+	var jitterMax nullable.Nullable[int]
+	if row.JitterMax != nil {
+		jitterMax = nullable.NewNullableWithValue(*row.JitterMax)
+	} else {
+		jitterMax.SetNull()
+	}
+	saveSubmittedData := nullable.NewNullableWithValue(row.SaveSubmittedData)
+	saveBrowserMetadata := nullable.NewNullableWithValue(row.SaveBrowserMetadata)
+	isAnonymous := nullable.NewNullableWithValue(row.IsAnonymous)
+	isTest := nullable.NewNullableWithValue(row.IsTest)
+	isTraining := nullable.NewNullableWithValue(row.IsTraining)
+	obfuscate := nullable.NewNullableWithValue(row.Obfuscate)
+	// deprecated fields - kept for backward compatibility
+	webhookIncludeData := nullable.NewNullableWithValue(row.WebhookIncludeData)
+	webhookEvents := nullable.NewNullableWithValue(row.WebhookEvents)
+	var templateID nullable.Nullable[uuid.UUID]
+	if row.CampaignTemplateID != nil {
+		templateID = nullable.NewNullableWithValue(*row.CampaignTemplateID)
+	}
+	var template *model.CampaignTemplate
+	if row.CampaignTemplate != nil {
+		var err error
+		template, err = ToCampaignTemplate(row.CampaignTemplate)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+	}
+	recipientGroups := []*model.RecipientGroup{}
+	recipientGroupIDs := []*uuid.UUID{}
+	if row.RecipientGroups != nil {
+		for _, rg := range row.RecipientGroups {
+			r, err := ToRecipientGroup(rg)
+			if err != nil {
+				return nil, errs.Wrap(err)
+			}
+			recipientGroups = append(recipientGroups, r)
+			recipientGroupIDs = append(recipientGroupIDs, rg.ID)
+		}
+	}
+	allowDeny := []*model.AllowDeny{}
+	// AllowDenyIDs stays unspecified unless the allow/deny association was
+	// preloaded. A scalar-only UpdateByID (notable event, close) reads a campaign
+	// without that preload and must leave the filter lists alone; a specified but
+	// empty value makes UpdateByID delete every join row.
+	var allowDenyIDs nullable.Nullable[[]*uuid.UUID]
+	if row.AllowDeny != nil {
+		ids := []*uuid.UUID{}
+		for _, ad := range row.AllowDeny {
+			allowDeny = append(allowDeny, ToAllowDeny(ad))
+			ids = append(ids, ad.ID)
+		}
+		allowDenyIDs.Set(ids)
+	}
+	var denyPage *model.Page
+	if row.DenyPage != nil {
+		dp, err := ToPage(row.DenyPage)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		denyPage = dp
+	}
+	denyPageID := nullable.NewNullNullable[uuid.UUID]()
+	if row.DenyPageID != nil {
+		denyPageID.Set(*row.DenyPageID)
+	} else {
+		denyPageID.SetNull()
+	}
+
+	var evasionPage *model.Page
+	if row.EvasionPage != nil {
+		ep, err := ToPage(row.EvasionPage)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		evasionPage = ep
+	}
+	evasionPageID := nullable.NewNullNullable[uuid.UUID]()
+	if row.EvasionPageID != nil {
+		evasionPageID.Set(*row.EvasionPageID)
+	} else {
+		evasionPageID.SetNull()
+	}
+
+	constraintWeekDays := nullable.NewNullNullable[vo.CampaignWeekDays]()
+	if row.ConstraintWeekDays != nil {
+		weekDays, err := vo.NewCampaignWeekDays(*row.ConstraintWeekDays)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		constraintWeekDays.Set(*weekDays)
+	}
+	constraintStartTime := nullable.NewNullNullable[vo.CampaignTimeConstraint]()
+	if row.ConstraintStartTime != nil {
+		t, err := vo.NewCampaignTimeConstraint(*row.ConstraintStartTime)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		constraintStartTime.Set(*t)
+	}
+	constraintEndTime := nullable.NewNullNullable[vo.CampaignTimeConstraint]()
+	if row.ConstraintEndTime != nil {
+		t, err := vo.NewCampaignTimeConstraint(*row.ConstraintEndTime)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		constraintEndTime.Set(*t)
+	}
+	// handle old single webhook (backward compatibility)
+	webhookID := nullable.NewNullNullable[uuid.UUID]()
+	if row.WebhookID != nil {
+		webhookID.Set(*row.WebhookID)
+	}
+
+	// handle new multiple webhooks - will be populated separately if needed
+	webhooks := nullable.NewNullNullable[[]*model.CampaignWebhook]()
+	anonymizeAt := nullable.NewNullNullable[time.Time]()
+	if row.AnonymizeAt != nil {
+		anonymizeAt.Set(*row.AnonymizeAt)
+	}
+	anonymizedAt := nullable.NewNullNullable[time.Time]()
+	if row.AnonymizedAt != nil {
+		anonymizedAt.Set(*row.AnonymizedAt)
+	}
+	dataAnonymizeAt := nullable.NewNullNullable[time.Time]()
+	if row.DataAnonymizeAt != nil {
+		dataAnonymizeAt.Set(*row.DataAnonymizeAt)
+	}
+	dataAnonymizedAt := nullable.NewNullNullable[time.Time]()
+	if row.DataAnonymizedAt != nil {
+		dataAnonymizedAt.Set(*row.DataAnonymizedAt)
+	}
+
+	var notableEventName string
+	var notableEventID nullable.Nullable[uuid.UUID]
+	notableEventID.SetNull()
+	if row.NotableEventID != nil {
+		notableEventID = nullable.NewNullableWithValue(*row.NotableEventID)
+		notableEventName = cache.EventNameByID[row.NotableEventID.String()]
+	}
+
+	return &model.Campaign{
+		ID:                  id,
+		CreatedAt:           row.CreatedAt,
+		UpdatedAt:           row.UpdatedAt,
+		CompanyID:           companyID,
+		Company:             company,
+		Name:                name,
+		CloseAt:             closeAt,
+		ClosedAt:            closedAt,
+		AnonymizeAt:         anonymizeAt,
+		AnonymizedAt:        anonymizedAt,
+		DataAnonymizeAt:     dataAnonymizeAt,
+		DataAnonymizedAt:    dataAnonymizedAt,
+		SortField:           sortField,
+		SortOrder:           sortOrder,
+		SendStartAt:         sendStartAt,
+		SendEndAt:           sendEndAt,
+		ScheduleAt:          scheduleAt,
+		JitterMin:           jitterMin,
+		JitterMax:           jitterMax,
+		ConstraintWeekDays:  constraintWeekDays,
+		ConstraintStartTime: constraintStartTime,
+		ConstraintEndTime:   constraintEndTime,
+		SaveSubmittedData:   saveSubmittedData,
+		SaveBrowserMetadata: saveBrowserMetadata,
+		IsAnonymous:         isAnonymous,
+		IsTraining:          isTraining,
+		IsTest:              isTest,
+		Obfuscate:           obfuscate,
+		WebhookIncludeData:  webhookIncludeData,
+		WebhookEvents:       webhookEvents,
+		TemplateID:          templateID,
+		Template:            template,
+		RecipientGroups:     recipientGroups,
+		RecipientGroupIDs:   nullable.NewNullableWithValue(recipientGroupIDs),
+		AllowDeny:           allowDeny,
+		AllowDenyIDs:        allowDenyIDs,
+		DenyPage:            denyPage,
+		DenyPageID:          denyPageID,
+		EvasionPage:         evasionPage,
+		EvasionPageID:       evasionPageID,
+		WebhookID:           webhookID,
+		Webhooks:            webhooks,
+		NotableEventID:      notableEventID,
+		NotableEventName:    notableEventName,
+		LureURLMode:         nullable.NewNullableWithValue(row.LureURLMode),
+		LureCodeAlgo:        nullable.NewNullableWithValue(row.LureCodeAlgo),
+		LureCodeLength:      nullable.NewNullableWithValue(row.LureCodeLength),
+	}, nil
+}
+
+func ToCampaignEvent(row *database.CampaignEvent) (*model.CampaignEvent, error) {
+	var recipient *model.Recipient
+	if row.Recipient != nil {
+		r, err := ToRecipient(row.Recipient)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		recipient = r
+	}
+	var campaign *model.Campaign
+	if row.Campaign != nil {
+		c, err := ToCampaign(row.Campaign)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
+		campaign = c
+	}
+	ip := vo.NewOptionalString64Must(row.IPAddress)
+	userAgent := vo.NewOptionalString255Must(row.UserAgent)
+	data := vo.NewOptionalString1MBMust(row.Data)
+	metadata := vo.NewOptionalString1MBMust(row.Metadata)
+
+	return &model.CampaignEvent{
+		ID:           row.ID,
+		CreatedAt:    row.CreatedAt,
+		CampaignID:   row.CampaignID,
+		Campaign:     campaign,
+		IP:           ip,
+		UserAgent:    userAgent,
+		Data:         data,
+		Metadata:     metadata,
+		AnonymizedID: row.AnonymizedID,
+		RecipientID:  row.RecipientID,
+		EventID:      row.EventID,
+		Recipient:    recipient,
+	}, nil
+}
+
+func ToRecipientCampaignEvent(row *database.RecipientCampaignEventView) (*model.RecipientCampaignEvent, error) {
+	campaignEvent, err := ToCampaignEvent(&row.CampaignEvent)
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+	return &model.RecipientCampaignEvent{
+		CampaignEvent: *campaignEvent,
+		Name:          row.Name,
+		CampaignName:  row.CampaignName,
+	}, nil
+}
+
+func appendWhereCampaignIsActive(db *gorm.DB) *gorm.DB {
+	return db.Where(
+		fmt.Sprintf(
+			"((%s <= ? OR %s IS NULL) AND %s IS NULL)",
+			TableColumn(database.CAMPAIGN_TABLE, "send_start_at"),
+			TableColumn(database.CAMPAIGN_TABLE, "send_start_at"),
+			TableColumn(database.CAMPAIGN_TABLE, "closed_at"),
+		),
+		utils.NowRFC3339UTC(),
+	)
+}
+
+// InsertCampaignStats inserts campaign statistics when a campaign is closed
+func (r *Campaign) InsertCampaignStats(ctx context.Context, stats *database.CampaignStats) error {
+	return r.DB.WithContext(ctx).Create(stats).Error
+}
+
+// GetCampaignStats retrieves campaign statistics by campaign ID
+func (r *Campaign) GetCampaignStats(ctx context.Context, campaignID *uuid.UUID) (*database.CampaignStats, error) {
+	var stats database.CampaignStats
+	res := r.DB.WithContext(ctx).Where("campaign_id = ?", campaignID).First(&stats)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return &stats, nil
+}
+
+// GetAllCampaignStats retrieves all campaign statistics
+func (r *Campaign) GetAllCampaignStats(ctx context.Context, companyID *uuid.UUID) ([]database.CampaignStats, error) {
+	var stats []database.CampaignStats
+
+	db := r.DB.WithContext(ctx).Order("campaign_start_date DESC NULLS LAST, created_at DESC")
+
+	if companyID != nil {
+		db = db.Where("company_id = ?", companyID)
+	}
+
+	res := db.Find(&stats)
+	return stats, res.Error
+}
+
+// GetCampaignStatsCount returns the total count of campaign statistics
+func (r *Campaign) GetCampaignStatsCount(ctx context.Context, companyID *uuid.UUID) (int64, error) {
+	var count int64
+
+	db := r.DB.WithContext(ctx).Model(&database.CampaignStats{})
+
+	if companyID != nil {
+		db = db.Where("company_id = ?", companyID)
+	}
+
+	res := db.Count(&count)
+	return count, res.Error
+}
+
+// DeleteCampaignStats deletes campaign statistics by campaign ID
+func (r *Campaign) DeleteCampaignStats(ctx context.Context, campaignID *uuid.UUID) error {
+	res := r.DB.WithContext(ctx).Where("campaign_id = ?", campaignID).Delete(&database.CampaignStats{})
+	return res.Error
+}
+
+// GetManualCampaignStats retrieves manual campaign statistics (those with null campaignID)
+func (r *Campaign) GetManualCampaignStats(ctx context.Context, companyID *uuid.UUID) ([]database.CampaignStats, error) {
+	var stats []database.CampaignStats
+
+	db := r.DB.WithContext(ctx).Where("campaign_id IS NULL").Order("campaign_start_date DESC NULLS LAST, created_at DESC")
+
+	if companyID != nil {
+		db = db.Where("company_id = ?", companyID)
+	}
+
+	res := db.Find(&stats)
+	return stats, res.Error
+}
+
+// GetManualCampaignStatsCount returns the total count of manual campaign statistics
+func (r *Campaign) GetManualCampaignStatsCount(ctx context.Context, companyID *uuid.UUID) (int64, error) {
+	var count int64
+
+	db := r.DB.WithContext(ctx).Model(&database.CampaignStats{}).Where("campaign_id IS NULL")
+
+	if companyID != nil {
+		db = db.Where("company_id = ?", companyID)
+	}
+
+	res := db.Count(&count)
+	return count, res.Error
+}
+
+// GetCampaignStatsByID retrieves campaign statistics by stats ID
+func (r *Campaign) GetCampaignStatsByID(ctx context.Context, statsID *uuid.UUID) (*database.CampaignStats, error) {
+	var stats database.CampaignStats
+	res := r.DB.WithContext(ctx).Where("id = ?", statsID).First(&stats)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return &stats, nil
+}
+
+// UpdateCampaignStats updates campaign statistics by ID
+func (r *Campaign) UpdateCampaignStats(ctx context.Context, statsID *uuid.UUID, updateData map[string]interface{}) error {
+	res := r.DB.WithContext(ctx).Model(&database.CampaignStats{}).Where("id = ?", statsID).Updates(updateData)
+	return res.Error
+}
+
+// DeleteCampaignStatsByID deletes campaign statistics by stats ID
+func (r *Campaign) DeleteCampaignStatsByID(ctx context.Context, statsID *uuid.UUID) error {
+	res := r.DB.WithContext(ctx).Where("id = ?", statsID).Delete(&database.CampaignStats{})
+	return res.Error
+}
+
+// reportRecipientRow is the scan target for GetReportRecipients
+type reportRecipientRow struct {
+	FirstName         string `gorm:"column:first_name"`
+	LastName          string `gorm:"column:last_name"`
+	Email             string `gorm:"column:email"`
+	Department        string `gorm:"column:department"`
+	Position          string `gorm:"column:position"`
+	ClickedLink       bool   `gorm:"column:clicked_link"`
+	SubmittedData     bool   `gorm:"column:submitted_data"`
+	Reported          bool   `gorm:"column:reported"`
+	TrainingStarted   bool   `gorm:"column:training_started"`
+	TrainingCompleted bool   `gorm:"column:training_completed"`
+}
+
+// GetReportRecipients returns per recipient click/submit/reported results for a campaign.
+// Only non-anonymized recipients (recipient_id IS NOT NULL) are included.
+func (r *Campaign) GetReportRecipients(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+) ([]model.ReportRecipient, error) {
+	var rows []reportRecipientRow
+
+	res := r.DB.WithContext(ctx).Raw(`
+		SELECT
+			rec.first_name,
+			rec.last_name,
+			rec.email,
+			rec.department,
+			rec.position,
+			CASE WHEN clicked.recipient_id IS NOT NULL THEN 1 ELSE 0 END AS clicked_link,
+			CASE WHEN submitted.recipient_id IS NOT NULL THEN 1 ELSE 0 END AS submitted_data,
+			CASE WHEN reported.recipient_id IS NOT NULL THEN 1 ELSE 0 END AS reported,
+			CASE WHEN started.recipient_id IS NOT NULL THEN 1 ELSE 0 END AS training_started,
+			CASE WHEN completed.recipient_id IS NOT NULL THEN 1 ELSE 0 END AS training_completed
+		FROM campaign_recipients cr
+		JOIN recipients rec ON rec.id = cr.recipient_id
+		LEFT JOIN (
+			SELECT DISTINCT recipient_id
+			FROM campaign_events
+			WHERE campaign_id = ? AND recipient_id IS NOT NULL
+			AND event_id IN (?, ?, ?)
+		) AS clicked ON clicked.recipient_id = cr.recipient_id
+		LEFT JOIN (
+			SELECT DISTINCT recipient_id
+			FROM campaign_events
+			WHERE campaign_id = ? AND recipient_id IS NOT NULL
+			AND event_id = ?
+		) AS submitted ON submitted.recipient_id = cr.recipient_id
+		LEFT JOIN (
+			SELECT DISTINCT recipient_id
+			FROM campaign_events
+			WHERE campaign_id = ? AND recipient_id IS NOT NULL
+			AND event_id = ?
+		) AS reported ON reported.recipient_id = cr.recipient_id
+		LEFT JOIN (
+			SELECT DISTINCT recipient_id
+			FROM campaign_events
+			WHERE campaign_id = ? AND recipient_id IS NOT NULL
+			AND event_id = ?
+		) AS started ON started.recipient_id = cr.recipient_id
+		LEFT JOIN (
+			SELECT DISTINCT recipient_id
+			FROM campaign_events
+			WHERE campaign_id = ? AND recipient_id IS NOT NULL
+			AND event_id = ?
+		) AS completed ON completed.recipient_id = cr.recipient_id
+		WHERE cr.campaign_id = ? AND cr.recipient_id IS NOT NULL
+		ORDER BY rec.last_name, rec.first_name
+	`,
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_BEFORE_PAGE_VISITED],
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_PAGE_VISITED],
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_AFTER_PAGE_VISITED],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_SUBMITTED_DATA],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_REPORTED],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_TRAINING_STARTED],
+		campaignID,
+		cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_TRAINING_COMPLETED],
+		campaignID,
+	).Scan(&rows)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	result := make([]model.ReportRecipient, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, model.ReportRecipient{
+			FirstName:         row.FirstName,
+			LastName:          row.LastName,
+			Email:             row.Email,
+			Department:        row.Department,
+			Position:          row.Position,
+			ClickedLink:       row.ClickedLink,
+			SubmittedData:     row.SubmittedData,
+			Reported:          row.Reported,
+			TrainingStarted:   row.TrainingStarted,
+			TrainingCompleted: row.TrainingCompleted,
+		})
+	}
+	return result, nil
+}
+
+// groupedStatColumns is the fixed allowlist of snapshot columns a grouped stats
+// query may group on. Never group on a raw column taken from user input.
+var groupedStatColumns = map[string]bool{
+	"position":   true,
+	"department": true,
+}
+
+// GetGroupedResultStats returns outcome counts grouped by a recipient attribute
+// snapshotted on the campaign recipient, joining events to recipients by the
+// stable pseudonym so it works for an anonymous campaign both while live and after
+// the recipient relation is severed. Each unique pseudonym is counted once per
+// outcome. Only anonymous campaigns snapshot the grouping columns, so this returns
+// empty for a campaign that has none.
+func (r *Campaign) GetGroupedResultStats(
+	ctx context.Context,
+	campaignID *uuid.UUID,
+	groupColumn string,
+) ([]model.CampaignGroupStat, error) {
+	if !groupedStatColumns[groupColumn] {
+		return nil, fmt.Errorf("invalid group column: %s", groupColumn)
+	}
+	beforeID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_BEFORE_PAGE_VISITED]
+	pageID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_PAGE_VISITED]
+	afterID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_AFTER_PAGE_VISITED]
+	submitID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_SUBMITTED_DATA]
+	reportID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_REPORTED]
+	startedID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_TRAINING_STARTED]
+	completedID := cache.EventIDByName[data.EVENT_CAMPAIGN_RECIPIENT_TRAINING_COMPLETED]
+
+	type groupRow struct {
+		Grp               string
+		Total             int
+		Clicked           int
+		Submitted         int
+		Reported          int
+		TrainingStarted   int
+		TrainingCompleted int
+	}
+	var rows []groupRow
+	// the person key is the pseudonym when present, else the recipient id, so counts
+	// work for normal, anonymous and anonymized campaigns; the group value is the
+	// snapshot, falling back to the recipient's attribute. Events are aggregated to
+	// one row per person first, then joined once to the recipients so the join key is
+	// a plain column the database can index; joining the raw event rows on the
+	// COALESCE expression scans every recipient against every event and is quadratic.
+	// groupColumn is allowlisted above, so its interpolation is safe.
+	query := fmt.Sprintf(`
+	SELECT
+		p.grp AS grp,
+		COUNT(DISTINCT p.person) AS total,
+		COUNT(DISTINCT CASE WHEN ev.clicked = 1 THEN p.person END) AS clicked,
+		COUNT(DISTINCT CASE WHEN ev.submitted = 1 THEN p.person END) AS submitted,
+		COUNT(DISTINCT CASE WHEN ev.reported = 1 THEN p.person END) AS reported,
+		COUNT(DISTINCT CASE WHEN ev.training_started = 1 THEN p.person END) AS training_started,
+		COUNT(DISTINCT CASE WHEN ev.training_completed = 1 THEN p.person END) AS training_completed
+	FROM (
+		SELECT
+			COALESCE(cr.anonymized_id, cr.recipient_id) AS person,
+			COALESCE(NULLIF(cr.%[1]s, ''), r.%[1]s) AS grp
+		FROM campaign_recipients cr
+		LEFT JOIN recipients r ON r.id = cr.recipient_id
+		WHERE cr.campaign_id = ? AND COALESCE(cr.anonymized_id, cr.recipient_id) IS NOT NULL
+	) AS p
+	LEFT JOIN (
+		SELECT
+			COALESCE(anonymized_id, recipient_id) AS person,
+			MAX(CASE WHEN event_id IN (?, ?, ?) THEN 1 ELSE 0 END) AS clicked,
+			MAX(CASE WHEN event_id = ? THEN 1 ELSE 0 END) AS submitted,
+			MAX(CASE WHEN event_id = ? THEN 1 ELSE 0 END) AS reported,
+			MAX(CASE WHEN event_id = ? THEN 1 ELSE 0 END) AS training_started,
+			MAX(CASE WHEN event_id = ? THEN 1 ELSE 0 END) AS training_completed
+		FROM campaign_events
+		WHERE campaign_id = ? AND COALESCE(anonymized_id, recipient_id) IS NOT NULL
+		GROUP BY COALESCE(anonymized_id, recipient_id)
+	) AS ev ON ev.person = p.person
+	GROUP BY p.grp
+	ORDER BY total DESC
+	`, groupColumn)
+
+	res := r.DB.WithContext(ctx).Raw(query,
+		campaignID,
+		beforeID, pageID, afterID,
+		submitID,
+		reportID,
+		startedID,
+		completedID,
+		campaignID,
+	).Scan(&rows)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	result := make([]model.CampaignGroupStat, 0, len(rows))
+	for _, row := range rows {
+		grp := row.Grp
+		if grp == "" {
+			grp = "(unspecified)"
+		}
+		result = append(result, model.CampaignGroupStat{
+			Group:             grp,
+			Total:             row.Total,
+			Clicked:           row.Clicked,
+			Submitted:         row.Submitted,
+			Reported:          row.Reported,
+			TrainingStarted:   row.TrainingStarted,
+			TrainingCompleted: row.TrainingCompleted,
+		})
+	}
+	return result, nil
+}

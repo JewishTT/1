@@ -19,6 +19,13 @@ as a ``CoverageQualifiedAbsence`` meeting the profile's coverage and
 detection-power thresholds (Appendix P.2); otherwise it is "none observed under
 declared coverage". §13A already enforces the thresholds, and here the phrasing is
 tied to them so the two cannot drift apart.
+
+:func:`degrade_universal` (FR-014) is the third layer. It takes a
+:class:`ResultSet`, reads all six declared preconditions, and returns a
+:class:`DegradedUniversalAnswer` whose phrasing is fixed and whose limitations are
+enumerated. A caller cannot supply that phrasing, which is the point: the failure this
+prevents is not a missing feature, it is a caller who wanted a universal answer and
+wrote one.
 """
 
 from __future__ import annotations
@@ -445,3 +452,210 @@ class ResultSet:
             ),
             "banner": self.banner(),
         }
+
+
+# -- FR-014: what a universal question actually gets answered with -------------
+
+
+class LimitationKind(enum.StrEnum):
+    """FR-014's enumerated limitations. Each is a *fact about the run*, not a caveat.
+
+    Named rather than left as free text because a limitation a reader cannot act on is
+    a disclaimer, and FR-014 asks for an enumeration precisely so the reader can see
+    which preconditions failed and go and satisfy one.
+    """
+
+    #: FR-014's six inputs, in its own order.
+    UNIVERSE_NOT_DECLARED = "universe_not_declared"
+    COVERAGE_NOT_DECLARED = "coverage_not_declared"
+    FRESHNESS_NOT_DECLARED = "freshness_not_declared"
+    CAPABILITY_UNAVAILABLE = "capability_unavailable"
+    BUDGET_TRUNCATED = "budget_truncated"
+    DETECTION_POWER_UNDECLARED = "detection_power_undeclared"
+    #: Everything above was satisfied, so the enumeration is empty and the answer may
+    #: be phrased as a universal claim.
+    NONE = "none"
+
+
+#: The universal phrasing FR-014 mandates when the preconditions do not hold.
+#: Quoted rather than composed, because the whole point is that it is a fixed sentence
+#: a reader can recognise, not one this module paraphrases differently per call site.
+OBSERVED_WITHIN_STATED_COVERAGE = "candidates observed within the stated coverage"
+
+
+@dataclass(frozen=True, slots=True)
+class DegradedUniversalAnswer:
+    """What a universal query is answered with when the world will not support it.
+
+    Degradation is computed, never requested. :func:`degrade_universal` is the only
+    constructor, it reads the declared preconditions, and a caller cannot pass its own
+    phrasing -- a caller that could would reinstate exactly the failure this type
+    exists to make impossible, which is a confident universal answer produced by
+    someone who wanted one.
+
+    The three fields travel together and none of them is optional:
+
+    * ``candidates`` -- what was actually observed. Never empty by construction when
+      the answer is a degradation; a degradation that observed nothing is
+      :class:`SearchDisposition.FAILED`'s job, not this type's.
+    * ``coverage`` -- the boundary the candidates were observed within, as text.
+    * ``limitations`` -- every unmet precondition, enumerated and named.
+
+    A bare ``[]`` is not an answer this type can express, and neither is "none exist":
+    that phrasing requires :attr:`may_claim_universal_negative`, which requires a
+    declared universe *and* declared detection power.
+    """
+
+    candidates: tuple[str, ...]
+    coverage: str
+    limitations: tuple[LimitationKind, ...]
+    completeness_mode: CompletenessMode
+    requested_mode: RequestedMode = RequestedMode.UNIVERSAL
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "candidates", tuple(str(item) for item in self.candidates))
+        if not self.coverage.strip():
+            raise ValueError(
+                "a degraded answer must state the coverage its candidates were observed "
+                f"within; '{OBSERVED_WITHIN_STATED_COVERAGE}' without a boundary is the "
+                "sentence that says nothing (FR-014)"
+            )
+        object.__setattr__(
+            self,
+            "limitations",
+            tuple(sorted({LimitationKind(item) for item in self.limitations}, key=str)),
+        )
+        if not self.limitations:
+            raise ValueError(
+                "a DegradedUniversalAnswer must enumerate at least one limitation; if the "
+                "preconditions all hold the caller has a universal claim and not a degraded "
+                "one, and mislabelling it as degraded hides a real limitation"
+            )
+        if LimitationKind.NONE in self.limitations:
+            raise ValueError(
+                "LimitationKind.NONE is the empty enumeration's marker and cannot appear "
+                "inside a non-empty one"
+            )
+        object.__setattr__(
+            self, "completeness_mode", CompletenessMode(self.completeness_mode)
+        )
+        object.__setattr__(self, "requested_mode", RequestedMode(self.requested_mode))
+
+    @property
+    def may_claim_universal_negative(self) -> bool:
+        """Whether "none exist" is available. Only with a declared universe *and* power.
+
+        Coverage and detection power being absent from the limitation list is the test,
+        because that is precisely the two that FR-014 and contract 03 R4 make
+        prerequisites of an absence claim. Everything else on the list -- an undeclared
+        freshness, a missing capability -- makes the answer weaker without making the
+        negative reading unavailable.
+        """
+        blocking = {LimitationKind.UNIVERSE_NOT_DECLARED, LimitationKind.DETECTION_POWER_UNDECLARED}
+        return not (blocking & set(self.limitations))
+
+    @property
+    def phrasing(self) -> str:
+        """The sentence. Never a flat "there are none"."""
+        found = len(self.candidates)
+        detail = (
+            f"{found} candidate{'s' if found != 1 else ''} observed within "
+            f"{self.coverage} ({self.completeness_mode.value})"
+        )
+        if self.may_claim_universal_negative:
+            return (
+                f"no candidate satisfies the query within {self.coverage}; "
+                f"{detail}. Limitations: "
+                + ", ".join(item.value for item in self.limitations)
+            )
+        return (
+            f"{OBSERVED_WITHIN_STATED_COVERAGE}: {detail}. Not a universal answer. "
+            "Limitations: "
+            + ", ".join(item.value for item in self.limitations)
+        )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "answer_kind": "degraded_universal",
+            "phrasing": self.phrasing,
+            "candidates": list(self.candidates),
+            "coverage": self.coverage,
+            "requested_mode": self.requested_mode.value,
+            "completeness_mode": self.completeness_mode.value,
+            "limitations": [item.value for item in self.limitations],
+            "may_claim_universal_negative": self.may_claim_universal_negative,
+        }
+
+
+def degrade_universal(
+    result_set: ResultSet,
+    *,
+    requested_mode: RequestedMode = RequestedMode.UNIVERSAL,
+    universe_declared: bool = True,
+    coverage_declared: bool | None = None,
+    freshness_declared: bool = True,
+    capabilities_available: bool = True,
+    budget_truncated: bool = False,
+    detection_power_declared: bool | None = None,
+) -> DegradedUniversalAnswer:
+    """Answer a universal query as honestly as the declared preconditions allow (FR-014).
+
+    Every FR-014 input is read here and each one that fails becomes a named
+    limitation. The two inputs FR-014 does *not* list but contract 03 R4 does -- the
+    declared universe and the declared detection power -- default to ``True`` only
+    because :attr:`ResultSet.source_universe` is non-empty by construction and
+    :attr:`ResultSet.may_claim_universal_negative` has already computed the power half;
+    a caller wanting the stricter reading passes them explicitly.
+
+    The interesting case is ``detection_power_declared=None``: it means "ask the
+    absences", and a result set with no admissible absence answers ``False``. That is
+    the route by which "we looked and found nothing" is prevented from becoming "it
+    does not exist" -- the question is asked of the *evidence*, and the evidence
+    decides.
+    """
+    if coverage_declared is None:
+        coverage_declared = result_set.coverage_estimate is not None
+    if detection_power_declared is None:
+        detection_power_declared = result_set.may_claim_universal_negative()
+
+    limitation_flags = {
+        LimitationKind.UNIVERSE_NOT_DECLARED: not universe_declared,
+        LimitationKind.COVERAGE_NOT_DECLARED: not coverage_declared,
+        LimitationKind.FRESHNESS_NOT_DECLARED: not freshness_declared,
+        LimitationKind.CAPABILITY_UNAVAILABLE: not capabilities_available,
+        LimitationKind.BUDGET_TRUNCATED: budget_truncated,
+        LimitationKind.DETECTION_POWER_UNDECLARED: not detection_power_declared,
+    }
+    limitations = tuple(kind for kind, unmet in limitation_flags.items() if unmet)
+
+    if requested_mode is RequestedMode.BEST_EFFORT and not limitations:
+        # Nothing is unmet because nothing was asked for. Say so rather than inventing
+        # a limitation, and rather than phrasing a best-effort answer as a universal one.
+        raise ValueError(
+            "a best-effort request with every precondition met is not a degraded universal "
+            "answer; returning the ResultSet directly says more than manufacturing a "
+            "limitation to fit this type (FR-014)"
+        )
+
+    mode = (
+        result_set.completeness.feasible_mode
+        if result_set.completeness is not None
+        else CompletenessMode.OPEN_WORLD_DISCOVERY
+    )
+    observed = tuple(result_set.resolved_set) or tuple(result_set.candidate_set)
+    if not limitations:
+        # Every precondition holds, so the universal answer is available and there is
+        # nothing to degrade to. Refusing here keeps a qualified absence from being
+        # phrased as a degraded one, which would understate it.
+        raise ValueError(
+            "every FR-014 precondition is met: the universal claim is supported and does "
+            "not need degrading. Refusing is deliberate -- a supported answer phrased as a "
+            "degraded one understates what was actually established"
+        )
+    return DegradedUniversalAnswer(
+        candidates=observed,
+        coverage=result_set.source_universe,
+        limitations=limitations,
+        completeness_mode=mode,
+        requested_mode=requested_mode,
+    )

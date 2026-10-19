@@ -186,13 +186,19 @@ function envelope<T>(body: T) {
 beforeEach(() => {
   vi.clearAllMocks();
   mock.ghostlineStatus.mockResolvedValue(envelope(status()));
-  mock.listGhostlinePlaybooks.mockResolvedValue(
-    envelope({ playbooks: [playbook()], invalid: {} }),
-  );
+  mock.listGhostlinePlaybooks.mockResolvedValue(envelope({ playbooks: [playbook()], invalid: {} }));
   mock.getGhostlinePlaybook.mockResolvedValue(
     envelope({
       playbook: playbook(),
-      stages: [stage(), stage({ stage: "CLOSE", position: 1, success_regex: "\\b\\d{6}\\b", captures_credential: true })],
+      stages: [
+        stage(),
+        stage({
+          stage: "CLOSE",
+          position: 1,
+          success_regex: "\\b\\d{6}\\b",
+          captures_credential: true,
+        }),
+      ],
       persona: {
         name: "Alex Morgan",
         background: "Senior support engineer",
@@ -263,17 +269,20 @@ describe("RuntimePanel", () => {
      *
      * One render, then walk the tabs: rendering per tab would test four separate
      * canvases, which is not the property being claimed.
+     *
+     * The timeout is explicit because this is the only test in the file that walks
+     * every tab, and four render cycles do not reliably fit the 5s default on a
+     * loaded machine. Weakening the assertion to fit the clock would trade a real
+     * guarantee for a fast suite.
      */
     render(<GhostlineCanvas />);
     for (const tab of ["Playbooks", "Dialler", "Analytics", "Runtime"]) {
       fireEvent.click(await screen.findByRole("tab", { name: tab }));
-      await waitFor(() =>
-        expect(screen.getByTestId("gl-deck-engine")).toHaveTextContent("2"),
-      );
+      await waitFor(() => expect(screen.getByTestId("gl-deck-engine")).toHaveTextContent("2"));
       expect(screen.getByTestId("gl-deck-edges")).toHaveTextContent("0/1");
       expect(screen.getByTestId("gl-deck-donor")).toHaveTextContent("MIT");
     }
-  });
+  }, 20_000);
 
   it("shows provenance on the Runtime panel rather than a second copy of the deck", async () => {
     render(<GhostlineCanvas />);
@@ -304,7 +313,11 @@ describe("RuntimePanel", () => {
 
   it("renders a blocked runtime as a setup gap, not as a refusal", async () => {
     mock.startGhostlineRuntime.mockRejectedValue(
-      new ApiError(424, { error: "RuntimeUnavailable", reason: "2 prerequisites are missing", blockers: ["a"] }, "blocked"),
+      new ApiError(
+        424,
+        { error: "RuntimeUnavailable", reason: "2 prerequisites are missing", blockers: ["a"] },
+        "blocked",
+      ),
     );
     render(<GhostlineCanvas />);
     await waitFor(() => expect(screen.getByTestId("gl-voice-select")).toBeInTheDocument());
@@ -326,7 +339,9 @@ describe("PlaybooksPanel", () => {
     render(<GhostlineCanvas initialPanel="playbooks" />);
     fireEvent.click(await screen.findByTestId("gl-playbook-it-test"));
     await waitFor(() => expect(screen.getByTestId("gl-ladder")).toBeInTheDocument());
-    expect(screen.getByTestId("gl-stage-RAPPORT")).toHaveTextContent("open and get permission to talk");
+    expect(screen.getByTestId("gl-stage-RAPPORT")).toHaveTextContent(
+      "open and get permission to talk",
+    );
     expect(screen.getByTestId("gl-triggers-RAPPORT")).toHaveTextContent("reciprocity");
   });
 
@@ -351,7 +366,9 @@ describe("PlaybooksPanel", () => {
     );
     render(<GhostlineCanvas initialPanel="playbooks" />);
     fireEvent.click(await screen.findByTestId("gl-playbook-it-test"));
-    await waitFor(() => expect(screen.getByTestId("gl-branch-URGENCY")).toHaveTextContent("OBJECTION"));
+    await waitFor(() =>
+      expect(screen.getByTestId("gl-branch-URGENCY")).toHaveTextContent("OBJECTION"),
+    );
   });
 
   it("attributes the ATT&CK mapping to the platform", async () => {
@@ -363,7 +380,9 @@ describe("PlaybooksPanel", () => {
   it("reports a playbook the donor rejected instead of hiding it", async () => {
     mock.listGhostlinePlaybooks.mockResolvedValue(
       envelope({
-        playbooks: [playbook({ valid: false, invalid_reason: "sequence[2] duplicates stage CLOSE" })],
+        playbooks: [
+          playbook({ valid: false, invalid_reason: "sequence[2] duplicates stage CLOSE" }),
+        ],
         invalid: { "it-test": "sequence[2] duplicates stage CLOSE" },
       }),
     );
@@ -425,7 +444,9 @@ describe("SimulatePanel", () => {
     fireEvent.change(await screen.findByTestId("gl-sim-script"), { target: { value: "hello" } });
     fireEvent.click(screen.getByTestId("gl-sim-run"));
 
-    await waitFor(() => expect(screen.getByTestId("gl-sim-no-capture")).toHaveTextContent("0 credentials"));
+    await waitFor(() =>
+      expect(screen.getByTestId("gl-sim-no-capture")).toHaveTextContent("0 credentials"),
+    );
     expect(screen.getByTestId("gl-sim-missing")).toHaveTextContent("openai-agents");
   });
 
@@ -464,7 +485,11 @@ describe("VoicesPanel", () => {
 
   it("renders a 422 from the clone route as a fixable reason", async () => {
     mock.cloneGhostlineVoice.mockRejectedValue(
-      new ApiError(422, { error: "VoiceUnavailable", reason: "sample format .mp3 is not readable" }, "bad"),
+      new ApiError(
+        422,
+        { error: "VoiceUnavailable", reason: "sample format .mp3 is not readable" },
+        "bad",
+      ),
     );
     render(<GhostlineCanvas initialPanel="voices" />);
     fireEvent.change(await screen.findByTestId("gl-clone-name"), { target: { value: "helpdesk" } });
@@ -489,12 +514,22 @@ describe("DialerPanel", () => {
 
   it("renders a gate refusal as a refusal and names the rejected number", async () => {
     const running = status();
-    running.runtime = { ...running.runtime, state: "running", ws_url: "wss://lab.example/twilio", voice_id: "v", playbook_id: "it-test" };
+    running.runtime = {
+      ...running.runtime,
+      state: "running",
+      ws_url: "wss://lab.example/twilio",
+      voice_id: "v",
+      playbook_id: "it-test",
+    };
     mock.ghostlineStatus.mockResolvedValue(envelope(running));
     mock.dialGhostline.mockRejectedValue(
       new ApiError(
         422,
-        { error: "RosterError", reason: "1 target(s) are not on the supervisor-approved roster", rejected_targets: ["+15559999999"] },
+        {
+          error: "RosterError",
+          reason: "1 target(s) are not on the supervisor-approved roster",
+          rejected_targets: ["+15559999999"],
+        },
         "refused",
       ),
     );
@@ -532,7 +567,9 @@ describe("DialerPanel", () => {
 
   it("keeps the capture counter on screen where a credential would otherwise be", async () => {
     render(<GhostlineCanvas initialPanel="dialer" />);
-    await waitFor(() => expect(screen.getByTestId("gl-no-capture")).toHaveTextContent("0 credentials"));
+    await waitFor(() =>
+      expect(screen.getByTestId("gl-no-capture")).toHaveTextContent("0 credentials"),
+    );
   });
 
   it("never renders the operator's own caller id", async () => {
@@ -554,7 +591,9 @@ describe("DialerPanel", () => {
     await waitFor(() => expect(screen.getByTestId("gl-dialer-providers")).toBeInTheDocument());
     // Configured is reported; the number itself is not served, so it cannot be shown.
     expect(screen.getByTestId("gl-dialer-providers-twilio_from_number")).toBeInTheDocument();
-    expect(screen.getByTestId("gl-dialer-providers")).toHaveTextContent("The caller ID placed on every call.");
+    expect(screen.getByTestId("gl-dialer-providers")).toHaveTextContent(
+      "The caller ID placed on every call.",
+    );
     expect(screen.getByTestId("gl-dialer-providers")).not.toHaveTextContent(/\+\d{6,}/);
   });
 });

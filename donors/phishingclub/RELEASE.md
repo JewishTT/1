@@ -1,0 +1,539 @@
+# Changelog
+
+## [1.43.0] - 2026-10-01
+- Added scripts feature with support in campaigns, AiTM proxy and Remote Browser
+- Added custom branding settings
+- Added AiTM Proxy status engine
+- Added Remote Browser request() API.
+- Added Remote Browser state machine API for managing flow in sessions
+- Added Remote Browser can manipulate headers
+- Added hotkey for VIM toggle in editor
+- Added custom EHLO/HELO on SMTP
+- Added updatable external IP and ASN data for filters
+- Added ASN look up tool
+- Added change of campaign trend graph type when over 60 campaigns in view
+- Updated Remote Browser default template
+- Fix filters deleted during scheduling update
+- Fix modal text is now globally selectable
+- Fix message-id was leaking internals
+- Fix added implicit TLS on SMTP when using port 465
+- Fix malformed request when using browser impersonation
+- Fix AiTM Proxy did not collect cookie when required was set to false
+- Fix global company assets could not be deleted
+- Fix improve error message when browser start fails
+- Fix campaign creation schedule time matched against current time in some timezones
+- Fix domain listing could 500 via API
+- Fix Remote Browser 'disableFidoUI' and renamed it - Deprecated disableFioUI
+- Fix loader location on settings page
+- Fix send test email search recipient ondemand
+- Fix alignment on TextFieldSearchSelect component
+- Fix reduce binary size ~50% by stripping js.map's and debug from build
+- Deprecated notification for embedded IP filter list
+- Bumped dependencies
+
+## [1.42.0] - 2026-09-11
+- Added position and department statistics to campaigns
+- Added anonymous campaign mode
+- Added unified login audit event
+- Added remote browser log event as campaign recipient info event 
+- Added page editor auto complete for remote browser, 'rb'
+- Fix API sender not supporting template functions in request headers
+- Fix API sender not supporting Device code in request headers
+- Fix restrict report generation browser egress 
+- Fix disable report generation browser telemetry
+- Fix escape recipient data in report generation
+- Fix email sort by updated at
+- Fix deprecated .on overloading in 'rb' API
+- Various performance and maintenance fixes 
+
+## [1.41.0] - 2026-08-16
+- Added awareness training campaigns with completion tracking and dedicated reports
+- Added URL path identifier support for campaigns
+- Added set custom lure for recipient
+- Added variable support for specific landing pages
+- Improved table loading UX
+- Update internal GEO ip database
+- Fix referrer leak in links to phishing.club
+
+## [1.40.1] - 2026-07-26
+- Fix broken arm64 image 
+
+## [1.40.0] - 2026-07-24
+- Added recipient report endpoint and ReportURL variable 
+- Added proxy target port support and cross origin captures
+- Added better support for remote browser handling headfull locally and remote
+- Fix various bugs related to remote browser CDP fingerprinting
+- Fix various proxy bugs related to cookie scoping
+- Fix various proxy bugs related to sessionless requests
+- Minor UI improvements
+
+## [1.39.0] - 2026-07-03
+- Add campaign data anonymization
+- Add table multi select and delete
+- Fix recipient could be mixed cased and added optional normalization migration
+- Fix cookie captured contained host port
+- Fix export campaign events had incorrect CSV header
+- Fix import campaign reporters wrong date format
+
+## [1.38.0] - 2026-06-18
+- Added support company recipient and group sync via. SCIM
+- Added OIDC provider support
+- Added SSO exclusive mode
+- Added automated report delivery
+- Added company page for settings
+- Added company color setting
+- Added company level shared asset folder
+- Improved setting UI with tabs
+- Minor UI improvements
+- Fixed SSO can nolonger create new users
+- Fixed SSO match normalize email on import
+- Fixed minor match when using quick navigation to switch company
+- Fixed back navigation to settings page
+- Fixed modals with sensitive action should use text confirmation
+- Fixed deleting group anonymization sideeffect on active recipients
+- Fixed wrong recipient count on anonymized campaigns
+- Fixed asset with no preview icon not centered 
+
+## [1.37.1] - 2026-06-07
+- Fix disable CSP giving issue when previews
+- Fix preview for report template
+
+## [1.37.0] - 2026-06-06
+- Added generate campaign report
+- Added global and company level campaign report customization 
+- Added calendar invite builder
+- Added calendar invite attachment handling
+- Added trusted IP header forwarding now works for phishing server 
+- Added musl for statically linked binary - no libc dependency anymore
+- Added security headers to admin server
+- Bump dependencies
+- Update geo ips to latest
+- Improve UI of setting page
+- Improve UI of tools page
+- Improve UI on event timeline and campaign trendline
+- Fix remove TOTP from logs
+- Fix added missing audit logs for TOTP disable
+- Fix only the first found API key worked
+- Fix favicon fingerprinting
+- Fix validation when AiTM proxies reuse domains without errors 
+- Fix bug in table layout were last column would get cut
+- Fix delete group modal warning was incorrect 
+- Remote Browser: Add lifecycle events
+- Remote Browser: Added dependencies to image builds
+- Remote Browser: Add right click context menu with copy paste
+- Remote Browser: Fix click outside of element bug
+- Remote Browser: Add mouse movement and console trap patch 
+
+## [1.36.0] - 2026-05-24
+- Added experimental support for Remote Browser Phishing
+- Fixed incorrect constraint parsing for local time 
+- Fixed a vulnerability where TOTP codes were briefly replayable
+- Fixed state tracking for SSO login
+
+## [1.35.0] - 2026-04-23
+- Added support for custom certificates in proxy configuration
+- Added support for URL rewrite in visual proxy editor
+- Fix apply rewrite rules when redirecting to proxy pages
+- Fix recipient URL using start URL in proxy
+- Fix remove campaign webhooks and device codes on campaign deletion
+- Fix company email attachments not working
+- Fix create template did not include URL path
+
+## [1.34.0] - 2026-04-02
+- Added dynamic groups
+- Added late scheduling to campaigns
+- Added option to auto prune orphans
+- Added option to clear generated device codes for campaign
+- Added proxy (socks5) for device code
+- Added optional request path and method on proxy rewrites
+- Added proxy rewrite header engine
+- Added support for proxy capturing as info event instead of submit event
+- Fix proxy replace not working on header responses
+- Fix email is not optional in campaign template
+- Fix proxy normalize empty path to /
+- Minor UI fixes / improvements
+
+## [1.33.0] - 2026-03-21
+- Added Microsoft Device Code phishing
+- Fix pagination on dashboard events table
+- Fix domain table sort by type
+- Fix missing cascading effect of deleting an email
+
+## [1.32.1] - 2026-03-07
+- Added detail when manually set recipient as sent
+- Bump go version 
+- Fix do not track email pixel after campaign closed
+- Fix default sort recipients on campaign creation
+- Fix missing method check on cookie capture with cookie engine
+- Fix legacy cookie capturing engine rule applied to cookie engine
+- Fix missing parsing of some captured cookie attributes
+
+## [1.32.0] - 2026-02-28
+- Added support for multiple webhooks per campaign
+- Added webhook links on campaign page
+- Bumped / Cleaned vendor dependencies
+- Fix domain type centered on table
+- Fix upload files style on asset modal
+- Fix modal info style
+- Fix potential reuse of oauth on database failure to mark as used
+- Fix add missing timeout to oauth handler
+- Fix missed handled error in MFA login flow
+- Fix cookie expiration should be set with TLS flag
+
+
+## [1.31.0] - 2026-02-21
+- Split dashboard into multiple pages and added latest events.
+- Added header to allow / deny filters
+- Added campaign clickable on campaign trend line
+- Added follow mode on campaign event timeline
+- Improved company context switching synchronized across multiple browser tabs
+- Campaign actions restricted when viewing from different context
+- Various UI/UX improvements
+- Fix missing eclipses on TextFieldSelect and added hover title
+- Fix editing moving avg on campaign trend line 
+- Fix copy template not available in company context
+- Fix sort / search by repeat offender
+- Fix table dropdown disappearing on table refresh
+
+## [1.30.3] - 2026-02-10
+- Fix saved pagination value is handled by url params
+- Fix custom stat campaign start date
+- Fix missing sort column mapping for name on domain and allow deny
+
+## [1.30.2] - 2026-02-08
+- Fix authenticated blind SQL injection related to orphaned recipients. 
+ 
+Thanks to [Rayn Light](https://www.linkedin.com/in/rayn-light-723a6a261) for responsible disclosure, detailed report and quick feedback.
+
+## [1.30.1] - 2026-02-05
+- Fix various proxy rewrite replace bugs
+- Fix proxy multiline yaml
+
+## [1.30.0] - 2026-02-04
+- Added toggle test campaigns from campaign page
+- Added proxy rewrite replace support multi lines
+- Added delete event for open campaigns
+- Added save pagination choice globally 
+- Minor table and select UI improvements
+- Fix missing allow / deny list on created campaign
+- Fix dashboard toggle test campaigns and label in table
+
+## [1.29.0] - 2026-01-30
+- Add search to proxy hosts in visual mode
+- Add support for recipient variables in proxies
+- Add support for {{.Origin}} in proxy response headers
+- Add support to remove header via. empty replace when using regex
+- Extended timeout for application update
+- Fix proxy dom engine should only handle content type HTML
+- Fix CTRL+S inside proxy visual mode
+
+## [1.28.0] - 2026-01-29
+- Added proxy builder visual mode
+- Added proxy import / export 
+- Added calendar week mode, start by today, and start of week
+- Added option to add custom database DSN query params
+- Improved calendar UI
+- Improved view as company frame
+- Improve loading spinner on navigation
+- Improve campaign trend chart in log scale
+- Minor database index optimization
+- Fix complete refresh not required on links in profile menu
+
+## [1.27.1] - 2026-01-27
+- Fixed rID variable using key instead of value in email
+- Added experimental ARM support in all release builds
+
+## [1.27.0] - 2026-01-22
+- Added support for attachments as inline images in emails and the email editor
+- Fix delete orphans recipients when recipient is in active campaign
+- Fix error in update options
+- Fix faulty migration
+- Fix added AllowDenyIDs on get campaign by id endpoint for consistency 
+
+## [1.26.0] - 2025-12-19
+- Added ContentRaw variable to API Senders
+- Fix proxy capturing on 302 responses
+- Fix remove frontend max length on start url
+- Fix removed frontend validation on email FROM
+- Fix import text description
+
+## [1.25.0] - 2025-12-17
+- Added webhook data level selection and webhook filtering
+- Fix and improve upload campaign reporters with column selection
+- Fix disable webhook on created campaign 
+
+## [1.24.0] - 2025-12-15
+- Added import oauth
+- Add warning before viewing email that cause an event to trigger
+- Improved campaign timeline performance and added now indicator
+- Fix multi select was cut off when overflowing modal
+- Fix campaign recipient event modal switching sort between asc and desc 
+
+## [1.23.0] - 2025-12-13
+- Added Session Sushi as recommended handling of captured cookies
+- Rename whitebox/blackbox to Simulation/Red Team
+- Added support for capturing PUT, PATCH and more content types
+- Added status modal after import recipients
+
+## [1.22.0 / 1.21.1] - 2025-12-03
+- Added preview recipients modal to create campaign modal
+- Added readonly to recipient email on update modal
+- Added CTRL+s save on create modals that are primarily editors
+- Improved installer UI width
+- Added clientside validation to username and password on installer
+- Added recipient CSV clientside parsing warnings and errors
+- Fix rewrite_urls query param mapping bug in proxies
+- Fix CTRL+s save on update now keep position in editor
+
+## [1.21.0] - 2025-11-27
+- Added new capture engines for json, formdata and urlencoded
+- Added support for multiple find in captures 
+- Added Random Recipient variable 
+- Added support for variables in email subject line
+- Added support for proxy targers with ports
+- Added schema http/https in proxy
+- Fix added noreferrer to external links 
+- Minor UI improvements
+
+## [1.20.0] - 2025-11-23
+- Added Blackbox / Whitebox display mode
+- Obfuscation template can now be edited
+- For MITM proxying Surf HTTP client is now exclusively used 
+- Added copy recipient email (not content) to campaign action
+- Improved campaign page detail and actions UI 
+- Improved input placeholder color in dark mode
+- Fixed various MITM bugs related to impersonation and Surf HTTP client
+
+## [1.19.0] - 2025-11-21
+- Added OAuth Providers and integration with API Senders
+- Added copy email on recipient actions on campaign page
+- Fix bad error message on custom sent message failure
+- Fix bad error sometimes caused by context cancellation on custom send message 
+- Fix campaign template able to be both SMTP and API Sender 
+- Fix has next page in pagination on campaign page
+- Fix campaign recipients endpoint uses standard response 
+- Improved recipient actions text on campaign page
+
+## [1.18.0] - 2025-11-18
+- Added option to add jitter to scheduling 
+- Fix set cancelled only for recipients of campaign
+- Fix missing tabindex and active style for checkboxes
+- Improve range slider for campaign distribution
+
+## [1.17.1] - 2025-11-16
+- Fixed missing meta data on a couple of eserivents
+
+## [1.17.0] - 2025-11-16
+- Added option to to add data to webhook events
+- Fix added a couple of webhook calls
+- Fix add global rewrite rules to requests without mitm session
+- Fix bad handling of brotli/gzip with browser empersonation 
+- Fix cookie events captured before all required captures
+- Removed unused sorting column
+
+## [1.16.0] - 2025-11-12
+- Added synthetic 'email read' event when visiting a lure without having loaded a tracking pixel in a email
+- Added {{.FromName}}, {{.FromEmail}} and {{.Subject}} variable support to API sender
+- Fix {{.APIKey}} not rendered in API request header
+
+## [1.15.1] - 2025-11-11
+- Fix missing meta data field on some events
+- Handle unknown events on campaign page
+
+## [1.15.0] - 2025-11-11
+- Added tools page with ip geo lookup and JA4 fingerprint builder
+- Added option to save additional recipient event data (ja4, Sec-CH-UA-Platform header and Accept-Lang header)
+- Deny page visits are now saved as events
+- Fix updating geo filter not updating filter
+
+## [1.14.0] - 2025-11-09
+- Added allow / deny filtering based on geo IP
+- Added support for sock5 with authentication
+
+## [1.13.1] - 2025-11-07
+- Fix bad calculation for submitted on campaign page
+- Fix ensure folder exists for attachments
+
+## [1.13.0] - 2025-11-07
+- Added proxy request JA4 impersonation
+- Added JA4 filtering with wildcard support in allow deny lists
+- Changed IP filtering to filtering
+- Bumped dependencies
+- Fixed overly eager proxy auto completion in editor
+- Fixed bug in obfuscation that could cause dublicate variables
+
+## [1.12.0] - 2025-11-04
+- Added tls directive for proxy domains
+- Added self signed certificates for domains
+- Added expand mode to SimpleCodeEditor
+- Align proxy editor UI with normal editor
+- All campaign trendline settings are saved
+- Clear proxy session when changing a proxy config
+- Fixed unused config field
+
+## [1.11.0] - 2025-11-01
+- Added option to use campaign obfuscation
+- Removed details/editor and added expand option to editor
+- Fix editor preview bug when toggled multiple times
+
+## [1.10.0] - 2025-10-31
+- Added release image on ghcr
+- Added option to pin menu
+- Pagination now disables previous and/or next button in appropriate cases
+- Added log scale and relative metrics to Campaign Trendline
+- Trendline settings are now saved
+- Updated custom company stats table to more than just percentages
+- Various UI style fixing mostly related to firefox and tables
+- Various fixes to Campaign Trendline
+- Fix proxy host rules reacting to other hosts rules
+- Fix custom stats not added to completed campaigns on dashboard
+- Fix bug with importing data in nested folders
+- Fix preview domain always visible in editor
+- Fix bug where domains might be shown in editor
+
+
+## [1.9.1] - 2025-10-25
+- Fixed missing proxy logic for modifying sessionless request and headers
+- Fixed actions width to align with header width
+
+## [1.9.0] - 2025-10-24
+- Revamped proxy access directive
+- Added proxy rewrite URL directive
+- Added custom stats for company
+- Various changes to the proxing logic
+- Simplified create campaign modal
+- Simplefied create template modal
+- Campaign anonymization now requires confirmation
+- Improved dashboard campaign trendline
+- Fixed response for host specific path matched any host
+- Fixed copy button copied wrong text
+- Fixed bad dark mode color on copy campaign recipient event
+- Fixed check campaign name before step 2 on copy campaign
+- Fixed copy campaign transfering values that should be reset
+- Fixed bad mapping on campaign templates 'is complete'
+- Fixed proxy should not be available in all contexts
+- Fixed bug when deleting all assets of a domain
+- Added beta tag for Proxy functionality
+
+## [1.8.0] - 2025-10-19
+- Campaigns now support Anti-Bot / Evasion page
+- Proxy campaign pages now support IP filtering
+- Minor UI update / fixes
+
+## [1.7.0] - 2025-10-16
+- New DOM engine choice for proxy rewrite directive
+- New response proxy directive
+- New orhaned recipients page with delete all
+- Quick navigation with CTRL+p
+- A comment can now be added to a company
+- Added confirm alerts to company and shared data export
+- When in company context tables show which scope a row belongs to
+- Fix panic on missing nil checks of various proxy rules
+- Fix panic on export shared view data
+- Fix missing validation of type on allow/deny list
+- Fix error still shown when updating with shortcut
+- Fix campagin box position on trendline
+
+## [1.6.2] - 2025-10-13
+- Remove dark mode browser specific styling for date components
+
+## [1.6.1] - 2025-10-13
+- Fix proxy domain comparison
+- Improve campaign trendline campaign box
+- Escape context in analytics graphs
+- Fix login page on dark mode
+
+## [1.6.0] - 2025-10-12
+- Added debug flag
+- Option to install example templates on setup
+- Support for CTRL+s to save when updating email, page or domain without closing editing modal
+- Many UI updates
+- Set as sent now has a confirm modal
+- Improve tabbing in form modals
+- Fix if first page is a proxy, skip the campaign template domain
+
+## [1.5.0] - 2025-10-08
+- Added access control rules for proxys
+- Completion help for proxys in editor
+- Vim mode for editors
+- Fix proxy header rewrite not being done
+- Fix company attachments in shared context
+- Fix panic on loading tracking pixel for deleted campaign
+- Various UI fixes
+- Campaigns now default to saving submitted data
+- Updated embedded licenses
+- Removed securejoin dependency in favor of os.OpenRoot (native)
+
+## [1.4.0] - 2025-09-30
+- Added proxy (MITM) functionality
+- Added 'Advanced mode' to interactive installer
+- Various UI fixes
+- Fix Editor style isolation
+- Bump dependency
+
+## [1.3.1] - 2025-09-21
+- Improved width of links in tables
+- Fixed asset page not showing domains
+- Fixed domain assets shown under global assets
+- Improve asset delete modal text
+- Removed asset preview icon background
+- Minor improvements to install / login UI
+
+## [1.3.0] - 2025-09-19
+- Added dark mode support and various UI improvements
+- Added manual backup functionality
+- Added reported functionality for phishing campaigns
+- Added recipient manual send action
+- Added validation on save
+- Added link to release information on update modal and page
+- Fixed copy campaign wrong text on create
+- Fixed HTML to text template handling
+- Fixed bad title on settings page
+- Fixed dashboard scroll to top issue
+- Improved send again texts
+- Improved modal error position
+- Moved recent campaigns to bottom of dashboard
+- Bumped Go version and dependencies
+
+## [1.2.1] - 2025-09-15
+- Add debug logging to SMTP
+- Fix excessive table URL params
+- Bump backend and frontend dependencies
+- Add debug log for SMTP
+
+## [1.2.0] - 2025-09-04
+- Added support for YmdHis Date and Base64 template functions
+- Improved campaign review details
+- Fix import modal not scrolling to bottom after import
+
+## [1.1.13] - 2025-08-30
+- Fix too many get all sessions params sent
+- Fix invalidate all sessions
+- Fix missing change company
+- Fix improve table checkboxes to Yes/No
+- Table menu is now larger and placed more correctly
+- Simple code editor for API senders body
+- Removed CRM/License link from developer panel
+
+## [1.1.12] - 2025-08 -29
+- Added a update button to campaigns details page
+- Toggle test campaign on dashboard
+- Fix trend legend alignment
+- Improve domain TLS certificate management naming
+- Campaign creator, sort by and order not optional in delivery
+- Smaller height on table rows
+- Fix group recipient column headers
+- Improve validation error messages
+- Campaign details show correct "Data saving" and "anonymization"
+- Campaign update handle anonymization and close at
+
+## [1.1.11] - 2025-08-29
+- Show full error on invalid password when installing
+
+## [1.1.10] - 2025-08-27
+- Removed systemd inline comments
+- Version check for updates in development
+
+## [1.1.9] - 2025-08-23
+- Fixed db lock bug in installer
+- Removed license text in installer

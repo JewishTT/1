@@ -1,0 +1,164 @@
+package model
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/oapi-codegen/nullable"
+	"github.com/phishingclub/phishingclub/validate"
+	"github.com/phishingclub/phishingclub/vo"
+)
+
+// ReportTemplate is a report template
+type ReportTemplate struct {
+	ID         nullable.Nullable[uuid.UUID]            `json:"id"`
+	CreatedAt  *time.Time                              `json:"createdAt"`
+	UpdatedAt  *time.Time                              `json:"updatedAt"`
+	CompanyID  nullable.Nullable[uuid.UUID]            `json:"companyID"`
+	Content    nullable.Nullable[vo.OptionalString1MB] `json:"content"`
+	IsTraining nullable.Nullable[bool]                 `json:"isTraining"`
+
+	Company *Company `json:"-"`
+}
+
+// Validate checks if the report template has a valid state
+func (r *ReportTemplate) Validate() error {
+	if err := validate.NullableFieldRequired("content", r.Content); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ToDBMap converts updatable fields to a map
+func (r *ReportTemplate) ToDBMap() map[string]any {
+	m := map[string]any{}
+	if r.Content.IsSpecified() {
+		m["content"] = nil
+		if content, err := r.Content.Get(); err == nil {
+			m["content"] = content.String()
+		}
+	}
+	if r.CompanyID.IsSpecified() {
+		if r.CompanyID.IsNull() {
+			m["company_id"] = nil
+		} else {
+			m["company_id"] = r.CompanyID.MustGet()
+		}
+	}
+	if r.IsTraining.IsSpecified() {
+		if v, err := r.IsTraining.Get(); err == nil {
+			m["is_training"] = v
+		}
+	}
+	return m
+}
+
+// ReportData is the data context passed to a report HTML template for rendering.
+// Date fields are pre-formatted as "YYYY-MM-DD" strings (empty when not set).
+type ReportData struct {
+	// Campaign identity
+	CampaignName      string
+	CompanyName       string
+	ReportDate        string
+	CampaignStartDate string
+	CampaignEndDate   string
+	CampaignClosedAt  string
+
+	// Totals
+	TotalTargets int64
+	EmailsSent   int64
+	EmailsOpened int64
+
+	// Core outcome counts
+	ResultClicked   int64
+	ResultSubmitted int64
+	ResultReported  int64
+
+	// Formatted percentages (e.g. "45.2"), ready to use directly in templates
+	ResultClickedPercent   string
+	ResultSubmittedPercent string
+	ResultReportedPercent  string
+
+	// Float percentages for custom formatting with {{printf "%.1f" .ClickRate}}
+	SentRate   float64
+	OpenRate   float64
+	ClickRate  float64
+	SubmitRate float64
+	ReportRate float64
+
+	// Relative conversion rates, funnel step to step (formatted strings like "45.2")
+	OpenedOfSent       string // EmailsOpened / EmailsSent
+	ClickedOfOpened    string // ResultClicked / EmailsOpened
+	SubmittedOfClicked string // ResultSubmitted / ResultClicked
+
+	// Awareness training funnel, populated for training campaigns, zero otherwise.
+	// The training report template renders these in place of the phishing outcomes.
+	IsTraining               bool
+	TrainingStarted          int64
+	TrainingCompleted        int64
+	TrainingStartedPercent   string  // of recipients
+	TrainingCompletedPercent string  // of recipients
+	TrainingStartedRate      float64 // of recipients
+	TrainingCompletedRate    float64 // of recipients
+	StartedOfOpened          string  // TrainingStarted / EmailsOpened
+	CompletedOfStarted       string  // TrainingCompleted / TrainingStarted
+
+	// Per recipient detail, empty for anonymous or anonymized campaigns
+	Recipients []ReportRecipient
+
+	// Grouped outcome breakdown. Groups is the default dimension (Department when
+	// present, else Position), named by GroupsBy; DepartmentGroups and PositionGroups
+	// expose each dimension explicitly.
+	GroupsBy         string
+	Groups           []ReportGroupStat
+	DepartmentGroups []ReportGroupStat
+	PositionGroups   []ReportGroupStat
+}
+
+// ReportGroupStat is one row of the report's grouped outcome breakdown, with
+// percentages already formatted as "45" strings ready for the template. Suppressed
+// hides the outcome counts for a group below the anonymity floor.
+type ReportGroupStat struct {
+	Group                    string
+	Total                    int
+	Clicked                  int
+	ClickedPercent           string
+	Submitted                int
+	SubmittedPercent         string
+	Reported                 int
+	ReportedPercent          string
+	TrainingStarted          int
+	TrainingStartedPercent   string
+	TrainingCompleted        int
+	TrainingCompletedPercent string
+	Suppressed               bool
+}
+
+// ReportRecipient holds per-recipient result data for the recipient detail table
+type ReportRecipient struct {
+	FirstName         string
+	LastName          string
+	Email             string
+	Department        string
+	Position          string
+	ClickedLink       bool
+	SubmittedData     bool
+	Reported          bool
+	TrainingStarted   bool
+	TrainingCompleted bool
+}
+
+// CampaignGroupStat holds an aggregate outcome count for one group value, such
+// as one position or one department. It carries no identity, only counts, so it
+// is safe to show for an anonymous campaign. Suppressed is true when the group is
+// smaller than the anonymity floor and its counts are withheld.
+type CampaignGroupStat struct {
+	Group             string `json:"group"`
+	Total             int    `json:"total"`
+	Clicked           int    `json:"clicked"`
+	Submitted         int    `json:"submitted"`
+	Reported          int    `json:"reported"`
+	TrainingStarted   int    `json:"trainingStarted"`
+	TrainingCompleted int    `json:"trainingCompleted"`
+	Suppressed        bool   `json:"suppressed"`
+}

@@ -218,7 +218,6 @@
   opacity: 0.9;
 }
 
-
 .ui-gl-hint {
   font-size: 0.76rem;
   color: var(--ui-text-muted);
@@ -270,6 +269,18 @@
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--ui-text-muted);
+}
+
+/* A filesystem path is the one string on this surface long enough to wrap ugly. It is
+ * reference, not something to read character by character, so it truncates from the
+ * right and carries the full value in `title`. */
+.ui-gl-provenance-side > code {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.66rem;
 }
 
 .ui-gl-donor-repo {
@@ -422,7 +433,8 @@
   border-left: 2px solid var(--holo-hue, var(--ui-steel));
   border-radius: 7px;
   background: color-mix(in srgb, var(--surface-0) 48%, transparent);
-  box-shadow: -8px 0 20px -16px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
+  box-shadow: -8px 0 20px -16px
+    color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
 }
 
 /* The spine node. */
@@ -602,7 +614,8 @@
   border-left: 2px solid var(--holo-hue, var(--ui-steel));
   border-radius: 7px;
   background: color-mix(in srgb, var(--surface-0) 48%, transparent);
-  box-shadow: -8px 0 20px -16px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
+  box-shadow: -8px 0 20px -16px
+    color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
 }
 
 .ui-gl-trace > li::before {
@@ -731,7 +744,8 @@
   border-left: 2px solid var(--holo-hue, var(--ui-steel));
   border-radius: 7px;
   background: color-mix(in srgb, var(--surface-0) 48%, transparent);
-  box-shadow: -8px 0 18px -16px color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
+  box-shadow: -8px 0 18px -16px
+    color-mix(in srgb, var(--holo-hue, var(--ui-steel)) 90%, transparent);
 }
 
 .ui-gl-turns > li[data-role="user"],
@@ -850,4 +864,126 @@
  * operator is the one who has to live with it. */
 .ui-cicanvas[data-testid="gl-canvas"]::after {
   opacity: 0.22;
+}
+
+/* ── Engagement board (Feature 032) ────────────────────────────────── */
+
+/* The funnel bars. Each row is a rung; the bar is the share of subjects whose DEEPEST
+ * position is at or below this rung. A subject appears once, so the bars are
+ * comparable and a wide bar means "many people", not "one person, many clicks". */
+.ui-gl-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 11%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-0) 34%, transparent);
+}
+
+.ui-gl-funnel > li {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ui-gl-funnel > li[data-empty="true"] {
+  opacity: 0.42;
+}
+
+.ui-gl-funnel-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  font-variant: all-small-caps;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.ui-gl-funnel-track {
+  display: block;
+  min-width: 0;
+  height: 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--bg-0) 60%, transparent);
+}
+
+/* The training track. Under its own heading, inside its own well, with its own edge
+ * colour, so no eye can fold it into the funnel above it. */
+.ui-gl-training {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.7rem 0.8rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--ui-gold) 26%, transparent);
+  border-left: 2px solid var(--ui-gold);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ui-gold) 5%, transparent);
+}
+
+.ui-gl-training .ui-pane-title {
+  color: var(--ui-gold);
+}
+
+.ui-gl-subjects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-gl-subjects > li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 12%, transparent);
+  border-left: 2px solid var(--holo-hue, var(--ui-steel));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-0) 48%, transparent);
+}
+
+/* Anonymised subject: the pseudonym keeps the history linked, so the row is still
+ * meaningful — it just no longer names anyone, and it is dashed to say so at a glance. */
+.ui-gl-subjects > li[data-anonymized="true"] {
+  border-style: dashed;
+  border-left-style: solid;
+  --holo-hue: var(--ui-gold);
+}
+
+.ui-gl-subjects > li[data-conceded="true"] {
+  --holo-hue: var(--ui-danger);
+}
+
+.ui-gl-subjects > li[data-resisted="true"]:not([data-conceded="true"]) {
+  --holo-hue: var(--ui-accent);
+}
+
+.ui-gl-subject-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--ui-text);
+  min-width: 11rem;
+}
+
+.ui-gl-subject-channels {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.ui-gl-refusals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--ui-text-muted);
 }

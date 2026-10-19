@@ -23,9 +23,9 @@ import type { GlRefusal } from "../types";
  * targets resisted rather than that nothing has been measured yet.
  */
 export function AnalyticsPanel() {
-  const [analytics, setAnalytics] = useState<Awaited<
-    ReturnType<typeof api.ghostlineAnalytics>
-  >["analytics"] | null>(null);
+  const [analytics, setAnalytics] = useState<
+    Awaited<ReturnType<typeof api.ghostlineAnalytics>>["analytics"] | null
+  >(null);
   const [campaign, setCampaign] = useState("");
   const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<GlRefusal | null>(null);
@@ -104,10 +104,22 @@ export function AnalyticsPanel() {
           mono
           data-testid="gl-analytics-campaign"
         />
-        <Button size="sm" icon="open-external" disabled={busy} onClick={() => void download("csv")} data-testid="gl-export-csv">
+        <Button
+          size="sm"
+          icon="open-external"
+          disabled={busy}
+          onClick={() => void download("csv")}
+          data-testid="gl-export-csv"
+        >
           Export CSV
         </Button>
-        <Button size="sm" icon="open-external" disabled={busy} onClick={() => void download("json")} data-testid="gl-export-json">
+        <Button
+          size="sm"
+          icon="open-external"
+          disabled={busy}
+          onClick={() => void download("json")}
+          data-testid="gl-export-json"
+        >
           Export JSON
         </Button>
       </div>
@@ -117,11 +129,19 @@ export function AnalyticsPanel() {
           <div className="ui-ci-metrics" data-testid="gl-analytics-metrics">
             <Metric label="calls" value={analytics.call_count} testId="gl-m-calls" />
             <Metric label="completed" value={analytics.completed_count} testId="gl-m-completed" />
-            <Metric label="in progress" value={analytics.in_progress_count} testId="gl-m-inprogress" />
+            <Metric
+              label="in progress"
+              value={analytics.in_progress_count}
+              testId="gl-m-inprogress"
+            />
             <Metric label="turns" value={analytics.turn_count} testId="gl-m-turns" />
             <Metric
               label="compliance rate"
-              value={analytics.conversion_rate === null ? "—" : `${Math.round(analytics.conversion_rate * 100)}%`}
+              value={
+                analytics.conversion_rate === null
+                  ? "—"
+                  : `${Math.round(analytics.conversion_rate * 100)}%`
+              }
               muted={analytics.conversion_rate === null}
               title={
                 analytics.conversion_rate === null
@@ -130,7 +150,11 @@ export function AnalyticsPanel() {
               }
               testId="gl-m-rate"
             />
-            <Metric label="credentials captured" value={analytics.credentials_captured} testId="gl-m-captured" />
+            <Metric
+              label="credentials captured"
+              value={analytics.credentials_captured}
+              testId="gl-m-captured"
+            />
           </div>
 
           <div className="ui-gl-split">
@@ -140,18 +164,22 @@ export function AnalyticsPanel() {
                 <Empty>No turns recorded yet.</Empty>
               ) : (
                 <ul className="ui-gl-bars" data-testid="gl-stage-bars">
-                  {STAGE_LADDER.filter((stage) => analytics.stage_counts[stage] !== undefined).map((stage) => (
-                    <li key={stage}>
-                      <span className="ui-gl-bar-label">{stage}</span>
-                      <span className="ui-gl-bar-track">
-                        <span
-                          className="ui-ci-bar"
-                          style={{ width: `${Math.round(((analytics.stage_counts[stage] ?? 0) / stageMax) * 100)}%` }}
-                        />
-                      </span>
-                      <span className="op-value">{analytics.stage_counts[stage]}</span>
-                    </li>
-                  ))}
+                  {STAGE_LADDER.filter((stage) => analytics.stage_counts[stage] !== undefined).map(
+                    (stage) => (
+                      <li key={stage}>
+                        <span className="ui-gl-bar-label">{stage}</span>
+                        <span className="ui-gl-bar-track">
+                          <span
+                            className="ui-ci-bar"
+                            style={{
+                              width: `${Math.round(((analytics.stage_counts[stage] ?? 0) / stageMax) * 100)}%`,
+                            }}
+                          />
+                        </span>
+                        <span className="op-value">{analytics.stage_counts[stage]}</span>
+                      </li>
+                    ),
+                  )}
                 </ul>
               )}
             </div>
@@ -191,8 +219,8 @@ export function AnalyticsPanel() {
                 </ul>
               )}
               <p className="ui-id">
-                Every count above is a record that a credential was elicited. None of them is
-                the credential.
+                Every count above is a record that a credential was elicited. None of them is the
+                credential.
               </p>
             </div>
           </div>

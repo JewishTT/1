@@ -101,7 +101,7 @@ export function classify(err: unknown): GlRefusal {
       : err.message;
   const rejected =
     detail && typeof detail === "object" && "rejected_targets" in detail
-      ? ((detail as { rejected_targets: unknown }).rejected_targets as string[]) ?? []
+      ? (((detail as { rejected_targets: unknown }).rejected_targets as string[]) ?? [])
       : [];
 
   if (code === "RoEError" || code === "RosterError") {
@@ -152,17 +152,30 @@ export function RuntimeDot({ runtime, testId }: { runtime: GlRuntimeRow; testId?
       : runtime.state === "blocked"
         ? `blocked · ${runtime.blockers.length} missing`
         : "stopped";
-  const status = runtime.state === "running" ? "Running" : runtime.state === "blocked" ? "Blocked" : "Paused";
-  return <StatusDot status={status} label={label} live={runtime.state === "running"} testId={testId} />;
+  const status =
+    runtime.state === "running" ? "Running" : runtime.state === "blocked" ? "Blocked" : "Paused";
+  return (
+    <StatusDot status={status} label={label} live={runtime.state === "running"} testId={testId} />
+  );
 }
 
 /** Provider readiness as a list: each row is a variable the operator either set or did not. */
-export function ProviderList({ providers, testId }: { providers: readonly GlProviderRow[]; testId: string }) {
+export function ProviderList({
+  providers,
+  testId,
+}: {
+  providers: readonly GlProviderRow[];
+  testId: string;
+}) {
   return (
     <ul className="ui-gl-providers" data-testid={testId}>
       {providers.map((provider) => (
         <li key={provider.name} data-configured={provider.configured}>
-          <StatusDot status={provider.status} label={provider.name} testId={`${testId}-${provider.name}`} />
+          <StatusDot
+            status={provider.status}
+            label={provider.name}
+            testId={`${testId}-${provider.name}`}
+          />
           <span className="ui-gl-provider-detail">{provider.detail}</span>
           {provider.configured ? null : (
             <code className="ui-gl-env" data-testid={`${testId}-${provider.name}-env`}>

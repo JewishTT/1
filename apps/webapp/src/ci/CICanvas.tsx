@@ -55,7 +55,9 @@ export function CICanvas({ initialPanel = "operations" }: { initialPanel?: CiPan
           label="CI/SpecOps panels"
           orientation="bar"
         />
-        <span className="ui-rail-hint">lab-isolated · RoE-gated · not scoped to one investigation</span>
+        <span className="ui-rail-hint">
+          lab-isolated · RoE-gated · not scoped to one investigation
+        </span>
       </div>
 
       <div className="ui-cicanvas-body">
@@ -83,10 +85,11 @@ function DetectionPlaceholder() {
         <span className="ui-pane-title">Detection coverage &amp; evidence-to-detection</span>
       </header>
       <p className="panel-note">
-        Not served yet — the detection-chain endpoint (<code>GET /specops/findings/{"{id}"}/detection-chain</code>)
-        has not landed. It will trace finding → evidence → behavior → ATT&CK technique → required telemetry →
-        candidate rules. This panel is intentionally empty rather than showing a fabricated coverage number
-        (§90, §99).
+        Not served yet — the detection-chain endpoint (
+        <code>GET /specops/findings/{"{id}"}/detection-chain</code>) has not landed. It will trace
+        finding → evidence → behavior → ATT&CK technique → required telemetry → candidate rules.
+        This panel is intentionally empty rather than showing a fabricated coverage number (§90,
+        §99).
       </p>
     </section>
   );

@@ -1,0 +1,630 @@
+<script>
+	import { page } from '$app/stores';
+	import { api } from '$lib/api/apiProxy.js';
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { newTableURLParams } from '$lib/service/tableURLParams.js';
+	import { globalButtonDisabledAttributes } from '$lib/utils/form.js';
+	import Headline from '$lib/components/Headline.svelte';
+	import TextField from '$lib/components/TextField.svelte';
+	import TableCell from '$lib/components/table/TableCell.svelte';
+	import TableRow from '$lib/components/table/TableRow.svelte';
+	import TableUpdateButton from '$lib/components/table/TableUpdateButton.svelte';
+	import TableDeleteButton from '$lib/components/table/TableDeleteButton2.svelte';
+	import { addToast } from '$lib/store/toast';
+	import FormError from '$lib/components/FormError.svelte';
+	import { AppStateService } from '$lib/service/appState';
+	import TableCellEmpty from '$lib/components/table/TableCellEmpty.svelte';
+	import TableCellAction from '$lib/components/table/TableCellAction.svelte';
+	import TableCellScope from '$lib/components/table/TableCellScope.svelte';
+	import CheckboxField from '$lib/components/CheckboxField.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import TableCellCheck from '$lib/components/table/TableCellCheck.svelte';
+	import Table from '$lib/components/table/Table.svelte';
+	import BigButton from '$lib/components/BigButton.svelte';
+	import FormFooter from '$lib/components/FormFooter.svelte';
+	import HeadTitle from '$lib/components/HeadTitle.svelte';
+	import { getModalText } from '$lib/utils/common';
+	import TableCopyButton from '$lib/components/table/TableCopyButton.svelte';
+	import TableViewButton from '$lib/components/table/TableViewButton.svelte';
+	import { showIsLoading, hideIsLoading } from '$lib/store/loading.js';
+	import Editor from '$lib/components/editor/Editor.svelte';
+	import { fetchAllRows } from '$lib/utils/api-utils';
+	import FormColumns from '$lib/components/FormColumns.svelte';
+	import FormColumn from '$lib/components/FormColumn.svelte';
+	import TextFieldSelect from '$lib/components/TextFieldSelect.svelte';
+	import TextFieldSearchSelect from '$lib/components/TextFieldSearchSelect.svelte';
+	import { BiMap } from '$lib/utils/maps';
+	import TableDropDownEllipsis from '$lib/components/table/TableDropDownEllipsis.svelte';
+	import DeleteAlert from '$lib/components/modal/DeleteAlert.svelte';
+	import TableDropDownButton from '$lib/components/table/TableDropDownButton.svelte';
+	import TableCellCheckbox from '$lib/components/table/TableCellCheckbox.svelte';
+	import BulkActionBar from '$lib/components/table/BulkActionBar.svelte';
+	import {
+		createTableSelection,
+		headerSelectionState,
+		runBulkDelete
+	} from '$lib/service/tableSelection.js';
+
+	// services
+	const appStateService = AppStateService.instance;
+
+	// data
+	let contextCompanyID = null;
+	let form = null;
+	let sendTestForm = null;
+
+	let formValues = {
+		id: null,
+		name: null,
+		content: null,
+		mailEnvelopeFrom: null,
+		mailHeaderFrom: null,
+		mailHeaderSubject: null,
+		addTrackingPixel: false,
+		attachments: []
+	};
+	let isDeleteAlertVisible = false;
+	let deleteValues = {
+		id: null,
+		name: null
+	};
+	let smtpMap = new BiMap({});
+	let domainMap = new BiMap({});
+	let selectedTestSMTPValue = null;
+	let selectedTestEmailID = null;
+	let selectedTestDomainID = null;
+	// recipient is searched on demand instead of preloading every recipient
+	let recipientSearch = '';
+	let recipientSearchOptions = [];
+	let recipientSearchMap = new BiMap({});
+	let selectedTestRecipientID = null;
+	let modalError = '';
+	let sendTestModalError = '';
+	let emails = [];
+	let emailsHasNextPage = true;
+
+	// multi select
+	const selection = createTableSelection();
+	let isBulkDeleteAlertVisible = false;
+	const isRowDisabled = (e) => globalButtonDisabledAttributes(e, contextCompanyID).disabled;
+	$: selectablePageIds = emails
+		.filter((e) => !globalButtonDisabledAttributes(e, contextCompanyID).disabled)
+		.map((e) => e.id);
+	$: headerState = headerSelectionState($selection, selectablePageIds);
+	$: showMultiSelect = emails.length > 0;
+	const onClickBulkDelete = async () => {
+		await runBulkDelete({ ids: [...$selection], deleteFn: api.email.delete, noun: 'email' });
+		await refreshEmails();
+		return { success: true };
+	};
+	const tableURLParams = newTableURLParams();
+	let isModalVisible = false;
+	let isSendTestModalVisible = false;
+	let isTableLoading = false;
+	// @type {null|'create'|'update'}
+	let modalMode = null;
+	let modalText = '';
+	let isSubmitting = false;
+
+	$: {
+		modalText = getModalText('email', modalMode);
+	}
+
+	// hooks
+	onMount(() => {
+		const context = appStateService.getContext();
+		if (context) {
+			contextCompanyID = context.companyID;
+		}
+		refreshEmails();
+		tableURLParams.onChange(refreshEmails);
+
+		(async () => {
+			const editID = $page.url.searchParams.get('edit');
+			if (editID) {
+				await openUpdateModal(editID);
+			}
+		})();
+		return () => {
+			tableURLParams.unsubscribe();
+		};
+	});
+
+	// component logic
+	const refreshEmails = async () => {
+		try {
+			isTableLoading = true;
+			selection.clear();
+			const res = await getEmails();
+			emails = res.rows;
+			emailsHasNextPage = res.hasNextPage;
+		} catch (e) {
+			addToast('Failed to load emails', 'Error');
+			console.error('Failed to load emails', e);
+		} finally {
+			isTableLoading = false;
+		}
+	};
+
+	const refreshDomains = async () => {
+		const domains = await fetchAllRows((options) => {
+			return api.domain.getAllSubsetWithoutProxies(options, contextCompanyID);
+		});
+		domainMap = BiMap.FromArrayOfObjects(domains);
+	};
+
+	const getEmails = async () => {
+		try {
+			const res = await api.email.getOverviews(tableURLParams, contextCompanyID);
+			if (!res.success) {
+				throw res.error;
+			}
+			return res.data;
+		} catch (e) {
+			addToast('Failed to load emails', 'Error');
+			console.error('failed to get emails', e);
+		}
+	};
+
+	const onSubmit = async (event) => {
+		try {
+			const saveOnly = event?.detail?.saveOnly || false;
+			isSubmitting = true;
+			if (modalMode === 'create' || modalMode === 'copy') {
+				await onClickCreate();
+				return;
+			} else {
+				await onClickUpdate(saveOnly);
+				return;
+			}
+		} finally {
+			isSubmitting = false;
+		}
+	};
+
+	const onClickCreate = async () => {
+		try {
+			const res = await api.email.create({
+				name: formValues.name,
+				content: formValues.content,
+				mailEnvelopeFrom: formValues.mailEnvelopeFrom,
+				mailHeaderFrom: formValues.mailHeaderFrom,
+				mailHeaderSubject: formValues.mailHeaderSubject,
+				addTrackingPixel: formValues.addTrackingPixel,
+				companyID: contextCompanyID
+			});
+			if (!res.success) {
+				modalError = res.error;
+				return;
+			}
+			closeModal();
+			addToast('Email created', 'Success');
+			refreshEmails();
+		} catch (err) {
+			addToast('Failed to create email', 'Error');
+			console.error('failed to create email:', err);
+		}
+	};
+
+	const onClickUpdate = async (saveOnly = false) => {
+		try {
+			const res = await api.email.update({
+				id: formValues.id,
+				name: formValues.name,
+				content: formValues.content,
+				mailEnvelopeFrom: formValues.mailEnvelopeFrom,
+				mailHeaderFrom: formValues.mailHeaderFrom,
+				mailHeaderSubject: formValues.mailHeaderSubject,
+				addTrackingPixel: formValues.addTrackingPixel
+			});
+			if (!res.success) {
+				modalError = res.error;
+				return;
+			}
+			modalError = '';
+			addToast(saveOnly ? 'Email saved' : 'Email updated', 'Success');
+			if (!saveOnly) {
+				closeModal();
+				// only refresh the table when actually closing the modal
+				refreshEmails();
+			}
+		} catch (e) {
+			addToast(saveOnly ? 'Failed to save email' : 'Failed to update email', 'Error');
+			console.error('failed to update email', e);
+		}
+	};
+
+	/** @param {string} id */
+	const getEmail = async (id) => {
+		try {
+			const res = await api.email.getByID(id, contextCompanyID);
+			if (!res.success) {
+				throw res.error;
+			}
+			return res.data;
+		} catch (e) {
+			addToast('Failed to load email', 'Error');
+			console.error('failed to get email', e);
+		}
+	};
+
+	/** @param {string} id */
+	const gotoAttachments = (id) => {
+		goto(`/email/${id}/attachments/`);
+	};
+
+	/** @param {string} id */
+	const onClickDelete = async (id) => {
+		const action = api.email.delete(id);
+		action
+			.then((res) => {
+				if (res.success) {
+					refreshEmails();
+					return;
+				}
+				throw res.error;
+			})
+			.catch((e) => {
+				console.error('failed to delete email', e);
+			});
+		return action;
+	};
+
+	const openCreateModal = async () => {
+		modalMode = 'create';
+		await refreshDomains();
+		isModalVisible = true;
+	};
+
+	const closeModal = () => {
+		modalError = '';
+		formValues = {
+			id: null,
+			name: null,
+			content: null,
+			mailEnvelopeFrom: null,
+			mailHeaderFrom: null,
+			mailHeaderSubject: null,
+			addTrackingPixel: false,
+			attachments: []
+		};
+		form.reset();
+		isModalVisible = false;
+	};
+
+	/** @param {string} id */
+	const openUpdateModal = async (id) => {
+		modalMode = 'update';
+		try {
+			showIsLoading();
+			await refreshDomains();
+			const page = await getEmail(id);
+			const r = globalButtonDisabledAttributes(page, contextCompanyID);
+			if (r.disabled) {
+				hideIsLoading();
+				return;
+			}
+			isModalVisible = true;
+			assignEmail(page);
+		} catch (e) {
+			addToast('Failed to load email', 'Error');
+			console.error('failed to get email', e);
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	const openCopyModal = async (id) => {
+		modalMode = 'copy';
+		try {
+			showIsLoading();
+			const email = await getEmail(id);
+			isModalVisible = true;
+			assignEmail(email);
+		} catch (e) {
+			addToast('Failed to load email', 'Error');
+			console.error('failed to get email', e);
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	const assignEmail = (email) => {
+		formValues.id = email.id;
+		formValues.name = email.name;
+		formValues.content = email.content;
+		formValues.mailEnvelopeFrom = email.mailEnvelopeFrom;
+		formValues.mailHeaderFrom = email.mailHeaderFrom;
+		formValues.mailHeaderSubject = email.mailHeaderSubject;
+		formValues.addTrackingPixel = email.addTrackingPixel;
+		formValues.attachments = email.attachments || [];
+	};
+
+	const openSendTestModal = async (id) => {
+		try {
+			showIsLoading();
+			const smtps = await fetchAllRows(async (options) => {
+				return api.smtpConfiguration.getAll(options, contextCompanyID);
+			});
+			await refreshDomains();
+			smtpMap = BiMap.FromArrayOfObjects(smtps);
+			// reset recipient search state for a fresh modal
+			recipientSearch = '';
+			recipientSearchOptions = [];
+			recipientSearchMap = new BiMap({});
+			selectedTestRecipientID = null;
+			selectedTestEmailID = id;
+			isSendTestModalVisible = true;
+		} catch (e) {
+			addToast('Failed to get data', 'Error');
+		} finally {
+			hideIsLoading();
+		}
+	};
+
+	// searchRecipients queries the backend for recipients matching the typed text
+	// so we never load the whole recipient set into the browser
+	const searchRecipients = async () => {
+		try {
+			// typing a new search invalidates any previous pick until one is chosen again
+			selectedTestRecipientID = null;
+			const res = await api.recipient.getAll({ search: recipientSearch }, contextCompanyID);
+			if (!res.success) {
+				throw res.error;
+			}
+			/** @type {Record<string, string>} */
+			const idToLabel = {};
+			recipientSearchOptions = res.data.rows.map((r) => {
+				const name = [r.firstName, r.lastName].filter(Boolean).join(' ');
+				const label = name ? `${name} (${r.email})` : r.email;
+				idToLabel[r.id] = label;
+				return label;
+			});
+			recipientSearchMap = new BiMap(idToLabel);
+			return recipientSearchOptions;
+		} catch (err) {
+			addToast('Failed to search recipients', 'Error');
+			console.error('failed to search recipients', err);
+		}
+	};
+
+	/** @param {string} option */
+	const onSelectTestRecipient = (option) => {
+		selectedTestRecipientID = recipientSearchMap.byValue(option);
+		// keep the chosen recipient visible in the field, like the other selects
+		recipientSearch = option;
+	};
+
+	const closeSendTestModal = () => {
+		isSendTestModalVisible = false;
+		selectedTestSMTPValue = null;
+		selectedTestEmailID = null;
+		recipientSearch = '';
+		recipientSearchOptions = [];
+		recipientSearchMap = new BiMap({});
+		selectedTestRecipientID = null;
+	};
+
+	const openDeleteAlert = async (email) => {
+		isDeleteAlertVisible = true;
+		deleteValues.id = email.id;
+		deleteValues.name = email.name;
+	};
+
+	const sendPreview = async () => {
+		try {
+			const smtpID = smtpMap.byValue(selectedTestSMTPValue);
+			const recpID = selectedTestRecipientID;
+			const domainID = domainMap.byValue(selectedTestDomainID);
+			if (!recpID) {
+				sendTestModalError = 'Please search for and select a recipient';
+				return;
+			}
+
+			const res = await api.email.sendTest({
+				id: selectedTestEmailID,
+				smtpID: smtpID,
+				recipientID: recpID,
+				domainID: domainID
+			});
+			if (!res.success) {
+				sendTestModalError = res.error;
+				return;
+			}
+			closeSendTestModal();
+			addToast('Email sent', 'Success');
+			refreshEmails();
+		} catch (err) {
+			addToast('Failed to sent test email', 'Error');
+			console.error('failed to send test email:', err);
+		}
+	};
+</script>
+
+<HeadTitle title="Emails" />
+<main>
+	<Headline docSlug="emails">Emails</Headline>
+	<BigButton on:click={async () => await openCreateModal()}>New Email</BigButton>
+	<BulkActionBar
+		count={$selection.size}
+		noun="email"
+		on:delete={() => (isBulkDeleteAlertVisible = true)}
+		on:clear={() => selection.clear()}
+	/>
+	<Table
+		selectable
+		{headerState}
+		on:toggleAll={(e) => selection.setPageSelection(selectablePageIds, e.detail)}
+		columns={[
+			{ column: 'Name', size: 'large' },
+			{ column: 'From', size: 'medium' },
+			{ column: 'Subject', size: 'medium' },
+			{ column: 'Tracking Pixel', size: 'small', alignText: 'center' },
+			...(contextCompanyID ? [{ column: 'Scope', size: 'small' }] : [])
+		]}
+		sortable={['Name', 'From', 'Subject', 'Tracking Pixel', ...(contextCompanyID ? ['scope'] : [])]}
+		hasData={!!emails.length}
+		hasNextPage={emailsHasNextPage}
+		plural="emails"
+		pagination={tableURLParams}
+		isGhost={isTableLoading}
+	>
+		{#each emails as email}
+			<TableRow>
+				{#if showMultiSelect}
+					<TableCellCheckbox
+						checked={$selection.has(email.id)}
+						disabled={isRowDisabled(email)}
+						on:change={() => selection.toggle(email.id)}
+					/>
+				{/if}
+				<TableCell>
+					<button
+						on:click={() => {
+							openUpdateModal(email.id);
+						}}
+						{...globalButtonDisabledAttributes(email, contextCompanyID)}
+						title={email.name}
+						class="block w-full py-1 text-left"
+					>
+						{email.name}
+					</button>
+				</TableCell>
+				<TableCell value={email.mailHeaderFrom} />
+				<TableCell value={email.mailHeaderSubject} />
+				<TableCellCheck value={email.addTrackingPixel} />
+				{#if contextCompanyID}
+					<TableCellScope companyID={email.companyID} />
+				{/if}
+				<TableCellEmpty />
+				<TableCellAction>
+					<TableDropDownEllipsis>
+						<TableDropDownButton name="Attachments" on:click={() => gotoAttachments(email.id)} />
+						<TableUpdateButton
+							on:click={() => openUpdateModal(email.id)}
+							{...globalButtonDisabledAttributes(email, contextCompanyID)}
+						/>
+						<TableCopyButton title={'Copy'} on:click={() => openCopyModal(email.id)} />
+						<TableDeleteButton
+							on:click={() => openDeleteAlert(email)}
+							{...globalButtonDisabledAttributes(email, contextCompanyID)}
+						/>
+						<TableViewButton name="Send test" on:click={() => openSendTestModal(email.id)} />
+					</TableDropDownEllipsis>
+				</TableCellAction>
+			</TableRow>
+		{/each}
+	</Table>
+	<Modal headerText={modalText} visible={isModalVisible} onClose={closeModal} {isSubmitting}>
+		<FormGrid on:submit={onSubmit} bind:bindTo={form} {isSubmitting} {modalMode}>
+			<Editor
+				contentType="email"
+				{domainMap}
+				bind:value={formValues.content}
+				attachments={formValues.attachments}
+			>
+				<div class="flex flex-row flex-wrap items-start gap-x-6 gap-y-2 w-full pl-4">
+					<TextField
+						minLength={1}
+						maxLength={64}
+						required
+						bind:value={formValues.name}
+						placeholder="Verify login information"
+					>
+						Name
+					</TextField>
+					<TextField
+						minLength={5}
+						maxLength={254}
+						type="email"
+						required
+						bind:value={formValues.mailEnvelopeFrom}
+						placeholder="alice@example.test"
+						toolTipText="Envelope From. ex. 'a@example.test"
+					>
+						Envelope From
+					</TextField>
+					<TextField
+						minLength={5}
+						maxLength={254}
+						required
+						bind:value={formValues.mailHeaderFrom}
+						placeholder="Alice <a@example.test>"
+						toolTipText="Header From. ex. '<a@example.test>'"
+					>
+						From
+					</TextField>
+					<TextField
+						required
+						minLength={1}
+						maxLength={255}
+						bind:value={formValues.mailHeaderSubject}
+						placeholder="Important: Verification required"
+					>
+						Subject
+					</TextField>
+					<CheckboxField
+						bind:value={formValues.addTrackingPixel}
+						defaultValue={true}
+						toolTipText="Adds a tracking pixel to the email">Add tracking pixel</CheckboxField
+					>
+				</div>
+			</Editor>
+			<FormError message={modalError} />
+			<FormFooter {closeModal} {isSubmitting} />
+		</FormGrid>
+	</Modal>
+	<Modal
+		headerText={'Send test'}
+		visible={isSendTestModalVisible}
+		onClose={closeSendTestModal}
+		{isSubmitting}
+	>
+		<FormGrid on:submit={sendPreview} bind:bindTo={sendTestForm} {isSubmitting}>
+			<FormColumns>
+				<FormColumn>
+					<TextFieldSelect
+						required
+						id="smtp"
+						options={smtpMap.values()}
+						bind:value={selectedTestSMTPValue}>Sender SMTP</TextFieldSelect
+					>
+				</FormColumn>
+				<FormColumn>
+					<TextFieldSelect
+						required
+						id="domainID"
+						options={domainMap.values()}
+						bind:value={selectedTestDomainID}>Domain</TextFieldSelect
+					>
+				</FormColumn>
+				<FormColumn>
+					<TextFieldSearchSelect
+						id="recp"
+						placeholder={'Type to search'}
+						onKeyUp={searchRecipients}
+						onSelect={onSelectTestRecipient}
+						options={recipientSearchOptions}
+						bind:value={recipientSearch}>Receiver</TextFieldSearchSelect
+					>
+				</FormColumn>
+			</FormColumns>
+			<FormError message={sendTestModalError} />
+			<FormFooter okText={'Send test e-mail'} closeModal={closeSendTestModal} {isSubmitting} />
+		</FormGrid>
+	</Modal>
+	<DeleteAlert
+		name={deleteValues.name}
+		onClick={() => onClickDelete(deleteValues.id)}
+		bind:isVisible={isDeleteAlertVisible}
+	></DeleteAlert>
+	<DeleteAlert
+		title="Delete emails"
+		name={`${$selection.size} email${$selection.size === 1 ? '' : 's'}`}
+		onClick={onClickBulkDelete}
+		confirm
+		bind:isVisible={isBulkDeleteAlertVisible}
+	></DeleteAlert>
+</main>

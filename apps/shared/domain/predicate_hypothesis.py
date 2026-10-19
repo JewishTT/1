@@ -46,6 +46,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import StrEnum
+from typing import Any
 
 from semantic.contracts import RelationRef, content_key
 
@@ -53,7 +54,9 @@ __all__ = [
     "PREDICATE_PREFIX",
     "PredicateContractError",
     "PredicateHypothesis",
+    "PredicateRaw",
     "PredicateResolutionState",
+    "RawPredicateOrigin",
 ]
 
 #: A local namespace for predicates nobody has mapped. Prefixed rather than bare so
@@ -96,6 +99,99 @@ class PredicateResolutionState(StrEnum):
     UNKNOWN = "unknown"
     AMBIGUOUS = "ambiguous"
     CONFLICTING = "conflicting"
+
+
+class RawPredicateOrigin(StrEnum):
+    """Where :attr:`PredicateRaw.label` came from.
+
+    FR-013 requires the original label to be preserved, and "preserved" is only
+    meaningful if the reader can tell the observation's words from the platform's. A
+    relation whose predicate was never resolved still has to render *something*, and
+    without this marker the typed fallback would read in the UI as though a human had
+    written it in the source — which is the silent-drop failure in a different costume.
+
+    ``TYPED_RESOLUTION`` is reachable only when the platform actually resolved
+    something; an ``UNKNOWN`` predicate cannot take it, which is checked rather than
+    assumed.
+    """
+
+    #: The words the observation used. The honest default, and the only one an unknown
+    #: predicate may carry.
+    OBSERVED_SURFACE = "observed_surface"
+    #: The operator the platform mapped this to, because the source said no words at
+    #: all and a bare ``null`` label would render as an unnamed relation.
+    TYPED_RESOLUTION = "typed_resolution"
+
+
+@dataclass(frozen=True)
+class PredicateRaw:
+    """The predicate label exactly as it must be preserved, and where it came from.
+
+    **Non-nullable by construction.** :attr:`label` may not be empty and the type is
+    produced only by :attr:`PredicateHypothesis.predicate_raw`, which always yields
+    one. FR-013's failure mode is a predicate the platform does not understand being
+    *dropped*, and a dropped predicate is indistinguishable from a relation that does
+    not exist in the world — so there is no representation here in which the label is
+    absent.
+
+    The span travels with it. FR-013 says "original label **and** span", and a label
+    without a location cannot be checked against the source by anybody reading the
+    record later, so the two are held together rather than being split between a
+    candidate's fields.
+
+    Held as plain scalars rather than as a :class:`domain.relation_candidate.SpanRef`
+    because that module imports this one; the candidate fills these fields in from its
+    own ``trigger_span`` when it exposes ``predicate_raw``.
+    """
+
+    label: str
+    origin: RawPredicateOrigin = RawPredicateOrigin.OBSERVED_SURFACE
+    span_ref: str = ""
+    char_start: int | None = None
+    char_end: int | None = None
+
+    def __post_init__(self) -> None:
+        label = str(self.label).strip()
+        if not label:
+            raise PredicateContractError(
+                "predicate_raw_required",
+                "a predicate label may not be empty (FR-013). A relation the platform cannot "
+                "name still said something, and dropping it makes 'we did not understand it' "
+                "indistinguishable from 'the relation does not exist'",
+            )
+        object.__setattr__(self, "label", label)
+        object.__setattr__(self, "origin", RawPredicateOrigin(self.origin))
+        if (self.char_start is None) != (self.char_end is None):
+            raise PredicateContractError(
+                "predicate_raw_half_span",
+                "a predicate span needs both offsets; half a span is a location that resolves "
+                "to nothing",
+            )
+        if self.char_start is not None and self.char_end is not None:
+            if self.char_start < 0 or self.char_end < self.char_start:
+                raise PredicateContractError(
+                    "predicate_raw_inverted_span",
+                    f"predicate span [{self.char_start}, {self.char_end}) is not a "
+                    "half-open range over a document",
+                )
+
+    @property
+    def is_observed(self) -> bool:
+        """Whether these are the observation's own words rather than the platform's label."""
+        return self.origin is RawPredicateOrigin.OBSERVED_SURFACE
+
+    @property
+    def has_span(self) -> bool:
+        return self.char_start is not None and self.char_end is not None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "label": self.label,
+            "origin": self.origin.value,
+            "span_ref": self.span_ref,
+            "char_start": self.char_start,
+            "char_end": self.char_end,
+        }
 
 
 #: States that require at least one operator ref. A hypothesis in one of these knows
@@ -269,6 +365,39 @@ class PredicateHypothesis:
         meaning against what the document actually said.
         """
         return self.surface_form or (str(self.relation_ref) if self.relation_ref else "")
+
+    @property
+    def predicate_raw(self) -> PredicateRaw:
+        """The label as it must be preserved. Always present; never empty.
+
+        Two branches, and the second is reachable only when the platform resolved
+        something. An ``UNKNOWN`` predicate has no ``relation_ref`` by construction, so
+        it can only ever take the observed branch — which is FR-013's requirement stated
+        as code rather than as prose, and why ``ORIGIN`` exists at all: the typed
+        fallback is legitimate, but it must announce itself so a reader never mistakes
+        the platform's label for the source's words.
+
+        Deliberately **not** folded into :meth:`content_key`. The key already digests
+        ``surface``, ``normalized``, ``ref`` and ``state``, so every input to this
+        property is already inside the address; adding it would change the digest of
+        every stored candidate without changing what any candidate *is*.
+        """
+        surface = self.surface_form or self.normalized_form
+        if surface.strip():
+            return PredicateRaw(label=surface, origin=RawPredicateOrigin.OBSERVED_SURFACE)
+        if self.relation_ref is not None:
+            return PredicateRaw(
+                label=str(self.relation_ref.relation_type),
+                origin=RawPredicateOrigin.TYPED_RESOLUTION,
+            )
+        # Unreachable: ``__post_init__`` refuses a hypothesis with neither a surface nor
+        # a ref. Kept as an explicit refusal rather than a fall-through, because the day
+        # that guard is relaxed this must fail loudly instead of returning a blank label.
+        raise PredicateContractError(  # pragma: no cover - guarded by predicate_asserts_nothing
+            "predicate_raw_required",
+            "this hypothesis has neither an observed surface nor a resolved operator, so "
+            "there is no label to preserve (FR-013)",
+        )
 
     def content_key(self) -> str:
         """Order-insensitive digest of the whole reading."""

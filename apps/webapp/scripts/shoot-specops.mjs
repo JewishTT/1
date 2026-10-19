@@ -35,7 +35,10 @@ const PANELS = [
 mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
-const page = await browser.newPage({ viewport: { width: 1680, height: 1050 }, deviceScaleFactor: 2 });
+const page = await browser.newPage({
+  viewport: { width: 1680, height: 1050 },
+  deviceScaleFactor: 2,
+});
 
 const problems = [];
 page.on("console", (m) => {

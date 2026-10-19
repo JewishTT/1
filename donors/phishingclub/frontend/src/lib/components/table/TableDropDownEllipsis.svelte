@@ -1,0 +1,162 @@
+<script>
+	import { onMount, onDestroy } from 'svelte';
+	import { activeFormElement } from '$lib/store/activeFormElement';
+	import { scrollBarClassesVertical } from '$lib/utils/scrollbar';
+
+	let isMenuVisible = false;
+	let menuX = 0;
+	let menuY = 0;
+	let menuRef = null;
+	let buttonRef = null;
+
+	// generate unique id for this dropdown instance
+	const dropdownId = Symbol();
+
+	// subscribe to active dropdown store
+	const unsubscribe = activeFormElement.subscribe((activeId) => {
+		isMenuVisible = activeId === dropdownId;
+	});
+
+	const toggle = (e) => {
+		if (isMenuVisible) {
+			activeFormElement.set(null);
+		} else {
+			document.addEventListener('click', handleClickWhenVisible);
+			document.addEventListener('keydown', handleGlobalKeydown);
+			activeFormElement.set(dropdownId); // set this as active, closing others
+
+			// Use clientWidth/clientHeight (excludes scrollbars, matches CSS layout) rather than
+			// window.innerWidth which can report stale or incorrect values after client-side navigation
+			// when the page previously had horizontal overflow (e.g. navigating from dashboard).
+			const viewportHeight = document.documentElement.clientHeight;
+			const viewportWidth = document.documentElement.clientWidth;
+			const buffer = 20;
+			const minHeight = 64;
+			const maxHeight = 400;
+			const gap = 8;
+
+			// Capture scroll offsets so we can express the final position in document coordinates.
+			// position:absolute (relative to initial containing block) requires document coords,
+			// which avoids the position:fixed quirk where body overflow-x:auto can cause the
+			// containing block to shift after cross-page navigation (e.g. dashboard → filters).
+			const scrollX = window.scrollX || document.documentElement.scrollLeft || 0;
+			const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+
+			const buttonRect = buttonRef.getBoundingClientRect();
+
+			const spaceAbove = buttonRect.top - buffer;
+			const spaceBelow = viewportHeight - buttonRect.bottom - buffer;
+			const shouldShowAbove = spaceBelow < minHeight && spaceAbove > spaceBelow;
+			const availableSpace = shouldShowAbove ? spaceAbove : spaceBelow;
+			const optimalHeight = Math.min(Math.max(availableSpace, minHeight), maxHeight);
+
+			// Calculate in viewport coordinates first, then clamp to viewport bounds.
+			const menuWidth = 256;
+			const spaceOnRight = viewportWidth - buttonRect.right - buffer;
+			menuX = spaceOnRight >= menuWidth ? buttonRect.left : buttonRect.right - menuWidth;
+			menuX = Math.max(buffer, Math.min(menuX, viewportWidth - menuWidth - buffer));
+
+			if (shouldShowAbove) {
+				menuRef.style.visibility = 'hidden';
+				menuRef.style.display = 'block';
+				const actualMenuHeight = menuRef.scrollHeight;
+				menuRef.style.display = '';
+				menuRef.style.visibility = '';
+				menuY = buttonRect.top - actualMenuHeight - gap;
+			} else {
+				menuY = buttonRect.bottom + gap;
+			}
+
+			// Convert viewport coordinates to document coordinates for position:absolute.
+			menuRef.style = `left: ${menuX + scrollX}px; top: ${menuY + scrollY}px; max-height: ${optimalHeight}px`;
+		}
+	};
+
+	const handleClickWhenVisible = (event) => {
+		if (isMenuVisible && menuRef && buttonRef) {
+			activeFormElement.set(null);
+		}
+		event.preventDefault();
+		event.stopPropagation();
+		document.removeEventListener('click', handleClickWhenVisible);
+	};
+
+	const handleGlobalKeydown = (event) => {
+		if (event.key === 'Escape' && isMenuVisible) {
+			activeFormElement.set(null);
+			document.removeEventListener('keydown', handleGlobalKeydown);
+		}
+	};
+
+	const handleKeydown = (e) => {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			e.stopPropagation();
+			toggle(e);
+		} else if (e.key === 'Escape' && isMenuVisible) {
+			e.preventDefault();
+			e.stopPropagation();
+			activeFormElement.set(null);
+		}
+	};
+
+	const _onDestroy = () => {
+		document.removeEventListener('click', handleClickWhenVisible);
+		document.removeEventListener('keydown', handleGlobalKeydown);
+		unsubscribe();
+		// clear active dropdown if this one was active
+		activeFormElement.update((current) => (current === dropdownId ? null : current));
+	};
+
+	onDestroy(_onDestroy);
+
+	onMount(() => {
+		return () => {
+			_onDestroy();
+		};
+	});
+</script>
+
+<div class="">
+	<button
+		bind:this={buttonRef}
+		class="w-full h-full py-3 flex items-center justify-center"
+		on:click|stopPropagation|preventDefault={toggle}
+		on:keydown={handleKeydown}
+	>
+		<svg width="3.335557" height="16.465519" viewBox="0 0 0.88253281 4.3565019">
+			<g transform="translate(-892.25669,88.863024)">
+				<g transform="matrix(0,1.0139418,-1.0139418,0,802.48114,-807.2715)">
+					<circle
+						class="fill-cta-blue dark:fill-blue-500 transition-colors duration-200"
+						cx="708.99603"
+						cy="-88.976357"
+						r="0.40846577"
+					/>
+					<circle
+						class="fill-cta-blue dark:fill-blue-500 transition-colors duration-200"
+						cx="710.67859"
+						cy="-88.976357"
+						r="0.40846577"
+					/>
+					<circle
+						class="fill-cta-blue dark:fill-blue-500 transition-colors duration-200"
+						cx="712.36115"
+						cy="-88.976357"
+						r="0.40846577"
+					/>
+				</g>
+			</g>
+		</svg>
+	</button>
+
+	<div
+		bind:this={menuRef}
+		class="absolute bg-white dark:bg-gray-900/90 drop-shadow-md dark:shadow-gray-900/50 border dark:border-gray-700/60 z-50 w-64 rounded-md overflow-y-scroll transition-colors duration-200 {scrollBarClassesVertical}"
+		class:hidden={!isMenuVisible}
+	>
+		<ul class="flex flex-col text-left">
+			<slot />
+		</ul>
+	</div>
+</div>

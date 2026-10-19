@@ -111,6 +111,46 @@ the same aggregate the panel renders, returned to the browser to download.
 `GHOSTLINE_TWILIO_FROM_NUMBER` is the operator's own PSTN identity and the donor's
 README says so. It is read to place calls and reported only as `configured`.
 
+### D9 — the department is re-skinned as a holographic deck (owner-approved rule-bend)
+
+The surface was re-skinned for the whole CI/SpecOps department, not only GhostLine,
+into what the owner selected as the "holographic deck" direction.
+
+This **deliberately breaks two rules** the design system states about itself, and the
+break is recorded here because the rule is the reason to be careful about it:
+
+* `styles/tokens/color.css` says "FORBIDDEN by §3.3 … neon glow … glassmorphism" and §93
+  says "hierarchy is not carried by colour — no glow, no colour explosion,
+  no shadow-as-hierarchy".
+* What the deck actually does: translucent panes, a luminous edge used as a depth
+  signal, `backdrop-filter`, and an explicit three-step elevation stack.
+
+What it does **not** break, because these are semantics rather than taste: §57/§92 (the
+closed status vocabulary — the palette may not be re-tuned to make a panel prettier),
+§59 (one icon set), §67 (colour never carries meaning alone — every luminous edge is
+paired with a text label or a `data-*` attribute saying the same thing), §12 (contrast —
+translucency layers over opaque tokens rather than replacing them).
+
+The three mechanisms that make it work rather than merely shine:
+
+1. **One lit thing per panel.** Exactly one element on a surface carries a luminous
+   edge. When every row glows, the glow stops meaning anything and the operator is back
+   to reading a list — only slower.
+2. **Three elevation values, alternating.** field (`bg-0`) → canvas (`bg-1`) →
+   instrument (`surface-0`) → row (a mix back down toward `bg-0`). A surface where
+   everything is one tone has no planes, only outlines.
+3. **Three keyframes, all disabled under `prefers-reduced-motion`.** rise, sweep, pulse.
+
+Verification is a script, not an opinion: `apps/webapp/scripts/shoot-specops.mjs` drives
+the real app in a real browser and writes twelve PNGs — every panel, the light theme,
+and a narrow viewport — failing on any console error. It earned its keep immediately:
+the first run found a mojibake bug that no unit test could see, because the donor's
+`Playbook.from_file` reads YAML with `p.read_text()` and no encoding, which resolves to
+the machine's *locale* codec. On a Windows box that is cp1251, and every non-ASCII
+character in a scenario name reached the screen corrupted. Repaired on transfer in
+`specops/ghostline/catalog.py` by decoding UTF-8 explicitly and using the donor's own
+`Playbook.from_string`, with a regression test that asserts on the rendered name.
+
 ## Risks
 
 | Risk | Mitigation |

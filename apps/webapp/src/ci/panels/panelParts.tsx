@@ -30,7 +30,9 @@ export function CiPanelShell({
       <header className="ui-ci-panel-head">
         <span className="ui-pane-title">{title}</span>
         <span className="ui-id" data-testid={`${testId}-scope`}>
-          {scope === "tenant-wide" ? "tenant-wide · not scoped to one investigation" : "investigation-scoped"}
+          {scope === "tenant-wide"
+            ? "tenant-wide · not scoped to one investigation"
+            : "investigation-scoped"}
         </span>
         {status}
       </header>
@@ -40,7 +42,13 @@ export function CiPanelShell({
 }
 
 /** The named-absence block. `missing` names each endpoint/field that would close it. */
-export function NamedAbsence({ missing, testId }: { missing: ReadonlyArray<string | Unavailable>; testId: string }) {
+export function NamedAbsence({
+  missing,
+  testId,
+}: {
+  missing: ReadonlyArray<string | Unavailable>;
+  testId: string;
+}) {
   if (missing.length === 0) return null;
   return (
     <ul className="ui-blockers" data-testid={testId}>
@@ -57,7 +65,15 @@ export function NamedAbsence({ missing, testId }: { missing: ReadonlyArray<strin
   );
 }
 
-export function StatusChip({ label, tone = "neutral", testId }: { label: string; tone?: "accent" | "gold" | "danger" | "neutral" | "analytical" | "strong"; testId?: string }) {
+export function StatusChip({
+  label,
+  tone = "neutral",
+  testId,
+}: {
+  label: string;
+  tone?: "accent" | "gold" | "danger" | "neutral" | "analytical" | "strong";
+  testId?: string;
+}) {
   return (
     <Badge tone={tone} testId={testId}>
       {label}

@@ -1,0 +1,2310 @@
+# COGNITIVE donor and dependency licence registry
+#
+# Task T039 (specs/030-global-platform-upgrade/tasks.md). Reconciles the 11
+# catalogues in docs/architecture/donors/ and the vendored checkouts under donors/
+# with the distributions the workspace declares, into one machine-readable record.
+#
+# HOW TO READ THIS FILE
+#   status: verified    - licence and version were read from a named file or from
+#                        installed distribution metadata. license_source says which.
+#   status: unverified  - the artefact is not present or declares nothing readable.
+#                        license is null and verification_note says what was tried.
+#                        A null here is a recorded gap, not a permissive default.
+#   status: removed     - once declared, now gone from the graph.
+#
+# Nothing in this file is recalled. Every non-null license below was read out of the
+# file named in its license_source. Where a licence is not SPDX-named (bespoke or
+# custom terms) the value is null rather than forced into a family, because mapping
+# a custom grant onto MIT/AGPL is a legal conclusion and not a clerical one.
+#
+# Enforced by apps/shared/tests/contract/test_donor_registry.py (T040, FR-113):
+# a declared dependency or a vendored donor without an entry here fails the build.
+
+schema_version: 1
+
+registry:
+  task: T039
+  spec: specs/030-global-platform-upgrade
+  requirement: FR-113
+  vendored_checkout_count: 108
+  vendored_checkouts_note: "The 108 checkouts under donors/ are separate git clones and are NOT tracked by this repository, so a bare CI checkout sees an empty donors/ tree. This count is the recorded inventory: the donor-side gate asserts against it when the checkouts are absent, and against the filesystem when they are present. The declared-dependency gate needs neither."
+  catalogues_reconciled:
+    - docs/architecture/donors/00-INDEX.md
+    - docs/architecture/donors/01-COGNITIVE-WARFARE.md
+    - docs/architecture/donors/02-SPEC-OPS-PENTEST.md
+    - docs/architecture/donors/03-OSINT-CTI.md
+    - docs/architecture/donors/04-GRAPH-TDA.md
+    - docs/architecture/donors/05-SOCIAL-SIMULATION.md
+    - docs/architecture/donors/06-UI-DASHBOARDS.md
+    - docs/architecture/donors/07-INFRA-STACK.md
+    - docs/architecture/donors/08-ECONOMICS.md
+    - docs/architecture/donors/09-INTEGRATION-MATRIX.md
+    - docs/architecture/donors/10-ZERO-LAYER.md
+  scope_notes:
+    - "'donors' covers [project].dependencies and [project.optional-dependencies] of every uv workspace member, plus every directory under donors/."
+    - "[dependency-groups] (dev/test tooling) is deliberately out of scope: it is not shipped and is not a donor input. Stated here so the gap is visible, not implicit."
+    - "Transitive dependencies are out of scope. Only what the workspace declares is recorded; a lockfile audit is a different instrument."
+    - "A README licence badge is not treated as a licence grant. Several checkouts carry a badge for a LICENSE file that is not in the checkout; those are recorded unverified."
+  version_convention:
+    - vendored-checkout: git short SHA at the vendored checkout, plus commit_date.
+    - installed-distribution: the version resolved in the workspace .venv.
+
+# ---------------------------------------------------------------------------
+# Vendored checkouts and declared distributions.
+# ---------------------------------------------------------------------------
+donors:
+  - id: ABM_polarisation
+    kind: vendored-checkout
+    path: donors/ABM_polarisation
+    upstream: https://github.com/SageAnastasi/ABM_polarisation
+    version: "439dc8b"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 04, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-04-23
+  - id: ABa-KiTo
+    kind: vendored-checkout
+    path: donors/ABa-KiTo
+    upstream: https://github.com/asfigueroaa/ABa-KiTo
+    version: "fe5b9b9"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 04, 08, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-04
+  - id: APT-SF
+    kind: vendored-checkout
+    path: donors/APT-SF
+    upstream: https://github.com/JoasASantos/APT-SF
+    version: "84f456c"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 02, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-01-02
+  - id: Aperture-OSINT-Workbench
+    kind: vendored-checkout
+    path: donors/Aperture-OSINT-Workbench
+    upstream: https://github.com/petstuk/Aperture-OSINT-Workbench.git
+    version: "d9b1469"
+    license: "MIT"
+    license_source: "donors/Aperture-OSINT-Workbench/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-15
+  - id: AzureAD-Attack-Defense
+    kind: vendored-checkout
+    path: donors/AzureAD-Attack-Defense
+    upstream: https://github.com/Cloud-Architekt/AzureAD-Attack-Defense
+    version: "1b402f6"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-30
+  - id: BeliefLandscapeFramework
+    kind: vendored-checkout
+    path: donors/BeliefLandscapeFramework
+    upstream: https://github.com/c4-lab/BeliefLandscapeFramework
+    version: "dc81508"
+    license: "MIT"
+    license_source: "donors/BeliefLandscapeFramework/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 04, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-04-30
+  - id: BluePhish
+    kind: vendored-checkout
+    path: donors/BluePhish
+    upstream: https://github.com/Und3rTakerOPS/BluePhish
+    version: "4c445e0"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-04-13
+  - id: CogniX-Surface
+    kind: vendored-checkout
+    path: donors/CogniX-Surface
+    upstream: https://github.com/Und3rTakerOPS/CogniX-Surface
+    version: "5e8443e"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 06, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-04-12
+  - id: Cognitive-Weaponization-Matrix
+    kind: vendored-checkout
+    path: donors/Cognitive-Weaponization-Matrix
+    upstream: https://github.com/Anadema/Cognitive-Weaponization-Matrix
+    version: "1826602"
+    license: "Apache-2.0"
+    license_source: "donors/Cognitive-Weaponization-Matrix/LICENCE"
+    status: verified
+    vendored: true
+    role: "catalogue 01, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-10
+  - id: CognitiveAttack
+    kind: vendored-checkout
+    path: donors/CognitiveAttack
+    upstream: https://github.com/YancyKahn/CognitiveAttack
+    version: "2a8b96f"
+    license: "MIT"
+    license_source: "donors/CognitiveAttack/LICENSE.txt"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 01, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-11-17
+  - id: CyberStrikeAI
+    kind: vendored-checkout
+    path: donors/CyberStrikeAI
+    upstream: https://github.com/Ed1s0nZ/CyberStrikeAI.git
+    version: "8da3c8c"
+    license: "Apache-2.0"
+    license_source: "donors/CyberStrikeAI/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-18
+  - id: DIGI-NETRA
+    kind: vendored-checkout
+    path: donors/DIGI-NETRA
+    upstream: https://github.com/pwnxotus/DIGI-NETRA.git
+    version: "301bdb2"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (3 reference(s))"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted. README embeds a shields.io github/license badge (target repo named in the badge differs from this checkout's origin remote). A README badge is not a licence grant and was not treated as one."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-08-27
+  - id: DIMA-OntoToolkit
+    kind: vendored-checkout
+    path: donors/DIMA-OntoToolkit
+    upstream: https://github.com/benjamin-delhomme/DIMA-OntoToolkit
+    version: "a09e3d5"
+    license: "Apache-2.0"
+    license_source: "donors/DIMA-OntoToolkit/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 01, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-02-08
+  - id: DualMind
+    kind: vendored-checkout
+    path: donors/DualMind
+    upstream: https://github.com/EonHao/DualMind
+    version: "d20813e"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 04, 05, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted. README shows a shields.io badge reading 'License Apache 2.0' linking to a LICENSE file that is not present in the checkout. A README badge is not a licence grant and was not treated as one."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-03-07
+  - id: Email-Permutator
+    kind: vendored-checkout
+    path: donors/Email-Permutator
+    upstream: https://github.com/emeth-/Email-Permutator.git
+    version: "4447e99"
+    license: "MIT"
+    license_source: "donors/Email-Permutator/LICENSE.txt"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (5 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2021-03-09
+  - id: EmailExtractWithProxyApp
+    kind: vendored-checkout
+    path: donors/EmailExtractWithProxyApp
+    upstream: https://github.com/psoman-star/EmailExtractWithProxyApp.git
+    version: "2a5edfe"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-04-21
+  - id: EmailFinder
+    kind: vendored-checkout
+    path: donors/EmailFinder
+    upstream: https://github.com/elliott-diy/EmailFinder.git
+    version: "ba59969"
+    license: "MIT"
+    license_source: "donors/EmailFinder/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-03-05
+  - id: EmailHarvester
+    kind: vendored-checkout
+    path: donors/EmailHarvester
+    upstream: https://github.com/maldevel/EmailHarvester.git
+    version: "e1a3316"
+    license: "GPL-3.0"
+    license_source: "donors/EmailHarvester/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-07
+  - id: Entropic-Dynamics-of-the-Universal-Equivalent
+    kind: vendored-checkout
+    path: donors/Entropic-Dynamics-of-the-Universal-Equivalent
+    upstream: https://github.com/namanh95/Entropic-Dynamics-of-the-Universal-Equivalent
+    version: "d1308bf"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 08; code-attributed in apps/ (1 reference(s))"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-01
+  - id: EvoCorps
+    kind: vendored-checkout
+    path: donors/EvoCorps
+    upstream: https://github.com/ln2146/EvoCorps
+    version: "8848b3a"
+    license: "MIT"
+    license_source: "donors/EvoCorps/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 01, 04, 06, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-03-08
+  - id: Flippy
+    kind: vendored-checkout
+    path: donors/Flippy
+    upstream: https://github.com/thecaticorn01/Flippy.git
+    version: "6cd90fc"
+    license: "GPL-3.0"
+    license_source: "donors/Flippy/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-18
+  - id: GitFive
+    kind: vendored-checkout
+    path: donors/GitFive
+    upstream: https://github.com/mxrch/GitFive.git
+    version: "212ac30"
+    license: "MPL-2.0"
+    license_source: "donors/GitFive/LICENSE.md"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (2 reference(s))"
+    verification_note: "LICENSE.md title line is 'Mozilla Public License Version 2.0'; pyproject.toml independently declares license = \"MPL-2.0\"."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-10-04
+  - id: Gmail_Checker
+    kind: vendored-checkout
+    path: donors/Gmail_Checker
+    upstream: https://github.com/Baga6312/Gmail_Checker.git
+    version: "5ccad7d"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-04-11
+  - id: Hostile-Command-Suite
+    kind: vendored-checkout
+    path: donors/Hostile-Command-Suite
+    upstream: https://github.com/cycloarcane/Hostile-Command-Suite.git
+    version: "03d2481"
+    license: "PolyForm-Noncommercial-1.0.0"
+    license_source: "donors/Hostile-Command-Suite/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "LICENSE title line is 'PolyForm Noncommercial License 1.0.0'."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-18
+  - id: IO-detecting-and-anticipating
+    kind: vendored-checkout
+    path: donors/IO-detecting-and-anticipating
+    upstream: https://github.com/SimoneMungari/IO-detecting-and-anticipating
+    version: "a9b9b8d"
+    license: "MIT"
+    license_source: "donors/IO-detecting-and-anticipating/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 01, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-11
+  - id: Labyrinth
+    kind: vendored-checkout
+    path: donors/Labyrinth
+    upstream: https://github.com/DaxxSec/Labyrinth
+    version: "fbcca78"
+    license: "AGPL-3.0"
+    license_source: "donors/Labyrinth/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 06, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-03-15
+  - id: LeakHunter
+    kind: vendored-checkout
+    path: donors/LeakHunter
+    upstream: https://github.com/Und3rTakerOPS/LeakHunter
+    version: "7dea2d2"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 06, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted. README shows a shields.io badge reading 'license-MIT'. A README badge is not a licence grant and was not treated as one."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-04-12
+  - id: Lying_with_Truth
+    kind: vendored-checkout
+    path: donors/Lying_with_Truth
+    upstream: https://github.com/CharlesJW222/Lying_with_Truth
+    version: "21183d3"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 01, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-11
+  - id: Mail-Hunter
+    kind: vendored-checkout
+    path: donors/Mail-Hunter
+    upstream: https://github.com/CYB3R-G0D/Mail-Hunter.git
+    version: "b2d3685"
+    license: "MIT"
+    license_source: "donors/Mail-Hunter/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2024-06-30
+  - id: MicroWorld
+    kind: vendored-checkout
+    path: donors/MicroWorld
+    upstream: https://github.com/D2I-CUHKSZ/MicroWorld
+    version: "b6fb993"
+    license: "AGPL-3.0"
+    license_source: "donors/MicroWorld/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 05, 06, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "pyproject.toml independently declares license = { text = \"AGPL-3.0\" }."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-02
+  - id: MottaHunter
+    kind: vendored-checkout
+    path: donors/MottaHunter
+    upstream: https://github.com/MottaSec/MottaHunter.git
+    version: "4e6a708"
+    license: null
+    license_source: "donors/MottaHunter/LICENSE"
+    status: unverified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "LICENSE title line is 'MottaSec Custom License'; the body then opens with MIT grant wording. Title and body disagree and there is no SPDX identifier, so no family is asserted. Licence left null rather than guessed."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-05-13
+  - id: NarrativeDiffusion
+    kind: vendored-checkout
+    path: donors/NarrativeDiffusion
+    upstream: https://github.com/c4-lab/NarrativeDiffusion
+    version: "18b78ac"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 01, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2024-07-12
+  - id: OnionSearch
+    kind: vendored-checkout
+    path: donors/OnionSearch
+    upstream: https://github.com/megadose/OnionSearch.git
+    version: "fc9d62c"
+    license: "GPL-3.0"
+    license_source: "donors/OnionSearch/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2023-12-29
+  - id: Operation-Molasses
+    kind: vendored-checkout
+    path: donors/Operation-Molasses
+    upstream: https://github.com/zencefilefendi/Operation-Molasses
+    version: "9066f1d"
+    license: "MIT"
+    license_source: "donors/Operation-Molasses/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 08, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-05-17
+  - id: OsintEye
+    kind: vendored-checkout
+    path: donors/OsintEye
+    upstream: https://github.com/atiilla/OsintEye.git
+    version: "1b37009"
+    license: "MIT"
+    license_source: "donors/OsintEye/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2024-11-24
+  - id: PHoDMSs
+    kind: vendored-checkout
+    path: donors/PHoDMSs
+    upstream: https://github.com/ndag/PHoDMSs
+    version: "fec7a3d"
+    license: "MIT"
+    license_source: "donors/PHoDMSs/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 04, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2021-06-25
+  - id: PIDSF
+    kind: vendored-checkout
+    path: donors/PIDSF
+    upstream: https://github.com/Umama-tech/PIDSF
+    version: "7e0eae0"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 03, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-17
+  - id: PhantomStrike-AI
+    kind: vendored-checkout
+    path: donors/PhantomStrike-AI
+    upstream: https://github.com/Und3rTakerOPS/PhantomStrike-AI
+    version: "3d83d65"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-03-25
+  - id: PhishSlayer
+    kind: vendored-checkout
+    path: donors/PhishSlayer
+    upstream: https://github.com/viruchith/PhishSlayer
+    version: "18c4aea"
+    license: "GPL-3.0"
+    license_source: "donors/PhishSlayer/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-05-23
+  - id: Phunter
+    kind: vendored-checkout
+    path: donors/Phunter
+    upstream: https://github.com/N0rz3/Phunter.git
+    version: "bedff7b"
+    license: "GPL-3.0"
+    license_source: "donors/Phunter/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2024-04-06
+  - id: Profil3r
+    kind: vendored-checkout
+    path: donors/Profil3r
+    upstream: https://github.com/Greyjedix/Profil3r.git
+    version: "394a12d"
+    license: "MIT"
+    license_source: "donors/Profil3r/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2021-04-14
+  - id: Raphtory
+    kind: vendored-checkout
+    path: donors/Raphtory
+    upstream: https://github.com/Pometry/Raphtory
+    version: "31db9e7eb"
+    license: "GPL-3.0"
+    license_source: "donors/Raphtory/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 04, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-09
+  - id: SPEAR
+    kind: vendored-checkout
+    path: donors/SPEAR
+    upstream: https://github.com/TrafficDetection-art/SPEAR
+    version: "9331ed1"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-02-10
+  - id: SYNINT
+    kind: vendored-checkout
+    path: donors/SYNINT
+    upstream: https://github.com/gs-ai/SYNINT
+    version: "3025017"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 03, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-14
+  - id: SearchPhone
+    kind: vendored-checkout
+    path: donors/SearchPhone
+    upstream: https://github.com/HackUnderway/SearchPhone.git
+    version: "8cbd65b"
+    license: "MIT"
+    license_source: "donors/SearchPhone/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-24
+  - id: Social-Network-Simulation-Analysis
+    kind: vendored-checkout
+    path: donors/Social-Network-Simulation-Analysis
+    upstream: https://github.com/shubKnight/Social-Network-Simulation-Analysis
+    version: "d23e84e"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 05, 06; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-05-20
+  - id: Sublist3r
+    kind: vendored-checkout
+    path: donors/Sublist3r
+    upstream: https://github.com/aboul3la/Sublist3r.git
+    version: "729d649"
+    license: "GPL-2.0-only"
+    license_source: "donors/Sublist3r/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (3 reference(s))"
+    verification_note: "LICENSE title line is 'GNU GENERAL PUBLIC LICENSE / Version 2, June 1991'. This differs from the MIT licence commonly associated with upstream Sublist3r; the vendored file is what was read."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2020-07-29
+  - id: The-3rd-Eye
+    kind: vendored-checkout
+    path: donors/The-3rd-Eye
+    upstream: https://github.com/Ordinary0x/The-3rd-Eye.git
+    version: "378eb5f"
+    license: "MIT"
+    license_source: "donors/The-3rd-Eye/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-12-18
+  - id: TheBigBrother
+    kind: vendored-checkout
+    path: donors/TheBigBrother
+    upstream: https://github.com/chadi0x/TheBigBrother.git
+    version: "29c3c6e"
+    license: "MIT"
+    license_source: "donors/TheBigBrother/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-13
+  - id: TraceMatrix
+    kind: vendored-checkout
+    path: donors/TraceMatrix
+    upstream: null
+    version: null
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "no .git in this checkout; version not determinable"
+  - id: TripleFantasy
+    kind: vendored-checkout
+    path: donors/TripleFantasy
+    upstream: https://github.com/Sadpainy/TripleFantasy
+    version: "176d891"
+    license: "AGPL-3.0"
+    license_source: "donors/TripleFantasy/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-11
+  - id: TwinMarket
+    kind: vendored-checkout
+    path: donors/TwinMarket
+    upstream: https://github.com/TobyYang7/TwinMarket
+    version: "4ccb3ab"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 05, 08, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-10-17
+  - id: WhoCord
+    kind: vendored-checkout
+    path: donors/WhoCord
+    upstream: https://github.com/Siv-nick/WhoCord.git
+    version: "5b80f4c"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (2 reference(s))"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-15
+  - id: X-osint
+    kind: vendored-checkout
+    path: donors/X-osint
+    upstream: https://github.com/TechWithTy/X-osint.git
+    version: "c11b50a"
+    license: "GPL-3.0"
+    license_source: "donors/X-osint/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-07-31
+  - id: YuLan-OneSim
+    kind: vendored-checkout
+    path: donors/YuLan-OneSim
+    upstream: https://github.com/RUC-GSAI/YuLan-OneSim
+    version: "9829d72"
+    license: "Apache-2.0"
+    license_source: "donors/YuLan-OneSim/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 05, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-02-02
+  - id: adversary_emulation_library
+    kind: vendored-checkout
+    path: donors/adversary_emulation_library
+    upstream: https://github.com/center-for-threat-informed-defense/adversary_emulation_library
+    version: "4467a6e"
+    license: "Apache-2.0"
+    license_source: "donors/adversary_emulation_library/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; code-attributed in apps/ (2 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-05-28
+  - id: adversarygraph
+    kind: vendored-checkout
+    path: donors/adversarygraph
+    upstream: https://github.com/anpa1200/adversarygraph
+    version: "27de0b1"
+    license: null
+    license_source: "donors/adversarygraph/LICENSE"
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 04, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "LICENSE title line is 'AdversaryGraph Personal Use License' (copyright (c) 2026 Andrey Pautov). A bespoke personal-use licence, not an OSI identifier; no SPDX mapping asserted. Licence left null rather than guessed."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-25
+  - id: ael
+    kind: vendored-checkout
+    path: donors/ael
+    upstream: https://github.com/attackevals/ael
+    version: "5594518d"
+    license: "Apache-2.0"
+    license_source: "donors/ael/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 03, 09, 10; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-01-22
+  - id: argus
+    kind: vendored-checkout
+    path: donors/argus
+    upstream: https://github.com/anhtdang92/argus
+    version: "448887f"
+    license: "MIT"
+    license_source: "donors/argus/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 03, 06, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-03-26
+  - id: argus-cotcollective
+    kind: vendored-checkout
+    path: donors/argus-cotcollective
+    upstream: https://github.com/cotcollective/argus.git
+    version: "9b0d9ec"
+    license: "MIT"
+    license_source: "donors/argus-cotcollective/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-25
+  - id: caldera
+    kind: vendored-checkout
+    path: donors/caldera
+    upstream: https://github.com/apache/caldera
+    version: "cb8d6a81"
+    license: "Apache-2.0"
+    license_source: "donors/caldera/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 06, 09, 10; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-26
+  - id: cognitive_phase_transitions
+    kind: vendored-checkout
+    path: donors/cognitive_phase_transitions
+    upstream: https://github.com/Khomyakov-Vladimir/cognitive_phase_transitions
+    version: "6844730"
+    license: "MIT"
+    license_source: "donors/cognitive_phase_transitions/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 01, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-10-19
+  - id: coldreach
+    kind: vendored-checkout
+    path: donors/coldreach
+    upstream: https://github.com/dhruvmojila/coldreach.git
+    version: "6282133"
+    license: "MIT"
+    license_source: "donors/coldreach/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-05-11
+  - id: email2phonenumber
+    kind: vendored-checkout
+    path: donors/email2phonenumber
+    upstream: https://github.com/martinvigo/email2phonenumber.git
+    version: "9df9dbe"
+    license: "MIT"
+    license_source: "donors/email2phonenumber/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2022-02-16
+  - id: erlik-graph
+    kind: vendored-checkout
+    path: donors/erlik-graph
+    upstream: https://github.com/malkreide/erlik-graph
+    version: "21d2754"
+    license: "MIT"
+    license_source: "donors/erlik-graph/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 03, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-13
+  - id: estorides
+    kind: vendored-checkout
+    path: donors/estorides
+    upstream: https://github.com/grisuno/estorides.git
+    version: "ca66de4"
+    license: "AGPL-3.0"
+    license_source: "donors/estorides/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (7 reference(s))"
+    verification_note: "LICENSE title line is 'GNU AFFERO GENERAL PUBLIC LICENSE'. CONFLICT: this checkout's pyproject.toml declares license = {text = \"GPL-3.0\"}. Recorded from the LICENSE file; the two disagree and the difference is AGPL-vs-GPL, so the conflict is recorded rather than resolved."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-20
+  - id: fiercephish
+    kind: vendored-checkout
+    path: donors/fiercephish
+    upstream: https://github.com/raikia/fiercephish
+    version: "0c37803"
+    license: "GPL-3.0"
+    license_source: "donors/fiercephish/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2024-01-08
+  - id: gh-mailto
+    kind: vendored-checkout
+    path: donors/gh-mailto
+    upstream: https://github.com/codeGROOVE-dev/gh-mailto.git
+    version: "b6a1494"
+    license: "Apache-2.0"
+    license_source: "donors/gh-mailto/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (3 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-10-30
+  - id: ghostline
+    kind: vendored-checkout
+    path: donors/ghostline
+    upstream: null
+    version: null
+    license: "MIT"
+    license_source: "donors/ghostline/LICENSE"
+    status: verified
+    vendored: true
+    role: "not covered by any of the 11 catalogues; code-attributed in apps/ (3 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "no .git in this checkout; version not determinable"
+  - id: github-email-extractor
+    kind: vendored-checkout
+    path: donors/github-email-extractor
+    upstream: https://github.com/toqulent/github-email-extractor.git
+    version: "1f034e4"
+    license: "MIT"
+    license_source: "donors/github-email-extractor/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-04
+  - id: gitrecon
+    kind: vendored-checkout
+    path: donors/gitrecon
+    upstream: https://github.com/atiilla/gitrecon.git
+    version: "4d23513"
+    license: "MIT"
+    license_source: "donors/gitrecon/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-12-30
+  - id: gitsnitch
+    kind: vendored-checkout
+    path: donors/gitsnitch
+    upstream: https://github.com/gruns/gitsnitch.git
+    version: "d506fbe"
+    license: "MIT"
+    license_source: "donors/gitsnitch/LICENSE.txt"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (4 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-03-06
+  - id: hive-mind-gnca
+    kind: vendored-checkout
+    path: donors/hive-mind-gnca
+    upstream: https://github.com/algoplexity/hive-mind-gnca
+    version: "3e278ba"
+    license: "MIT"
+    license_source: "donors/hive-mind-gnca/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 04, 06, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-12-29
+  - id: holehe
+    kind: vendored-checkout
+    path: donors/holehe
+    upstream: https://github.com/megadose/holehe.git
+    version: "14da70f"
+    license: "GPL-3.0"
+    license_source: "donors/holehe/LICENSE.md"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2024-09-10
+  - id: hypergraphx
+    kind: vendored-checkout
+    path: donors/hypergraphx
+    upstream: https://github.com/HGX-Team/hypergraphx
+    version: "18ae78f"
+    license: "BSD-3-Clause"
+    license_source: "donors/hypergraphx/LICENSE.md"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 04, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "LICENSE.md is BSD-3-Clause text (non-advertising clause present); pyproject.toml independently declares license = \"BSD-3-Clause\"."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-03
+  - id: ignorant
+    kind: vendored-checkout
+    path: donors/ignorant
+    upstream: https://github.com/megadose/ignorant.git
+    version: "40b3eb7"
+    license: "GPL-3.0"
+    license_source: "donors/ignorant/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (6 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2023-12-29
+  - id: intellyweave
+    kind: vendored-checkout
+    path: donors/intellyweave
+    upstream: https://github.com/vericle/intellyweave
+    version: "ff4152c"
+    license: "BSD-3-Clause"
+    license_source: "donors/intellyweave/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 03, 09, 10; code-attributed in apps/ (4 reference(s))"
+    verification_note: "LICENSE title line is 'BSD 3-Clause License'."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-01-12
+  - id: io-coordinated-replies
+    kind: vendored-checkout
+    path: donors/io-coordinated-replies
+    upstream: https://github.com/osome-iu/io-coordinated-replies
+    version: "a834156"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 01, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-03-05
+  - id: lau-network-science
+    kind: vendored-checkout
+    path: donors/lau-network-science
+    upstream: https://github.com/SuperInstance/lau-network-science
+    version: "4a110bf"
+    license: "MIT"
+    license_source: "donors/lau-network-science/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 04, 09, 10; code-attributed in apps/ (2 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-12
+  - id: lazyaddon
+    kind: vendored-checkout
+    path: donors/lazyaddon
+    upstream: https://github.com/grisuno/lazyaddon.git
+    version: "01c9c11"
+    license: "GPL-3.0-or-later"
+    license_source: "donors/lazyaddon/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "LICENSE carries the GPLv3 text; pyproject.toml declares license = \"GPL-3.0-or-later\"."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-23
+  - id: maigret
+    kind: vendored-checkout
+    path: donors/maigret
+    upstream: https://github.com/soxoj/maigret.git
+    version: "38bbf5c"
+    license: "MIT"
+    license_source: "donors/maigret/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (9 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-21
+  - id: mosint
+    kind: vendored-checkout
+    path: donors/mosint
+    upstream: https://github.com/alpkeskin/mosint.git
+    version: "dd331ba"
+    license: "MIT"
+    license_source: "donors/mosint/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2023-09-20
+  - id: mysterious-cyclopus
+    kind: vendored-checkout
+    path: donors/mysterious-cyclopus
+    upstream: https://github.com/Iankulani/mysterious-cyclopus.git
+    version: "9de4997"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted. README shows a shields.io badge reading 'license-MIT' linking to a LICENSE file that is not present in the checkout. A README badge is not a licence grant and was not treated as one."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-18
+  - id: osia-framework
+    kind: vendored-checkout
+    path: donors/osia-framework
+    upstream: https://github.com/osianet/osia-framework
+    version: "38a6dab"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 03, 06, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-05-10
+  - id: osint-search-tool
+    kind: vendored-checkout
+    path: donors/osint-search-tool
+    upstream: https://github.com/hasamba/osint-search-tool.git
+    version: "a0de7e6"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-09-02
+  - id: osint-terminal
+    kind: vendored-checkout
+    path: donors/osint-terminal
+    upstream: https://github.com/RojanSapkota/osint-terminal.git
+    version: "26c291e"
+    license: "MIT"
+    license_source: "donors/osint-terminal/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-02
+  - id: osint-web-mcp
+    kind: vendored-checkout
+    path: donors/osint-web-mcp
+    upstream: https://github.com/Johnz86/osint-web-mcp.git
+    version: "a14c28d"
+    license: "MIT"
+    license_source: "donors/osint-web-mcp/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-03-06
+  - id: persistence-agent
+    kind: vendored-checkout
+    path: donors/persistence-agent
+    upstream: https://github.com/SuperInstance/persistence-agent
+    version: "eabff93"
+    license: "MIT OR Apache-2.0"
+    license_source: "donors/persistence-agent/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 04, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "LICENSE opens 'Dual-licensed under MIT or Apache-2.0' and then carries the Apache-2.0 text."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-13
+  - id: phantomsignal
+    kind: vendored-checkout
+    path: donors/phantomsignal
+    upstream: https://github.com/getphantomsignal/phantomsignal.git
+    version: "9bb7ab6"
+    license: "MIT"
+    license_source: "donors/phantomsignal/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-26
+  - id: phishingclub
+    kind: vendored-checkout
+    path: donors/phishingclub
+    upstream: null
+    version: null
+    license: "AGPL-3.0"
+    license_source: "donors/phishingclub/LICENSE"
+    status: verified
+    vendored: true
+    role: "not covered by any of the 11 catalogues; code-attributed in apps/ (3 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "no .git in this checkout; version not determinable"
+  - id: phone-osint-framework
+    kind: vendored-checkout
+    path: donors/phone-osint-framework
+    upstream: https://github.com/aegisceo/phone-osint-framework.git
+    version: "acd577a"
+    license: "MIT"
+    license_source: "donors/phone-osint-framework/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-11-02
+  - id: phoneinfoga
+    kind: vendored-checkout
+    path: donors/phoneinfoga
+    upstream: https://github.com/sundowndev/phoneinfoga.git
+    version: "55807b0"
+    license: "GPL-3.0"
+    license_source: "donors/phoneinfoga/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (5 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-08-25
+  - id: posim
+    kind: vendored-checkout
+    path: donors/posim
+    upstream: https://github.com/DeepCogLab/posim
+    version: "7e2d76cc"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 04, 05, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted. README shows a shields.io badge reading 'License: MIT'. A README badge is not a licence grant and was not treated as one."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-18
+  - id: postexploitation-toolbox-android
+    kind: vendored-checkout
+    path: donors/postexploitation-toolbox-android
+    upstream: https://github.com/timschneeb/postexploitation-toolbox-android.git
+    version: "20c3208"
+    license: "GPL-3.0"
+    license_source: "donors/postexploitation-toolbox-android/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-03
+  - id: secureflow-intel
+    kind: vendored-checkout
+    path: donors/secureflow-intel
+    upstream: https://github.com/BarakMozesPro/secureflow-intel.git
+    version: "b3d9690"
+    license: "MIT"
+    license_source: "donors/secureflow-intel/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-03-16
+  - id: seekr
+    kind: vendored-checkout
+    path: donors/seekr
+    upstream: https://github.com/seekr-osint/seekr.git
+    version: "023b7a8"
+    license: "GPL-3.0"
+    license_source: "donors/seekr/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-06-16
+  - id: seithar-research
+    kind: vendored-checkout
+    path: donors/seithar-research
+    upstream: https://github.com/MEET-UC/seithar-research
+    version: "472c68a"
+    license: "CC-BY-NC-4.0"
+    license_source: "donors/seithar-research/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 01, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "LICENSE title line is 'Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)'. Knowledge-only; no code vendoring."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-12
+  - id: sherlock
+    kind: vendored-checkout
+    path: donors/sherlock
+    upstream: https://github.com/sherlock-project/sherlock.git
+    version: "3760187"
+    license: "MIT"
+    license_source: "donors/sherlock/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (7 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-09
+  - id: silisocs
+    kind: vendored-checkout
+    path: donors/silisocs
+    upstream: https://github.com/sandbox-social/silisocs
+    version: "cfaa45b"
+    license: "MIT"
+    license_source: "donors/silisocs/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 05, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-31
+  - id: social-oscillation-model
+    kind: vendored-checkout
+    path: donors/social-oscillation-model
+    upstream: https://github.com/izaqsee/social-oscillation-model
+    version: "27ad3cb"
+    license: "MIT"
+    license_source: "donors/social-oscillation-model/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 05, 09; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-02-06
+  - id: spiderfoot
+    kind: vendored-checkout
+    path: donors/spiderfoot
+    upstream: https://github.com/smICALLEF/spiderfoot.git
+    version: "0f815a2"
+    license: "MIT"
+    license_source: "donors/spiderfoot/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2023-11-05
+  - id: sticks
+    kind: vendored-checkout
+    path: donors/sticks
+    upstream: https://github.com/c2dc/sticks
+    version: "f40006e"
+    license: null
+    license_source: null
+    status: unverified
+    vendored: true
+    role: "catalogue 00, 02, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "No LICENSE*, COPYING* or licence field found: top-level listing is clean and a depth-2 recursive scan of the checkout returned no licence file. No licence asserted."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-04-15
+  - id: theHarvester
+    kind: vendored-checkout
+    path: donors/theHarvester
+    upstream: https://github.com/laramies/theHarvester.git
+    version: "dc8c0c0"
+    license: "GPL-2.0-only"
+    license_source: "donors/theHarvester/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (4 reference(s))"
+    verification_note: "LICENSE carries the GPLv2 text; pyproject.toml independently declares license = \"GPL-2.0-only\". Note this checkout's declared licence is GPL-2.0, which differs from the MIT licence commonly associated with upstream theHarvester."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-19
+  - id: thecrowler
+    kind: vendored-checkout
+    path: donors/thecrowler
+    upstream: https://github.com/pzaino/thecrowler.git
+    version: "513ea9f"
+    license: "Apache-2.0"
+    license_source: "donors/thecrowler/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-03
+  - id: topology
+    kind: vendored-checkout
+    path: donors/topology
+    upstream: https://github.com/SuperInstance/witness-topology
+    version: "ed4d5db"
+    license: "MIT"
+    license_source: "donors/topology/witness-topology/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 01, 03, 04, 05, 06, 09, 10; no code under apps/ attributes work to it (reference donor only)"
+    verification_note: "donors/topology/ holds a single nested checkout at witness-topology/, which has its own .git and LICENSE ('MIT License / Copyright (c) 2024 SuperInstance')."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-07-12
+  - id: trident
+    kind: vendored-checkout
+    path: donors/trident
+    upstream: https://github.com/tbckr/trident.git
+    version: "5cbf3e5"
+    license: "GPL-3.0"
+    license_source: "donors/trident/LICENSE.md"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (4 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-12
+  - id: user-scanner
+    kind: vendored-checkout
+    path: donors/user-scanner
+    upstream: https://github.com/kaifcodec/user-scanner.git
+    version: "466654a"
+    license: "MIT"
+    license_source: "donors/user-scanner/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 09, 10; code-attributed in apps/ (2 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2026-09-21
+  - id: votranhabysscoremicro
+    kind: vendored-checkout
+    path: donors/votranhabysscoremicro
+    upstream: https://github.com/vinhatson/votranhabysscoremicro
+    version: "7bbbe5f"
+    license: "Apache-2.0"
+    license_source: "donors/votranhabysscoremicro/LICENSE"
+    status: verified
+    vendored: true
+    role: "catalogue 00, 05, 08, 09; code-attributed in apps/ (1 reference(s))"
+    verification_note: "Licence read directly from the named file."
+    version_source: "git rev-parse --short HEAD in the vendored checkout"
+    commit_date: 2025-07-14
+  - id: splink
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "4.0.17"
+    license: "MIT"
+    license_source: "importlib.metadata.metadata('splink')['License-Expression'] == 'MIT'"
+    status: verified
+    vendored: false
+    role: "Entity resolution adapter for apps/admission; bound by apps/admission/resolution/splink_adapter.py."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/admission/pyproject.toml"
+  - id: h3
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "4.5.0"
+    license: "Apache-2.0"
+    license_source: "importlib.metadata.metadata('h3')['License'] holds the full Apache-2.0 text; Classifier: Apache Software License"
+    status: verified
+    vendored: false
+    role: "Hex spatial index for apps/projection; bound by apps/projection/spatial/h3_index.py."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. The METADATA License field holds the full Apache-2.0 text rather than a short identifier, and there is no License-Expression; Apache-2.0 is what that text is."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/projection/pyproject.toml"
+  - id: river
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.26.1"
+    license: "BSD-3-Clause"
+    license_source: "importlib.metadata.metadata('river')['License-Expression'] == 'BSD-3-Clause'"
+    status: verified
+    vendored: false
+    role: "Streaming online-learning operators for apps/science; bound by apps/science/streaming/river_operator.py."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/science/pyproject.toml"
+  - id: docling-core
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.101.1"
+    license: "MIT"
+    license_source: "importlib.metadata.metadata('docling-core')['License-Expression'] == 'MIT'"
+    status: verified
+    vendored: false
+    role: "Document-model core for apps/interpretation parsing."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: bm25s
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.3.11"
+    license: "MIT"
+    license_source: "Classifier: 'License :: OSI Approved :: MIT License'. No License field and no License-Expression in the installed METADATA; licence taken from the trove classifier alone."
+    status: verified
+    vendored: false
+    role: "Sparse lexical retrieval index for apps/projection."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. Licence comes from a trove classifier alone -- no License field, no License-Expression -- so no SPDX identifier is asserted."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/projection/pyproject.toml"
+  - id: duckdb
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.5.5"
+    license: "MIT"
+    license_source: "Classifier: 'License :: OSI Approved :: MIT License'. No License field and no License-Expression in the installed METADATA; licence taken from the trove classifier alone."
+    status: verified
+    vendored: false
+    role: "Embedded analytical engine for apps/projection."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. Licence comes from a trove classifier alone -- no License field, no License-Expression -- so no SPDX identifier is asserted."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/projection/pyproject.toml"
+  - id: gudhi
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "3.13.0"
+    license: "MIT"
+    license_source: ".venv/Lib/site-packages/gudhi-3.13.0.dist-info/licenses/LICENSE ('MIT License / Copyright (c) 2014 The GUDHI developers.')"
+    status: verified
+    vendored: false
+    role: "Topological data analysis path actually called from apps/projection (tda/pipeline.py, tda/bridge.py)."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. Its METADATA carries no License field and no licence classifier, so the licence was read instead from the dist-info LICENSE file named in license_source."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/projection/pyproject.toml"
+  - id: certstream
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.12"
+    license: "MIT"
+    license_source: "METADATA License == 'MIT' and Classifier MIT License"
+    status: verified
+    vendored: false
+    role: "Certificate-transparency stream client for apps/acquisition."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/acquisition/pyproject.toml"
+  - id: crawlee
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.10.0"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "Crawler runtime for apps/acquisition."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/acquisition/pyproject.toml"
+  - id: pyarrow
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "25.0.1"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "Columnar column for apps/acquisition."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/acquisition/pyproject.toml"
+  - id: scrapy
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.19.0"
+    license: "BSD-3-Clause"
+    license_source: "METADATA License-Expression == 'BSD-3-Clause'"
+    status: verified
+    vendored: false
+    role: "Crawling framework for apps/acquisition."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/acquisition/pyproject.toml"
+  - id: warcio
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.8.1"
+    license: "Apache-2.0"
+    license_source: "METADATA License == 'Apache 2.0' and Classifier Apache Software License"
+    status: verified
+    vendored: false
+    role: "WARC reader/writer for apps/acquisition."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/acquisition/pyproject.toml"
+  - id: numpy
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.4.6"
+    license: "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0"
+    license_source: "METADATA License-Expression"
+    status: verified
+    vendored: false
+    role: "Array core across the workspace."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/admission/pyproject.toml"
+      - "apps/interpretation/pyproject.toml"
+      - "apps/projection/pyproject.toml"
+      - "apps/science/pyproject.toml"
+      - "apps/feedback/pyproject.toml"
+  - id: scikit-learn
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.9.1"
+    license: "BSD-3-Clause"
+    license_source: "METADATA License-Expression == 'BSD-3-Clause'"
+    status: verified
+    vendored: false
+    role: "Model fitting for apps/admission."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/admission/pyproject.toml"
+  - id: scipy
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.17.1"
+    license: "BSD"
+    license_source: "Classifier: 'License :: OSI Approved :: BSD License'. The METADATA License field holds an Enthought/SciPy Developers copyright string, not a licence name; no License-Expression. Recorded as the classifier states it, without asserting a clause count."
+    status: verified
+    vendored: false
+    role: "Numerics across admission and projection."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. The METADATA License field is a copyright string, not a licence name, and there is no License-Expression; the value recorded is the trove classifier verbatim."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/admission/pyproject.toml"
+      - "apps/projection/pyproject.toml"
+  - id: httpx
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.28.1"
+    license: "BSD-3-Clause"
+    license_source: "METADATA License == 'BSD-3-Clause' and Classifier BSD License"
+    status: verified
+    vendored: false
+    role: "Async HTTP client."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/bulk-ingestion/pyproject.toml"
+      - "apps/control-plane/pyproject.toml"
+      - "apps/shared/pyproject.toml"
+      - "bench/pyproject.toml"
+  - id: fastapi
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.141.1"
+    license: "MIT"
+    license_source: "METADATA License-Expression == 'MIT'"
+    status: verified
+    vendored: false
+    role: "Control-plane HTTP API."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/control-plane/pyproject.toml"
+  - id: uvicorn
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.52.4"
+    license: "BSD-3-Clause"
+    license_source: "METADATA License-Expression == 'BSD-3-Clause'"
+    status: verified
+    vendored: false
+    role: "ASGI server for the control plane."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/control-plane/pyproject.toml"
+  - id: alembic
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.19.2"
+    license: "MIT"
+    license_source: "METADATA License-Expression == 'MIT'"
+    status: verified
+    vendored: false
+    role: "Schema migrations for the control-plane DB."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/control-plane/pyproject.toml"
+  - id: temporalio
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.32.0"
+    license: "MIT"
+    license_source: "METADATA License-Expression == 'MIT' and Classifier MIT License"
+    status: verified
+    vendored: false
+    role: "Durable workflow engine for the control plane."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/control-plane/pyproject.toml"
+  - id: clickhouse-connect
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.8.0"
+    license: "Apache-2.0"
+    license_source: "METADATA License == 'Apache-2.0' and Classifier Apache Software License"
+    status: verified
+    vendored: false
+    role: "ClickHouse client for the control plane."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/control-plane/pyproject.toml"
+  - id: neo4j
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "6.3.0"
+    license: "Apache-2.0 AND Python-2.0"
+    license_source: "METADATA License-Expression"
+    status: verified
+    vendored: false
+    role: "Graph store for the control plane."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/control-plane/pyproject.toml"
+  - id: orjson
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "3.12.0"
+    license: "MPL-2.0 AND (Apache-2.0 OR MIT)"
+    license_source: "METADATA License-Expression"
+    status: verified
+    vendored: false
+    role: "Fast JSON codec for the control plane."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/control-plane/pyproject.toml"
+  - id: trafilatura
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.2.0"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "Main-content extraction for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: selectolax
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.4.12"
+    license: "MIT"
+    license_source: "METADATA License-Expression == 'MIT'"
+    status: verified
+    vendored: false
+    role: "HTML/CSS parser for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: extruct
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.18.0"
+    license: "BSD"
+    license_source: "Classifier: 'License :: OSI Approved :: BSD License'. No License field and no License-Expression in the installed METADATA; licence taken from the trove classifier alone."
+    status: verified
+    vendored: false
+    role: "Metadata extraction for apps/interpretation."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. Licence comes from a trove classifier alone -- no License field, no License-Expression -- so no SPDX identifier is asserted."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: phonenumbers
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "9.0.39"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "Phone metadata for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: nameparser
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.3.0"
+    license: "LGPL"
+    license_source: "METADATA License == 'LGPL' and Classifier GNU Library or Lesser General Public License (LGPL). Recorded as the classifier states it, without asserting a version."
+    status: verified
+    vendored: false
+    role: "Person-name parsing for apps/interpretation."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. METADATA License is the bare string 'LGPL' and the classifier names no version, so no version is asserted."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: pymorphy3
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.0.6"
+    license: "MIT"
+    license_source: "METADATA License == 'MIT license' and Classifier MIT License"
+    status: verified
+    vendored: false
+    role: "Russian morphology for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: pyahocorasick
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.3.1"
+    license: "BSD-3-Clause and Public-Domain"
+    license_source: "METADATA License == 'BSD-3-Clause and Public-Domain'"
+    status: verified
+    vendored: false
+    role: "Literal multi-pattern automaton for pattern dictionaries."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+      - "apps/shared/pyproject.toml"
+  - id: charset-normalizer
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "3.5.1"
+    license: "MIT"
+    license_source: "METADATA License == 'MIT'"
+    status: verified
+    vendored: false
+    role: "Charset detection for payload parsing."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+      - "apps/shared/pyproject.toml"
+  - id: pypdf
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "6.19.0"
+    license: "BSD-3-Clause"
+    license_source: "METADATA License-Expression == 'BSD-3-Clause'"
+    status: verified
+    vendored: false
+    role: "PDF text extraction for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: python-docx
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.2.0"
+    license: "MIT"
+    license_source: "METADATA License == 'MIT' and Classifier MIT License"
+    status: verified
+    vendored: false
+    role: "DOCX extraction for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: openpyxl
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "3.1.5"
+    license: "MIT"
+    license_source: "METADATA License == 'MIT' and Classifier MIT License"
+    status: verified
+    vendored: false
+    role: "XLSX extraction for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: pillow
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "12.3.0"
+    license: "MIT-CMU"
+    license_source: "METADATA License-Expression == 'MIT-CMU'"
+    status: verified
+    vendored: false
+    role: "Image handling for apps/interpretation."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. METADATA License-Expression is 'MIT-CMU', the Pillow-specific dual grant, not plain MIT."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: anyascii
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.3.3"
+    license: "ISC"
+    license_source: "Classifier: 'License :: OSI Approved :: ISC License (ISCL)'. No License field and no License-Expression in the installed METADATA."
+    status: verified
+    vendored: false
+    role: "Transliteration for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: rapidfuzz
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "3.14.6"
+    license: "MIT"
+    license_source: "METADATA License-Expression == 'MIT'"
+    status: verified
+    vendored: false
+    role: "Fuzzy string matching for apps/interpretation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml"
+  - id: simplemma
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: null
+    license: null
+    license_source: null
+    status: unverified
+    vendored: false
+    role: "Language-tiers extra: language detection."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "not installed in the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml (optional-dependencies.lang-tiers)"
+  - id: jieba
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: null
+    license: null
+    license_source: null
+    status: unverified
+    vendored: false
+    role: "Language-tiers extra: Chinese segmentation."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "not installed in the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml (optional-dependencies.lang-tiers)"
+  - id: fugashi
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: null
+    license: null
+    license_source: null
+    status: unverified
+    vendored: false
+    role: "Language-tiers extra: Japanese tokenizer."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "not installed in the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml (optional-dependencies.lang-tiers)"
+  - id: unidic-lite
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: null
+    license: null
+    license_source: null
+    status: unverified
+    vendored: false
+    role: "Language-tiers extra: Japanese dictionary."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "not installed in the workspace .venv"
+    declared_in:
+      - "apps/interpretation/pyproject.toml (optional-dependencies.lang-tiers)"
+  - id: pydantic
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.13.5"
+    license: "MIT"
+    license_source: "METADATA License-Expression == 'MIT'"
+    status: verified
+    vendored: false
+    role: "Validation core for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+      - "bench/pyproject.toml"
+  - id: pydantic-settings
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.15.0"
+    license: "MIT"
+    license_source: "METADATA License-Expression == 'MIT' and Classifier MIT License"
+    status: verified
+    vendored: false
+    role: "Settings loading for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: sqlalchemy
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.0.52"
+    license: "MIT"
+    license_source: "METADATA License == 'MIT'"
+    status: verified
+    vendored: false
+    role: "ORM for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: asyncpg
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.31.0"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "Async Postgres driver."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: confluent-kafka
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "2.15.0"
+    license: "Apache-2.0"
+    license_source: "Classifier: 'License :: OSI Approved :: Apache Software License'. No License field and no License-Expression in the installed METADATA; licence taken from the trove classifier alone."
+    status: verified
+    vendored: false
+    role: "Kafka client for cognitive-shared."
+    verification_note: "Version read via importlib.metadata.version() against the workspace .venv. Licence comes from a trove classifier alone -- no License field, no License-Expression -- so no SPDX identifier is asserted."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: redis
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "8.1.0"
+    license: "MIT"
+    license_source: "METADATA License-Expression == 'MIT' and Classifier MIT License"
+    status: verified
+    vendored: false
+    role: "Redis client for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: aioboto3
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "15.5.0"
+    license: "Apache-2.0"
+    license_source: "METADATA License == 'Apache-2.0' and Classifier Apache Software License"
+    status: verified
+    vendored: false
+    role: "Async S3 client for immutable Observation storage."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: protobuf
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "7.36.1"
+    license: "BSD-3-Clause"
+    license_source: "METADATA License == '3-Clause BSD License'"
+    status: verified
+    vendored: false
+    role: "Wire format for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: grpcio
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.83.1"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "gRPC runtime for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: grpcio-tools
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.83.1"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "gRPC codegen for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: opentelemetry-sdk
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.44.0"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "Telemetry SDK for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: opentelemetry-exporter-otlp
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "1.44.0"
+    license: "Apache-2.0"
+    license_source: "METADATA License-Expression == 'Apache-2.0'"
+    status: verified
+    vendored: false
+    role: "OTLP exporter for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: prometheus-client
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "0.26.0"
+    license: "Apache-2.0 AND BSD-2-Clause"
+    license_source: "METADATA License-Expression"
+    status: verified
+    vendored: false
+    role: "Metrics client for cognitive-shared."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "apps/shared/pyproject.toml"
+  - id: click
+    kind: installed-distribution
+    path: null
+    upstream: null
+    version: "8.5.0"
+    license: "BSD-3-Clause"
+    license_source: "METADATA License-Expression == 'BSD-3-Clause'"
+    status: verified
+    vendored: false
+    role: "CLI parameterisation for the benchmark harness."
+    verification_note: "Version and licence read from the installed distribution metadata."
+    version_source: "importlib.metadata.version() against the workspace .venv"
+    declared_in:
+      - "bench/pyproject.toml"
+  - id: giotto-tda
+    kind: removed-dependency
+    path: null
+    upstream: null
+    version: null
+    license: null
+    license_source: null
+    status: removed
+    vendored: false
+    role: "Removed from the dependency graph; Removed 2026-10-16. Declared but had zero imports anywhere in the tree (not one `import giotto_tda`). Every giotto-tda release, including the 0.6.2 named in the removal comment, hard-pins scikit-learn==1.3.2, which caps numpy below 2.0 workspace-wide and blocked river>=0.26, scikit-learn 1.9 and the Splink 4 stack."
+    verification_note: "Absent from uv.lock and not installed in the workspace .venv (importlib.metadata raises PackageNotFoundError), and no vendored checkout exists under donors/. Licence and version therefore unverifiable here; the 0.6.2 figure is a claim in apps/projection/pyproject.toml, not something read from a package."
+    version_source: "no longer declared, locked or installed"
+    declared_in:
+      - "apps/projection/pyproject.toml"
+
+# ---------------------------------------------------------------------------
+# Named sources that are attributed in code or documentation but have no checkout
+# under donors/ and no installed distribution to read. Listed so the gap is
+# countable rather than invisible.
+# ---------------------------------------------------------------------------
+unregistered:
+  - id: followthemoney
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/shared/donor/statement.py, apps/shared/domain/{statement,schema,property,entity}.py name donors/followthemoney as the source repo, but no such directory exists under donors/. Licence and version unverifiable from this workspace; not registered."
+  - id: OpenOSINT
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/admission/resolution/candidate.py and apps/shared/donor/correlation_graph.py name donors/OpenOSINT as the source repo, but no such directory exists under donors/. Licence and version unverifiable from this workspace; not registered."
+  - id: NetForensicAI
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/shared/donor/evidence.py and apps/interpretation/evidence/manifest.py name donors/NetForensicAI as the source repo, but no such directory exists under donors/. Licence and version unverifiable; not registered."
+  - id: investigator
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/control-plane/workflows/investigation.py and apps/control-plane/cp_domain/investigation.py name donors/investigator as the donor, but no such directory exists under donors/. Licence and version unverifiable; not registered."
+  - id: pyzbar
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/zero/zero/harvesters/image.py cites donors/pyzbar for an EXIF pattern; no donors/pyzbar checkout exists. Not registered."
+  - id: Name2Email
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/zero/zero/enrichment/modules.py cites donors/Name2Email for name patterns; no donors/Name2Email checkout exists. Not registered."
+  - id: tesseract
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/zero/zero/harvesters/image.py cites donors/tesseract as a worker command; no donors/tesseract checkout exists. Not registered."
+  - id: BeautifulSoup
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/zero/zero/harvesters/url.py cites donors/BeautifulSoup for a pattern; no donors/BeautifulSoup checkout exists. bs4 is instead an installed transitive dependency and is not declared in any workspace pyproject, so it carries no registry entry. Not registered."
+  - id: PANO
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "Referenced by docs/architecture/donors/00-INDEX.md only; no donors/PANO checkout exists. Not registered."
+  - id: reNgine
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "Referenced by docs/architecture/donors/00-INDEX.md only; no donors/reNgine checkout exists. Not registered."
+  - id: erfert
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "apps/zero/zero/enrichment/modules.py and apps/zero/zero/harvesters/url.py cite an 'erfert estimator'; no donors/erfert checkout exists. Not registered."
+  - id: vitni
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "Referenced by docs/architecture/donors only; no donors/vitni checkout exists. Not registered."
+  - id: kipi
+    kind: attributed-source-not-vendored
+    license: null
+    reason: "Referenced by docs/architecture/donors only; no donors/kipi checkout exists. Not registered."

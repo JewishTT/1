@@ -1,0 +1,44 @@
+name: donor-registry
+
+# T040 / FR-113. Fails the build when a declared dependency or a vendored donor has no
+# licence/version entry in donors/registry.yaml.
+#
+# The check is a pytest module so it is runnable and debuggable locally with exactly the
+# same command this workflow runs:
+#
+#   .venv/Scripts/python.exe -m pytest apps/shared/tests/contract/test_donor_registry.py -q
+#
+# One caveat worth stating rather than discovering in a CI log: the checkouts under donors/
+# are separate git clones and are not tracked by this repository, so a CI checkout has an
+# empty donors/ tree. The donor-side assertions fall back to the inventory the registry
+# records for itself in that case. The declared-dependency assertions -- the part FR-113
+# actually turns red -- need no checkouts and run identically here and on a full tree.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  donor-registry:
+    name: donor registry (FR-113)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync the workspace
+        run: uv sync --locked
+
+      - name: Run the donor registry contract tests
+        run: .venv/bin/python -m pytest apps/shared/tests/contract/test_donor_registry.py -q
