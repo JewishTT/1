@@ -1,0 +1,113 @@
+apiVersion: cognitive.openai.com/v1
+kind: ModelCapabilityRegistry
+metadata:
+  version: 1
+  owner: control-plane
+spec:
+  default_provider: vllm_private
+  default_model: qwen38_person_case
+  providers:
+    vllm_private:
+      protocol: openai-compatible
+      base_url_env: COGNITIVE_VLLM_BASE_URL
+      api_key_env: COGNITIVE_VLLM_API_KEY
+      public_network_exposure: false
+      permitted_data_classes: [public_professional, case_confidential]
+      allowed_model_ids: [Qwen/Qwen3.8-27B]
+      request_model_override: false
+      request_base_url_override: false
+      request_tools_allowed: false
+      max_retries: 1
+      require_tls_or_private_service_identity: true
+  models:
+    qwen38_person_case:
+      provider: vllm_private
+      provider_model_id: Qwen/Qwen3.8-27B
+      served_alias: cognitive-qwen38-person-case
+      immutable_revision_required: true
+      tokenizer_revision_required: true
+      model_file_sha256_manifest_required: true
+      max_context_tokens: 262144
+      allowed_data_classes: [public_professional, case_confidential]
+      allowed_use: [nl.query_compiler, claim.extractor, hypothesis.proposer, red_team.reviewer, report.drafter]
+      disallowed_use: [identity_commit, source_discovery_tool_call, external_write, policy_change]
+  capabilities:
+    nl.query_compiler:
+      model: qwen38_person_case
+      input_schema: contracts/schemas/nl-query-compiler.input.json
+      output_schema: contracts/schemas/nl-query-compiler.output.json
+      permission: PROPOSE
+      inputs: [user_query, scope_digest, allowed_claim_families, available_capability_ids]
+      outputs: [grammar_text, unresolved_spans, ambiguity_reasons]
+      network_tools: []
+      canonical_write: false
+      max_input_tokens: 12000
+      max_output_tokens: 2500
+      timeout_seconds: 45
+      max_calls_per_case: 20
+      redaction_profile: person_case_minimum_text
+      provider_allowlist: [vllm_private]
+      on_failure: BLOCKED_MODEL_UNAVAILABLE
+    claim.extractor:
+      model: qwen38_person_case
+      input_schema: contracts/schemas/claim-extractor.input.json
+      output_schema: contracts/schemas/claim-extractor.output.json
+      permission: DERIVE
+      inputs: [observation_ref, evidence_window, allowed_claim_families, policy_digest]
+      outputs: [claim_candidates]
+      network_tools: []
+      canonical_write: false
+      max_input_tokens: 16000
+      max_output_tokens: 4000
+      timeout_seconds: 60
+      max_calls_per_case: 500
+      redaction_profile: person_case_minimum_text
+      provider_allowlist: [vllm_private]
+      span_server_validation_required: true
+      on_failure: BLOCKED_MODEL_UNAVAILABLE
+    hypothesis.proposer:
+      model: qwen38_person_case
+      input_schema: contracts/schemas/hypothesis.input.json
+      output_schema: contracts/schemas/hypothesis.output.json
+      permission: PROPOSE
+      inputs: [finding_refs, admitted_claim_refs, contested_claim_refs, open_obligation_refs]
+      outputs: [hypothesis_candidates, discriminating_obligations]
+      network_tools: []
+      canonical_write: false
+      max_input_tokens: 12000
+      max_output_tokens: 3000
+      timeout_seconds: 45
+      max_calls_per_case: 50
+      provider_allowlist: [vllm_private]
+      on_failure: BLOCKED_MODEL_UNAVAILABLE
+    red_team.reviewer:
+      model: qwen38_person_case
+      input_schema: contracts/schemas/red-team.input.json
+      output_schema: contracts/schemas/red-team.output.json
+      permission: PROPOSE
+      inputs: [finding_refs, claims, source_lineage, temporal_refs]
+      outputs: [criticisms, alternatives, missing_evidence, obligation_candidates]
+      network_tools: []
+      canonical_write: false
+      max_input_tokens: 12000
+      max_output_tokens: 3000
+      timeout_seconds: 45
+      max_calls_per_case: 25
+      provider_allowlist: [vllm_private]
+      on_failure: BLOCKED_MODEL_UNAVAILABLE
+    report.drafter:
+      model: qwen38_person_case
+      input_schema: contracts/schemas/report-drafter.input.json
+      output_schema: contracts/schemas/report-drafter.output.json
+      permission: DERIVE
+      inputs: [approved_finding_ids, unresolved_obligations, coverage_ledger, policy_scope]
+      outputs: [report_sections, sentence_finding_refs]
+      network_tools: []
+      canonical_write: false
+      max_input_tokens: 16000
+      max_output_tokens: 5000
+      timeout_seconds: 60
+      max_calls_per_case: 5
+      provider_allowlist: [vllm_private]
+      sentence_grounding_required: true
+      on_failure: DETERMINISTIC_REPORT_RENDERER

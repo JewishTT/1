@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NLQueryCompilerOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "grammar_text",
+    "intent",
+    "unresolved_spans",
+    "ambiguity_reasons"
+  ],
+  "properties": {
+    "grammar_text": {
+      "type": "string",
+      "maxLength": 12000,
+      "minLength": 1
+    },
+    "intent": {
+      "enum": [
+        "find",
+        "show",
+        "compare",
+        "explain",
+        "trace",
+        "detect"
+      ]
+    },
+    "unresolved_spans": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "reason"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "reason": {
+            "enum": [
+              "ambiguous_person",
+              "ambiguous_time",
+              "unknown_field",
+              "out_of_scope",
+              "unsupported_operation",
+              "missing_basis"
+            ]
+          }
+        }
+      }
+    },
+    "ambiguity_reasons": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      }
+    }
+  }
+}

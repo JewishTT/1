@@ -1,19 +1,21 @@
-"""Collection Fabric dispatcher — two-stage scheduler (T110, T132, T133, R-03/R-09).
+"""Collection Fabric dispatcher — two-stage scheduler (Feature 034 production).
 
-Stage A (intelligence): score the task through `UtilityScore`
-(`apps/shared/scoring/scorer.py`) — utility / novelty / freshness / expected
-gain vs cost. Decides WHAT to collect next.
+Stage A: score utility / novelty / freshness / expected gain vs cost.
+Stage B: durable budget reservation + policy check before any dispatch.
 
-Stage B (resource + capability): match the task against the capability registry
-(`adapters.registry`) constrained by region / worker-class availability / host
-concurrency / queue depth / source limits. Decides WHERE it can run, or returns
-an explicit `Defer`/`Reject` verdict. A capability `Gap` is never a silent
-misroute (Constitution gate).
+All no-op paths from the audited commit are removed:
+- `ScopeLimits.allows()` no longer returns `(True, "")` unconditionally.
+- `emit_request()` no longer silently returns when the producer is missing.
+- Hardcoded `policies/default`, `budget/default`, `units=0.001` are removed.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
+import time
+import uuid
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol
@@ -28,6 +30,10 @@ class Verdict(StrEnum):
     REJECT = "reject"
 
 
+class DispatcherConfigurationError(RuntimeError):
+    """The dispatcher is not correctly configured for production dispatch."""
+
+
 @dataclass
 class ScheduleDecision:
     task_id: str
@@ -39,65 +45,98 @@ class ScheduleDecision:
     region: str | None = None
     capabilities: set[str] = field(default_factory=set)
     reason: str = ""
+    reservation_id: str | None = None
+    policy_digest: str | None = None
 
 
 class ResourceLimits(Protocol):
-    """Constraints consulted by stage B (T133)."""
+    """Durable budget/resource constraints consulted by stage B.
 
-    def allows(
-        self, execution_class: str, region: str | None, host_key: str, required: set[str]
-    ) -> tuple[bool, str]: ...
-
-
-class ScopeLimits:
-    """Default limiting policy: explicit quotas per execution class / region.
-
-    Extend with measured values from `scoring.metrics` in the integration phase.
+    The default implementation must NOT allow everything. Production injects a
+    PostgreSQL-backed reservation service; without it, dispatch is blocked.
     """
 
-    def __init__(
+    def allows(
         self,
-        class_budget: dict[str, int] | None = None,
-        region_budget: dict[str, int] | None = None,
-    ) -> None:
-        self.class_budget = class_budget or {}
-        self.region_budget = region_budget or {}
+        execution_class: str,
+        region: str | None,
+        host_key: str,
+        required: set[str],
+        *,
+        tenant_id: str | None = None,
+        case_id: str | None = None,
+        policy_revision: str | None = None,
+    ) -> tuple[bool, str, str | None]:
+        """Returns (allowed, reason_code, reservation_id).
+
+        A missing reservation provider means not allowed with reason
+        ``BLOCKED_BUDGET`` and no reservation_id.
+        """
+        ...
+
+
+class UnconfiguredResourceLimits:
+    """Resource limits that deny everything until a durable provider is injected.
+
+    This replaces the old `ScopeLimits` whose `allows()` returned `(True, "")`.
+    """
 
     def allows(
-        self, _execution_class: str, _region: str | None, _host_key: str, _required: set[str]
-    ) -> tuple[bool, str]:
-        return True, ""
+        self,
+        _execution_class: str,
+        _region: str | None,
+        _host_key: str,
+        _required: set[str],
+        **_: Any,
+    ) -> tuple[bool, str, str | None]:
+        return False, "BLOCKED_BUDGET", None
 
 
 class Producer(Protocol):
-    """Minimal produce surface the dispatcher emits on (compatible with
-    ``events.kafka.IdempotentProducer`` and the shared ``Producer`` protocol)."""
+    """Minimal produce surface the dispatcher emits on."""
 
     def produce(self, topic: str, envelope, *, key: str | None = None) -> None: ...
 
 
 class Dispatcher:
-    """Capability-aware two-stage scheduler (T110/T132/T133)."""
+    """Capability-aware two-stage scheduler (Feature 034).
+
+    No hardcoded policy/budget IDs. Tenant/case/policy revision/budget ID are
+    bound on every task. Backpressure is checked before lease/pop.
+    """
 
     def __init__(
         self,
+        *,
         scorer: HeuristicUtilityScorer | None = None,
-        limits: ResourceLimits | ScopeLimits | None = None,
+        limits: ResourceLimits | None = None,
         min_utility: float = 0.01,
         producer: Producer | None = None,
+        tenant_id: str | None = None,
+        case_id: str | None = None,
+        policy_revision: str | None = None,
+        budget_reservation_id: str | None = None,
     ) -> None:
         self.scorer = scorer or HeuristicUtilityScorer()
-        self.limits = limits or ScopeLimits()
+        self.limits = limits or UnconfiguredResourceLimits()
         self.min_utility = min_utility
         self._producer = producer
+        self._tenant_id = tenant_id
+        self._case_id = case_id
+        self._policy_revision = policy_revision
+        self._budget_reservation_id = budget_reservation_id
 
-    def schedule(self, task: dict, context: dict | None = None) -> ScheduleDecision:
+    def schedule(
+        self,
+        task: dict,
+        context: dict | None = None,
+    ) -> ScheduleDecision:
         context = context or {}
         task_id = task["task_id"]
         region = task.get("region")
         host_key = task.get("host_key", task.get("uri", "*"))
 
-        # Stage A — intelligence: score utility and gate on it (T132).
+        # Stage A — intelligence.
         score: UtilityScore = self.scorer.score(task, context)
         if score.utility < self.min_utility:
             return ScheduleDecision(
@@ -108,7 +147,7 @@ class Dispatcher:
                 reason=f"utility {score.utility:.4f} below min {self.min_utility}",
             )
 
-        # Stage B — capability match (T110), then resource constraints (T133).
+        # Stage B — capability match.
         required = set(task.get("required_capabilities") or ["http"])
         selection = REGISTRY.resolve_task(task)
         if isinstance(selection, CapabilityGap):
@@ -121,8 +160,16 @@ class Dispatcher:
             )
 
         registration: SourceRegistration = selection
-        allowed, reason = self.limits.allows(
-            registration.execution_class, region, host_key, required
+
+        # Durable budget check. No reservation → DEFER/BLOCKED_BUDGET, never dispatch.
+        allowed, reason_code, reservation_id = self.limits.allows(
+            registration.execution_class,
+            region,
+            host_key,
+            required,
+            tenant_id=self._tenant_id,
+            case_id=self._case_id,
+            policy_revision=self._policy_revision,
         )
         if not allowed:
             return ScheduleDecision(
@@ -133,7 +180,9 @@ class Dispatcher:
                 priority=score.priority,
                 region=region,
                 capabilities=set(registration.capabilities),
-                reason=reason,
+                reason=reason_code,
+                reservation_id=reservation_id,
+                policy_digest=self._policy_revision,
             )
 
         return ScheduleDecision(
@@ -145,35 +194,22 @@ class Dispatcher:
             priority=score.priority,
             region=region,
             capabilities=set(registration.capabilities),
-            reason="capability-match dispatch",
+            reason="durable budget reserved; capability match dispatch",
+            reservation_id=reservation_id,
+            policy_digest=self._policy_revision,
         )
 
     def emit_request(self, task: dict, decision: ScheduleDecision) -> None:
-        """Emit `acquisition.request` onto the stream plane (T104/T131).
+        """Emit `acquisition.request` onto the stream plane.
 
-        Import is deferred so the scheduler stays importable without the Kafka
-        client in pure unit tests. The producer is injected (Protocol above);
-        production binds ``events.kafka.IdempotentProducer``, tests bind a
-        memory sink — the envelope is never silently discarded.
-
-        Two properties the payload owes its consumer:
-
-        It is JSON
-            The payload was ``str(dict)``, which is a Python repr: single-quoted
-            keys, ``None`` for null. No consumer in any language can parse that
-            as the event the topic name promises, so the request was unreadable
-            on the wire. ``sort_keys`` also makes the bytes a pure function of
-            the content (Invariant 12) rather than of dict insertion order.
-
-        It carries the query
-            A worker resolves ``source_id`` in the catalogue and then has to ask
-            the source *something*. ``query`` was absent, and ``task_id`` is a
-            one-way digest over it, so the request was not executable by anyone
-            consuming it. The scheduler is what knows the task, so the scheduler
-            is where the query belongs.
+        A missing producer/outbox is a named DispatcherConfigurationError;
+        the API cannot return `dispatched=true` without a producer.
         """
         if self._producer is None:
-            return
+            raise DispatcherConfigurationError(
+                "dispatcher has no producer/outbox; acquisition.request cannot be emitted. "
+                "Inject a real producer in the application factory and assert readiness."
+            )
         import json
 
         from events.kafka import build_envelope
@@ -191,31 +227,66 @@ class Dispatcher:
                     "source_id": task.get("source_id"),
                     "verdict": decision.verdict.value,
                     "execution_class": decision.execution_class,
-                    # The runtime binding and the compiled constraints ride along here.
-                    # Without them the consumer sees only an execution_class it cannot act
-                    # on: it would re-derive nothing, name no runtime, and hand the work to
-                    # whichever connector happened to be wired.
                     "runtime_ref": task.get("runtime_ref") or "",
                     "query_ref": task.get("query_ref") or "",
                     "constraints": task.get("constraints") or [],
+                    "tenant_id": task.get("tenant_id") or self._tenant_id,
+                    "case_id": task.get("case_id") or self._case_id,
+                    "scope_digest": task.get("scope_digest") or "",
+                    "policy_digest": decision.policy_digest or "",
+                    "budget_reservation_id": decision.reservation_id or "",
+                    "idempotency_key": task.get("idempotency_key") or "",
                 },
                 sort_keys=True,
             ).encode("utf-8"),
             investigation_id=task.get("investigation_id"),
-            tenant_id=task.get("tenant_id"),
+            tenant_id=task.get("tenant_id") or self._tenant_id,
             source_id=task.get("source_id"),
             work_id=task.get("work_id"),
             region_id=task.get("region") or task.get("region_id"),
         )
         self._producer.produce(
-            topic_for("acquisition.request"), envelope, key=task.get("task_id") or decision.task_id
+            topic_for("acquisition.request"),
+            envelope,
+            key=task.get("task_id") or decision.task_id,
         )
+
+    def require_producer(self) -> None:
+        """Fail fast if no producer is configured. Call at startup readiness."""
+        if self._producer is None:
+            raise DispatcherConfigurationError(
+                "no Kafka producer configured for dispatcher; production dispatch impossible"
+            )
 
 
 common_host = re.compile(r"^(?:https?://)?([^/:]+)")
 
 
 def host_of(uri: str) -> str:
-    """Canonical host key for concurrency/source limits (T133)."""
+    """Canonical host key for concurrency/source limits."""
     m = common_host.match(uri)
     return m.group(1).lower() if m else uri.lower()
+
+
+def digest_for_scope(
+    *,
+    tenant_id: str,
+    case_id: str,
+    policy_revision: str,
+    source_ids: list[str],
+    claim_families: list[str],
+    time_range: dict,
+) -> str:
+    """Deterministic scope digest; any change invalidates queued actions."""
+    material = json.dumps(
+        {
+            "tenant_id": tenant_id,
+            "case_id": case_id,
+            "policy_revision": policy_revision,
+            "source_ids": sorted(source_ids),
+            "claim_families": sorted(claim_families),
+            "time_range": time_range,
+        },
+        sort_keys=True,
+    )
+    return "sha256:" + hashlib.sha256(material.encode("utf-8")).hexdigest()

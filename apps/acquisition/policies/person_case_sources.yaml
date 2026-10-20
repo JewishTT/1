@@ -1,0 +1,181 @@
+apiVersion: cognitive.openai.com/v1
+kind: PersonCaseSourcePolicy
+metadata:
+  name: public-professional-default
+  version: 1
+  owner: compliance-policy-owner
+  purpose: public professional and public-role research only
+spec:
+  default: deny
+  case_profiles:
+    - PUBLIC_PROFESSIONAL
+    - PUBLIC_ROLE_REVIEW
+    - CONSENTED_RECORDS
+  excluded_claim_families:
+    - private_contact
+    - precise_home_address
+    - private_relationship
+    - credential
+    - breach_data
+    - private_communications
+    - biometric_identity
+    - individual_location_tracking
+    - sensitive_inference
+  required_case_fields:
+    - tenant_id
+    - purpose_code
+    - basis_ref
+    - scope_digest
+    - scope_revision
+    - budget_ref
+    - expires_at
+  stale_scope_behavior: CANCELLED_STALE_SCOPE
+  source_profiles:
+    - source_id: openalex_author
+      runtime_ref: http
+      operation: record_lookup
+      upstream_base: https://api.openalex.org/authors
+      allowed_case_profiles: [PUBLIC_PROFESSIONAL, PUBLIC_ROLE_REVIEW]
+      allowed_claim_families: [public_bio, public_affiliation, publication]
+      contact_class: public_api
+      term_policy_ref: owner-attestation-required:openalex-api-terms
+      term_status: BLOCKED_UNTIL_ATTESTED
+      license_status: BLOCKED_UNTIL_ATTESTED
+      required_response_parser: openalex
+      pagination: cursor
+      max_requests: 40
+      max_concurrency: 1
+      max_raw_bytes: 20000000
+      max_decompressed_bytes: 40000000
+      max_records: 2500
+      max_pages: 40
+      max_wall_seconds: 180
+      respect_rate_headers: true
+      egress_hosts: [api.openalex.org]
+      retention_class: case_evidence_standard
+      enabled: false
+    - source_id: openalex_work
+      runtime_ref: http
+      operation: record_lookup
+      upstream_base: https://api.openalex.org/works
+      allowed_case_profiles: [PUBLIC_PROFESSIONAL, PUBLIC_ROLE_REVIEW]
+      allowed_claim_families: [publication, public_affiliation]
+      contact_class: public_api
+      term_policy_ref: owner-attestation-required:openalex-api-terms
+      term_status: BLOCKED_UNTIL_ATTESTED
+      license_status: BLOCKED_UNTIL_ATTESTED
+      required_response_parser: openalex
+      pagination: cursor
+      max_requests: 40
+      max_concurrency: 1
+      max_raw_bytes: 20000000
+      max_decompressed_bytes: 40000000
+      max_records: 2500
+      max_pages: 40
+      max_wall_seconds: 180
+      respect_rate_headers: true
+      egress_hosts: [api.openalex.org]
+      retention_class: case_evidence_standard
+      enabled: false
+    - source_id: crossref_works
+      runtime_ref: http
+      operation: record_lookup
+      upstream_base: https://api.crossref.org/works
+      allowed_case_profiles: [PUBLIC_PROFESSIONAL, PUBLIC_ROLE_REVIEW]
+      allowed_claim_families: [publication, public_affiliation]
+      contact_class: public_api
+      term_policy_ref: https://www.crossref.org/documentation/retrieve-metadata/rest-api/
+      term_status: PUBLIC_METADATA_API_DOCUMENTED
+      license_status: PUBLIC_METADATA_ONLY_ABSTRACTS_SEPARATELY_GATED
+      required_env: [COGNITIVE_CROSSREF_MAILTO]
+      required_response_parser: crossref_works
+      pagination: cursor
+      rate_profile: crossref_polite_list_requests
+      max_requests: 100
+      max_concurrency: 3
+      max_raw_bytes: 25000000
+      max_decompressed_bytes: 50000000
+      max_records: 5000
+      max_pages: 50
+      max_wall_seconds: 300
+      respect_rate_headers: true
+      egress_hosts: [api.crossref.org]
+      retention_class: case_evidence_standard
+      enabled: true
+    - source_id: searxng_public_search
+      runtime_ref: searxng
+      operation: search
+      upstream_base: http://searxng:8080/search
+      allowed_case_profiles: [PUBLIC_PROFESSIONAL, PUBLIC_ROLE_REVIEW]
+      allowed_claim_families: []
+      contact_class: search_engine
+      term_policy_ref: deployment-policy:internal-searxng-config
+      term_status: DEPLOYMENT_POLICY
+      license_status: NOT_APPLICABLE_INTERNAL_DISCOVERY
+      required_response_parser: searxng_json
+      pagination: page
+      max_requests: 20
+      max_concurrency: 2
+      max_raw_bytes: 5000000
+      max_decompressed_bytes: 10000000
+      max_records: 1000
+      max_pages: 5
+      max_wall_seconds: 120
+      respect_rate_headers: true
+      egress_hosts: [searxng]
+      retention_class: case_evidence_standard
+      result_role: DISCOVERY_ONLY
+      enabled: true
+    - source_id: common_crawl_historical
+      runtime_ref: common_crawl
+      operation: archive_lookup
+      allowed_case_profiles: [PUBLIC_PROFESSIONAL, PUBLIC_ROLE_REVIEW]
+      allowed_claim_families: [public_bio, public_role, public_affiliation, publication, public_statement, official_decision]
+      contact_class: archive
+      term_policy_ref: deployment-policy:common-crawl-and-origin-publisher-terms
+      term_status: OWNER_ATTESTATION_REQUIRED
+      license_status: ORIGIN_DOCUMENT_TERMS_APPLY
+      required_response_parser: warc_html
+      pagination: cursor
+      max_requests: 50
+      max_concurrency: 2
+      max_raw_bytes: 50000000
+      max_decompressed_bytes: 100000000
+      max_records: 1000
+      max_pages: 50
+      max_wall_seconds: 600
+      respect_rate_headers: true
+      egress_hosts: [index.commoncrawl.org, data.commoncrawl.org]
+      retention_class: case_evidence_standard
+      lineage_family: common_crawl_archive
+      enabled: false
+    - source_id: official_public_page
+      runtime_ref: http
+      operation: fetch
+      allowed_case_profiles: [PUBLIC_PROFESSIONAL, PUBLIC_ROLE_REVIEW, CONSENTED_RECORDS]
+      allowed_claim_families: [public_bio, public_role, public_affiliation, publication, public_statement, official_decision, public_registry_record, source_document_metadata]
+      contact_class: public_api
+      term_policy_ref: deployment-policy:official-public-page-terms
+      term_status: OWNER_ATTESTATION_REQUIRED
+      license_status: REVIEWED
+      required_response_parser: html_dom
+      pagination: none
+      max_requests: 50
+      max_concurrency: 2
+      max_raw_bytes: 25000000
+      max_decompressed_bytes: 50000000
+      max_records: 500
+      max_pages: 10
+      max_wall_seconds: 120
+      respect_rate_headers: true
+      egress_hosts: []
+      retention_class: case_evidence_standard
+      enabled: false
+  activation_rules:
+    - all_required_env_must_exist
+    - case_basis_must_be_valid
+    - source_host_must_be_allowlisted
+    - policy_and_terms_must_be_attested
+    - budget_must_be_reserved_before_dispatch
+    - parser_capability_must_be_installed
+    - every_capture_must_pass_artifact_sink_and_observation_gate

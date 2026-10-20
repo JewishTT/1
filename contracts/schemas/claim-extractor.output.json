@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ClaimExtractorOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claims",
+    "abstention_reason"
+  ],
+  "properties": {
+    "claims": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject_quote",
+          "predicate",
+          "object_quote",
+          "claim_family",
+          "polarity",
+          "evidence_quote",
+          "offset_coordinate_space",
+          "start_offset",
+          "end_offset",
+          "language",
+          "valid_time"
+        ],
+        "properties": {
+          "subject_quote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          },
+          "object_quote": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          },
+          "claim_family": {
+            "type": "string",
+            "minLength": 1
+          },
+          "polarity": {
+            "enum": [
+              "positive",
+              "negative",
+              "unknown"
+            ]
+          },
+          "evidence_quote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "start_offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end_offset": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "language": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 35
+          },
+          "published_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "valid_time": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "until",
+              "precision"
+            ],
+            "properties": {
+              "from": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "until": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "precision": {
+                "enum": [
+                  "instant",
+                  "day",
+                  "month",
+                  "year",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "offset_coordinate_space": {
+            "const": "evidence_window_unicode_codepoint"
+          }
+        }
+      }
+    },
+    "abstention_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    }
+  }
+}

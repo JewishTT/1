@@ -164,6 +164,14 @@ class InMemoryDeduplicator(Deduplicator):
         self._seen.discard(key)
 
 
+class DurableDeduplicatorRequired(RuntimeError):
+    """Raised when a consumer is constructed without a durable deduplicator.
+
+    Production requires an explicit durable adapter (PostgreSQL inbox/outbox).
+    InMemoryDeduplicator is lost on restart and cannot be the production default.
+    """
+
+
 class IdempotentConsumer(ABC):
     """Base consumer: dedups on idempotency key, quarantines malformed records.
 
@@ -178,6 +186,10 @@ class IdempotentConsumer(ABC):
        ``hasattr`` guard turned a lost failure into ``None``, so failures vanished.
     4. The offset was committed after ``_process`` returned, but ``_process``
        swallowed exceptions, so a failed record was marked as done.
+
+    Feature 034: the production constructor requires an explicit durable
+    deduplicator. ``InMemoryDeduplicator`` is no longer the default; a consumer
+    built without one raises :class:`DurableDeduplicatorRequired`.
     """
 
     def __init__(
@@ -199,7 +211,13 @@ class IdempotentConsumer(ABC):
             }
         )
         self._consumer.subscribe(topics)
-        self._dedup = deduplicator or InMemoryDeduplicator()
+        if deduplicator is None:
+            raise DurableDeduplicatorRequired(
+                "IdempotentConsumer requires an explicit durable deduplicator. "
+                "InMemoryDeduplicator is not a production default; inject a "
+                "PostgreSQL inbox/idempotency adapter instead."
+            )
+        self._dedup = deduplicator
         self._failure_publish = failure_publish
         self._quarantine = quarantine
         self.processed = 0

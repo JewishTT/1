@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HypothesisOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "hypotheses",
+    "discriminating_observations"
+  ],
+  "properties": {
+    "hypotheses": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "explanation_kind",
+          "support_claim_refs",
+          "refute_claim_refs",
+          "unknowns"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "explanation_kind": {
+            "enum": [
+              "stale_source",
+              "different_person",
+              "role_changed",
+              "data_error",
+              "true_conflict",
+              "other"
+            ]
+          },
+          "support_claim_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50
+          },
+          "refute_claim_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50
+          },
+          "unknowns": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "maxItems": 20
+          }
+        }
+      }
+    },
+    "discriminating_observations": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "question",
+          "obligation_ref"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "obligation_ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

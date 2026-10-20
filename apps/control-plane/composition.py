@@ -44,6 +44,14 @@ log = logging.getLogger(__name__)
 #: Where the declarative source catalogue lives, relative to this package.
 _CATALOGUE_ROOT = Path(__file__).resolve().parents[1] / "acquisition" / "sources" / "estorides"
 
+#: Where the person-case source policy lives.
+_PERSON_CASE_POLICY_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "acquisition"
+    / "policies"
+    / "person_case_sources.yaml"
+)
+
 
 @dataclass(slots=True)
 class Health:
@@ -60,6 +68,9 @@ class Health:
     return_path: str = "absent"
     temporal: str = "absent"
     queries: str = "absent"
+    model_gateway: str = "absent"
+    person_case_policy: str = "absent"
+    research_case_service: str = "absent"
     notes: list[str] = field(default_factory=list)
 
     @property
@@ -85,6 +96,9 @@ class Health:
             "return_path": self.return_path,
             "temporal": self.temporal,
             "queries": self.queries,
+            "model_gateway": self.model_gateway,
+            "person_case_policy": self.person_case_policy,
+            "research_case_service": self.research_case_service,
             "ready": self.ready,
             "cycles": self.cycles,
             "notes": list(self.notes),
@@ -112,6 +126,9 @@ class Platform:
     frontier: Any = None
     concept_registry: Any = None
     sources: int = 0
+    model_gateway: Any = None
+    person_case_policy: Any = None
+    research_case_service: Any = None
     #: Reader class for the return path. Held as a class rather than an instance because the
     #: instance is per-call (one session per read), and ``slots=True`` rejects attributes
     #: that were not declared as fields.
@@ -143,6 +160,9 @@ class Platform:
         await platform._build_return_path()
         if enable_temporal_probe:
             await platform._probe_temporal(tenant_id)
+        await platform._build_model_gateway()
+        await platform._build_person_case_policy()
+        await platform._build_research_case_service()
 
         if platform.loop is not None:
             from context_engine.query_cycle import CycleLedger, QueryCycle
@@ -285,6 +305,49 @@ class Platform:
             self.health.temporal = "absent"
             self.health.notes.append(f"temporal unavailable: {exc}")
 
+    async def _build_model_gateway(self) -> None:
+        """Build the Feature 034 Model Gateway with the default capability set."""
+        try:
+            from services.model_gateway import build_gateway
+
+            self.model_gateway = build_gateway()
+            self.health.model_gateway = "ready"
+        except Exception as exc:  # noqa: BLE001
+            self.health.model_gateway = "absent"
+            self.health.notes.append(f"model gateway unavailable: {exc}")
+            log.warning("model gateway unavailable: %s", exc)
+
+    async def _build_person_case_policy(self) -> None:
+        """Build the Feature 034 person-case policy gate from the source-policy YAML."""
+        try:
+            from services.research_case_policy import PersonCasePolicy
+
+            policy = PersonCasePolicy(policy_path=str(_PERSON_CASE_POLICY_PATH))
+            policy.load()
+            self.person_case_policy = policy
+            self.health.person_case_policy = "ready"
+        except Exception as exc:  # noqa: BLE001
+            self.health.person_case_policy = "absent"
+            self.health.notes.append(f"person-case policy unavailable: {exc}")
+            log.warning("person-case policy unavailable: %s", exc)
+
+    async def _build_research_case_service(self) -> None:
+        """Build the Feature 034 research case application service."""
+        try:
+            from services.research_case_service import ResearchCaseService
+
+            self.research_case_service = ResearchCaseService(
+                store=self.store,
+                loop=self.loop,
+                policy=self.person_case_policy,
+                model_gateway=self.model_gateway,
+            )
+            self.health.research_case_service = "ready"
+        except Exception as exc:  # noqa: BLE001
+            self.health.research_case_service = "absent"
+            self.health.notes.append(f"research case service unavailable: {exc}")
+            log.warning("research case service unavailable: %s", exc)
+
     # -- use -----------------------------------------------------------------
 
     @property
@@ -336,6 +399,9 @@ class Platform:
             "has_loop": self.loop is not None,
             "has_cycle": self.cycle is not None,
             "has_bridge": self.bridge is not None,
+            "has_model_gateway": self.model_gateway is not None,
+            "has_person_case_policy": self.person_case_policy is not None,
+            "has_research_case_service": self.research_case_service is not None,
             **self.health.as_dict(),
         }
 

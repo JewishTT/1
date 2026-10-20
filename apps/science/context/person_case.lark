@@ -1,0 +1,61 @@
+// Production DSL grammar for the person-research case.
+// The LLM is only allowed to propose text accepted by this grammar. The parser's
+// output is mapped to the existing QueryAST by deterministic code; this grammar
+// never dispatches work or expands unresolved entity references.
+
+start: query
+
+query: VERB target where_clause? temporal_clause? scope_clause? return_clause?
+
+target: (IDENT | STRING) (IDENT | STRING)*
+
+where_clause: WHERE constraint (COMMA constraint)*
+constraint: IDENT operator value
+operator: GTE | LTE | NE | EQEQ | GT | LT | EQ | CONTAINS | IN
+?value: collection | scalar
+collection: LPAR scalar (COMMA scalar)+ RPAR
+?scalar: SIGNED_NUMBER UNIT? -> number_value
+       | STRING             -> string_value
+       | IDENT              -> identifier_value
+
+temporal_clause: AS_OF TIMESTAMP            -> as_of_clause
+               | BETWEEN TIMESTAMP TIMESTAMP -> interval_clause
+scope_clause: WITHIN universe (COMMA scope_term)*
+?universe: REGISTERED_CATALOGUE -> registered_catalogue
+         | AVAILABLE_SOURCES    -> available_sources
+         | REGISTERED_CHAIN_SOURCES -> registered_chain_sources
+         | EXPLICIT_UNIVERSE     -> explicit_universe
+         | IDENT                 -> named_universe
+scope_term: IDENT | STRING
+return_clause: RETURN field (COMMA field)*
+field: IDENT
+
+VERB.10: "find" | "show" | "compare" | "explain" | "trace" | "detect"
+WHERE.10: "where"
+AS_OF.10: "as_of"
+BETWEEN.10: "between"
+WITHIN.10: "within"
+RETURN.10: "return"
+CONTAINS.5: "contains"
+IN.5: "in"
+REGISTERED_CATALOGUE.8: "registered_catalogue"
+AVAILABLE_SOURCES.8: "available_sources"
+REGISTERED_CHAIN_SOURCES.8: "registered_chain_sources"
+EXPLICIT_UNIVERSE.8: "explicit_universe"
+GTE: ">="
+LTE: "<="
+NE: "!="
+EQEQ: "=="
+GT: ">"
+LT: "<"
+EQ: "="
+LPAR: "("
+RPAR: ")"
+COMMA: ","
+TIMESTAMP: /\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?/
+SIGNED_NUMBER: /-?\d+(?:\.\d+)?/
+UNIT: /[A-Za-z%$€£₽][A-Za-z0-9%$€£₽_-]*/
+IDENT: /[A-Za-z_][A-Za-z0-9_.:-]*/
+STRING: /"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/
+%import common.WS
+%ignore WS

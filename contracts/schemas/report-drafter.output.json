@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReportDrafterOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sections",
+    "sentence_finding_refs"
+  ],
+  "properties": {
+    "sections": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "heading",
+          "text",
+          "finding_ids"
+        ],
+        "properties": {
+          "heading": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "finding_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 20
+          }
+        }
+      }
+    },
+    "sentence_finding_refs": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sentence_index",
+          "finding_ids"
+        ],
+        "properties": {
+          "sentence_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "finding_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 20
+          }
+        }
+      }
+    }
+  }
+}
