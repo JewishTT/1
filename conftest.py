@@ -65,7 +65,7 @@ _BENCH = ROOT / "bench"
 _OWNERS = {
     "tda": "projection",
     "search": "projection",
-    "evidence": "admission",
+    "evidence": "interpretation",
     "resolution": "admission",
 }
 

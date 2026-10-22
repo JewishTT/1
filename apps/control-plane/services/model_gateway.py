@@ -19,8 +19,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-import litellm
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, create_model
 
 from services.policy_service import PolicyService
 
@@ -32,9 +31,19 @@ class ModelGatewayError(RuntimeError):
 class CapabilityBlocked(ModelGatewayError):
     """A capability is blocked: model unavailable, provider denied, or schema invalid."""
 
+    def __init__(self, capability: str, code: str, message: str) -> None:
+        self.capability = capability
+        self.code = code
+        super().__init__(f"{capability}/{code}: {message}")
+
 
 class CapabilityUnavailable(ModelGatewayError):
     """Capability cannot run in this environment (missing model, bad config)."""
+
+    def __init__(self, capability: str, code: str, message: str) -> None:
+        self.capability = capability
+        self.code = code
+        super().__init__(f"{capability}/{code}: {message}")
 
 
 class ModelRun(BaseModel):
@@ -95,10 +104,7 @@ class ModelGateway:
         self._caps: dict[str, CapabilityConfig] = dict(capabilities or {})
         self._base_url = base_url
         self._api_key = api_key
-        #: capability name -> count of calls this case/budget period (in-memory guard;
-        #: durable reservation is checked by the caller before dispatch)
         self._call_counts: dict[str, int] = {}
-        #: last emitted ModelRun per capability for readiness inspection
         self._last_run: dict[str, ModelRun] = {}
 
     # -- registration ---------------------------------------------------------
@@ -128,15 +134,8 @@ class ModelGateway:
     # -- readiness ------------------------------------------------------------
 
     async def readiness(self, capability: str) -> dict[str, Any]:
-        """Check whether a capability can run right now.
-
-        Returns a status dict; callers treat anything but READY as a block.
-        """
+        """Check whether a capability can run right now."""
         cap = self.get(capability)
-        try:
-            import splink  # noqa: F401 - probe only for splink-backed paths
-        except ImportError:
-            pass
         litellm_import_ok = True
         try:
             import litellm as _ll  # noqa: F401
@@ -165,23 +164,25 @@ class ModelGateway:
         policy_digest: str,
         input_refs: list[str] | None = None,
     ) -> dict[str, Any]:
-        """Invoke a registered capability with full schema validation and auditing.
-
-        Raises CapabilityBlocked / CapabilityUnavailable on any failure path --
-        never returns a synthetic or empty success-shaped result.
-        """
+        """Invoke a registered capability with full schema validation and auditing."""
         cap = self.get(capability)
         start = time.monotonic()
         run_id = f"run-{uuid.uuid4().hex[:12]}"
 
-        # Redact input to the declared redaction profile before it leaves this
-        # process. Raw case text never reaches default application logs.
+        # LiteLLM is imported lazily so the gateway module imports without it.
+        try:
+            import litellm  # type: ignore[import-not-found]
+        except ImportError as exc:
+            raise CapabilityUnavailable(
+                capability, "litellm_not_installed", "litellm SDK is not installed"
+            ) from exc
+
         redacted_input = self._redact(cap.redaction_profile, dict(input_payload))
 
         # Validate input against the capability's input schema.
         try:
-            input_schema_model = self._schema_model(cap.input_schema, f"{cap.name}_input")
-            input_schema_model(**redacted_input)
+            input_model = self._schema_model(cap.input_schema, f"{cap.name}_input")
+            input_model(**redacted_input)
         except ValidationError as exc:
             raise CapabilityBlocked(
                 capability, "input_schema_invalid", f"input failed schema: {exc}"
@@ -190,9 +191,6 @@ class ModelGateway:
         prompt_digest = self._digest(json.dumps(redacted_input, sort_keys=True))
         schema_digest = self._digest(json.dumps(cap.output_schema, sort_keys=True))
 
-        # Call LiteLLM against the static provider/model route only. Per-request
-        # api_base / base_url / user_config / tools / provider override are
-        # rejected by construction: they are not passed through.
         try:
             response = await litellm.acompletion(
                 model=cap.model,
@@ -212,7 +210,7 @@ class ModelGateway:
                 base_url=self._base_url,
                 api_key=self._api_key,
             )
-        except Exception as exc:  # noqa: BLE001 - any provider failure is blocked
+        except Exception as exc:  # noqa: BLE001
             latency_ms = (time.monotonic() - start) * 1000
             self._record_run(
                 run_id=run_id,
@@ -245,13 +243,12 @@ class ModelGateway:
 
         # Validate output against the capability's output schema.
         try:
-            output_schema_model = self._schema_model(cap.output_schema, f"{cap.name}_output")
-            parsed_output = output_schema_model.model_validate_json(raw_output)
+            output_model = self._schema_model(cap.output_schema, f"{cap.name}_output")
+            parsed_output = output_model.model_validate_json(raw_output)
             validation_result = "valid"
         except ValidationError as exc:
             validation_result = f"schema_invalid:{exc}"
-            # One schema repair request may occur without tools and without
-            # extending the input scope; repeated invalid output is blocked.
+            # One schema repair request may occur without tools.
             try:
                 repair = await litellm.acompletion(
                     model=cap.model,
@@ -276,7 +273,7 @@ class ModelGateway:
                 if repair.choices:
                     repaired = repair.choices[0].message.content or ""
                 try:
-                    parsed_output = output_schema_model.model_validate_json(repaired)
+                    parsed_output = output_model.model_validate_json(repaired)
                     raw_output = repaired
                     output_digest = self._digest(raw_output)
                     validation_result = "repaired_valid"
@@ -288,7 +285,7 @@ class ModelGateway:
                     ) from exc
             except CapabilityBlocked:
                 raise
-            except Exception as exc2:  # noqa: BLE001
+            except Exception as exc2:
                 raise CapabilityBlocked(
                     capability, "model_output_invalid", f"output failed schema: {exc}"
                 ) from exc2
@@ -319,7 +316,11 @@ class ModelGateway:
             failure_code=None,
         )
         self._call_counts[capability] = self._call_counts.get(capability, 0) + 1
-        return parsed_output.model_dump() if hasattr(parsed_output, "model_dump") else dict(parsed_output)
+        return (
+            parsed_output.model_dump()
+            if hasattr(parsed_output, "model_dump")
+            else dict(parsed_output)
+        )
 
     # -- internals ------------------------------------------------------------
 
@@ -336,12 +337,7 @@ class ModelGateway:
 
     @staticmethod
     def _redact(profile: str, payload: Mapping[str, Any]) -> dict[str, Any]:
-        """Redact case content to the declared profile before any model call.
-
-        person_case_minimum_text keeps only the minimal relevant text window and
-        typed source metadata. No external provider receives case content unless
-        policy explicitly permits the provider, region and retention terms.
-        """
+        """Redact case content to the declared profile before any model call."""
         if profile == "person_case_minimum_text":
             out: dict[str, Any] = {}
             for key in (
@@ -379,14 +375,17 @@ class ModelGateway:
 
     @staticmethod
     def _schema_model(schema: dict[str, Any], name: str) -> type[BaseModel]:
-        """Build a Pydantic model from a JSON Schema dict (extra='forbid')."""
+        """Build a Pydantic v2 model from a JSON Schema dict (extra='forbid')."""
+        from pydantic import CreateModel
+
         fields: dict[str, Any] = {}
         required = set(schema.get("required", []))
         for prop_name, prop_schema in schema.get("properties", {}).items():
             default = ... if prop_name in required else None
-            fields[prop_name] = (Any, default)
-        model = BaseModel.model_construct  # type: ignore[attr-defined]
-        return type(name, (BaseModel,), {"__annotations__": fields, "__config__": {"extra": "forbid"}})
+            # Determine the Python type from the JSON Schema type.
+            field_type = _json_schema_type(prop_schema)
+            fields[prop_name] = (field_type, default)
+        return create_model(name, __config__={"extra": "forbid"}, **fields)
 
     def _record_run(
         self,
@@ -431,6 +430,32 @@ class ModelGateway:
         return self._last_run.get(capability)
 
 
+def _json_schema_type(schema: dict[str, Any]) -> Any:
+    """Map a JSON Schema type to a Python type for Pydantic model creation."""
+    json_type = schema.get("type", "string")
+    enum_values = schema.get("enum")
+    const_value = schema.get("const")
+
+    if const_value is not None:
+        return type(const_value)
+    if enum_values is not None:
+        return str  # enum validated by Pydantic if needed, but str is fine for now
+
+    if json_type == "string":
+        return str
+    if json_type == "integer":
+        return int
+    if json_type == "number":
+        return float
+    if json_type == "boolean":
+        return bool
+    if json_type == "array":
+        return list[Any]
+    if json_type == "object":
+        return dict[str, Any]
+    return str
+
+
 # -- default capability registry ----------------------------------------------
 
 def default_capabilities() -> dict[str, CapabilityConfig]:
@@ -456,7 +481,7 @@ def default_capabilities() -> dict[str, CapabilityConfig]:
             input_schema=input_schema,
             output_schema=output_schema,
             permission=permission,
-            inputs=[],  # populated at call time by the caller
+            inputs=[],
             outputs=[],
             network_tools=[],
             canonical_write=False,

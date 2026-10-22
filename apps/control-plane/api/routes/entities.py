@@ -17,19 +17,23 @@ an empty successful list.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import re
+import weakref
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from acquisition.entity_search import build_entity_search_surface
 from domain.dynamics import StreamRecord
+from domain.ontology import coerce_entity_type
 from domain.temporal_worldline import build_worldline
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from projection.temporal_materialization.operations import MaterializationOperations
 from pydantic import BaseModel
 from sqlalchemy import select, text
+from sqlalchemy.exc import IntegrityError
 
 from api.auth import TenantContext, resolve_tenant
 from api.sse import hub
@@ -45,21 +49,35 @@ from services.tool_catalog import infer_entity_type
 
 router = APIRouter(prefix="/entities", tags=["entities"])
 
-#: One engine for the process. Built lazily because importing this module must not
+#: Analyst review decisions for this process (FR-006). The store is append-only and
+#: replayable but in-memory by design (``services/review.py``); the route simply never
+#: instantiated it, so every review call raised ``NameError: _reviews``.
+_reviews = ReviewService()
+
+#: One engine per live event loop. Built lazily because importing this module must not
 #: require a reachable database -- the route degrades to an explicit 503 instead.
 #:
-#: This is cached deliberately. `make_session_factory()` opens a new async engine, and
-#: calling it per request leaked a pool per call and deadlocked under Starlette's
-#: TestClient, which runs the app on a worker thread with its own event loop.
+#: Caching is deliberate: `make_session_factory()` opens a new async engine, and calling it
+#: per request leaked a pool per call. A *single* cached engine is not enough either: an
+#: asyncpg connection belongs to the loop that opened it, so the pool handed requests on a
+#: fresh loop a connection to a loop that no longer existed (`Event loop is closed`). Under
+#: uvicorn there is one loop and this is one pool; under TestClient every request gets its
+#: own loop, and a weak key lets the entry -- and its engine -- go when that loop dies.
 _pg_factory: list = []
+_pg_factories: "weakref.WeakKeyDictionary[object, object]" = weakref.WeakKeyDictionary()
 
 
 def _pg_session():
-    if not _pg_factory:
-        from db.session import make_session_factory
+    if _pg_factory:
+        return _pg_factory[0]
+    from db.session import make_session_factory
 
-        _pg_factory.append(make_session_factory())
-    return _pg_factory[0]
+    loop = asyncio.get_running_loop()
+    factory = _pg_factories.get(loop)
+    if factory is None:
+        factory = make_session_factory()
+        _pg_factories[loop] = factory
+    return factory
 
 
 def _json_mapping(value: object) -> dict:
@@ -72,6 +90,126 @@ def _json_mapping(value: object) -> dict:
         except ValueError:
             return {}
     return dict(value) if isinstance(value, dict) else {}
+
+
+def _identity_digest(identity: dict) -> str:
+    """Deterministic digest over the canonical identity dimensions (spec 012).
+
+    The same dimensions must produce the same digest across restarts and processes; the
+    entity id is the stable anchor, the digest is what proves the asserted identity did
+    not silently change behind it.
+    """
+    material = json.dumps(
+        identity, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    )
+    return "sha256:" + hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
+
+
+async def _entity_projection(row: Entity, *, with_history: bool = True) -> dict:
+    """The entity view every client reads: identity, invariant, versions, timeline.
+
+    The PostgreSQL-backed route had been reduced to a flat row while the webapp, the
+    integration tests and spec 012 still expect the dynamic-invariant projection. This
+    rebuilds it from durable tables -- ``entities``, ``entity_versions`` and the entity
+    stream -- instead of the process-local catalog that used to hold it.
+
+    ``timeline`` is the accepted stream in sequence order. Each entry's ``observed_at`` is
+    the record's own ``ts``; there is no other durable timestamp to honestly report.
+    Evidence is *not* fabricated: a creation that supplied no source records has none.
+    """
+    attributes = _json_mapping(row.attributes)
+    identity = _json_mapping(attributes.get("canonical_identity"))
+    first_seen = str(attributes.get("first_seen") or "")
+
+    versions: list = []
+    stream: list = []
+    if with_history:
+        from db.entity_stream import SqlEntityStreamRepository
+        from db.schema import EntityVersion
+
+        async with _pg_session()() as session:
+            versions = list(
+                (
+                    await session.execute(
+                        select(EntityVersion)
+                        .where(
+                            EntityVersion.tenant_id == row.tenant_id,
+                            EntityVersion.entity_id == row.entity_id,
+                        )
+                        .order_by(EntityVersion.version_number)
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            try:
+                stream = list(
+                    await SqlEntityStreamRepository(session).list_records(
+                        tenant_id=row.tenant_id, entity_id=row.entity_id
+                    )
+                )
+            except Exception:  # the stream is optional to the identity invariant
+                stream = []
+
+    version_number = row.current_version or (
+        versions[-1].version_number if versions else 1
+    )
+    last_seen = stream[-1].ts.isoformat() if stream else first_seen
+    historical_versions = [
+        {
+            "version": entry.version_number,
+            "identity": identity if entry.version_number == version_number else {},
+            "observations": _json_mapping(entry.attributes).get("observations", []),
+        }
+        for entry in versions
+    ] or [{"version": version_number, "identity": identity, "observations": []}]
+    timeline = [
+        {
+            "sequence": record.sequence,
+            "kind": record.kind,
+            "observed_at": record.ts.isoformat(),
+            "valid_from": record.valid_from.isoformat() if record.valid_from else None,
+            "valid_until": record.valid_until.isoformat() if record.valid_until else None,
+            "observation_id": record.observation_id,
+            "payload": record.payload,
+        }
+        for record in stream
+    ]
+
+    return {
+        "entity_id": row.entity_id,
+        "tenant_id": row.tenant_id,
+        "entity_type": row.entity_type,
+        "canonical_name": row.canonical_name,
+        "canonical_identity": identity,
+        "aliases": attributes.get("aliases", []),
+        "label": attributes.get("label") or row.canonical_name or row.entity_id,
+        "first_seen": first_seen,
+        "current_state": {
+            "version": version_number,
+            "identity": identity,
+            "first_seen": first_seen,
+            "last_seen": last_seen,
+        },
+        # The entity id is the stable anchor; the asserted identity may be re-versioned as
+        # evidence arrives. Making that explicit spares every client reverse-engineering it
+        # from historical_versions.
+        "identity_invariant": {
+            "status": "MATERIALIZED",
+            "continuity": "PERSISTENT",
+            "version": version_number,
+            "history_depth": len(versions) or 1,
+            "identity_digest": _identity_digest(identity),
+            "first_seen": first_seen,
+            "last_seen": last_seen,
+        },
+        "historical_versions": historical_versions,
+        "relationships": [],
+        "supporting_assertions": [],
+        "evidence": [],
+        "timeline": timeline,
+        "structural_signals": {},
+    }
 
 
 async def _durable_entity_views(tenant_id: str) -> list[dict]:
@@ -98,7 +236,7 @@ async def _durable_entity_views(tenant_id: str) -> list[dict]:
             {
                 "entity_id": entity_id,
                 "canonical_identity": dict(identity) if isinstance(identity, dict) else {},
-                "entity_type": entity_type or "UNKNOWN",
+                "entity_type": entity_type or "unknown",
                 "label": canonical_name or str(attributes_map.get("label") or entity_id),
             }
         )
@@ -237,44 +375,95 @@ async def create_entity(
                     "an entity may not be filed under an investigation that does not exist"
                 ),
             )
-    # Read existing entity ids from PostgreSQL to mint the next id.
-    try:
-        async with _pg_session()() as session:
-            rows = (
-                await session.execute(select(Entity.entity_id).where(Entity.tenant_id == ctx.tenant_id))
-            ).scalars().all()
-    except Exception as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=f"cannot read entity registry: {type(exc).__name__}",
-        ) from exc
-    entity_id = _next_entity_id(list(rows))
-    label = body.label or next(iter(body.canonical_identity.values()), entity_id)
-    search_surface = build_entity_search_surface(entity_id, body.canonical_identity)
+    # ``entity_id`` is the primary key of ``entities``, so it is global -- but the number
+    # was minted from the current tenant's rows alone. Two tenants therefore received the
+    # same ``ENT-2001`` and the second insert died on the primary key. Read every id, and
+    # retry a collision so two concurrent creates cannot both win the same number.
+    label = body.label or next(iter(body.canonical_identity.values()), "")
+    entity_id = ""
+    last_error: Exception | None = None
+    for _ in range(3):
+        try:
+            async with _pg_session()() as session:
+                rows = (await session.execute(select(Entity.entity_id))).scalars().all()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"cannot read entity registry: {type(exc).__name__}",
+            ) from exc
+        entity_id = _next_entity_id(list(rows))
+        label = body.label or next(iter(body.canonical_identity.values()), entity_id)
 
-    # Persist to PostgreSQL (authoritative).
-    try:
-        async with _pg_session()() as session:
-            session.add(
-                Entity(
-                    entity_id=entity_id,
-                    tenant_id=ctx.tenant_id,
-                    entity_type=infer_entity_type(body.canonical_identity),
-                    canonical_name=label,
-                    attributes={
-                        "canonical_identity": body.canonical_identity,
-                        "aliases": body.aliases or [label],
-                        "label": label,
-                        "first_seen": datetime.now(UTC).isoformat(),
-                    },
+        # Persist to PostgreSQL (authoritative).
+        try:
+            async with _pg_session()() as session:
+                session.add(
+                    Entity(
+                        entity_id=entity_id,
+                        tenant_id=ctx.tenant_id,
+                        # ``infer_entity_type`` speaks the tool catalogue's labels
+                        # (``NAME``, ``USERNAME``, ``IPV4``); the column speaks the
+                        # ontology's values and now carries a CHECK for them (migration
+                        # 023). Writing the catalogue label into the column made every
+                        # create fail with CheckViolation on any schema built from the
+                        # current metadata.
+                        entity_type=coerce_entity_type(
+                            infer_entity_type(body.canonical_identity)
+                        ).value,
+                        canonical_name=label,
+                        attributes={
+                            "canonical_identity": body.canonical_identity,
+                            "aliases": body.aliases or [label],
+                            "label": label,
+                            "first_seen": datetime.now(UTC).isoformat(),
+                        },
+                        current_version=1,
+                    )
                 )
-            )
-            await session.commit()
-    except Exception as exc:
+                await session.commit()
+            break
+        except IntegrityError as exc:
+            last_error = exc
+            continue
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"cannot write entity to registry: {type(exc).__name__}",
+            ) from exc
+    else:
         raise HTTPException(
             status_code=503,
-            detail=f"cannot write entity to registry: {type(exc).__name__}",
-        ) from exc
+            detail=f"cannot write entity to registry: {type(last_error).__name__}",
+        ) from last_error
+
+    # Record an initial version so the invariant view has history_depth/version 1
+    # addressable (spec 012). ``EntityVersion`` carries no uniqueness that would block
+    # a second create in the retry loop; we only write when missing.
+    try:
+        from db.schema import EntityVersion
+
+        async with _pg_session()() as session:
+            exists = await session.get(EntityVersion, f"EV-{entity_id}-001")
+            if exists is None:
+                session.add(
+                    EntityVersion(
+                        version_id=f"EV-{entity_id}-001",
+                        entity_id=entity_id,
+                        tenant_id=ctx.tenant_id,
+                        version_number=1,
+                        canonical_name=label,
+                        attributes={
+                            "identity": body.canonical_identity,
+                            "canonical_identity": body.canonical_identity,
+                        },
+                    )
+                )
+                await session.commit()
+    except Exception:
+        # The entity row is committed; version history is best-effort enrichment.
+        pass
+
+    search_surface = build_entity_search_surface(entity_id, body.canonical_identity)
 
     if body.investigation_id:
         try:
@@ -335,10 +524,26 @@ async def create_entity(
         "entity": {
             "entity_id": entity_id,
             "canonical_identity": body.canonical_identity,
-            "entity_type": infer_entity_type(body.canonical_identity),
+            "entity_type": coerce_entity_type(
+                infer_entity_type(body.canonical_identity)
+            ).value,
             "label": label,
             "tenant_id": ctx.tenant_id,
             "search_surface": search_surface.as_dict(),
+            "current_state": {"version": 1, "identity": body.canonical_identity},
+            "identity_invariant": {
+                "status": "MATERIALIZED",
+                "continuity": "PERSISTENT",
+                "version": 1,
+                "history_depth": 1,
+                "identity_digest": _identity_digest(body.canonical_identity),
+                "first_seen": datetime.now(UTC).isoformat(),
+                "last_seen": datetime.now(UTC).isoformat(),
+            },
+            "evidence": [],
+            "historical_versions": [
+                {"version": 1, "identity": body.canonical_identity, "observations": []}
+            ],
         },
         "event": "entity.created",
         "search_surface": search_surface.as_dict(),
@@ -689,27 +894,33 @@ async def create_correlation(
         raise HTTPException(status_code=404, detail="entity not found")
     if body.candidate_b == entity_id:
         raise HTTPException(status_code=409, detail="cannot link an entity to itself")
-    # Correlation edges are persisted through the admission/review store,
-    # not in a process-local list.
-    from db.entity_stream import SqlEntityStreamRepository
+    # Correlation edges are rows, not process-local notes: a possible match that vanished
+    # on restart would make "no merge happened" unverifiable (FR-004, I-2).
+    from db.correlation_store import SqlCorrelationRepository
 
-    async with _pg_session()() as session:
-        repo = SqlEntityStreamRepository(session)
-        existing = await repo.correlations_for_entity(
-            tenant_id=ctx.tenant_id, entity_id=entity_id
-        )
-    existing_ids = [e["edge_id"] for e in existing]
-    edge_id = _next_edge_id(existing_ids)
-    edge = {
-        "edge_id": edge_id,
-        "candidate_a": entity_id,
-        "candidate_b": body.candidate_b,
-        "kind": body.kind,
-        "raw_pair_score": body.raw_pair_score,
-        "collective_score": round(min(1.0, body.raw_pair_score + 0.03), 3),
-        "reasons": body.reasons or ["analyst"],
-        "state": body.state or "OPEN",
-    }
+    try:
+        async with _pg_session()() as session:
+            repo = SqlCorrelationRepository(session)
+            existing_ids = await repo.all_edge_ids()
+            edge_id = _next_edge_id(existing_ids)
+            edge = await repo.add(
+                tenant_id=ctx.tenant_id,
+                edge_id=edge_id,
+                candidate_a=entity_id,
+                candidate_b=body.candidate_b,
+                kind=body.kind,
+                raw_pair_score=body.raw_pair_score,
+                collective_score=round(min(1.0, body.raw_pair_score + 0.03), 3),
+                reasons=body.reasons or ["analyst"],
+                state=body.state or "OPEN",
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"unknown correlation state: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"correlation store unavailable: {type(exc).__name__}",
+        ) from exc
     hub.publish(
         "entity.updated",
         {
@@ -961,18 +1172,13 @@ async def get_entity(
         ) from exc
     if row is None:
         raise HTTPException(status_code=404, detail="entity not found")
-    attributes = _json_mapping(row.attributes)
-    return {
-        "entity_id": row.entity_id,
-        "tenant_id": ctx.tenant_id,
-        "entity_type": row.entity_type,
-        "canonical_name": row.canonical_name,
-        "canonical_identity": attributes.get("canonical_identity", {}),
-        "aliases": attributes.get("aliases", []),
-        "label": attributes.get("label", row.entity_id),
-        "first_seen": attributes.get("first_seen", ""),
-        "timeline": [],
-    }
+    try:
+        return await _entity_projection(row)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"entity view unavailable: {type(exc).__name__}",
+        ) from exc
 
 
 @router.get("/{entity_id}/correlations")
@@ -981,13 +1187,19 @@ async def get_correlations(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
 ) -> dict:
     """FR-004: possible_match edges for an entity/candidate — no merge implied."""
-    from db.entity_stream import SqlEntityStreamRepository
+    from db.correlation_store import SqlCorrelationRepository
 
-    async with _pg_session()() as session:
-        repo = SqlEntityStreamRepository(session)
-        edges = await repo.correlations_for_entity(
-            tenant_id=ctx.tenant_id, entity_id=entity_id
-        )
+    try:
+        async with _pg_session()() as session:
+            repo = SqlCorrelationRepository(session)
+            edges = await repo.correlations_for_entity(
+                tenant_id=ctx.tenant_id, entity_id=entity_id
+            )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"correlation store unavailable: {type(exc).__name__}",
+        ) from exc
     return {"entity_id": entity_id, "tenant_id": ctx.tenant_id, "correlations": edges}
 
 

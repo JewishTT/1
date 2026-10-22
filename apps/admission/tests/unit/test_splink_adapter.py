@@ -28,6 +28,19 @@ def _vec(field: str = "name", level: str = "exact", l="a", r="a"):
     return ComparisonVectorEntry(field=field, comparison_level=level, value_l=l, value_r=r)
 
 
+def _pinned_splink_version() -> str:
+    """The splink version the admission workspace pins, read from the manifest."""
+    import tomllib
+    from pathlib import Path
+
+    manifest = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+    for spec in data["project"]["dependencies"]:
+        if spec.startswith("splink"):
+            return spec.split("==", 1)[1].strip()
+    raise AssertionError("the admission workspace does not pin splink")
+
+
 def _cand(adapter: SplinkAdapter, *, l="1", r="2", score=0.9, semantics=ScoreSemantics.MATCH_PROBABILITY):
     return adapter.to_candidate(
         left_id=l,
@@ -177,9 +190,16 @@ class TestUpstreamIsReal:
         assert reported == actually_installed, (
             f"adapter reports {reported} but splink {actually_installed} is installed"
         )
-        major, minor = (int(p) for p in reported.split(".")[:2])
-        assert (major, minor) >= (4, 0), f"unsupported splink {reported}"
-        assert major == 4, f"unsupported splink major {reported}"
+        # The pin lives in the manifest, so the expectation cannot rot: a pin that moves
+        # to 6 makes this test demand 6, and a pin that is not installed at all makes it
+        # fail here rather than in a run nobody read.
+        pinned = _pinned_splink_version()
+        assert actually_installed == pinned, (
+            f"splink {actually_installed} is installed but the workspace pins {pinned}"
+        )
+        assert reported == pinned, f"adapter reports {reported}, the workspace pins {pinned}"
+        major = int(reported.split(".")[0])
+        assert major == int(pinned.split(".")[0]), f"unsupported splink major {reported}"
 
     def test_the_adapter_imports_without_splink_present(self):
         """Import must not explode on a machine that lacks the optional backend."""

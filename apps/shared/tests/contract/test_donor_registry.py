@@ -21,6 +21,7 @@ that distinction is the whole risk.
 
 from __future__ import annotations
 
+import importlib.metadata
 import re
 import sys
 import tomllib
@@ -95,6 +96,24 @@ def requirement_name(requirement: str) -> str:
     the workspace's own name and comes back unchanged.
     """
     return canonical(re.split(r"[\s\[<>=!~;@]", requirement.strip(), maxsplit=1)[0])
+
+
+def _satisfies(installed: str, requirement: str) -> bool:
+    """Whether the installed version satisfies the declared requirement.
+
+    A requirement this test cannot parse is a failure, not a pass: the record claims a pin
+    and the gate cannot check it, so the pin is unverified and must not be waved through.
+    """
+    from packaging.requirements import Requirement
+    from packaging.version import Version
+
+    try:
+        parsed = Requirement(requirement)
+    except Exception as exc:  # noqa: BLE001
+        raise AssertionError(f"cannot parse the declared requirement {requirement!r}: {exc}") from exc
+    if not parsed.specifier:
+        return True
+    return parsed.specifier.contains(Version(installed), prereleases=True)
 
 
 # ---------------------------------------------------------------------------
@@ -502,23 +521,97 @@ class TestEveryDeclaredDependencyIsRecorded:
         assert "scikit-learn" in note, "the removal reason must name the pin that caused it"
 
     def test_the_donor_work_installed_packages_carry_their_real_versions(self):
-        """The spec-030 additions are verifiable exactly; they must not drift to nulls."""
+        """The recorded version must be the one that is actually installed.
+
+        This used to compare the registry against a literal snapshot of four versions. The
+        snapshot was a lie waiting to happen: it kept claiming ``splink 4.0.17`` after the
+        workspace pinned ``5.0.0``, and because the gate compared the file with the
+        snapshot, the drift passed. The environment is the authority -- a registry that
+        disagrees with what is installed is wrong, and it is wrong in the direction that
+        matters for supply-chain review.
+        """
         entries = {canonical(str(e.get("id"))): e for e in load_registry()["donors"]}
-        expected = {
-            "splink": "4.0.17",
-            "h3": "4.5.0",
-            "river": "0.26.1",
-            "docling-core": "2.101.1",
-        }
-        bad = {
-            name: entries.get(name, {}).get("version")
-            for name, version in expected.items()
-            if entries.get(name, {}).get("version") != version
-        }
+        packages = ("splink", "h3", "river", "docling-core")
+        bad = {}
+        for name in packages:
+            try:
+                installed = importlib.metadata.version(name)
+            except importlib.metadata.PackageNotFoundError:
+                continue
+            recorded = entries.get(name, {}).get("version")
+            if recorded != installed:
+                bad[name] = {"recorded": recorded, "installed": installed}
         assert not bad, (
-            "these versions were verified from installed metadata and must match: "
-            f"{bad}"
+            "the registry records a version that is not the one installed: "
+            f"{bad}. Record what is installed; a snapshot literal cannot be trusted."
         )
+
+    def test_the_recorded_version_satisfies_the_declared_pin(self):
+        """Environment and manifest are two opinions; the registry has to reconcile them.
+
+        A package that satisfies its pin is a clean record. One that does not is a real
+        conflict -- the workspace asked for something the environment does not have -- and
+        the registry must say so in words rather than quietly prefer one of them.
+        """
+        entries = {canonical(str(e.get("id"))): e for e in load_registry()["donors"]}
+        conflicts = []
+        for name, entry in entries.items():
+            declared = entry.get("declared_requirement")
+            installed = entry.get("installed_version")
+            if not declared or not installed:
+                continue
+            requirements = declared if isinstance(declared, list) else [declared]
+            for requirement in requirements:
+                if not _satisfies(installed, requirement):
+                    conflicts.append(
+                        f"{name}: installed {installed} does not satisfy {requirement!r}"
+                    )
+        assert not conflicts, (
+            "installed versions that do not satisfy the declared pin: "
+            + "; ".join(conflicts)
+        )
+
+
+class TestTheAmbiguousDonorsAreRecorded:
+    """FR-042 / FR-043: the ambiguous donors are resolved on paper before any code moves."""
+
+    def test_aegis_is_recorded_as_unverified_url_required(self):
+        """`AEGiS` must be in the registry, unresolved and unresolved-by-design.
+
+        The failure this prevents is a future pass that reads `AEGiS` in a catalogue,
+        finds a repository with a similar name, and copies it. FR-043 says that must not
+        happen until the intended upstream is pinned, so the registry has to carry the
+        prohibition rather than leave it to a spec nobody reads at copy time.
+        """
+        entries = {canonical(str(e.get("id"))): e for e in load_registry()["donors"]}
+        entry = entries.get("aegis")
+        assert entry is not None, (
+            "AEGiS must be recorded in donors/registry.yaml as UNVERIFIED / URL_REQUIRED "
+            "(FR-043). An ambiguous donor that is absent is a donor that gets selected by "
+            "name similarity later."
+        )
+        assert entry.get("status") == "unverified"
+        assert entry.get("license") is None
+        blob = f"{entry.get('verification_note')} {entry.get('role')}".lower()
+        assert "url_required" in blob or "url required" in blob, (
+            "the AEGiS entry must state UNVERIFIED / URL_REQUIRED in so many words"
+        )
+        assert "similarity" in blob, (
+            "the AEGiS entry must record that name similarity is not a selection rule"
+        )
+
+    def test_kafsiem_records_its_pinned_upstream_and_what_must_not_be_taken(self):
+        """`kafSIEM` is usable as a pattern source, never as a second authority."""
+        entries = {canonical(str(e.get("id"))): e for e in load_registry()["donors"]}
+        entry = entries.get("kafsiem")
+        assert entry is not None, "kafSIEM must be recorded with its pinned upstream (FR-042)"
+        assert entry.get("upstream") == "https://github.com/scalytics/kafSIEM"
+        blob = f"{entry.get('verification_note')} {entry.get('role')}".lower()
+        for forbidden in ("sqlite", "collector", "entity types", "broker"):
+            assert forbidden in blob, (
+                f"the kafSIEM entry must say what may not be imported as a second authority; "
+                f"{forbidden!r} is missing"
+            )
 
 
 # ---------------------------------------------------------------------------

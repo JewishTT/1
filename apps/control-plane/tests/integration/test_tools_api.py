@@ -73,16 +73,31 @@ class TestToolsApi:
         )
         assert resp.status_code == 422
 
-    def test_entities_list_contains_seed_catalog_node(self, client: TestClient) -> None:
+    def test_entities_list_contains_a_created_entity(self, client: TestClient) -> None:
+        """The list is served from PostgreSQL, not from a fixture (ADR-0027).
+
+        This test used to assert the demo row (``ENT-2001`` = ``{"account": "Yard"}``),
+        which was fixture data of the process-local catalog the route no longer has; the
+        assertion pinned demo content rather than the contract, the same defect the graph
+        test below was already rewritten for. What is asserted now: an entity created
+        through the API comes back through the list with the identity it was created with,
+        its label, and a type drawn from the declared ontology vocabulary (migration 023).
+        """
+        created = client.post(
+            "/api/v1/entities", json={"canonical_identity": {"account": "listcheck"}}
+        )
+        assert created.status_code == 202, created.text
+        entity_id = created.json()["entity"]["entity_id"]
+
         resp = client.get("/api/v1/entities")
         assert resp.status_code == 200
         body = resp.json()
         ids = [e["entity_id"] for e in body["entities"]]
-        assert "ENT-2001" in ids
-        seed = next(e for e in body["entities"] if e["entity_id"] == "ENT-2001")
-        assert seed["canonical_identity"] == {"account": "Yard"}
-        assert seed["entity_type"] == "USERNAME"
-        assert seed["label"] == "Yard"
+        assert entity_id in ids
+        seed = next(e for e in body["entities"] if e["entity_id"] == entity_id)
+        assert seed["canonical_identity"] == {"account": "listcheck"}
+        assert seed["label"] == "listcheck"
+        assert seed["entity_type"] == "handle"
 
     def test_graph_returns_seed_node_and_correlation_edge(self, client: TestClient) -> None:
         """Feature 024: the graph is served from PostgreSQL, not a fixture.

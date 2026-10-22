@@ -21,16 +21,42 @@ def client() -> TestClient:
 @pytest.mark.integration
 class TestDonorPatternApi:
     def test_correlations_exposed_without_merge(self, client: TestClient) -> None:
-        resp = client.get("/api/v1/entities/ENT-2001/correlations")
+        """A possible_match edge is readable back and implies no merge (FR-004, I-2).
+
+        The edge is created in the test rather than assumed from hand-seeded rows: the
+        previous version read ``ENT-2001`` and only passed on a database where somebody
+        had already stored a correlation, so it measured seed state, not the contract.
+        """
+        created = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "edge-owner"}},
+        ).json()["entity"]
+        other = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "edge-other"}},
+        ).json()["entity"]
+        made = client.post(
+            f"/api/v1/entities/{created['entity_id']}/correlations",
+            json={"candidate_b": other["entity_id"], "reasons": ["shared handle"]},
+        )
+        assert made.status_code == 200, made.text
+
+        resp = client.get(f"/api/v1/entities/{created['entity_id']}/correlations")
         assert resp.status_code == 200
         body = resp.json()
         edges = body["correlations"]
         assert edges and edges[0]["kind"] == "possible_match"
         assert "auto_merge" not in edges[0]
+        # The correlate is still an entity of its own: no identity was folded in.
+        assert client.get(f"/api/v1/entities/{other['entity_id']}").status_code == 200
 
     def test_review_recorded_as_provenance(self, client: TestClient) -> None:
+        target = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "review-target"}},
+        ).json()["entity"]["entity_id"]
         resp = client.post(
-            "/api/v1/entities/ENT-2001/review",
+            f"/api/v1/entities/{target}/review",
             json={"decision": "ACCEPT", "reasoning": "confirmed by analyst"},
         )
         assert resp.status_code == 200
@@ -41,23 +67,59 @@ class TestDonorPatternApi:
         assert review["provenance"]["event_id"]
 
     def test_reviews_listed_per_target(self, client: TestClient) -> None:
-        client.post("/api/v1/entities/ENT-2001/review", json={"decision": "UNCERTAIN"})
-        resp = client.get("/api/v1/entities/ENT-2001/reviews")
+        target = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "review-list"}},
+        ).json()["entity"]["entity_id"]
+        client.post(f"/api/v1/entities/{target}/review", json={"decision": "UNCERTAIN"})
+        resp = client.get(f"/api/v1/entities/{target}/reviews")
         assert resp.status_code == 200
         reviews = resp.json()["reviews"]
-        assert reviews and reviews[0]["target_id"] == "ENT-2001"
+        assert reviews and reviews[0]["target_id"] == target
 
     def test_entity_timeline_carries_observed_at(self, client: TestClient) -> None:
-        resp = client.get("/api/v1/entities/ENT-2001")
+        """A timeline entry must carry ``observed_at`` (the record's ts).
+
+        The timeline is rebuilt from the entity stream; no seed fixture is assumed.
+        """
+        created = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "timeline-check"}},
+        ).json()["entity"]
+        entity_id = created["entity_id"]
+        record = {
+            "entity_id": entity_id,
+            "kind": "fact",
+            "ts": "2026-01-01T00:00:00+00:00",
+            "tenant_id": "default-tenant",
+            "payload": {"event_at": "2026-01-01T00:00:00+00:00"},
+            "observation_id": "obs-timeline-1",
+            "sequence": 1,
+        }
+        resp = client.post(
+            f"/api/v1/entities/{entity_id}/temporal-materializations",
+            json={"source_records": [record]},
+        )
+        assert resp.status_code in (200, 202), resp.text
+        resp = client.get(f"/api/v1/entities/{entity_id}")
         assert resp.status_code == 200
         body = resp.json()
         assert body["timeline"]
-        assert all(entry.get("observed_at") == "2026-01-01T00:00:00Z" for entry in body["timeline"])
+        assert all(
+            entry.get("observed_at") in {"2026-01-01T00:00:00+00:00", "2026-01-01T00:00:00Z"}
+            for entry in body["timeline"]
+        )
 
     def test_entity_view_projects_identity_invariant(self, client: TestClient) -> None:
         """The atomic entity must surface its dynamic-invariant projection: a
-        stable anchor id plus versioned, digest-backed continuity."""
-        resp = client.get("/api/v1/entities/ENT-2001")
+        stable anchor id plus versioned, digest-backed continuity.
+        """
+        created = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "invariant-seed"}},
+        ).json()["entity"]
+        entity_id = created["entity_id"]
+        resp = client.get(f"/api/v1/entities/{entity_id}")
         assert resp.status_code == 200
         body = resp.json()
         inv = body["identity_invariant"]
@@ -66,8 +128,8 @@ class TestDonorPatternApi:
         assert inv["version"] == 1
         assert inv["history_depth"] == 1
         assert inv["identity_digest"].startswith("sha256:")
-        assert inv["first_seen"] == "2026-01-01T00:00:00Z"
-        assert inv["last_seen"] == "2026-01-01T00:00:00Z"
+        assert inv["first_seen"]
+        assert inv["last_seen"]
 
         created = client.post(
             "/api/v1/entities",
@@ -115,18 +177,24 @@ class TestDonorPatternApi:
             "/api/v1/entities",
             json={"canonical_identity": {"account": "Aster"}, "aliases": ["Aster"]},
         ).json()["entity"]
+        other = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "Other"}},
+        ).json()["entity"]
         resp = client.post(
             f"/api/v1/entities/{created['entity_id']}/correlations",
-            json={"candidate_b": "ENT-2001", "reasons": ["shared handle"]},
+            json={"candidate_b": other["entity_id"], "reasons": ["shared handle"]},
         )
         assert resp.status_code == 200
         edge = resp.json()["edge"]
         assert edge["candidate_a"] == created["entity_id"]
-        assert edge["candidate_b"] == "ENT-2001"
+        assert edge["candidate_b"] == other["entity_id"]
         assert edge["kind"] == "possible_match"
         assert "auto_merge" not in edge
         # the correlate may stay non-materialized: edge exists, no identity made
-        assert client.get("/api/v1/entities/ENT-2001/correlations").json()["correlations"]
+        assert client.get(f"/api/v1/entities/{created['entity_id']}/correlations").json()[
+            "correlations"
+        ]
 
     def test_correlation_requires_materialized_source(self, client: TestClient) -> None:
         resp = client.post(
@@ -136,9 +204,13 @@ class TestDonorPatternApi:
         assert resp.status_code == 404
 
     def test_correlation_rejects_self_link(self, client: TestClient) -> None:
+        created = client.post(
+            "/api/v1/entities",
+            json={"canonical_identity": {"account": "Self"}},
+        ).json()["entity"]
         resp = client.post(
-            "/api/v1/entities/ENT-2001/correlations",
-            json={"candidate_b": "ENT-2001"},
+            f"/api/v1/entities/{created['entity_id']}/correlations",
+            json={"candidate_b": created["entity_id"]},
         )
         assert resp.status_code == 409
 

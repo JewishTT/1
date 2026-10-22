@@ -1,0 +1,333 @@
+{
+  "schema": "wp0-baseline-failures/1",
+  "command": "python -m pytest -q -p no:randomly",
+  "rootdir": "C:\\Users\\tim\\Desktop\\COGNITIVE\\1",
+  "exit_status": 1,
+  "collected": 5622,
+  "passed": 5506,
+  "failed": 38,
+  "skipped": 79,
+  "errors": 0,
+  "duration_seconds": 2846,
+  "collection_command": "python -m pytest --co -q",
+  "collection_errors": 0,
+  "category_totals": {
+    "infra": 12,
+    "defect": 19,
+    "gap": 7,
+    "unclassified": 0
+  },
+  "files": [
+    {
+      "file": "apps/acquisition/tests/contract/test_plan_driver.py",
+      "failures": [
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_dispatched_task_is_published_with_acked_offset",
+          "error": "AssertionError",
+          "location": "test_plan_driver.py:114",
+          "message": "AssertionError: assert False is True",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_topic_is_the_catalog_topic_for_the_event",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:128",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_each_task_gets_its_own_offset_not_a_previous_one",
+          "error": "AssertionError",
+          "location": "",
+          "message": "AssertionError: offsets must be distinct per task",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_publish_is_keyed_by_task_id",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:146",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_no_acknowledgement_is_reported_as_not_published",
+          "error": "AssertionError",
+          "location": "test_plan_driver.py:160",
+          "message": "AssertionError: assert 'acknowledged nothing' in 'BLOCKED_BUDGET'",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_envelope_satisfies_the_worker_contract",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:205",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_requires_a_source_id",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:212",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_requires_a_tenant",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:221",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_rejects_a_foreign_event_type",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:230",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_is_json_not_a_python_repr",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:254",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_carries_the_query",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:247",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_carries_source_and_verdict",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:247",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_worker_can_parse_the_payload_into_a_task",
+          "error": "IndexError",
+          "location": "test_plan_driver.py:274",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        }
+      ]
+    },
+    {
+      "file": "apps/acquisition/tests/integration/test_loop_closed.py",
+      "failures": [
+        {
+          "test": "apps/acquisition/tests/integration/test_loop_closed.py::test_the_loop_closes_hermetically",
+          "error": "AssertionError",
+          "location": "test_loop_closed.py:125",
+          "message": "AssertionError: assert False is True",
+          "category": "defect"
+        },
+        {
+          "test": "apps/acquisition/tests/integration/test_loop_closed.py::test_the_request_the_worker_parses_is_the_scheduler_s_own",
+          "error": "IndexError",
+          "location": "test_loop_closed.py:204",
+          "message": "IndexError: list index out of range",
+          "category": "defect"
+        }
+      ]
+    },
+    {
+      "file": "apps/control-plane/tests/integration/test_cc_temporality_api.py",
+      "failures": [
+        {
+          "test": "apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_domain_entity_full_payload",
+          "error": "KeyError",
+          "location": "test_cc_temporality_api.py:33",
+          "message": "KeyError: 'entity'",
+          "category": "infra"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_missing_captures_reported_honestly",
+          "error": "KeyError",
+          "location": "test_cc_temporality_api.py:77",
+          "message": "KeyError: 'entity'",
+          "category": "infra"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_unknown_entity_404",
+          "error": "assert 503 == 404",
+          "location": "test_cc_temporality_api.py:91",
+          "message": "assert 503 == 404",
+          "category": "infra"
+        }
+      ]
+    },
+    {
+      "file": "apps/control-plane/tests/integration/test_donor_api.py",
+      "failures": [
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlations_exposed_without_merge",
+          "error": "AttributeError",
+          "location": "entities.py:988",
+          "message": "AttributeError: 'SqlEntityStreamRepository' object has no attribute 'correlations_for_entity'",
+          "category": "defect"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_review_recorded_as_provenance",
+          "error": "NameError",
+          "location": "entities.py:1001",
+          "message": "NameError: name '_reviews' is not defined",
+          "category": "defect"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_reviews_listed_per_target",
+          "error": "NameError",
+          "location": "entities.py:1001",
+          "message": "NameError: name '_reviews' is not defined",
+          "category": "defect"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_timeline_carries_observed_at",
+          "error": "assert 503 == 200",
+          "location": "test_donor_api.py:52",
+          "message": "assert 503 == 200",
+          "category": "infra"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_view_projects_identity_invariant",
+          "error": "assert 503 == 200",
+          "location": "test_donor_api.py:61",
+          "message": "assert 503 == 200",
+          "category": "infra"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_can_be_created_as_dynamic_invariant",
+          "error": "assert 503 == 202",
+          "location": "test_donor_api.py:91",
+          "message": "assert 503 == 202",
+          "category": "infra"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_created_without_merge",
+          "error": "KeyError",
+          "location": "test_donor_api.py:114",
+          "message": "KeyError: 'entity'",
+          "category": "infra"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_requires_materialized_source",
+          "error": "assert 503 == 404",
+          "location": "test_donor_api.py:136",
+          "message": "assert 503 == 404",
+          "category": "infra"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_rejects_self_link",
+          "error": "assert 503 == 409",
+          "location": "test_donor_api.py:143",
+          "message": "assert 503 == 409",
+          "category": "infra"
+        }
+      ]
+    },
+    {
+      "file": "apps/control-plane/tests/integration/test_temporal_materialization_api.py",
+      "failures": [
+        {
+          "test": "apps/control-plane/tests/integration/test_temporal_materialization_api.py::test_create_entity_starts_materialization",
+          "error": "assert 503 == 202",
+          "location": "test_temporal_materialization_api.py:50",
+          "message": "assert 503 == 202",
+          "category": "infra"
+        }
+      ]
+    },
+    {
+      "file": "apps/control-plane/tests/integration/test_tools_api.py",
+      "failures": [
+        {
+          "test": "apps/control-plane/tests/integration/test_tools_api.py::TestToolsApi::test_entities_list_contains_seed_catalog_node",
+          "error": "AssertionError",
+          "location": "test_tools_api.py:81",
+          "message": "AssertionError: assert 'ENT-2001' in []",
+          "category": "infra"
+        },
+        {
+          "test": "apps/control-plane/tests/integration/test_tools_api.py::TestToolsApi::test_graph_returns_seed_node_and_correlation_edge",
+          "error": "assert 503 == 200",
+          "location": "test_tools_api.py:98",
+          "message": "assert 503 == 200",
+          "category": "infra"
+        }
+      ]
+    },
+    {
+      "file": "apps/control-plane/tests/unit/test_sse_stream.py",
+      "failures": [
+        {
+          "test": "apps/control-plane/tests/unit/test_sse_stream.py::test_review_publishes_entity_updated",
+          "error": "NameError",
+          "location": "entities.py:1001",
+          "message": "NameError: name '_reviews' is not defined",
+          "category": "defect"
+        }
+      ]
+    },
+    {
+      "file": "apps/shared/tests/constitution/test_constitution_has_teeth.py",
+      "failures": [
+        {
+          "test": "apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-6_0]",
+          "error": "AssertionError",
+          "location": "test_constitution_has_teeth.py:203",
+          "message": "AssertionError: the mutation 'CD-6: let a bare string become an operator type' left test_constitution4_no_fabrication.py::TestThePlatformDoesNotInventAnOperatorType::test_a_bare_string_at_a_ref_position_is_refused green,",
+          "category": "gap"
+        },
+        {
+          "test": "apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-1]",
+          "error": "AssertionError",
+          "location": "test_constitution_has_teeth.py:203",
+          "message": "AssertionError: the mutation 'CD-1: let the SUPPORTED label be the only way in again' left test_constitution4_no_fabrication.py::TestAdmissionIsNotAFormality::test_a_cd1_reading_admits_on_its_evidence_not_its_label green",
+          "category": "gap"
+        },
+        {
+          "test": "apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[iv]",
+          "error": "AssertionError",
+          "location": "test_constitution_has_teeth.py:203",
+          "message": "AssertionError: the mutation 'IV: let an empty tenant through on a temporal observation' left test_iv_vi_tenancy_and_determinism.py::TestTenantsAreFailClosed::test_an_empty_tenant_is_refused green, so nothing is guarding",
+          "category": "gap"
+        },
+        {
+          "test": "apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[vi]",
+          "error": "AssertionError",
+          "location": "test_constitution_has_teeth.py:203",
+          "message": "AssertionError: the mutation \"VI: let a producer's identity into the signal address\" left test_iv_vi_tenancy_and_determinism.py::TestDeterminism::test_two_producers_reading_the_same_thing_are_two_signals green, so nothin",
+          "category": "gap"
+        },
+        {
+          "test": "apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-5]",
+          "error": "AssertionError",
+          "location": "test_constitution_has_teeth.py:203",
+          "message": "AssertionError: the mutation 'CD-5: pad a time by accepting a naive instant as UTC' left test_constitution4_no_fabrication.py::TestThePlatformDoesNotPadATime::test_a_naive_instant_is_refused_rather_than_assumed_utc green",
+          "category": "gap"
+        },
+        {
+          "test": "apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[i-1]",
+          "error": "AssertionError",
+          "location": "test_constitution_has_teeth.py:203",
+          "message": "AssertionError: the mutation 'I-1: let a carried content address be trusted' left test_i1_i3_immutability_and_preservation.py::TestObservationsAreImmutable::test_a_carried_address_that_disagrees_is_refused green, so noth",
+          "category": "gap"
+        }
+      ]
+    },
+    {
+      "file": "apps/shared/tests/unit/test_layer_boundaries.py",
+      "failures": [
+        {
+          "test": "apps/shared/tests/unit/test_layer_boundaries.py::test_no_new_layer_boundary_violations",
+          "error": "AssertionError",
+          "location": "",
+          "message": "AssertionError: 26 violations, was 25. New ones:",
+          "category": "gap"
+        }
+      ]
+    }
+  ]
+}

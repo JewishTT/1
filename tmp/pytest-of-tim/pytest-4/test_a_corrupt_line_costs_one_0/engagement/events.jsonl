@@ -1,0 +1,2 @@
+{"event_id": "bd21fd79-b0f6-414c-997e-0d0eeb5d6f37", "campaign_id": "EN-32", "channel": "email", "kind": "campaign_recipient_message_sent", "display": "Message sent", "occurred_at": "2026-10-22T05:54:48.744395+00:00", "subject_ref": "a@lab", "pseudonym": "anon-62c4d244d8d6dd8c", "stage": 1, "track": "phishing", "payload": {}, "metadata": {}, "ip": null, "user_agent": null, "anonymized": false}
+{not json

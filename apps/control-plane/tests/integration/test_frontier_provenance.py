@@ -755,13 +755,17 @@ def live_frontier():
 
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import NullPool
 
     from db.schema import FrontierItem as Row
 
     dsn = _postgres_dsn()
 
     async def _setup() -> Any:
-        engine = create_async_engine(dsn)
+        # `NullPool` for the same reason the membership test states: the engine is
+        # built inside this `asyncio.run` and then used from the adapter's own loop,
+        # so a pooled connection is a connection to a loop that no longer exists.
+        engine = create_async_engine(dsn, poolclass=NullPool)
         async with engine.connect() as connection:
             await connection.execute(text(f"DROP SCHEMA IF EXISTS {SCHEMA} CASCADE"))
             await connection.execute(text(f"CREATE SCHEMA {SCHEMA}"))

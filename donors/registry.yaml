@@ -2,7 +2,7 @@ schema_version: 1
 registry:
   authority: apps/shared/tests/contract/test_donor_registry.py (FR-113)
   generator: tools/specs/build_donor_registry.py
-  generated_at: '2026-10-19T13:52:37+00:00'
+  generated_at: '2026-10-22T06:31:43+00:00'
   vendored_checkout_count: 108
   scope_notes: 'Covers every declared dependency in [project].dependencies and [project].optional-dependencies across
     the workspace manifests, plus every checkout under donors/. [dependency-groups] is out of scope: it is never
@@ -52,6 +52,21 @@ donors:
     no known SPDX signature. Unrecognised licence text is a blocker, not a blank.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
+- id: aegis
+  path: null
+  upstream: null
+  version: null
+  license: null
+  license_source: null
+  status: unverified
+  verification_note: 'UNVERIFIED / URL_REQUIRED. The name is ambiguous and must not be resolved by name similarity.
+    Candidate upstreams: https://github.com/ChristopherKahler/aegis (epistemic-review methodology: observation/evidence/assumption/judgment
+    separation, dissent, Devil''s Advocate) and https://github.com/aegisceo/phone-osint-framework (phone-oriented
+    OSINT module family, registered separately under its own name and a different role). No licence was read for
+    either candidate and no code from either may be copied until one is pinned. Verdict recorded in specs/032-global-upgrade-execution/contracts/donor-registry.md.'
+  role: ambiguous donor named in the architecture catalogue; UNVERIFIED / URL_REQUIRED until the intended upstream
+    is pinned. Not a code dependency and not a checkout.
+  vendored: false
 - id: ael
   path: donors/ael
   upstream: https://github.com/attackevals/ael
@@ -71,10 +86,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (15.5.0). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as aioboto3>=13; version read from installed metadata
+    (15.5.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - aioboto3>=13
+  installed_version: 15.5.0
 - id: alembic
   path: null
   upstream: https://pypi.org/project/alembic/
@@ -82,10 +100,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/control-plane/pyproject.toml; version read from installed metadata (1.19.2).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml as alembic>=1.13; version read from installed
+    metadata (1.19.2). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - alembic>=1.13
+  installed_version: 1.19.2
 - id: anyascii
   path: null
   upstream: https://pypi.org/project/anyascii/
@@ -93,10 +114,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (0.3.3).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as anyascii>=0.3.2; version read from installed
+    metadata (0.3.3). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - anyascii>=0.3.2
+  installed_version: 0.3.3
 - id: Aperture-OSINT-Workbench
   path: donors/Aperture-OSINT-Workbench
   upstream: https://github.com/petstuk/Aperture-OSINT-Workbench.git
@@ -150,10 +174,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (0.31.0). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as asyncpg>=0.29; version read from installed metadata
+    (0.31.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - asyncpg>=0.29
+  installed_version: 0.31.0
 - id: AzureAD-Attack-Defense
   path: donors/AzureAD-Attack-Defense
   upstream: https://github.com/Cloud-Architekt/AzureAD-Attack-Defense
@@ -193,10 +220,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/projection/pyproject.toml; version read from installed metadata (0.3.11).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/projection/pyproject.toml as bm25s>=0.2; version read from installed metadata
+    (0.3.11). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - bm25s>=0.2
+  installed_version: 0.3.11
 - id: caldera
   path: donors/caldera
   upstream: https://github.com/apache/caldera
@@ -216,10 +246,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/acquisition/pyproject.toml; version read from installed metadata (1.12).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/acquisition/pyproject.toml as certstream>=1.11; version read from installed
+    metadata (1.12). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - certstream>=1.11
+  installed_version: '1.12'
 - id: charset-normalizer
   path: null
   upstream: https://pypi.org/project/charset-normalizer/
@@ -227,10 +260,14 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml, apps/shared/pyproject.toml; version read from
-    installed metadata (3.5.1). Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml, apps/shared/pyproject.toml as charset-normalizer>=3.3;
+    version read from installed metadata (3.5.1). Licence not reviewed: no distribution-level licence text was read
+    for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - charset-normalizer>=3.3
+  installed_version: 3.5.1
 - id: click
   path: null
   upstream: https://pypi.org/project/click/
@@ -238,10 +275,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in bench/pyproject.toml; version read from installed metadata (8.5.0). Licence not
-    reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in bench/pyproject.toml as click>=8.1; version read from installed metadata (8.5.0).
+    Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - click>=8.1
+  installed_version: 8.5.0
 - id: clickhouse-connect
   path: null
   upstream: https://pypi.org/project/clickhouse-connect/
@@ -249,10 +289,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/control-plane/pyproject.toml; version read from installed metadata (1.8.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml as clickhouse-connect>=0.7; version read from
+    installed metadata (1.8.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - clickhouse-connect>=0.7
+  installed_version: 1.8.0
 - id: cognitive_phase_transitions
   path: donors/cognitive_phase_transitions
   upstream: https://github.com/Khomyakov-Vladimir/cognitive_phase_transitions
@@ -318,10 +361,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (2.15.0). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as confluent-kafka>=2.4; version read from installed
+    metadata (2.15.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - confluent-kafka>=2.4
+  installed_version: 2.15.0
 - id: crawlee
   path: null
   upstream: https://pypi.org/project/crawlee/
@@ -329,10 +375,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/acquisition/pyproject.toml; version read from installed metadata (1.10.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/acquisition/pyproject.toml as crawlee[playwright]>=1.10.0; version read from
+    installed metadata (1.10.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - crawlee[playwright]>=1.10.0
+  installed_version: 1.10.0
 - id: CyberStrikeAI
   path: donors/CyberStrikeAI
   upstream: https://github.com/Ed1s0nZ/CyberStrikeAI.git
@@ -374,10 +423,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (2.101.1).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as docling-core>=2.101,<3; version read from
+    installed metadata (2.101.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - docling-core>=2.101,<3
+  installed_version: 2.101.1
 - id: DualMind
   path: donors/DualMind
   upstream: https://github.com/EonHao/DualMind
@@ -395,10 +447,14 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/projection/pyproject.toml; version read from installed metadata (1.5.5).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml, apps/projection/pyproject.toml as duckdb>=1.0;
+    version read from installed metadata (1.5.5). Licence not reviewed: no distribution-level licence text was read
+    for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - duckdb>=1.0
+  installed_version: 1.5.5
 - id: Email-Permutator
   path: donors/Email-Permutator
   upstream: https://github.com/emeth-/Email-Permutator.git
@@ -510,10 +566,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (0.18.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as extruct>=0.17; version read from installed
+    metadata (0.18.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - extruct>=0.17
+  installed_version: 0.18.0
 - id: fastapi
   path: null
   upstream: https://pypi.org/project/fastapi/
@@ -521,10 +580,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/control-plane/pyproject.toml; version read from installed metadata (0.141.1).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml as fastapi>=0.111; version read from installed
+    metadata (0.141.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - fastapi>=0.111
+  installed_version: 0.141.1
 - id: fiercephish
   path: donors/fiercephish
   upstream: https://github.com/raikia/fiercephish
@@ -556,10 +618,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: declared in apps/interpretation/pyproject.toml [optional-dependencies.lang-tiers]; not installed
-    in this environment, so no version could be read and no licence was reviewed.
+  verification_note: declared in apps/interpretation/pyproject.toml [optional-dependencies.lang-tiers] as fugashi>=1.3;
+    not installed in this environment, so no version could be read and no licence was reviewed.
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - fugashi>=1.3
+  installed_version: null
 - id: gh-mailto
   path: donors/gh-mailto
   upstream: https://github.com/codeGROOVE-dev/gh-mailto.git
@@ -661,10 +726,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (1.83.1). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as grpcio>=1.64; version read from installed metadata
+    (1.83.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - grpcio>=1.64
+  installed_version: 1.83.1
 - id: grpcio-tools
   path: null
   upstream: https://pypi.org/project/grpcio-tools/
@@ -672,10 +740,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (1.83.1). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as grpcio-tools>=1.64; version read from installed
+    metadata (1.83.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - grpcio-tools>=1.64
+  installed_version: 1.83.1
 - id: gudhi
   path: null
   upstream: https://pypi.org/project/gudhi/
@@ -683,10 +754,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/projection/pyproject.toml; version read from installed metadata (3.13.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/projection/pyproject.toml as gudhi>=3.10; version read from installed metadata
+    (3.13.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - gudhi>=3.10
+  installed_version: 3.13.0
 - id: h3
   path: null
   upstream: https://pypi.org/project/h3/
@@ -694,10 +768,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/projection/pyproject.toml; version read from installed metadata (4.5.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/projection/pyproject.toml as h3>=4.5,<5; version read from installed metadata
+    (4.5.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - h3>=4.5,<5
+  installed_version: 4.5.0
 - id: hive-mind-gnca
   path: donors/hive-mind-gnca
   upstream: https://github.com/algoplexity/hive-mind-gnca
@@ -741,10 +818,13 @@ donors:
   license_source: null
   status: unverified
   verification_note: 'declared in apps/bulk-ingestion/pyproject.toml, apps/control-plane/pyproject.toml, apps/shared/pyproject.toml,
-    bench/pyproject.toml; version read from installed metadata (0.28.1). Licence not reviewed: no distribution-level
-    licence text was read for this record.'
+    bench/pyproject.toml as httpx>=0.27; version read from installed metadata (0.28.1). Licence not reviewed: no
+    distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - httpx>=0.27
+  installed_version: 0.28.1
 - id: hypergraphx
   path: donors/hypergraphx
   upstream: https://github.com/HGX-Team/hypergraphx
@@ -810,9 +890,27 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: declared in apps/interpretation/pyproject.toml [optional-dependencies.lang-tiers]; not installed
-    in this environment, so no version could be read and no licence was reviewed.
+  verification_note: declared in apps/interpretation/pyproject.toml [optional-dependencies.lang-tiers] as jieba>=0.42;
+    not installed in this environment, so no version could be read and no licence was reviewed.
   role: third-party declared dependency
+  vendored: false
+  declared_requirement:
+  - jieba>=0.42
+  installed_version: null
+- id: kafsiem
+  path: null
+  upstream: https://github.com/scalytics/kafSIEM
+  version: null
+  license: null
+  license_source: null
+  status: unverified
+  verification_note: 'Pinned upstream: https://github.com/scalytics/kafSIEM. What may be taken: the domain-pack
+    approach, the typed API shape, replay/provenance desk patterns and graph/map UX. What must not be taken as a
+    second authority: its SQLite graph/store, its collector process, its independent entity types and its broker-specific
+    event schemas. Licence not reviewed for the CSS lineage vendored under apps/webapp/src/styles/donors/kafSIEM/,
+    so the entry stays unverified.'
+  role: donor for pack-contract and analyst-workflow patterns only; its CSS lineage is vendored into apps/webapp/src/styles/donors/kafSIEM/.
+    Not a code dependency and not a checkout.
   vendored: false
 - id: Labyrinth
   path: donors/Labyrinth
@@ -826,6 +924,21 @@ donors:
     any model weights or the bundled assets, so the entry stays unverified.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
+- id: lark
+  path: null
+  upstream: https://pypi.org/project/lark/
+  version: 1.3.1
+  license: null
+  license_source: null
+  status: unverified
+  verification_note: 'declared in apps/control-plane/pyproject.toml, pyproject.toml as lark==1.3.1; version read
+    from installed metadata (1.3.1). Licence not reviewed: no distribution-level licence text was read for this
+    record.'
+  role: third-party declared dependency
+  vendored: false
+  declared_requirement:
+  - lark==1.3.1
+  installed_version: 1.3.1
 - id: lau-network-science
   path: donors/lau-network-science
   upstream: https://github.com/SuperInstance/lau-network-science
@@ -860,6 +973,20 @@ donors:
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
+- id: litellm
+  path: null
+  upstream: https://pypi.org/project/litellm/
+  version: 1.97.0
+  license: null
+  license_source: null
+  status: unverified
+  verification_note: 'declared in apps/control-plane/pyproject.toml as litellm>=1.0,<2.0; version read from installed
+    metadata (1.97.0). Licence not reviewed: no distribution-level licence text was read for this record.'
+  role: third-party declared dependency
+  vendored: false
+  declared_requirement:
+  - litellm>=1.0,<2.0
+  installed_version: 1.97.0
 - id: Lying_with_Truth
   path: donors/Lying_with_Truth
   upstream: https://github.com/CharlesJW222/Lying_with_Truth
@@ -947,10 +1074,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (2.3.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as nameparser>=1.1; version read from installed
+    metadata (2.3.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - nameparser>=1.1
+  installed_version: 2.3.0
 - id: NarrativeDiffusion
   path: donors/NarrativeDiffusion
   upstream: https://github.com/c4-lab/NarrativeDiffusion
@@ -968,10 +1098,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/control-plane/pyproject.toml; version read from installed metadata (6.3.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml as neo4j>=5.21; version read from installed
+    metadata (6.3.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - neo4j>=5.21
+  installed_version: 6.3.0
 - id: numpy
   path: null
   upstream: https://pypi.org/project/numpy/
@@ -980,10 +1113,14 @@ donors:
   license_source: null
   status: unverified
   verification_note: 'declared in apps/admission/pyproject.toml, apps/feedback/pyproject.toml, apps/interpretation/pyproject.toml,
-    apps/projection/pyproject.toml, apps/science/pyproject.toml; version read from installed metadata (2.4.6). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+    apps/projection/pyproject.toml, apps/science/pyproject.toml as numpy>=1.26, numpy>=1.26,<3; version read from
+    installed metadata (2.4.6). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - numpy>=1.26
+  - numpy>=1.26,<3
+  installed_version: 2.4.6
 - id: OnionSearch
   path: donors/OnionSearch
   upstream: https://github.com/megadose/OnionSearch.git
@@ -1003,10 +1140,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (3.1.5).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as openpyxl>=3.1; version read from installed
+    metadata (3.1.5). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - openpyxl>=3.1
+  installed_version: 3.1.5
 - id: opentelemetry-exporter-otlp
   path: null
   upstream: https://pypi.org/project/opentelemetry-exporter-otlp/
@@ -1014,10 +1154,14 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (1.44.0). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as opentelemetry-exporter-otlp>=1.25; version read
+    from installed metadata (1.44.0). Licence not reviewed: no distribution-level licence text was read for this
+    record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - opentelemetry-exporter-otlp>=1.25
+  installed_version: 1.44.0
 - id: opentelemetry-sdk
   path: null
   upstream: https://pypi.org/project/opentelemetry-sdk/
@@ -1025,10 +1169,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (1.44.0). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as opentelemetry-sdk>=1.25; version read from installed
+    metadata (1.44.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - opentelemetry-sdk>=1.25
+  installed_version: 1.44.0
 - id: Operation-Molasses
   path: donors/Operation-Molasses
   upstream: https://github.com/zencefilefendi/Operation-Molasses
@@ -1048,10 +1195,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/control-plane/pyproject.toml; version read from installed metadata (3.12.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml as orjson>=3.10; version read from installed
+    metadata (3.12.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - orjson>=3.10
+  installed_version: 3.12.0
 - id: osia-framework
   path: donors/osia-framework
   upstream: https://github.com/osianet/osia-framework
@@ -1209,10 +1359,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (9.0.39).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as phonenumbers>=8.13; version read from installed
+    metadata (9.0.39). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - phonenumbers>=8.13
+  installed_version: 9.0.39
 - id: Phunter
   path: donors/Phunter
   upstream: https://github.com/N0rz3/Phunter.git
@@ -1242,10 +1395,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (12.3.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as pillow>=10.4; version read from installed
+    metadata (12.3.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - pillow>=10.4
+  installed_version: 12.3.0
 - id: posim
   path: donors/posim
   upstream: https://github.com/DeepCogLab/posim
@@ -1287,10 +1443,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (0.26.0). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as prometheus-client>=0.20; version read from installed
+    metadata (0.26.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - prometheus-client>=0.20
+  installed_version: 0.26.0
 - id: protobuf
   path: null
   upstream: https://pypi.org/project/protobuf/
@@ -1298,10 +1457,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (7.36.1). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as protobuf>=5.26; version read from installed metadata
+    (7.36.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - protobuf>=5.26
+  installed_version: 7.36.1
 - id: pyahocorasick
   path: null
   upstream: https://pypi.org/project/pyahocorasick/
@@ -1309,10 +1471,14 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml, apps/shared/pyproject.toml; version read from
-    installed metadata (2.3.1). Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml, apps/shared/pyproject.toml as pyahocorasick>=2.1;
+    version read from installed metadata (2.3.1). Licence not reviewed: no distribution-level licence text was read
+    for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - pyahocorasick>=2.1
+  installed_version: 2.3.1
 - id: pyarrow
   path: null
   upstream: https://pypi.org/project/pyarrow/
@@ -1320,10 +1486,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/acquisition/pyproject.toml; version read from installed metadata (25.0.1).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/acquisition/pyproject.toml as pyarrow>=25.0.1; version read from installed
+    metadata (25.0.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - pyarrow>=25.0.1
+  installed_version: 25.0.1
 - id: pydantic
   path: null
   upstream: https://pypi.org/project/pydantic/
@@ -1331,10 +1500,15 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml, bench/pyproject.toml; version read from installed
-    metadata (2.13.5). Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml, apps/shared/pyproject.toml, bench/pyproject.toml
+    as pydantic>=2.0, pydantic>=2.7; version read from installed metadata (2.13.5). Licence not reviewed: no distribution-level
+    licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - pydantic>=2.0
+  - pydantic>=2.7
+  installed_version: 2.13.5
 - id: pydantic-settings
   path: null
   upstream: https://pypi.org/project/pydantic-settings/
@@ -1342,10 +1516,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (2.15.0). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as pydantic-settings>=2.3; version read from installed
+    metadata (2.15.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - pydantic-settings>=2.3
+  installed_version: 2.15.0
 - id: pymorphy3
   path: null
   upstream: https://pypi.org/project/pymorphy3/
@@ -1353,10 +1530,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (2.0.6).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as pymorphy3[ru]>=2.0; version read from installed
+    metadata (2.0.6). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - pymorphy3[ru]>=2.0
+  installed_version: 2.0.6
 - id: pypdf
   path: null
   upstream: https://pypi.org/project/pypdf/
@@ -1364,10 +1544,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (6.19.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as pypdf>=4.3; version read from installed
+    metadata (6.19.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - pypdf>=4.3
+  installed_version: 6.19.0
 - id: python-docx
   path: null
   upstream: https://pypi.org/project/python-docx/
@@ -1375,10 +1558,27 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (1.2.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as python-docx>=1.1; version read from installed
+    metadata (1.2.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - python-docx>=1.1
+  installed_version: 1.2.0
+- id: pyyaml
+  path: null
+  upstream: https://pypi.org/project/pyyaml/
+  version: 6.0.3
+  license: null
+  license_source: null
+  status: unverified
+  verification_note: 'declared in apps/control-plane/pyproject.toml as pyyaml>=6.0; version read from installed
+    metadata (6.0.3). Licence not reviewed: no distribution-level licence text was read for this record.'
+  role: third-party declared dependency
+  vendored: false
+  declared_requirement:
+  - pyyaml>=6.0
+  installed_version: 6.0.3
 - id: Raphtory
   path: donors/Raphtory
   upstream: https://github.com/Pometry/Raphtory
@@ -1398,10 +1598,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (3.14.6).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as rapidfuzz>=3.9; version read from installed
+    metadata (3.14.6). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - rapidfuzz>=3.9
+  installed_version: 3.14.6
 - id: redis
   path: null
   upstream: https://pypi.org/project/redis/
@@ -1409,10 +1612,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (8.1.0). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as redis>=5.0; version read from installed metadata
+    (8.1.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - redis>=5.0
+  installed_version: 8.1.0
 - id: river
   path: null
   upstream: https://pypi.org/project/river/
@@ -1420,10 +1626,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/science/pyproject.toml; version read from installed metadata (0.26.1). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/science/pyproject.toml as river>=0.26,<0.27; version read from installed
+    metadata (0.26.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - river>=0.26,<0.27
+  installed_version: 0.26.1
 - id: scikit-learn
   path: null
   upstream: https://pypi.org/project/scikit-learn/
@@ -1431,10 +1640,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/admission/pyproject.toml; version read from installed metadata (1.9.1). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/admission/pyproject.toml as scikit-learn>=1.3; version read from installed
+    metadata (1.9.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - scikit-learn>=1.3
+  installed_version: 1.9.1
 - id: scipy
   path: null
   upstream: https://pypi.org/project/scipy/
@@ -1442,10 +1654,14 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/admission/pyproject.toml, apps/projection/pyproject.toml; version read from
-    installed metadata (1.17.1). Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/admission/pyproject.toml, apps/projection/pyproject.toml as scipy>=1.13;
+    version read from installed metadata (1.17.1). Licence not reviewed: no distribution-level licence text was
+    read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - scipy>=1.13
+  installed_version: 1.17.1
 - id: scrapy
   path: null
   upstream: https://pypi.org/project/scrapy/
@@ -1453,10 +1669,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/acquisition/pyproject.toml; version read from installed metadata (2.19.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/acquisition/pyproject.toml as scrapy>=2.19.0; version read from installed
+    metadata (2.19.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - scrapy>=2.19.0
+  installed_version: 2.19.0
 - id: SearchPhone
   path: donors/SearchPhone
   upstream: https://github.com/HackUnderway/SearchPhone.git
@@ -1511,10 +1730,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (0.4.12).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as selectolax>=0.3.21; version read from installed
+    metadata (0.4.12). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - selectolax>=0.3.21
+  installed_version: 0.4.12
 - id: sherlock
   path: donors/sherlock
   upstream: https://github.com/sherlock-project/sherlock.git
@@ -1546,10 +1768,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: declared in apps/interpretation/pyproject.toml [optional-dependencies.lang-tiers]; not installed
-    in this environment, so no version could be read and no licence was reviewed.
+  verification_note: declared in apps/interpretation/pyproject.toml [optional-dependencies.lang-tiers] as simplemma>=1.0;
+    not installed in this environment, so no version could be read and no licence was reviewed.
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - simplemma>=1.0
+  installed_version: null
 - id: Social-Network-Simulation-Analysis
   path: donors/Social-Network-Simulation-Analysis
   upstream: https://github.com/shubKnight/Social-Network-Simulation-Analysis
@@ -1597,14 +1822,17 @@ donors:
 - id: splink
   path: null
   upstream: https://pypi.org/project/splink/
-  version: 4.0.17
+  version: 5.0.0
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/admission/pyproject.toml; version read from installed metadata (4.0.17).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/admission/pyproject.toml as splink==5.0.0; version read from installed metadata
+    (5.0.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - splink==5.0.0
+  installed_version: 5.0.0
 - id: sqlalchemy
   path: null
   upstream: https://pypi.org/project/sqlalchemy/
@@ -1612,10 +1840,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml; version read from installed metadata (2.0.52). Licence
-    not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml as sqlalchemy[asyncio]>=2.0; version read from installed
+    metadata (2.0.52). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - sqlalchemy[asyncio]>=2.0
+  installed_version: 2.0.52
 - id: sticks
   path: donors/sticks
   upstream: https://github.com/c2dc/sticks
@@ -1655,10 +1886,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/control-plane/pyproject.toml; version read from installed metadata (1.32.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml as temporalio>=1.4; version read from installed
+    metadata (1.32.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - temporalio>=1.4
+  installed_version: 1.32.0
 - id: The-3rd-Eye
   path: donors/The-3rd-Eye
   upstream: https://github.com/Ordinary0x/The-3rd-Eye.git
@@ -1734,10 +1968,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/interpretation/pyproject.toml; version read from installed metadata (2.2.0).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/interpretation/pyproject.toml as trafilatura>=1.12; version read from installed
+    metadata (2.2.0). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - trafilatura>=1.12
+  installed_version: 2.2.0
 - id: trident
   path: donors/trident
   upstream: https://github.com/tbckr/trident.git
@@ -1779,10 +2016,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: declared in apps/interpretation/pyproject.toml [optional-dependencies.lang-tiers]; not installed
-    in this environment, so no version could be read and no licence was reviewed.
+  verification_note: declared in apps/interpretation/pyproject.toml [optional-dependencies.lang-tiers] as unidic-lite>=1.0;
+    not installed in this environment, so no version could be read and no licence was reviewed.
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - unidic-lite>=1.0
+  installed_version: null
 - id: user-scanner
   path: donors/user-scanner
   upstream: https://github.com/kaifcodec/user-scanner.git
@@ -1802,10 +2042,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/control-plane/pyproject.toml; version read from installed metadata (0.52.4).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/control-plane/pyproject.toml as uvicorn[standard]>=0.30; version read from
+    installed metadata (0.52.4). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - uvicorn[standard]>=0.30
+  installed_version: 0.52.4
 - id: votranhabysscoremicro
   path: donors/votranhabysscoremicro
   upstream: https://github.com/vinhatson/votranhabysscoremicro
@@ -1825,10 +2068,13 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/acquisition/pyproject.toml; version read from installed metadata (1.8.1).
-    Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/acquisition/pyproject.toml as warcio>=1.8.1; version read from installed
+    metadata (1.8.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
+  declared_requirement:
+  - warcio>=1.8.1
+  installed_version: 1.8.1
 - id: WhoCord
   path: donors/WhoCord
   upstream: https://github.com/Siv-nick/WhoCord.git

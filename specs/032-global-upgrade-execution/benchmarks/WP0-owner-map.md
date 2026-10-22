@@ -62,7 +62,7 @@ through a helper that does not name the class.
 ### candidate (`candidates`)
 
 - `apps/acquisition/adapters/discovery/contracts.py`:94 — `out: list[Candidate] = []`
-- `apps/admission/resolution/blocking.py`:80 — `def strategies(self, rec: CandidateRecord) -> dict[str, set[str]]:`
+- `apps/admission/resolution/blocking.py`:90 — `def strategies(self, rec: CandidateRecord) -> dict[str, set[str]]:`
 - `apps/feedback/feedback/branch/source.py`:83 — `candidates: list[FeedbackCandidate] = []`
 - `apps/feedback/feedback/frontier.py`:64 — `async def enqueue_candidate(self, candidate: FeedbackCandidate) -> bool:`
 - `apps/interpretation/aggregation/candidates.py`:63 — `def add(self, mention: CanonicalMention, source_id: str, offset: int = 0) -> Candidate:`
@@ -70,7 +70,7 @@ through a helper that does not name the class.
 
 ### entity (`entities`)
 
-- `apps/control-plane/api/routes/entities.py`:252 — `from db.schema import InvestigationEntityMembership`
+- `apps/control-plane/api/routes/entities.py`:144 — `pg_insert(InvestigationEntityMembership)`
 - `apps/control-plane/api/routes/manual_assertions.py`:172 — `existing = await session.get(Entity, entity_id)`
 - `apps/control-plane/db/entity_stream.py`:182 — `EntityStreamRow.observation_id.in_(wanted),`
 - `apps/control-plane/services/interpretation_bridge.py`:281 — `EntityRow.entity_id == entity_id,`
@@ -84,7 +84,7 @@ through a helper that does not name the class.
 
 ### investigation (`investigations`)
 
-- `apps/control-plane/api/routes/entities.py`:252 — `from db.schema import InvestigationEntityMembership`
+- `apps/control-plane/api/routes/entities.py`:144 — `pg_insert(InvestigationEntityMembership)`
 - `apps/control-plane/context_engine/engine.py`:1254 — `state = InvestigationState.ACTIVE if created else context.state`
 - `apps/control-plane/context_engine/postgres_store.py`:405 — `async def put_context(self, context: InvestigationContext) -> None:`
 - `apps/control-plane/db/investigation_store.py`:133 — `async def create(self, investigation: Investigation) -> Investigation:`

@@ -1,0 +1,343 @@
+/**
+ * Research Case API client (Feature 034).
+ *
+ * Typed wrappers around the FastAPI REST surface mounted at /api/v1/research-cases/.
+ * Every function returns the raw JSON payload; adaptation to UI shapes happens in
+ * the container/components.
+ */
+
+import { clientFor } from "../../lib/http";
+
+const API_BASE = "/api/v1/research-cases";
+const request = clientFor(API_BASE);
+
+// ── Types ──────────────────────────────────────────────────────────
+
+export type LaunchProfile =
+  | "PUBLIC_PROFESSIONAL"
+  | "PUBLIC_ROLE_REVIEW"
+  | "CONSENTED_RECORDS"
+  | "AUTHORISED_CASE";
+
+export type CaseState =
+  | "DRAFT"
+  | "AWAITING_APPROVAL"
+  | "APPROVED"
+  | "RUNNING"
+  | "PARTIAL"
+  | "COMPLETE"
+  | "BLOCKED"
+  | "CANCELLED"
+  | "CLOSED";
+
+export type ClaimFamily =
+  | "public_name_as_published"
+  | "public_professional_role"
+  | "public_organization_affiliation"
+  | "public_authorship_or_publication"
+  | "public_statement_or_official_action"
+  | "public_award_or_appointment"
+  | "public_event_participation"
+  | "public_registry_record"
+  | "source_document_metadata";
+
+export type Disposition = "satisfied" | "abandoned" | "blocked" | "superseded";
+
+export interface SubjectAnchor {
+  kind: "public_name" | "orcid" | "openalex_author_id" | "doi_author_record" | "official_profile_url";
+  value: string;
+  evidence_ref?: string;
+}
+
+export interface ValidTime {
+  from: string | null;
+  until: string | null;
+  precision: "instant" | "day" | "month" | "year" | "unknown";
+}
+
+export interface ResearchCase {
+  case_id: string;
+  tenant_id: string;
+  state: CaseState;
+  purpose_code: string;
+  purpose_text: string;
+  basis_ref: string;
+  launch_profile: LaunchProfile;
+  subject_anchors: SubjectAnchor[];
+  jurisdictions: string[];
+  valid_time: ValidTime;
+  claim_families: ClaimFamily[];
+  allowed_source_ids: string[];
+  denied_claim_families: string[];
+  scope_digest: string;
+  scope_revision: number;
+  approved: boolean;
+  created_at: string;
+  updated_at: string;
+  expires_at: string | null;
+}
+
+export interface CreateCaseRequest {
+  purpose_code: string;
+  purpose_text: string;
+  basis_ref: string;
+  launch_profile?: LaunchProfile;
+  subject_anchors?: SubjectAnchor[];
+  jurisdictions?: string[];
+  valid_time?: ValidTime;
+  claim_families?: ClaimFamily[];
+  allowed_source_ids?: string[];
+  denied_claim_families?: string[];
+  budget_ref?: string;
+  expires_at?: string;
+  questions?: string[];
+}
+
+export interface ApproveCaseRequest {
+  scope_digest: string;
+  scope_revision: number;
+}
+
+export interface Obligation {
+  obligation_id: string;
+  question: string;
+  claim_family: string;
+  state: string;
+  required_capabilities: string[];
+  satisfaction_condition: string;
+  scope_condition: string;
+  priority: number;
+  priority_basis: string;
+}
+
+export interface CoverageItem {
+  obligation_id: string;
+  source_id: string | null;
+  query_variant_id: string | null;
+  state: string;
+  attempts: number;
+  records_received: number;
+  raw_artifact_refs: string[];
+  observation_refs: string[];
+  started_at: string | null;
+  finished_at: string | null;
+  policy_digest: string;
+  budget_reservation_id: string | null;
+  reason_code: string | null;
+  next_action_ref: string | null;
+}
+
+export interface CoverageLedger {
+  case_id: string;
+  scope_revision: number;
+  overall_state: string;
+  counts: Record<string, number>;
+  items: CoverageItem[];
+}
+
+export interface Claim {
+  claim_id: string;
+  case_id: string;
+  claim_family: string;
+  subject_mention: string;
+  predicate: string;
+  object_payload: unknown;
+  polarity: "positive" | "negative" | "unknown";
+  state: "proposed" | "admitted" | "contested" | "retracted" | "superseded";
+  valid_time: ValidTime;
+  evidence_refs: string[];
+  source_ref: string;
+  extractor_ref: string;
+  extractor_version: string;
+}
+
+export interface TimelineItem {
+  claim_id: string;
+  label: string;
+  valid_time: ValidTime;
+  source_time: { published_at: string | null; captured_at: string | null };
+  epistemic_state: "TRUE_ONLY" | "FALSE_ONLY" | "BOTH" | "NEITHER";
+  evidence_refs: string[];
+  conflict_refs: string[];
+}
+
+export interface GraphNode {
+  id: string;
+  kind: "PersonCandidate" | "AdmittedEntity" | "PublicOrganisation" | "PublicRole" | "PublicPublication" | "PublicEvent/Action" | "Claim" | "SourceDocument";
+  label: string;
+  identity_state: "UNRESOLVED" | "REVIEW_REQUIRED" | "ADMITTED" | "CONTESTED";
+  claim_refs: string[];
+}
+
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  kind: "ASSERTS" | "SUPPORTED_BY" | "REFUTED_BY" | "HELD_PUBLIC_ROLE" | "AFFILIATED_WITH" | "AUTHORED" | "PARTICIPATED_IN_PUBLIC_EVENT" | "PUBLISHED_IN" | "POSSIBLE_MATCH";
+  epistemic_state: "TRUE_ONLY" | "FALSE_ONLY" | "BOTH" | "NEITHER";
+  valid_time: ValidTime;
+  evidence_refs: string[];
+  lineage_roots: string[];
+  review_state: string;
+}
+
+export interface GraphProjection {
+  case_id: string;
+  scope_revision: number;
+  projection_version: string;
+  as_of: string;
+  truncated: boolean;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  warnings: string[];
+}
+
+export interface IdentityReview {
+  review_id: string;
+  case_id: string;
+  decision: "ACCEPT" | "REJECT" | "UNCERTAIN";
+  rationale: string;
+  reviewer: string;
+  created_at: string;
+}
+
+export interface ClaimDispute {
+  dispute_id: string;
+  case_id: string;
+  claim_id: string;
+  action: "contest" | "retract" | "qualify";
+  reason: string;
+  actor: string;
+  created_at: string;
+}
+
+export interface Report {
+  report_id: string;
+  case_id: string;
+  sections: Array<{ heading: string; text: string; finding_ids: string[] }>;
+  sentence_finding_refs: Array<{ sentence_index: number; finding_ids: string[] }>;
+}
+
+export interface RetentionAction {
+  action_id: string;
+  case_id: string;
+  action: string;
+  actor: string;
+  created_at: string;
+}
+
+// ── Endpoints ──────────────────────────────────────────────────────
+
+export async function createCase(body: CreateCaseRequest): Promise<ResearchCase> {
+  return request("", "", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function getCase(caseId: string): Promise<ResearchCase> {
+  return request(`/${encodeURIComponent(caseId)}`);
+}
+
+export async function proposeScopeRevision(
+  caseId: string,
+  body: ApproveCaseRequest,
+): Promise<{ case_id: string; scope_revision: number; scope_digest: string; re_approval_required: boolean; stale_scope_behavior: string }> {
+  return request(`/${encodeURIComponent(caseId)}/scope`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function approveCase(caseId: string, body: ApproveCaseRequest): Promise<{ case_id: string; state: string; scope_digest: string; scope_revision: number; approved_at: string }> {
+  return request(`/${encodeURIComponent(caseId)}/approve`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function planCase(caseId: string): Promise<{ case_id: string; tenant_id: string; scope_digest: string; scope_revision: number; obligations: Obligation[]; capabilities_preview: string[]; no_network_side_effects: boolean }> {
+  return request(`/${encodeURIComponent(caseId)}/plan`, { method: "POST" });
+}
+
+export interface RunCaseRequest {
+  idempotency_key: string;
+  approved_action_refs: string[];
+}
+
+export async function runCase(caseId: string, body: RunCaseRequest): Promise<{ case_id: string; run_id: string; idempotency_key: string; state: string; actions_proposed: string[]; awaiting_approval: string[] }> {
+  return request(`/${encodeURIComponent(caseId)}/run`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function pauseCase(caseId: string): Promise<{ case_id: string; state: string }> {
+  return request(`/${encodeURIComponent(caseId)}/pause`, { method: "POST" });
+}
+
+export async function listObligations(caseId: string): Promise<{ case_id: string; tenant_id: string; obligations: Obligation[] }> {
+  return request(`/${encodeURIComponent(caseId)}/obligations`);
+}
+
+export async function getCoverage(caseId: string): Promise<CoverageLedger> {
+  return request(`/${encodeURIComponent(caseId)}/coverage`);
+}
+
+export async function listClaims(caseId: string, limit = 50, cursor?: string): Promise<{ case_id: string; claims: Claim[] }> {
+  const qs = new URLSearchParams({ limit: String(limit) });
+  if (cursor) qs.set("cursor", cursor);
+  return request(`/${encodeURIComponent(caseId)}/claims?${qs}`);
+}
+
+export async function getTimeline(caseId: string, validFrom?: string, validUntil?: string, asOf?: string, limit = 50): Promise<{ case_id: string; timeline: TimelineItem[] }> {
+  const qs = new URLSearchParams({ limit: String(limit) });
+  if (validFrom) qs.set("valid_from", validFrom);
+  if (validUntil) qs.set("valid_until", validUntil);
+  if (asOf) qs.set("as_of", asOf);
+  return request(`/${encodeURIComponent(caseId)}/timeline?${qs}`);
+}
+
+export async function getGraph(caseId: string, asOf?: string, depth = 1, kinds?: string[]): Promise<GraphProjection> {
+  const qs = new URLSearchParams({ depth: String(depth) });
+  if (asOf) qs.set("as_of", asOf);
+  if (kinds?.length) qs.set("kinds", kinds.join(","));
+  return request(`/${encodeURIComponent(caseId)}/graph?${qs}`);
+}
+
+export async function createIdentityReview(caseId: string, body: { decision: string; rationale: string }): Promise<{ review_id: string; event: string }> {
+  return request(`/${encodeURIComponent(caseId)}/identity-reviews`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function createClaimDispute(caseId: string, body: { claim_id: string; action: string; reason: string }): Promise<{ dispute_id: string; event: string }> {
+  return request(`/${encodeURIComponent(caseId)}/claim-disputes`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function generateReport(caseId: string, body: { approved_finding_ids: string[] }): Promise<{ report_id: string; case_id: string }> {
+  return request(`/${encodeURIComponent(caseId)}/report`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export interface CloseCaseRequest {
+  disposition: string;
+  report?: Record<string, unknown>;
+}
+
+export async function closeCase(caseId: string, body: CloseCaseRequest): Promise<{ case_id: string; state: string; disposition: string; report: Record<string, unknown>; closed_at: string }> {
+  return request(`/${encodeURIComponent(caseId)}/close`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function retentionAction(caseId: string, body: { action: string }): Promise<{ action_id: string; case_id: string }> {
+  return request(`/${encodeURIComponent(caseId)}/retention-action`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}

@@ -1,0 +1,584 @@
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"AM"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"ARM"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"AU"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"AUS"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"AZ"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"AZE"}
+{"payload":{"country":"KZ","geo_id":"geo-1526384","iso2":"KZ","kind":"city","lat":43.222,"lon":76.8512,"name":"Almaty","name_ru":"Алматы"},"term":"Almaty"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"Armenia"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"Australia"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"Azerbaijan"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"BLR"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"BR"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"BRA"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"BY"}
+{"payload":{"country":"CN","geo_id":"geo-1816670","iso2":"CN","kind":"city","lat":39.9042,"lon":116.4074,"name":"Beijing","name_ru":"Пекин"},"term":"Beijing"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"Belarus"}
+{"payload":{"country":"DE","geo_id":"geo-2950159","iso2":"DE","kind":"city","lat":52.52,"lon":13.405,"name":"Berlin","name_ru":"Берлин"},"term":"Berlin"}
+{"payload":{"country":"US","geo_id":"geo-4930956","iso2":"US","kind":"city","lat":42.3601,"lon":-71.0589,"name":"Boston","name_ru":"Бостон"},"term":"Boston"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"Brazil"}
+{"payload":{"geo_id":"country-ca","iso2":"CA","iso3":"CAN","kind":"country","name_en":"Canada","name_ru":"Канада"},"term":"CA"}
+{"payload":{"geo_id":"country-ca","iso2":"CA","iso3":"CAN","kind":"country","name_en":"Canada","name_ru":"Канада"},"term":"CAN"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"CH"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"CHE"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"CHN"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"CN"}
+{"payload":{"geo_id":"country-ca","iso2":"CA","iso3":"CAN","kind":"country","name_en":"Canada","name_ru":"Канада"},"term":"Canada"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"China"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"DE"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"DEU"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"EE"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"ES"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"ESP"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"EST"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"Estonia"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"FI"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"FIN"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"FR"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"FRA"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"Finland"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"France"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"GB"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"GBR"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"GE"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"GEO"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"GR"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"GRC"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"Georgia"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"Georgia (country)"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"Germany"}
+{"payload":{"country":"GB","geo_id":"geo-2648579","iso2":"GB","kind":"city","lat":55.8642,"lon":-4.2518,"name":"Glasgow","name_ru":"Глазго"},"term":"Glasgow"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"Greece"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"IL"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"IN"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"IND"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"ISR"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"IT"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"ITA"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"India"}
+{"payload":{"country":"RU","geo_id":"geo-2013159","iso2":"RU","kind":"city","lat":52.2978,"lon":104.2964,"name":"Irkutsk","name_ru":"Иркутск"},"term":"Irkutsk"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"Israel"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"Italy"}
+{"payload":{"geo_id":"country-jp","iso2":"JP","iso3":"JPN","kind":"country","name_en":"Japan","name_ru":"Япония"},"term":"JP"}
+{"payload":{"geo_id":"country-jp","iso2":"JP","iso3":"JPN","kind":"country","name_en":"Japan","name_ru":"Япония"},"term":"JPN"}
+{"payload":{"geo_id":"country-jp","iso2":"JP","iso3":"JPN","kind":"country","name_en":"Japan","name_ru":"Япония"},"term":"Japan"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"KAZ"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"KZ"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"Kazakhstan"}
+{"payload":{"country":"RU","geo_id":"geo-551487","iso2":"RU","kind":"city","lat":55.7963,"lon":49.1088,"name":"Kazan","name_ru":"Казань"},"term":"Kazan"}
+{"payload":{"country":"RU","geo_id":"geo-1496153","iso2":"RU","kind":"city","lat":56.0097,"lon":92.8526,"name":"Krasnoyarsk","name_ru":"Красноярск"},"term":"Krasnoyarsk"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"Kyiv"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"LT"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"LTU"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"LV"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"LVA"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"Latvia"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"Lithuania"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"London"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"MD"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"MDA"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"MEX"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"MX"}
+{"payload":{"country":"ES","geo_id":"geo-2510769","iso2":"ES","kind":"city","lat":40.4168,"lon":-3.7038,"name":"Madrid","name_ru":"Мадрид"},"term":"Madrid"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"Mexico"}
+{"payload":{"country":"BY","geo_id":"geo-625144","iso2":"BY","kind":"city","lat":53.9006,"lon":27.559,"name":"Minsk","name_ru":"Минск"},"term":"Minsk"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"Moldova"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"Moscow"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"NL"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"NLD"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"NO"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"NOR"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"Netherlands"}
+{"payload":{"country":"US","geo_id":"geo-5128581","iso2":"US","kind":"city","lat":40.7128,"lon":-74.006,"name":"New York City","name_ru":"Нью-Йорк"},"term":"New York City"}
+{"payload":{"country":"RU","geo_id":"geo-520555","iso2":"RU","kind":"city","lat":56.2965,"lon":43.9361,"name":"Nizhny Novgorod","name_ru":"Нижний Новгород"},"term":"Nizhny Novgorod"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"Norway"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"Novosibirsk"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"PL"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"POL"}
+{"payload":{"country":"FR","geo_id":"geo-2968815","iso2":"FR","kind":"city","lat":48.8566,"lon":2.3522,"name":"Paris","name_ru":"Париж"},"term":"Paris"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"People's Republic of China"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"Poland"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"RU"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"RUS"}
+{"payload":{"country":"IT","geo_id":"geo-3169070","iso2":"IT","kind":"city","lat":41.9028,"lon":12.4964,"name":"Rome","name_ru":"Рим"},"term":"Rome"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"Russia"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"Russian Federation"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"SE"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"SWE"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Saint Petersburg"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"South Africa"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"Spain"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"Sweden"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"Switzerland"}
+{"payload":{"country":"AU","geo_id":"geo-2078025","iso2":"AU","kind":"city","lat":-33.8688,"lon":151.2093,"name":"Sydney","name_ru":"Сидней"},"term":"Sydney"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"TR"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"TUR"}
+{"payload":{"country":"JP","geo_id":"geo-1850147","iso2":"JP","kind":"city","lat":35.6762,"lon":139.6503,"name":"Tokyo","name_ru":"Токио"},"term":"Tokyo"}
+{"payload":{"country":"RU","geo_id":"geo-1489425","iso2":"RU","kind":"city","lat":56.4977,"lon":84.9744,"name":"Tomsk","name_ru":"Томск"},"term":"Tomsk"}
+{"payload":{"country":"CA","geo_id":"geo-6167865","iso2":"CA","kind":"city","lat":43.6532,"lon":-79.3832,"name":"Toronto","name_ru":"Торонто"},"term":"Toronto"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"Turkey"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"Türkiye"}
+{"payload":{"geo_id":"country-ua","iso2":"UA","iso3":"UKR","kind":"country","name_en":"Ukraine","name_ru":"Украина"},"term":"UA"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"UK"}
+{"payload":{"geo_id":"country-ua","iso2":"UA","iso3":"UKR","kind":"country","name_en":"Ukraine","name_ru":"Украина"},"term":"UKR"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"US"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"USA"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"UZ"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"UZB"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"Ufa"}
+{"payload":{"geo_id":"country-ua","iso2":"UA","iso3":"UKR","kind":"country","name_en":"Ukraine","name_ru":"Украина"},"term":"Ukraine"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"United Kingdom"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"United States"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"United States of America"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"Uzbekistan"}
+{"payload":{"country":"RU","geo_id":"geo-2013348","iso2":"RU","kind":"city","lat":43.1056,"lon":131.8735,"name":"Vladivostok","name_ru":"Владивосток"},"term":"Vladivostok"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"Yekaterinburg"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"ZA"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"ZAF"}
+{"payload":{"country":"KZ","geo_id":"geo-1526384","iso2":"KZ","kind":"city","lat":43.222,"lon":76.8512,"name":"Almaty","name_ru":"Алматы"},"term":"almaty"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"am"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"arm"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"armenia"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"au"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"aus"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"australia"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"az"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"aze"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"azerbaijan"}
+{"payload":{"country":"CN","geo_id":"geo-1816670","iso2":"CN","kind":"city","lat":39.9042,"lon":116.4074,"name":"Beijing","name_ru":"Пекин"},"term":"beijing"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"belarus"}
+{"payload":{"country":"DE","geo_id":"geo-2950159","iso2":"DE","kind":"city","lat":52.52,"lon":13.405,"name":"Berlin","name_ru":"Берлин"},"term":"berlin"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"blr"}
+{"payload":{"country":"US","geo_id":"geo-4930956","iso2":"US","kind":"city","lat":42.3601,"lon":-71.0589,"name":"Boston","name_ru":"Бостон"},"term":"boston"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"br"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"bra"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"brazil"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"by"}
+{"payload":{"geo_id":"country-ca","iso2":"CA","iso3":"CAN","kind":"country","name_en":"Canada","name_ru":"Канада"},"term":"ca"}
+{"payload":{"geo_id":"country-ca","iso2":"CA","iso3":"CAN","kind":"country","name_en":"Canada","name_ru":"Канада"},"term":"can"}
+{"payload":{"geo_id":"country-ca","iso2":"CA","iso3":"CAN","kind":"country","name_en":"Canada","name_ru":"Канада"},"term":"canada"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"ch"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"che"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"china"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"chn"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"cn"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"de"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"deu"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"ee"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"es"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"esp"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"est"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"estonia"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"fi"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"fin"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"finland"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"fr"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"fra"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"france"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"gb"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"gbr"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"ge"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"geo"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"georgia"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"georgia (country)"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"germany"}
+{"payload":{"country":"GB","geo_id":"geo-2648579","iso2":"GB","kind":"city","lat":55.8642,"lon":-4.2518,"name":"Glasgow","name_ru":"Глазго"},"term":"glasgow"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"gr"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"grc"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"greece"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"il"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"in"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"ind"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"india"}
+{"payload":{"country":"RU","geo_id":"geo-2013159","iso2":"RU","kind":"city","lat":52.2978,"lon":104.2964,"name":"Irkutsk","name_ru":"Иркутск"},"term":"irkutsk"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"isr"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"israel"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"it"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"ita"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"italy"}
+{"payload":{"geo_id":"country-jp","iso2":"JP","iso3":"JPN","kind":"country","name_en":"Japan","name_ru":"Япония"},"term":"japan"}
+{"payload":{"geo_id":"country-jp","iso2":"JP","iso3":"JPN","kind":"country","name_en":"Japan","name_ru":"Япония"},"term":"jp"}
+{"payload":{"geo_id":"country-jp","iso2":"JP","iso3":"JPN","kind":"country","name_en":"Japan","name_ru":"Япония"},"term":"jpn"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"kaz"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"kazakhstan"}
+{"payload":{"country":"RU","geo_id":"geo-551487","iso2":"RU","kind":"city","lat":55.7963,"lon":49.1088,"name":"Kazan","name_ru":"Казань"},"term":"kazan"}
+{"payload":{"country":"RU","geo_id":"geo-1496153","iso2":"RU","kind":"city","lat":56.0097,"lon":92.8526,"name":"Krasnoyarsk","name_ru":"Красноярск"},"term":"krasnoyarsk"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"kyiv"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"kz"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"latvia"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"lithuania"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"london"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"lt"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"ltu"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"lv"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"lva"}
+{"payload":{"country":"ES","geo_id":"geo-2510769","iso2":"ES","kind":"city","lat":40.4168,"lon":-3.7038,"name":"Madrid","name_ru":"Мадрид"},"term":"madrid"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"md"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"mda"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"mex"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"mexico"}
+{"payload":{"country":"BY","geo_id":"geo-625144","iso2":"BY","kind":"city","lat":53.9006,"lon":27.559,"name":"Minsk","name_ru":"Минск"},"term":"minsk"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"moldova"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"moscow"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"mx"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"netherlands"}
+{"payload":{"country":"US","geo_id":"geo-5128581","iso2":"US","kind":"city","lat":40.7128,"lon":-74.006,"name":"New York City","name_ru":"Нью-Йорк"},"term":"new york city"}
+{"payload":{"country":"RU","geo_id":"geo-520555","iso2":"RU","kind":"city","lat":56.2965,"lon":43.9361,"name":"Nizhny Novgorod","name_ru":"Нижний Новгород"},"term":"nizhny novgorod"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"nl"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"nld"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"no"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"nor"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"norway"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"novosibirsk"}
+{"payload":{"country":"FR","geo_id":"geo-2968815","iso2":"FR","kind":"city","lat":48.8566,"lon":2.3522,"name":"Paris","name_ru":"Париж"},"term":"paris"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"people's republic of china"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"pl"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"pol"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"poland"}
+{"payload":{"country":"IT","geo_id":"geo-3169070","iso2":"IT","kind":"city","lat":41.9028,"lon":12.4964,"name":"Rome","name_ru":"Рим"},"term":"rome"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"ru"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"rus"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"russia"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"russian federation"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"saint petersburg"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"se"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"south africa"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"spain"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"swe"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"sweden"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"switzerland"}
+{"payload":{"country":"AU","geo_id":"geo-2078025","iso2":"AU","kind":"city","lat":-33.8688,"lon":151.2093,"name":"Sydney","name_ru":"Сидней"},"term":"sydney"}
+{"payload":{"country":"JP","geo_id":"geo-1850147","iso2":"JP","kind":"city","lat":35.6762,"lon":139.6503,"name":"Tokyo","name_ru":"Токио"},"term":"tokyo"}
+{"payload":{"country":"RU","geo_id":"geo-1489425","iso2":"RU","kind":"city","lat":56.4977,"lon":84.9744,"name":"Tomsk","name_ru":"Томск"},"term":"tomsk"}
+{"payload":{"country":"CA","geo_id":"geo-6167865","iso2":"CA","kind":"city","lat":43.6532,"lon":-79.3832,"name":"Toronto","name_ru":"Торонто"},"term":"toronto"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"tr"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"tur"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"turkey"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"türkiye"}
+{"payload":{"geo_id":"country-ua","iso2":"UA","iso3":"UKR","kind":"country","name_en":"Ukraine","name_ru":"Украина"},"term":"ua"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"ufa"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"uk"}
+{"payload":{"geo_id":"country-ua","iso2":"UA","iso3":"UKR","kind":"country","name_en":"Ukraine","name_ru":"Украина"},"term":"ukr"}
+{"payload":{"geo_id":"country-ua","iso2":"UA","iso3":"UKR","kind":"country","name_en":"Ukraine","name_ru":"Украина"},"term":"ukraine"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"united kingdom"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"united states"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"united states of america"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"us"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"usa"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"uz"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"uzb"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"uzbekistan"}
+{"payload":{"country":"RU","geo_id":"geo-2013348","iso2":"RU","kind":"city","lat":43.1056,"lon":131.8735,"name":"Vladivostok","name_ru":"Владивосток"},"term":"vladivostok"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"yekaterinburg"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"za"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"zaf"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"Австралийский Союз"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"Австралия"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"Азербайджан"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"Азербайджанская Республика"}
+{"payload":{"country":"KZ","geo_id":"geo-1526384","iso2":"KZ","kind":"city","lat":43.222,"lon":76.8512,"name":"Almaty","name_ru":"Алматы"},"term":"Алма-Ата"}
+{"payload":{"country":"KZ","geo_id":"geo-1526384","iso2":"KZ","kind":"city","lat":43.222,"lon":76.8512,"name":"Almaty","name_ru":"Алматы"},"term":"Алматы"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"Армения"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"Беларусь"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"Белоруссия"}
+{"payload":{"country":"DE","geo_id":"geo-2950159","iso2":"DE","kind":"city","lat":52.52,"lon":13.405,"name":"Berlin","name_ru":"Берлин"},"term":"Берлин"}
+{"payload":{"country":"DE","geo_id":"geo-2950159","iso2":"DE","kind":"city","lat":52.52,"lon":13.405,"name":"Berlin","name_ru":"Берлин"},"term":"Берлина"}
+{"payload":{"country":"DE","geo_id":"geo-2950159","iso2":"DE","kind":"city","lat":52.52,"lon":13.405,"name":"Berlin","name_ru":"Берлин"},"term":"Берлине"}
+{"payload":{"country":"US","geo_id":"geo-4930956","iso2":"US","kind":"city","lat":42.3601,"lon":-71.0589,"name":"Boston","name_ru":"Бостон"},"term":"Бостон"}
+{"payload":{"country":"US","geo_id":"geo-4930956","iso2":"US","kind":"city","lat":42.3601,"lon":-71.0589,"name":"Boston","name_ru":"Бостон"},"term":"Бостона"}
+{"payload":{"country":"US","geo_id":"geo-4930956","iso2":"US","kind":"city","lat":42.3601,"lon":-71.0589,"name":"Boston","name_ru":"Бостон"},"term":"Бостоне"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"Бразилия"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"Великобритания"}
+{"payload":{"country":"RU","geo_id":"geo-2013348","iso2":"RU","kind":"city","lat":43.1056,"lon":131.8735,"name":"Vladivostok","name_ru":"Владивосток"},"term":"Владивосток"}
+{"payload":{"country":"RU","geo_id":"geo-2013348","iso2":"RU","kind":"city","lat":43.1056,"lon":131.8735,"name":"Vladivostok","name_ru":"Владивосток"},"term":"Владивостока"}
+{"payload":{"country":"RU","geo_id":"geo-2013348","iso2":"RU","kind":"city","lat":43.1056,"lon":131.8735,"name":"Vladivostok","name_ru":"Владивосток"},"term":"Владивостоке"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"Германия"}
+{"payload":{"country":"GB","geo_id":"geo-2648579","iso2":"GB","kind":"city","lat":55.8642,"lon":-4.2518,"name":"Glasgow","name_ru":"Глазго"},"term":"Глазго"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"Голландия"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"Государство Израиль"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"Греция"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"Греческая Республика"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"Грузия"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"Екатеринбург"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"Екатеринбурга"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"Екатеринбурге"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"Екатеринбургом"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"Израиль"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"Индия"}
+{"payload":{"country":"RU","geo_id":"geo-2013159","iso2":"RU","kind":"city","lat":52.2978,"lon":104.2964,"name":"Irkutsk","name_ru":"Иркутск"},"term":"Иркутск"}
+{"payload":{"country":"RU","geo_id":"geo-2013159","iso2":"RU","kind":"city","lat":52.2978,"lon":104.2964,"name":"Irkutsk","name_ru":"Иркутск"},"term":"Иркутска"}
+{"payload":{"country":"RU","geo_id":"geo-2013159","iso2":"RU","kind":"city","lat":52.2978,"lon":104.2964,"name":"Irkutsk","name_ru":"Иркутск"},"term":"Иркутске"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"Испания"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"Испанское королевство"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"Италия"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"Итальянская Республика"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"КНР"}
+{"payload":{"country":"RU","geo_id":"geo-551487","iso2":"RU","kind":"city","lat":55.7963,"lon":49.1088,"name":"Kazan","name_ru":"Казань"},"term":"Казани"}
+{"payload":{"country":"RU","geo_id":"geo-551487","iso2":"RU","kind":"city","lat":55.7963,"lon":49.1088,"name":"Kazan","name_ru":"Казань"},"term":"Казань"}
+{"payload":{"country":"RU","geo_id":"geo-551487","iso2":"RU","kind":"city","lat":55.7963,"lon":49.1088,"name":"Kazan","name_ru":"Казань"},"term":"Казанью"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"Казахстан"}
+{"payload":{"geo_id":"country-ca","iso2":"CA","iso3":"CAN","kind":"country","name_en":"Canada","name_ru":"Канада"},"term":"Канада"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"Киев"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"Киева"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"Киеве"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"Китай"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"Китайская Народная Республика"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"Київ"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"Королевство Норвегия"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"Королевство Швеция"}
+{"payload":{"country":"RU","geo_id":"geo-1496153","iso2":"RU","kind":"city","lat":56.0097,"lon":92.8526,"name":"Krasnoyarsk","name_ru":"Красноярск"},"term":"Красноярск"}
+{"payload":{"country":"RU","geo_id":"geo-1496153","iso2":"RU","kind":"city","lat":56.0097,"lon":92.8526,"name":"Krasnoyarsk","name_ru":"Красноярск"},"term":"Красноярска"}
+{"payload":{"country":"RU","geo_id":"geo-1496153","iso2":"RU","kind":"city","lat":56.0097,"lon":92.8526,"name":"Krasnoyarsk","name_ru":"Красноярск"},"term":"Красноярске"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"Латвийская Республика"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"Латвия"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"Литва"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"Литовская Республика"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"Лондон"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"Лондона"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"Лондоне"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"Лондоном"}
+{"payload":{"country":"ES","geo_id":"geo-2510769","iso2":"ES","kind":"city","lat":40.4168,"lon":-3.7038,"name":"Madrid","name_ru":"Мадрид"},"term":"Мадрид"}
+{"payload":{"country":"ES","geo_id":"geo-2510769","iso2":"ES","kind":"city","lat":40.4168,"lon":-3.7038,"name":"Madrid","name_ru":"Мадрид"},"term":"Мадрида"}
+{"payload":{"country":"ES","geo_id":"geo-2510769","iso2":"ES","kind":"city","lat":40.4168,"lon":-3.7038,"name":"Madrid","name_ru":"Мадрид"},"term":"Мадриде"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"Мексика"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"Мексиканские Соединённые Штаты"}
+{"payload":{"country":"BY","geo_id":"geo-625144","iso2":"BY","kind":"city","lat":53.9006,"lon":27.559,"name":"Minsk","name_ru":"Минск"},"term":"Минск"}
+{"payload":{"country":"BY","geo_id":"geo-625144","iso2":"BY","kind":"city","lat":53.9006,"lon":27.559,"name":"Minsk","name_ru":"Минск"},"term":"Минска"}
+{"payload":{"country":"BY","geo_id":"geo-625144","iso2":"BY","kind":"city","lat":53.9006,"lon":27.559,"name":"Minsk","name_ru":"Минск"},"term":"Минске"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"Молдавия"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"Молдова"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"Москва"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"Москве"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"Москвой"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"Москву"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"Москвы"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"Нидерланды"}
+{"payload":{"country":"RU","geo_id":"geo-520555","iso2":"RU","kind":"city","lat":56.2965,"lon":43.9361,"name":"Nizhny Novgorod","name_ru":"Нижний Новгород"},"term":"Нижнего Новгорода"}
+{"payload":{"country":"RU","geo_id":"geo-520555","iso2":"RU","kind":"city","lat":56.2965,"lon":43.9361,"name":"Nizhny Novgorod","name_ru":"Нижний Новгород"},"term":"Нижнем Новгороде"}
+{"payload":{"country":"RU","geo_id":"geo-520555","iso2":"RU","kind":"city","lat":56.2965,"lon":43.9361,"name":"Nizhny Novgorod","name_ru":"Нижний Новгород"},"term":"Нижний Новгород"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"Новосибирск"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"Новосибирска"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"Новосибирске"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"Новосибирском"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"Норвегия"}
+{"payload":{"country":"US","geo_id":"geo-5128581","iso2":"US","kind":"city","lat":40.7128,"lon":-74.006,"name":"New York City","name_ru":"Нью-Йорк"},"term":"Нью-Йорк"}
+{"payload":{"country":"US","geo_id":"geo-5128581","iso2":"US","kind":"city","lat":40.7128,"lon":-74.006,"name":"New York City","name_ru":"Нью-Йорк"},"term":"Нью-Йорка"}
+{"payload":{"country":"US","geo_id":"geo-5128581","iso2":"US","kind":"city","lat":40.7128,"lon":-74.006,"name":"New York City","name_ru":"Нью-Йорк"},"term":"Нью-Йорке"}
+{"payload":{"country":"FR","geo_id":"geo-2968815","iso2":"FR","kind":"city","lat":48.8566,"lon":2.3522,"name":"Paris","name_ru":"Париж"},"term":"Париж"}
+{"payload":{"country":"FR","geo_id":"geo-2968815","iso2":"FR","kind":"city","lat":48.8566,"lon":2.3522,"name":"Paris","name_ru":"Париж"},"term":"Парижа"}
+{"payload":{"country":"FR","geo_id":"geo-2968815","iso2":"FR","kind":"city","lat":48.8566,"lon":2.3522,"name":"Paris","name_ru":"Париж"},"term":"Париже"}
+{"payload":{"country":"CN","geo_id":"geo-1816670","iso2":"CN","kind":"city","lat":39.9042,"lon":116.4074,"name":"Beijing","name_ru":"Пекин"},"term":"Пекин"}
+{"payload":{"country":"CN","geo_id":"geo-1816670","iso2":"CN","kind":"city","lat":39.9042,"lon":116.4074,"name":"Beijing","name_ru":"Пекин"},"term":"Пекина"}
+{"payload":{"country":"CN","geo_id":"geo-1816670","iso2":"CN","kind":"city","lat":39.9042,"lon":116.4074,"name":"Beijing","name_ru":"Пекин"},"term":"Пекине"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Петербург"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Петербурге"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Питер"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"Польша"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"РФ"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"Республика Армения"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"Республика Беларусь"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"Республика Индия"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"Республика Казахстан"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"Республика Молдова"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"Республика Польша"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"Республика Узбекистан"}
+{"payload":{"country":"IT","geo_id":"geo-3169070","iso2":"IT","kind":"city","lat":41.9028,"lon":12.4964,"name":"Rome","name_ru":"Рим"},"term":"Рим"}
+{"payload":{"country":"IT","geo_id":"geo-3169070","iso2":"IT","kind":"city","lat":41.9028,"lon":12.4964,"name":"Rome","name_ru":"Рим"},"term":"Рима"}
+{"payload":{"country":"IT","geo_id":"geo-3169070","iso2":"IT","kind":"city","lat":41.9028,"lon":12.4964,"name":"Rome","name_ru":"Рим"},"term":"Риме"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"Российская Федерация"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"Россия"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"США"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Санкт-Петербург"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Санкт-Петербурга"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Санкт-Петербурге"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Санкт-Петербургом"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"Санкт-Петербургу"}
+{"payload":{"country":"AU","geo_id":"geo-2078025","iso2":"AU","kind":"city","lat":-33.8688,"lon":151.2093,"name":"Sydney","name_ru":"Сидней"},"term":"Сиднее"}
+{"payload":{"country":"AU","geo_id":"geo-2078025","iso2":"AU","kind":"city","lat":-33.8688,"lon":151.2093,"name":"Sydney","name_ru":"Сидней"},"term":"Сидней"}
+{"payload":{"country":"AU","geo_id":"geo-2078025","iso2":"AU","kind":"city","lat":-33.8688,"lon":151.2093,"name":"Sydney","name_ru":"Сидней"},"term":"Сиднея"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"Соединённое Королевство"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"Соединённые Штаты"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"Соединённые Штаты Америки"}
+{"payload":{"country":"JP","geo_id":"geo-1850147","iso2":"JP","kind":"city","lat":35.6762,"lon":139.6503,"name":"Tokyo","name_ru":"Токио"},"term":"Токио"}
+{"payload":{"country":"RU","geo_id":"geo-1489425","iso2":"RU","kind":"city","lat":56.4977,"lon":84.9744,"name":"Tomsk","name_ru":"Томск"},"term":"Томск"}
+{"payload":{"country":"RU","geo_id":"geo-1489425","iso2":"RU","kind":"city","lat":56.4977,"lon":84.9744,"name":"Tomsk","name_ru":"Томск"},"term":"Томска"}
+{"payload":{"country":"RU","geo_id":"geo-1489425","iso2":"RU","kind":"city","lat":56.4977,"lon":84.9744,"name":"Tomsk","name_ru":"Томск"},"term":"Томске"}
+{"payload":{"country":"CA","geo_id":"geo-6167865","iso2":"CA","kind":"city","lat":43.6532,"lon":-79.3832,"name":"Toronto","name_ru":"Торонто"},"term":"Торонто"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"Турецкая Республика"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"Турция"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"Узбекистан"}
+{"payload":{"geo_id":"country-ua","iso2":"UA","iso3":"UKR","kind":"country","name_en":"Ukraine","name_ru":"Украина"},"term":"Украина"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"Уфа"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"Уфе"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"Уфу"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"Уфы"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"ФРГ"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"Федеративная Республика Бразилия"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"Федеративная Республика Германия"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"Финляндия"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"Финляндская Республика"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"Франция"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"Французская Республика"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"Швейцария"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"Швейцарская Конфедерация"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"Швеция"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"Эстония"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"Эстонская Республика"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"ЮАР"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"Южно-Африканская Республика"}
+{"payload":{"geo_id":"country-jp","iso2":"JP","iso3":"JPN","kind":"country","name_en":"Japan","name_ru":"Япония"},"term":"Япония"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"австралийский союз"}
+{"payload":{"geo_id":"country-au","iso2":"AU","iso3":"AUS","kind":"country","name_en":"Australia","name_ru":"Австралия"},"term":"австралия"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"азербайджан"}
+{"payload":{"geo_id":"country-az","iso2":"AZ","iso3":"AZE","kind":"country","name_en":"Azerbaijan","name_ru":"Азербайджан"},"term":"азербайджанская республика"}
+{"payload":{"country":"KZ","geo_id":"geo-1526384","iso2":"KZ","kind":"city","lat":43.222,"lon":76.8512,"name":"Almaty","name_ru":"Алматы"},"term":"алма-ата"}
+{"payload":{"country":"KZ","geo_id":"geo-1526384","iso2":"KZ","kind":"city","lat":43.222,"lon":76.8512,"name":"Almaty","name_ru":"Алматы"},"term":"алматы"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"армения"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"беларусь"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"белоруссия"}
+{"payload":{"country":"DE","geo_id":"geo-2950159","iso2":"DE","kind":"city","lat":52.52,"lon":13.405,"name":"Berlin","name_ru":"Берлин"},"term":"берлин"}
+{"payload":{"country":"DE","geo_id":"geo-2950159","iso2":"DE","kind":"city","lat":52.52,"lon":13.405,"name":"Berlin","name_ru":"Берлин"},"term":"берлина"}
+{"payload":{"country":"DE","geo_id":"geo-2950159","iso2":"DE","kind":"city","lat":52.52,"lon":13.405,"name":"Berlin","name_ru":"Берлин"},"term":"берлине"}
+{"payload":{"country":"US","geo_id":"geo-4930956","iso2":"US","kind":"city","lat":42.3601,"lon":-71.0589,"name":"Boston","name_ru":"Бостон"},"term":"бостон"}
+{"payload":{"country":"US","geo_id":"geo-4930956","iso2":"US","kind":"city","lat":42.3601,"lon":-71.0589,"name":"Boston","name_ru":"Бостон"},"term":"бостона"}
+{"payload":{"country":"US","geo_id":"geo-4930956","iso2":"US","kind":"city","lat":42.3601,"lon":-71.0589,"name":"Boston","name_ru":"Бостон"},"term":"бостоне"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"бразилия"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"великобритания"}
+{"payload":{"country":"RU","geo_id":"geo-2013348","iso2":"RU","kind":"city","lat":43.1056,"lon":131.8735,"name":"Vladivostok","name_ru":"Владивосток"},"term":"владивосток"}
+{"payload":{"country":"RU","geo_id":"geo-2013348","iso2":"RU","kind":"city","lat":43.1056,"lon":131.8735,"name":"Vladivostok","name_ru":"Владивосток"},"term":"владивостока"}
+{"payload":{"country":"RU","geo_id":"geo-2013348","iso2":"RU","kind":"city","lat":43.1056,"lon":131.8735,"name":"Vladivostok","name_ru":"Владивосток"},"term":"владивостоке"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"германия"}
+{"payload":{"country":"GB","geo_id":"geo-2648579","iso2":"GB","kind":"city","lat":55.8642,"lon":-4.2518,"name":"Glasgow","name_ru":"Глазго"},"term":"глазго"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"голландия"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"государство израиль"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"греция"}
+{"payload":{"geo_id":"country-gr","iso2":"GR","iso3":"GRC","kind":"country","name_en":"Greece","name_ru":"Греция"},"term":"греческая республика"}
+{"payload":{"geo_id":"country-ge","iso2":"GE","iso3":"GEO","kind":"country","name_en":"Georgia","name_ru":"Грузия"},"term":"грузия"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"екатеринбург"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"екатеринбурга"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"екатеринбурге"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":56.8389,"lon":60.6057,"name":"Yekaterinburg","name_ru":"Екатеринбург"},"term":"екатеринбургом"}
+{"payload":{"geo_id":"country-il","iso2":"IL","iso3":"ISR","kind":"country","name_en":"Israel","name_ru":"Израиль"},"term":"израиль"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"индия"}
+{"payload":{"country":"RU","geo_id":"geo-2013159","iso2":"RU","kind":"city","lat":52.2978,"lon":104.2964,"name":"Irkutsk","name_ru":"Иркутск"},"term":"иркутск"}
+{"payload":{"country":"RU","geo_id":"geo-2013159","iso2":"RU","kind":"city","lat":52.2978,"lon":104.2964,"name":"Irkutsk","name_ru":"Иркутск"},"term":"иркутска"}
+{"payload":{"country":"RU","geo_id":"geo-2013159","iso2":"RU","kind":"city","lat":52.2978,"lon":104.2964,"name":"Irkutsk","name_ru":"Иркутск"},"term":"иркутске"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"испания"}
+{"payload":{"geo_id":"country-es","iso2":"ES","iso3":"ESP","kind":"country","name_en":"Spain","name_ru":"Испания"},"term":"испанское королевство"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"италия"}
+{"payload":{"geo_id":"country-it","iso2":"IT","iso3":"ITA","kind":"country","name_en":"Italy","name_ru":"Италия"},"term":"итальянская республика"}
+{"payload":{"country":"RU","geo_id":"geo-551487","iso2":"RU","kind":"city","lat":55.7963,"lon":49.1088,"name":"Kazan","name_ru":"Казань"},"term":"казани"}
+{"payload":{"country":"RU","geo_id":"geo-551487","iso2":"RU","kind":"city","lat":55.7963,"lon":49.1088,"name":"Kazan","name_ru":"Казань"},"term":"казань"}
+{"payload":{"country":"RU","geo_id":"geo-551487","iso2":"RU","kind":"city","lat":55.7963,"lon":49.1088,"name":"Kazan","name_ru":"Казань"},"term":"казанью"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"казахстан"}
+{"payload":{"geo_id":"country-ca","iso2":"CA","iso3":"CAN","kind":"country","name_en":"Canada","name_ru":"Канада"},"term":"канада"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"киев"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"киева"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"киеве"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"китай"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"китайская народная республика"}
+{"payload":{"country":"UA","geo_id":"geo-703448","iso2":"UA","kind":"city","lat":50.4501,"lon":30.5234,"name":"Kyiv","name_ru":"Киев"},"term":"київ"}
+{"payload":{"geo_id":"country-cn","iso2":"CN","iso3":"CHN","kind":"country","name_en":"China","name_ru":"Китай"},"term":"кнр"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"королевство норвегия"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"королевство швеция"}
+{"payload":{"country":"RU","geo_id":"geo-1496153","iso2":"RU","kind":"city","lat":56.0097,"lon":92.8526,"name":"Krasnoyarsk","name_ru":"Красноярск"},"term":"красноярск"}
+{"payload":{"country":"RU","geo_id":"geo-1496153","iso2":"RU","kind":"city","lat":56.0097,"lon":92.8526,"name":"Krasnoyarsk","name_ru":"Красноярск"},"term":"красноярска"}
+{"payload":{"country":"RU","geo_id":"geo-1496153","iso2":"RU","kind":"city","lat":56.0097,"lon":92.8526,"name":"Krasnoyarsk","name_ru":"Красноярск"},"term":"красноярске"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"латвийская республика"}
+{"payload":{"geo_id":"country-lv","iso2":"LV","iso3":"LVA","kind":"country","name_en":"Latvia","name_ru":"Латвия"},"term":"латвия"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"литва"}
+{"payload":{"geo_id":"country-lt","iso2":"LT","iso3":"LTU","kind":"country","name_en":"Lithuania","name_ru":"Литва"},"term":"литовская республика"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"лондон"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"лондона"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"лондоне"}
+{"payload":{"country":"GB","geo_id":"geo-2643743","iso2":"GB","kind":"city","lat":51.5074,"lon":-0.1278,"name":"London","name_ru":"Лондон"},"term":"лондоном"}
+{"payload":{"country":"ES","geo_id":"geo-2510769","iso2":"ES","kind":"city","lat":40.4168,"lon":-3.7038,"name":"Madrid","name_ru":"Мадрид"},"term":"мадрид"}
+{"payload":{"country":"ES","geo_id":"geo-2510769","iso2":"ES","kind":"city","lat":40.4168,"lon":-3.7038,"name":"Madrid","name_ru":"Мадрид"},"term":"мадрида"}
+{"payload":{"country":"ES","geo_id":"geo-2510769","iso2":"ES","kind":"city","lat":40.4168,"lon":-3.7038,"name":"Madrid","name_ru":"Мадрид"},"term":"мадриде"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"мексика"}
+{"payload":{"geo_id":"country-mx","iso2":"MX","iso3":"MEX","kind":"country","name_en":"Mexico","name_ru":"Мексика"},"term":"мексиканские соединённые штаты"}
+{"payload":{"country":"BY","geo_id":"geo-625144","iso2":"BY","kind":"city","lat":53.9006,"lon":27.559,"name":"Minsk","name_ru":"Минск"},"term":"минск"}
+{"payload":{"country":"BY","geo_id":"geo-625144","iso2":"BY","kind":"city","lat":53.9006,"lon":27.559,"name":"Minsk","name_ru":"Минск"},"term":"минска"}
+{"payload":{"country":"BY","geo_id":"geo-625144","iso2":"BY","kind":"city","lat":53.9006,"lon":27.559,"name":"Minsk","name_ru":"Минск"},"term":"минске"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"молдавия"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"молдова"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"москва"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"москве"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"москвой"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"москву"}
+{"payload":{"country":"RU","geo_id":"geo-524901","iso2":"RU","kind":"city","lat":55.7558,"lon":37.6173,"name":"Moscow","name_ru":"Москва"},"term":"москвы"}
+{"payload":{"geo_id":"country-nl","iso2":"NL","iso3":"NLD","kind":"country","name_en":"Netherlands","name_ru":"Нидерланды"},"term":"нидерланды"}
+{"payload":{"country":"RU","geo_id":"geo-520555","iso2":"RU","kind":"city","lat":56.2965,"lon":43.9361,"name":"Nizhny Novgorod","name_ru":"Нижний Новгород"},"term":"нижнего новгорода"}
+{"payload":{"country":"RU","geo_id":"geo-520555","iso2":"RU","kind":"city","lat":56.2965,"lon":43.9361,"name":"Nizhny Novgorod","name_ru":"Нижний Новгород"},"term":"нижнем новгороде"}
+{"payload":{"country":"RU","geo_id":"geo-520555","iso2":"RU","kind":"city","lat":56.2965,"lon":43.9361,"name":"Nizhny Novgorod","name_ru":"Нижний Новгород"},"term":"нижний новгород"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"новосибирск"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"новосибирска"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"новосибирске"}
+{"payload":{"country":"RU","geo_id":"geo-1496747","iso2":"RU","kind":"city","lat":55.0084,"lon":82.9357,"name":"Novosibirsk","name_ru":"Новосибирск"},"term":"новосибирском"}
+{"payload":{"geo_id":"country-no","iso2":"NO","iso3":"NOR","kind":"country","name_en":"Norway","name_ru":"Норвегия"},"term":"норвегия"}
+{"payload":{"country":"US","geo_id":"geo-5128581","iso2":"US","kind":"city","lat":40.7128,"lon":-74.006,"name":"New York City","name_ru":"Нью-Йорк"},"term":"нью-йорк"}
+{"payload":{"country":"US","geo_id":"geo-5128581","iso2":"US","kind":"city","lat":40.7128,"lon":-74.006,"name":"New York City","name_ru":"Нью-Йорк"},"term":"нью-йорка"}
+{"payload":{"country":"US","geo_id":"geo-5128581","iso2":"US","kind":"city","lat":40.7128,"lon":-74.006,"name":"New York City","name_ru":"Нью-Йорк"},"term":"нью-йорке"}
+{"payload":{"country":"FR","geo_id":"geo-2968815","iso2":"FR","kind":"city","lat":48.8566,"lon":2.3522,"name":"Paris","name_ru":"Париж"},"term":"париж"}
+{"payload":{"country":"FR","geo_id":"geo-2968815","iso2":"FR","kind":"city","lat":48.8566,"lon":2.3522,"name":"Paris","name_ru":"Париж"},"term":"парижа"}
+{"payload":{"country":"FR","geo_id":"geo-2968815","iso2":"FR","kind":"city","lat":48.8566,"lon":2.3522,"name":"Paris","name_ru":"Париж"},"term":"париже"}
+{"payload":{"country":"CN","geo_id":"geo-1816670","iso2":"CN","kind":"city","lat":39.9042,"lon":116.4074,"name":"Beijing","name_ru":"Пекин"},"term":"пекин"}
+{"payload":{"country":"CN","geo_id":"geo-1816670","iso2":"CN","kind":"city","lat":39.9042,"lon":116.4074,"name":"Beijing","name_ru":"Пекин"},"term":"пекина"}
+{"payload":{"country":"CN","geo_id":"geo-1816670","iso2":"CN","kind":"city","lat":39.9042,"lon":116.4074,"name":"Beijing","name_ru":"Пекин"},"term":"пекине"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"петербург"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"петербурге"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"питер"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"польша"}
+{"payload":{"geo_id":"country-am","iso2":"AM","iso3":"ARM","kind":"country","name_en":"Armenia","name_ru":"Армения"},"term":"республика армения"}
+{"payload":{"geo_id":"country-by","iso2":"BY","iso3":"BLR","kind":"country","name_en":"Belarus","name_ru":"Беларусь"},"term":"республика беларусь"}
+{"payload":{"geo_id":"country-in","iso2":"IN","iso3":"IND","kind":"country","name_en":"India","name_ru":"Индия"},"term":"республика индия"}
+{"payload":{"geo_id":"country-kz","iso2":"KZ","iso3":"KAZ","kind":"country","name_en":"Kazakhstan","name_ru":"Казахстан"},"term":"республика казахстан"}
+{"payload":{"geo_id":"country-md","iso2":"MD","iso3":"MDA","kind":"country","name_en":"Moldova","name_ru":"Молдова"},"term":"республика молдова"}
+{"payload":{"geo_id":"country-pl","iso2":"PL","iso3":"POL","kind":"country","name_en":"Poland","name_ru":"Польша"},"term":"республика польша"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"республика узбекистан"}
+{"payload":{"country":"IT","geo_id":"geo-3169070","iso2":"IT","kind":"city","lat":41.9028,"lon":12.4964,"name":"Rome","name_ru":"Рим"},"term":"рим"}
+{"payload":{"country":"IT","geo_id":"geo-3169070","iso2":"IT","kind":"city","lat":41.9028,"lon":12.4964,"name":"Rome","name_ru":"Рим"},"term":"рима"}
+{"payload":{"country":"IT","geo_id":"geo-3169070","iso2":"IT","kind":"city","lat":41.9028,"lon":12.4964,"name":"Rome","name_ru":"Рим"},"term":"риме"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"российская федерация"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"россия"}
+{"payload":{"geo_id":"country-ru","iso2":"RU","iso3":"RUS","kind":"country","name_en":"Russia","name_ru":"Россия"},"term":"рф"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"санкт-петербург"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"санкт-петербурга"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"санкт-петербурге"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"санкт-петербургом"}
+{"payload":{"country":"RU","geo_id":"geo-498677","iso2":"RU","kind":"city","lat":59.9311,"lon":30.3609,"name":"Saint Petersburg","name_ru":"Санкт-Петербург"},"term":"санкт-петербургу"}
+{"payload":{"country":"AU","geo_id":"geo-2078025","iso2":"AU","kind":"city","lat":-33.8688,"lon":151.2093,"name":"Sydney","name_ru":"Сидней"},"term":"сиднее"}
+{"payload":{"country":"AU","geo_id":"geo-2078025","iso2":"AU","kind":"city","lat":-33.8688,"lon":151.2093,"name":"Sydney","name_ru":"Сидней"},"term":"сидней"}
+{"payload":{"country":"AU","geo_id":"geo-2078025","iso2":"AU","kind":"city","lat":-33.8688,"lon":151.2093,"name":"Sydney","name_ru":"Сидней"},"term":"сиднея"}
+{"payload":{"geo_id":"country-gb","iso2":"GB","iso3":"GBR","kind":"country","name_en":"United Kingdom","name_ru":"Великобритания"},"term":"соединённое королевство"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"соединённые штаты"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"соединённые штаты америки"}
+{"payload":{"geo_id":"country-us","iso2":"US","iso3":"USA","kind":"country","name_en":"United States","name_ru":"США"},"term":"сша"}
+{"payload":{"country":"JP","geo_id":"geo-1850147","iso2":"JP","kind":"city","lat":35.6762,"lon":139.6503,"name":"Tokyo","name_ru":"Токио"},"term":"токио"}
+{"payload":{"country":"RU","geo_id":"geo-1489425","iso2":"RU","kind":"city","lat":56.4977,"lon":84.9744,"name":"Tomsk","name_ru":"Томск"},"term":"томск"}
+{"payload":{"country":"RU","geo_id":"geo-1489425","iso2":"RU","kind":"city","lat":56.4977,"lon":84.9744,"name":"Tomsk","name_ru":"Томск"},"term":"томска"}
+{"payload":{"country":"RU","geo_id":"geo-1489425","iso2":"RU","kind":"city","lat":56.4977,"lon":84.9744,"name":"Tomsk","name_ru":"Томск"},"term":"томске"}
+{"payload":{"country":"CA","geo_id":"geo-6167865","iso2":"CA","kind":"city","lat":43.6532,"lon":-79.3832,"name":"Toronto","name_ru":"Торонто"},"term":"торонто"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"турецкая республика"}
+{"payload":{"geo_id":"country-tr","iso2":"TR","iso3":"TUR","kind":"country","name_en":"Türkiye","name_ru":"Турция"},"term":"турция"}
+{"payload":{"geo_id":"country-uz","iso2":"UZ","iso3":"UZB","kind":"country","name_en":"Uzbekistan","name_ru":"Узбекистан"},"term":"узбекистан"}
+{"payload":{"geo_id":"country-ua","iso2":"UA","iso3":"UKR","kind":"country","name_en":"Ukraine","name_ru":"Украина"},"term":"украина"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"уфа"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"уфе"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"уфу"}
+{"payload":{"country":"RU","geo_id":"geo-1486209","iso2":"RU","kind":"city","lat":54.7348,"lon":55.9579,"name":"Ufa","name_ru":"Уфа"},"term":"уфы"}
+{"payload":{"geo_id":"country-br","iso2":"BR","iso3":"BRA","kind":"country","name_en":"Brazil","name_ru":"Бразилия"},"term":"федеративная республика бразилия"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"федеративная республика германия"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"финляндия"}
+{"payload":{"geo_id":"country-fi","iso2":"FI","iso3":"FIN","kind":"country","name_en":"Finland","name_ru":"Финляндия"},"term":"финляндская республика"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"франция"}
+{"payload":{"geo_id":"country-fr","iso2":"FR","iso3":"FRA","kind":"country","name_en":"France","name_ru":"Франция"},"term":"французская республика"}
+{"payload":{"geo_id":"country-de","iso2":"DE","iso3":"DEU","kind":"country","name_en":"Germany","name_ru":"Германия"},"term":"фрг"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"швейцария"}
+{"payload":{"geo_id":"country-ch","iso2":"CH","iso3":"CHE","kind":"country","name_en":"Switzerland","name_ru":"Швейцария"},"term":"швейцарская конфедерация"}
+{"payload":{"geo_id":"country-se","iso2":"SE","iso3":"SWE","kind":"country","name_en":"Sweden","name_ru":"Швеция"},"term":"швеция"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"эстония"}
+{"payload":{"geo_id":"country-ee","iso2":"EE","iso3":"EST","kind":"country","name_en":"Estonia","name_ru":"Эстония"},"term":"эстонская республика"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"юар"}
+{"payload":{"geo_id":"country-za","iso2":"ZA","iso3":"ZAF","kind":"country","name_en":"South Africa","name_ru":"ЮАР"},"term":"южно-африканская республика"}
+{"payload":{"geo_id":"country-jp","iso2":"JP","iso3":"JPN","kind":"country","name_en":"Japan","name_ru":"Япония"},"term":"япония"}

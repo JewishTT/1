@@ -1,0 +1,49 @@
+name: platform-model
+
+# The dynamic platform documentation in docs/platform/ is generated from the source
+# tree by platform_model/build.py. This workflow fails the build when the committed
+# model no longer matches the tree -- a commit that changes the platform and does
+# not regenerate the documentation is a commit whose documentation is a lie.
+#
+# The check is a pytest module so it is runnable and debuggable locally with exactly
+# the same command this workflow runs:
+#
+#   .venv/Scripts/python.exe -m pytest apps/shared/tests/contract/test_platform_model.py -q
+#
+# It covers more than drift. The same module holds the import-surface ratchets: a
+# broken platform import or an undeclared third-party dependency that is not on the
+# recorded list fails the build, because both are runtime failures that only surface
+# on somebody else's machine.
+#
+# Regenerating locally, before you push:
+#
+#   .venv/Scripts/python.exe -m platform_model.build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  platform-model:
+    name: platform model is not stale
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync the workspace
+        run: uv sync --locked
+
+      - name: Run the platform model contract tests
+        run: .venv/bin/python -m pytest apps/shared/tests/contract/test_platform_model.py -q

@@ -95,7 +95,7 @@
       {
         "file": "apps/admission/resolution/blocking.py",
         "lines": [
-          80
+          90
         ],
         "evidence": "def strategies(self, rec: CandidateRecord) -> dict[str, set[str]]:"
       },
@@ -142,10 +142,9 @@
       {
         "file": "apps/control-plane/api/routes/entities.py",
         "lines": [
-          252,
-          255
+          144
         ],
-        "evidence": "from db.schema import InvestigationEntityMembership"
+        "evidence": "pg_insert(InvestigationEntityMembership)"
       },
       {
         "file": "apps/control-plane/api/routes/manual_assertions.py",
@@ -215,10 +214,9 @@
       {
         "file": "apps/control-plane/api/routes/entities.py",
         "lines": [
-          252,
-          255
+          144
         ],
-        "evidence": "from db.schema import InvestigationEntityMembership"
+        "evidence": "pg_insert(InvestigationEntityMembership)"
       }
     ],
     "competing": false,
@@ -348,10 +346,9 @@
       {
         "file": "apps/control-plane/api/routes/entities.py",
         "lines": [
-          252,
-          255
+          144
         ],
-        "evidence": "from db.schema import InvestigationEntityMembership"
+        "evidence": "pg_insert(InvestigationEntityMembership)"
       },
       {
         "file": "apps/control-plane/context_engine/engine.py",

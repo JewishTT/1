@@ -10,10 +10,18 @@ from __future__ import annotations
 
 from .scheduler import (
     Dispatcher,
+    ResourceLimits,
     ScheduleDecision,
-    ScopeLimits,
+    UnconfiguredResourceLimits,
     Verdict,
     host_of,
 )
 
-__all__ = ["Dispatcher", "ScheduleDecision", "ScopeLimits", "Verdict", "host_of"]
+__all__ = [
+    "Dispatcher",
+    "ResourceLimits",
+    "ScheduleDecision",
+    "UnconfiguredResourceLimits",
+    "Verdict",
+    "host_of",
+]

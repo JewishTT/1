@@ -30,7 +30,7 @@ def test_create_entity_starts_materialization(
 ) -> None:
     import api.routes.entities as entities_route
 
-    monkeypatch.setattr(entities_route, "_next_entity_id", lambda: "ENT-9001")
+    monkeypatch.setattr(entities_route, "_next_entity_id", lambda existing: "ENT-9001")
     record = {
         "entity_id": "ENT-9001",
         "kind": "fact",

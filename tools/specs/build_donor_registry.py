@@ -59,14 +59,56 @@ SPDX_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
 )
 
-#: Versions verified from installed metadata by spec 030. The gate pins these literally
-#: so they cannot drift to null; the generator reads the same metadata, so the file and
-#: the environment cannot disagree.
-VERIFIED_INSTALLED_VERSIONS = {
-    "splink": "4.0.17",
-    "h3": "4.5.0",
-    "river": "0.26.1",
-    "docling-core": "2.101.1",
+#: Versions are read from the *installed metadata* at generation time, and the declared
+#: pin is recorded next to it. An earlier version of this generator carried a literal
+#: snapshot of four versions; the snapshot went stale (it kept claiming ``splink
+#: 4.0.17`` after the workspace pinned ``5.0.0``) and a stale snapshot that the gate
+#: agrees with is a lie with a green build. The environment is the source of truth here;
+#: the manifest pin is the second opinion, and a disagreement is recorded, not hidden.
+VERIFIED_INSTALLED_VERSIONS: dict[str, str] = {}
+
+#: Donors named in the architecture catalogues that are neither vendored checkouts nor
+#: declared dependencies. They still need a record: FR-043 requires ``AEGiS`` to appear in
+#: the registry as ``UNVERIFIED / URL_REQUIRED`` so that no future pass can select it by
+#: name similarity, and FR-042 requires the ``kafSIEM`` lineage to name its pinned
+#: upstream and the boundary of what may be taken from it.
+CATALOGUE_ONLY: dict[str, dict[str, object]] = {
+    "aegis": {
+        "upstream": None,
+        "version": None,
+        "role": (
+            "ambiguous donor named in the architecture catalogue; UNVERIFIED / URL_REQUIRED "
+            "until the intended upstream is pinned. Not a code dependency and not a checkout."
+        ),
+        "verification_note": (
+            "UNVERIFIED / URL_REQUIRED. The name is ambiguous and must not be resolved by "
+            "name similarity. Candidate upstreams: https://github.com/ChristopherKahler/aegis "
+            "(epistemic-review methodology: observation/evidence/assumption/judgment "
+            "separation, dissent, Devil's Advocate) and "
+            "https://github.com/aegisceo/phone-osint-framework (phone-oriented OSINT module "
+            "family, registered separately under its own name and a different role). No "
+            "licence was read for either candidate and no code from either may be copied "
+            "until one is pinned. Verdict recorded in "
+            "specs/032-global-upgrade-execution/contracts/donor-registry.md."
+        ),
+    },
+    "kafsiem": {
+        "upstream": "https://github.com/scalytics/kafSIEM",
+        "version": None,
+        "role": (
+            "donor for pack-contract and analyst-workflow patterns only; its CSS lineage is "
+            "vendored into apps/webapp/src/styles/donors/kafSIEM/. Not a code dependency and "
+            "not a checkout."
+        ),
+        "verification_note": (
+            "Pinned upstream: https://github.com/scalytics/kafSIEM. What may be taken: the "
+            "domain-pack approach, the typed API shape, replay/provenance desk patterns and "
+            "graph/map UX. What must not be taken as a second authority: its SQLite "
+            "graph/store, its collector process, its independent entity types and its "
+            "broker-specific event schemas. Licence not reviewed for the CSS lineage vendored "
+            "under apps/webapp/src/styles/donors/kafSIEM/, so the entry stays unverified."
+        ),
+    },
 }
 
 #: Dependencies that left the workspace, with the reason. Kept in the record so the
@@ -137,6 +179,61 @@ def declared_dependencies() -> dict[str, list[str]]:
             for requirement in requirements:
                 record(requirement, f"{rel} [optional-dependencies.{extra}]")
     return dict(sorted(found.items()))
+
+
+def declared_requirement_strings() -> dict[str, list[str]]:
+    """Name -> the raw requirement strings, so the record can carry the declared pin.
+
+    The pin is the second opinion in the version question: the environment says what is
+    installed, the manifest says what the workspace asked for, and when they disagree the
+    registry has to say so rather than pick whichever is easier to defend.
+    """
+    found: dict[str, list[str]] = {}
+
+    def record(requirement: str) -> None:
+        name = requirement_name(requirement)
+        if name:
+            found.setdefault(name, []).append(requirement.strip())
+
+    for manifest in workspace_pyprojects():
+        try:
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+        except (OSError, tomllib.TOMLDecodeError):
+            continue
+        project = data.get("project", {})
+        for requirement in project.get("dependencies", []):
+            record(requirement)
+        for requirements in project.get("optional-dependencies", {}).values():
+            for requirement in requirements:
+                record(requirement)
+    return {name: sorted(set(values)) for name, values in sorted(found.items())}
+
+
+def _pin_of(requirement: str) -> str:
+    """The version part of a requirement (``splink==5.0.0`` -> ``5.0.0``)."""
+    _, _, spec = requirement.partition("==")
+    if spec and " " not in spec and ";" not in spec:
+        return spec
+    return ""
+
+
+def _satisfies(installed: str, requirement: str) -> bool | None:
+    """Whether ``installed`` satisfies the declared requirement. ``None`` when unknown."""
+    try:
+        from packaging.requirements import Requirement
+        from packaging.version import Version
+    except ImportError:  # pragma: no cover - packaging ships with every build env
+        return None
+    try:
+        parsed = Requirement(requirement)
+    except Exception:  # noqa: BLE001 - a requirement we cannot parse is simply unknown
+        return None
+    if not parsed.specifier:
+        return True
+    try:
+        return parsed.specifier.contains(Version(installed), prereleases=True)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def workspace_members() -> set[str]:
@@ -239,19 +336,41 @@ def _donor_entry(name: str) -> dict[str, object]:
     }
 
 
-def _dependency_entry(name: str, sources: list[str]) -> dict[str, object]:
-    version = VERIFIED_INSTALLED_VERSIONS.get(name) or _installed_version(name)
-    declared = ", ".join(sorted(set(sources)))
-    if version:
+def _dependency_entry(name: str, sources: list[str], requirements: list[str]) -> dict[str, object]:
+    declared = ", ".join(requirements) if requirements else "no version constraint recorded"
+    installed = _installed_version(name)
+    pins = sorted({pin for pin in (_pin_of(req) for req in requirements) if pin})
+    version = installed or (pins[0] if pins else None)
+
+    if installed and requirements:
+        verdicts = {_satisfies(installed, req) for req in requirements}
+        if verdicts == {False}:
+            note = (
+                f"declared in {', '.join(sorted(set(sources)))} as {declared}; version read from "
+                f"installed metadata ({installed}). The installed version does NOT satisfy the "
+                "declared pin: the workspace and the environment disagree, and the environment "
+                "is what is actually running. Licence not reviewed: no distribution-level "
+                "licence text was read for this record."
+            )
+        else:
+            note = (
+                f"declared in {', '.join(sorted(set(sources)))} as {declared}; version read from "
+                f"installed metadata ({installed}). "
+                "Licence not reviewed: no distribution-level licence text was read for this "
+                "record."
+            )
+    elif installed:
         note = (
-            f"declared in {declared}; version read from installed metadata ({version}). "
+            f"declared in {', '.join(sorted(set(sources)))} as {declared}; version read from "
+            f"installed metadata ({installed}). "
             "Licence not reviewed: no distribution-level licence text was read for this record."
         )
     else:
         note = (
-            f"declared in {declared}; not installed in this environment, so no version could be "
-            "read and no licence was reviewed."
+            f"declared in {', '.join(sorted(set(sources)))} as {declared}; not installed in this "
+            "environment, so no version could be read and no licence was reviewed."
         )
+
     return {
         "id": name,
         "path": None,
@@ -263,6 +382,8 @@ def _dependency_entry(name: str, sources: list[str]) -> dict[str, object]:
         "verification_note": note,
         "role": "third-party declared dependency",
         "vendored": False,
+        "declared_requirement": requirements,
+        "installed_version": installed,
     }
 
 
@@ -272,6 +393,7 @@ def build() -> dict[str, object]:
     for name in vendored_donor_names():
         entries[canonical(name)] = _donor_entry(name)
 
+    requirements = declared_requirement_strings()
     members = workspace_members()
     for name, sources in declared_dependencies().items():
         if name in members:
@@ -284,7 +406,24 @@ def build() -> dict[str, object]:
                 f"{existing['verification_note']} Also declared in {', '.join(sorted(set(sources)))}."
             )
             continue
-        entries[name] = _dependency_entry(name, sources)
+        entries[name] = _dependency_entry(name, sources, requirements.get(name, []))
+
+    for name, entry in CATALOGUE_ONLY.items():
+        key = canonical(name)
+        if key in entries:
+            continue
+        entries[key] = {
+            "id": key,
+            "path": None,
+            "upstream": entry["upstream"],
+            "version": entry["version"],
+            "license": None,
+            "license_source": None,
+            "status": "unverified",
+            "verification_note": entry["verification_note"],
+            "role": entry["role"],
+            "vendored": False,
+        }
 
     for name, removed in REMOVED.items():
         entries[canonical(name)] = {

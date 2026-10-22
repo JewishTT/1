@@ -1,0 +1,236 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\tim\Desktop\COGNITIVE\1\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: C:\Users\tim\Desktop\COGNITIVE\1
+configfile: pyproject.toml
+testpaths: apps
+plugins: anyio-4.15.1, hypothesis-6.169.0, asyncio-1.4.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 68 items / 30 deselected / 38 selected
+run-last-failure: rerun previous 38 failures (skipped 295 files)
+
+apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_dispatched_task_is_published_with_acked_offset FAILED [  2%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_topic_is_the_catalog_topic_for_the_event FAILED [  5%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_each_task_gets_its_own_offset_not_a_previous_one FAILED [  7%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_publish_is_keyed_by_task_id FAILED [ 10%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_no_acknowledgement_is_reported_as_not_published FAILED [ 13%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_envelope_satisfies_the_worker_contract FAILED [ 15%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_requires_a_source_id FAILED [ 18%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_requires_a_tenant FAILED [ 21%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_rejects_a_foreign_event_type FAILED [ 23%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_is_json_not_a_python_repr FAILED [ 26%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_carries_the_query FAILED [ 28%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_carries_source_and_verdict FAILED [ 31%]
+apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_worker_can_parse_the_payload_into_a_task FAILED [ 34%]
+apps/acquisition/tests/integration/test_loop_closed.py::test_the_loop_closes_hermetically FAILED [ 36%]
+apps/acquisition/tests/integration/test_loop_closed.py::test_the_request_the_worker_parses_is_the_scheduler_s_own FAILED [ 39%]
+apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_domain_entity_full_payload FAILED [ 42%]
+apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_missing_captures_reported_honestly FAILED [ 44%]
+apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_unknown_entity_404 FAILED [ 47%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlations_exposed_without_merge FAILED [ 50%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_review_recorded_as_provenance FAILED [ 52%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_reviews_listed_per_target FAILED [ 55%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_timeline_carries_observed_at FAILED [ 57%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_view_projects_identity_invariant FAILED [ 60%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_can_be_created_as_dynamic_invariant FAILED [ 63%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_created_without_merge FAILED [ 65%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_requires_materialized_source FAILED [ 68%]
+apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_rejects_self_link FAILED [ 71%]
+apps/control-plane/tests/integration/test_temporal_materialization_api.py::test_create_entity_starts_materialization FAILED [ 73%]
+apps/control-plane/tests/integration/test_tools_api.py::TestToolsApi::test_entities_list_contains_seed_catalog_node FAILED [ 76%]
+apps/control-plane/tests/integration/test_tools_api.py::TestToolsApi::test_graph_returns_seed_node_and_correlation_edge FAILED [ 78%]
+apps/control-plane/tests/unit/test_sse_stream.py::test_review_publishes_entity_updated FAILED [ 81%]
+apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-6_0] FAILED [ 84%]
+apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-1] FAILED [ 86%]
+apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[iv] FAILED [ 89%]
+apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[vi] FAILED [ 92%]
+apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-5] FAILED [ 94%]
+apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[i-1] FAILED [ 97%]
+apps/shared/tests/unit/test_layer_boundaries.py::test_no_new_layer_boundary_violations FAILED [100%]
+
+================================== FAILURES ===================================
+E   AssertionError: assert False is True
+     +  where False = DispatchRecord(task_id='TSK-abc', source_id='SRC-1', query='acme corp', verdict='defer', reason='BLOCKED_BUDGET', published=False, topic='', partition=-1, offset=-1, key='', utility=0.03749999987499999, execution_class='http').published
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:114: AssertionError: assert False is True
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:128: IndexError: list index out of range
+E   AssertionError: offsets must be distinct per task
+    assert 1 == 3
+     +  where 1 = len({-1})
+     +    where {-1} = set([-1, -1, -1])
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:139: AssertionError: offsets must be distinct per task
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:146: IndexError: list index out of range
+E   AssertionError: assert 'acknowledged nothing' in 'BLOCKED_BUDGET'
+     +  where 'BLOCKED_BUDGET' = DispatchRecord(task_id='TSK-abc', source_id='SRC-1', query='acme corp', verdict='defer', reason='BLOCKED_BUDGET', published=False, topic='', partition=-1, offset=-1, key='', utility=0.03749999987499999, execution_class='http').reason
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:160: AssertionError: assert 'acknowledged nothing' in 'BLOCKED_BUDGET'
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:205: IndexError: list index out of range
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:212: IndexError: list index out of range
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:221: IndexError: list index out of range
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:230: IndexError: list index out of range
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:254: IndexError: list index out of range
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:247: IndexError: list index out of range
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:247: IndexError: list index out of range
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_plan_driver.py:274: IndexError: list index out of range
+E   AssertionError: assert False is True
+     +  where False = DispatchRecord(task_id='TSK-loop', source_id='SRC-loop', query='acme corp', verdict='defer', reason='BLOCKED_BUDGET', published=False, topic='', partition=-1, offset=-1, key='', utility=0.03749999987499999, execution_class='http').published
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\integration\test_loop_closed.py:125: AssertionError: assert False is True
+E   IndexError: list index out of range
+C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\integration\test_loop_closed.py:204: IndexError: list index out of range
+E   KeyError: 'entity'
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_cc_temporality_api.py:33: KeyError: 'entity'
+E   KeyError: 'entity'
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_cc_temporality_api.py:77: KeyError: 'entity'
+E   assert 503 == 404
+     +  where 503 = <Response [503 Service Unavailable]>.status_code
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_cc_temporality_api.py:91: assert 503 == 404
+E   AttributeError: 'SqlEntityStreamRepository' object has no attribute 'correlations_for_entity'
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\api\routes\entities.py:988: AttributeError: 'SqlEntityStreamRepository' object has no attribute 'correlations_for_entity'
+E   NameError: name '_reviews' is not defined
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\api\routes\entities.py:1001: NameError: name '_reviews' is not defined
+E   NameError: name '_reviews' is not defined
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\api\routes\entities.py:1001: NameError: name '_reviews' is not defined
+E   assert 503 == 200
+     +  where 503 = <Response [503 Service Unavailable]>.status_code
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_donor_api.py:52: assert 503 == 200
+E   assert 503 == 200
+     +  where 503 = <Response [503 Service Unavailable]>.status_code
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_donor_api.py:61: assert 503 == 200
+E   assert 503 == 202
+     +  where 503 = <Response [503 Service Unavailable]>.status_code
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_donor_api.py:91: assert 503 == 202
+E   KeyError: 'entity'
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_donor_api.py:114: KeyError: 'entity'
+E   assert 503 == 404
+     +  where 503 = <Response [503 Service Unavailable]>.status_code
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_donor_api.py:136: assert 503 == 404
+E   assert 503 == 409
+     +  where 503 = <Response [503 Service Unavailable]>.status_code
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_donor_api.py:143: assert 503 == 409
+E   assert 503 == 202
+     +  where 503 = <Response [503 Service Unavailable]>.status_code
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_temporal_materialization_api.py:50: assert 503 == 202
+E   AssertionError: assert 'ENT-2001' in []
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_tools_api.py:81: AssertionError: assert 'ENT-2001' in []
+E   assert 503 == 200
+     +  where 503 = <Response [503 Service Unavailable]>.status_code
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\tests\integration\test_tools_api.py:98: assert 503 == 200
+E   NameError: name '_reviews' is not defined
+C:\Users\tim\Desktop\COGNITIVE\1\apps\control-plane\api\routes\entities.py:1001: NameError: name '_reviews' is not defined
+E   AssertionError: the mutation 'CD-6: let a bare string become an operator type' left test_constitution4_no_fabrication.py::TestThePlatformDoesNotInventAnOperatorType::test_a_bare_string_at_a_ref_position_is_refused green, so nothing is guarding that invariant
+    assert 0 != 0
+     +  where 0 = CompletedProcess(args=['C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\.venv\\Scripts\\python.exe', '-m', 'pytest', 'C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\tmp\\constitution-mutation-07vmbgjz\\tests\\constitution\\test_constitution4_no_fabrication.py::TestThePlatformDoesNotInventAnOperatorType::test_a_bare_string_at_a_ref_position_is_refused', '-q', '--no-header', '-p', 'no:cacheprovider'], returncode=0, stdout='.                                                                        [100%]\n1 passed in 1.99s\n', stderr='').returncode
+C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\tests\constitution\test_constitution_has_teeth.py:203: AssertionError: the mutation 'CD-6: let a bare string become an operator type' left test_constitution4_no_fabrication.py::TestThePlatformDoesNotInventAnOperatorType::test_a_bare_string_at_a_ref_position_is_refused green, so nothing is guarding that invariant
+E   AssertionError: the mutation 'CD-1: let the SUPPORTED label be the only way in again' left test_constitution4_no_fabrication.py::TestAdmissionIsNotAFormality::test_a_cd1_reading_admits_on_its_evidence_not_its_label green, so nothing is guarding that invariant
+    assert 0 != 0
+     +  where 0 = CompletedProcess(args=['C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\.venv\\Scripts\\python.exe', '-m', 'pytest', 'C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\tmp\\constitution-mutation-0m_pfl92\\tests\\constitution\\test_constitution4_no_fabrication.py::TestAdmissionIsNotAFormality::test_a_cd1_reading_admits_on_its_evidence_not_its_label', '-q', '--no-header', '-p', 'no:cacheprovider'], returncode=0, stdout='.                                                                        [100%]\n1 passed in 1.27s\n', stderr='').returncode
+C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\tests\constitution\test_constitution_has_teeth.py:203: AssertionError: the mutation 'CD-1: let the SUPPORTED label be the only way in again' left test_constitution4_no_fabrication.py::TestAdmissionIsNotAFormality::test_a_cd1_reading_admits_on_its_evidence_not_its_label green, so nothing is guarding that invariant
+E   AssertionError: the mutation 'IV: let an empty tenant through on a temporal observation' left test_iv_vi_tenancy_and_determinism.py::TestTenantsAreFailClosed::test_an_empty_tenant_is_refused green, so nothing is guarding that invariant
+    assert 0 != 0
+     +  where 0 = CompletedProcess(args=['C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\.venv\\Scripts\\python.exe', '-m', 'pytest', 'C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\tmp\\constitution-mutation-u3lih8a1\\tests\\constitution\\test_iv_vi_tenancy_and_determinism.py::TestTenantsAreFailClosed::test_an_empty_tenant_is_refused', '-q', '--no-header', '-p', 'no:cacheprovider'], returncode=0, stdout='....                                                                     [100%]\n4 passed in 1.89s\n', stderr='').returncode
+C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\tests\constitution\test_constitution_has_teeth.py:203: AssertionError: the mutation 'IV: let an empty tenant through on a temporal observation' left test_iv_vi_tenancy_and_determinism.py::TestTenantsAreFailClosed::test_an_empty_tenant_is_refused green, so nothing is guarding that invariant
+E   AssertionError: the mutation "VI: let a producer's identity into the signal address" left test_iv_vi_tenancy_and_determinism.py::TestDeterminism::test_two_producers_reading_the_same_thing_are_two_signals green, so nothing is guarding that invariant
+    assert 0 != 0
+     +  where 0 = CompletedProcess(args=['C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\.venv\\Scripts\\python.exe', '-m', 'pytest', 'C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\tmp\\constitution-mutation-y1qpas73\\tests\\constitution\\test_iv_vi_tenancy_and_determinism.py::TestDeterminism::test_two_producers_reading_the_same_thing_are_two_signals', '-q', '--no-header', '-p', 'no:cacheprovider'], returncode=0, stdout='.                                                                        [100%]\n1 passed in 1.17s\n', stderr='').returncode
+C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\tests\constitution\test_constitution_has_teeth.py:203: AssertionError: the mutation "VI: let a producer's identity into the signal address" left test_iv_vi_tenancy_and_determinism.py::TestDeterminism::test_two_producers_reading_the_same_thing_are_two_signals green, so nothing is guarding that invariant
+E   AssertionError: the mutation 'CD-5: pad a time by accepting a naive instant as UTC' left test_constitution4_no_fabrication.py::TestThePlatformDoesNotPadATime::test_a_naive_instant_is_refused_rather_than_assumed_utc green, so nothing is guarding that invariant
+    assert 0 != 0
+     +  where 0 = CompletedProcess(args=['C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\.venv\\Scripts\\python.exe', '-m', 'pytest', 'C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\tmp\\constitution-mutation-k3ikaufn\\tests\\constitution\\test_constitution4_no_fabrication.py::TestThePlatformDoesNotPadATime::test_a_naive_instant_is_refused_rather_than_assumed_utc', '-q', '--no-header', '-p', 'no:cacheprovider'], returncode=0, stdout='.                                                                        [100%]\n1 passed in 1.48s\n', stderr='').returncode
+C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\tests\constitution\test_constitution_has_teeth.py:203: AssertionError: the mutation 'CD-5: pad a time by accepting a naive instant as UTC' left test_constitution4_no_fabrication.py::TestThePlatformDoesNotPadATime::test_a_naive_instant_is_refused_rather_than_assumed_utc green, so nothing is guarding that invariant
+E   AssertionError: the mutation 'I-1: let a carried content address be trusted' left test_i1_i3_immutability_and_preservation.py::TestObservationsAreImmutable::test_a_carried_address_that_disagrees_is_refused green, so nothing is guarding that invariant
+    assert 0 != 0
+     +  where 0 = CompletedProcess(args=['C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\.venv\\Scripts\\python.exe', '-m', 'pytest', 'C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\tmp\\constitution-mutation-lgy99o73\\tests\\constitution\\test_i1_i3_immutability_and_preservation.py::TestObservationsAreImmutable::test_a_carried_address_that_disagrees_is_refused', '-q', '--no-header', '-p', 'no:cacheprovider'], returncode=0, stdout='.                                                                        [100%]\n1 passed in 1.35s\n', stderr='').returncode
+C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\tests\constitution\test_constitution_has_teeth.py:203: AssertionError: the mutation 'I-1: let a carried content address be trusted' left test_i1_i3_immutability_and_preservation.py::TestObservationsAreImmutable::test_a_carried_address_that_disagrees_is_refused green, so nothing is guarding that invariant
+E   AssertionError: 26 violations, was 25. New ones:
+        apps/feedback/feedback/frontier.py:59 [feedback] cross-layer-store -> control-plane/db.session: `db` is owned by control-plane; feedback must go through a contract
+        apps/feedback/feedback/frontier.py:65 [feedback] cross-layer-store -> control-plane/db.schema: `db` is owned by control-plane; feedback must go through a contract
+        apps/feedback/tests/test_frontier_loop.py:43 [feedback] cross-layer-store -> control-plane/db.session: `db` is owned by control-plane; feedback must go through a contract
+        apps/feedback/tests/test_frontier_loop.py:81 [feedback] cross-layer-store -> control-plane/db.schema: `db` is owned by control-plane; feedback must go through a contract
+        apps/feedback/tests/test_frontier_loop.py:91 [feedback] cross-layer-store -> control-plane/db.session: `db` is owned by control-plane; feedback must go through a contract
+        apps/feedback/tests/test_frontier_loop.py:121 [feedback] cross-layer-store -> control-plane/db.schema: `db` is owned by control-plane; feedback must go through a contract
+        apps/projection/analytics/projector.py:12 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/analytics/store.py:10 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/graph/abstraction.py:17 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/graph/adjacency.py:17 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/graph/neo4j.py:16 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/graph/relation_store.py:46 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/graph/snapshot.py:17 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/metrics/community.py:19 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/metrics/network_measures.py:21 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/search/bm25s_backend.py:45 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/search/index.py:15 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/search/indexer.py:22 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/search/projector.py:26 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/search/publisher.py:40 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/search/quickwit.py:23 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/search/relevance.py:29 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/search/tantivy_backend.py:19 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/projection/tests/unit/test_relation_store.py:23 [projection] shim -> /path_shim: sys.path manipulation instead of a declared dependency
+        apps/science/tests/contract/test_ontology_and_schema_stay_in_step.py:25 [science] cross-layer-store -> control-plane/db.schema: `db` is owned by control-plane; science must go through a contract
+        apps/science/tests/integration/test_live_asg_pipeline.py:35 [science] cross-layer-store -> control-plane/db.session: `db` is owned by control-plane; science must go through a contract
+    assert 26 <= 25
+     +  where 26 = len([Violation(layer='feedback', source='apps/feedback/feedback/frontier.py', line=59, target_app='control-plane', target_module='db.session', kind='cross-layer-store', detail='`db` is owned by control-plane; feedback must go through a contract'), Violation(layer='feedback', source='apps/feedback/feedback/frontier.py', line=65, target_app='control-plane', target_module='db.schema', kind='cross-layer-store', detail='`db` is owned by control-plane; feedback must go through a contract'), Violation(layer='feedback', source='apps/feedback/tests/test_frontier_loop.py', line=43, target_app='control-plane', target_module='db.session', kind='cross-layer-store', detail='`db` is owned by control-plane; feedback must go through a contract'), Violation(layer='feedback', source='apps/feedback/tests/test_frontier_loop.py', line=81, target_app='control-plane', target_module='db.schema', kind='cross-layer-store', detail='`db` is owned by control-plane; feedback must go through a contract'), Violation(layer='feedback', source='apps/feedback/tests/test_frontier_loop.py', line=91, target_app='control-plane', target_module='db.session', kind='cross-layer-store', detail='`db` is owned by control-plane; feedback must go through a contract'), Violation(layer='feedback', source='apps/feedback/tests/test_frontier_loop.py', line=121, target_app='control-plane', target_module='db.schema', kind='cross-layer-store', detail='`db` is owned by control-plane; feedback must go through a contract'), ...])
+C:\Users\tim\Desktop\COGNITIVE\1\apps\shared\tests\unit\test_layer_boundaries.py:31: AssertionError: 26 violations, was 25. New ones:
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+apps\acquisition\sources\append_parse_blocks.py:104
+  C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\sources\append_parse_blocks.py:104: DeprecationWarning: invalid escape sequence '\s'
+    "record_type": {"path": "", "kind": "status", "pattern": "^([A-Z0-9]+)\s*:"},
+
+apps\acquisition\sources\append_parse_blocks.py:108
+  C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\sources\append_parse_blocks.py:108: DeprecationWarning: invalid escape sequence '\s'
+    "pattern": "^[A-Z0-9]+\s*:\s*(\S+)",
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_dispatched_task_is_published_with_acked_offset
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_topic_is_the_catalog_topic_for_the_event
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_each_task_gets_its_own_offset_not_a_previous_one
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_publish_is_keyed_by_task_id
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestDispatchPublishes::test_no_acknowledgement_is_reported_as_not_published
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_envelope_satisfies_the_worker_contract
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_requires_a_source_id
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_requires_a_tenant
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestRequestEnvelopeContract::test_contract_rejects_a_foreign_event_type
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_is_json_not_a_python_repr
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_carries_the_query
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_payload_carries_source_and_verdict
+FAILED apps/acquisition/tests/contract/test_plan_driver.py::TestRequestPayloadIsExecutable::test_worker_can_parse_the_payload_into_a_task
+FAILED apps/acquisition/tests/integration/test_loop_closed.py::test_the_loop_closes_hermetically
+FAILED apps/acquisition/tests/integration/test_loop_closed.py::test_the_request_the_worker_parses_is_the_scheduler_s_own
+FAILED apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_domain_entity_full_payload
+FAILED apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_missing_captures_reported_honestly
+FAILED apps/control-plane/tests/integration/test_cc_temporality_api.py::TestCcTemporalityApi::test_unknown_entity_404
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlations_exposed_without_merge
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_review_recorded_as_provenance
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_reviews_listed_per_target
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_timeline_carries_observed_at
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_view_projects_identity_invariant
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_entity_can_be_created_as_dynamic_invariant
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_created_without_merge
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_requires_materialized_source
+FAILED apps/control-plane/tests/integration/test_donor_api.py::TestDonorPatternApi::test_correlation_rejects_self_link
+FAILED apps/control-plane/tests/integration/test_temporal_materialization_api.py::test_create_entity_starts_materialization
+FAILED apps/control-plane/tests/integration/test_tools_api.py::TestToolsApi::test_entities_list_contains_seed_catalog_node
+FAILED apps/control-plane/tests/integration/test_tools_api.py::TestToolsApi::test_graph_returns_seed_node_and_correlation_edge
+FAILED apps/control-plane/tests/unit/test_sse_stream.py::test_review_publishes_entity_updated
+FAILED apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-6_0]
+FAILED apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-1]
+FAILED apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[iv]
+FAILED apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[vi]
+FAILED apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[cd-5]
+FAILED apps/shared/tests/constitution/test_constitution_has_teeth.py::test_each_invariant_is_actually_guarded[i-1]
+FAILED apps/shared/tests/unit/test_layer_boundaries.py::test_no_new_layer_boundary_violations
+========== 38 failed, 30 deselected, 3 warnings in 299.39s (0:04:59) ==========

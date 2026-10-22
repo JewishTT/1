@@ -3,6 +3,12 @@
 COGNITIVE runs a closed investigation loop (spec §84). Every hop emits a
 traceable event; projections are rebuildable; findings resolve to raw evidence.
 
+> This page is the hand-written summary. The authoritative, machine-generated
+> description of what the tree actually contains lives in
+> [`docs/platform/`](../platform/index.md) and is regenerated from the source by
+> `python -m platform_model.build`. When the two disagree, the generated model is
+> right and this page is stale.
+
 ## Closed loop
 
 ```

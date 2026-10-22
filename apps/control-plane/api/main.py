@@ -82,6 +82,14 @@ async def lifespan(app: FastAPI):
         )
         for note in assembled.health.notes:
             log.warning("platform: %s", note)
+        # Wire the Feature 034 research-case router to the assembled service + policy.
+        if assembled.research_case_service is not None:
+            research_cases.configure(
+                assembled.research_case_service, assembled.person_case_policy
+            )
+            log.info("research-cases router configured")
+        else:
+            log.warning("research-case service absent; router unconfigured")
     except Exception as exc:  # noqa: BLE001 - boot must survive a partial platform
         log.error("platform assembly failed: %s", exc)
     try:

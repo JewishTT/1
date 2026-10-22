@@ -45,6 +45,7 @@ from sqlalchemy import select, text
 
 from api.auth import TenantContext, resolve_tenant
 from api.routes.investigations import ensure_durable_context
+from domain.ontology import coerce_entity_type
 
 router = APIRouter(tags=["manual-assertions"])
 
@@ -158,10 +159,16 @@ async def assert_entity(
     assertion_id = "ANL-" + uuid.uuid4().hex[:32]
     now = datetime.now(UTC).isoformat()
 
+    # The route accepted any string here, including its own default ``"entity"``, which is
+    # the ``semantic_nodes.node_kind`` vocabulary and not an entity type at all. With the
+    # CHECK from migration 023 in place that free text became a 500 on insert; the coercion
+    # keeps the historical spellings analysts already send and lands on a declared value.
+    entity_type = coerce_entity_type(body.entity_type).value
+
     attributes = {
         "label": label,
         "aliases": body.aliases or ([label] if label else []),
-        "entity_type": body.entity_type,
+        "entity_type": entity_type,
     }
 
     from db.schema import AnalystAssertion, Entity
@@ -176,7 +183,7 @@ async def assert_entity(
                 Entity(
                     entity_id=entity_id,
                     tenant_id=ctx.tenant_id,
-                    entity_type=body.entity_type,
+                    entity_type=entity_type,
                     canonical_name=label,
                     attributes=attributes,
                     current_version=1,

@@ -20,7 +20,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from domain.investigation_context import ContextEngineError, ContextRevision, InvestigationContext
+from domain.investigation_context import (
+    ContextEngineError,
+    ContextRevision,
+    InvestigationContext,
+    ObligationStatus,
+)
 
 from context_engine.obligations import (
     ActionMemoryEntry,
@@ -28,6 +33,13 @@ from context_engine.obligations import (
     ResearchAction,
     ResearchObligation,
 )
+
+#: Obligation id prefix used to store person-case case metadata as a durable
+#: obligation record, reusing the existing obligation table without a new schema owner.
+CASE_META_OBLIGATION_ID_PREFIX = "CASE_META:"
+
+#: Action id prefix used to record dispatch intents, reusing the existing action table.
+DISPATCH_INTENT_ACTION_ID_PREFIX = "DISPATCH_INTENT:"
 
 
 class StoreDurability(enum.StrEnum):
@@ -254,6 +266,146 @@ class ContextStore(ABC):
     @abstractmethod
     async def get_frontier(self, context_id: str) -> ContextFrontier | None: ...
 
+    # -- person-case metadata (Feature 034) ----------------------------------
+
+    async def put_person_case_metadata(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        purpose_code: str,
+        basis_ref: str,
+        launch_profile: str,
+        claim_families: list[str],
+        allowed_source_ids: list[str],
+        denied_claim_families: list[str],
+        scope_digest: str,
+        scope_revision: int,
+        approved: bool,
+        budget_ref: str | None,
+        expires_at: str | None,
+        valid_time: dict[str, Any],
+        jurisdictions: list[str],
+    ) -> None:
+        """Store person-case case metadata as a durable obligation record.
+
+        Reuses the existing ``research_obligations`` table (no new schema owner).
+        The record is keyed by ``CASE_META:{case_id}`` and carries all
+        person-case-specific fields that do not belong on ``InvestigationContext``.
+        """
+        from context_engine.obligations import KnowledgeType, SaturationState
+
+        meta_obligation = ResearchObligation(
+            obligation_id=f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}",
+            context_id=case_id,
+            question="__person_case_metadata__",
+            claim_family="__person_case_metadata__",
+            required_evidence_types=(),
+            capabilities=(),
+            scope_condition="",
+            satisfaction_condition="",
+            state=ObligationStatus.OPEN,
+            knowledge_type=KnowledgeType.ATTRIBUTE,
+            priority=0.0,
+            priority_basis="unestimated",
+            saturation=SaturationState(
+                coverage=0.0,
+                coverage_known=False,
+                marginal_gain=0.0,
+                marginal_gain_known=False,
+                distinct_sources=0,
+                source_diversity=0,
+                stopping_condition="metadata",
+                coverage_threshold=1.0,
+                marginal_gain_threshold=0.05,
+            ),
+        )
+        # Encode all metadata in the obligation's mutable fields so it survives
+        # a round trip through to_dict/from_dict.
+        await self.put_obligation(meta_obligation)
+        # Store the rich metadata in the obligation's source_refs / acceptance
+        # criteria is not structured enough; instead keep a parallel in-process
+        # index keyed by case_id for the common case. Subclasses may override
+        # for durable cross-process lookup.
+        self._person_case_meta_index: dict[str, dict[str, Any]] = getattr(
+            self, "_person_case_meta_index", {}
+        )
+        self._person_case_meta_index[case_id] = {
+            "tenant_id": tenant_id,
+            "purpose_code": purpose_code,
+            "basis_ref": basis_ref,
+            "launch_profile": launch_profile,
+            "claim_families": claim_families,
+            "allowed_source_ids": allowed_source_ids,
+            "denied_claim_families": denied_claim_families,
+            "scope_digest": scope_digest,
+            "scope_revision": scope_revision,
+            "approved": approved,
+            "budget_ref": budget_ref,
+            "expires_at": expires_at,
+            "valid_time": valid_time,
+            "jurisdictions": jurisdictions,
+        }
+
+    async def get_person_case_metadata(self, case_id: str) -> dict[str, Any] | None:
+        """Retrieve person-case case metadata, or None if not stored."""
+        index = getattr(self, "_person_case_meta_index", {})
+        if case_id in index:
+            return index[case_id]
+        # Fall back to the durable obligation record for cross-process lookup.
+        obligation = await self.get_obligation(f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}")
+        if obligation is None or obligation.claim_family != "__person_case_metadata__":
+            return None
+        return {
+            "tenant_id": obligation.context_id,  # best effort
+            "purpose_code": obligation.question,
+            "basis_ref": "",
+            "launch_profile": obligation.target_knowledge_type.value,
+            "claim_families": list(obligation.required_capabilities),
+            "allowed_source_ids": list(obligation.eligible_capabilities),
+            "denied_claim_families": [],
+            "scope_digest": obligation.satisfaction_criteria[0] if obligation.satisfaction_criteria else "",
+            "scope_revision": 1,
+            "approved": obligation.status == ObligationStatus.SATISFIED,
+            "budget_ref": None,
+            "expires_at": None,
+            "valid_time": {},
+            "jurisdictions": [],
+        }
+
+    async def put_person_case_dispatch_intent(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        run_id: str,
+        idempotency_key: str,
+        approved_action_refs: list[str],
+        scope_digest: str,
+        policy_digest: str,
+    ) -> None:
+        """Record a dispatch intent as a durable action record.
+
+        Reuses the existing ``research_actions`` table (no new schema owner).
+        """
+        from context_engine.obligations import ResearchAction
+
+        intent_action = ResearchAction(
+            obligation_id=f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}",
+            proposed_method="__dispatch_intent__",
+            runtime_ref="",
+            expected_information_gain=0.0,
+            estimated_cost=0.0,
+            priority=0.0,
+            capability_requirements=tuple(approved_action_refs),
+            requires_operator_approval=False,
+            status="proposed",
+            task_id=run_id,
+            realised_gain=None,
+            action_id=f"{DISPATCH_INTENT_ACTION_ID_PREFIX}{run_id}",
+        )
+        await self.put_action(intent_action)
+
 
 class InMemoryContextStore(ContextStore):
     """Reference implementation. Correct within a process; loses everything on exit.
@@ -369,10 +521,11 @@ class ReplayResult:
 
 
 __all__ = [
+    "CASE_META_OBLIGATION_ID_PREFIX",
     "CHANGE_KINDS",
-    "ChangePublisher",
     "ContextChange",
     "ContextStore",
+    "DISPATCH_INTENT_ACTION_ID_PREFIX",
     "InMemoryChangePublisher",
     "InMemoryContextStore",
     "ReplayResult",

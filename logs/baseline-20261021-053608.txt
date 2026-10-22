@@ -1,0 +1,27 @@
+
+=================================== ERRORS ====================================
+_____ ERROR collecting apps/acquisition/tests/contract/test_scheduler.py ______
+ImportError while importing test module 'C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\tests\contract\test_scheduler.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps\acquisition\tests\contract\test_scheduler.py:24: in <module>
+    from dispatcher.scheduler import Dispatcher, ScheduleDecision, ScopeLimits, Verdict, host_of
+E   ImportError: cannot import name 'ScopeLimits' from 'dispatcher.scheduler' (C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\dispatcher\scheduler.py)
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\tim\Desktop\COGNITIVE\1\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+apps\acquisition\sources\append_parse_blocks.py:104
+  C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\sources\append_parse_blocks.py:104: DeprecationWarning: invalid escape sequence '\s'
+    "record_type": {"path": "", "kind": "status", "pattern": "^([A-Z0-9]+)\s*:"},
+
+apps\acquisition\sources\append_parse_blocks.py:108
+  C:\Users\tim\Desktop\COGNITIVE\1\apps\acquisition\sources\append_parse_blocks.py:108: DeprecationWarning: invalid escape sequence '\s'
+    "pattern": "^[A-Z0-9]+\s*:\s*(\S+)",
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR apps/acquisition/tests/contract/test_scheduler.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 skipped, 3 warnings, 1 error in 136.08s (0:02:16)

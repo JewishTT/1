@@ -47,7 +47,7 @@ try:
     from donor.target import classify, normalize
     from donor.temporal import scan as temporal_scan
     from engine.assertions import AssertionExtractor, EvidenceLink, EvidenceRef
-    from evidence.independence import SourceIndependenceEngine
+    from independence.independence import SourceIndependenceEngine
     from resolution.collective import CorrelationService, ResolvedPair
     from scoring.claim import assess_claim
 

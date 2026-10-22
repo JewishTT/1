@@ -21,7 +21,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "shared"))
 
 import pytest
 from adapters.registry import REGISTRY, register
-from dispatcher.scheduler import Dispatcher, ScheduleDecision, ScopeLimits, Verdict, host_of
+from dispatcher.scheduler import (
+    Dispatcher,
+    DispatcherConfigurationError,
+    ResourceLimits,
+    ScheduleDecision,
+    UnconfiguredResourceLimits,
+    Verdict,
+    host_of,
+)
 
 pytestmark = pytest.mark.contract
 
@@ -34,6 +42,23 @@ def _clean_registry():
     yield
     adapters.clear()
     adapters.update(saved)
+
+
+class AllowingLimits:
+    """A durable budget provider that always reserves.
+
+    Production never uses this; tests inject it to exercise the dispatch path
+    without a PostgreSQL-backed reservation service.
+    """
+
+    def allows(
+        self, execution_class, region, host_key, required, **_
+    ) -> tuple[bool, str, str | None]:
+        return True, "reserved", "res-1"
+
+
+def _allow() -> ResourceLimits:
+    return AllowingLimits()
 
 
 def task(**overrides) -> dict:
@@ -66,7 +91,7 @@ def test_low_utility_defers() -> None:
 
 def test_capability_match_selects_http() -> None:
     register("web", execution_class="http", capabilities={"http"})
-    d = Dispatcher()
+    d = Dispatcher(limits=_allow())
     dec = d.schedule(task(required_capabilities=["http"]))
     assert dec.verdict is Verdict.DISPATCH
     assert dec.execution_class == "http"
@@ -76,7 +101,7 @@ def test_capability_match_selects_http() -> None:
 def test_capability_intersection_routes_browser() -> None:
     register("web", execution_class="http", capabilities={"http"})
     register("js", execution_class="browser", capabilities={"http", "javascript", "dom"})
-    d = Dispatcher()
+    d = Dispatcher(limits=_allow())
     dec = d.schedule(task(required_capabilities=["javascript", "http"], uri="https://spa.example/"))
     assert dec.verdict is Verdict.DISPATCH
     assert dec.execution_class == "browser"
@@ -85,7 +110,7 @@ def test_capability_intersection_routes_browser() -> None:
 
 def test_capability_gap_defers_explicitly() -> None:
     register("web", execution_class="http", capabilities={"http"})
-    d = Dispatcher()
+    d = Dispatcher(limits=_allow())
     dec = d.schedule(task(required_capabilities=["parquet", "range-read"]))
     assert dec.verdict is Verdict.DEFER
     assert "gap" in dec.reason
@@ -94,7 +119,7 @@ def test_capability_gap_defers_explicitly() -> None:
 
 def test_no_required_capabilities_falls_back_to_http() -> None:
     register("web", execution_class="http", capabilities={"http"})
-    d = Dispatcher()
+    d = Dispatcher(limits=_allow())
     dec = d.schedule(task(required_capabilities=[]))
     assert dec.verdict is Verdict.DISPATCH
     assert dec.execution_class == "http"
@@ -104,10 +129,8 @@ def test_resource_limit_parks_dispatch() -> None:
     register("web", execution_class="http", capabilities={"http"})
 
     class RejectingLimits:
-        def allows(
-            self, execution_class: str, region: str | None, host_key: str, required: set[str]
-        ) -> tuple[bool, str]:
-            return False, "browser capacity exhausted"
+        def allows(self, execution_class, region, host_key, required, **_) -> tuple[bool, str, str | None]:
+            return False, "browser capacity exhausted", None
 
     d = Dispatcher(limits=RejectingLimits())
     dec = d.schedule(task())
@@ -115,10 +138,18 @@ def test_resource_limit_parks_dispatch() -> None:
     assert "capacity" in dec.reason
 
 
-def test_scope_limits_default_allows() -> None:
+def test_default_limits_fail_closed() -> None:
+    """No injected reservation provider means no dispatch, ever.
+
+    The default `UnconfiguredResourceLimits` denies with `BLOCKED_BUDGET`; the
+    old permissive `ScopeLimits` (which allowed everything) is gone by design.
+    """
     register("web", execution_class="http", capabilities={"http"})
-    d = Dispatcher(limits=ScopeLimits())
-    assert d.schedule(task()).verdict is Verdict.DISPATCH
+    d = Dispatcher()
+    assert isinstance(d.limits, UnconfiguredResourceLimits)
+    dec = d.schedule(task())
+    assert dec.verdict is Verdict.DEFER
+    assert dec.reason == "BLOCKED_BUDGET"
 
 
 def test_host_of_canonicalizes() -> None:
@@ -129,7 +160,7 @@ def test_host_of_canonicalizes() -> None:
 
 def test_dispatch_carries_routing_and_utility() -> None:
     register("web", execution_class="http", capabilities={"http"})
-    d = Dispatcher()
+    d = Dispatcher(limits=_allow())
     dec: ScheduleDecision = d.schedule(task())
     assert dec.verdict is Verdict.DISPATCH
     assert dec.utility > 0.0
@@ -151,7 +182,7 @@ class MemoryProducer:
 def test_emit_request_produces_acquisition_request_envelope() -> None:
     register("web", execution_class="http", capabilities={"http"})
     producer = MemoryProducer()
-    d = Dispatcher(producer=producer)
+    d = Dispatcher(producer=producer, limits=_allow())
     t = task()
     dec = d.schedule(t)
     assert dec.verdict is Verdict.DISPATCH
@@ -172,10 +203,15 @@ def test_emit_request_produces_acquisition_request_envelope() -> None:
     assert b"dispatch" in env.payload  # verdict travels in the payload
 
 
-def test_emit_request_without_producer_is_noop() -> None:
-    """Back-compat: no producer configured → nothing produced, no crash."""
+def test_emit_request_without_producer_raises() -> None:
+    """No producer configured → named configuration error, never a silent no-op.
+
+    A dispatcher that cannot emit must fail loudly so the API cannot report
+    `dispatched=true` without a transport.
+    """
     register("web", execution_class="http", capabilities={"http"})
-    d = Dispatcher()
+    d = Dispatcher(limits=_allow())
     t = task()
     dec = d.schedule(t)
-    d.emit_request(t, dec)  # must not raise despite no transport
+    with pytest.raises(DispatcherConfigurationError):
+        d.emit_request(t, dec)  # must not silently no-op

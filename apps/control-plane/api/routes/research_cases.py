@@ -22,7 +22,7 @@ from services.research_case_service import (
     ResearchCaseService,
 )
 
-router = APIRouter(prefix="/api/v1/research-cases", tags=["research-cases"])
+router = APIRouter(prefix="/research-cases", tags=["research-cases"])
 
 _service: ResearchCaseService | None = None
 _policy: PersonCasePolicy | None = None

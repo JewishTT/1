@@ -1,0 +1,12 @@
+{
+  "evidence_id": "EV-0002",
+  "investigation_id": "INV-1",
+  "filename": "b.json",
+  "evidence_type": "json",
+  "sha256": "f9d86028c6e0d64e225186f96acb69338b2c59764df79162107f5c4bb34d1310",
+  "size_bytes": 8,
+  "imported_at": "2026-10-22T05:46:59.264184+00:00",
+  "source_path": "C:\\Users\\tim\\Desktop\\COGNITIVE\\1\\tmp\\pytest-of-tim\\pytest-4\\test_evidence_ids_increment0\\b.json",
+  "stored_path": "evidence/EV-0002/original/b.json",
+  "source_modified_at": "2026-10-22T05:46:59.154576+00:00"
+}

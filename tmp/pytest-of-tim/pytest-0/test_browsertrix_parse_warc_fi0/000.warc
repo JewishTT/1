@@ -1,0 +1,16 @@
+WARC/1.0
+WARC-Type: response
+WARC-Record-ID: <urn:uuid:65132c4b-8066-49a3-9f36-c067005fd91d>
+WARC-Target-URI: https://b.example/
+WARC-Date: 2026-10-21T15:09:45Z
+WARC-Payload-Digest: sha1:OCV7YGZ4ZVUSBY3WVFNF25QSYBRAXPJJ
+WARC-Block-Digest: sha1:YLZTHOLEBIUBKATT7Q3TUKVZHW7OF7UC
+Content-Type: application/http; msgtype=response
+Content-Length: 87
+
+HTTP/1.1 HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 14
+
+<html>b</html>
+

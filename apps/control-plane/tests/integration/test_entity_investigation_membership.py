@@ -129,9 +129,12 @@ def client() -> Iterator[TestClient]:
     # ``getattr`` rather than a direct attribute read: the ownership map is part of the
     # fix under test, and a fixture that dies on its absence would replace the real
     # failure (the route answering unfiltered) with an unrelated error, which is the one
-    # thing a red-then-green measurement must not do.
+    # thing a red-then-green measurement must not do. The same rule applies to the
+    # process-local catalog and entity streams: the catalog was removed when PostgreSQL
+    # became the authoritative registry, and this fixture must not outlive that change.
     previous_owners = dict(getattr(entities_route, "_entity_owner", {}) or {})
-    previous_catalog_ids = set(entities_route._catalog.entity_ids())
+    catalog = getattr(entities_route, "_catalog", None)
+    previous_catalog_ids = set(catalog.entity_ids()) if catalog is not None else set()
     entities_route._pg_factory.clear()
     entities_route._pg_factory.append(async_sessionmaker(engine, expire_on_commit=False))
 
@@ -148,11 +151,14 @@ def client() -> Iterator[TestClient]:
         if owners is not None:
             owners.clear()
             owners.update(previous_owners)
-        for entity_id in set(entities_route._catalog.entity_ids()) - previous_catalog_ids:
-            entities_route._catalog._entities.pop(entity_id, None)
-            if owners is not None:
-                owners.pop(entity_id, None)
-        entities_route._entity_streams.clear()
+        if catalog is not None:
+            for entity_id in set(catalog.entity_ids()) - previous_catalog_ids:
+                catalog._entities.pop(entity_id, None)
+                if owners is not None:
+                    owners.pop(entity_id, None)
+        streams = getattr(entities_route, "_entity_streams", None)
+        if streams is not None:
+            streams.clear()
 
 
         async def _teardown() -> None:

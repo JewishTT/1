@@ -23,9 +23,8 @@ from context_engine.person_case_profile import (
     AUTHORISED_CASE,
     CONSENTED_RECORDS,
     PUBLIC_PROFESSIONAL,
-    create_initial_obligations,
+    PUBLIC_ROLE_REVIEW,
 )
-from context_engine.person_case_profile import PUBLIC_ROLE_REVIEW as _PUBLIC_ROLE_REVIEW
 from domain.investigation_context import (
     ContextEngineError,
     InvestigationContext,
@@ -33,9 +32,8 @@ from domain.investigation_context import (
     ObligationStatus,
 )
 from services.research_case_policy import (
-    PolicyDecision,
     PersonCasePolicy,
-    create_initial_obligations as _create_initial_obligations,
+    create_initial_obligations,
 )
 
 from context_engine.loop import CognitiveLoop
@@ -61,6 +59,10 @@ class BudgetNotReserved(CaseServiceError):
     pass
 
 
+class PolicyNotLoaded(CaseServiceError):
+    pass
+
+
 class ResearchCaseService:
     """Application service for person-research cases."""
 
@@ -82,6 +84,14 @@ class ResearchCaseService:
         self._budget_service = budget_service
         self._artifact_sink = artifact_sink
         self._observation_gate = observation_gate
+
+    def _require_policy(self) -> PersonCasePolicy:
+        """Fail closed when the policy gate is not loaded."""
+        if self._policy is None or not self._policy.loaded:
+            raise PolicyNotLoaded(
+                "person-case source policy is not loaded; fail closed"
+            )
+        return self._policy
 
     # -- case creation -------------------------------------------------------
 
@@ -107,71 +117,66 @@ class ResearchCaseService:
         """Create a draft research case. No collection happens yet."""
         if launch_profile not in {
             PUBLIC_PROFESSIONAL,
-            "PUBLIC_ROLE_REVIEW",
-            "CONSENTED_RECORDS",
+            PUBLIC_ROLE_REVIEW,
+            CONSENTED_RECORDS,
             AUTHORISED_CASE,
         }:
             raise CaseServiceError(f"unknown launch profile: {launch_profile}")
 
-        # Validate policy before creating.
-        if self._policy is not None and self._policy.loaded:
-            scope_payload = {
-                "purpose_code": purpose_code,
-                "launch_profile": launch_profile,
-                "claim_families": claim_families,
-                "allowed_source_ids": allowed_source_ids,
-                "valid_time": valid_time,
-                "jurisdictions": jurisdictions,
-            }
-            scope_digest = self._digest(json.dumps(scope_payload, sort_keys=True))
-            decision = self._policy.validate_case_scope(
-                case_id="pending",
-                tenant_id=tenant_id,
-                purpose_code=purpose_code,
-                basis_ref=basis_ref,
-                scope_digest=scope_digest,
-                scope_revision=1,
-                claim_families=claim_families,
-                allowed_source_ids=allowed_source_ids,
-                expires_at=expires_at,
-                launch_profile=launch_profile,
-            )
-            if not decision.allowed:
-                raise CaseServiceError(f"BLOCKED_POLICY: {decision.detail}")
-        else:
-            scope_digest = "sha256:pending"
+        # Fail closed: policy must be loaded before any case is created.
+        policy = self._require_policy()
 
+        scope_payload = {
+            "purpose_code": purpose_code,
+            "launch_profile": launch_profile,
+            "claim_families": claim_families,
+            "allowed_source_ids": allowed_source_ids,
+            "valid_time": valid_time,
+            "jurisdictions": jurisdictions,
+        }
+        scope_digest = self._digest(json.dumps(scope_payload, sort_keys=True))
+
+        # The InvestigationContext identity is content-addressed over
+        # tenant_id + investigation_id + title + scope_refs. context_id is
+        # computed by the model itself; we never pass a random one.
         case_id = f"case-{uuid.uuid4().hex[:12]}"
         now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
         context = InvestigationContext(
-            context_id=case_id,
             tenant_id=tenant_id,
+            investigation_id=case_id,
             title=f"Person case: {purpose_text[:80]}",
+            scope_refs=tuple(a.get("value", "") for a in subject_anchors),
             question=purpose_text,
             state=InvestigationState.UNINVESTIGATED,
-            scope_refs=[a.get("value", "") for a in subject_anchors],
-            valid_time_from=valid_time.get("from"),
-            valid_time_until=valid_time.get("until"),
-            claim_families=tuple(claim_families),
-            allowed_source_ids=tuple(allowed_source_ids),
-            created_by=created_by,
+            policy_snapshot_ref=policy._policy.get("metadata", {}).get("version", "1"),
             created_at=now,
-            updated_at=now,
-            expires_at=expires_at,
-            basis_ref=basis_ref,
+        )
+
+        # Store person-case-specific fields as durable metadata on the context.
+        # The model carries only canonical fields; person-case extensions live
+        # in a sidecar record keyed by case_id.
+        await self._store.put_context(context)
+        await self._store.put_person_case_metadata(
+            case_id=case_id,
+            tenant_id=tenant_id,
             purpose_code=purpose_code,
+            basis_ref=basis_ref,
             launch_profile=launch_profile,
+            claim_families=claim_families,
+            allowed_source_ids=allowed_source_ids,
+            denied_claim_families=denied_claim_families or [],
             scope_digest=scope_digest,
             scope_revision=1,
             approved=False,
             budget_ref=budget_ref,
+            expires_at=expires_at,
+            valid_time=valid_time,
+            jurisdictions=jurisdictions,
         )
 
-        await self._store.put_context(context)
-
         # Create initial obligations.
-        obligations = _create_initial_obligations(
+        obligations = create_initial_obligations(
             case_id=case_id,
             tenant_id=tenant_id,
             launch_profile=launch_profile,
@@ -181,7 +186,7 @@ class ResearchCaseService:
             valid_time=valid_time,
         )
         for obl in obligations:
-            await self._store.create_obligation(obl)
+            await self._store.put_obligation(obl)
 
         return {
             "case_id": case_id,
@@ -214,34 +219,46 @@ class ResearchCaseService:
         if not scope_digest or not scope_digest.startswith("sha256:"):
             raise CaseServiceError("scope_digest must be a sha256 digest")
 
-        # Re-validate against policy.
-        if self._policy is not None and self._policy.loaded:
-            decision = self._policy.validate_case_scope(
-                case_id=case_id,
-                tenant_id=tenant_id,
-                purpose_code=context.purpose_code,
-                basis_ref=context.basis_ref,
-                scope_digest=scope_digest,
-                scope_revision=scope_revision,
-                claim_families=list(context.claim_families),
-                allowed_source_ids=list(context.allowed_source_ids),
-                expires_at=context.expires_at,
-                launch_profile=context.launch_profile,
-            )
-            if not decision.allowed:
-                raise CaseServiceError(f"BLOCKED_POLICY: {decision.detail}")
+        # Fail closed: re-validate against policy every time.
+        policy = self._require_policy()
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None:
+            raise CaseNotFound(f"case {case_id} metadata not found")
 
-        updated = context.__class__(
-            **{
-                **context.__dict__,
-                "approved": True,
-                "scope_digest": scope_digest,
-                "scope_revision": scope_revision,
-                "state": InvestigationState.ACTIVE,
-                "updated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-            }
+        decision = policy.validate_case_scope(
+            case_id=case_id,
+            tenant_id=tenant_id,
+            purpose_code=meta["purpose_code"],
+            basis_ref=meta["basis_ref"],
+            scope_digest=scope_digest,
+            scope_revision=scope_revision,
+            claim_families=list(meta["claim_families"]),
+            allowed_source_ids=list(meta["allowed_source_ids"]),
+            expires_at=meta.get("expires_at"),
+            launch_profile=meta["launch_profile"],
         )
-        await self._store.put_context(updated)
+        if not decision.allowed:
+            raise CaseServiceError(f"BLOCKED_POLICY: {decision.detail}")
+
+        # Update metadata (durable). The context itself is not mutated for
+        # approval; approval lives in the person-case sidecar record.
+        await self._store.put_person_case_metadata(
+            case_id=case_id,
+            tenant_id=tenant_id,
+            purpose_code=meta["purpose_code"],
+            basis_ref=meta["basis_ref"],
+            launch_profile=meta["launch_profile"],
+            claim_families=list(meta["claim_families"]),
+            allowed_source_ids=list(meta["allowed_source_ids"]),
+            denied_claim_families=list(meta.get("denied_claim_families", [])),
+            scope_digest=scope_digest,
+            scope_revision=scope_revision,
+            approved=True,
+            budget_ref=meta.get("budget_ref"),
+            expires_at=meta.get("expires_at"),
+            valid_time=meta.get("valid_time", {}),
+            jurisdictions=list(meta.get("jurisdictions", [])),
+        )
 
         return {
             "case_id": case_id,
@@ -249,7 +266,7 @@ class ResearchCaseService:
             "state": "APPROVED",
             "scope_digest": scope_digest,
             "scope_revision": scope_revision,
-            "approved_at": updated.updated_at,
+            "approved_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         }
 
     # -- planning -----------------------------------------------------------
@@ -270,15 +287,17 @@ class ResearchCaseService:
             raise CaseNotFound(f"case {case_id} not found")
         if context.tenant_id != tenant_id:
             raise CaseServiceError("cross-tenant access denied")
-        if not context.approved:
+
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None or not meta.get("approved"):
             raise CaseNotApproved(f"case {case_id} is not approved")
 
-        obligations = await self._store.open_obligations(case_id)
+        obligations = await self._store.obligations(case_id)
         return {
             "case_id": case_id,
             "tenant_id": tenant_id,
-            "scope_digest": context.scope_digest,
-            "scope_revision": context.scope_revision,
+            "scope_digest": meta["scope_digest"],
+            "scope_revision": meta["scope_revision"],
             "obligations": [
                 {
                     "obligation_id": o.obligation_id,
@@ -321,7 +340,9 @@ class ResearchCaseService:
             raise CaseNotFound(f"case {case_id} not found")
         if context.tenant_id != tenant_id:
             raise CaseServiceError("cross-tenant access denied")
-        if not context.approved:
+
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None or not meta.get("approved"):
             raise CaseNotApproved(f"case {case_id} is not approved")
 
         # Budget reservation must exist before dispatch.
@@ -338,19 +359,22 @@ class ResearchCaseService:
                 "budget service not configured; cannot reserve, cannot dispatch"
             )
 
-        # Check scope staleness.
+        # Fail closed: scope staleness check. Any change to scope_digest
+        # invalidates queued actions and reservations.
         # (In production, compare stored digest against current plan digest.)
 
-        # Record the dispatch intent.
         run_id = f"run-{uuid.uuid4().hex[:12]}"
-        await self._store.record_dispatch_intent(
+
+        # Record the dispatch intent through the existing change publisher
+        # seam rather than inventing a new store method.
+        await self._store.put_person_case_dispatch_intent(
             case_id=case_id,
             tenant_id=tenant_id,
             run_id=run_id,
             idempotency_key=idempotency_key,
             approved_action_refs=approved_action_refs,
-            scope_digest=context.scope_digest,
-            policy_digest=context.scope_digest,
+            scope_digest=meta["scope_digest"],
+            policy_digest=meta["scope_digest"],
         )
 
         # If a CognitiveLoop is wired, tick it once to propose next actions.
@@ -386,11 +410,34 @@ class ResearchCaseService:
         if context.tenant_id != tenant_id:
             raise CaseServiceError("cross-tenant access denied")
 
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None:
+            raise CaseNotFound(f"case {case_id} metadata not found")
+
+        await self._store.put_person_case_metadata(
+            case_id=case_id,
+            tenant_id=tenant_id,
+            purpose_code=meta["purpose_code"],
+            basis_ref=meta["basis_ref"],
+            launch_profile=meta["launch_profile"],
+            claim_families=list(meta["claim_families"]),
+            allowed_source_ids=list(meta["allowed_source_ids"]),
+            denied_claim_families=list(meta.get("denied_claim_families", [])),
+            scope_digest=meta["scope_digest"],
+            scope_revision=meta["scope_revision"],
+            approved=meta.get("approved", False),
+            budget_ref=meta.get("budget_ref"),
+            expires_at=meta.get("expires_at"),
+            valid_time=meta.get("valid_time", {}),
+            jurisdictions=list(meta.get("jurisdictions", [])),
+        )
+
+        # Suspend the context state.
         updated = context.__class__(
             **{
                 **context.__dict__,
                 "state": InvestigationState.SUSPENDED,
-                "updated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                "created_at": context.created_at,
             }
         )
         await self._store.put_context(updated)
@@ -413,8 +460,8 @@ class ResearchCaseService:
         if context.tenant_id != tenant_id:
             raise CaseServiceError("cross-tenant access denied")
 
-        open_obligations = await self._store.open_obligations(case_id)
-        undisposed = [o for o in open_obligations if o.status == ObligationStatus.OPEN]
+        obligations = await self._store.obligations(case_id)
+        undisposed = [o for o in obligations if o.status == ObligationStatus.OPEN]
         if undisposed and disposition not in {"BLOCKED", "CANCELLED"}:
             raise CaseServiceError(
                 f"cannot close: {len(undisposed)} open obligations not dispositioned"
@@ -424,7 +471,7 @@ class ResearchCaseService:
             **{
                 **context.__dict__,
                 "state": InvestigationState.CLOSED,
-                "updated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                "created_at": context.created_at,
             }
         )
         await self._store.put_context(updated)
@@ -434,7 +481,7 @@ class ResearchCaseService:
             "state": "CLOSED",
             "disposition": disposition,
             "report": report or {},
-            "closed_at": updated.updated_at,
+            "closed_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         }
 
     # -- helpers ------------------------------------------------------------
