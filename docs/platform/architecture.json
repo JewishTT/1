@@ -566,6 +566,9 @@
           "platform_model/__init__.py",
           "platform_model/architecture.py",
           "platform_model/build.py",
+          "platform_model/evidence.py",
+          "platform_model/facts.py",
+          "platform_model/narrative.py",
           "platform_model/scanners.py",
           "platform_model/semantic.py",
           "tools/append_zero_frontend_a.py",
@@ -579,7 +582,7 @@
           "tools/specs/build_owner_map.py",
           "tools/strip_zero_inventory.py"
         ],
-        "module_count": 61
+        "module_count": 64
       },
       {
         "id": "orchestration-temporal",
@@ -1378,6 +1381,7 @@
       "api.md",
       "api.routes.search_rebuild",
       "api.tavily.com",
+      "app.py",
       "apple.com",
       "architecture.json",
       "archive.org",
@@ -1536,8 +1540,7 @@
       "entity.version_created",
       "env.py",
       "epistemic.state.recorded",
-      "events.dlq",
-      "events.jsonl"
+      "events.dlq"
     ]
   },
   "context_map": {
@@ -1786,10 +1789,10 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\001-global-osint-platform\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 138,
+        "tasks_total": 139,
+        "modules": [],
+        "module_count": 0
       },
       {
         "id": "002-donor-pattern-integration",
@@ -1797,10 +1800,10 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\002-donor-pattern-integration\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 36,
+        "tasks_total": 36,
+        "modules": [],
+        "module_count": 0
       },
       {
         "id": "003-donor-code-integration",
@@ -1808,10 +1811,12 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\003-donor-code-integration\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 10,
+        "tasks_total": 10,
+        "modules": [
+          "apps/admission/tests/test_collective_export.py"
+        ],
+        "module_count": 1
       },
       {
         "id": "004-donor-coverage-complete",
@@ -1819,10 +1824,15 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\004-donor-coverage-complete\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 13,
+        "tasks_total": 13,
+        "modules": [
+          "apps/shared/donor/target.py",
+          "apps/shared/donor/temporal.py",
+          "apps/shared/tests/unit/donor/test_target.py",
+          "apps/shared/tests/unit/donor/test_temporal.py"
+        ],
+        "module_count": 4
       },
       {
         "id": "005-donor-core-subsystems",
@@ -1830,10 +1840,26 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\005-donor-core-subsystems\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 31,
+        "tasks_total": 35,
+        "modules": [
+          "apps/acquisition/registry.py",
+          "apps/admission/resolution/candidate.py",
+          "apps/admission/tests/test_candidate.py",
+          "apps/admission/tests/test_statement_consumer.py",
+          "apps/control-plane/api/routes/resolutions.py",
+          "apps/control-plane/tests/integration/test_resolution_api.py",
+          "apps/interpretation/evidence/__init__.py",
+          "apps/interpretation/evidence/manifest.py",
+          "apps/interpretation/pipeline.py",
+          "apps/interpretation/tests/test_evidence_manifest.py",
+          "apps/shared/domain/entity.py",
+          "apps/shared/domain/property.py",
+          "apps/shared/domain/schema.py",
+          "apps/shared/domain/statement.py",
+          "apps/shared/tests/unit/domain/test_domain_model.py"
+        ],
+        "module_count": 15
       },
       {
         "id": "006-scientific-intelligence-fabric",
@@ -1841,10 +1867,10 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\006-scientific-intelligence-fabric\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 10,
+        "tasks_total": 64,
+        "modules": [],
+        "module_count": 0
       },
       {
         "id": "007-deterministic-entity-extraction-stack",
@@ -1852,10 +1878,49 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\007-deterministic-entity-extraction-stack\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 32,
+        "tasks_total": 32,
+        "modules": [
+          "apps/interpretation/dictionaries/__init__.py",
+          "apps/interpretation/dictionaries/build_mini.py",
+          "apps/interpretation/dictionaries/companies.py",
+          "apps/interpretation/dictionaries/countries.py",
+          "apps/interpretation/dictionaries/data.py",
+          "apps/interpretation/dictionaries/first_names.py",
+          "apps/interpretation/dictionaries/sanctions.py",
+          "apps/interpretation/extract_demo.py",
+          "apps/interpretation/extractors/__init__.py",
+          "apps/interpretation/extractors/contacts.py",
+          "apps/interpretation/extractors/dictionary_entities.py",
+          "apps/interpretation/extractors/lane.py",
+          "apps/interpretation/extractors/language.py",
+          "apps/interpretation/extractors/matching.py",
+          "apps/interpretation/extractors/normalize.py",
+          "apps/interpretation/extractors/orgs.py",
+          "apps/interpretation/extractors/persons.py",
+          "apps/interpretation/extractors/places.py",
+          "apps/interpretation/extractors/translit.py",
+          "apps/interpretation/extractors/types.py",
+          "apps/interpretation/extractors/util.py",
+          "apps/interpretation/parsers/documents.py",
+          "apps/interpretation/parsers/html_full.py",
+          "apps/interpretation/parsers/ocr.py",
+          "apps/interpretation/parsers/plaintext.py",
+          "apps/interpretation/parsers/structured.py",
+          "apps/interpretation/tests/conftest.py",
+          "apps/interpretation/tests/contract/__init__.py",
+          "apps/interpretation/tests/contract/test_dictionary_entities.py",
+          "apps/interpretation/tests/contract/test_documents.py",
+          "apps/interpretation/tests/contract/test_lang_parity.py",
+          "apps/interpretation/tests/contract/test_normalize.py",
+          "apps/interpretation/tests/contract/test_persons.py",
+          "apps/interpretation/tests/test_deterministic_extraction.py",
+          "apps/shared/datasets/__init__.py",
+          "apps/shared/datasets/build.py",
+          "bench/extraction/bench_extract.py",
+          "bench/fixtures/extraction/_generate.py"
+        ],
+        "module_count": 38
       },
       {
         "id": "008-discovery-search-fabric",
@@ -1863,10 +1928,13 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\008-discovery-search-fabric\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 40,
+        "modules": [
+          "apps/acquisition/adapters/discovery/__init__.py",
+          "apps/control-plane/db/migrations/versions/017_discovery_provenance.py"
+        ],
+        "module_count": 2
       },
       {
         "id": "009-donor-full-catalogue",
@@ -1874,10 +1942,16 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\009-donor-full-catalogue\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 12,
+        "tasks_total": 75,
+        "modules": [
+          "apps/shared/domain/dynamics.py",
+          "apps/shared/domain/fabric.py",
+          "apps/shared/domain/hypergraph.py",
+          "apps/shared/domain/stream_events.py",
+          "apps/shared/events/fabric_events.py"
+        ],
+        "module_count": 5
       },
       {
         "id": "010-zero-layer-contact-harvesting",
@@ -1885,10 +1959,53 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\010-zero-layer-contact-harvesting\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 16,
+        "tasks_total": 39,
+        "modules": [
+          "apps/control-plane/services/layer0_pipeline.py",
+          "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+          "apps/projection/lakehouse/river/lake.py",
+          "apps/projection/search/bm25s_backend.py",
+          "apps/projection/search/indexer.py",
+          "apps/projection/search/relevance.py",
+          "apps/projection/search/tantivy_backend.py",
+          "apps/projection/tests/test_bm25s_backend.py",
+          "apps/projection/tests/test_lakehouse.py",
+          "apps/projection/tests/test_relevance.py",
+          "apps/projection/tests/test_tantivy_backend.py",
+          "apps/shared/tests/unit/websearch/test_websearch.py",
+          "apps/shared/websearch/__init__.py",
+          "apps/shared/websearch/discovery.py",
+          "apps/shared/websearch/queries.py",
+          "apps/zero/tests/test_enrichment.py",
+          "apps/zero/tests/test_harvest_wave.py",
+          "apps/zero/tests/test_harvesters.py",
+          "apps/zero/tests/test_resolution.py",
+          "apps/zero/tests/test_type_detector.py",
+          "apps/zero/zero/__init__.py",
+          "apps/zero/zero/enrichment/__init__.py",
+          "apps/zero/zero/enrichment/feedback.py",
+          "apps/zero/zero/enrichment/modules.py",
+          "apps/zero/zero/harvest_wave.py",
+          "apps/zero/zero/harvesters/__init__.py",
+          "apps/zero/zero/harvesters/contracts.py",
+          "apps/zero/zero/harvesters/domain.py",
+          "apps/zero/zero/harvesters/git.py",
+          "apps/zero/zero/harvesters/image.py",
+          "apps/zero/zero/harvesters/modules.py",
+          "apps/zero/zero/harvesters/phone.py",
+          "apps/zero/zero/harvesters/registry.py",
+          "apps/zero/zero/harvesters/transport.py",
+          "apps/zero/zero/harvesters/url.py",
+          "apps/zero/zero/harvesters/username.py",
+          "apps/zero/zero/observation_gate.py",
+          "apps/zero/zero/resolution/__init__.py",
+          "apps/zero/zero/resolution/fellegi_sunter.py",
+          "apps/zero/zero/resolution/graph.py",
+          "apps/zero/zero/resolution/similarity.py",
+          "apps/zero/zero/type_detector.py"
+        ],
+        "module_count": 42
       },
       {
         "id": "011-atomic-entity-commoncrawl-tda",
@@ -1896,10 +2013,10 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\011-atomic-entity-commoncrawl-tda\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 14,
+        "tasks_total": 18,
+        "modules": [],
+        "module_count": 0
       },
       {
         "id": "012-dynamic-entity-invariant",
@@ -1907,10 +2024,13 @@
         "has_tasks": false,
         "has_plan": false,
         "spec_path": "specs\\012-dynamic-entity-invariant\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [
+          "apps/control-plane/tests/unit/test_invariant_reducer.py",
+          "apps/shared/domain/graph_invariant.py"
+        ],
+        "module_count": 2
       },
       {
         "id": "014-temporal-materialization",
@@ -1918,10 +2038,13 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\014-temporal-materialization\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 30,
+        "tasks_total": 30,
+        "modules": [
+          "apps/control-plane/db/migrations/versions/014_temporal_materialization.py",
+          "apps/control-plane/workflows/temporal_materialization.py"
+        ],
+        "module_count": 2
       },
       {
         "id": "015-worldline-reconstruction",
@@ -1929,10 +2052,14 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\015-worldline-reconstruction\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 11,
+        "tasks_total": 104,
+        "modules": [
+          "apps/acquisition/tests/unit/test_source_query_set.py",
+          "apps/control-plane/db/source_query_store.py",
+          "apps/control-plane/tests/unit/test_migration_forward_only.py"
+        ],
+        "module_count": 3
       },
       {
         "id": "016-relation-evidence-graph-fabric",
@@ -1940,10 +2067,18 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\016-relation-evidence-graph-fabric\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 32,
+        "tasks_total": 93,
+        "modules": [
+          "apps/control-plane/db/migrations/versions/016_relation_evidence_graph.py",
+          "apps/projection/graph/relation_store.py",
+          "apps/shared/domain/capture.py",
+          "apps/shared/domain/evidence_context.py",
+          "apps/shared/domain/relation_claim.py",
+          "apps/shared/domain/relation_identity.py",
+          "apps/shared/domain/relation_schema.py"
+        ],
+        "module_count": 7
       },
       {
         "id": "017-semantic-fabric",
@@ -1951,10 +2086,12 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\017-semantic-fabric\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 30,
+        "modules": [
+          "apps/control-plane/db/migrations/versions/018_semantic_fabric.py"
+        ],
+        "module_count": 1
       },
       {
         "id": "018-world-substrate",
@@ -1962,10 +2099,15 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\018-world-substrate\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 30,
+        "modules": [
+          "apps/acquisition/stream.py",
+          "apps/control-plane/db/migrations/versions/019_world_substrate.py",
+          "apps/interpretation/extractors/relations.py",
+          "apps/shared/domain/entity_identity.py"
+        ],
+        "module_count": 4
       },
       {
         "id": "019-universal-relation-extraction",
@@ -1973,10 +2115,14 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\019-universal-relation-extraction\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 44,
+        "tasks_total": 44,
+        "modules": [
+          "apps/control-plane/db/migrations/versions/020_universal_relation_extraction.py",
+          "apps/control-plane/semantic_path/signal_corpus_baseline.py",
+          "apps/shared/domain/temporal_observation.py"
+        ],
+        "module_count": 3
       },
       {
         "id": "021-entity-relation-extraction-finalization",
@@ -1984,10 +2130,12 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\021-entity-relation-extraction-finalization\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 94,
+        "modules": [
+          "apps/shared/tests/unit/test_schema_hierarchy.py"
+        ],
+        "module_count": 1
       },
       {
         "id": "022-estorides-donor-mining",
@@ -1995,10 +2143,10 @@
         "has_tasks": false,
         "has_plan": false,
         "spec_path": "specs\\022-estorides-donor-mining\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [],
+        "module_count": 0
       },
       {
         "id": "023-acquisition-integration-searxng",
@@ -2006,10 +2154,14 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\023-acquisition-integration-searxng\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 214,
+        "modules": [
+          "apps/acquisition/_prove_airbyte.py",
+          "apps/acquisition/_prove_searxng.py",
+          "apps/acquisition/_prove_tools.py"
+        ],
+        "module_count": 3
       },
       {
         "id": "024-context-driven-continuous-intelligence",
@@ -2017,10 +2169,35 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\024-context-driven-continuous-intelligence\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 168,
+        "modules": [
+          "apps/control-plane/context_engine/__init__.py",
+          "apps/control-plane/context_engine/catalogue_bridge.py",
+          "apps/control-plane/context_engine/loop.py",
+          "apps/control-plane/context_engine/obligations.py",
+          "apps/control-plane/tests/integration/test_investigation_temporal.py",
+          "apps/control-plane/tests/unit/test_cognitive_loop.py",
+          "apps/control-plane/tests/unit/test_context_engine.py",
+          "apps/control-plane/tests/unit/test_context_termination_and_catalogue.py",
+          "apps/control-plane/tests/unit/test_dispatcher_backpressure.py",
+          "apps/control-plane/workflows/investigation_activities.py",
+          "apps/projection/analytics/temporal_graph.py",
+          "apps/science/anchoring.py",
+          "apps/science/tests/test_anchoring.py",
+          "apps/shared/domain/investigation_context.py",
+          "apps/shared/events/dlq_durable.py",
+          "apps/shared/net/secure_fetch.py",
+          "apps/shared/tests/unit/test_dlq_durable.py",
+          "apps/shared/tests/unit/test_event_timestamps.py",
+          "apps/shared/tests/unit/test_idempotent_consumer.py",
+          "apps/shared/tests/unit/test_investigation_context.py",
+          "apps/shared/tests/unit/test_layer_boundaries.py",
+          "apps/shared/tests/unit/test_research_lineage.py",
+          "apps/shared/tests/unit/test_secure_fetch.py",
+          "apps/shared/tools/layer_boundaries.py"
+        ],
+        "module_count": 24
       },
       {
         "id": "025-context-reality-approximation-engine",
@@ -2028,10 +2205,42 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\025-context-reality-approximation-engine\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [
+          "apps/control-plane/db/migrations/versions/022_context_fabric.py",
+          "apps/control-plane/db/migrations/versions/023_derivation_enforcement.py",
+          "apps/interpretation/parsers/families.py",
+          "apps/interpretation/parsers/paths.py",
+          "apps/interpretation/parsers/to_entities.py",
+          "apps/interpretation/tests/contract/test_parser_families.py",
+          "apps/interpretation/tests/integration/test_all_sources_parse.py",
+          "apps/projection/tda/bridge.py",
+          "apps/projection/tests/contract/test_tda_bridge_contract.py",
+          "apps/science/context/__init__.py",
+          "apps/science/context/argumentation.py",
+          "apps/science/context/coverage.py",
+          "apps/science/context/epistemic.py",
+          "apps/science/context/fabric.py",
+          "apps/science/context/lattice.py",
+          "apps/science/context/operators/adapters.py",
+          "apps/science/context/operators/base.py",
+          "apps/science/context/operators/compatibility.py",
+          "apps/science/context/operators/gluing.py",
+          "apps/science/context/operators/registry.py",
+          "apps/science/context/semantic_graph.py",
+          "apps/science/tests/contract/test_argumentation_contract.py",
+          "apps/science/tests/contract/test_epistemic_contract.py",
+          "apps/science/tests/contract/test_gluing_contract.py",
+          "apps/science/tests/contract/test_growth_contract.py",
+          "apps/science/tests/contract/test_ontology_and_schema_stay_in_step.py",
+          "apps/science/tests/contract/test_operator_registry_contract.py",
+          "apps/science/tests/contract/test_query_compiler_contract.py",
+          "apps/science/tests/integration/test_live_scope_lattice.py",
+          "apps/shared/domain/derivation.py",
+          "apps/shared/tests/unit/test_derivation_identity.py"
+        ],
+        "module_count": 31
       },
       {
         "id": "026-universal-context-engine",
@@ -2039,10 +2248,16 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\026-universal-context-engine\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [
+          "apps/acquisition/sources/capabilities.py",
+          "apps/science/context/enrichment.py",
+          "apps/science/tests/contract/test_dossier_contract.py",
+          "apps/science/tests/contract/test_enrichment_contract.py",
+          "apps/science/tests/contract/test_hierarchy_contract.py"
+        ],
+        "module_count": 5
       },
       {
         "id": "027-ci-specops-fabric",
@@ -2050,10 +2265,19 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\027-ci-specops-fabric\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 37,
+        "tasks_total": 58,
+        "modules": [
+          "apps/specops/__init__.py",
+          "apps/specops/emulation.py",
+          "apps/specops/forensics.py",
+          "apps/specops/phishing.py",
+          "apps/specops/roe/__init__.py",
+          "apps/specops/roe/gate.py",
+          "apps/specops/tests/conftest.py",
+          "apps/specops/tests/test_roe_gate.py"
+        ],
+        "module_count": 8
       },
       {
         "id": "028-closed-research-loop",
@@ -2061,10 +2285,10 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\028-closed-research-loop\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [],
+        "module_count": 0
       },
       {
         "id": "029-research-closed-loop-upgrade",
@@ -2072,10 +2296,10 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\029-research-closed-loop-upgrade\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [],
+        "module_count": 0
       },
       {
         "id": "030-global-platform-upgrade",
@@ -2083,10 +2307,35 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\030-global-platform-upgrade\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 152,
+        "modules": [
+          "apps/admission/resolution/span.py",
+          "apps/admission/tests/contract/test_no_auto_merge.py",
+          "apps/admission/tests/contract/test_resolution_history.py",
+          "apps/admission/tests/unit/test_cluster_transitivity.py",
+          "apps/admission/tests/unit/test_splink_adapter.py",
+          "apps/control-plane/tests/unit/test_approval_gate.py",
+          "apps/control-plane/tests/unit/test_fabric_anchor_guard.py",
+          "apps/interpretation/tests/contract/test_span_semantics.py",
+          "apps/projection/tests/unit/test_h3_spatial.py",
+          "apps/science/tests/unit/test_river_drift.py",
+          "apps/shared/contracts/canonical.py",
+          "apps/shared/domain/access_mode.py",
+          "apps/shared/tests/contract/test_donor_registry.py",
+          "apps/shared/tests/contract/test_error_codes.py",
+          "apps/shared/tests/contract/test_evidence_span.py",
+          "apps/shared/tests/contract/test_operator_result.py",
+          "apps/shared/tests/contract/test_projection_manifest.py",
+          "apps/shared/tests/contract/test_stage_outcome.py",
+          "apps/shared/tests/unit/test_access_mode.py",
+          "apps/shared/tests/unit/test_fusion.py",
+          "apps/shared/tests/unit/test_measured_values.py",
+          "apps/shared/tests/unit/test_resolution_mention_span.py",
+          "bench/fixtures/global_upgrade/epistemic/build_corpus.py",
+          "bench/fixtures/global_upgrade/identity/build_corpus.py"
+        ],
+        "module_count": 24
       },
       {
         "id": "031-ghostline-vishing-fabric",
@@ -2094,10 +2343,15 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\031-ghostline-vishing-fabric\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 53,
+        "tasks_total": 53,
+        "modules": [
+          "apps/control-plane/api/routes/specops_ghostline.py",
+          "apps/specops/ghostline/__init__.py",
+          "apps/specops/tests/test_ghostline.py",
+          "apps/specops/tests/test_specops_ghostline_routers.py"
+        ],
+        "module_count": 4
       },
       {
         "id": "032-global-upgrade-execution",
@@ -2105,10 +2359,19 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\032-global-upgrade-execution\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 84,
+        "modules": [
+          "apps/control-plane/api/routes/specops_engagement.py",
+          "apps/shared/tests/contract/test_single_publication_path.py",
+          "apps/specops/engagement/__init__.py",
+          "apps/specops/engagement/config.py",
+          "apps/specops/engagement/fabric.py",
+          "apps/specops/engagement/funnel.py",
+          "apps/specops/engagement/taxonomy.py",
+          "apps/specops/tests/test_engagement.py"
+        ],
+        "module_count": 8
       },
       {
         "id": "033-universal-context-runtime",
@@ -2116,10 +2379,10 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs\\033-universal-context-runtime\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 84,
+        "modules": [],
+        "module_count": 0
       },
       {
         "id": "034-person-research-case",
@@ -2127,10 +2390,18 @@
         "has_tasks": false,
         "has_plan": false,
         "spec_path": "specs\\034-person-research-case\\spec.md",
-        "capabilities": [],
-        "wired_and_tested": 0,
-        "test_only": 0,
-        "missing": 0
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [
+          "apps/acquisition/dispatcher/scheduler.py",
+          "apps/admission/resolution/blocking.py",
+          "apps/control-plane/api/routes/research_cases.py",
+          "apps/control-plane/context_engine/person_case_profile.py",
+          "apps/control-plane/services/model_gateway.py",
+          "apps/control-plane/services/research_case_policy.py",
+          "apps/control-plane/services/research_case_service.py"
+        ],
+        "module_count": 7
       }
     ]
   },

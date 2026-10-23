@@ -59,8 +59,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from urllib.parse import quote
 
-from rdflib import RDF, XSD, Graph, Literal, Namespace, URIRef
-from rdflib.namespace import SH
+try:
+    from rdflib import RDF, XSD, Graph, Literal, Namespace, URIRef
+    from rdflib.namespace import SH
+except ImportError:  # pragma: no cover - optional capability
+    RDF = XSD = Graph = Literal = Namespace = URIRef = SH = None  # type: ignore
 
 from domain.evidence_context import EvidenceContext
 from domain.relation_claim import RelationClaim
@@ -92,8 +95,10 @@ __all__ = [
 #: over the internal id space so an internal id is never dressed up as an ontology IRI.
 RDF_VIEW_BASE = "urn:cognitive:semantic:view:"
 
-#: The view's own vocabulary, for shapes to target.
-RDF_VIEW_NS = Namespace(f"{RDF_VIEW_BASE}ns#")
+#: The view's own vocabulary, for shapes to target. ``None`` when ``rdflib`` is absent, which is
+#: the whole point of the guarded import above: importing this module must never require the
+#: optional projection library.
+RDF_VIEW_NS = Namespace(f"{RDF_VIEW_BASE}ns#") if Namespace is not None else None
 
 #: Node ceiling on a projected view. Sized for a validation batch and small enough that a runaway
 #: loop cannot turn one sidecar call into an unbounded allocation (constitution VIII).

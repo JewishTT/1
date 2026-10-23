@@ -155,7 +155,35 @@ def build_context_map(root: Path, model: dict, contexts: dict) -> dict:
     return {"edges": edges}
 
 
+_SPEC_REF = re.compile(r"\b(?:spec|feature)[ /]0*(\d{1,3})\b", re.I)
+
+
+def _tasks_progress(path: Path) -> tuple[int, int]:
+    """(checked, total) task checkboxes in a tasks.md, or (0, 0)."""
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return 0, 0
+    checked = len(re.findall(r"^\s*[-*]\s*\[[xX]\]", text, re.M))
+    unchecked = len(re.findall(r"^\s*[-*]\s*\[\s\]", text, re.M))
+    return checked, checked + unchecked
+
+
 def build_traceability(root: Path, model: dict) -> dict:
+    """Spec (intended) ↔ code (actual), both sides derived.
+
+    ``tasks_checked``/``tasks_total`` is the spec's own declared progress. ``modules``
+    is the count of platform modules whose docstring cites the spec by number — the
+    actual, in-tree footprint. Where declared progress is 0 but the footprint is
+    large, the spec's bookkeeping is behind the code.
+    """
+    # docstring references per spec number
+    refs: dict[int, list[str]] = defaultdict(list)
+    for m in model.get("python", {}).get("modules", []):
+        doc = m.get("docstring") or ""
+        for num in {int(x) for x in _SPEC_REF.findall(doc)}:
+            refs[num].append(m["path"])
+
     specs = []
     for p in sorted((root / "specs").iterdir()):
         if not p.is_dir():
@@ -163,44 +191,24 @@ def build_traceability(root: Path, model: dict) -> dict:
         spec_md = p / "spec.md"
         tasks_md = p / "tasks.md"
         plan_md = p / "plan.md"
+        num = None
+        mnum = re.match(r"(\d{1,3})-", p.name)
+        if mnum:
+            num = int(mnum.group(1))
+        checked, total = _tasks_progress(tasks_md)
+        modules = sorted(set(refs.get(num, []))) if num is not None else []
         specs.append({
             "id": p.name,
             "has_spec": spec_md.exists(),
             "has_tasks": tasks_md.exists(),
             "has_plan": plan_md.exists(),
             "spec_path": str(spec_md.relative_to(root)) if spec_md.exists() else None,
+            "tasks_checked": checked,
+            "tasks_total": total,
+            "modules": modules,
+            "module_count": len(modules),
         })
-
-    caps = model.get("capabilities", [])
-    cap_by_spec = defaultdict(list)
-    for c in caps:
-        cid = c.get("id", "")
-        for s in ["030", "031", "032", "033", "034"]:
-            if s in cid:
-                cap_by_spec[f"{s}-" + next((x["id"][4:] for x in []), "") or cid].append(cid)
-    # simpler
-    for c in caps:
-        cid = c.get("id", "")
-        for spec_id in ["030-global-platform-upgrade", "031-ghostline-vishing-fabric", "032-global-upgrade-execution", "033-universal-context-runtime", "034-person-research-case"]:
-            if spec_id[:3] in cid or spec_id in str(c):
-                cap_by_spec[spec_id].append(cid)
-                break
-
-    out_specs = []
-    for s in specs:
-        cids = sorted(set(cap_by_spec.get(s["id"], [])))
-        matched = [c for c in caps if c["id"] in cids]
-        wired = len([c for c in matched if c["status"] == "WIRED_AND_TESTED"])
-        test_only = len([c for c in matched if c["status"] == "TEST_ONLY"])
-        missing = len([c for c in matched if c.get("status") == "MISSING"])
-        out_specs.append({
-            **s,
-            "capabilities": cids,
-            "wired_and_tested": wired,
-            "test_only": test_only,
-            "missing": missing,
-        })
-    return {"specs": out_specs}
+    return {"specs": specs}
 
 
 def build_execution_flows(root: Path, model: dict) -> dict:

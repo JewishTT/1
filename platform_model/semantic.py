@@ -119,15 +119,22 @@ def scan_api(root: Path) -> list[dict]:
 _TEST_FUNC = re.compile(r"""^\s*(?:async\s+)?def\s+(test_[A-Za-z0-9_]+)""", re.M)
 
 
-def scan_tests(root: Path, py_modules: list[dict]) -> dict[str, dict]:
-    """Map test files to the platform modules they import, and count tests."""
+def scan_tests(root: Path, py_modules: list[dict], roots: dict[str, str] | None = None) -> dict[str, dict]:
+    """Map test files to the platform modules they import, and count tests.
+
+    ``roots`` is the top-level import name → repo directory map produced by the
+    import-graph builder. Without it, a test that imports a platform package by
+    its bare name (``from contracts.observation import ...``, which ``conftest``
+    puts on ``sys.path``) cannot be resolved to a file, and every test would be
+    recorded with no target — which is the difference between a coverage claim
+    and a coverage fiction.
+    """
     module_by_path = {m["path"]: m for m in py_modules}
+    roots = roots or {}
     by_target: dict[str, dict] = {}
-    total = 0
     for p in iter_test_files(root):
         text = p.read_text(encoding="utf-8", errors="replace")
         tests = _TEST_FUNC.findall(text)
-        total += len(tests)
         imports = _test_imports(text)
         rel = _rel(p, root)
         entry = by_target.setdefault(
@@ -138,7 +145,7 @@ def scan_tests(root: Path, py_modules: list[dict]) -> dict[str, dict]:
         entry["test_names"].extend(tests[:50])
         entry["imports"] = sorted(set(entry["imports"]) | set(imports))
         for imp in imports:
-            tgt = _resolve_import(imp, module_by_path)
+            tgt = _resolve_import(imp, module_by_path, roots)
             if tgt:
                 entry["targets"].append(tgt)
         entry["targets"] = sorted(set(entry["targets"]))
@@ -160,15 +167,33 @@ def _test_imports(text: str) -> list[str]:
     return re.findall(r"""^\s*(?:from|import)\s+([A-Za-z0-9_\.]+)""", text, re.M)
 
 
-def _resolve_import(imp: str, module_by_path: dict[str, dict]) -> str | None:
+def _resolve_import(imp: str, module_by_path: dict[str, dict], roots: dict[str, str]) -> str | None:
+    """Repo path of the platform module an import names, or None.
+
+    Resolution goes through the same import-root map the import graph uses: the
+    platform imports its packages by bare directory name, so ``contracts.x``
+    means ``apps/shared/contracts/x.py`` and only ``roots`` knows that.
+    """
     parts = imp.split(".")
     for n in range(len(parts), 0, -1):
-        cand = "/".join(parts[:n]) + ".py"
-        if cand in module_by_path:
-            return module_by_path[cand]["module"]
-        cand_init = "/".join(parts[:n]) + "/__init__.py"
-        if cand_init in module_by_path:
-            return module_by_path[cand_init]["module"]
+        prefix = ".".join(parts[:n])
+        base = roots.get(prefix)
+        if not base:
+            continue
+        if base.endswith("/__init__.py"):
+            base = base[: -len("/__init__.py")]
+        elif base.endswith(".py"):
+            base = base[:-3]
+        rest = parts[n:]
+        rel = "/".join([base] + rest) if rest else base
+        for cand in (rel + ".py", rel + "/__init__.py"):
+            if cand in module_by_path:
+                return cand
+    # fall back to a literal repo-path match (tests that import by repo path)
+    for n in range(len(parts), 0, -1):
+        for cand in ("/".join(parts[:n]) + ".py", "/".join(parts[:n]) + "/__init__.py"):
+            if cand in module_by_path:
+                return cand
     return None
 
 

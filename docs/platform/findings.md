@@ -60,7 +60,7 @@ _None: every declared capability has a module in the tree._
 
 ## Untested modules
 
-639 platform modules are not imported by any test. Sample:
+263 platform modules are not imported by any test. Sample:
 
 | Module |
 |---|
@@ -73,41 +73,41 @@ _None: every declared capability has a module in the tree._
 | `apps/acquisition/_prove_tools.py` |
 | `apps/acquisition/adapters/__init__.py` |
 | `apps/acquisition/adapters/_ingest.py` |
-| `apps/acquisition/adapters/browsertrix/__init__.py` |
-| `apps/acquisition/adapters/browsertrix/collect.py` |
 | `apps/acquisition/adapters/common_crawl.py` |
-| `apps/acquisition/adapters/commoncrawl/__init__.py` |
-| `apps/acquisition/adapters/commoncrawl/index.py` |
-| `apps/acquisition/adapters/discovery/__init__.py` |
 | `apps/acquisition/adapters/discovery/commoncrawl_index.py` |
 | `apps/acquisition/adapters/discovery/contracts.py` |
 | `apps/acquisition/adapters/discovery/crtsh.py` |
 | `apps/acquisition/adapters/discovery/linkgraph.py` |
-| `apps/acquisition/adapters/discovery/registry.py` |
 | `apps/acquisition/adapters/discovery/wayback_cdx.py` |
-| `apps/acquisition/adapters/heritrix/__init__.py` |
-| `apps/acquisition/adapters/heritrix/collect.py` |
-| `apps/acquisition/adapters/nutch/__init__.py` |
-| `apps/acquisition/adapters/nutch/collect.py` |
-| `apps/acquisition/adapters/registry.py` |
-| `apps/acquisition/adapters/scrapy/__init__.py` |
 | `apps/acquisition/adapters/scrapy/spider.py` |
-| `apps/acquisition/adapters/scrapy/stream.py` |
 | `apps/acquisition/adapters/sec_edgar.py` |
-| `apps/acquisition/adapters/stormcrawler/__init__.py` |
-| `apps/acquisition/adapters/stormcrawler/collect.py` |
-| `apps/acquisition/adapters/warc/__init__.py` |
-| `apps/acquisition/adapters/warc/collect.py` |
-| `apps/acquisition/artifact_sink.py` |
-| `apps/acquisition/cc_extract.py` |
-| `apps/acquisition/cc_plan.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
-| `apps/acquisition/dispatcher/kafka_producer.py` |
-| `apps/acquisition/dispatcher/plan_driver.py` |
+| `apps/acquisition/observation_gate/__init__.py` |
+| `apps/acquisition/runtime/external_tool.py` |
+| `apps/acquisition/runtime/searxng.py` |
+| `apps/acquisition/sources/__init__.py` |
+| `apps/acquisition/sources/append_parse_blocks.py` |
+| `apps/acquisition/sources/capabilities.py` |
+| `apps/acquisition/stream.py` |
+| `apps/acquisition/worker-dataset/__init__.py` |
+| `apps/acquisition/worker-dataset/acquire.py` |
+| `apps/acquisition/worker_browser/__init__.py` |
+| `apps/acquisition/worker_http/__init__.py` |
+| `apps/admission/engine/__init__.py` |
+| `apps/admission/independence/__init__.py` |
+| `apps/admission/resolution/__init__.py` |
+| `apps/bulk-ingestion/backfill.py` |
+| `apps/bulk-ingestion/historical/__init__.py` |
+| `apps/bulk-ingestion/historical/replay.py` |
+| `apps/control-plane/__init__.py` |
+| `apps/control-plane/api/auth.py` |
+| `apps/control-plane/api/path_shim.py` |
+| `apps/control-plane/api/routes/connectors.py` |
+| `apps/control-plane/api/routes/discovery.py` |
 
-## Broken imports
+## Unresolved imports (by evidence)
 
-0 imports name a platform package that does not exist, and 0 distinct top-level names are neither platform roots, nor installed, nor declared in any manifest.
+0 platform imports have no resolved target (local/stale/guarded-local); 1 tracked guarded gaps; 0 undeclared (not platform/stdlib/installed/declared).
 
 | From | Import | Kind |
 |---|---|---|

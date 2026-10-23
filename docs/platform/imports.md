@@ -1,6 +1,6 @@
 # Import graph
 
-957 Python modules, 2617 resolved local edges.
+960 Python modules, 2619 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,19 +10,19 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 830 |
+| `__future__` | stdlib | 833 |
 | `dataclasses` | stdlib | 386 |
-| `typing` | stdlib | 348 |
-| `pathlib` | stdlib | 292 |
+| `typing` | stdlib | 349 |
+| `pathlib` | stdlib | 295 |
 | `pytest` | third-party | 254 |
 | `sys` | stdlib | 246 |
 | `collections` | stdlib | 233 |
+| `json` | stdlib | 179 |
 | `datetime` | stdlib | 177 |
-| `json` | stdlib | 177 |
 | `enum` | stdlib | 117 |
 | `sqlalchemy` | third-party | 117 |
-| `hashlib` | stdlib | 112 |
-| `re` | stdlib | 79 |
+| `hashlib` | stdlib | 113 |
+| `re` | stdlib | 85 |
 | `asyncio` | stdlib | 62 |
 | `fastapi` | third-party | 62 |
 | `os` | stdlib | 61 |
@@ -39,12 +39,12 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `logging` | stdlib | 21 |
 | `httpx` | third-party | 20 |
 | `inspect` | stdlib | 19 |
+| `alembic` | declared-not-installed | 18 |
 | `argparse` | stdlib | 18 |
-| `alembic` | third-party | 18 |
 | `tempfile` | stdlib | 17 |
 | `threading` | stdlib | 17 |
+| `warcio` | declared-not-installed | 15 |
 | `subprocess` | stdlib | 15 |
-| `warcio` | third-party | 15 |
 | `shutil` | stdlib | 14 |
 | `confluent_kafka` | third-party | 14 |
 | `temporalio` | third-party | 13 |
@@ -59,9 +59,9 @@ that is switched off in this environment.
 
 | Package | Probe sites |
 |---|---|
+| `rdflib` | 2 |
 | `pyshacl` | 1 |
 | `pyzbar` | 1 |
-| `tantivy` | 1 |
 
 ## Import roots
 
@@ -80,7 +80,6 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `api` | `apps/control-plane/api/__init__.py` |
 | `application` | `apps/control-plane/application` |
 | `artifact_sink` | `apps/acquisition/artifact_sink.py` |
-| `backfill` | `apps/bulk-ingestion/backfill.py` |
 | `badges` | `apps/control-plane/badges/__init__.py` |
 | `beliefs` | `apps/science/beliefs/__init__.py` |
 | `bench` | `bench/bench/__init__.py` |
@@ -108,12 +107,10 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `evidence` | `apps/interpretation/evidence/__init__.py` |
 | `experiments` | `apps/science/experiments/__init__.py` |
 | `extractors` | `apps/interpretation/extractors/__init__.py` |
-| `feedback` | `apps/feedback/feedback/__init__.py` |
-| `feedback_engine` | `apps/feedback/feedback_engine.py` |
+| `feedback` | `apps/feedback` |
 | `fixtures` | `apps/science/fixtures/__init__.py` |
 | `frontier` | `apps/acquisition/frontier` |
 | `graph` | `apps/projection/graph/__init__.py` |
-| `historical` | `apps/bulk-ingestion/historical/__init__.py` |
 | `hypotheses` | `apps/science/hypotheses/__init__.py` |
 | `ids` | `apps/shared/ids/__init__.py` |
 | `independence` | `apps/admission/independence/__init__.py` |
@@ -154,7 +151,6 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `sources` | `apps/acquisition/sources/__init__.py` |
 | `spatial` | `apps/projection/spatial` |
 | `specops` | `apps/specops/__init__.py` |
-| `stopping` | `apps/feedback/stopping.py` |
 | `storage` | `apps/shared/storage/__init__.py` |
 | `store` | `apps/science/store.py` |
 | `stream` | `apps/acquisition/stream.py` |

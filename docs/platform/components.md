@@ -280,7 +280,7 @@ apps.interpretation.extractors.signals.tables
 
 The generator that produces docs/platform from the tree.
 
-Python modules: **5** · TypeScript modules: **0**
+Python modules: **8** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -288,6 +288,9 @@ Python modules: **5** · TypeScript modules: **0**
 platform_model
 platform_model.architecture
 platform_model.build
+platform_model.evidence
+platform_model.facts
+platform_model.narrative
 platform_model.scanners
 platform_model.semantic
 ```

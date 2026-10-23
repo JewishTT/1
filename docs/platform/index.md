@@ -9,15 +9,20 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 957 |
+| Python modules | 960 |
 | TypeScript modules | 251 |
 | Rust crates | 9 |
 | Rust source files | 15 |
-| Import edges (local) | 2617 |
-| Broken local imports | 1 |
+| Import edges (local) | 2619 |
+| Unresolved imports (no local target) | 1 |
+| Unresolved: local | 0 |
+| Unresolved: stale-platform-path | 0 |
+| Unresolved: guarded-local | 0 |
+| Unresolved: guarded-gap | 1 |
+| Unresolved: unknown (undeclared) | 0 |
 | Test files | 321 |
-| Test functions | 5177 |
-| Untested platform modules | 639 |
+| Test functions | 5178 |
+| Untested platform modules | 263 |
 | HTTP routes | 174 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
 | Capabilities | 30 |
@@ -46,7 +51,7 @@ committed model no longer matches the tree.
 | control-plane | 214 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
 | interpretation | 109 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
-| platform_model | 5 | 0 | The generator that produces docs/platform from the tree. |
+| platform_model | 8 | 0 | The generator that produces docs/platform from the tree. |
 | projection | 65 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |

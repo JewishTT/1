@@ -57,6 +57,9 @@ from platform_model import build as pm  # noqa: E402
 #: smaller build.
 EXPECTED_PAGES = (
     "api.md",
+    "architecture.json",
+    "architecture-evidence.json",
+    "architecture-evidence.jsonl",
     "capabilities.md",
     "components.md",
     "contracts.md",
@@ -92,7 +95,22 @@ KNOWN_UNDECLARED_DEPENDENCIES = frozenset()
 #: imported inside ``try/except ImportError``, so the platform works without them; they
 #: are listed here because "the platform can run without it" is a decision someone made,
 #: not an accident.
-KNOWN_OPTIONAL_PROBES = frozenset({"pyshacl", "pyzbar", "tantivy"})
+KNOWN_OPTIONAL_PROBES = frozenset({"pyshacl", "pyzbar", "rdflib"})
+
+#: Generated narrative documents that live outside ``docs/platform/``. They are rendered
+#: from the model by ``platform_model/narrative.py`` and are part of the drift gate, so a
+#: factual change to the tree that is not reflected here fails.
+EXPECTED_NARRATIVE_DOCS = (
+    "README.md",
+    "docs/README.md",
+    "docs/CONTRIBUTING.md",
+    "docs/architecture/overview.md",
+    "docs/architecture/stream-processing.md",
+    "docs/architecture/fabric-collection.md",
+    "docs/architecture/multi-region.md",
+    "docs/architecture/dynamic-entity-invariant.md",
+    "docs/architecture/donors/00-INDEX.md",
+)
 
 #: Extensions that count as "source" when deciding whether an app dir is a component.
 SOURCE_SUFFIXES = (".py", ".ts", ".tsx")
@@ -125,6 +143,15 @@ def test_every_expected_page_is_generated(model: dict) -> None:
 
 def test_generated_pages_are_not_empty(model: dict) -> None:
     for name, content in pm.artifacts(model).items():
+        assert content.strip(), f"{name} is empty"
+
+
+def test_narrative_docs_are_generated(model: dict) -> None:
+    """The README and the docs index are generated, non-empty, and drift-gated."""
+    produced = pm.narrative_artifacts(model)
+    missing = sorted(set(EXPECTED_NARRATIVE_DOCS) - set(produced))
+    assert not missing, f"the generator no longer produces: {missing}"
+    for name, content in produced.items():
         assert content.strip(), f"{name} is empty"
 
 

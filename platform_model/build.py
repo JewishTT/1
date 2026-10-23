@@ -619,6 +619,11 @@ def build_import_graph(py_modules: list[dict], root: Path) -> dict:
     }
 
 
+def _is_test_path(path: str) -> bool:
+    name = path.rsplit("/", 1)[-1]
+    return "/tests/" in path or name.startswith("test_") or name.endswith("_test.py")
+
+
 def component_of(path: str) -> str:
     parts = path.split("/")
     if len(parts) >= 2 and parts[0] == "apps":
@@ -677,13 +682,22 @@ def build_model(root: Path) -> dict:
     rust, crates = collect_rust(root)
     graph = build_import_graph(py, root)
     components = build_components(py, ts)
-    tests = scan_tests(root, py)
+    tests = scan_tests(root, py, graph["roots"])
     artifacts = load_spec_artifacts(root)
 
     from .architecture import build_architecture
 
-    py_tests = {t["path"]: t for t in tests.values()}
-    untested = [m["path"] for m in py if "/tests/" not in m["path"] and m["path"] not in py_tests]
+    # A module is "tested" when some test file targets it (resolved through the
+    # same import roots as the import graph). "Not imported by a test" is a fact
+    # about reachability, not a claim about behavioural coverage.
+    targeted: set[str] = set()
+    for t in tests.values():
+        targeted.update(t.get("targets", ()))
+    untested = [
+        m["path"]
+        for m in py
+        if not _is_test_path(m["path"]) and m["path"] not in targeted
+    ]
 
     model = {
         "generated_from": str(root),
@@ -709,6 +723,11 @@ def build_model(root: Path) -> dict:
         "untested_count": len(untested),
     }
     model["architecture"] = build_architecture(root, model)
+    try:
+        from .evidence import build_evidence
+        model["evidence"] = build_evidence(root, model)
+    except Exception:
+        model["evidence"] = {"facts": [], "stats": {"facts_total": 0, "static_facts": 0, "inferred": 0, "intended": 0}}
     return model
 
 
@@ -725,6 +744,12 @@ def _md_table(headers: list[str], rows: list[list[str]]) -> str:
 
 def render_index(model: dict) -> str:
     comps = model["components"]
+    g = model["import_graph"]
+    by_kind: dict[str, int] = {}
+    for u in g.get("unresolved", []):
+        k = u.get("kind", "unknown")
+        by_kind[k] = by_kind.get(k, 0) + 1
+    unresolved_total = len(g.get("unresolved", []))
     lines = [
         "# COGNITIVE Platform — Dynamic Model",
         "",
@@ -742,8 +767,13 @@ def render_index(model: dict) -> str:
                 ["TypeScript modules", model["typescript"]["count"]],
                 ["Rust crates", len(model["rust"]["crates"])],
                 ["Rust source files", model["rust"]["count"]],
-                ["Import edges (local)", model["import_graph"]["edge_count"]],
-                ["Broken local imports", len(model["import_graph"]["unresolved"])],
+                ["Import edges (local)", g["edge_count"]],
+                ["Unresolved imports (no local target)", unresolved_total],
+                ["Unresolved: local", by_kind.get("local", 0)],
+                ["Unresolved: stale-platform-path", by_kind.get("stale-platform-path", 0)],
+                ["Unresolved: guarded-local", by_kind.get("guarded-local", 0)],
+                ["Unresolved: guarded-gap", by_kind.get("guarded-gap", 0)],
+                ["Unresolved: unknown (undeclared)", by_kind.get("unknown", 0)],
                 ["Test files", len(model["tests"]["by_file"])],
                 ["Test functions", model["tests"]["total"]],
                 ["Untested platform modules", model["untested_count"]],
@@ -919,14 +949,13 @@ def render_imports(model: dict) -> str:
             + by_kind.get("guarded-local", [])
         )
         lines += [
-            "## Broken platform imports",
+            "## Platform imports with no resolved target",
             "",
-            "The import names a platform package that does not exist in the tree.",
+            "The import names a platform package that does not exist at the resolved target. Classified by proof:",
             "",
-            "* `stale-platform-path` — the module still exists under a different root; a "
-            "rename that did not reach the importer.",
-            "* `guarded-local` — the import is inside a `try`, so it does not crash, but the "
-            "feature behind it is silently switched off.",
+            "* `local` — no target found; treated as a potential defect until proven otherwise.",
+            "* `stale-platform-path` — the module still exists under a different root; a rename that did not reach the importer.",
+            "* `guarded-local` — the import is inside a `try`, so it does not crash, but the feature behind it is silently switched off.",
             "",
             _md_table(
                 ["From", "Import", "Kind"],
@@ -981,8 +1010,12 @@ def render_tests(model: dict) -> str:
     lines = [
         "# Tests",
         "",
-        f"{len(t['by_file'])} test files, {t['total']} test functions. {model['untested_count']} platform",
-        "modules are not imported by any test.",
+        f"{len(t['by_file'])} test files, {t['total']} test functions. "
+        f"{model['untested_count']} platform modules are not targeted by any test.",
+        "",
+        "`Targets` is resolved through the platform's own import roots, so a test that imports a "
+        "package by its bare name resolves to the module it exercises. A target is reachability, "
+        "not behavioural coverage.",
         "",
         "## Test files",
         "",
@@ -994,7 +1027,7 @@ def render_tests(model: dict) -> str:
             ],
         ),
         "",
-        "## Untested platform modules (sample)",
+        "## Platform modules not targeted by any test (sample)",
         "",
         _md_table(["Module"], [[f"`{m}`"] for m in model["untested_modules"][:60]]),
         "",
@@ -1130,12 +1163,12 @@ def render_findings(model: dict) -> str:
         "",
         _md_table(["Module"], [[f"`{m}`"] for m in model["untested_modules"][:40]]),
         "",
-        "## Broken imports",
+        "## Unresolved imports (by evidence)",
         "",
         f"{sum(1 for u in graph['unresolved'] if u.get('kind') in ('local', 'stale-platform-path', 'guarded-local'))}"
-        " imports name a platform package that does not exist, and"
-        f" {len(graph['unknown'])} distinct top-level names are neither platform roots, nor"
-        " installed, nor declared in any manifest.",
+        " platform imports have no resolved target (local/stale/guarded-local); "
+        f"{sum(1 for u in graph['unresolved'] if u.get('kind') == 'guarded-gap')} tracked guarded gaps; "
+        f"{sum(1 for u in graph['unresolved'] if u.get('kind') == 'unknown')} undeclared (not platform/stdlib/installed/declared).",
         "",
         _md_table(
             ["From", "Import", "Kind"],
@@ -1221,6 +1254,8 @@ def summary_model(model: dict) -> dict:
         "untested_modules": model["untested_count"],
         "http_routes": sum(len(a["routes"]) for a in model["api"]),
     }
+    if model.get("evidence"):
+        out["evidence_stats"] = model["evidence"].get("stats", {})
     out["import_graph"] = {
         "module_count": g["module_count"],
         "edge_count": g["edge_count"],
@@ -1251,7 +1286,40 @@ def artifacts(model: dict) -> dict[str, str]:
     files["modules.jsonl"] = "\n".join(module_lines(model)) + "\n"
     if model.get("architecture"):
         files["architecture.json"] = json.dumps(model["architecture"], indent=2, ensure_ascii=False)
+    if model.get("evidence"):
+        ev = model["evidence"]
+        facts = ev.get("facts", [])
+        lines = []
+        for f in facts:
+            lines.append(json.dumps(f, ensure_ascii=False))
+        files["architecture-evidence.jsonl"] = "\n".join(lines) + ("\n" if lines else "")
+        files["architecture-evidence.json"] = json.dumps({"stats": ev.get("stats", {}), "facts": facts}, indent=2, ensure_ascii=False)
     return files
+
+
+#: narrative documents that live outside docs/platform/ but are still generated.
+#: repo-relative path -> renderer.
+NARRATIVE_DOCS = {
+    "README.md": "render_readme",
+    "docs/README.md": "render_docs_index",
+    "docs/CONTRIBUTING.md": "render_contributing",
+    "docs/architecture/overview.md": "render_architecture_overview",
+    "docs/architecture/stream-processing.md": "render_stream_processing",
+    "docs/architecture/fabric-collection.md": "render_fabric_collection",
+    "docs/architecture/multi-region.md": "render_multi_region",
+    "docs/architecture/dynamic-entity-invariant.md": "render_dynamic_entity_invariant",
+    "docs/architecture/donors/00-INDEX.md": "render_donors_index",
+}
+
+
+def narrative_artifacts(model: dict) -> dict[str, str]:
+    """Generated documents outside ``docs/platform/``, keyed by repo-relative path."""
+    from . import narrative
+
+    out: dict[str, str] = {}
+    for rel, fn_name in NARRATIVE_DOCS.items():
+        out[rel] = getattr(narrative, fn_name)(model)
+    return out
 
 
 def write(model: dict) -> dict[str, str]:
@@ -1259,6 +1327,10 @@ def write(model: dict) -> dict[str, str]:
     files = artifacts(model)
     for name, content in files.items():
         (OUT / name).write_text(content, encoding="utf-8")
+    for rel, content in narrative_artifacts(model).items():
+        path = ROOT / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
     return files
 
 
@@ -1269,6 +1341,10 @@ def check(model: dict) -> list[str]:
         path = OUT / name
         if not path.exists() or path.read_text(encoding="utf-8") != content:
             drift.append(str(path.relative_to(ROOT)))
+    for rel, content in narrative_artifacts(model).items():
+        path = ROOT / rel
+        if not path.exists() or path.read_text(encoding="utf-8") != content:
+            drift.append(rel)
     return drift
 
 
