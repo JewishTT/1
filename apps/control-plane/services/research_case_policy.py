@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import hashlib
+import json
 import os
 from typing import Any
 
@@ -100,6 +102,17 @@ class PersonCasePolicy:
         for src in spec.get("source_profiles", []):
             self._sources[str(src.get("source_id"))] = src
         self._loaded = True
+
+    @property
+    def policy_digest(self) -> str:
+        """Digest the complete loaded policy, not only its human-maintained version label."""
+        material = json.dumps(self._policy, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        return "sha256:" + hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+    @property
+    def policy_revision(self) -> str:
+        version = str(self._policy.get("metadata", {}).get("version", "1"))
+        return f"{version}:{self.policy_digest}"
 
     @property
     def loaded(self) -> bool:
@@ -254,7 +267,7 @@ class PersonCasePolicy:
             reason_code="READY",
             detail="scope validated against source policy",
             scope_digest=scope_digest,
-            policy_revision=self._policy.get("metadata", {}).get("version", "1"),
+            policy_revision=self.policy_revision,
         )
 
     def _source_block_reason(self, source_id: str, launch_profile: str) -> str | None:
