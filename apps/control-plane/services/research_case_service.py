@@ -276,7 +276,7 @@ class ResearchCaseService:
             "budget_ref": meta.get("budget_ref"),
             "approved": bool(meta["approved"]),
             "created_at": context.created_at,
-            "updated_at": context.created_at,
+            "updated_at": meta.get("updated_at", context.created_at),
             "expires_at": meta.get("expires_at"),
         }
 
