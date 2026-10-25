@@ -44,7 +44,7 @@ _TQL_TRANSFORM = (
     "normalized_value_type = value_type.to_lower()\n"
     "value_length_chars = value.length_chars()\n"
     "value_length_bytes = value.length_bytes()\n"
-    "value_is_numeric_lexeme = value.is_numeric()\n"
+    "value_is_numeric_lexeme = value.match_regex("^[+-]?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$")\n"
     "has_nonempty_surface = value.trim() != \"\"\n"
     "byte_span_width = byte_span.get(1) - byte_span.get(0) if byte_span != null else null\n"
     "structural_role = \"container\" if value_type == \"nested\" else \"null\" if value_type == \"null\" else \"surface\""
