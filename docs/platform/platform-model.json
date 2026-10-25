@@ -1134,7 +1134,7 @@
       "stdlib:itertools": 11,
       "stdlib:json": 180,
       "stdlib:logging": 21,
-      "stdlib:math": 38,
+      "stdlib:math": 39,
       "stdlib:os": 62,
       "stdlib:pathlib": 301,
       "stdlib:queue": 1,
@@ -31782,7 +31782,7 @@
       {
         "path": "apps/control-plane/api/auth.py",
         "status": "IMPLEMENTED",
-        "loc": 195,
+        "loc": 201,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
@@ -33273,7 +33273,7 @@
       {
         "path": "apps/control-plane/tests/test_auth_security.py",
         "status": "TEST",
-        "loc": 137,
+        "loc": 144,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,

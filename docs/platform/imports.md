@@ -27,7 +27,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `asyncio` | stdlib | 62 |
 | `os` | stdlib | 62 |
 | `uuid` | stdlib | 48 |
-| `math` | stdlib | 38 |
+| `math` | stdlib | 39 |
 | `pydantic` | third-party | 34 |
 | `urllib` | stdlib | 32 |
 | `importlib` | stdlib | 28 |
