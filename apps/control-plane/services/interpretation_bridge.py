@@ -422,7 +422,12 @@ class InterpretationBridge:
     # -- 5. stream ------------------------------------------------------------
 
     async def append_stream(
-        self, result: InterpretationResult, resolved: Sequence[Any], *, sequence_base: int = 0
+        self,
+        result: InterpretationResult,
+        resolved: Sequence[Any],
+        *,
+        sequence_base: int = 0,
+        raise_on_failure: bool = False,
     ) -> int:
         """Append one stream record per entity. This is what makes an invariant derivable.
 
@@ -483,9 +488,14 @@ class InterpretationBridge:
                 )
                 written += 1
             await session.commit()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 - fail closed when the caller requires the stream
             await session.rollback()
             log.warning("stream append failed for %s: %s", result.observation_id, exc)
+            if raise_on_failure:
+                raise InterpretationPersistenceError(
+                    f"entity stream persistence failed for {result.observation_id}: "
+                    f"{type(exc).__name__}: {exc}"
+                ) from exc
             return 0
         finally:
             await session.close()
