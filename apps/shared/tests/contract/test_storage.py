@@ -66,7 +66,7 @@ class TestStorageContract:
         assert store._ym().isdigit()
 
     @pytest.mark.asyncio
-    async def test_derived_artifacts_use_a_separate_content_addressed_namespace(monkeypatch) -> None:
+    async def test_derived_artifacts_use_a_separate_content_addressed_namespace(self, monkeypatch) -> None:
         from storage.memory import MemoryObjectStore
         from storage.s3 import ObjectStore
 
