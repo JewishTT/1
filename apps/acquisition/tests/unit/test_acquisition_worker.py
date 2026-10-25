@@ -184,7 +184,24 @@ def envelope_for(t: AcquisitionTask):
             "execution_class": "http",
             "query": t.query,
             "source_id": t.source_id,
+            "source_name": t.source_name,
             "task_id": t.task_id,
+            "tenant_id": t.tenant_id,
+            "investigation_id": t.investigation_id,
+            "runtime_ref": t.runtime_ref,
+            "query_ref": t.query_ref,
+            "constraints": [dict(item) for item in t.constraints],
+            "case_id": t.case_id,
+            "scope_digest": t.scope_digest,
+            "policy_digest": t.policy_digest,
+            "policy_revision": t.policy_revision,
+            "scope_revision": t.scope_revision,
+            "budget_reservation_id": t.budget_reservation_id,
+            "idempotency_key": t.idempotency_key,
+            "run_id": t.run_id,
+            "case_policy_source_id": t.case_policy_source_id,
+            "approved_action_ref": t.approved_action_ref,
+            "action_id": t.action_id,
             "verdict": "dispatch",
         },
         sort_keys=True,
@@ -589,3 +606,48 @@ class TestIdempotencyUnderReplay:
         assert "uuid4" not in src
         assert "datetime.now" not in src
         assert "time.time" not in src
+
+
+class TestCaseExecutionPreflight:
+    @pytest.mark.asyncio
+    async def test_case_preflight_runs_before_connector_network_io(self) -> None:
+        worker, _published, sink, transport = make_worker([(200, b"must not fetch")])
+        task_bound = task(
+            case_id="case-034",
+            scope_digest="sha256:" + "a" * 64,
+            policy_digest="sha256:" + "b" * 64,
+            policy_revision="1:sha256:" + "c" * 64,
+            scope_revision=2,
+            budget_reservation_id="RBR-034",
+            idempotency_key="run-034",
+            run_id="RUN-034",
+            case_policy_source_id="crossref_works",
+            approved_action_ref="ACT-034",
+            action_id="ACT-034",
+        )
+        calls = []
+
+        async def revoked(_task):
+            calls.append(_task.task_id)
+            raise AcquisitionError("case_scope_stale", "case was revised after dispatch")
+
+        worker.preflight = revoked
+        result = await worker.handle(envelope_for(task_bound))
+
+        assert calls == [task_bound.task_id]
+        assert result.failures
+        assert result.failures[0].code == "case_scope_stale"
+        assert transport.requests == []
+        assert sink.failures
+
+
+    @pytest.mark.asyncio
+    async def test_partial_case_binding_is_quarantined_not_downgraded(self) -> None:
+        worker, _published, sink, transport = make_worker([(200, b"must not fetch")])
+        result = await worker.handle(envelope_for(task(case_id="case-034")))
+
+        assert result.failures
+        assert result.failures[0].code == "case_dispatch_binding_missing"
+        assert transport.requests == []
+        assert sink.failures
+
