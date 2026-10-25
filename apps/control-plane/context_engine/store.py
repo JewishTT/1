@@ -357,6 +357,8 @@ class ContextStore(ABC):
             "approved_action_refs": sorted(set(approved_action_refs)),
             "scope_digest": scope_digest,
             "policy_digest": policy_digest,
+            "state": "PREPARED",
+            "outcome": None,
         }
         self._person_case_dispatch_index: dict[tuple[str, str, str], dict[str, Any]] = getattr(
             self, "_person_case_dispatch_index", {}
@@ -372,6 +374,27 @@ class ContextStore(ABC):
             return {**previous, "created": False}
         self._person_case_dispatch_index[key] = proposed
         return {**proposed, "created": True}
+
+    async def mark_person_case_dispatch_intent(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        idempotency_key: str,
+        state: str,
+        outcome: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Record the broker outcome without deleting the idempotency ledger."""
+        if state not in {"PREPARED", "PUBLISHED", "PARTIAL", "FAILED"}:
+            raise ContextEngineError("dispatch_state_invalid", f"unsupported dispatch state {state}")
+        index = getattr(self, "_person_case_dispatch_index", {})
+        key = (tenant_id, case_id, idempotency_key)
+        current = index.get(key)
+        if current is None:
+            raise ContextEngineError("dispatch_intent_missing", "dispatch intent is not recorded")
+        updated = {**current, "state": state, "outcome": dict(outcome or {})}
+        index[key] = updated
+        return {**updated, "created": False}
 
 
 
