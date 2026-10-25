@@ -51,6 +51,12 @@ log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
+class InterpretationPersistenceError(RuntimeError):
+    """A canonical entity/relation write failed and must be retried before offset commit."""
+
+    retryable = True
+
+
 class InterpretationResult:
     """What one document produced, all the way through persistence."""
 
@@ -223,6 +229,7 @@ class InterpretationBridge:
         raw_ref: str = "",
         capture_id: str = "",
         locator: str = "",
+        raise_on_failure: bool = False,
     ) -> bool:
         """Write the observation, its entities, their versions, relations and stream rows.
 
@@ -400,9 +407,14 @@ class InterpretationBridge:
 
             await session.commit()
             return True
-        except Exception as exc:  # noqa: BLE001 - a write failure is reported, not raised
+        except Exception as exc:  # noqa: BLE001 - caller chooses fail-closed retry semantics
             await session.rollback()
             log.warning("persist failed for %s: %s", result.observation_id, exc)
+            if raise_on_failure:
+                raise InterpretationPersistenceError(
+                    f"canonical entity/relation persistence failed for {result.observation_id}: "
+                    f"{type(exc).__name__}: {exc}"
+                ) from exc
             return False
         finally:
             await session.close()
