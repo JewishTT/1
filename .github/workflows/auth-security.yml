@@ -27,6 +27,7 @@ jobs:
           apps/control-plane/tests/unit/test_migration_028_processing_results.py
           apps/control-plane/tests/test_research_case_projection.py
           apps/acquisition/tests/unit/test_acquisition_worker.py
+          apps/acquisition/tests/unit/test_case_execution_guard.py
           apps/acquisition/tests/unit/test_evidence_writer.py
           apps/interpretation/tests/test_observation_consumer.py
           -q
