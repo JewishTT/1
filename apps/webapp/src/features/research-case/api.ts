@@ -98,6 +98,13 @@ export interface ApproveCaseRequest {
   scope_revision: number;
 }
 
+export interface ReviseScopeRequest extends CreateCaseRequest {
+  purpose_code: string;
+  purpose_text: string;
+  basis_ref: string;
+  subject_anchors: SubjectAnchor[];
+}
+
 export interface Obligation {
   obligation_id: string;
   question: string;
@@ -238,7 +245,7 @@ export async function getCase(caseId: string): Promise<ResearchCase> {
 
 export async function proposeScopeRevision(
   caseId: string,
-  body: ApproveCaseRequest,
+  body: ReviseScopeRequest,
 ): Promise<{ case_id: string; scope_revision: number; scope_digest: string; re_approval_required: boolean; stale_scope_behavior: string }> {
   return request(`/${encodeURIComponent(caseId)}/scope`, {
     method: "PATCH",
