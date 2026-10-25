@@ -731,17 +731,20 @@ class ResearchCaseService:
         case_id: str,
         tenant_id: str,
     ) -> dict[str, Any]:
-        """Cancel or pause dispatch; preserve partial results."""
+        """Pause dispatch with an append-only lifecycle revision."""
         context = await self._store.get_context(case_id)
-        if context is None:
+        if context is None or context.tenant_id != tenant_id:
             raise CaseNotFound(f"case {case_id} not found")
-        if context.tenant_id != tenant_id:
-            raise CaseServiceError("cross-tenant access denied")
+        if context.state == InvestigationState.CLOSED:
+            raise CaseServiceError("closed case cannot be paused")
+        if context.state == InvestigationState.SUSPENDED:
+            return {"case_id": case_id, "state": "PAUSED", "already_paused": True}
 
         meta = await self._store.get_person_case_metadata(case_id)
-        if meta is None:
-            raise CaseNotFound(f"case {case_id} metadata not found")
-
+        if meta is None or meta.get("tenant_id") != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        # A paused case must be explicitly approved again if resumed through a future
+        # execution path; preserving an old approval bit must not restore dispatch rights.
         await self._store.put_person_case_metadata(
             case_id=case_id,
             tenant_id=tenant_id,
@@ -753,18 +756,28 @@ class ResearchCaseService:
             denied_claim_families=list(meta.get("denied_claim_families", [])),
             scope_digest=meta["scope_digest"],
             scope_revision=meta["scope_revision"],
-            approved=meta.get("approved", False),
+            approved=False,
             budget_ref=meta.get("budget_ref"),
             expires_at=meta.get("expires_at"),
             valid_time=meta.get("valid_time", {}),
             jurisdictions=list(meta.get("jurisdictions", [])),
             subject_anchors=list(meta.get("subject_anchors", [])),
         )
-
-        # Suspend the canonical context without relying on __dict__ on a slots dataclass.
         updated = replace(context, state=InvestigationState.SUSPENDED)
         await self._store.put_context(updated)
-        return {"case_id": case_id, "state": "PAUSED"}
+        await self._append_case_revision(
+            context=updated,
+            snapshot={
+                "context": updated.to_dict(),
+                "lifecycle_action": "PAUSE",
+                "scope_digest": meta["scope_digest"],
+                "scope_revision": meta["scope_revision"],
+                "approval_revoked": True,
+            },
+            actor="system:pause",
+            rule="pause_case",
+        )
+        return {"case_id": case_id, "state": "PAUSED", "approval_revoked": True}
 
     # -- close --------------------------------------------------------------
 
@@ -776,12 +789,17 @@ class ResearchCaseService:
         disposition: str,
         report: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Terminal state + CompletionReport. Requires open obligations dispositioned."""
+        """Close a case only with a supported terminal disposition."""
+        allowed_dispositions = {
+            "COMPLETE", "PARTIAL", "BLOCKED", "CANCELLED", "CLOSED_WITH_NO_FINDING"
+        }
+        if disposition not in allowed_dispositions:
+            raise CaseServiceError(f"unsupported terminal disposition: {disposition}")
         context = await self._store.get_context(case_id)
-        if context is None:
+        if context is None or context.tenant_id != tenant_id:
             raise CaseNotFound(f"case {case_id} not found")
-        if context.tenant_id != tenant_id:
-            raise CaseServiceError("cross-tenant access denied")
+        if context.state == InvestigationState.CLOSED:
+            raise CaseServiceError("case is already closed")
 
         obligations = await self._store.obligations(case_id)
         undisposed = [o for o in obligations if o.status == ObligationStatus.OPEN]
@@ -792,13 +810,25 @@ class ResearchCaseService:
 
         updated = replace(context, state=InvestigationState.CLOSED)
         await self._store.put_context(updated)
-
+        closed_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        await self._append_case_revision(
+            context=updated,
+            snapshot={
+                "context": updated.to_dict(),
+                "lifecycle_action": "CLOSE",
+                "disposition": disposition,
+                "report": report or {},
+                "closed_at": closed_at,
+            },
+            actor="system:close",
+            rule="close_case",
+        )
         return {
             "case_id": case_id,
             "state": "CLOSED",
             "disposition": disposition,
             "report": report or {},
-            "closed_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "closed_at": closed_at,
         }
 
     # -- helpers ------------------------------------------------------------
