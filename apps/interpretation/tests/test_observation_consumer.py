@@ -432,7 +432,7 @@ class TestOptionalTenzirNormalization:
         assert result.normalization["status"] == "failed"
         assert result.normalization["failure_code"] == "tenzir_normalization_failed"
         assert "unavailable" in result.normalization["detail"]
-        assert len(store.derived_writes) == 2
+        assert len(store.derived_writes) == 1
         native = json.loads(store.derived_writes[0]["body"].decode("utf-8"))
         assert native["schema"] == "cognitive.parsed-observation/v1"
 
@@ -454,4 +454,5 @@ class TestOptionalTenzirNormalization:
 
         assert first is second
         assert tenzir.calls == 1
-        assert len(store.derived_writes) == 1
+        # Native parser output plus one normalized sidecar; replay must not repeat either.
+        assert len(store.derived_writes) == 2
