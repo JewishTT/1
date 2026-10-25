@@ -140,3 +140,142 @@ def test_claim_cursor_is_stable_and_rejects_invalid_input() -> None:
     assert relation_id == "relation-abc"
     with pytest.raises(ValueError, match="invalid relation-claim cursor"):
         _cursor_decode("not-a-cursor")
+
+
+class _FakeValues:
+    def __init__(self, values):
+        self._values = values
+
+    def all(self):
+        return self._values
+
+
+class _FakeResult:
+    def __init__(self, *, mappings=(), scalars=()):
+        self._mappings = list(mappings)
+        self._scalars = list(scalars)
+
+    def mappings(self):
+        return _FakeValues(self._mappings)
+
+    def scalars(self):
+        return _FakeValues(self._scalars)
+
+
+class _ProjectionDatabase:
+    def __init__(self, *, intents=(), reservations=(), observations=()):
+        self.intents = list(intents)
+        self.reservations = list(reservations)
+        self.observations = list(observations)
+
+
+class _ProjectionSession(_EmptySession):
+    def __init__(self, database):
+        self.database = database
+
+    async def execute(self, statement, *_args, **_kwargs):
+        sql = str(statement).lower()
+        if "person_case_dispatch_intents" in sql:
+            return _FakeResult(mappings=self.database.intents)
+        if "person_case_budget_reservations" in sql:
+            return _FakeResult(mappings=self.database.reservations)
+        if "from observations" in sql:
+            return _FakeResult(scalars=self.database.observations)
+        return _FakeResult()
+
+
+class _ActionStore(_FakeStore):
+    def __init__(self, *, actions, revisions=()):
+        super().__init__(revisions=revisions)
+        self._actions = list(actions)
+
+    async def actions(self, obligation_id):
+        assert obligation_id == "obligation-1"
+        return list(self._actions)
+
+
+@pytest.mark.asyncio
+async def test_coverage_links_broker_ack_to_the_real_observation_row() -> None:
+    scope_digest = "sha256:" + "a" * 64
+    policy_digest = "sha256:" + "b" * 64
+    action = SimpleNamespace(
+        action_id="action-approved-1",
+        parent_action_id="action-proposed-1",
+        obligation_id="obligation-1",
+        source_id="crossref_works",
+        catalogue_source_id="crossref_doi",
+        scope_digest=scope_digest,
+        policy_digest=policy_digest,
+        status="approved",
+        requires_operator_approval=False,
+    )
+    intent_payload = {
+        "case_id": "case-context-1",
+        "tenant_id": "tenant-1",
+        "run_id": "run-1",
+        "idempotency_key": "run-key-1",
+        "approved_action_refs": ["action-approved-1"],
+        "scope_digest": scope_digest,
+        "policy_digest": policy_digest,
+        "state": "PUBLISHED",
+        "outcome": {
+            "published": True,
+            "budget_reservation_id": "reservation-1",
+            "records": [{
+                "action_id": "action-approved-1",
+                "task_id": "TSK-actual-task-1",
+                "source_id": "crossref_doi",
+                "published": True,
+                "verdict": "PUBLISHED",
+                "topic": "acquisition.request",
+                "offset": 17,
+            }],
+        },
+    }
+    now = datetime(2026, 10, 25, 12, 0, tzinfo=UTC)
+    observation = SimpleNamespace(
+        observation_id="OBS-actual-1",
+        tenant_id="tenant-1",
+        investigation_id="case-investigation-1",
+        task_id="TSK-actual-task-1",
+        source_id="crossref_doi",
+        uri="https://api.crossref.org/works?query=Public",
+        raw_ref="s3://raw/sha256/ab/cd",
+        created_at=now,
+        status="created",
+        content_hash="deadbeef",
+    )
+    database = _ProjectionDatabase(
+        intents=[{
+            "payload": intent_payload,
+            "created_at": now,
+            "updated_at": now,
+        }],
+        reservations=[{
+            "reservation_id": "reservation-1",
+            "idempotency_key": "run-key-1",
+            "state": "PUBLISHED",
+            "payload": {"state": "PUBLISHED"},
+            "created_at": now,
+            "updated_at": now,
+        }],
+        observations=[observation],
+    )
+    store = _ActionStore(actions=[action])
+    provider = PostgresResearchCaseProjectionProvider(
+        session_factory=lambda: _ProjectionSession(database),
+        context_store=store,
+        policy=SimpleNamespace(policy_digest=policy_digest),
+    )
+
+    ledger = await provider.coverage_ledger(case_id="case-context-1", tenant_id="tenant-1")
+
+    assert ledger["overall_state"] == "OBSERVATIONS_RECEIVED"
+    assert ledger["source_of_truth"].startswith("postgres:")
+    item = ledger["items"][0]
+    assert item["state"] == "OBSERVATIONS_RECEIVED"
+    assert item["attempts"] == 1
+    assert item["records_received"] == 1
+    assert item["observation_refs"] == ["OBS-actual-1"]
+    assert item["raw_artifact_refs"] == ["s3://raw/sha256/ab/cd"]
+    assert item["budget_reservation_id"] == "reservation-1"
