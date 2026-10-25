@@ -30,10 +30,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
-NORMALIZATION_SCHEMA = "cognitive.observed-field-normalization/v1"
+NORMALIZATION_SCHEMA = "cognitive.observed-field-normalization/v2"
 NORMALIZATION_ENGINE = "tenzir-node"
 TENZIR_API_PREFIX = "/api/v0"
-NORMALIZATION_VERSION = "tenzir-observed-fields-v1"
+NORMALIZATION_VERSION = "tenzir-observed-fields-v2"
 
 # Keep this transformation intentionally additive. Never use ocsf_cast / ocsf_trim
 # on open-world evidence records: those operators can remove fields outside a target
@@ -48,7 +48,17 @@ _TQL_TRANSFORM = (
     'value_is_numeric_lexeme = value.match_regex("^[+-]?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$")\n'
     "has_nonempty_surface = value.trim() != \"\"\n"
     "byte_span_width = byte_span.get(1) - byte_span.get(0) if byte_span != null else null\n"
-    "structural_role = \"container\" if value_type == \"nested\" else \"null\" if value_type == \"null\" else \"surface\""
+    "structural_role = \"container\" if value_type == \"nested\" else \"null\" if value_type == \"null\" else \"surface\"\n"
+    'value_shape = "container" if value_type == "nested" else '
+    '"null" if value_type == "null" else '
+    '"empty" if value.trim() == "" else '
+    '"numeric" if value.match_regex("^[+-]?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$") else '
+    '"boolean" if value.match_regex("^[Tt][Rr][Uu][Ee]$|^[Ff][Aa][Ll][Ss][Ee]$") else '
+    '"email_like" if value.match_regex("^[^@ ]+@[^ ]+[.][^ ]+$") else '
+    '"url_like" if value.match_regex("^[A-Za-z][A-Za-z0-9+.-]*://") else '
+    '"uuid_like" if value.match_regex("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$") else '
+    '"hex_digest_like" if value.match_regex("^([0-9A-Fa-f]{32}|[0-9A-Fa-f]{40}|[0-9A-Fa-f]{64})$") else '
+    '"text"'
 )
 _PIPELINE_DIGEST = "sha256:" + hashlib.sha256(
     (NORMALIZATION_VERSION + "\n" + _TQL_TRANSFORM).encode("utf-8")
@@ -388,6 +398,8 @@ class TenzirNodeNormalizer:
                         "has_nonempty_surface": data.get("has_nonempty_surface"),
                         "byte_span_width": data.get("byte_span_width"),
                         "structural_role": data.get("structural_role"),
+                        # A lexical shape hint, not a semantic type assertion.
+                        "value_shape": data.get("value_shape"),
                     }
                     if (
                         not isinstance(normalized_path, str)
@@ -401,6 +413,10 @@ class TenzirNodeNormalizer:
                             and not isinstance(derived["byte_span_width"], int)
                         )
                         or derived["structural_role"] not in {"container", "null", "surface"}
+                        or derived["value_shape"] not in {
+                            "container", "null", "empty", "numeric", "boolean",
+                            "email_like", "url_like", "uuid_like", "hex_digest_like", "text",
+                        }
                     ):
                         raise TenzirError(
                             "tenzir_output_invalid",
