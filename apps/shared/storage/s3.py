@@ -152,6 +152,7 @@ class ObjectStore:
                 json.dumps(meta, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str).encode("utf-8"),
             )
         return ref, False
+
     async def read_range(self, *, bucket: str, key: str, offset: int = 0, length: int | None = None) -> bytes:
         """Range read without loading the whole object (T093 archive retrieval).
 
