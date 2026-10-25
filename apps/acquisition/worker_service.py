@@ -28,6 +28,7 @@ from storage.s3 import ObjectStore
 from sources.connector import SourceConnector
 from worker_acquisition import AcquisitionWorker, kafka_failure_sink
 from evidence_writer import PostgresAcquisitionEvidenceWriter
+from case_execution_guard import PostgresCaseExecutionGuard
 
 log = logging.getLogger("cognitive.acquisition.worker")
 
@@ -106,6 +107,7 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
             # The worker validates its evidence refs but must not publish a second JSON event.
             publish=None,
             store=object_store,
+            preflight=PostgresCaseExecutionGuard(session_factory),
         )
         topic = topic_for("acquisition.request")
         kafka_consumer.subscribe([topic])
