@@ -10,6 +10,14 @@
 
 ---
 
+## Implementation closure artifacts
+
+The executable delivery plan is in [plan.md](plan.md), the gated work breakdown is in [tasks.md](tasks.md), and mandatory service-backed acceptance conditions are in [conformance/acceptance-matrix.md](conformance/acceptance-matrix.md). These documents supplement this specification; they do not supersede canonical contracts from Features 030/032/033.
+
+Task status is evidence-driven. All new task checkboxes start unchecked; no implementation is considered complete from declarations, source-file existence, mocked tests or an unexecuted CI workflow. Any mandatory BLOCKED, NOT_RUN, FAIL or skipped-service result prevents a production-ready verdict.
+
+---
+ 
 ## 0. Outcome in one paragraph
 
 After implementation, an analyst creates a `ResearchCase`, specifies purpose, authority, profile, time interval, and permitted sources. COGNITIVE translates the request into typed research obligations; the planner selects only capabilities suitable for the case policy; Acquisition executes bounded tasks; all bytes go to `ArtifactSink`, creating `Capture` + `Observation` and an event; Interpretation extracts mention-bound assertions; Admission matches candidates without automatic merging; Science/Fabric discovers gaps, conflicts, and competing hypotheses; `CognitiveLoop` selects the next safe task; UI provides an entity card, graph, timeline, assertions table, and coverage matrix; the final report contains only verifiable findings with traceback to source material. All unfulfilled requests, limitations, conflicts, and unknowns are shown explicitly.
