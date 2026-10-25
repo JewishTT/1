@@ -121,6 +121,37 @@ def test_remote_endpoint_requires_a_node_token() -> None:
         )
 
 
+def test_node_url_rejects_an_api_path_to_prevent_double_prefixing() -> None:
+    with pytest.raises(TenzirError, match="must be the node origin"):
+        TenzirSettings(node_url="http://localhost:5160/api/v0")
+
+
+def test_node_client_calls_the_versioned_rest_api(monkeypatch) -> None:
+    seen: dict[str, Any] = {}
+
+    class _Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def read(self, _limit: int) -> bytes:
+            return b"{}"
+
+    def _fake_urlopen(request, timeout):
+        seen["url"] = request.full_url
+        seen["method"] = request.get_method()
+        seen["timeout"] = timeout
+        return _Response()
+
+    monkeypatch.setattr("normalization.tenzir.urlopen", _fake_urlopen)
+    client = TenzirNodeNormalizer(TenzirSettings(node_url="http://localhost:5160"))
+    assert client._post_json("/pipeline/list", {}) == {}
+    assert seen["url"] == "http://localhost:5160/api/v0/pipeline/list"
+    assert seen["method"] == "POST"
+
+
 def test_tql_literals_escape_source_strings_and_reject_injected_field_names() -> None:
     assert _tql_literal('x"} | where true //') == '"x\\"} | where true //"'
     with pytest.raises(TenzirError, match="tenzir_input_invalid"):
