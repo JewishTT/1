@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **98** · TypeScript modules: **0**
+Python modules: **101** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **222** · TypeScript modules: **0**
+Python modules: **227** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 

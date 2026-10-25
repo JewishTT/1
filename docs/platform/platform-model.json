@@ -18,7 +18,7 @@
     {
       "name": "acquisition",
       "description": "Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.",
-      "python_modules": 98,
+      "python_modules": 101,
       "typescript_modules": 0,
       "modules": [
         "apps.acquisition._measure_coverage",
@@ -64,6 +64,7 @@
         "apps.acquisition.dispatcher.regional",
         "apps.acquisition.dispatcher.scheduler",
         "apps.acquisition.entity_search",
+        "apps.acquisition.evidence_writer",
         "apps.acquisition.observation_gate",
         "apps.acquisition.observation_gate.replay",
         "apps.acquisition.registry",
@@ -104,6 +105,7 @@
         "apps.acquisition.tests.unit.test_cc_plan",
         "apps.acquisition.tests.unit.test_engine_adapters",
         "apps.acquisition.tests.unit.test_entity_search",
+        "apps.acquisition.tests.unit.test_evidence_writer",
         "apps.acquisition.tests.unit.test_primproc_runtime",
         "apps.acquisition.tests.unit.test_region_backpressure",
         "apps.acquisition.tests.unit.test_render_pipeline",
@@ -118,7 +120,8 @@
         "apps.acquisition.worker_browser.fabric",
         "apps.acquisition.worker_browser.renderer",
         "apps.acquisition.worker_http",
-        "apps.acquisition.worker_http.archival"
+        "apps.acquisition.worker_http.archival",
+        "apps.acquisition.worker_service"
       ]
     },
     {
@@ -200,7 +203,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 222,
+      "python_modules": 227,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -293,6 +296,7 @@
         "apps.control-plane.db.migrations.versions.025_context_graph",
         "apps.control-plane.db.migrations.versions.026_person_research_case_runtime",
         "apps.control-plane.db.migrations.versions.027_person_research_case_records",
+        "apps.control-plane.db.migrations.versions.028_observation_processing_results",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
         "apps.control-plane.db.session",
@@ -309,6 +313,7 @@
         "apps.control-plane.semantic_path.signal_corpus",
         "apps.control-plane.semantic_path.signal_corpus_baseline",
         "apps.control-plane.services",
+        "apps.control-plane.services.acquisition_evidence",
         "apps.control-plane.services.acquisition_loop",
         "apps.control-plane.services.audit",
         "apps.control-plane.services.capture_interpretation",
@@ -327,8 +332,10 @@
         "apps.control-plane.services.layer0_pipeline",
         "apps.control-plane.services.materialization_outbox_relay",
         "apps.control-plane.services.model_gateway",
+        "apps.control-plane.services.observation_consumer_runner",
         "apps.control-plane.services.policy_service",
         "apps.control-plane.services.pow_run",
+        "apps.control-plane.services.processing_result_store",
         "apps.control-plane.services.query_planner",
         "apps.control-plane.services.reobservation",
         "apps.control-plane.services.research_case_policy",
@@ -397,12 +404,8 @@
         "apps.control-plane.tests.unit.test_migration_020_universal_relation",
         "apps.control-plane.tests.unit.test_migration_024_investigation_entity_membership",
         "apps.control-plane.tests.unit.test_migration_027_person_case_records",
-        "apps.control-plane.tests.unit.test_migration_forward_only",
-        "apps.control-plane.tests.unit.test_modifier_mismatch",
-        "apps.control-plane.tests.unit.test_monitor",
-        "apps.control-plane.tests.unit.test_network_analytics",
-        "apps.control-plane.tests.unit.test_ontology_registry",
-        "apps.control-plane.tests.unit.test_postgres_context_store"
+        "apps.control-plane.tests.unit.test_migration_028_processing_results",
+        "apps.control-plane.tests.unit.test_migration_forward_only"
       ]
     },
     {
@@ -1099,67 +1102,68 @@
     }
   ],
   "import_graph": {
-    "module_count": 977,
-    "edge_count": 2697,
+    "module_count": 985,
+    "edge_count": 2719,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 850,
+      "stdlib:__future__": 858,
       "stdlib:abc": 3,
       "stdlib:argparse": 18,
       "stdlib:ast": 26,
-      "stdlib:asyncio": 64,
+      "stdlib:asyncio": 67,
       "stdlib:base64": 9,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 238,
+      "stdlib:collections": 239,
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 388,
-      "stdlib:datetime": 183,
+      "stdlib:datetime": 185,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
       "stdlib:enum": 117,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 119,
+      "stdlib:hashlib": 122,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 9,
       "stdlib:http": 5,
-      "stdlib:importlib": 29,
-      "stdlib:inspect": 20,
+      "stdlib:importlib": 30,
+      "stdlib:inspect": 21,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 185,
-      "stdlib:logging": 21,
+      "stdlib:json": 188,
+      "stdlib:logging": 23,
       "stdlib:math": 41,
-      "stdlib:os": 65,
-      "stdlib:pathlib": 303,
+      "stdlib:os": 67,
+      "stdlib:pathlib": 304,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 92,
+      "stdlib:re": 93,
       "stdlib:secrets": 2,
       "stdlib:shlex": 1,
       "stdlib:shutil": 14,
+      "stdlib:signal": 2,
       "stdlib:socket": 9,
       "stdlib:stat": 2,
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 15,
-      "stdlib:sys": 248,
+      "stdlib:sys": 249,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 17,
       "stdlib:threading": 17,
       "stdlib:time": 29,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
-      "stdlib:types": 29,
-      "stdlib:typing": 354,
+      "stdlib:types": 30,
+      "stdlib:typing": 359,
       "stdlib:unicodedata": 6,
       "stdlib:urllib": 39,
       "stdlib:uuid": 48,
@@ -1170,14 +1174,14 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 20,
+      "third-party:alembic": 21,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
       "third-party:bm25s": 1,
       "third-party:botocore": 1,
       "third-party:charset_normalizer": 1,
-      "third-party:confluent_kafka": 14,
+      "third-party:confluent_kafka": 16,
       "third-party:docx": 2,
       "third-party:duckdb": 5,
       "third-party:extruct": 1,
@@ -1199,14 +1203,14 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 260,
+      "third-party:pytest": 261,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 124,
+      "third-party:sqlalchemy": 135,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
       "third-party:trafilatura": 1,
@@ -2388,6 +2392,11 @@
         "via": "acquisition.entity_search"
       },
       {
+        "from": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "to": "apps/acquisition/evidence_writer.py",
+        "via": "evidence_writer"
+      },
+      {
         "from": "apps/acquisition/tests/unit/test_primproc_runtime.py",
         "to": "apps/shared/domain/acquisition_artifact.py",
         "via": "domain.acquisition_artifact"
@@ -2496,6 +2505,61 @@
         "from": "apps/acquisition/worker_http/__init__.py",
         "to": "apps/acquisition/worker_http/archival.py",
         "via": "archival"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/shared/config/settings.py",
+        "via": "config.settings"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/acquisition/artifact_sink.py",
+        "via": "artifact_sink"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/acquisition/dispatcher/kafka_producer.py",
+        "via": "dispatcher.kafka_producer"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/shared/events/event_envelope_pb2.py",
+        "via": "events.event_envelope_pb2"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/shared/events/content_router.py",
+        "via": "events.content_router"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/shared/events/observation_gate.py",
+        "via": "events.observation_gate"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/shared/events/topics.py",
+        "via": "events.topics"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/shared/storage/s3.py",
+        "via": "storage.s3"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/acquisition/sources/connector.py",
+        "via": "sources.connector"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/acquisition/worker_acquisition.py",
+        "via": "worker_acquisition"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/acquisition/evidence_writer.py",
+        "via": "evidence_writer"
       },
       {
         "from": "apps/admission/engine/admission.py",
@@ -5148,6 +5212,11 @@
         "via": "domain.relation_candidate"
       },
       {
+        "from": "apps/control-plane/services/acquisition_evidence.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
         "from": "apps/control-plane/services/acquisition_loop.py",
         "to": "apps/shared/events/observation_gate.py",
         "via": "events.observation_gate"
@@ -5683,6 +5752,41 @@
         "via": "services.policy_service"
       },
       {
+        "from": "apps/control-plane/services/observation_consumer_runner.py",
+        "to": "apps/shared/config/settings.py",
+        "via": "config.settings"
+      },
+      {
+        "from": "apps/control-plane/services/observation_consumer_runner.py",
+        "to": "apps/shared/events/event_envelope_pb2.py",
+        "via": "events.event_envelope_pb2"
+      },
+      {
+        "from": "apps/control-plane/services/observation_consumer_runner.py",
+        "to": "apps/shared/events/topics.py",
+        "via": "events.topics"
+      },
+      {
+        "from": "apps/control-plane/services/observation_consumer_runner.py",
+        "to": "apps/shared/storage/s3.py",
+        "via": "storage.s3"
+      },
+      {
+        "from": "apps/control-plane/services/observation_consumer_runner.py",
+        "to": "apps/interpretation/observation_consumer/__init__.py",
+        "via": "observation_consumer"
+      },
+      {
+        "from": "apps/control-plane/services/observation_consumer_runner.py",
+        "to": "apps/control-plane/services/processing_result_store.py",
+        "via": "services.processing_result_store"
+      },
+      {
+        "from": "apps/control-plane/services/observation_consumer_runner.py",
+        "to": "apps/control-plane/services/interpretation_bridge.py",
+        "via": "services.interpretation_bridge"
+      },
+      {
         "from": "apps/control-plane/services/policy_service.py",
         "to": "apps/control-plane/cp_domain/policy.py",
         "via": "cp_domain.policy"
@@ -5776,6 +5880,11 @@
         "from": "apps/control-plane/services/pow_run.py",
         "to": "apps/control-plane/db/session.py",
         "via": "db.session"
+      },
+      {
+        "from": "apps/control-plane/services/processing_result_store.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
       },
       {
         "from": "apps/control-plane/services/query_planner.py",
@@ -7066,6 +7175,11 @@
         "from": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
         "to": "apps/control-plane/context_engine/postgres_store.py",
         "via": "context_engine.postgres_store"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
       },
       {
         "from": "apps/control-plane/tests/unit/test_modifier_mismatch.py",
@@ -14751,6 +14865,7 @@
       "errors": "apps/science/errors.py",
       "events": "apps/shared/events/__init__.py",
       "evidence": "apps/interpretation/evidence/__init__.py",
+      "evidence_writer": "apps/acquisition/evidence_writer.py",
       "experiments": "apps/science/experiments/__init__.py",
       "extractors": "apps/interpretation/extractors/__init__.py",
       "feedback": "apps/feedback/feedback/__init__.py",
@@ -15332,6 +15447,17 @@
         ],
         "targets": [
           "apps/acquisition/entity_search.py"
+        ]
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "tests": 2,
+        "test_names": [
+          "test_capture_and_observation_are_committed_idempotently",
+          "test_tenant_or_digest_mismatch_fails_before_relational_write"
+        ],
+        "targets": [
+          "apps/acquisition/evidence_writer.py"
         ]
       },
       {
@@ -17014,6 +17140,18 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+        "tests": 3,
+        "test_names": [
+          "test_028_is_the_single_additive_head_after_027",
+          "test_028_has_idempotency_key_and_append_safe_processing_fields",
+          "test_processing_result_orm_declares_the_same_durable_columns"
+        ],
+        "targets": [
+          "apps/control-plane/db/schema.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_migration_forward_only.py",
         "tests": 5,
         "test_names": [
@@ -17826,7 +17964,7 @@
       },
       {
         "path": "apps/interpretation/tests/test_observation_consumer.py",
-        "tests": 23,
+        "tests": 25,
         "test_names": [
           "test_reads_raw_and_parses",
           "test_reads_the_capture_it_was_given",
@@ -17834,6 +17972,8 @@
           "test_records_a_machine_readable_result",
           "test_derived_ref_names_the_parser_and_version",
           "test_unknown_parser_is_not_guessed",
+          "test_result_writer_is_called_before_handle_returns",
+          "test_result_writer_failure_bubbles_and_does_not_cache_success",
           "test_replay_returns_the_same_result",
           "test_distinct_observations_are_distinct_results",
           "test_replay_is_byte_stable",
@@ -22817,7 +22957,7 @@
         "targets": []
       }
     ],
-    "total": 5222
+    "total": 5229
   },
   "contracts": {
     "python": [
@@ -27915,6 +28055,7 @@
     "apps/acquisition/worker-dataset/acquire.py",
     "apps/acquisition/worker_browser/__init__.py",
     "apps/acquisition/worker_http/__init__.py",
+    "apps/acquisition/worker_service.py",
     "apps/admission/engine/__init__.py",
     "apps/admission/independence/__init__.py",
     "apps/admission/resolution/__init__.py",
@@ -27980,6 +28121,7 @@
     "apps/control-plane/db/migrations/versions/025_context_graph.py",
     "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
     "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
+    "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
     "apps/control-plane/db/relation_claim_store.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
@@ -27987,6 +28129,7 @@
     "apps/control-plane/semantic_path/record_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
+    "apps/control-plane/services/acquisition_evidence.py",
     "apps/control-plane/services/capture_interpretation.py",
     "apps/control-plane/services/cc_cursor_materialization.py",
     "apps/control-plane/services/document_adapter.py",
@@ -27996,7 +28139,9 @@
     "apps/control-plane/services/investigation_scheduler.py",
     "apps/control-plane/services/materialization_outbox_relay.py",
     "apps/control-plane/services/model_gateway.py",
+    "apps/control-plane/services/observation_consumer_runner.py",
     "apps/control-plane/services/pow_run.py",
+    "apps/control-plane/services/processing_result_store.py",
     "apps/control-plane/services/research_case_runtime.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
@@ -28080,14 +28225,9 @@
     "apps/shared/semantic/__init__.py",
     "apps/shared/semantic/expansion.py",
     "apps/shared/semantic/mappings.py",
-    "apps/shared/semantic/oak_adapter.py",
-    "apps/shared/semantic/operators.py",
-    "apps/shared/semantic/profiles.py",
-    "apps/shared/semantic/regime.py",
-    "apps/shared/semantic/regime_store.py",
-    "apps/shared/semantic/registry.py"
+    "apps/shared/semantic/oak_adapter.py"
   ],
-  "untested_count": 258,
+  "untested_count": 263,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -28221,6 +28361,7 @@
             "apps/acquisition/dispatcher/regional.py",
             "apps/acquisition/dispatcher/scheduler.py",
             "apps/acquisition/entity_search.py",
+            "apps/acquisition/evidence_writer.py",
             "apps/acquisition/observation_gate/__init__.py",
             "apps/acquisition/observation_gate/replay.py",
             "apps/acquisition/registry.py",
@@ -28261,6 +28402,7 @@
             "apps/acquisition/tests/unit/test_cc_plan.py",
             "apps/acquisition/tests/unit/test_engine_adapters.py",
             "apps/acquisition/tests/unit/test_entity_search.py",
+            "apps/acquisition/tests/unit/test_evidence_writer.py",
             "apps/acquisition/tests/unit/test_primproc_runtime.py",
             "apps/acquisition/tests/unit/test_region_backpressure.py",
             "apps/acquisition/tests/unit/test_render_pipeline.py",
@@ -28276,6 +28418,7 @@
             "apps/acquisition/worker_browser/renderer.py",
             "apps/acquisition/worker_http/__init__.py",
             "apps/acquisition/worker_http/archival.py",
+            "apps/acquisition/worker_service.py",
             "apps/bulk-ingestion/backfill.py",
             "apps/bulk-ingestion/historical/__init__.py",
             "apps/bulk-ingestion/historical/replay.py",
@@ -28313,7 +28456,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 134
+          "module_count": 137
         },
         {
           "id": "interpretation",
@@ -28988,6 +29131,7 @@
             "apps/control-plane/db/migrations/versions/025_context_graph.py",
             "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
             "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
+            "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
             "apps/control-plane/db/session.py",
@@ -29004,6 +29148,7 @@
             "apps/control-plane/semantic_path/signal_corpus.py",
             "apps/control-plane/semantic_path/signal_corpus_baseline.py",
             "apps/control-plane/services/__init__.py",
+            "apps/control-plane/services/acquisition_evidence.py",
             "apps/control-plane/services/acquisition_loop.py",
             "apps/control-plane/services/audit.py",
             "apps/control-plane/services/capture_interpretation.py",
@@ -29020,8 +29165,10 @@
             "apps/control-plane/services/layer0_pipeline.py",
             "apps/control-plane/services/materialization_outbox_relay.py",
             "apps/control-plane/services/model_gateway.py",
+            "apps/control-plane/services/observation_consumer_runner.py",
             "apps/control-plane/services/policy_service.py",
             "apps/control-plane/services/pow_run.py",
+            "apps/control-plane/services/processing_result_store.py",
             "apps/control-plane/services/query_planner.py",
             "apps/control-plane/services/reobservation.py",
             "apps/control-plane/services/research_case_policy.py",
@@ -29089,6 +29236,7 @@
             "apps/control-plane/tests/unit/test_migration_020_universal_relation.py",
             "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
             "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+            "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
             "apps/control-plane/tests/unit/test_migration_forward_only.py",
             "apps/control-plane/tests/unit/test_modifier_mismatch.py",
             "apps/control-plane/tests/unit/test_monitor.py",
@@ -29183,7 +29331,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 279
+          "module_count": 284
         },
         {
           "id": "webapp",
@@ -29485,6 +29633,7 @@
         "alembic.ini",
         "alibaba.com",
         "alice.moon",
+        "allow.auto.create.topics",
         "amazon.com",
         "analytics.projected",
         "api.example.com",
@@ -29549,6 +29698,7 @@
         "claim.subject",
         "claim.timezone",
         "cloudflare.com",
+        "cognitive.acquisition.worker",
         "cognitive.investigation.activities",
         "cognitive.worker",
         "collections.abc",
@@ -29636,6 +29786,7 @@
         "donors.md",
         "downstream.json",
         "enable.auto.commit",
+        "enable.auto.offset.store",
         "enable.idempotence",
         "entities.entity_id",
         "entity.claimed",
@@ -29647,10 +29798,7 @@
         "entity.series.projected",
         "entity.state.projected",
         "entity.stream",
-        "entity.stream.appended",
-        "entity.updated",
-        "entity.version_created",
-        "env.py"
+        "entity.stream.appended"
       ]
     },
     "context_map": {
@@ -31129,7 +31277,7 @@
       {
         "path": "apps/acquisition/artifact_sink.py",
         "status": "IMPLEMENTED",
-        "loc": 288,
+        "loc": 316,
         "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
@@ -31205,6 +31353,15 @@
         "status": "IMPLEMENTED",
         "loc": 136,
         "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/evidence_writer.py",
+        "status": "IMPLEMENTED",
+        "loc": 183,
+        "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -31351,7 +31508,7 @@
       {
         "path": "apps/acquisition/sources/connector.py",
         "status": "IMPLEMENTED",
-        "loc": 350,
+        "loc": 352,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
@@ -31576,6 +31733,15 @@
         "markers": []
       },
       {
+        "path": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "status": "TEST",
+        "loc": 160,
+        "callables": 14,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/acquisition/tests/unit/test_primproc_runtime.py",
         "status": "TEST",
         "loc": 608,
@@ -31661,7 +31827,7 @@
       {
         "path": "apps/acquisition/worker_acquisition.py",
         "status": "IMPLEMENTED",
-        "loc": 565,
+        "loc": 611,
         "callables": 19,
         "stubs": 1,
         "not_implemented": 0,
@@ -31710,6 +31876,15 @@
         "status": "IMPLEMENTED",
         "loc": 174,
         "callables": 6,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/worker_service.py",
+        "status": "IMPLEMENTED",
+        "loc": 186,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -32860,6 +33035,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
+        "status": "MIGRATION",
+        "loc": 76,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/db/relation_claim_store.py",
         "status": "IMPLEMENTED",
         "loc": 559,
@@ -32871,7 +33055,7 @@
       {
         "path": "apps/control-plane/db/schema.py",
         "status": "IMPLEMENTED",
-        "loc": 3071,
+        "loc": 3126,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -33008,6 +33192,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/services/acquisition_evidence.py",
+        "status": "IMPLEMENTED",
+        "loc": 169,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/services/acquisition_loop.py",
         "status": "IMPLEMENTED",
         "loc": 118,
@@ -33127,7 +33320,7 @@
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
         "status": "IMPLEMENTED",
-        "loc": 696,
+        "loc": 727,
         "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
@@ -33172,6 +33365,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/services/observation_consumer_runner.py",
+        "status": "IMPLEMENTED",
+        "loc": 166,
+        "callables": 6,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/services/policy_service.py",
         "status": "IMPLEMENTED",
         "loc": 54,
@@ -33185,6 +33387,15 @@
         "status": "IMPLEMENTED",
         "loc": 798,
         "callables": 14,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/services/processing_result_store.py",
+        "status": "IMPLEMENTED",
+        "loc": 106,
+        "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -33810,6 +34021,15 @@
         "path": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
         "status": "TEST",
         "loc": 113,
+        "callables": 5,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+        "status": "TEST",
+        "loc": 97,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -34587,7 +34807,7 @@
       {
         "path": "apps/interpretation/observation_consumer/__init__.py",
         "status": "IMPLEMENTED",
-        "loc": 478,
+        "loc": 596,
         "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
@@ -34987,8 +35207,8 @@
       {
         "path": "apps/interpretation/tests/test_observation_consumer.py",
         "status": "TEST",
-        "loc": 415,
-        "callables": 32,
+        "loc": 458,
+        "callables": 36,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -37636,8 +37856,8 @@
       {
         "path": "apps/shared/events/observation_gate.py",
         "status": "IMPLEMENTED",
-        "loc": 350,
-        "callables": 5,
+        "loc": 385,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -39716,12 +39936,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 529,
+      "IMPLEMENTED": 534,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 90,
-      "TEST": 325,
-      "MIGRATION": 15,
-      "total": 977
+      "TEST": 327,
+      "MIGRATION": 16,
+      "total": 985
     }
   },
   "reachability": {
@@ -39899,6 +40119,10 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/acquisition/evidence_writer.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/acquisition/observation_gate/__init__.py",
         "status": "ORPHAN"
       },
@@ -40059,6 +40283,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/acquisition/tests/unit/test_primproc_runtime.py",
         "status": "TEST"
       },
@@ -40117,6 +40345,10 @@
       {
         "path": "apps/acquisition/worker_http/archival.py",
         "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/acquisition/worker_service.py",
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/admission/engine/__init__.py",
@@ -40623,6 +40855,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/db/relation_claim_store.py",
         "status": "ORPHAN"
       },
@@ -40687,6 +40923,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/services/acquisition_evidence.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/services/acquisition_loop.py",
         "status": "TEST_ONLY"
       },
@@ -40740,7 +40980,7 @@
       },
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/services/investigation_scheduler.py",
@@ -40759,11 +40999,19 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/control-plane/services/observation_consumer_runner.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/control-plane/services/policy_service.py",
         "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/services/pow_run.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/control-plane/services/processing_result_store.py",
         "status": "PRODUCTION"
       },
       {
@@ -41036,6 +41284,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
         "status": "TEST"
       },
       {
@@ -43643,10 +43895,12 @@
       "apps/acquisition/_prove_tools.py",
       "apps/acquisition/sources/append_parse_blocks.py",
       "apps/acquisition/worker_acquisition.py",
+      "apps/acquisition/worker_service.py",
       "apps/control-plane/api/main.py",
       "apps/control-plane/composition.py",
       "apps/control-plane/semantic_path/corpus.py",
       "apps/control-plane/semantic_path/record_corpus.py",
+      "apps/control-plane/services/observation_consumer_runner.py",
       "apps/control-plane/services/pow_run.py",
       "apps/control-plane/services/worker_pools.py",
       "apps/control-plane/workflows/worker.py",
@@ -43672,11 +43926,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 392,
+      "PRODUCTION": 397,
       "TEST_ONLY": 143,
-      "ORPHAN": 117,
-      "TEST": 325,
-      "total": 977
+      "ORPHAN": 118,
+      "TEST": 327,
+      "total": 985
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -43864,12 +44118,13 @@
       "apps/control-plane/db/migrations/versions/025_context_graph.py",
       "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
       "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
+      "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
       "apps/control-plane/db/relation_claim_store.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
       "apps/control-plane/services/__init__.py",
-      "apps/control-plane/services/interpretation_bridge.py",
+      "apps/control-plane/services/acquisition_evidence.py",
       "apps/control-plane/services/specops_catalog.py",
       "apps/control-plane/workflows/__init__.py",
       "apps/interpretation/__init__.py",
@@ -45034,7 +45289,7 @@
       },
       "acquisition.request": {
         "lane": "acquisition",
-        "files": 13,
+        "files": 14,
         "producer_files": 9
       },
       "admission.decided": {
@@ -45279,7 +45534,7 @@
       },
       "observation.created": {
         "lane": "observation",
-        "files": 24,
+        "files": 25,
         "producer_files": 8
       },
       "observation.duplicate": {
@@ -48528,6 +48783,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "9236d1a08478a9c2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "object": "apps/acquisition/evidence_writer.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_evidence_writer.py",
+          "via": "evidence_writer"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "cba971d66ffb790d",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/tests/unit/test_primproc_runtime.py",
@@ -48810,6 +49078,149 @@
         "evidence": {
           "file": "apps/acquisition/worker_http/__init__.py",
           "via": "archival"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b19bf16fbb356167",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/shared/config/settings.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "config.settings"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2fc96b6267d40d61",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/acquisition/artifact_sink.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "artifact_sink"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "aae8cb75415bba39",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/acquisition/dispatcher/kafka_producer.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "dispatcher.kafka_producer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "83546603f8e56ea6",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/shared/events/event_envelope_pb2.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "events.event_envelope_pb2"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c18442785e0d9eb2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/shared/events/content_router.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "events.content_router"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "61fffb99f1c6f24d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/shared/events/observation_gate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "events.observation_gate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a091bea8186879f5",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/shared/events/topics.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "events.topics"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "724d423f22f178ab",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/shared/storage/s3.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "storage.s3"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "90a904aada73cfec",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/acquisition/sources/connector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "sources.connector"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f2919f184d9427fd",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/acquisition/worker_acquisition.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "worker_acquisition"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "64612b9e659ee34f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/acquisition/evidence_writer.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "evidence_writer"
         },
         "confidence": 1.0
       },
@@ -55704,6 +56115,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "bdb9808e4727fa9b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/acquisition_evidence.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/acquisition_evidence.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "e20705b02aebe873",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/acquisition_loop.py",
@@ -57095,6 +57519,97 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "53a4ae9d64a14ec0",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/observation_consumer_runner.py",
+        "object": "apps/shared/config/settings.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/observation_consumer_runner.py",
+          "via": "config.settings"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c0fb97bb991ae2ac",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/observation_consumer_runner.py",
+        "object": "apps/shared/events/event_envelope_pb2.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/observation_consumer_runner.py",
+          "via": "events.event_envelope_pb2"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "68d6ec0072835c12",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/observation_consumer_runner.py",
+        "object": "apps/shared/events/topics.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/observation_consumer_runner.py",
+          "via": "events.topics"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "729724a6206d85bc",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/observation_consumer_runner.py",
+        "object": "apps/shared/storage/s3.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/observation_consumer_runner.py",
+          "via": "storage.s3"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3ff03cca03e998ee",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/observation_consumer_runner.py",
+        "object": "apps/interpretation/observation_consumer/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/observation_consumer_runner.py",
+          "via": "observation_consumer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "72580d084a065e95",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/observation_consumer_runner.py",
+        "object": "apps/control-plane/services/processing_result_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/observation_consumer_runner.py",
+          "via": "services.processing_result_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "38c5205f0bc3d731",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/observation_consumer_runner.py",
+        "object": "apps/control-plane/services/interpretation_bridge.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/observation_consumer_runner.py",
+          "via": "services.interpretation_bridge"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "b4afa40f0c9b9ba7",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/policy_service.py",
@@ -57338,6 +57853,19 @@
         "evidence": {
           "file": "apps/control-plane/services/pow_run.py",
           "via": "db.session"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "aa3f010a440c59b7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/processing_result_store.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/processing_result_store.py",
+          "via": "db.schema"
         },
         "confidence": 1.0
       },
@@ -60692,6 +61220,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
           "via": "context_engine.postgres_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "844cfbdc77380fea",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+          "via": "db.schema"
         },
         "confidence": 1.0
       },
@@ -83725,6 +84266,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "1e5dc2ea0c8fd3e8",
+        "kind": "TABLE_CLASS_DEFINED",
+        "subject": "ProcessingResultRow",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "regex_class_base",
+        "evidence": {
+          "file": "apps/control-plane/db/schema.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "262ee2f3a2e02caf",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
@@ -84741,6 +85294,18 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/acquisition/tests/unit/test_entity_search.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a2b7c01bab15c655",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "object": "apps/acquisition/evidence_writer.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_evidence_writer.py"
         },
         "confidence": 1.0
       },
@@ -87549,6 +88114,18 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "89eda1e9b1ff90bf",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_migration_028_processing_results.py"
         },
         "confidence": 1.0
       },
@@ -99065,44 +99642,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4220,
-      "static_facts": 3930,
+      "facts_total": 4245,
+      "static_facts": 3955,
       "inferred": 290,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 977,
+    "python_modules": 985,
     "typescript_modules": 254,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2697,
-    "test_files": 328,
-    "test_functions": 5222,
-    "untested_modules": 258,
+    "import_edges": 2719,
+    "test_files": 330,
+    "test_functions": 5229,
+    "untested_modules": 263,
     "http_routes": 176
   },
   "evidence_stats": {
-    "facts_total": 4220,
-    "static_facts": 3930,
+    "facts_total": 4245,
+    "static_facts": 3955,
     "inferred": 290,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 529,
+    "IMPLEMENTED": 534,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 90,
-    "TEST": 325,
-    "MIGRATION": 15,
-    "total": 977
+    "TEST": 327,
+    "MIGRATION": 16,
+    "total": 985
   },
   "reachability_summary": {
-    "PRODUCTION": 392,
+    "PRODUCTION": 397,
     "TEST_ONLY": 143,
-    "ORPHAN": 117,
-    "TEST": 325,
-    "total": 977
+    "ORPHAN": 118,
+    "TEST": 327,
+    "total": 985
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -99112,10 +99689,12 @@
     "apps/acquisition/_prove_tools.py",
     "apps/acquisition/sources/append_parse_blocks.py",
     "apps/acquisition/worker_acquisition.py",
+    "apps/acquisition/worker_service.py",
     "apps/control-plane/api/main.py",
     "apps/control-plane/composition.py",
     "apps/control-plane/semantic_path/corpus.py",
     "apps/control-plane/semantic_path/record_corpus.py",
+    "apps/control-plane/services/observation_consumer_runner.py",
     "apps/control-plane/services/pow_run.py",
     "apps/control-plane/services/worker_pools.py",
     "apps/control-plane/workflows/worker.py",
@@ -99326,12 +99905,13 @@
     "apps/control-plane/db/migrations/versions/025_context_graph.py",
     "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
     "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
+    "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
     "apps/control-plane/db/relation_claim_store.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
     "apps/control-plane/services/__init__.py",
-    "apps/control-plane/services/interpretation_bridge.py",
+    "apps/control-plane/services/acquisition_evidence.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/workflows/__init__.py",
     "apps/interpretation/__init__.py",

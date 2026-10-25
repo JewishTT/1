@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4220,
-    "static_facts": 3930,
+    "facts_total": 4245,
+    "static_facts": 3955,
     "inferred": 290,
     "intended": 0
   },
@@ -3023,6 +3023,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "9236d1a08478a9c2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_evidence_writer.py",
+      "object": "apps/acquisition/evidence_writer.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "via": "evidence_writer"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "cba971d66ffb790d",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/tests/unit/test_primproc_runtime.py",
@@ -3305,6 +3318,149 @@
       "evidence": {
         "file": "apps/acquisition/worker_http/__init__.py",
         "via": "archival"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b19bf16fbb356167",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/shared/config/settings.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "config.settings"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2fc96b6267d40d61",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/acquisition/artifact_sink.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "artifact_sink"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "aae8cb75415bba39",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/acquisition/dispatcher/kafka_producer.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "dispatcher.kafka_producer"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "83546603f8e56ea6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/shared/events/event_envelope_pb2.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "events.event_envelope_pb2"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c18442785e0d9eb2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/shared/events/content_router.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "events.content_router"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "61fffb99f1c6f24d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/shared/events/observation_gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "events.observation_gate"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a091bea8186879f5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/shared/events/topics.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "events.topics"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "724d423f22f178ab",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/shared/storage/s3.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "storage.s3"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "90a904aada73cfec",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/acquisition/sources/connector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "sources.connector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f2919f184d9427fd",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/acquisition/worker_acquisition.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "worker_acquisition"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "64612b9e659ee34f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/acquisition/evidence_writer.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "evidence_writer"
       },
       "confidence": 1.0
     },
@@ -10199,6 +10355,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "bdb9808e4727fa9b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/acquisition_evidence.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/acquisition_evidence.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "e20705b02aebe873",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/services/acquisition_loop.py",
@@ -11590,6 +11759,97 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "53a4ae9d64a14ec0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/observation_consumer_runner.py",
+      "object": "apps/shared/config/settings.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/observation_consumer_runner.py",
+        "via": "config.settings"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c0fb97bb991ae2ac",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/observation_consumer_runner.py",
+      "object": "apps/shared/events/event_envelope_pb2.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/observation_consumer_runner.py",
+        "via": "events.event_envelope_pb2"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "68d6ec0072835c12",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/observation_consumer_runner.py",
+      "object": "apps/shared/events/topics.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/observation_consumer_runner.py",
+        "via": "events.topics"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "729724a6206d85bc",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/observation_consumer_runner.py",
+      "object": "apps/shared/storage/s3.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/observation_consumer_runner.py",
+        "via": "storage.s3"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3ff03cca03e998ee",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/observation_consumer_runner.py",
+      "object": "apps/interpretation/observation_consumer/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/observation_consumer_runner.py",
+        "via": "observation_consumer"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "72580d084a065e95",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/observation_consumer_runner.py",
+      "object": "apps/control-plane/services/processing_result_store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/observation_consumer_runner.py",
+        "via": "services.processing_result_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "38c5205f0bc3d731",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/observation_consumer_runner.py",
+      "object": "apps/control-plane/services/interpretation_bridge.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/observation_consumer_runner.py",
+        "via": "services.interpretation_bridge"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "b4afa40f0c9b9ba7",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/services/policy_service.py",
@@ -11833,6 +12093,19 @@
       "evidence": {
         "file": "apps/control-plane/services/pow_run.py",
         "via": "db.session"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "aa3f010a440c59b7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/processing_result_store.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/processing_result_store.py",
+        "via": "db.schema"
       },
       "confidence": 1.0
     },
@@ -15187,6 +15460,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
         "via": "context_engine.postgres_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "844cfbdc77380fea",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+        "via": "db.schema"
       },
       "confidence": 1.0
     },
@@ -38220,6 +38506,18 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "1e5dc2ea0c8fd3e8",
+      "kind": "TABLE_CLASS_DEFINED",
+      "subject": "ProcessingResultRow",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "regex_class_base",
+      "evidence": {
+        "file": "apps/control-plane/db/schema.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "262ee2f3a2e02caf",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
@@ -39236,6 +39534,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_entity_search.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a2b7c01bab15c655",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_evidence_writer.py",
+      "object": "apps/acquisition/evidence_writer.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_evidence_writer.py"
       },
       "confidence": 1.0
     },
@@ -42044,6 +42354,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "89eda1e9b1ff90bf",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_migration_028_processing_results.py"
       },
       "confidence": 1.0
     },

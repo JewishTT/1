@@ -131,6 +131,7 @@
           "apps/acquisition/dispatcher/regional.py",
           "apps/acquisition/dispatcher/scheduler.py",
           "apps/acquisition/entity_search.py",
+          "apps/acquisition/evidence_writer.py",
           "apps/acquisition/observation_gate/__init__.py",
           "apps/acquisition/observation_gate/replay.py",
           "apps/acquisition/registry.py",
@@ -171,6 +172,7 @@
           "apps/acquisition/tests/unit/test_cc_plan.py",
           "apps/acquisition/tests/unit/test_engine_adapters.py",
           "apps/acquisition/tests/unit/test_entity_search.py",
+          "apps/acquisition/tests/unit/test_evidence_writer.py",
           "apps/acquisition/tests/unit/test_primproc_runtime.py",
           "apps/acquisition/tests/unit/test_region_backpressure.py",
           "apps/acquisition/tests/unit/test_render_pipeline.py",
@@ -186,6 +188,7 @@
           "apps/acquisition/worker_browser/renderer.py",
           "apps/acquisition/worker_http/__init__.py",
           "apps/acquisition/worker_http/archival.py",
+          "apps/acquisition/worker_service.py",
           "apps/bulk-ingestion/backfill.py",
           "apps/bulk-ingestion/historical/__init__.py",
           "apps/bulk-ingestion/historical/replay.py",
@@ -223,7 +226,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 134
+        "module_count": 137
       },
       {
         "id": "interpretation",
@@ -898,6 +901,7 @@
           "apps/control-plane/db/migrations/versions/025_context_graph.py",
           "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
           "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
+          "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
           "apps/control-plane/db/session.py",
@@ -914,6 +918,7 @@
           "apps/control-plane/semantic_path/signal_corpus.py",
           "apps/control-plane/semantic_path/signal_corpus_baseline.py",
           "apps/control-plane/services/__init__.py",
+          "apps/control-plane/services/acquisition_evidence.py",
           "apps/control-plane/services/acquisition_loop.py",
           "apps/control-plane/services/audit.py",
           "apps/control-plane/services/capture_interpretation.py",
@@ -930,8 +935,10 @@
           "apps/control-plane/services/layer0_pipeline.py",
           "apps/control-plane/services/materialization_outbox_relay.py",
           "apps/control-plane/services/model_gateway.py",
+          "apps/control-plane/services/observation_consumer_runner.py",
           "apps/control-plane/services/policy_service.py",
           "apps/control-plane/services/pow_run.py",
+          "apps/control-plane/services/processing_result_store.py",
           "apps/control-plane/services/query_planner.py",
           "apps/control-plane/services/reobservation.py",
           "apps/control-plane/services/research_case_policy.py",
@@ -999,6 +1006,7 @@
           "apps/control-plane/tests/unit/test_migration_020_universal_relation.py",
           "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
           "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+          "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
           "apps/control-plane/tests/unit/test_migration_forward_only.py",
           "apps/control-plane/tests/unit/test_modifier_mismatch.py",
           "apps/control-plane/tests/unit/test_monitor.py",
@@ -1093,7 +1101,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 279
+        "module_count": 284
       },
       {
         "id": "webapp",
@@ -1395,6 +1403,7 @@
       "alembic.ini",
       "alibaba.com",
       "alice.moon",
+      "allow.auto.create.topics",
       "amazon.com",
       "analytics.projected",
       "api.example.com",
@@ -1459,6 +1468,7 @@
       "claim.subject",
       "claim.timezone",
       "cloudflare.com",
+      "cognitive.acquisition.worker",
       "cognitive.investigation.activities",
       "cognitive.worker",
       "collections.abc",
@@ -1546,6 +1556,7 @@
       "donors.md",
       "downstream.json",
       "enable.auto.commit",
+      "enable.auto.offset.store",
       "enable.idempotence",
       "entities.entity_id",
       "entity.claimed",
@@ -1557,10 +1568,7 @@
       "entity.series.projected",
       "entity.state.projected",
       "entity.stream",
-      "entity.stream.appended",
-      "entity.updated",
-      "entity.version_created",
-      "env.py"
+      "entity.stream.appended"
     ]
   },
   "context_map": {

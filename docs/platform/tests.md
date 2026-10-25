@@ -1,6 +1,6 @@
 # Tests
 
-328 test files, 5222 test functions. 258 platform modules are not targeted by any test.
+330 test files, 5229 test functions. 263 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -30,6 +30,7 @@
 | `apps/acquisition/tests/unit/test_cc_plan.py` | 12 | `apps/acquisition/cc_plan.py` |
 | `apps/acquisition/tests/unit/test_engine_adapters.py` | 6 | `apps/acquisition/adapters/browsertrix/__init__.py`, `apps/acquisition/adapters/browsertrix/collect.py`, `apps/acquisition/adapters/heritrix/__init__.py`, `apps/acquisition/adapters/heritrix/collect.py` |
 | `apps/acquisition/tests/unit/test_entity_search.py` | 4 | `apps/acquisition/entity_search.py` |
+| `apps/acquisition/tests/unit/test_evidence_writer.py` | 2 | `apps/acquisition/evidence_writer.py` |
 | `apps/acquisition/tests/unit/test_primproc_runtime.py` | 32 | `apps/acquisition/runtime/__init__.py`, `apps/acquisition/runtime/primproc.py`, `apps/shared/domain/acquisition_artifact.py` |
 | `apps/acquisition/tests/unit/test_region_backpressure.py` | 7 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/tests/unit/test_render_pipeline.py` | 6 | `apps/acquisition/worker_browser/renderer.py` |
@@ -102,6 +103,7 @@
 | `apps/control-plane/tests/unit/test_migration_020_universal_relation.py` | 16 | `apps/control-plane/db/schema.py`, `apps/shared/domain/relation_candidate.py` |
 | `apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py` | 9 | `apps/control-plane/api/routes/entities.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/session.py`, `apps/shared/config/settings.py` |
 | `apps/control-plane/tests/unit/test_migration_027_person_case_records.py` | 3 | `apps/control-plane/context_engine/postgres_store.py` |
+| `apps/control-plane/tests/unit/test_migration_028_processing_results.py` | 3 | `apps/control-plane/db/schema.py` |
 | `apps/control-plane/tests/unit/test_migration_forward_only.py` | 5 | — |
 | `apps/control-plane/tests/unit/test_modifier_mismatch.py` | 9 | `apps/control-plane/modifier/__init__.py` |
 | `apps/control-plane/tests/unit/test_monitor.py` | 11 | `apps/control-plane/cp_domain/investigation.py` |
@@ -142,7 +144,7 @@
 | `apps/interpretation/tests/test_deterministic_extraction.py` | 16 | `apps/interpretation/dictionaries/__init__.py`, `apps/interpretation/dictionaries/build_mini.py`, `apps/interpretation/extractors/lane.py`, `apps/interpretation/extractors/language.py` |
 | `apps/interpretation/tests/test_evidence_manifest.py` | 14 | `apps/interpretation/evidence/manifest.py` |
 | `apps/interpretation/tests/test_mention_binding_seam.py` | 16 | `apps/interpretation/extractors/signals/__init__.py`, `apps/interpretation/extractors/signals/lexical.py`, `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/mentions.py` |
-| `apps/interpretation/tests/test_observation_consumer.py` | 23 | `apps/interpretation/normalization/tenzir.py`, `apps/interpretation/observation_consumer/__init__.py`, `apps/shared/events/__init__.py` |
+| `apps/interpretation/tests/test_observation_consumer.py` | 25 | `apps/interpretation/normalization/tenzir.py`, `apps/interpretation/observation_consumer/__init__.py`, `apps/shared/events/__init__.py` |
 | `apps/interpretation/tests/test_parser_adapter.py` | 17 | `apps/interpretation/parsers/registry.py` |
 | `apps/interpretation/tests/test_payload_binding.py` | 14 | `apps/interpretation/parsers/payload/__init__.py`, `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/relation_participant.py` |
 | `apps/interpretation/tests/test_payload_detection.py` | 15 | `apps/interpretation/parsers/payload/__init__.py` |
@@ -370,6 +372,7 @@
 | `apps/acquisition/worker-dataset/acquire.py` |
 | `apps/acquisition/worker_browser/__init__.py` |
 | `apps/acquisition/worker_http/__init__.py` |
+| `apps/acquisition/worker_service.py` |
 | `apps/admission/engine/__init__.py` |
 | `apps/admission/independence/__init__.py` |
 | `apps/admission/resolution/__init__.py` |
@@ -400,4 +403,3 @@
 | `apps/control-plane/api/routes/search.py` |
 | `apps/control-plane/api/routes/search_rebuild.py` |
 | `apps/control-plane/api/routes/specops_counterintel.py` |
-| `apps/control-plane/api/routes/specops_emulation.py` |

@@ -1,6 +1,6 @@
 # Import graph
 
-977 Python modules, 2697 resolved local edges.
+985 Python modules, 2719 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,43 +10,43 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 850 |
+| `__future__` | stdlib | 858 |
 | `dataclasses` | stdlib | 388 |
-| `typing` | stdlib | 354 |
-| `pathlib` | stdlib | 303 |
-| `pytest` | third-party | 260 |
-| `sys` | stdlib | 248 |
-| `collections` | stdlib | 238 |
-| `json` | stdlib | 185 |
-| `datetime` | stdlib | 183 |
-| `sqlalchemy` | third-party | 124 |
-| `hashlib` | stdlib | 119 |
+| `typing` | stdlib | 359 |
+| `pathlib` | stdlib | 304 |
+| `pytest` | third-party | 261 |
+| `sys` | stdlib | 249 |
+| `collections` | stdlib | 239 |
+| `json` | stdlib | 188 |
+| `datetime` | stdlib | 185 |
+| `sqlalchemy` | third-party | 135 |
+| `hashlib` | stdlib | 122 |
 | `enum` | stdlib | 117 |
-| `re` | stdlib | 92 |
+| `re` | stdlib | 93 |
+| `asyncio` | stdlib | 67 |
+| `os` | stdlib | 67 |
 | `fastapi` | third-party | 66 |
-| `os` | stdlib | 65 |
-| `asyncio` | stdlib | 64 |
 | `uuid` | stdlib | 48 |
 | `math` | stdlib | 41 |
 | `urllib` | stdlib | 39 |
 | `pydantic` | third-party | 34 |
-| `importlib` | stdlib | 29 |
+| `importlib` | stdlib | 30 |
+| `types` | stdlib | 30 |
 | `time` | stdlib | 29 |
-| `types` | stdlib | 29 |
 | `ast` | stdlib | 26 |
 | `io` | stdlib | 25 |
+| `logging` | stdlib | 23 |
 | `numpy` | third-party | 23 |
-| `logging` | stdlib | 21 |
-| `inspect` | stdlib | 20 |
-| `alembic` | third-party | 20 |
+| `inspect` | stdlib | 21 |
+| `alembic` | third-party | 21 |
 | `httpx` | third-party | 20 |
 | `argparse` | stdlib | 18 |
 | `tempfile` | stdlib | 17 |
 | `threading` | stdlib | 17 |
+| `confluent_kafka` | third-party | 16 |
 | `subprocess` | stdlib | 15 |
 | `warcio` | third-party | 15 |
 | `shutil` | stdlib | 14 |
-| `confluent_kafka` | third-party | 14 |
 | `temporalio` | third-party | 13 |
 | `itertools` | stdlib | 11 |
 | `base64` | stdlib | 9 |
@@ -106,6 +106,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `errors` | `apps/science/errors.py` |
 | `events` | `apps/shared/events/__init__.py` |
 | `evidence` | `apps/interpretation/evidence/__init__.py` |
+| `evidence_writer` | `apps/acquisition/evidence_writer.py` |
 | `experiments` | `apps/science/experiments/__init__.py` |
 | `extractors` | `apps/interpretation/extractors/__init__.py` |
 | `feedback` | `apps/feedback/feedback/__init__.py` |

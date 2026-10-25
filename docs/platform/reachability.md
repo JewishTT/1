@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 392 |
+| PRODUCTION | 397 |
 | TEST_ONLY | 143 |
-| ORPHAN | 117 |
-| TEST | 325 |
+| ORPHAN | 118 |
+| TEST | 327 |
 
 ## Entrypoints (production roots)
 
@@ -22,10 +22,12 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/_prove_tools.py` |
 | `apps/acquisition/sources/append_parse_blocks.py` |
 | `apps/acquisition/worker_acquisition.py` |
+| `apps/acquisition/worker_service.py` |
 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/composition.py` |
 | `apps/control-plane/semantic_path/corpus.py` |
 | `apps/control-plane/semantic_path/record_corpus.py` |
+| `apps/control-plane/services/observation_consumer_runner.py` |
 | `apps/control-plane/services/pow_run.py` |
 | `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/workflows/worker.py` |
@@ -202,7 +204,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**117** modules are imported by neither production nor tests.
+**118** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -246,12 +248,13 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/025_context_graph.py` |
 | `apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py` |
 | `apps/control-plane/db/migrations/versions/027_person_research_case_records.py` |
+| `apps/control-plane/db/migrations/versions/028_observation_processing_results.py` |
 | `apps/control-plane/db/relation_claim_store.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |
 | `apps/control-plane/services/__init__.py` |
-| `apps/control-plane/services/interpretation_bridge.py` |
+| `apps/control-plane/services/acquisition_evidence.py` |
 | `apps/control-plane/services/specops_catalog.py` |
 | `apps/control-plane/workflows/__init__.py` |
 | `apps/interpretation/__init__.py` |
