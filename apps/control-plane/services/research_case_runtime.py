@@ -28,6 +28,7 @@ def estimate_case_reservation(
     *,
     actions: Sequence[ResearchAction],
     policy: Any,
+    launch_profile: str,
 ) -> dict[str, Any]:
     """Estimate finite worst-case limits from the enabled source definitions and policy."""
     from sources.catalogue import load_catalogue
@@ -43,13 +44,9 @@ def estimate_case_reservation(
         profile = policy._sources.get(action.source_id)
         if not isinstance(profile, Mapping):
             raise CaseRuntimeBlocked(f"unknown source policy id: {action.source_id}")
-        if policy._source_block_reason(action.source_id, str(profile.get("allowed_case_profiles", [""])[0])) is not None:
-            # The caller separately validates the exact launch profile. This check is a
-            # readiness guard so a broken runtime/terms/env manifest never gets budget.
-            reason = policy._source_block_reason(
-                action.source_id, str(profile.get("allowed_case_profiles", [""])[0])
-            )
-            raise CaseRuntimeBlocked(reason or f"source {action.source_id} is not eligible")
+        reason = policy._source_block_reason(action.source_id, launch_profile)
+        if reason is not None:
+            raise CaseRuntimeBlocked(reason)
         name = str(profile.get("catalogue_source_id") or "").strip()
         definition = by_name.get(name)
         if definition is None or not definition.enabled:
@@ -453,8 +450,12 @@ class CaseDispatchExecutor:
     def __init__(self, *, policy: Any) -> None:
         self._policy = policy
 
-    def estimate_reservation(self, *, actions: Sequence[ResearchAction]) -> dict[str, Any]:
-        return estimate_case_reservation(actions=actions, policy=self._policy)
+    def estimate_reservation(
+        self, *, actions: Sequence[ResearchAction], launch_profile: str
+    ) -> dict[str, Any]:
+        return estimate_case_reservation(
+            actions=actions, policy=self._policy, launch_profile=launch_profile
+        )
 
     async def dispatch_case(
         self,
@@ -553,7 +554,6 @@ class CaseDispatchExecutor:
                     )
                 )
             )
-            from dataclasses import replace
             task = AcquisitionTask(
                 task_id=task_id,
                 source_id=definition.source_id,
