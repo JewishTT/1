@@ -53,6 +53,38 @@ class MemoryObjectStore:
             existed,
         )
 
+    async def put_derived_dedup(
+        self, body: bytes, *, tenant_id: str, meta: dict | None = None
+    ) -> tuple[RawObjectRef, bool]:
+        """Mirror ObjectStore's separate immutable derived-object namespace."""
+        if not tenant_id or not tenant_id.strip():
+            raise ValueError("tenant_id is required for derived artifact storage")
+        if not isinstance(body, bytes):
+            raise TypeError("derived artifact body must be bytes")
+        digest = sha256_bytes(body)
+        ym = self._ym()
+        key = f"derived/{tenant_id}/{ym}/{digest}"
+        existed = key in self._objects
+        if not existed:
+            self._objects[key] = body
+            if meta:
+                self._meta[f"derived-meta/{tenant_id}/{ym}/{digest}.json"] = dict(meta)
+        return (
+            RawObjectRef(
+                uri=self.ref_uri(
+                    sha256=digest,
+                    tenant_id=tenant_id,
+                    year_month=ym,
+                    kind="derived",
+                ),
+                sha256=digest,
+                size=len(body),
+                tenant_prefix=f"{tenant_id}/{ym}",
+                year_month=ym,
+            ),
+            existed,
+        )
+
     async def exists(self, key: str) -> bool:
         return key in self._objects
 
