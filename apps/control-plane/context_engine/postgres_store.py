@@ -38,6 +38,8 @@ semantics: the engine still computes, this only remembers.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import json
 import re
 from collections.abc import Mapping
@@ -456,9 +458,14 @@ class PostgresContextStore(ContextStore):
         await self.ensure_schema()
         if not case_id or not tenant_id:
             raise ValueError("case_id and tenant_id are required")
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        previous = await self.get_person_case_metadata(case_id)
+        created_at = previous.get("created_at", now) if previous else now
         payload = {
             "case_id": case_id,
             "tenant_id": tenant_id,
+            "created_at": created_at,
+            "updated_at": now,
             "purpose_code": purpose_code,
             "basis_ref": basis_ref,
             "launch_profile": launch_profile,
