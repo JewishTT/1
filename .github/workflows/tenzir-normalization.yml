@@ -30,7 +30,7 @@ jobs:
             '--commands=web server --mode=dev --bind=0.0.0.0'
           ready=0
           for attempt in $(seq 1 60); do
-            if curl --silent --show-error --output /dev/null http://127.0.0.1:5160/ping 2>/dev/null; then
+            if curl --silent --show-error --output /dev/null --request POST --header "Content-Type: application/json" --data "{}" http://127.0.0.1:5160/api/v0/ping 2>/dev/null; then
               ready=1
               break
             fi
