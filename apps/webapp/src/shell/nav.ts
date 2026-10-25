@@ -54,6 +54,7 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
         // a URL kept for each is a URL an analyst has to remember which of the two they
         // meant, which is the opposite of what scoping is for.
         { to: "/investigations", label: "Investigations", icon: "view-graph" },
+        { to: "/research-cases", label: "Research Cases", icon: "view-evidence" },
         { to: "/intel?entity=ENT-2001", label: "Entities", icon: "view-objects" },
         // The findings destination is a LIST route, not one finding's page. It used to
         // carry the literal `/findings/0`, which named no record: the detail endpoint
@@ -121,6 +122,7 @@ export const NAV_TITLES: ReadonlyArray<{ prefix: string; title: string }> = [
   // Before "/investigations" so the department view is titled as itself, not as a
   // bare "Investigation": the department is a view within an investigation.
   { prefix: "/investigations/ci", title: "CI / SpecOps Department" },
+  { prefix: "/research-cases", title: "Person Research Case" },
   { prefix: "/investigations", title: "Investigation" },
   { prefix: "/entities", title: "Entity" },
   { prefix: "/findings", title: "Finding" },
