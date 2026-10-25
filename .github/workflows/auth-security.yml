@@ -16,5 +16,7 @@ jobs:
           enable-cache: true
       - name: Install the locked workspace
         run: uv sync --locked --all-packages --all-groups
-      - name: Run authentication security contracts
+      - name: Compile control-plane modules
+        run: .venv/bin/python -m compileall -q apps/control-plane
+      - name: Run authentication and research-case contracts
         run: .venv/bin/python -m pytest apps/control-plane/tests/test_auth_security.py apps/control-plane/tests/test_research_case_invariants.py -q
