@@ -1,6 +1,6 @@
 # Tests
 
-328 test files, 5220 test functions. 258 platform modules are not targeted by any test.
+328 test files, 5221 test functions. 258 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -162,7 +162,7 @@
 | `apps/interpretation/tests/test_signal_nary_contract.py` | 32 | `apps/interpretation/extractors/signals/signal.py`, `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/predicate_hypothesis.py`, `apps/shared/domain/predicate_signature.py` |
 | `apps/interpretation/tests/test_syntactic_producer.py` | 58 | `apps/interpretation/extractors/signals/mentions.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_tenzir_live.py` | 1 | `apps/interpretation/normalization/tenzir.py` |
-| `apps/interpretation/tests/test_tenzir_normalization.py` | 14 | `apps/interpretation/normalization/tenzir.py` |
+| `apps/interpretation/tests/test_tenzir_normalization.py` | 15 | `apps/interpretation/normalization/tenzir.py` |
 | `apps/interpretation/tests/test_warc_reader.py` | 44 | `apps/interpretation/parsers/warc.py` |
 | `apps/projection/tests/contract/test_search_projection_manifest.py` | 9 | `apps/projection/search/index.py`, `apps/projection/search/projector.py`, `apps/shared/contracts/projection_manifest.py` |
 | `apps/projection/tests/contract/test_tda_bridge_contract.py` | 30 | `apps/projection/graph/adjacency.py`, `apps/projection/tda/__init__.py`, `apps/projection/tda/bridge.py`, `apps/projection/tda/pipeline.py` |

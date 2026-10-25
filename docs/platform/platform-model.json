@@ -18439,7 +18439,7 @@
       },
       {
         "path": "apps/interpretation/tests/test_tenzir_normalization.py",
-        "tests": 14,
+        "tests": 15,
         "test_names": [
           "test_disabled_is_an_explicit_noop_without_a_new_dependency",
           "test_enabled_requires_an_explicit_endpoint",
@@ -18454,7 +18454,8 @@
           "test_normalizer_refuses_source_field_mutation",
           "test_normalizer_refuses_dropped_records",
           "test_normalizer_rejects_invalid_output_width",
-          "test_empty_input_does_not_create_a_pipeline"
+          "test_empty_input_does_not_create_a_pipeline",
+          "test_lexical_shape_hints_cover_common_structured_surfaces_without_claiming_identity"
         ],
         "targets": [
           "apps/interpretation/normalization/tenzir.py"
@@ -22804,7 +22805,7 @@
         "targets": []
       }
     ],
-    "total": 5220
+    "total": 5221
   },
   "contracts": {
     "python": [
@@ -34565,7 +34566,7 @@
       {
         "path": "apps/interpretation/normalization/tenzir.py",
         "status": "IMPLEMENTED",
-        "loc": 508,
+        "loc": 524,
         "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
@@ -35147,7 +35148,7 @@
       {
         "path": "apps/interpretation/tests/test_tenzir_live.py",
         "status": "TEST",
-        "loc": 76,
+        "loc": 150,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -35156,8 +35157,8 @@
       {
         "path": "apps/interpretation/tests/test_tenzir_normalization.py",
         "status": "TEST",
-        "loc": 251,
-        "callables": 22,
+        "loc": 306,
+        "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -99028,7 +99029,7 @@
     "rust_crates": 9,
     "import_edges": 2695,
     "test_files": 328,
-    "test_functions": 5220,
+    "test_functions": 5221,
     "untested_modules": 258,
     "http_routes": 176
   },
