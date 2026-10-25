@@ -251,6 +251,21 @@ services:
     # CLI/one-shot crawler: pulled here; runs are scheduled via the ThumbCrawl
     # adapter (T098) rather than a long-running daemon.
 
+  # Optional Layer-1 structural dataflow engine. The node is intentionally
+  # isolated behind a separate profile; the Python integration remains disabled by
+  # default and writes normalized data only to the derived-artifact namespace.
+  #
+  # DEV MODE bypasses API authentication/TLS, so publish it on loopback only.
+  # Production deployments must use server/upstream/mTLS mode, TLS, and a node
+  # token; never expose this development listener to a LAN or the public Internet.
+  tenzir-node:
+    profiles: ["tenzir"]
+    image: ghcr.io/tenzir/tenzir:6.19.1
+    entrypoint: ["tenzir-node"]
+    command: ["--commands=web server --mode=dev --bind=0.0.0.0"]
+    ports: ["127.0.0.1:5160:5160"]
+    restart: unless-stopped
+
   searxng:
     # Feature 023 §15/§17. A real search backend, not a mock: the acquisition
     # worker talks only to this endpoint and never to Google/Bing/Brave directly
