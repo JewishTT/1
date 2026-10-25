@@ -303,18 +303,17 @@ class ObservationGate:
         producer_version: str = GATE_PRODUCER_VERSION,
         publish_event: bool = True,
     ) -> dict:
-        """Address one record inside an already-stored capture (§9).
+        """Address one record inside an already-stored capture.
 
-        Deliberately does **not** re-store the blob. The bytes are already in the
-        ObjectStore under ``raw_ref`` and re-uploading them per record would turn
-        a thousand-record Airbyte stream into a thousand writes of the same body.
-        What this adds is a second, finer address: the capture says what came
-        back, this says which part of it is being observed.
-
-        The record's own metadata is retained verbatim when supplied, and *only*
-        then: §62 forbids deleting a field nobody anticipated, and the raw
-        artifact remains the source of truth for anything omitted.
+        The raw bytes are already durable under ``raw_ref``; this operation creates
+        the finer record address without storing the blob a second time. When
+        ``publish_event=False``, a caller may commit Capture + Observation in the
+        same transaction before invoking ``publish_record_event``.
         """
+        if not all((capture_id, record_locator, record_digest, tenant_id, raw_ref)):
+            raise ValueError(
+                "capture_id, record_locator, record_digest, tenant_id and raw_ref are required"
+            )
         identity = ObservationIdentity.for_record(
             tenant_id=tenant_id,
             capture_id=capture_id,
@@ -324,10 +323,16 @@ class ObservationGate:
         observation_id = identity.observation_id
         existing = self._observations.get(observation_id)
         if existing is not None:
-            # §12: a replay of one record is the same observation, not a second
-            # one. Returning the stored record is what makes the consumer
-            # idempotent without a dedup table keyed on something else.
+            # A replay keeps the same address. Republishing that deterministic event
+            # is safe and lets a caller recover from a publish failure after commit.
+            if publish_event:
+                self.publish_record_event(
+                    existing,
+                    producer=producer,
+                    producer_version=producer_version,
+                )
             return existing
+
         observation = {
             "observation_id": observation_id,
             "tenant_id": tenant_id,
@@ -351,17 +356,17 @@ class ObservationGate:
             },
         }
         if record_metadata is not None:
-            observation["record_metadata"] = r        # Durable callers can defer publication until Capture + Observation are
-        # committed. The same builder is then called after the transaction, avoiding
-        # "event published, DB row absent" and preserving one canonical envelope builder.
+            observation["record_metadata"] = dict(record_metadata)
+
+        # The gate's in-process index is a cache only. Production persistence is
+        # owned by ArtifactSink's injected evidence writer before event publication.
+        self._observations[observation_id] = observation
         if publish_event:
             self.publish_record_event(
                 observation,
                 producer=producer,
                 producer_version=producer_version,
             )
-(topic, env, key=observation_id)
-            self.last_emitted = {"event_id": env.event_id, "topic": topic}
         return observation
 
     #: Named ``ingest`` historically; §9 asks for the blob-level seam to be
