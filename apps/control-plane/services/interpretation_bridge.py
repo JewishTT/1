@@ -50,13 +50,13 @@ from services.document_adapter import NORMALIZATION_VERSION, ONTOLOGY_VERSION
 log = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
 class InterpretationPersistenceError(RuntimeError):
     """A canonical entity/relation write failed and must be retried before offset commit."""
 
     retryable = True
 
 
+@dataclass(frozen=True, slots=True)
 class InterpretationResult:
     """What one document produced, all the way through persistence."""
 
