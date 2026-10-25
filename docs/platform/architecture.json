@@ -1,5 +1,5 @@
 {
-  "generated_from": "C:\\Users\\tim\\Desktop\\COGNITIVE\\1",
+  "generated_from": "/home/runner/work/1/1",
   "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
   "bounded_contexts": {
     "contexts": [
@@ -967,6 +967,7 @@
           "apps/control-plane/tests/integration/test_temporal_materialization_api.py",
           "apps/control-plane/tests/integration/test_tenancy.py",
           "apps/control-plane/tests/integration/test_tools_api.py",
+          "apps/control-plane/tests/test_auth_security.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
           "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -1082,7 +1083,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 271
+        "module_count": 272
       },
       {
         "id": "webapp",
@@ -1794,7 +1795,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\001-global-osint-platform\\spec.md",
+        "spec_path": "specs/001-global-osint-platform/spec.md",
         "tasks_checked": 138,
         "tasks_total": 139,
         "modules": [],
@@ -1806,7 +1807,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\002-donor-pattern-integration\\spec.md",
+        "spec_path": "specs/002-donor-pattern-integration/spec.md",
         "tasks_checked": 36,
         "tasks_total": 36,
         "modules": [],
@@ -1818,7 +1819,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\003-donor-code-integration\\spec.md",
+        "spec_path": "specs/003-donor-code-integration/spec.md",
         "tasks_checked": 10,
         "tasks_total": 10,
         "modules": [
@@ -1832,7 +1833,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\004-donor-coverage-complete\\spec.md",
+        "spec_path": "specs/004-donor-coverage-complete/spec.md",
         "tasks_checked": 13,
         "tasks_total": 13,
         "modules": [
@@ -1849,7 +1850,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\005-donor-core-subsystems\\spec.md",
+        "spec_path": "specs/005-donor-core-subsystems/spec.md",
         "tasks_checked": 31,
         "tasks_total": 35,
         "modules": [
@@ -1879,7 +1880,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\006-scientific-intelligence-fabric\\spec.md",
+        "spec_path": "specs/006-scientific-intelligence-fabric/spec.md",
         "tasks_checked": 10,
         "tasks_total": 64,
         "modules": [],
@@ -1891,7 +1892,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\007-deterministic-entity-extraction-stack\\spec.md",
+        "spec_path": "specs/007-deterministic-entity-extraction-stack/spec.md",
         "tasks_checked": 32,
         "tasks_total": 32,
         "modules": [
@@ -1944,7 +1945,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\008-discovery-search-fabric\\spec.md",
+        "spec_path": "specs/008-discovery-search-fabric/spec.md",
         "tasks_checked": 0,
         "tasks_total": 40,
         "modules": [
@@ -1959,7 +1960,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\009-donor-full-catalogue\\spec.md",
+        "spec_path": "specs/009-donor-full-catalogue/spec.md",
         "tasks_checked": 12,
         "tasks_total": 75,
         "modules": [
@@ -1977,7 +1978,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\010-zero-layer-contact-harvesting\\spec.md",
+        "spec_path": "specs/010-zero-layer-contact-harvesting/spec.md",
         "tasks_checked": 16,
         "tasks_total": 39,
         "modules": [
@@ -2034,7 +2035,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\011-atomic-entity-commoncrawl-tda\\spec.md",
+        "spec_path": "specs/011-atomic-entity-commoncrawl-tda/spec.md",
         "tasks_checked": 14,
         "tasks_total": 18,
         "modules": [],
@@ -2046,7 +2047,7 @@
         "has_spec": true,
         "has_tasks": false,
         "has_plan": false,
-        "spec_path": "specs\\012-dynamic-entity-invariant\\spec.md",
+        "spec_path": "specs/012-dynamic-entity-invariant/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [
@@ -2063,7 +2064,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\014-temporal-materialization\\spec.md",
+        "spec_path": "specs/014-temporal-materialization/spec.md",
         "tasks_checked": 30,
         "tasks_total": 30,
         "modules": [
@@ -2078,7 +2079,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\015-worldline-reconstruction\\spec.md",
+        "spec_path": "specs/015-worldline-reconstruction/spec.md",
         "tasks_checked": 11,
         "tasks_total": 104,
         "modules": [
@@ -2094,7 +2095,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\016-relation-evidence-graph-fabric\\spec.md",
+        "spec_path": "specs/016-relation-evidence-graph-fabric/spec.md",
         "tasks_checked": 32,
         "tasks_total": 93,
         "modules": [
@@ -2117,7 +2118,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\017-semantic-fabric\\spec.md",
+        "spec_path": "specs/017-semantic-fabric/spec.md",
         "tasks_checked": 0,
         "tasks_total": 30,
         "modules": [
@@ -2131,7 +2132,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\018-world-substrate\\spec.md",
+        "spec_path": "specs/018-world-substrate/spec.md",
         "tasks_checked": 0,
         "tasks_total": 30,
         "modules": [
@@ -2148,7 +2149,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\019-universal-relation-extraction\\spec.md",
+        "spec_path": "specs/019-universal-relation-extraction/spec.md",
         "tasks_checked": 44,
         "tasks_total": 44,
         "modules": [
@@ -2164,7 +2165,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\021-entity-relation-extraction-finalization\\spec.md",
+        "spec_path": "specs/021-entity-relation-extraction-finalization/spec.md",
         "tasks_checked": 0,
         "tasks_total": 94,
         "modules": [
@@ -2178,7 +2179,7 @@
         "has_spec": true,
         "has_tasks": false,
         "has_plan": false,
-        "spec_path": "specs\\022-estorides-donor-mining\\spec.md",
+        "spec_path": "specs/022-estorides-donor-mining/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
@@ -2190,7 +2191,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\023-acquisition-integration-searxng\\spec.md",
+        "spec_path": "specs/023-acquisition-integration-searxng/spec.md",
         "tasks_checked": 0,
         "tasks_total": 214,
         "modules": [
@@ -2206,7 +2207,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\024-context-driven-continuous-intelligence\\spec.md",
+        "spec_path": "specs/024-context-driven-continuous-intelligence/spec.md",
         "tasks_checked": 0,
         "tasks_total": 168,
         "modules": [
@@ -2246,7 +2247,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\025-context-reality-approximation-engine\\spec.md",
+        "spec_path": "specs/025-context-reality-approximation-engine/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [
@@ -2290,7 +2291,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\026-universal-context-engine\\spec.md",
+        "spec_path": "specs/026-universal-context-engine/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [
@@ -2308,7 +2309,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\027-ci-specops-fabric\\spec.md",
+        "spec_path": "specs/027-ci-specops-fabric/spec.md",
         "tasks_checked": 37,
         "tasks_total": 58,
         "modules": [
@@ -2329,7 +2330,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\028-closed-research-loop\\spec.md",
+        "spec_path": "specs/028-closed-research-loop/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
@@ -2341,7 +2342,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\029-research-closed-loop-upgrade\\spec.md",
+        "spec_path": "specs/029-research-closed-loop-upgrade/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
@@ -2353,7 +2354,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\030-global-platform-upgrade\\spec.md",
+        "spec_path": "specs/030-global-platform-upgrade/spec.md",
         "tasks_checked": 0,
         "tasks_total": 152,
         "modules": [
@@ -2392,7 +2393,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\031-ghostline-vishing-fabric\\spec.md",
+        "spec_path": "specs/031-ghostline-vishing-fabric/spec.md",
         "tasks_checked": 53,
         "tasks_total": 53,
         "modules": [
@@ -2409,7 +2410,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\032-global-upgrade-execution\\spec.md",
+        "spec_path": "specs/032-global-upgrade-execution/spec.md",
         "tasks_checked": 0,
         "tasks_total": 84,
         "modules": [
@@ -2430,7 +2431,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\033-universal-context-runtime\\spec.md",
+        "spec_path": "specs/033-universal-context-runtime/spec.md",
         "tasks_checked": 0,
         "tasks_total": 84,
         "modules": [],
@@ -2440,11 +2441,11 @@
       {
         "id": "034-person-research-case",
         "has_spec": true,
-        "has_tasks": false,
-        "has_plan": false,
-        "spec_path": "specs\\034-person-research-case\\spec.md",
+        "has_tasks": true,
+        "has_plan": true,
+        "spec_path": "specs/034-person-research-case/spec.md",
         "tasks_checked": 0,
-        "tasks_total": 0,
+        "tasks_total": 76,
         "modules": [
           "apps/acquisition/dispatcher/scheduler.py",
           "apps/admission/resolution/blocking.py",

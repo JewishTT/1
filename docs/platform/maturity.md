@@ -11,7 +11,7 @@ Generated from the scanner's per-body flags. This separates *the symbol exists* 
 | DECLARATION_ONLY | 18 |
 | PACKAGE_INIT | 90 |
 | MIGRATION | 13 |
-| TEST | 319 |
+| TEST | 320 |
 
 **0** modules are present but not really built (STUB / NOT_IMPLEMENTED / PRIMITIVE).
 

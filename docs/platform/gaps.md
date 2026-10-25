@@ -38,6 +38,6 @@ Formerly-recorded gaps whose fix must stay in place; a regression flips the guar
 | `context-engine-was-in-memory-only` | GUARDED | CognitiveLoop ran entirely on InMemoryContextStore; the fix is a Postgres store. |
 | `investigation-workflow-was-unregistered` | GUARDED | InvestigationWorkflow/RecrawlWorkflow were declared but never registered. |
 | `all-downgrades-were-not-implemented` | GUARDED | Every migration downgrade raised NotImplementedError. |
-| `auth-anonymous-admin` | GUARDED | Anonymous requests fail closed; explicit development identity does not grant ADMIN. |
-| `auth-unverified-token` | GUARDED | HS256 signature, issuer, audience and temporal claims are checked before identity is accepted. |
 | `ci-sync-installed-no-test-runner` | GUARDED | CI ran `uv sync --locked` and installed no test runner. |
+| `auth-anonymous-admin` | GUARDED | Anonymous requests must not receive an administrator role. |
+| `auth-unverified-token` | GUARDED | JWT claims must be signed and validated before they can establish identity or role. |
