@@ -3,7 +3,6 @@ import { ApiError } from "../../lib/http";
 import {
   api,
   createCase,
-  getCase,
   proposeScopeRevision,
   type CreateCaseRequest,
 } from "./api";
@@ -70,7 +69,6 @@ describe("Feature 034 API client", () => {
     await expect(proposeScopeRevision("case/test", baseCaseRequest)).resolves.toEqual(response);
     expect(fetchSpy.mock.calls[0][0]).toBe("/api/v1/research-cases/case%2Ftest/scope");
     expect(fetchSpy.mock.calls[0][1]?.method).toBe("PATCH");
-    await getCase("case-123").catch(() => undefined);
   });
 
   it("preserves the 503 capability blocker as an actionable ApiError", async () => {
@@ -81,11 +79,12 @@ describe("Feature 034 API client", () => {
       }),
     );
 
-    await expect(api.getCoverage("case-123")).rejects.toMatchObject({
+    const error = await api.getCoverage("case-123").catch((value: unknown) => value);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({
       name: "ApiError",
       status: 503,
       message: "coverage projection is not composed",
     });
-    expect(new ApiError(503, "unavailable", "unavailable").status).toBe(503);
   });
 });
