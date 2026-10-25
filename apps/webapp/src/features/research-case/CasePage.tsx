@@ -110,12 +110,20 @@ export function CasePage() {
   );
 
   useEffect(() => {
-    const currentIds = new Set(currentActions.map((action) => action.action_id));
-    setSelectedActionRefs((previous) => previous.filter((id) => currentIds.has(id)));
-    if (selectedActionRefs.length === 0 && proposedActions.length > 0) {
-      setSelectedActionRefs(proposedActions.map((action) => action.action_id));
-    }
-  }, [actionsData]);
+    const actions = actionsData?.actions ?? [];
+    const currentIds = new Set(actions.map((action) => action.action_id));
+    setSelectedActionRefs((previous) => {
+      const retained = previous.filter((id) => currentIds.has(id));
+      if (retained.length > 0) return retained;
+      const pending = actions.filter(
+        (action) => action.status === "proposed" && action.requires_operator_approval,
+      );
+      const defaults = pending.length > 0
+        ? pending
+        : actions.filter((action) => action.status === "approved" && !action.requires_operator_approval);
+      return defaults.map((action) => action.action_id);
+    });
+  }, [actionsData?.actions]);
 
   const closeMutation = useMutation({
     mutationFn: (body: CloseCaseRequest) => api.closeCase(caseId!, body),
@@ -266,11 +274,14 @@ export function CasePage() {
                         type="checkbox"
                         checked={selectedActionRefs.includes(action.action_id)}
                         disabled={!selectable && !approved}
-                        onChange={(event) => setSelectedActionRefs((previous) =>
-                          event.target.checked
-                            ? [...new Set([...previous, action.action_id])]
-                            : previous.filter((id) => id !== action.action_id)
-                        )}
+                        onChange={(event) => {
+                          setRunIdempotencyKey(null);
+                          setSelectedActionRefs((previous) =>
+                            event.target.checked
+                              ? [...new Set([...previous, action.action_id])]
+                              : previous.filter((id) => id !== action.action_id)
+                          );
+                        }}
                         className="mt-1"
                       />
                       <span className="min-w-0 flex-1">
