@@ -9,14 +9,12 @@
  *   footer: coverage bar (queried / no result / unavailable / blocked / not queried)
  */
 
-import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
 import {
   ResearchCase,
-  ApproveCaseRequest,
   CloseCaseRequest,
   Obligation,
   CoverageLedger,
@@ -72,14 +70,6 @@ export function CasePage() {
     },
   });
 
-  const approveMutation = useMutation({
-    mutationFn: ({ digest, revision }: { digest: string; revision: number }) =>
-      api.approveCase(caseId!, { scope_digest: digest, scope_revision: revision }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["research-case", caseId] });
-    },
-  });
-
   const closeMutation = useMutation({
     mutationFn: (body: CloseCaseRequest) => api.closeCase(caseId!, body),
     onSuccess: () => {
@@ -104,7 +94,7 @@ export function CasePage() {
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             {caseData.launch_profile}
           </span>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {policyStateChip(caseData.state)}">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${policyStateChip(caseData.state)}`}>
             {caseData.state}
           </span>
         </div>
