@@ -29,6 +29,31 @@ def _record(field: str, value: str, value_type: str, span: list[int] | None, dep
     }
 
 
+def _lexical_shape(record: dict[str, Any]) -> str:
+    """Mirror the documented lexical-hint taxonomy; it deliberately asserts no semantics."""
+    value = record["value"]
+    value_type = record["value_type"]
+    if value_type == "nested":
+        return "container"
+    if value_type == "null":
+        return "null"
+    if not value.strip():
+        return "empty"
+    if re.fullmatch(r"[+-]?[0-9]+(?:[.][0-9]+)?(?:[eE][+-]?[0-9]+)?", value):
+        return "numeric"
+    if re.fullmatch(r"(?i:true|false)", value):
+        return "boolean"
+    if re.fullmatch(r"[^@ ]+@[^ ]+[.][^ ]+", value):
+        return "email_like"
+    if re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", value):
+        return "url_like"
+    if re.fullmatch(r"[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}", value):
+        return "uuid_like"
+    if re.fullmatch(r"(?:[0-9A-Fa-f]{32}|[0-9A-Fa-f]{40}|[0-9A-Fa-f]{64})", value):
+        return "hex_digest_like"
+    return "text"
+
+
 def _fake_tenzir(
     client: TenzirNodeNormalizer,
     complete_records: list[dict[str, Any]],
@@ -70,6 +95,7 @@ def _fake_tenzir(
                         else "null" if record["value_type"] == "null"
                         else "surface"
                     ),
+                    "value_shape": _lexical_shape(record),
                 }
                 if mutate_protected:
                     data["value"] = "changed-source-value"
@@ -166,9 +192,12 @@ def test_transform_is_additive_and_records_the_reproducible_pipeline_digest() ->
     assert "value.length_bytes()" in definition
     assert 'value.match_regex("^[+-]?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$")' in definition
     assert "byte_span_width" in definition
+    assert 'value_shape = "container"' in definition
+    assert 'value.match_regex("^[Tt][Rr][Uu][Ee]$|^[Ff][Aa][Ll][Ss][Ee]$")' in definition
+    assert 'value.match_regex("^[A-Za-z][A-Za-z0-9+.-]*://")' in definition
     assert "ocsf_cast" not in definition
     assert "address_refusal" in definition
-    assert NORMALIZATION_SCHEMA == "cognitive.observed-field-normalization/v1"
+    assert NORMALIZATION_SCHEMA == "cognitive.observed-field-normalization/v2"
 
 
 @pytest.mark.asyncio
@@ -192,6 +221,7 @@ async def test_normalizer_preserves_evidence_and_chunks_by_bounded_record_count(
     assert normalized.records[2]["normalized"]["value_length_chars"] == 4
     assert normalized.records[2]["normalized"]["value_length_bytes"] == 5
     assert normalized.records[1]["normalized"]["value_is_numeric_lexeme"] is True
+    assert normalized.records[1]["normalized"]["value_shape"] == "numeric"
     assert normalized.records[0]["normalized"]["byte_span_width"] == 3
     assert normalized.records[0]["normalized"]["structural_role"] == "surface"
     assert normalized.pipeline_digest.startswith("sha256:")
@@ -248,3 +278,28 @@ async def test_empty_input_does_not_create_a_pipeline() -> None:
     assert normalized.records == []
     assert normalized.record_count == 0
     assert normalized.pipeline_digest.startswith("sha256:")
+
+
+@pytest.mark.asyncio
+async def test_lexical_shape_hints_cover_common_structured_surfaces_without_claiming_identity() -> None:
+    records = [
+        _record('$["enabled"]', "true", "string", None, 1),
+        _record('$["email"]', "ops@example.test", "string", None, 1),
+        _record('$["url"]', "https://example.test/a", "string", None, 1),
+        _record('$["uuid"]', "550e8400-e29b-41d4-a716-446655440000", "string", None, 1),
+        _record('$["digest"]', "a" * 64, "string", None, 1),
+        _record('$["empty"]', "", "string", None, 1),
+        _record('$["null"]', "", "null", None, 1),
+        _record('$["container"]', "", "nested", None, 1),
+        _record('$["other"]', "Ada Lovelace", "string", None, 1),
+    ]
+    client = TenzirNodeNormalizer(TenzirSettings(node_url="http://localhost:5160"))
+    _fake_tenzir(client, records)
+
+    result = await client.normalize_records(records)
+
+    assert [row["normalized"]["value_shape"] for row in result.records] == [
+        "boolean", "email_like", "url_like", "uuid_like", "hex_digest_like",
+        "empty", "null", "container", "text",
+    ]
+    assert [row["record"] for row in result.records] == records
