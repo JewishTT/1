@@ -148,7 +148,8 @@ class TestConsumerProcesses:
     @pytest.mark.asyncio
     async def test_derived_ref_names_the_parser_and_version(self):
         """§63: traceable to the parser that read it."""
-        consumer = ObservationConsumer(store=_Store())
+        store = _Store()
+        consumer = ObservationConsumer(store=store)
         result = await consumer.handle(envelope())
         assert result.derived_ref.startswith("s3://bucket/derived/acme/")
         manifest = json.loads(store.derived_writes[-1]["body"].decode("utf-8"))
@@ -159,7 +160,8 @@ class TestConsumerProcesses:
     @pytest.mark.asyncio
     async def test_unknown_parser_is_not_guessed(self):
         """An undeclared parser takes the text route and records a refusal."""
-        consumer = ObservationConsumer(store=_Store())
+        store = _Store()
+        consumer = ObservationConsumer(store=store)
         result = await consumer.handle(envelope(parser_hint="no_such_parser"))
         assert result.status == "processed"
         manifest = json.loads(store.derived_writes[-1]["body"].decode("utf-8"))
