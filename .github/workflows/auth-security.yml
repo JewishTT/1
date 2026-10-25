@@ -19,4 +19,4 @@ jobs:
       - name: Compile control-plane modules
         run: .venv/bin/python -m compileall -q apps/control-plane
       - name: Run authentication and research-case contracts
-        run: .venv/bin/python -m pytest apps/control-plane/tests/test_auth_security.py apps/control-plane/tests/test_research_case_invariants.py -q
+        run: .venv/bin/python -m pytest apps/control-plane/tests/test_auth_security.py apps/control-plane/tests/test_research_case_invariants.py apps/control-plane/tests/unit/test_migration_027_person_case_records.py -q
