@@ -17,6 +17,7 @@ from typing import Any
 
 from context_engine.obligations import (
     KnowledgeType,
+    ResearchAction,
     ResearchObligation,
     SaturationState,
 )
@@ -137,7 +138,7 @@ class ResearchCaseService:
         ):
             raise CaseServiceError("at least one typed, non-empty subject anchor is required")
 
-        policy_revision = str(policy._policy.get("metadata", {}).get("version", "1"))
+        policy_revision = policy.policy_revision
         scope_payload = self._scope_material(
             tenant_id=tenant_id,
             purpose_code=purpose_code,
@@ -252,7 +253,7 @@ class ResearchCaseService:
         elif context.state == InvestigationState.SUSPENDED:
             case_state = "PAUSED"
         elif context.state == InvestigationState.ACTIVE:
-            case_state = "RUNNING"
+            case_state = "QUEUED"
         elif meta.get("approved"):
             case_state = "APPROVED"
         else:
@@ -507,13 +508,144 @@ class ResearchCaseService:
 
     # -- planning -----------------------------------------------------------
 
+    async def list_actions(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+    ) -> dict[str, Any]:
+        """Return the current leaf action proposals for one authorized case."""
+        context = await self._store.get_context(case_id)
+        if context is None or context.tenant_id != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None or meta.get("tenant_id") != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        policy = self._require_policy()
+        all_actions: list[ResearchAction] = []
+        for obligation in await self._store.obligations(case_id):
+            all_actions.extend(await self._store.actions(obligation.obligation_id))
+        current = [
+            action for action in all_actions
+            if action.scope_digest == meta.get("scope_digest")
+            and action.policy_digest == policy.policy_digest
+        ]
+        parent_ids = {action.parent_action_id for action in current if action.parent_action_id}
+        leaves = [action for action in current if action.action_id not in parent_ids]
+        leaves.sort(key=lambda action: (action.obligation_id, action.source_id, action.action_id))
+        return {
+            "case_id": case_id,
+            "scope_digest": meta["scope_digest"],
+            "scope_revision": meta["scope_revision"],
+            "policy_digest": policy.policy_digest,
+            "actions": [
+                {
+                    **action.to_dict(),
+                    "claim_family": self._action_claim_family(action),
+                }
+                for action in leaves
+            ],
+        }
+
+    async def approve_actions(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        approver_id: str,
+        action_refs: list[str],
+    ) -> dict[str, Any]:
+        """Append immutable operator approval versions for proposed source-bound actions."""
+        if not approver_id.strip():
+            raise CaseServiceError("approver identity is required")
+        selected_refs = sorted(set(action_refs))
+        if not selected_refs:
+            raise CaseServiceError("at least one action_ref is required")
+        context = await self._store.get_context(case_id)
+        if context is None or context.tenant_id != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None or meta.get("tenant_id") != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        if not meta.get("approved"):
+            raise CaseNotApproved("the case scope must be approved before action approval")
+        await self._validate_current_scope(context=context, meta=meta)
+        policy = self._require_policy()
+
+        by_id: dict[str, ResearchAction] = {}
+        for obligation in await self._store.obligations(case_id):
+            for action in await self._store.actions(obligation.obligation_id):
+                by_id[action.action_id] = action
+        missing = sorted(set(selected_refs) - set(by_id))
+        if missing:
+            raise CaseServiceError(f"action refs do not belong to this case: {missing}")
+
+        child_ids = {
+            action.parent_action_id
+            for action in by_id.values()
+            if action.parent_action_id
+            and action.scope_digest == meta["scope_digest"]
+            and action.policy_digest == policy.policy_digest
+        }
+        approved: list[ResearchAction] = []
+        for action_ref in selected_refs:
+            action = by_id[action_ref]
+            if action.action_id in child_ids:
+                raise CaseServiceError(f"action {action_ref} has already been superseded by a newer decision")
+            if action.status != "proposed" or not action.requires_operator_approval:
+                raise CaseServiceError(f"action {action_ref} is not a pending approval proposal")
+            if action.scope_digest != meta["scope_digest"] or action.policy_digest != policy.policy_digest:
+                raise CaseServiceError(f"action {action_ref} has a stale scope or policy digest")
+            if action.source_id not in set(meta.get("allowed_source_ids", [])):
+                raise CaseServiceError(f"action {action_ref} uses a source outside the approved scope")
+            source_profile = policy._sources.get(action.source_id)
+            reason = policy._source_block_reason(action.source_id, str(meta["launch_profile"]))
+            if reason:
+                raise CaseServiceError(f"BLOCKED_POLICY: {reason}")
+            family = self._action_claim_family(action)
+            if not family or not policy._source_supports_claim_family(source_profile, family):
+                raise CaseServiceError(f"source {action.source_id} does not support claim family {family!r}")
+
+            approved_action = replace(
+                action,
+                status="approved",
+                requires_operator_approval=False,
+                parent_action_id=action.action_id,
+                action_id="",
+            )
+            await self._store.put_action(approved_action)
+            approved.append(approved_action)
+
+        await self._append_case_revision(
+            context=context,
+            snapshot={
+                "context": context.to_dict(),
+                "scope_digest": meta["scope_digest"],
+                "scope_revision": meta["scope_revision"],
+                "policy_digest": policy.policy_digest,
+                "operator_action": "approve_research_actions",
+                "approved_by": approver_id,
+                "superseded_action_refs": selected_refs,
+                "approved_action_refs": [action.action_id for action in approved],
+            },
+            actor=approver_id,
+            rule="approve_research_actions",
+        )
+        return {
+            "case_id": case_id,
+            "approved_by": approver_id,
+            "approved_action_refs": [action.action_id for action in approved],
+            "scope_digest": meta["scope_digest"],
+            "policy_digest": policy.policy_digest,
+        }
+
     async def plan_case(
         self,
         *,
         case_id: str,
         tenant_id: str,
     ) -> dict[str, Any]:
-        """Return a read-only capability/obligation preview, never a fake plan."""
+        """Persist deterministic source-bound action proposals; never make network calls."""
         context = await self._store.get_context(case_id)
         if context is None or context.tenant_id != tenant_id:
             raise CaseNotFound(f"case {case_id} not found")
@@ -524,76 +656,171 @@ class ResearchCaseService:
         if meta is None or meta.get("tenant_id") != tenant_id or not meta.get("approved"):
             raise CaseNotApproved(f"case {case_id} is not approved")
         await self._validate_current_scope(context=context, meta=meta)
+        policy = self._require_policy()
 
+        from sources.catalogue import load_catalogue
+
+        definitions, rejected_definitions = load_catalogue()
+        by_name = {definition.name: definition for definition in definitions}
         obligations = await self._store.obligations(case_id)
         profile = profile_for(str(meta["launch_profile"]))
         family_by_criterion = {
             template.code: template.claim_family for template in profile.obligations
         }
+        anchors = [
+            item for item in meta.get("subject_anchors", [])
+            if isinstance(item, Mapping)
+            and str(item.get("value", "")).strip()
+        ]
+        if not anchors:
+            raise CaseServiceError("case has no usable typed subject anchor")
+
+        query_anchor = next(
+            (str(item["value"]).strip() for item in anchors if item.get("kind") == "public_name"),
+            str(anchors[0]["value"]).strip(),
+        )
+        scope_digest = str(meta["scope_digest"])
+        policy_digest = policy.policy_digest
+        proposal_views: list[dict[str, Any]] = []
         obligation_views: list[dict[str, Any]] = []
+        capability_gaps: list[dict[str, Any]] = []
         required_caps: set[str] = set()
         eligible_caps: set[str] = set()
-        capability_gaps: list[dict[str, Any]] = []
+        proposed_refs: list[str] = []
+
         for obligation in obligations:
-            families = sorted({
+            template_families = sorted({
                 family_by_criterion[criterion.criterion_id]
                 for criterion in obligation.acceptance_criteria
                 if criterion.criterion_id in family_by_criterion
             })
-            required = sorted(set(obligation.required_capabilities))
-            eligible = sorted(set(obligation.eligible_capabilities))
-            missing = sorted(set(required) - set(eligible))
-            required_caps.update(required)
-            eligible_caps.update(eligible)
-            if missing:
+            families = template_families or list(meta.get("claim_families", []))
+            required_caps_for_obligation: set[str] = set()
+            obligation_actions: list[ResearchAction] = []
+            gap_reasons: list[str] = []
+
+            for family in families:
+                source_ids = policy.eligible_evidence_sources(
+                    claim_family=family,
+                    source_ids=list(meta.get("allowed_source_ids", [])),
+                    launch_profile=str(meta["launch_profile"]),
+                )
+                if not source_ids:
+                    gap_reasons.append(
+                        f"no enabled, attested evidence source currently supports {family}"
+                    )
+                    continue
+
+                for source_id in source_ids:
+                    source_profile = policy._sources.get(source_id, {})
+                    catalogue_name = str(source_profile.get("catalogue_source_id") or "").strip()
+                    definition = by_name.get(catalogue_name)
+                    if definition is None or not definition.enabled:
+                        gap_reasons.append(
+                            f"policy source {source_id} has no enabled catalogue runtime {catalogue_name!r}"
+                        )
+                        continue
+                    uri = str(definition.tool.get("url") or "")
+                    from urllib.parse import urlsplit
+                    host = (urlsplit(uri).hostname or "").lower()
+                    hosts = {
+                        str(item).strip().lower()
+                        for item in (source_profile.get("egress_hosts") or [])
+                        if str(item).strip()
+                    }
+                    if not host or host not in hosts:
+                        gap_reasons.append(
+                            f"catalogue source {catalogue_name} host {host!r} is outside policy egress hosts"
+                        )
+                        continue
+                    if not query_anchor:
+                        gap_reasons.append("no non-empty anchor for query compilation")
+                        continue
+
+                    query = query_anchor
+                    action = ResearchAction(
+                        obligation_id=obligation.obligation_id,
+                        proposed_method=(
+                            f"Bounded public metadata query; claim_family={family}; "
+                            f"source_policy={source_id}; catalogue={catalogue_name}"
+                        ),
+                        runtime_ref=definition.runtime_ref,
+                        expected_information_gain=0.5,
+                        estimated_cost=0.1,
+                        priority=obligation.priority,
+                        capability_requirements=("http",),
+                        requires_operator_approval=True,
+                        status="proposed",
+                        source_id=source_id,
+                        catalogue_source_id=definition.source_id,
+                        query=query,
+                        scope_digest=scope_digest,
+                        policy_digest=policy_digest,
+                    )
+                    await self._store.put_action(action)
+                    obligation_actions.append(action)
+                    proposed_refs.append(action.action_id)
+                    required_caps_for_obligation.add("http")
+                    eligible_caps.add("http")
+
+            required_caps.update(required_caps_for_obligation)
+            if not obligation_actions:
                 capability_gaps.append({
                     "obligation_id": obligation.obligation_id,
-                    "required": missing,
-                    "detail": "No eligible runtime has been bound to this obligation yet.",
+                    "claim_families": families,
+                    "detail": "; ".join(dict.fromkeys(gap_reasons))
+                    or "No approved evidence source is available for this obligation.",
                 })
+
             obligation_views.append({
                 "obligation_id": obligation.obligation_id,
                 "question": obligation.question,
                 "claim_family": families[0] if len(families) == 1 else None,
                 "claim_families": families,
                 "state": obligation.status.value,
-                "target_knowledge_type": obligation.target_knowledge_type.value,
-                "required_capabilities": required,
-                "eligible_capabilities": eligible,
-                "missing_capabilities": missing,
+                "required_capabilities": sorted(required_caps_for_obligation),
+                "eligible_capabilities": sorted(required_caps_for_obligation),
+                "missing_capabilities": [] if obligation_actions else ["eligible_source"],
                 "satisfaction_condition": list(obligation.satisfaction_criteria),
                 "acceptance_criteria": [criterion.to_dict() for criterion in obligation.acceptance_criteria],
                 "scope_condition": obligation.rationale,
                 "priority": obligation.priority,
                 "priority_basis": obligation.priority_basis,
+                "proposed_action_refs": [action.action_id for action in obligation_actions],
             })
 
+        action_read = await self.list_actions(case_id=case_id, tenant_id=tenant_id)
+        actions = action_read["actions"]
         runtime_ready = bool(
             self._budget_service is not None
-            and self._artifact_sink is not None
-            and self._observation_gate is not None
-            and getattr(self, "_dispatch_executor", None) is not None
+            and callable(getattr(self._dispatch_executor, "dispatch_case", None))
+            and callable(getattr(self._dispatch_executor, "estimate_reservation", None))
         )
-        status = (
-            "BLOCKED_CAPABILITY" if capability_gaps
-            else "READY_FOR_REVIEW" if runtime_ready
-            else "BLOCKED_RUNTIME"
-        )
+        if capability_gaps:
+            status = "BLOCKED_CAPABILITY"
+        elif not actions:
+            status = "BLOCKED_NO_ACTIONS"
+        elif not runtime_ready:
+            status = "BLOCKED_RUNTIME"
+        else:
+            status = "READY_FOR_REVIEW"
+
         return {
             "case_id": case_id,
             "tenant_id": tenant_id,
-            "scope_digest": meta["scope_digest"],
+            "scope_digest": scope_digest,
             "scope_revision": meta["scope_revision"],
+            "policy_digest": policy_digest,
             "obligations": obligation_views,
+            "actions": actions,
             "required_capabilities": sorted(required_caps),
             "capabilities_preview": sorted(eligible_caps),
             "capability_gaps": capability_gaps,
+            "rejected_catalogue_definitions": rejected_definitions,
             "plan_state": status,
-            "ready_to_dispatch": runtime_ready and not capability_gaps,
+            "ready_to_dispatch": bool(actions) and runtime_ready and not capability_gaps,
             "no_network_side_effects": True,
         }
-
-    # -- run ----------------------------------------------------------------
 
     async def run_case(
         self,
@@ -603,10 +830,11 @@ class ResearchCaseService:
         idempotency_key: str,
         approved_action_refs: list[str],
     ) -> dict[str, Any]:
-        """Dispatch only a durable approved plan, and never simulate execution."""
+        """Reserve a durable budget before publishing source-bound requests to Kafka."""
         if not idempotency_key.strip():
             raise CaseServiceError("idempotency_key is required")
-        if not approved_action_refs:
+        selected_refs = sorted(set(approved_action_refs))
+        if not selected_refs:
             raise CaseServiceError("approved_action_refs must contain at least one reviewed action")
 
         context = await self._store.get_context(case_id)
@@ -619,86 +847,184 @@ class ResearchCaseService:
         if meta is None or meta.get("tenant_id") != tenant_id or not meta.get("approved"):
             raise CaseNotApproved(f"case {case_id} is not approved")
         await self._validate_current_scope(context=context, meta=meta)
+        policy = self._require_policy()
 
-        # Resolve every caller-supplied ref against durable actions on this case;
-        # a string in an HTTP request is not itself an operator approval.
-        by_id: dict[str, Any] = {}
+        dispatcher = self._dispatch_executor
+        budget_service = self._budget_service
+        if dispatcher is None or not callable(getattr(dispatcher, "dispatch_case", None)):
+            raise CaseServiceError("BLOCKED_RUNTIME: production Kafka dispatch adapter is not composed")
+        if budget_service is None or not callable(getattr(budget_service, "reserve_case", None)):
+            raise BudgetNotReserved("durable budget reservation service is not configured")
+
+        all_by_id: dict[str, ResearchAction] = {}
         for obligation in await self._store.obligations(case_id):
             for action in await self._store.actions(obligation.obligation_id):
-                by_id[action.action_id] = action
-        missing = sorted(set(approved_action_refs) - set(by_id))
+                all_by_id[action.action_id] = action
+        current_actions = [
+            action for action in all_by_id.values()
+            if action.scope_digest == meta["scope_digest"]
+            and action.policy_digest == policy.policy_digest
+        ]
+        child_ids = {action.parent_action_id for action in current_actions if action.parent_action_id}
+        leaves = [action for action in current_actions if action.action_id not in child_ids]
+        by_id = {action.action_id: action for action in leaves}
+        missing = sorted(set(selected_refs) - set(by_id))
         if missing:
-            raise CaseServiceError(f"action references do not belong to this case: {missing}")
-        unapproved = sorted(
-            action_id
-            for action_id in set(approved_action_refs)
-            if by_id[action_id].status != "approved" or by_id[action_id].requires_operator_approval
-        )
-        if unapproved:
-            raise CaseServiceError(f"actions lack a durable approval decision: {unapproved}")
+            raise CaseServiceError(f"action refs are missing or stale for current scope: {missing}")
 
-        # A budget reservation alone does not prove acquisition is reachable. Require
-        # the real runtime pieces; never create a dispatch intent and report RUNNING
-        # when the dispatcher/artifact path is absent.
-        if self._budget_service is None:
-            raise BudgetNotReserved(
-                "budget service is not configured; no reservation can be verified"
-            )
-        reserved = await self._budget_service.has_reservation(
-            case_id=case_id, tenant_id=tenant_id
-        )
-        if not reserved:
-            raise BudgetNotReserved(
-                f"no durable budget reservation for case {case_id}; dispatch blocked"
-            )
-        dispatcher = getattr(self, "_dispatch_executor", None)
-        if (
-            dispatcher is None
-            or self._artifact_sink is None
-            or self._observation_gate is None
-            or not callable(getattr(dispatcher, "dispatch_case", None))
-        ):
-            raise CaseServiceError(
-                "BLOCKED_RUNTIME: production dispatcher, ArtifactSink and ObservationGate "
-                "must be composed before a run can be started"
-            )
+        selected: list[ResearchAction] = []
+        for action_ref in selected_refs:
+            action = by_id[action_ref]
+            if action.status != "approved" or action.requires_operator_approval:
+                raise CaseServiceError(f"action {action_ref} lacks a durable approval decision")
+            if action.source_id not in set(meta.get("allowed_source_ids", [])):
+                raise CaseServiceError(f"action {action_ref} points outside the approved source set")
+            source_profile = policy._sources.get(action.source_id)
+            reason = policy._source_block_reason(action.source_id, str(meta["launch_profile"]))
+            if reason:
+                raise CaseServiceError(f"BLOCKED_POLICY: {reason}")
+            family = self._action_claim_family(action)
+            if not family or not policy._source_supports_claim_family(source_profile, family):
+                raise CaseServiceError(f"source {action.source_id} no longer supports claim family {family!r}")
+            selected.append(action)
 
-        run_id = f"run-{uuid.uuid4().hex[:12]}"
+        estimate = dispatcher.estimate_reservation(
+            actions=selected,
+            launch_profile=str(meta["launch_profile"]),
+        )
+        try:
+            reservation = await budget_service.reserve_case(
+                budget_ref=meta.get("budget_ref"),
+                tenant_id=tenant_id,
+                case_id=case_id,
+                investigation_id=context.investigation_id,
+                idempotency_key=idempotency_key,
+                scope_digest=meta["scope_digest"],
+                policy_digest=policy.policy_digest,
+                requests=estimate["requests"],
+                raw_bytes=estimate["raw_bytes"],
+                records=estimate["records"],
+                concurrency=estimate["concurrency"],
+                wall_seconds=estimate["wall_seconds"],
+                source_refs=estimate["source_refs"],
+            )
+        except Exception as exc:
+            from services.research_case_runtime import CaseRuntimeBlocked
+            if isinstance(exc, CaseRuntimeBlocked):
+                raise BudgetNotReserved(str(exc)) from exc
+            raise
+
+        run_material = "|".join((tenant_id, case_id, meta["scope_digest"], idempotency_key))
+        run_id = "RUN-" + hashlib.sha256(run_material.encode("utf-8")).hexdigest()[:24]
         intent = await self._store.put_person_case_dispatch_intent(
             case_id=case_id,
             tenant_id=tenant_id,
             run_id=run_id,
             idempotency_key=idempotency_key,
-            approved_action_refs=list(approved_action_refs),
+            approved_action_refs=selected_refs,
             scope_digest=meta["scope_digest"],
-            policy_digest=meta["scope_digest"],
+            policy_digest=policy.policy_digest,
         )
-        if not intent.get("created", True):
+        intent_state = str(intent.get("state") or "PREPARED")
+        if intent_state in {"PUBLISHED", "PARTIAL"}:
             return {
                 "case_id": case_id,
                 "run_id": intent["run_id"],
                 "idempotency_key": idempotency_key,
                 "state": "ALREADY_REQUESTED",
                 "dispatch_intent_created": False,
+                "outcome": intent.get("outcome"),
             }
-
-        outcome = await dispatcher.dispatch_case(
-            case_id=case_id,
-            tenant_id=tenant_id,
-            run_id=run_id,
-            idempotency_key=idempotency_key,
-            approved_action_refs=list(approved_action_refs),
-            scope_digest=meta["scope_digest"],
-            policy_digest=meta["scope_digest"],
-            budget_ref=meta.get("budget_ref"),
-            launch_profile=meta["launch_profile"],
-            allowed_source_ids=list(meta["allowed_source_ids"]),
-        )
-        if not isinstance(outcome, Mapping) or not outcome.get("published"):
+        if intent_state == "FAILED":
             raise CaseServiceError(
-                "dispatcher did not confirm broker-acknowledged publication; case remains approved"
+                "this idempotency key previously failed; use a new run key after inspecting its recorded outcome"
             )
 
+        try:
+            outcome = await dispatcher.dispatch_case(
+                case_id=case_id,
+                tenant_id=tenant_id,
+                run_id=run_id,
+                idempotency_key=idempotency_key,
+                approved_action_refs=selected_refs,
+                actions=selected,
+                reservation=reservation,
+                scope_digest=meta["scope_digest"],
+                policy_digest=policy.policy_digest,
+                policy_revision=str(context.policy_snapshot_ref),
+                scope_revision=int(meta["scope_revision"]),
+                launch_profile=str(meta["launch_profile"]),
+                allowed_source_ids=list(meta["allowed_source_ids"]),
+                investigation_id=context.investigation_id,
+            )
+        except Exception as exc:
+            outcome = {
+                "published": False,
+                "partial": False,
+                "requested_count": len(selected),
+                "published_count": 0,
+                "reason_code": "DISPATCH_EXCEPTION",
+                "detail": f"{type(exc).__name__}: {str(exc)[:500]}",
+            }
+
+        published_count = int(outcome.get("published_count", 0) or 0)
+        requested_count = int(outcome.get("requested_count", len(selected)) or len(selected))
+        if published_count == 0:
+            await self._store.mark_person_case_dispatch_intent(
+                case_id=case_id,
+                tenant_id=tenant_id,
+                idempotency_key=idempotency_key,
+                state="FAILED",
+                outcome=outcome,
+            )
+            mark_reservation = getattr(budget_service, "mark_reservation", None)
+            if callable(mark_reservation):
+                try:
+                    await mark_reservation(
+                        reservation_id=reservation["reservation_id"],
+                        state="FAILED",
+                        outcome=outcome,
+                    )
+                except Exception:
+                    pass
+            await self._append_case_revision(
+                context=context,
+                snapshot={
+                    "context": context.to_dict(),
+                    "run_id": run_id,
+                    "scope_digest": meta["scope_digest"],
+                    "scope_revision": meta["scope_revision"],
+                    "dispatch_state": "BLOCKED_DISPATCH",
+                    "dispatch_outcome": dict(outcome),
+                    "budget_reservation_id": reservation["reservation_id"],
+                },
+                actor="system:dispatcher",
+                rule="dispatch_blocked",
+            )
+            return {
+                "case_id": case_id,
+                "run_id": run_id,
+                "idempotency_key": idempotency_key,
+                "state": "BLOCKED_DISPATCH",
+                "dispatch_intent_created": bool(intent.get("created", True)),
+                "dispatch": dict(outcome),
+            }
+
+        dispatch_state = "PUBLISHED" if published_count == requested_count else "PARTIAL"
+        await self._store.mark_person_case_dispatch_intent(
+            case_id=case_id,
+            tenant_id=tenant_id,
+            idempotency_key=idempotency_key,
+            state=dispatch_state,
+            outcome=outcome,
+        )
+        mark_reservation = getattr(budget_service, "mark_reservation", None)
+        if callable(mark_reservation):
+            await mark_reservation(
+                reservation_id=reservation["reservation_id"],
+                state="PUBLISHED",
+                outcome=outcome,
+            )
         updated = replace(context, state=InvestigationState.ACTIVE)
         await self._store.put_context(updated)
         await self._append_case_revision(
@@ -708,20 +1034,31 @@ class ResearchCaseService:
                 "run_id": run_id,
                 "dispatch_intent": dict(intent),
                 "dispatch_outcome": dict(outcome),
+                "dispatch_state": dispatch_state,
                 "scope_digest": meta["scope_digest"],
                 "scope_revision": meta["scope_revision"],
+                "policy_digest": policy.policy_digest,
+                "budget_reservation_id": reservation["reservation_id"],
             },
             actor="system:dispatcher",
-            rule="dispatch_started",
+            rule="dispatch_published",
         )
         return {
             "case_id": case_id,
             "run_id": run_id,
             "idempotency_key": idempotency_key,
-            "state": "RUNNING",
-            "dispatch_intent_created": True,
+            "state": "QUEUED" if dispatch_state == "PUBLISHED" else "PARTIAL_DISPATCH",
+            "dispatch_intent_created": bool(intent.get("created", True)),
             "dispatch": dict(outcome),
+            "budget_reservation_id": reservation["reservation_id"],
         }
+
+    @staticmethod
+    def _action_claim_family(action: ResearchAction) -> str:
+        marker = "claim_family="
+        if marker not in action.proposed_method:
+            return ""
+        return action.proposed_method.split(marker, 1)[1].split(";", 1)[0].strip()
 
     # -- pause --------------------------------------------------------------
 
