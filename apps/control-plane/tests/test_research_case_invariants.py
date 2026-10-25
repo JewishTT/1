@@ -190,3 +190,51 @@ def test_source_policy_fails_closed_for_unattested_sources(loaded_policy: Person
     # Discovery policy is not silently treated as primary evidence.
     result = loaded_policy._sources["searxng_public_search"]
     assert result.get("result_role") == "DISCOVERY_ONLY"
+
+
+
+def test_api_create_read_obligations_and_projection_fail_closed(
+    service, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from api.auth import Role, TenantContext, resolve_tenant
+    from api.routes import research_cases
+
+    svc, _store = service
+    monkeypatch.setattr(research_cases, "_service", svc)
+    app = FastAPI()
+    app.include_router(research_cases.router, prefix="/api/v1")
+    principal = {
+        "ctx": TenantContext(
+            tenant_id="tenant-test-034",
+            user_id="analyst-test",
+            roles=frozenset({Role.ANALYST}),
+        )
+    }
+    app.dependency_overrides[resolve_tenant] = lambda: principal["ctx"]
+    request_body = _create_args()
+    request_body.pop("tenant_id")
+    request_body.pop("created_by")
+
+    with TestClient(app) as client:
+        created = client.post("/api/v1/research-cases", json=request_body)
+        assert created.status_code == 201, created.text
+        case_id = created.json()["case_id"]
+
+        read = client.get(f"/api/v1/research-cases/{case_id}")
+        assert read.status_code == 200, read.text
+        assert read.json()["case_id"] == case_id
+        assert read.json()["state"] == "DRAFT"
+        assert read.json()["updated_at"] >= read.json()["created_at"]
+
+        obligations = client.get(f"/api/v1/research-cases/{case_id}/obligations")
+        assert obligations.status_code == 200, obligations.text
+        assert obligations.json()["obligations"]
+        assert all("claim_family" not in item for item in obligations.json()["obligations"])
+
+        # An absent projection backend is reported, never emulated from hardcoded data.
+        coverage = client.get(f"/api/v1/research-cases/{case_id}/coverage")
+        assert coverage.status_code == 503, coverage.text
+        assert "not composed" in coverage.json()["detail"]
