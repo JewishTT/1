@@ -304,6 +304,8 @@ class SourceConnector:
                 "locator": accepted.locator,
                 "lifecycle": "created",
                 "artifact_sink_accepted": True,
+                "event_topic": accepted.topic or "",
+                "event_published": bool(accepted.event_id and accepted.topic),
                 **enrichment,
             }
 
