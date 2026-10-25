@@ -406,15 +406,6 @@ export function CasePage() {
   );
 }
 
-function UnavailablePanel({ title, detail }: { title: string; detail: string }) {
-  return (
-    <section className="rounded border border-slate-300 bg-white p-5">
-      <h2 className="text-sm font-semibold">{title}</h2>
-      <p className="mt-2 text-sm text-slate-600">{detail}</p>
-    </section>
-  );
-}
-
 function policyStateChip(state: string): string {
   switch (state) {
     case "APPROVED": return "bg-green-100 text-green-800";
