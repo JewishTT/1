@@ -10,7 +10,6 @@ py-modules = ["artifact_sink", "cc_extract", "cc_plan", "entity_search", "eviden
 name = "cognitive-acquisition"
 version = "0.1.0"
 description = "Acquisition subsystem: connector registry, bounded runner, SpiderFoot-style modules"
-scripts = { cognitive-acquisition-worker = "worker_service:main" }
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "certstream>=1.11",
@@ -20,6 +19,9 @@ dependencies = [
     "scrapy>=2.19.0",
     "warcio>=1.8.1",
 ]
+
+[project.scripts]
+cognitive-acquisition-worker = "worker_service:main"
 
 [tool.uv.sources]
 cognitive-shared = { workspace = true }
