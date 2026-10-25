@@ -93,6 +93,19 @@ _DDL = (
         ON research_obligations (context_id)
     """,
     """
+    CREATE TABLE IF NOT EXISTS person_case_metadata (
+        case_id    TEXT PRIMARY KEY,
+        tenant_id  TEXT NOT NULL,
+        payload    JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS ix_person_case_metadata_tenant
+        ON person_case_metadata (tenant_id, case_id)
+    """,
+    """
     CREATE TABLE IF NOT EXISTS research_actions (
         action_id     TEXT PRIMARY KEY,
         obligation_id TEXT NOT NULL,
@@ -399,6 +412,84 @@ class PostgresContextStore(ContextStore):
         result = commit()
         if hasattr(result, "__await__"):
             await result
+
+    # -- person-case metadata (Feature 034) ----------------------------------
+
+    async def put_person_case_metadata(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        purpose_code: str,
+        basis_ref: str,
+        launch_profile: str,
+        claim_families: list[str],
+        allowed_source_ids: list[str],
+        denied_claim_families: list[str],
+        scope_digest: str,
+        scope_revision: int,
+        approved: bool,
+        budget_ref: str | None,
+        expires_at: str | None,
+        valid_time: dict[str, Any],
+        jurisdictions: list[str],
+        subject_anchors: list[dict[str, str]] | None = None,
+    ) -> None:
+        """Durably upsert case metadata, refusing a cross-tenant key collision."""
+        await self.ensure_schema()
+        if not case_id or not tenant_id:
+            raise ValueError("case_id and tenant_id are required")
+        payload = {
+            "case_id": case_id,
+            "tenant_id": tenant_id,
+            "purpose_code": purpose_code,
+            "basis_ref": basis_ref,
+            "launch_profile": launch_profile,
+            "claim_families": list(claim_families),
+            "allowed_source_ids": list(allowed_source_ids),
+            "denied_claim_families": list(denied_claim_families),
+            "scope_digest": scope_digest,
+            "scope_revision": int(scope_revision),
+            "approved": bool(approved),
+            "budget_ref": budget_ref,
+            "expires_at": expires_at,
+            "valid_time": dict(valid_time),
+            "jurisdictions": list(jurisdictions),
+            "subject_anchors": [dict(a) for a in (subject_anchors or [])],
+        }
+        sql = """
+            INSERT INTO person_case_metadata
+                (case_id, tenant_id, payload)
+            VALUES (:case_id, :tenant_id, CAST(:payload AS jsonb))
+            ON CONFLICT (case_id) DO UPDATE SET
+                tenant_id = EXCLUDED.tenant_id,
+                payload = EXCLUDED.payload,
+                updated_at = now()
+            WHERE person_case_metadata.tenant_id = EXCLUDED.tenant_id
+            RETURNING tenant_id
+        """
+        async with self._session() as conn:
+            rows = await self._fetch(
+                conn,
+                sql,
+                {
+                    "case_id": case_id,
+                    "tenant_id": tenant_id,
+                    "payload": _json(payload),
+                },
+            )
+            if not rows:
+                raise ValueError("case metadata belongs to another tenant")
+            await self._commit(conn)
+
+    async def get_person_case_metadata(self, case_id: str) -> dict[str, Any] | None:
+        """Read the structured, tenant-tagged sidecar from PostgreSQL."""
+        await self.ensure_schema()
+        payload = await self._first(
+            "SELECT payload FROM person_case_metadata WHERE case_id = :case_id",
+            {"case_id": case_id},
+        )
+        return dict(payload) if isinstance(payload, Mapping) else None
 
     # -- contexts -----------------------------------------------------------
 
