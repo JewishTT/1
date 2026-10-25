@@ -723,17 +723,30 @@ class PostgresResearchCaseProjectionProvider:
             limit=max(1, min(int(limit), 500)),
         )
         relation_ids = {row.relation_id for row in rows}
+        context, _metadata = await self._case(case_id, tenant_id)
+        observations_by_id = await self._observations_for_claims(
+            tenant_id=tenant_id,
+            investigation_id=context.investigation_id,
+            claims=rows,
+        )
         items = []
         for row in rows:
             obs_refs = [str(ref) for ref in _json_list(row.observation_refs) if str(ref)]
             assertion_refs = [str(ref) for ref in _json_list(row.assertion_refs) if str(ref)]
+            capture_times = [
+                observation.created_at
+                for ref in obs_refs
+                if (observation := observations_by_id.get(ref)) is not None
+                and observation.created_at is not None
+            ]
+            captured_at = min(capture_times) if capture_times else None
             items.append({
                 "claim_id": row.relation_id,
                 "label": f"{row.subject_ref} — {row.relation_type} → {row.object_ref}",
                 "valid_time": _valid_time(row),
                 "source_time": {
                     "published_at": _iso(row.published_at),
-                    "captured_at": _iso(row.observed_at),
+                    "captured_at": _iso(captured_at),
                 },
                 "epistemic_state": _epistemic_state(row, relation_ids),
                 "evidence_refs": list(dict.fromkeys([*obs_refs, *assertion_refs])),
