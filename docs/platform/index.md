@@ -9,20 +9,20 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 960 |
+| Python modules | 966 |
 | TypeScript modules | 251 |
 | Rust crates | 9 |
 | Rust source files | 15 |
-| Import edges (local) | 2619 |
+| Import edges (local) | 2664 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 321 |
-| Test functions | 5178 |
-| Untested platform modules | 263 |
+| Test files | 322 |
+| Test functions | 5181 |
+| Untested platform modules | 268 |
 | HTTP routes | 174 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
 | Capabilities | 30 |
@@ -34,11 +34,15 @@ committed model no longer matches the tree.
 - [API](api.md) — the HTTP surface.
 - [Data flow](data-flow.md) — the canonical pipeline and the gaps.
 - [Import graph](imports.md) — who imports whom, and what does not resolve.
+- [Maturity](maturity.md) — which modules are built, primitive, or stubs.
+- [Reachability](reachability.md) — what production can actually reach.
 - [Tests](tests.md) — coverage and what is untested.
 - [Capabilities](capabilities.md) — WIRED vs TEST_ONLY vs MISSING.
 - [Ownership](ownership.md) — one writer per object, and the competing writers.
 - [Donors](donors.md) — the supply-chain record.
 - [Findings](findings.md) — what the model says is broken.
+- [Gaps](gaps.md) — machine-checked defects with re-checkable evidence.
+- [Golden path](golden-path.md) — the person-background path, capability by capability.
 
 ## Components
 
@@ -51,11 +55,11 @@ committed model no longer matches the tree.
 | control-plane | 214 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
 | interpretation | 109 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
-| platform_model | 8 | 0 | The generator that produces docs/platform from the tree. |
+| platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |
 | projection | 65 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| shared | 193 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| shared | 194 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops | 30 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | tools | 10 | 0 | Generators, capability/owner/donor tools, probes. |
 | webapp | 0 | 251 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |

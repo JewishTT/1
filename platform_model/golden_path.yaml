@@ -1,0 +1,311 @@
+# Golden-path capability manifest.
+#
+# The required capabilities for the person-background path, authored hybrid: the
+# backbone is derived from the specs (010 zero-layer, 001/008 collection, 007/016/
+# 018/019/020/021 extraction & relations, 024/025/030/033/034 context), and the
+# entries the specs omit but the platform philosophy demands (real lakehouse,
+# streaming transport, consumer wiring, projection reachability) are added here.
+#
+# platform_model/golden_path.py checks every capability against the tree and labels
+# it READY / PARTIAL / STUB / TEST_ONLY / ORPHAN / MISSING. A module probe that
+# cannot be found is MISSING; a module only tests reach is TEST_ONLY; a module
+# nothing imports is ORPHAN.
+#
+# Probe kinds:
+#   module:    the path exists in the tree
+#   symbol:    the regex appears in the file (a declared capability)
+#   reachable: the module is reached from a production entrypoint (checked via the
+#              reachability pass; no value needed)
+
+schema: golden-path/1
+goal: >-
+  Full person-background analysis: Layer 0 (broad, efficient collection over Kafka +
+  lakehouse + sources) -> Layer 1 (extraction, merge, resolution, normalization of
+  entity-artifacts and entity-invariants, plus relation extraction) -> Layer 2 (full
+  context engine), grounded in the platform philosophy (event-driven, evidence-first,
+  immutable observations, rebuildable projections, no fabrication).
+
+layers:
+  - id: "0"
+    title: "Layer 0 — collection"
+    capabilities:
+      - id: source-catalogue
+        title: Declarative source catalogue
+        why: The catalogue is the input to every acquisition plan.
+        probes:
+          - {kind: module, path: apps/acquisition/sources/catalogue.py}
+          - {kind: symbol, path: apps/acquisition/sources/catalogue.py, regex: "def |class "}
+          - {kind: reachable, path: apps/acquisition/sources/catalogue.py}
+      - id: source-executor
+        title: Source executor
+        why: Turns a source definition into observations.
+        probes:
+          - {kind: module, path: apps/acquisition/sources/executor.py}
+          - {kind: reachable, path: apps/acquisition/sources/executor.py}
+      - id: zero-harvesters
+        title: Zero-layer contact harvesters
+        why: The broadest, cheapest collection surface (emails, phones, domains, socials).
+        probes:
+          - {kind: module, path: apps/zero/zero/harvesters/url.py}
+          - {kind: module, path: apps/zero/zero/type_detector.py}
+          - {kind: reachable, path: apps/zero/zero/harvesters/url.py}
+      - id: acquisition-worker
+        title: Acquisition worker (request -> fetch -> observation)
+        why: The consumer that turns acquisition.request into immutable observations.
+        probes:
+          - {kind: module, path: apps/acquisition/worker_acquisition.py}
+          - {kind: symbol, path: apps/acquisition/worker_acquisition.py, regex: "acquisition.request"}
+          - {kind: reachable, path: apps/acquisition/worker_acquisition.py}
+      - id: dispatcher-scheduler
+        title: Two-stage dispatcher scheduler
+        why: Utility/budget-gated dispatch onto the stream plane.
+        probes:
+          - {kind: module, path: apps/acquisition/dispatcher/scheduler.py}
+          - {kind: reachable, path: apps/acquisition/dispatcher/scheduler.py}
+      - id: frontier
+        title: Durable frontier
+        why: Authoritative queue of work; partitioned, ETag/digest aware.
+        probes:
+          - {kind: module, path: apps/control-plane/services/frontier.py}
+          - {kind: reachable, path: apps/control-plane/services/frontier.py}
+      - id: observation-gate
+        title: Observation gate (content-addressed, immutable)
+        why: The write barrier that makes every observation immutable and deduped.
+        probes:
+          - {kind: module, path: apps/shared/events/observation_gate.py}
+          - {kind: reachable, path: apps/shared/events/observation_gate.py}
+      - id: artifact-sink
+        title: Artifact sink
+        why: AcquisitionArtifact -> Capture + Observation + event.
+        probes:
+          - {kind: module, path: apps/acquisition/artifact_sink.py}
+          - {kind: reachable, path: apps/acquisition/artifact_sink.py}
+      - id: kafka-transport
+        title: Kafka/Redpanda transport
+        why: The stream backbone the whole platform rides on.
+        probes:
+          - {kind: module, path: apps/shared/events/kafka.py}
+          - {kind: reachable, path: apps/shared/events/kafka.py}
+      - id: bulk-ingestion
+        title: Bulk historical ingestion (CC / Wayback / WARC)
+        why: Backfill from archives is how a person's past is reached.
+        probes:
+          - {kind: module, path: apps/bulk-ingestion/backfill.py}
+          - {kind: reachable, path: apps/bulk-ingestion/backfill.py}
+      - id: lakehouse
+        title: Lakehouse (columnar / object layout)
+        why: Analytics-grade storage for the observation lake.
+        probes:
+          - {kind: module, path: apps/projection/lakehouse/__init__.py}
+          - {kind: reachable, path: apps/projection/lakehouse/__init__.py}
+      - id: region-backpressure
+        title: Region backpressure
+        why: GO/THROTTLE/HALT gating per region.
+        probes:
+          - {kind: module, path: apps/acquisition/dispatcher/regional.py}
+          - {kind: reachable, path: apps/acquisition/dispatcher/regional.py}
+
+  - id: "1"
+    title: "Layer 1 — extraction, resolution, normalization"
+    capabilities:
+      - id: extraction-lane
+        title: Deterministic extraction lane
+        why: The no-ML lane that turns a document into mentions/candidates.
+        probes:
+          - {kind: module, path: apps/interpretation/extractors/lane.py}
+          - {kind: reachable, path: apps/interpretation/extractors/lane.py}
+      - id: parsers
+        title: Document parsers
+        why: Raw bytes -> parsed segments.
+        probes:
+          - {kind: module, path: apps/interpretation/parsers/documents.py}
+          - {kind: reachable, path: apps/interpretation/parsers/documents.py}
+      - id: extractor-persons
+        title: Person extraction
+        why: The central entity kind for the person path.
+        probes:
+          - {kind: module, path: apps/interpretation/extractors/persons.py}
+          - {kind: reachable, path: apps/interpretation/extractors/persons.py}
+      - id: extractor-orgs
+        title: Organization extraction
+        why: Employers and affiliations are half of a background.
+        probes:
+          - {kind: module, path: apps/interpretation/extractors/orgs.py}
+          - {kind: reachable, path: apps/interpretation/extractors/orgs.py}
+      - id: extractor-places
+        title: Place extraction
+        why: Location history anchors the timeline.
+        probes:
+          - {kind: module, path: apps/interpretation/extractors/places.py}
+          - {kind: reachable, path: apps/interpretation/extractors/places.py}
+      - id: extractor-contacts
+        title: Contact extraction
+        why: Emails/phones/handles are the join keys across sources.
+        probes:
+          - {kind: module, path: apps/interpretation/extractors/contacts.py}
+          - {kind: reachable, path: apps/interpretation/extractors/contacts.py}
+      - id: normalization
+        title: Normalization post-pass
+        why: Canonical forms + identity evidence before resolution.
+        probes:
+          - {kind: module, path: apps/interpretation/extractors/normalize.py}
+          - {kind: reachable, path: apps/interpretation/extractors/normalize.py}
+      - id: relation-extraction
+        title: Relation extraction
+        why: The edges that make a person a node in a network, not a row.
+        probes:
+          - {kind: module, path: apps/interpretation/extractors/relations.py}
+          - {kind: reachable, path: apps/interpretation/extractors/relations.py}
+      - id: relation-signals
+        title: Relation-signal producers
+        why: Producers emit what they saw before anyone decides what it means.
+        probes:
+          - {kind: module, path: apps/interpretation/extractors/signals/protocol.py}
+          - {kind: reachable, path: apps/interpretation/extractors/signals/protocol.py}
+      - id: signal-pipeline
+        title: Relation-signal execution path
+        why: The 14-stage pipeline signals -> candidates -> claims -> edges.
+        probes:
+          - {kind: module, path: apps/control-plane/semantic_path/execution.py}
+          - {kind: reachable, path: apps/control-plane/semantic_path/execution.py}
+      - id: entity-resolution
+        title: Entity resolution
+        why: The only place identity is decided (I-6).
+        probes:
+          - {kind: module, path: apps/admission/resolution/resolver.py}
+          - {kind: reachable, path: apps/admission/resolution/resolver.py}
+      - id: blocking
+        title: Multi-strategy blocking
+        why: Candidate generation before pairwise comparison.
+        probes:
+          - {kind: module, path: apps/admission/resolution/blocking.py}
+          - {kind: reachable, path: apps/admission/resolution/blocking.py}
+      - id: splink-adapter
+        title: Splink linkage proposer
+        why: Probabilistic linkage behind the platform's resolution contract.
+        probes:
+          - {kind: module, path: apps/admission/resolution/splink_adapter.py}
+          - {kind: reachable, path: apps/admission/resolution/splink_adapter.py}
+      - id: admission-engine
+        title: Admission engine
+        why: The ladder from candidate to admitted claim.
+        probes:
+          - {kind: module, path: apps/admission/engine/admission.py}
+          - {kind: reachable, path: apps/admission/engine/admission.py}
+      - id: independence
+        title: Source independence
+        why: Corroboration counts origins, not hostnames.
+        probes:
+          - {kind: module, path: apps/admission/independence/independence.py}
+          - {kind: reachable, path: apps/admission/independence/independence.py}
+      - id: graph-invariant
+        title: Graph invariant (entity-invariant)
+        why: The atomic entity as a relational function of its life-stream.
+        probes:
+          - {kind: module, path: apps/shared/domain/graph_invariant.py}
+          - {kind: reachable, path: apps/shared/domain/graph_invariant.py}
+      - id: relation-claim-store
+        title: Relation-claim store
+        why: Durable persistence of relation claims and their revision chain.
+        probes:
+          - {kind: module, path: apps/control-plane/db/relation_claim_store.py}
+          - {kind: reachable, path: apps/control-plane/db/relation_claim_store.py}
+      - id: semantic-fabric
+        title: Semantic fabric
+        why: Ontology-as-tool, regime, operators.
+        probes:
+          - {kind: module, path: apps/shared/semantic/__init__.py}
+          - {kind: reachable, path: apps/shared/semantic/__init__.py}
+
+  - id: "2"
+    title: "Layer 2 — context engine"
+    capabilities:
+      - id: context-engine
+        title: Context engine
+        why: Durable research context as a first-class object.
+        probes:
+          - {kind: module, path: apps/control-plane/context_engine/engine.py}
+          - {kind: reachable, path: apps/control-plane/context_engine/engine.py}
+      - id: context-store
+        title: Postgres context store
+        why: The durable store the engine runs on.
+        probes:
+          - {kind: module, path: apps/control-plane/context_engine/postgres_store.py}
+          - {kind: reachable, path: apps/control-plane/context_engine/postgres_store.py}
+      - id: cognitive-loop
+        title: Cognitive loop
+        why: Context drives work; results feed back into context.
+        probes:
+          - {kind: module, path: apps/control-plane/context_engine/loop.py}
+          - {kind: reachable, path: apps/control-plane/context_engine/loop.py}
+      - id: obligations
+        title: Obligations & saturation
+        why: What the context still needs, and when it is done.
+        probes:
+          - {kind: module, path: apps/control-plane/context_engine/obligations.py}
+          - {kind: reachable, path: apps/control-plane/context_engine/obligations.py}
+      - id: context-graph
+        title: Context graph
+        why: The durable graph the analyst works in.
+        probes:
+          - {kind: module, path: apps/control-plane/context_engine/context_graph.py}
+          - {kind: reachable, path: apps/control-plane/context_engine/context_graph.py}
+      - id: query-cycle
+        title: Query cycle
+        why: Context in, search requests out, results back in.
+        probes:
+          - {kind: module, path: apps/control-plane/context_engine/query_cycle.py}
+          - {kind: reachable, path: apps/control-plane/context_engine/query_cycle.py}
+      - id: dossier
+        title: Dossier assembly
+        why: The one artefact an analyst reads.
+        probes:
+          - {kind: module, path: apps/science/context/dossier.py}
+          - {kind: reachable, path: apps/science/context/dossier.py}
+      - id: person-case-profile
+        title: Person case profile pack
+        why: The golden-path domain pack for a person.
+        probes:
+          - {kind: module, path: apps/control-plane/context_engine/person_case_profile.py}
+          - {kind: reachable, path: apps/control-plane/context_engine/person_case_profile.py}
+      - id: research-case-service
+        title: Research case service
+        why: The application service that runs a person case.
+        probes:
+          - {kind: module, path: apps/control-plane/services/research_case_service.py}
+          - {kind: reachable, path: apps/control-plane/services/research_case_service.py}
+      - id: research-case-api
+        title: Research case API
+        why: The HTTP door for a person case.
+        probes:
+          - {kind: module, path: apps/control-plane/api/routes/research_cases.py}
+          - {kind: reachable, path: apps/control-plane/api/routes/research_cases.py}
+      - id: context-fabric
+        title: Context fabric
+        why: Every layer of the science fabric composed into one pass.
+        probes:
+          - {kind: module, path: apps/science/context/fabric.py}
+          - {kind: reachable, path: apps/science/context/fabric.py}
+
+  - id: x
+    title: "Cross-cutting — projections & events"
+    capabilities:
+      - id: projection-search
+        title: Search projection
+        why: Rebuildable search over observations..findings.
+        probes:
+          - {kind: module, path: apps/projection/search/indexer.py}
+          - {kind: reachable, path: apps/projection/search/indexer.py}
+      - id: projection-graph
+        title: Graph projection
+        why: Rebuildable relational serving projection.
+        probes:
+          - {kind: module, path: apps/projection/graph/__init__.py}
+          - {kind: reachable, path: apps/projection/graph/__init__.py}
+      - id: event-catalog
+        title: Event catalog
+        why: The routing authority from event type to lane.
+        probes:
+          - {kind: module, path: apps/shared/events/topics.py}
+          - {kind: symbol, path: apps/shared/events/topics.py, regex: "EVENT_CATALOG"}
+          - {kind: reachable, path: apps/shared/events/topics.py}

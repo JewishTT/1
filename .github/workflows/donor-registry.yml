@@ -38,7 +38,11 @@ jobs:
           enable-cache: true
 
       - name: Sync the workspace
-        run: uv sync --locked
+        # --all-packages installs every workspace member and --all-groups the dev
+        # groups; a bare `uv sync` installs only the root project (whose sole
+        # dependency is lark) and leaves pytest missing, so the test step dies with
+        # "No module named pytest" before it checks anything.
+        run: uv sync --locked --all-packages --all-groups
 
       - name: Run the donor registry contract tests
         run: .venv/bin/python -m pytest apps/shared/tests/contract/test_donor_registry.py -q

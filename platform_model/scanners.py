@@ -69,6 +69,46 @@ def _first_line(docstring: str | None, limit: int = 200) -> str:
 #: exception names whose handler also swallows ImportError
 _BROAD_IMPORT_HANDLERS = frozenset({"Exception", "BaseException"})
 
+#: markers that a body is a placeholder rather than an implementation.
+_STUB_MARKERS = re.compile(
+    r"\b(TODO|FIXME|XXX|HACK|placeholder|not implemented|unimplemented|stub)\b", re.I
+)
+
+
+def _body_maturity(node) -> dict:
+    """Classify a function/method body as a stub, a NotImplementedError, or real.
+
+    This is what separates "the symbol exists" from "the symbol does anything".
+    A body of only ``pass``/``...``/a docstring, or one that raises
+    ``NotImplementedError``, is not an implementation.
+    """
+    stmts = list(getattr(node, "body", []))
+    if stmts and isinstance(stmts[0], ast.Expr) and isinstance(stmts[0].value, ast.Constant) \
+            and isinstance(stmts[0].value.value, str):
+        stmts = stmts[1:]
+    stub = False
+    if not stmts:
+        stub = True
+    elif all(isinstance(s, ast.Pass) for s in stmts):
+        stub = True
+    elif len(stmts) == 1 and isinstance(stmts[0], ast.Expr) and isinstance(stmts[0].value, ast.Constant) \
+            and stmts[0].value.value is Ellipsis:
+        stub = True
+    not_implemented = False
+    for sub in ast.walk(node):
+        if not isinstance(sub, ast.Raise):
+            continue
+        exc = sub.exc
+        name = ""
+        if isinstance(exc, ast.Call):
+            name = _dotted(exc.func)
+        elif isinstance(exc, ast.Name):
+            name = exc.id
+        if "NotImplemented" in name:
+            not_implemented = True
+            break
+    return {"stub": stub, "not_implemented": not_implemented}
+
 
 def _catches_import_error(handler: ast.ExceptHandler) -> bool:
     """True when this handler would swallow an ImportError."""
@@ -96,6 +136,10 @@ class _PyVisitor(ast.NodeVisitor):
         self.constants: list[str] = []
         self.calls: list[str] = []
         self._optional_depth = 0
+        #: depth inside a ``class`` body. Methods are recorded on their class and
+        #: must not also land in the module-level ``functions`` list; without this
+        #: guard ``generic_visit`` in ``visit_ClassDef`` double-counts every method.
+        self._class_depth = 0
 
     # -- imports -----------------------------------------------------------
     def visit_Import(self, node: ast.Import) -> None:
@@ -162,6 +206,7 @@ class _PyVisitor(ast.NodeVisitor):
                         "args": _args(child.args),
                         "lineno": child.lineno,
                         "decorators": _decorators(child),
+                        **_body_maturity(child),
                     }
                 )
         self.classes.append(
@@ -173,18 +218,23 @@ class _PyVisitor(ast.NodeVisitor):
                 "methods": methods,
             }
         )
-        # do not descend: nested classes are not platform surface
+        # Descend for imports/calls (they may live in method bodies), but mark the
+        # depth so method definitions are not also recorded as module functions.
+        self._class_depth += 1
         self.generic_visit(node)
+        self._class_depth -= 1
 
     # -- functions ---------------------------------------------------------
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        self.functions.append(_func(node))
+        if self._class_depth == 0:
+            self.functions.append(_func(node))
         self.generic_visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        f = _func(node)
-        f["async"] = True
-        self.functions.append(f)
+        if self._class_depth == 0:
+            f = _func(node)
+            f["async"] = True
+            self.functions.append(f)
         self.generic_visit(node)
 
     # -- constants ---------------------------------------------------------
@@ -227,6 +277,7 @@ def _func(node) -> dict:
         "args": _args(node.args),
         "decorators": _decorators(node),
         "docstring": _first_line(ast.get_docstring(node)),
+        **_body_maturity(node),
     }
 
 
@@ -353,6 +404,20 @@ def path_insert_roots(tree: ast.AST, path: Path, root: Path) -> list[str]:
     return sorted(out)
 
 
+def _has_main_guard(tree: ast.AST) -> bool:
+    """True when the module has a top-level ``if __name__ == "__main__":`` guard."""
+    for node in getattr(tree, "body", []):
+        if not isinstance(node, ast.If):
+            continue
+        test = node.test
+        if isinstance(test, ast.Compare) and isinstance(test.left, ast.Name) \
+                and test.left.id == "__name__":
+            for comp in test.comparators:
+                if isinstance(comp, ast.Constant) and comp.value == "__main__":
+                    return True
+    return False
+
+
 def scan_python(path: Path, root: Path) -> dict:
     rel = _rel(path, root)
     module = rel[:-3].replace("/", ".")
@@ -366,6 +431,9 @@ def scan_python(path: Path, root: Path) -> dict:
             "module": module,
             "error": f"syntax: {exc}",
             "docstring": "",
+            "loc": 0,
+            "has_main": False,
+            "markers": [],
             "imports": [],
             "classes": [],
             "functions": [],
@@ -375,10 +443,14 @@ def scan_python(path: Path, root: Path) -> dict:
         }
     visitor = _PyVisitor()
     visitor.visit(tree)
+    text = path.read_text(encoding="utf-8", errors="replace")
     return {
         "path": rel,
         "module": module,
         "docstring": _first_line(ast.get_docstring(tree)),
+        "loc": text.count("\n") + 1,
+        "has_main": _has_main_guard(tree),
+        "markers": sorted({m.group(0).lower() for m in _STUB_MARKERS.finditer(text)}),
         "imports": visitor.imports,
         "classes": visitor.classes,
         "functions": visitor.functions,
@@ -472,9 +544,17 @@ def scan_cargo(path: Path, root: Path) -> dict:
     name = re.search(r'''^\s*name\s*=\s*"([^"]+)''', text, re.M)
     version = re.search(r'''^\s*version\s*=\s*"([^"]+)''', text, re.M)
     deps = re.findall(r'''^\s*([A-Za-z0-9_-]+)\s*=\s*[{\s]''', text, re.M)
+    # A crate with no [[bin]] and no src/main.rs builds only an rlib: nothing outside
+    # its own tests can run it. "A worker crate exists" is not "a worker can run".
+    has_bin = re.search(r"^\s*\[\[bin\]\]", text, re.M) is not None
+    crate_dir = path.parent
+    main_rs = (crate_dir / "src" / "main.rs").is_file()
     return {
         "path": rel,
         "name": name.group(1) if name else Path(rel).parent.name,
         "version": version.group(1) if version else "",
         "dependencies": sorted(set(deps)),
+        "has_bin": has_bin,
+        "has_main_rs": main_rs,
+        "runnable": has_bin or main_rs,
     }

@@ -21,13 +21,24 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python / TypeScript / Rust modules | 960 / 251 / 15 |
+| Python / TypeScript / Rust modules | 966 / 251 / 15 |
 | HTTP routes | 174 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 321 / 5178 |
+| Test files / functions | 322 / 5181 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
+
+## Generated platform model (from the tree)
+
+| Page | What it answers |
+| --- | --- |
+| [platform/audit.md](platform/audit.md) | The verified snapshot: scale, maturity, reachability, golden-path readiness, gaps, events. |
+| [platform/golden-path.md](platform/golden-path.md) | The person-background path, capability by capability, with the build plan. |
+| [platform/gaps.md](platform/gaps.md) | Machine-checked defects with re-checkable evidence. |
+| [platform/maturity.md](platform/maturity.md) | Which modules are built, primitive, or stubs. |
+| [platform/reachability.md](platform/reachability.md) | What production can actually reach; test-only and orphan modules. |
+| [platform/index.md](platform/index.md) | Scale, components, and the unresolved-import ledger. |
 
 ## Architecture
 
@@ -52,11 +63,11 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `control-plane` | 214 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
 | `interpretation` | 109 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
-| `platform_model` | 8 | 0 | 0 | The generator that produces docs/platform from the tree. |
+| `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
 | `projection` | 65 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| `shared` | 193 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| `shared` | 194 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 10 | 0 | 0 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 251 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
@@ -93,56 +104,33 @@ cd apps/webapp && pnpm test                       # UI suite
 
 ## Known gaps — verified inconsistencies
 
-Everything below was checked against the source, not inferred from docs.
+Machine-checked: each row is verified against the tree by a contract test.
 
-### Blocks "is this thing real?"
+Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; `pytest apps/shared/tests/contract/test_platform_gaps.py` fails if any open gap's evidence stops holding. **12** open gaps.
 
-| Finding | Evidence |
-| --- | --- |
-| **The Rust crates have no `fn main` and no `[[bin]]`.** They produce only rlibs; nothing outside their own tests links them. | `apps/acquisition/Cargo.toml`; no `main.rs` anywhere |
-| **`worker-browser` (Rust) contains no browser automation** — only an admission gate and a semaphore. The render path is `worker_browser/renderer.py`, whose only implementation is `NoopRenderer`. | `apps/acquisition/worker_browser/renderer.py` |
-| **No process consumes `acquisition.request`.** The only `confluent_kafka.Consumer` in the workspace is a hand-rolled one in a proof script. | `apps/interpretation/_consume_searxng.py` |
-| **`layer0_pipeline.py` / `acquisition_loop.py` is dead code** — imported only by tests, no HTTP route, no Temporal registration. | `specs/024-.../wave0-verified-state.md` |
-| **`context_engine/` and `semantic_path/` are test-only** and absent from the wheel `packages` list. `CognitiveLoop` runs entirely on `InMemoryContextStore`. | `apps/control-plane/pyproject.toml` |
+### Layer 0 — collection
 
-### Data layer
+| ID | Severity | Claim | Evidence |
+| --- | --- | --- | --- |
+| `layer0-pipeline-marked-stub` | medium | services/layer0_pipeline.py carries stub markers and is test-only. | `apps/control-plane/services/layer0_pipeline.py` |
 
-| Finding | Evidence |
-| --- | --- |
-| **Alembic migrations start at `014` with `down_revision = None`.** No revisions 001–013, so `alembic upgrade head` on an empty database creates none of the pre-014 tables; those exist only via `create_all()`. | `db/migrations/versions/014_temporal_materialization.py`; `db/session.py` |
-| **All `downgrade()` implementations raise `NotImplementedError`** — forward-only by design. | all revisions |
-| **Redis is declared as the frontier lease store but no Redis client exists.** Leases are Postgres columns. | `services/frontier.py`; `.env.example` |
-| **Search backend is ambiguous.** Compose ships OpenSearch; `search/mappings.py` and `search/quickwit.py` are Quickwit-targeted and no Quickwit service exists in compose. | `apps/projection/search/mappings.py` |
-| **`search/tantivy_backend.py` is a stub.** The real ranked paths are `search/relevance.py` and `search/bm25s_backend.py`. | `apps/projection/search/tantivy_backend.py` |
+### Layer 1 — extraction/resolution
 
-### API surface is partly fixture-driven
+| ID | Severity | Claim | Evidence |
+| --- | --- | --- | --- |
+| `search-tantivy-declared-not-implemented` | medium | search/tantivy_backend.py declares a BM25 backend but defines no class. | `apps/projection/search/tantivy_backend.py`, `apps/projection/search/tantivy_backend.py` |
 
-| Finding | Evidence |
-| --- | --- |
-| **`GET /api/v1/metrics` returns hard-coded numbers.** Never measured. | `api/routes/metrics.py` |
-| **Investigations live in a module-level dict**, lost on restart and split across uvicorn workers. | `api/routes/investigations.py` |
-| **The entities API is fixture-seeded** with in-memory streams. | `api/routes/entities.py` |
-| **`GET /api/v1/dlq` reads an in-process `QuarantineStore` seeded with one fake record**, not the `events.dlq` / `events.quarantine` lanes. | `api/routes/quarantine.py`; `shared/events/topics.py` |
-| **Auth is a JSON stub, and a missing token grants `Role.ADMIN` on `default-tenant`.** Token is `json.loads`'d, not JWT-verified. This must not reach production. | `api/auth.py` |
+### cross-cutting
 
-### Duplicated authorities
-
-| Finding | Evidence |
-| --- | --- |
-| **Two frontiers in one process.** `/api/v1/fabric/frontier/*` drives an in-memory singleton; `/api/v1/discovery/run` writes real Postgres rows. They never see each other. | `routes/fabric.py` vs `services/discovery_frontier.py` |
-| **Two dispatchers in the same app with different semantics**, plus a third in Rust. None calls the others. | `services/dispatcher.py` vs `dispatcher/scheduler.py` vs `dispatcher/src/lib.rs` |
-| **`ScopeLimits.allows()` always returns `(True, "")`** — stage-B resource limiting is a no-op. | `dispatcher/scheduler.py` |
-
-### Event catalog integrity
-
-| Finding | Evidence |
-| --- | --- |
-| **~25 catalogued events have no producer anywhere** (mention/candidate/assertion/admission/entity/evidence/finding/graph/analytics/discovery/frontier/acquisition/feedback/cc/science/zero_layer families). | cross-check `EVENT_CATALOG` against producer call sites |
-| **Two events are emitted but not in the catalog** — `feedback.source_policy` and `feedback.defer`. | `topic_for()` raises `UnknownEventTypeError` for them |
-| **`science.claim.scope_rejected` is effectively dead** — the scope guard always emits `science.causal.scope_rejected`. | `apps/science` |
-
-### Licensing — unresolved hazard
-
-| Finding | Evidence |
-| --- | --- |
-| **`donors/estorides/` is measured as AGPL-3.0.** A qualified human must confirm this reading before any derived code, file or spec moves into the repository. | `specs/022-.../repair/LICENCE-ANALYSIS.md` |
+| ID | Severity | Claim | Evidence |
+| --- | --- | --- | --- |
+| `auth-anonymous-admin` | critical | An anonymous request (no bearer token) resolves to Role.ADMIN. | `apps/control-plane/api/auth.py` |
+| `auth-unverified-token` | critical | The bearer path parses the token with json.loads; no signature/exp/aud check. | `apps/control-plane/api/auth.py` |
+| `roe-in-memory-registry` | critical | Rules-of-Engagement sign-off is written to an in-process registry, not durable storage. | `apps/control-plane/api/routes/specops_roe.py` |
+| `alembic-head-is-not-a-base` | high | The first Alembic revision has down_revision=None, so upgrade head builds no pre-014 table. | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` |
+| `create-tables-in-production-path` | high | Operational code creates schema with Base.metadata.create_all, not Alembic. | `apps/control-plane/services/temporal_materialization_dispatch.py` |
+| `dlq-seeded-record` | high | GET /api/v1/dlq reads an in-process store seeded with one fake record. | `apps/control-plane/api/routes/quarantine.py` |
+| `metrics-hardcoded` | high | GET /api/v1/metrics returns hard-coded numbers, never measured. | `apps/control-plane/api/routes/metrics.py` |
+| `roe-approved-by-from-body` | high | The RoE approver is taken from the request body, not a verified principal. | `apps/control-plane/api/routes/specops_roe.py` |
+| `wheel-packages-omit-context-engine` | high | The control-plane wheel omits context_engine/semantic_path, so an installed build differs from checkout. | `apps/control-plane/pyproject.toml` |
+| `health-is-constant` | medium | GET /health returns a constant and reflects no dependency availability. | `apps/control-plane/api/main.py` |

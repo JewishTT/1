@@ -1,6 +1,6 @@
 # Import graph
 
-960 Python modules, 2619 resolved local edges.
+966 Python modules, 2664 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,19 +10,19 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 833 |
+| `__future__` | stdlib | 839 |
 | `dataclasses` | stdlib | 386 |
 | `typing` | stdlib | 349 |
-| `pathlib` | stdlib | 295 |
-| `pytest` | third-party | 254 |
-| `sys` | stdlib | 246 |
-| `collections` | stdlib | 233 |
+| `pathlib` | stdlib | 301 |
+| `pytest` | third-party | 255 |
+| `sys` | stdlib | 247 |
+| `collections` | stdlib | 235 |
 | `json` | stdlib | 179 |
 | `datetime` | stdlib | 177 |
 | `enum` | stdlib | 117 |
 | `sqlalchemy` | third-party | 117 |
 | `hashlib` | stdlib | 113 |
-| `re` | stdlib | 85 |
+| `re` | stdlib | 88 |
 | `asyncio` | stdlib | 62 |
 | `fastapi` | third-party | 62 |
 | `os` | stdlib | 61 |

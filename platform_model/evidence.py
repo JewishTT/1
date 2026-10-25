@@ -124,6 +124,34 @@ def collect_facts(root: Path, model: dict) -> list[dict[str, Any]]:
             "evidence": {"source": "specs/032-global-upgrade-execution/benchmarks/WP0-capability-matrix.json"},
             "confidence": 1.0,
         })
+    # CONTEXT_DEPENDENCY -- from the architecture compiler. Some of these edges are
+    # hand-coded in platform_model/architecture.py, so they are INFERRED, not facts
+    # read straight from the tree. Marking them honestly is the point.
+    arch = model.get("architecture", {})
+    for e in arch.get("context_map", {}).get("edges", []):
+        facts.append({
+            "fact_id": _evidence_id("CONTEXT_DEPENDENCY", e.get("from", ""), e.get("to", ""), e.get("type", "")),
+            "kind": "CONTEXT_DEPENDENCY",
+            "subject": e.get("from", ""),
+            "object": e.get("to", ""),
+            "status": "INFERRED",
+            "method": f"architecture_compiler:{e.get('type', 'direct')}",
+            "evidence": {"via_import": e.get("via_import"), "event": e.get("event")},
+            "confidence": 0.6,
+        })
+    # SPEC_CITES_MODULE -- traceability link (docstring reference). INFERRED.
+    for s in arch.get("spec_traceability", {}).get("specs", []):
+        for m in s.get("modules", []):
+            facts.append({
+                "fact_id": _evidence_id("SPEC_CITES_MODULE", s["id"], m),
+                "kind": "SPEC_CITES_MODULE",
+                "subject": s["id"],
+                "object": m,
+                "status": "INFERRED",
+                "method": "docstring_reference",
+                "evidence": {"spec": s.get("spec_path")},
+                "confidence": 0.7,
+            })
     return facts
 
 

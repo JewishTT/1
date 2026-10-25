@@ -122,7 +122,15 @@ Large models are trained in part on text produced by other assistants, and the a
 
 The CI job .github/workflows/platform-model.yml fails on a stale model. The same command with --check is the gate. Edit nothing under docs/platform/ by hand; the generator overwrites it.
 
-The same generator also renders three narrative documents from the model: `README.md`, `docs/README.md` and `docs/architecture/overview.md`. Their facts (component counts, app table, event/lane counts) come from the tree; their prose lives in `platform_model/narrative.py`. Do not edit those three by hand either — the drift gate covers them.
+The same generator also renders narrative documents from the model: `README.md`, `docs/README.md`, `docs/CONTRIBUTING.md` and `docs/architecture/{overview,stream-processing,fabric-collection,multi-region,dynamic-entity-invariant}.md` plus `docs/architecture/donors/00-INDEX.md`. Their facts come from the tree; their prose lives in `platform_model/narrative.py`. Do not edit those by hand either — the drift gate covers them.
+
+Beyond the structural model, the generator produces decision-grade views, all drift-gated:
+
+- `docs/platform/golden-path.md` — the person-background path, capability by capability, from `platform_model/golden_path.yaml` (a hybrid manifest: specs + the platform philosophy). It reports per-capability status (READY/PARTIAL/STUB/TEST_ONLY/ORPHAN/MISSING) and an ordered build plan.
+- `docs/platform/gaps.md` — machine-checked defects. Every gap lives in `platform_model/gaps.py` with re-checkable evidence (a file and a regex); `apps/shared/tests/contract/test_platform_gaps.py` fails the build when a gap's evidence stops holding, so the registry cannot rot into stale prose.
+- `docs/platform/maturity.md`, `docs/platform/reachability.md`, `docs/platform/audit.md` — implementation maturity (stub/primitive detection), production reachability (test-only and orphan modules), and the aggregate verified snapshot.
+
+The old free-text `KNOWN_GAPS` is gone; do not reintroduce hand-written gap prose. Add a gap to `platform_model/gaps.py` instead.
 
 11.2 The generated model is the source of truth for the platform's shape. When a question is about what exists, what imports what, which capability is only reachable from tests, or who writes a table, read docs/platform/ before reading the source tree, and regenerate when the answer may have moved.
 

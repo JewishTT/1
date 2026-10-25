@@ -553,6 +553,22 @@ def build_import_graph(py_modules: list[dict], root: Path) -> dict:
             target = None
             via = module
             names = tuple(imp.get("names") or ())
+            # ``from pkg import sub`` is often a submodule import (``from api.routes
+            # import fabric``). Resolving it to the package ``__init__`` alone hides the
+            # edge to the submodule, which is exactly the edge reachability needs. Emit
+            # an edge for every name that is itself a module; otherwise fall through to
+            # the single-target resolution below.
+            if level == 0 and names and module:
+                sub_hit = False
+                for name in names:
+                    sub = f"{module}.{name}"
+                    for cand, cand_via in import_candidates(sub, 0, m["path"], roots, ()):
+                        if cand in module_by_path:
+                            edges.append({"from": m["path"], "to": cand, "via": sub})
+                            sub_hit = True
+                            break
+                if sub_hit:
+                    continue
             for cand, cand_via in import_candidates(module, level, m["path"], roots, names):
                 if cand in module_by_path:
                     target, via = cand, cand_via
@@ -723,6 +739,17 @@ def build_model(root: Path) -> dict:
         "untested_count": len(untested),
     }
     model["architecture"] = build_architecture(root, model)
+    from .maturity import build_maturity
+    model["maturity"] = build_maturity(root, model)
+    from .reachability import build_reachability
+    model["reachability"] = build_reachability(root, model)
+    from .gaps import verify as verify_gaps
+    model["gaps"] = verify_gaps(root)
+    from .golden_path import build_golden_path, build_plan
+    model["golden_path"] = build_golden_path(root, model)
+    model["build_plan"] = build_plan(model["golden_path"])
+    from .events import build_event_coverage
+    model["event_coverage"] = build_event_coverage(root, model)
     try:
         from .evidence import build_evidence
         model["evidence"] = build_evidence(root, model)
@@ -790,11 +817,15 @@ def render_index(model: dict) -> str:
         "- [API](api.md) — the HTTP surface.",
         "- [Data flow](data-flow.md) — the canonical pipeline and the gaps.",
         "- [Import graph](imports.md) — who imports whom, and what does not resolve.",
+        "- [Maturity](maturity.md) — which modules are built, primitive, or stubs.",
+        "- [Reachability](reachability.md) — what production can actually reach.",
         "- [Tests](tests.md) — coverage and what is untested.",
         "- [Capabilities](capabilities.md) — WIRED vs TEST_ONLY vs MISSING.",
         "- [Ownership](ownership.md) — one writer per object, and the competing writers.",
         "- [Donors](donors.md) — the supply-chain record.",
         "- [Findings](findings.md) — what the model says is broken.",
+        "- [Gaps](gaps.md) — machine-checked defects with re-checkable evidence.",
+        "- [Golden path](golden-path.md) — the person-background path, capability by capability.",
         "",
         "## Components",
         "",
@@ -1109,6 +1140,346 @@ def _writer_label(w) -> str:
     return f"`{w}`"
 
 
+_LAYER_LABEL = {"0": "Layer 0 — collection", "1": "Layer 1 — extraction/resolution", "2": "Layer 2 — context engine", "x": "cross-cutting"}
+
+
+def render_audit(model: dict) -> str:
+    from .narrative import _counts
+    counts = _counts(model)
+    ev = model.get("evidence", {}).get("stats", {})
+    mat = model.get("maturity", {}).get("summary", {})
+    reach = model.get("reachability", {}).get("summary", {})
+    gp = model.get("golden_path", {}).get("summary", {})
+    gaps = model.get("gaps", {})
+    ec = model.get("event_coverage", {})
+    caps = model.get("capabilities", [])
+    own = model.get("ownership", [])
+    test_only = [c for c in caps if c.get("status") == "TEST_ONLY"]
+    competing = [o for o in own if o.get("status") == "COMPETING_WRITERS"]
+    no_writer = [o for o in own if o.get("status") == "NO_DIRECT_WRITER_FOUND"]
+    trace = model.get("architecture", {}).get("spec_traceability", {}).get("specs", [])
+    behind = [s for s in trace if s.get("tasks_total", 0) and s.get("tasks_checked", 0) == 0 and s.get("module_count", 0) > 0]
+    linked = [s for s in trace if s.get("capabilities")]
+    lines = [
+        "# Platform audit",
+        "",
+        "A verified snapshot of the platform's true state. Every number is derived from the tree; "
+        "the section pages hold the detail. **Read this with its caveats**: the model proves "
+        "*structure, reachability and maturity* -- not correctness, not runtime behaviour.",
+        "",
+        "## Scale",
+        "",
+        _md_table(["Metric", "Value"], [
+            ["Components", counts["components"]],
+            ["Python / TypeScript / Rust modules", f"{counts['python_modules']} / {counts['typescript_modules']} / {counts['rust_modules']}"],
+            ["Resolved import edges", counts["import_edges"]],
+            ["HTTP routes / routers", f"{counts['http_routes']} / {len(model['api'])}"],
+            ["Test files / functions", f"{counts['test_files']} / {counts['test_functions']}"],
+            ["Evidence facts (static)", ev.get("facts_total", 0)],
+        ]),
+        "",
+        "## Implementation maturity",
+        "",
+        _md_table(["Status", "Modules"], [[k, mat.get(k, 0)] for k in
+                  ("IMPLEMENTED", "PRIMITIVE", "STUB", "NOT_IMPLEMENTED", "DECLARATION_ONLY", "PACKAGE_INIT", "MIGRATION", "TEST")]),
+        "",
+        "See [maturity.md](maturity.md).",
+        "",
+        "## Reachability",
+        "",
+        _md_table(["Status", "Modules"], [[k, reach.get(k, 0)] for k in
+                  ("PRODUCTION", "TEST_ONLY", "ORPHAN", "TEST")]),
+        "",
+        "See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.",
+        "",
+        "## Golden path readiness",
+        "",
+        _md_table(["Status", "Capabilities"], [[k, gp.get(k, 0)] for k in
+                  ("READY", "PARTIAL", "STUB", "TEST_ONLY", "ORPHAN", "MISSING")]),
+        "",
+        "See [golden-path.md](golden-path.md) for the capability map and the build plan.",
+        "",
+        "## Gaps (machine-checked)",
+        "",
+        f"**{gaps.get('open', 0)}** open, machine-checked gaps. See [gaps.md](gaps.md).",
+        "",
+        "## Event coverage",
+        "",
+        f"{ec.get('total', 0)} catalogued event types across {ec.get('lanes', 0)} lanes; "
+        f"{ec.get('produced', 0)} have a likely producer line; "
+        f"**{len(ec.get('unreferenced', []))}** are referenced by no file outside the catalog.",
+        "",
+    ]
+    unreferenced = ec.get("unreferenced", [])
+    if unreferenced:
+        lines += ["Unreferenced event types (catalogued, but no producer or consumer string):", ""]
+        lines += ["- " + ", ".join(f"`{t}`" for t in unreferenced[i:i + 6]) for i in range(0, len(unreferenced), 6)]
+        lines.append("")
+    crates = model.get("rust", {}).get("crates", [])
+    runnable = [c for c in crates if c.get("runnable")]
+    lines += [
+        "## Rust crates",
+        "",
+        f"{len(crates)} crates, **{len(runnable)} runnable** (has a `[[bin]]` or `src/main.rs`). "
+        "A crate with neither builds only an rlib: nothing outside its own tests can run it, so "
+        "it is not a worker.",
+        "",
+        _md_table(
+            ["Crate", "Runnable", "Bin", "main.rs"],
+            [[f"`{c['name']}`", "yes" if c.get("runnable") else "**no**", c.get("has_bin"), c.get("has_main_rs")] for c in crates],
+        ),
+        "",
+        "## Spec ↔ capability traceability",
+        "",
+        "Capabilities linked to a spec when the capability's module is cited by that spec's "
+        "(spec-numbered) modules. A spec with no linked capability is either unmapped or has no "
+        "capability behind it.",
+        "",
+        _md_table(
+            ["Spec", "Capabilities"],
+            [[f"`{s['id']}`", ", ".join(f"`{c}`" for c in s["capabilities"])] for s in linked],
+        ) if linked else "_None linked yet._",
+        "",
+        "## Test-only capabilities",
+        "",
+        "Declared capabilities that only tests reach -- a live risk if production is believed to use them.",
+        "",
+        _md_table(["Capability", "Module"], [[f"`{c['id']}`", f"`{c['module']}`"] for c in test_only]),
+        "",
+        "## Ownership (heuristic — competing writers are candidates, not verdicts)",
+        "",
+        f"`{len(competing)}` objects have competing writers and `{len(no_writer)}` have no writer found. "
+        "The owner map is built from textual write-site heuristics (reads and ORM imports are counted), "
+        "so each row is a candidate to verify, not a proven defect. See [ownership.md](ownership.md).",
+        "",
+        "## Spec bookkeeping behind the code",
+        "",
+        "Specs whose task list shows 0 checked but whose number is cited by real modules -- the file "
+        "understates the code.",
+        "",
+        _md_table(
+            ["Spec", "Tasks", "Modules citing it"],
+            [[f"`{s['id']}`", f"{s['tasks_checked']}/{s['tasks_total']}", s["module_count"]] for s in behind],
+        ) if behind else "_None._",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def render_golden_path(model: dict) -> str:
+    gp = model.get("golden_path", {})
+    plan = model.get("build_plan", [])
+    s = gp.get("summary", {})
+    lines = [
+        "# Golden path — person background analysis",
+        "",
+        gp.get("goal", ""),
+        "",
+        "Each capability is checked against the tree (`platform_model/golden_path.yaml`, a hybrid "
+        "manifest: specs + the platform philosophy). Status is **reachability and maturity**, not "
+        "correctness: `READY` means present, production-reachable and not a stub; `TEST_ONLY` means "
+        "only tests reach it; `ORPHAN` means nothing imports it.",
+        "",
+        _md_table(
+            ["Status", "Capabilities"],
+            [[k, s.get(k, 0)] for k in ("READY", "PARTIAL", "STUB", "TEST_ONLY", "ORPHAN", "MISSING")],
+        ),
+        "",
+    ]
+    for layer in gp.get("layers", []):
+        lines.append(f"## {layer['title']}")
+        lines.append("")
+        lines.append(_md_table(
+            ["Capability", "Status", "Module", "Reachability", "Maturity"],
+            [
+                [
+                    f"`{c['id']}` — {c['title']}",
+                    c["status"],
+                    f"`{c['primary']}`" if c["primary"] else "—",
+                    c["reachability"] or "—",
+                    c["maturity"] or "—",
+                ]
+                for c in layer["capabilities"]
+            ],
+        ))
+        lines.append("")
+    if plan:
+        lines += [
+            "---",
+            "",
+            "## Build plan (prioritized)",
+            "",
+            "Non-READY capabilities, worst-first within each layer. `MISSING` before `ORPHAN` before "
+            "`TEST_ONLY` before `STUB` before `PARTIAL`.",
+            "",
+        ]
+        for stream in plan:
+            lines.append(f"### {stream['title']}")
+            lines.append("")
+            lines.append(_md_table(
+                ["Capability", "Status", "Why it matters", "Module"],
+                [[f"`{c['id']}`", c["status"], c["why"], f"`{c['primary']}`" if c["primary"] else "—"] for c in stream["items"]],
+            ))
+            lines.append("")
+    return "\n".join(lines)
+
+
+def render_gaps(model: dict) -> str:
+    g = model.get("gaps", {})
+    lines = [
+        "# Gaps (machine-checked)",
+        "",
+        "Every defect below is a claim tied to re-checkable evidence (a file and a regex). "
+        "`platform_model/gaps.py` re-reads the tree and a contract test fails if any open gap's "
+        "evidence no longer holds. This is the replacement for the old free-text `KNOWN_GAPS`.",
+        "",
+        f"**{g.get('open', 0)}** open gaps; **{g.get('stale_or_resolved', 0)}** stale/resolved "
+        "(must be zero — the test fails otherwise).",
+        "",
+    ]
+    by_layer: dict[str, list[dict]] = {}
+    for gap in g.get("gaps", []):
+        by_layer.setdefault(gap["layer"], []).append(gap)
+    for layer in ("0", "1", "2", "x"):
+        items = by_layer.get(layer)
+        if not items:
+            continue
+        lines.append(f"## {_LAYER_LABEL.get(layer, layer)}")
+        lines.append("")
+        lines.append(_md_table(
+            ["ID", "Severity", "Status", "Claim", "Evidence"],
+            [
+                [
+                    f"`{x['id']}`",
+                    x["severity"],
+                    x["status"],
+                    x["claim"],
+                    ", ".join(f"`{c['path']}`" for c in x["checks"]),
+                ]
+                for x in sorted(items, key=lambda x: (x["severity"], x["id"]))
+            ],
+        ))
+        lines.append("")
+    resolved = g.get("resolved", [])
+    if resolved:
+        lines += [
+            "## Resolved claims (regression guards)",
+            "",
+            "Formerly-recorded gaps whose fix must stay in place; a regression flips the guard.",
+            "",
+            _md_table(
+                ["ID", "Status", "Claim"],
+                [[f"`{x['id']}`", x["status"], x["claim"]] for x in resolved],
+            ),
+            "",
+        ]
+    return "\n".join(lines)
+
+
+def render_reachability(model: dict) -> str:
+    r = model.get("reachability", {})
+    s = r.get("summary", {})
+    entrypoints = r.get("entrypoints", [])
+    test_only = r.get("test_only", [])
+    orphan = r.get("orphan", [])
+    lines = [
+        "# Reachability",
+        "",
+        "The import graph says A imports B; that is not the same as *B runs*. This walks the "
+        "import graph forward from the deployed processes (HTTP app, Temporal worker, acquisition "
+        "worker, CLI mains) and labels every module by whether production can reach it.",
+        "",
+        "`PRODUCTION` — reachable from a real entrypoint · `TEST_ONLY` — reachable only from tests · "
+        "`ORPHAN` — imported by nothing (dead or unwired).",
+        "",
+        _md_table(
+            ["Status", "Modules"],
+            [["PRODUCTION", s.get("PRODUCTION", 0)], ["TEST_ONLY", s.get("TEST_ONLY", 0)],
+             ["ORPHAN", s.get("ORPHAN", 0)], ["TEST", s.get("TEST", 0)]],
+        ),
+        "",
+        "## Entrypoints (production roots)",
+        "",
+        _md_table(["Entrypoint"], [[f"`{p}`"] for p in entrypoints]),
+        "",
+        "## Test-only modules (production never reaches them)",
+        "",
+        f"**{len(test_only)}** modules are reached only by tests.",
+        "",
+        _md_table(["Module"], [[f"`{p}`"] for p in test_only]),
+        "",
+        "## Orphan modules (nothing imports them)",
+        "",
+        f"**{len(orphan)}** modules are imported by neither production nor tests.",
+        "",
+        _md_table(["Module"], [[f"`{p}`"] for p in orphan]),
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def render_maturity(model: dict) -> str:
+    m = model.get("maturity", {})
+    rows = m.get("modules", [])
+    summary = m.get("summary", {})
+    unbuilt = [r for r in rows if r["status"] in ("STUB", "NOT_IMPLEMENTED", "PRIMITIVE")]
+    lines = [
+        "# Implementation maturity",
+        "",
+        "Generated from the scanner's per-body flags. This separates *the symbol exists* "
+        "from *the symbol does anything*. It is a heuristic over bodies and source markers, "
+        "not a judgement of correctness.",
+        "",
+        _md_table(
+            ["Status", "Modules"],
+            [[k, summary.get(k, 0)] for k in
+             ("IMPLEMENTED", "PRIMITIVE", "STUB", "NOT_IMPLEMENTED", "DECLARATION_ONLY", "PACKAGE_INIT", "MIGRATION", "TEST")],
+        ),
+        "",
+        f"**{len(unbuilt)}** modules are present but not really built "
+        f"(STUB / NOT_IMPLEMENTED / PRIMITIVE).",
+        "",
+        "## Not really built (STUB / NOT_IMPLEMENTED / PRIMITIVE)",
+        "",
+        _md_table(
+            ["Module", "Status", "LOC", "Callables", "Stubs", "NotImpl", "Markers"],
+            [
+                [
+                    f"`{r['path']}`",
+                    r["status"],
+                    r["loc"],
+                    r["callables"],
+                    r["stubs"],
+                    r["not_implemented"],
+                    ", ".join(r["markers"]) or "—",
+                ]
+                for r in sorted(unbuilt, key=lambda r: (r["status"], r["path"]))
+            ],
+        )
+        if unbuilt
+        else "_None._",
+        "",
+        "## Declaration-only modules (no callables) — review for stubs",
+        "",
+        "A non-``__init__`` module with no callables is either a data/declaration module "
+        "or a stub that declares a capability and implements nothing. This list is where "
+        "the second kind hides.",
+        "",
+        _md_table(
+            ["Module", "LOC", "Markers"],
+            [
+                [f"`{r['path']}`", r["loc"], ", ".join(r["markers"]) or "—"]
+                for r in sorted(
+                    (r for r in rows if r["status"] == "DECLARATION_ONLY"),
+                    key=lambda r: (r["loc"], r["path"]),
+                )
+            ],
+        ),
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def render_findings(model: dict) -> str:
     caps = model["capabilities"]
     own = model["ownership"]
@@ -1189,11 +1560,16 @@ RENDERERS = {
     "api.md": render_api,
     "data-flow.md": render_data_flow,
     "imports.md": render_imports,
+    "maturity.md": render_maturity,
+    "reachability.md": render_reachability,
     "tests.md": render_tests,
     "capabilities.md": render_capabilities,
     "ownership.md": render_ownership,
     "donors.md": render_donors,
+    "audit.md": render_audit,
     "findings.md": render_findings,
+    "gaps.md": render_gaps,
+    "golden-path.md": render_golden_path,
 }
 
 
@@ -1256,6 +1632,24 @@ def summary_model(model: dict) -> dict:
     }
     if model.get("evidence"):
         out["evidence_stats"] = model["evidence"].get("stats", {})
+    if model.get("maturity"):
+        out["maturity_summary"] = model["maturity"].get("summary", {})
+    if model.get("reachability"):
+        r = model["reachability"]
+        out["reachability_summary"] = r.get("summary", {})
+        out["reachability_entrypoints"] = r.get("entrypoints", [])
+        out["test_only_modules"] = r.get("test_only", [])
+        out["orphan_modules"] = r.get("orphan", [])
+    if model.get("golden_path"):
+        out["golden_path_summary"] = model["golden_path"].get("summary", {})
+    if model.get("event_coverage"):
+        ec = model["event_coverage"]
+        out["event_coverage_summary"] = {
+            "total": ec["total"], "lanes": ec["lanes"], "produced": ec["produced"],
+            "unreferenced": ec["unreferenced"],
+        }
+    if model.get("gaps"):
+        out["gaps_open"] = model["gaps"].get("open", 0)
     out["import_graph"] = {
         "module_count": g["module_count"],
         "edge_count": g["edge_count"],

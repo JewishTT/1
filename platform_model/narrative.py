@@ -33,64 +33,6 @@ INVARIANTS = [
     ("Multi-tenant", "Tenant-scoped queries; per-tenant ACLs, indexes and prefixes."),
 ]
 
-#: Verified inconsistencies between docs and code. Each entry is (title, evidence).
-#: "checked against the source, not inferred from docs" -- keep it that way.
-KNOWN_GAPS: list[tuple[str, list[tuple[str, str]]]] = [
-    (
-        'Blocks "is this thing real?"',
-        [
-            ("**The Rust crates have no `fn main` and no `[[bin]]`.** They produce only rlibs; nothing outside their own tests links them.", "`apps/acquisition/Cargo.toml`; no `main.rs` anywhere"),
-            ("**`worker-browser` (Rust) contains no browser automation** — only an admission gate and a semaphore. The render path is `worker_browser/renderer.py`, whose only implementation is `NoopRenderer`.", "`apps/acquisition/worker_browser/renderer.py`"),
-            ("**No process consumes `acquisition.request`.** The only `confluent_kafka.Consumer` in the workspace is a hand-rolled one in a proof script.", "`apps/interpretation/_consume_searxng.py`"),
-            ("**`layer0_pipeline.py` / `acquisition_loop.py` is dead code** — imported only by tests, no HTTP route, no Temporal registration.", "`specs/024-.../wave0-verified-state.md`"),
-            ("**`context_engine/` and `semantic_path/` are test-only** and absent from the wheel `packages` list. `CognitiveLoop` runs entirely on `InMemoryContextStore`.", "`apps/control-plane/pyproject.toml`"),
-        ],
-    ),
-    (
-        "Data layer",
-        [
-            ("**Alembic migrations start at `014` with `down_revision = None`.** No revisions 001–013, so `alembic upgrade head` on an empty database creates none of the pre-014 tables; those exist only via `create_all()`.", "`db/migrations/versions/014_temporal_materialization.py`; `db/session.py`"),
-            ("**All `downgrade()` implementations raise `NotImplementedError`** — forward-only by design.", "all revisions"),
-            ("**Redis is declared as the frontier lease store but no Redis client exists.** Leases are Postgres columns.", "`services/frontier.py`; `.env.example`"),
-            ("**Search backend is ambiguous.** Compose ships OpenSearch; `search/mappings.py` and `search/quickwit.py` are Quickwit-targeted and no Quickwit service exists in compose.", "`apps/projection/search/mappings.py`"),
-            ("**`search/tantivy_backend.py` is a stub.** The real ranked paths are `search/relevance.py` and `search/bm25s_backend.py`.", "`apps/projection/search/tantivy_backend.py`"),
-        ],
-    ),
-    (
-        "API surface is partly fixture-driven",
-        [
-            ("**`GET /api/v1/metrics` returns hard-coded numbers.** Never measured.", "`api/routes/metrics.py`"),
-            ("**Investigations live in a module-level dict**, lost on restart and split across uvicorn workers.", "`api/routes/investigations.py`"),
-            ("**The entities API is fixture-seeded** with in-memory streams.", "`api/routes/entities.py`"),
-            ("**`GET /api/v1/dlq` reads an in-process `QuarantineStore` seeded with one fake record**, not the `events.dlq` / `events.quarantine` lanes.", "`api/routes/quarantine.py`; `shared/events/topics.py`"),
-            ("**Auth is a JSON stub, and a missing token grants `Role.ADMIN` on `default-tenant`.** Token is `json.loads`'d, not JWT-verified. This must not reach production.", "`api/auth.py`"),
-        ],
-    ),
-    (
-        "Duplicated authorities",
-        [
-            ("**Two frontiers in one process.** `/api/v1/fabric/frontier/*` drives an in-memory singleton; `/api/v1/discovery/run` writes real Postgres rows. They never see each other.", "`routes/fabric.py` vs `services/discovery_frontier.py`"),
-            ("**Two dispatchers in the same app with different semantics**, plus a third in Rust. None calls the others.", "`services/dispatcher.py` vs `dispatcher/scheduler.py` vs `dispatcher/src/lib.rs`"),
-            ("**`ScopeLimits.allows()` always returns `(True, \"\")`** — stage-B resource limiting is a no-op.", "`dispatcher/scheduler.py`"),
-        ],
-    ),
-    (
-        "Event catalog integrity",
-        [
-            ("**~25 catalogued events have no producer anywhere** (mention/candidate/assertion/admission/entity/evidence/finding/graph/analytics/discovery/frontier/acquisition/feedback/cc/science/zero_layer families).", "cross-check `EVENT_CATALOG` against producer call sites"),
-            ("**Two events are emitted but not in the catalog** — `feedback.source_policy` and `feedback.defer`.", "`topic_for()` raises `UnknownEventTypeError` for them"),
-            ("**`science.claim.scope_rejected` is effectively dead** — the scope guard always emits `science.causal.scope_rejected`.", "`apps/science`"),
-        ],
-    ),
-    (
-        "Licensing — unresolved hazard",
-        [
-            ("**`donors/estorides/` is measured as AGPL-3.0.** A qualified human must confirm this reading before any derived code, file or spec moves into the repository.", "`specs/022-.../repair/LICENCE-ANALYSIS.md`"),
-        ],
-    ),
-]
-
-
 def _counts(model: dict) -> dict:
     if "counts" in model:
         return model["counts"]
@@ -142,15 +84,37 @@ def _event_lanes(model: dict) -> tuple[int, int, list[str]]:
     return len(pairs), len(lanes), lanes
 
 
-def _gaps_markdown() -> str:
-    out: list[str] = []
-    for title, rows in KNOWN_GAPS:
-        out.append(f"### {title}")
+def _verified_gaps_markdown(model: dict) -> str:
+    """Render the machine-checked gaps registry, not hand-written prose."""
+    g = model.get("gaps", {})
+    if not g:
+        return "_The gaps registry was not built._"
+    layer_label = {
+        "0": "Layer 0 — collection",
+        "1": "Layer 1 — extraction/resolution",
+        "2": "Layer 2 — context engine",
+        "x": "cross-cutting",
+    }
+    out: list[str] = [
+        f"Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; "
+        f"`pytest apps/shared/tests/contract/test_platform_gaps.py` fails if any open gap's "
+        f"evidence stops holding. **{g.get('open', 0)}** open gaps.",
+        "",
+    ]
+    by_layer: dict[str, list[dict]] = {}
+    for gap in g.get("gaps", []):
+        by_layer.setdefault(gap["layer"], []).append(gap)
+    for layer in ("0", "1", "2", "x"):
+        items = by_layer.get(layer)
+        if not items:
+            continue
+        out.append(f"### {layer_label.get(layer, layer)}")
         out.append("")
-        out.append("| Finding | Evidence |")
-        out.append("| --- | --- |")
-        for finding, evidence in rows:
-            out.append(f"| {finding} | {evidence} |")
+        out.append("| ID | Severity | Claim | Evidence |")
+        out.append("| --- | --- | --- | --- |")
+        for x in sorted(items, key=lambda x: (x["severity"], x["id"])):
+            ev = ", ".join(f"`{c['path']}`" for c in x["checks"])
+            out.append(f"| `{x['id']}` | {x['severity']} | {x['claim']} | {ev} |")
         out.append("")
     return "\n".join(out)
 
@@ -364,6 +328,17 @@ def render_docs_index(model: dict) -> str:
         "Full breakdown, per-component module counts and the unresolved-import ledger: "
         "[`platform/index.md`](platform/index.md).",
         "",
+        "## Generated platform model (from the tree)",
+        "",
+        "| Page | What it answers |",
+        "| --- | --- |",
+        "| [platform/audit.md](platform/audit.md) | The verified snapshot: scale, maturity, reachability, golden-path readiness, gaps, events. |",
+        "| [platform/golden-path.md](platform/golden-path.md) | The person-background path, capability by capability, with the build plan. |",
+        "| [platform/gaps.md](platform/gaps.md) | Machine-checked defects with re-checkable evidence. |",
+        "| [platform/maturity.md](platform/maturity.md) | Which modules are built, primitive, or stubs. |",
+        "| [platform/reachability.md](platform/reachability.md) | What production can actually reach; test-only and orphan modules. |",
+        "| [platform/index.md](platform/index.md) | Scale, components, and the unresolved-import ledger. |",
+        "",
         "## Architecture",
         "",
         "| Document | Scope |",
@@ -416,9 +391,9 @@ def render_docs_index(model: dict) -> str:
         "",
         "## Known gaps — verified inconsistencies",
         "",
-        "Everything below was checked against the source, not inferred from docs.",
+        "Machine-checked: each row is verified against the tree by a contract test.",
         "",
-        _gaps_markdown(),
+        _verified_gaps_markdown(model),
     ]
     return "\n".join(lines)
 

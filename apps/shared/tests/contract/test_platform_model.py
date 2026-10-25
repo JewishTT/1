@@ -57,6 +57,7 @@ from platform_model import build as pm  # noqa: E402
 #: smaller build.
 EXPECTED_PAGES = (
     "api.md",
+    "audit.md",
     "architecture.json",
     "architecture-evidence.json",
     "architecture-evidence.jsonl",
@@ -66,10 +67,14 @@ EXPECTED_PAGES = (
     "data-flow.md",
     "donors.md",
     "findings.md",
+    "gaps.md",
+    "golden-path.md",
     "imports.md",
     "index.md",
+    "maturity.md",
     "modules.jsonl",
     "ownership.md",
+    "reachability.md",
     "platform-model.json",
     "tests.md",
 )

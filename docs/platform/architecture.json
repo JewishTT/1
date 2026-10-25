@@ -566,9 +566,14 @@
           "platform_model/__init__.py",
           "platform_model/architecture.py",
           "platform_model/build.py",
+          "platform_model/events.py",
           "platform_model/evidence.py",
           "platform_model/facts.py",
+          "platform_model/gaps.py",
+          "platform_model/golden_path.py",
+          "platform_model/maturity.py",
           "platform_model/narrative.py",
+          "platform_model/reachability.py",
           "platform_model/scanners.py",
           "platform_model/semantic.py",
           "tools/append_zero_frontend_a.py",
@@ -582,7 +587,7 @@
           "tools/specs/build_owner_map.py",
           "tools/strip_zero_inventory.py"
         ],
-        "module_count": 64
+        "module_count": 69
       },
       {
         "id": "orchestration-temporal",
@@ -724,6 +729,7 @@
           "apps/shared/tests/contract/test_metrics.py",
           "apps/shared/tests/contract/test_ontology.py",
           "apps/shared/tests/contract/test_operator_result.py",
+          "apps/shared/tests/contract/test_platform_gaps.py",
           "apps/shared/tests/contract/test_platform_model.py",
           "apps/shared/tests/contract/test_projection_manifest.py",
           "apps/shared/tests/contract/test_review.py",
@@ -794,7 +800,7 @@
           "apps/shared/workflow/__init__.py",
           "apps/shared/workflow/client.py"
         ],
-        "module_count": 193
+        "module_count": 194
       },
       {
         "id": "projection-query",
@@ -1396,6 +1402,7 @@
       "attr.name",
       "attr.type",
       "audit.access",
+      "audit.md",
       "author.name",
       "auto.offset.reset",
       "b.example",
@@ -1444,6 +1451,7 @@
       "compatibility.assess",
       "completeness.assess",
       "components.md",
+      "composition.py",
       "compression.type",
       "conftest.py",
       "connection.asn",
@@ -1538,9 +1546,7 @@
       "entity.stream.appended",
       "entity.updated",
       "entity.version_created",
-      "env.py",
-      "epistemic.state.recorded",
-      "events.dlq"
+      "env.py"
     ]
   },
   "context_map": {
@@ -1568,6 +1574,18 @@
         "to": "platform-shared",
         "type": "direct",
         "via_import": "domain.statement"
+      },
+      {
+        "from": "projection-query",
+        "to": "identity-entities",
+        "type": "direct",
+        "via_import": "api.routes.entities"
+      },
+      {
+        "from": "projection-query",
+        "to": "investigations",
+        "type": "direct",
+        "via_import": "api.routes.investigations"
       },
       {
         "from": "projection-query",
@@ -1606,12 +1624,6 @@
         "via_import": "ids"
       },
       {
-        "from": "projection-query",
-        "to": "identity-entities",
-        "type": "direct",
-        "via_import": "services.catalog"
-      },
-      {
         "from": "investigations",
         "to": "platform-shared",
         "type": "direct",
@@ -1622,12 +1634,6 @@
         "to": "projection-query",
         "type": "direct",
         "via_import": "api.auth"
-      },
-      {
-        "from": "projection-query",
-        "to": "investigations",
-        "type": "direct",
-        "via_import": "api.routes.investigations"
       },
       {
         "from": "projection-query",
@@ -1669,7 +1675,7 @@
         "from": "interpretation",
         "to": "platform-shared",
         "type": "direct",
-        "via_import": "events"
+        "via_import": "events.event_envelope_pb2"
       },
       {
         "from": "interpretation",
@@ -1717,7 +1723,7 @@
         "from": "platform-shared",
         "to": "ops-deploy",
         "type": "direct",
-        "via_import": "platform_model"
+        "via_import": "platform_model.gaps"
       },
       {
         "from": "ops-deploy",
@@ -1792,7 +1798,8 @@
         "tasks_checked": 138,
         "tasks_total": 139,
         "modules": [],
-        "module_count": 0
+        "module_count": 0,
+        "capabilities": []
       },
       {
         "id": "002-donor-pattern-integration",
@@ -1803,7 +1810,8 @@
         "tasks_checked": 36,
         "tasks_total": 36,
         "modules": [],
-        "module_count": 0
+        "module_count": 0,
+        "capabilities": []
       },
       {
         "id": "003-donor-code-integration",
@@ -1816,7 +1824,8 @@
         "modules": [
           "apps/admission/tests/test_collective_export.py"
         ],
-        "module_count": 1
+        "module_count": 1,
+        "capabilities": []
       },
       {
         "id": "004-donor-coverage-complete",
@@ -1832,7 +1841,8 @@
           "apps/shared/tests/unit/donor/test_target.py",
           "apps/shared/tests/unit/donor/test_temporal.py"
         ],
-        "module_count": 4
+        "module_count": 4,
+        "capabilities": []
       },
       {
         "id": "005-donor-core-subsystems",
@@ -1859,7 +1869,10 @@
           "apps/shared/domain/statement.py",
           "apps/shared/tests/unit/domain/test_domain_model.py"
         ],
-        "module_count": 15
+        "module_count": 15,
+        "capabilities": [
+          "identity-resolution"
+        ]
       },
       {
         "id": "006-scientific-intelligence-fabric",
@@ -1870,7 +1883,8 @@
         "tasks_checked": 10,
         "tasks_total": 64,
         "modules": [],
-        "module_count": 0
+        "module_count": 0,
+        "capabilities": []
       },
       {
         "id": "007-deterministic-entity-extraction-stack",
@@ -1920,7 +1934,10 @@
           "bench/extraction/bench_extract.py",
           "bench/fixtures/extraction/_generate.py"
         ],
-        "module_count": 38
+        "module_count": 38,
+        "capabilities": [
+          "interpretation-lane"
+        ]
       },
       {
         "id": "008-discovery-search-fabric",
@@ -1934,7 +1951,8 @@
           "apps/acquisition/adapters/discovery/__init__.py",
           "apps/control-plane/db/migrations/versions/017_discovery_provenance.py"
         ],
-        "module_count": 2
+        "module_count": 2,
+        "capabilities": []
       },
       {
         "id": "009-donor-full-catalogue",
@@ -1951,7 +1969,8 @@
           "apps/shared/domain/stream_events.py",
           "apps/shared/events/fabric_events.py"
         ],
-        "module_count": 5
+        "module_count": 5,
+        "capabilities": []
       },
       {
         "id": "010-zero-layer-contact-harvesting",
@@ -2005,7 +2024,10 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 42
+        "module_count": 42,
+        "capabilities": [
+          "websearch"
+        ]
       },
       {
         "id": "011-atomic-entity-commoncrawl-tda",
@@ -2016,7 +2038,8 @@
         "tasks_checked": 14,
         "tasks_total": 18,
         "modules": [],
-        "module_count": 0
+        "module_count": 0,
+        "capabilities": []
       },
       {
         "id": "012-dynamic-entity-invariant",
@@ -2030,7 +2053,10 @@
           "apps/control-plane/tests/unit/test_invariant_reducer.py",
           "apps/shared/domain/graph_invariant.py"
         ],
-        "module_count": 2
+        "module_count": 2,
+        "capabilities": [
+          "graph-invariant"
+        ]
       },
       {
         "id": "014-temporal-materialization",
@@ -2044,7 +2070,8 @@
           "apps/control-plane/db/migrations/versions/014_temporal_materialization.py",
           "apps/control-plane/workflows/temporal_materialization.py"
         ],
-        "module_count": 2
+        "module_count": 2,
+        "capabilities": []
       },
       {
         "id": "015-worldline-reconstruction",
@@ -2059,7 +2086,8 @@
           "apps/control-plane/db/source_query_store.py",
           "apps/control-plane/tests/unit/test_migration_forward_only.py"
         ],
-        "module_count": 3
+        "module_count": 3,
+        "capabilities": []
       },
       {
         "id": "016-relation-evidence-graph-fabric",
@@ -2078,7 +2106,11 @@
           "apps/shared/domain/relation_identity.py",
           "apps/shared/domain/relation_schema.py"
         ],
-        "module_count": 7
+        "module_count": 7,
+        "capabilities": [
+          "evidence-context",
+          "projection-graph"
+        ]
       },
       {
         "id": "017-semantic-fabric",
@@ -2091,7 +2123,8 @@
         "modules": [
           "apps/control-plane/db/migrations/versions/018_semantic_fabric.py"
         ],
-        "module_count": 1
+        "module_count": 1,
+        "capabilities": []
       },
       {
         "id": "018-world-substrate",
@@ -2107,7 +2140,8 @@
           "apps/interpretation/extractors/relations.py",
           "apps/shared/domain/entity_identity.py"
         ],
-        "module_count": 4
+        "module_count": 4,
+        "capabilities": []
       },
       {
         "id": "019-universal-relation-extraction",
@@ -2122,7 +2156,8 @@
           "apps/control-plane/semantic_path/signal_corpus_baseline.py",
           "apps/shared/domain/temporal_observation.py"
         ],
-        "module_count": 3
+        "module_count": 3,
+        "capabilities": []
       },
       {
         "id": "021-entity-relation-extraction-finalization",
@@ -2135,7 +2170,8 @@
         "modules": [
           "apps/shared/tests/unit/test_schema_hierarchy.py"
         ],
-        "module_count": 1
+        "module_count": 1,
+        "capabilities": []
       },
       {
         "id": "022-estorides-donor-mining",
@@ -2146,7 +2182,8 @@
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
-        "module_count": 0
+        "module_count": 0,
+        "capabilities": []
       },
       {
         "id": "023-acquisition-integration-searxng",
@@ -2161,7 +2198,8 @@
           "apps/acquisition/_prove_searxng.py",
           "apps/acquisition/_prove_tools.py"
         ],
-        "module_count": 3
+        "module_count": 3,
+        "capabilities": []
       },
       {
         "id": "024-context-driven-continuous-intelligence",
@@ -2197,7 +2235,11 @@
           "apps/shared/tests/unit/test_secure_fetch.py",
           "apps/shared/tools/layer_boundaries.py"
         ],
-        "module_count": 24
+        "module_count": 24,
+        "capabilities": [
+          "durable-dlq",
+          "layer-boundaries"
+        ]
       },
       {
         "id": "025-context-reality-approximation-engine",
@@ -2240,7 +2282,8 @@
           "apps/shared/domain/derivation.py",
           "apps/shared/tests/unit/test_derivation_identity.py"
         ],
-        "module_count": 31
+        "module_count": 31,
+        "capabilities": []
       },
       {
         "id": "026-universal-context-engine",
@@ -2257,7 +2300,8 @@
           "apps/science/tests/contract/test_enrichment_contract.py",
           "apps/science/tests/contract/test_hierarchy_contract.py"
         ],
-        "module_count": 5
+        "module_count": 5,
+        "capabilities": []
       },
       {
         "id": "027-ci-specops-fabric",
@@ -2277,7 +2321,8 @@
           "apps/specops/tests/conftest.py",
           "apps/specops/tests/test_roe_gate.py"
         ],
-        "module_count": 8
+        "module_count": 8,
+        "capabilities": []
       },
       {
         "id": "028-closed-research-loop",
@@ -2288,7 +2333,8 @@
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
-        "module_count": 0
+        "module_count": 0,
+        "capabilities": []
       },
       {
         "id": "029-research-closed-loop-upgrade",
@@ -2299,7 +2345,8 @@
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
-        "module_count": 0
+        "module_count": 0,
+        "capabilities": []
       },
       {
         "id": "030-global-platform-upgrade",
@@ -2335,7 +2382,10 @@
           "bench/fixtures/global_upgrade/epistemic/build_corpus.py",
           "bench/fixtures/global_upgrade/identity/build_corpus.py"
         ],
-        "module_count": 24
+        "module_count": 24,
+        "capabilities": [
+          "canonical-serialisation"
+        ]
       },
       {
         "id": "031-ghostline-vishing-fabric",
@@ -2351,7 +2401,8 @@
           "apps/specops/tests/test_ghostline.py",
           "apps/specops/tests/test_specops_ghostline_routers.py"
         ],
-        "module_count": 4
+        "module_count": 4,
+        "capabilities": []
       },
       {
         "id": "032-global-upgrade-execution",
@@ -2371,7 +2422,8 @@
           "apps/specops/engagement/taxonomy.py",
           "apps/specops/tests/test_engagement.py"
         ],
-        "module_count": 8
+        "module_count": 8,
+        "capabilities": []
       },
       {
         "id": "033-universal-context-runtime",
@@ -2382,7 +2434,8 @@
         "tasks_checked": 0,
         "tasks_total": 84,
         "modules": [],
-        "module_count": 0
+        "module_count": 0,
+        "capabilities": []
       },
       {
         "id": "034-person-research-case",
@@ -2401,7 +2454,8 @@
           "apps/control-plane/services/research_case_policy.py",
           "apps/control-plane/services/research_case_service.py"
         ],
-        "module_count": 7
+        "module_count": 7,
+        "capabilities": []
       }
     ]
   },

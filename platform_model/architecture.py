@@ -184,6 +184,12 @@ def build_traceability(root: Path, model: dict) -> dict:
         for num in {int(x) for x in _SPEC_REF.findall(doc)}:
             refs[num].append(m["path"])
 
+    # capability -> the specs whose cited modules include the capability's module.
+    module_to_spec: dict[str, list[str]] = defaultdict(list)
+    for num, mods in refs.items():
+        for m in mods:
+            module_to_spec[m].append(f"{num:03d}")
+
     specs = []
     for p in sorted((root / "specs").iterdir()):
         if not p.is_dir():
@@ -197,6 +203,10 @@ def build_traceability(root: Path, model: dict) -> dict:
             num = int(mnum.group(1))
         checked, total = _tasks_progress(tasks_md)
         modules = sorted(set(refs.get(num, []))) if num is not None else []
+        caps = sorted(
+            c["id"] for c in model.get("capabilities", [])
+            if c.get("module") and f"{num:03d}" in module_to_spec.get(c["module"], [])
+        ) if num is not None else []
         specs.append({
             "id": p.name,
             "has_spec": spec_md.exists(),
@@ -207,6 +217,7 @@ def build_traceability(root: Path, model: dict) -> dict:
             "tasks_total": total,
             "modules": modules,
             "module_count": len(modules),
+            "capabilities": caps,
         })
     return {"specs": specs}
 

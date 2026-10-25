@@ -280,7 +280,7 @@ apps.interpretation.extractors.signals.tables
 
 The generator that produces docs/platform from the tree.
 
-Python modules: **8** · TypeScript modules: **0**
+Python modules: **13** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -288,9 +288,14 @@ Python modules: **8** · TypeScript modules: **0**
 platform_model
 platform_model.architecture
 platform_model.build
+platform_model.events
 platform_model.evidence
 platform_model.facts
+platform_model.gaps
+platform_model.golden_path
+platform_model.maturity
 platform_model.narrative
+platform_model.reachability
 platform_model.scanners
 platform_model.semantic
 ```
@@ -421,7 +426,7 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **193** · TypeScript modules: **0**
+Python modules: **194** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
