@@ -768,6 +768,7 @@ class ResearchAction:
     realised_gain: float | None = None
     action_id: str = ""
     source_id: str = ""
+    catalogue_source_id: str = ""
     query: str = ""
     parent_action_id: str = ""
     scope_digest: str = ""
@@ -810,6 +811,8 @@ class ResearchAction:
         # these extension fields, so empty values do not alter their action_id.
         if self.source_id:
             material["source_id"] = self.source_id
+        if self.catalogue_source_id:
+            material["catalogue_source_id"] = self.catalogue_source_id
         if self.query:
             material["query"] = self.query
         if self.parent_action_id:
@@ -845,6 +848,7 @@ class ResearchAction:
             task_id=str(data.get("task_id", "")),
             realised_gain=data.get("realised_gain"),
             source_id=str(data.get("source_id", "")),
+            catalogue_source_id=str(data.get("catalogue_source_id", "")),
             query=str(data.get("query", "")),
             parent_action_id=str(data.get("parent_action_id", "")),
             scope_digest=str(data.get("scope_digest", "")),
