@@ -1,67 +1,79 @@
 /**
- * Subject overview — identity state, public roles, organizations, publications,
- * timeline highlights, open conflicts, coverage.
- *
- * Never displays a proposed match as the subject's confirmed alias. Identity
- * state: UNRESOLVED | REVIEW_REQUIRED | ADMITTED | CONTESTED.
+ * Subject overview backed by the canonical case read model.
+ * No counts are inferred before claims and temporal projections are composed.
  */
-
 import { useQuery } from "@tanstack/react-query";
-
 import { api } from "./api";
 
 interface SubjectOverviewProps {
   caseId: string;
 }
 
-const IDENTITY_CHIP: Record<string, string> = {
-  UNRESOLVED: "bg-slate-100 text-slate-600",
-  REVIEW_REQUIRED: "bg-amber-100 text-amber-800",
-  ADMITTED: "bg-green-100 text-green-800",
-  CONTESTED: "bg-red-100 text-red-800",
-};
-
 export function SubjectOverview({ caseId }: SubjectOverviewProps) {
-  const { data: caseData, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["research-case-subject", caseId],
     queryFn: () => api.getCase(caseId),
   });
 
-  if (isLoading) return <div className="text-xs text-slate-500">Loading subject…</div>;
-  if (error) return <div className="text-xs text-red-600">Unable to load subject.</div>;
-
-  const identityState = "UNRESOLVED"; // derived from claims/resolution in full impl
+  if (isLoading) return <div className="text-xs text-slate-500">Loading case context…</div>;
+  if (error || !data) {
+    return <div className="rounded border border-red-300 bg-white p-4 text-sm text-red-700">
+      Unable to load case context. {error instanceof Error ? error.message : ""}
+    </div>;
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 px-2 py-2 rounded-lg border border-slate-200 bg-slate-50">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${IDENTITY_CHIP[identityState]}`}>
-          {identityState}
-        </span>
-        <span className="text-sm text-slate-600">Subject identity — not confirmed until an admitted identity decision.</span>
-      </div>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-700">Declared research context</h2>
+        <p className="mt-2 text-sm whitespace-pre-wrap">{data.purpose_text}</p>
+        <dl className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Field label="Case ID" value={data.case_id} />
+          <Field label="Lifecycle" value={data.state} />
+          <Field label="Scope revision" value={String(data.scope_revision)} />
+          <Field label="Scope digest" value={data.scope_digest} />
+          <Field label="Launch profile" value={data.launch_profile} />
+          <Field label="Basis reference" value={data.basis_ref} />
+        </dl>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <StatCard title="Public roles" value="—" note="No admitted role claims yet" />
-        <StatCard title="Organizations" value="—" note="No admitted affiliations yet" />
-        <StatCard title="Publications" value="—" note="No admitted publications yet" />
-        <StatCard title="Open conflicts" value="0" note="No temporal contradictions detected" />
-      </div>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-700">Subject anchors</h2>
+        {data.subject_anchors.length === 0 ? (
+          <p className="mt-2 text-sm text-amber-800">No typed subject anchor was recorded; case is not eligible for planning.</p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {data.subject_anchors.map((anchor, index) => (
+              <li key={`${anchor.kind}-${anchor.value}-${index}`} className="rounded border border-slate-200 p-3">
+                <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{anchor.kind}</div>
+                <div className="mt-1 break-all text-sm">{anchor.value}</div>
+                {anchor.evidence_ref && <div className="mt-1 break-all text-xs text-slate-500">Reference: {anchor.evidence_ref}</div>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-slate-700 mb-2">Coverage by claim family</h3>
-        <div className="text-xs text-slate-500">No claims extracted yet. Run the case to populate.</div>
-      </div>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-700">Declared scope</h2>
+        <Field label="Claim families" value={data.claim_families.join(", ") || "None declared"} />
+        <Field label="Allowed source IDs" value={data.allowed_source_ids.join(", ") || "None selected"} />
+        <Field label="Jurisdictions" value={data.jurisdictions.join(", ") || "Unspecified"} />
+        <Field label="Valid time" value={`${data.valid_time.from ?? "unknown"} → ${data.valid_time.until ?? "open"} (${data.valid_time.precision})`} />
+        <Field label="Approval" value={data.approved ? "Approved for current digest" : "Not approved"} />
+        <p className="mt-3 text-xs text-slate-500">
+          Claims, affiliations, publications, contradictions and coverage are intentionally not counted here: their canonical projections are not currently composed.
+        </p>
+      </section>
     </div>
   );
 }
 
-function StatCard({ title, value, note }: { title: string; value: string; note: string }) {
+function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3">
-      <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{title}</div>
-      <div className="text-lg font-semibold">{value}</div>
-      <div className="text-xs text-slate-400 mt-1">{note}</div>
+    <div className="py-1">
+      <dt className="text-xs uppercase tracking-wider text-slate-500">{label}</dt>
+      <dd className="mt-1 break-words text-sm">{value}</dd>
     </div>
   );
 }
