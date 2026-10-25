@@ -134,7 +134,7 @@ async def test_live_tenzir_node_compiles_tql_and_preserves_source_records() -> N
     normalized = await TenzirNodeNormalizer(settings).normalize_records(records)
 
     assert len(normalized.records) == len(records)
-    assert [item["ordinal"] for item in normalized.records] == [0, 1, 2]
+    assert [item["ordinal"] for item in normalized.records] == list(range(len(records)))
     assert [item["record"] for item in normalized.records] == records
     assert normalized.records[0]["normalized"]["field_path"] == '$["name"]'
     assert normalized.records[0]["normalized"]["value_length_chars"] == len("München")
