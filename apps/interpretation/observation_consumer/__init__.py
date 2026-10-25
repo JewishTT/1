@@ -178,7 +178,11 @@ class ObservationConsumer:
             result = await self._process(envelope)
         except ConsumerContractError as exc:
             result = self._fail(envelope, exc.code, exc.message)
-        except Exception as exc:  # noqa: BLE001 - classified, never swallowed
+        except Exception as exc:  # noqa: BLE001 - typed infrastructure failures stay retryable
+            if getattr(exc, "retryable", False):
+                # The runner commits the Kafka offset only after handle() returns. A
+                # canonical database failure must therefore bubble out unchanged.
+                raise
             result = self._fail(envelope, "downstream", f"{type(exc).__name__}: {exc}")
 
         # The durable write sits outside the data-problem catch above. If PostgreSQL
