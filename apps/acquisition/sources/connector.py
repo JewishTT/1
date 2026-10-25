@@ -14,7 +14,7 @@ differently tomorrow without re-fetching anything.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterable, Mapping
+from collections.abc import AsyncIterator, Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -160,9 +160,15 @@ class SourceConnector:
         executor: HttpSourceExecutor | None = None,
         *,
         gate: Any | None = None,
+        artifact_sink_factory: Callable[[SourceDefinition], Any] | None = None,
     ) -> None:
         self.executor = executor or HttpSourceExecutor()
         self.gate = gate
+        # Production can route each source through ArtifactSink without teaching this
+        # transport layer how a particular storage backend or identity provider works.
+        # The factory receives the validated, declarative source definition so the
+        # capture's independence family and time basis are never inferred from its URL.
+        self.artifact_sink_factory = artifact_sink_factory
 
     def definition_for(self, source_id: str) -> SourceDefinition | None:
         definitions, _ = load_catalogue()
@@ -220,6 +226,86 @@ class SourceConnector:
             "entity_hints": list(definition.entity_hints),
             "contact": definition.contact,
         }
+
+        if self.artifact_sink_factory is not None:
+            # The one production path: immutable raw object first, then a first-class
+            # Capture, then an Observation through the gate. The gate owns event identity
+            # and broker publication; the worker must not build a second event.
+            from datetime import UTC, datetime
+            from domain.acquisition_artifact import AcquisitionArtifact
+            from domain.capture import CaptureTimeBasis
+
+            if not definition.source_family or not definition.time_basis:
+                raise AcquisitionError(
+                    "source_capture_provenance_missing",
+                    f"{definition.name} must declare source_family and time_basis before "
+                    "it can enter the raw-first ArtifactSink path",
+                )
+            try:
+                time_basis = CaptureTimeBasis(definition.time_basis)
+            except ValueError as exc:
+                raise AcquisitionError(
+                    "source_time_basis_invalid",
+                    f"{definition.name} declares unknown time_basis {definition.time_basis!r}",
+                ) from exc
+            if self.gate is None:
+                raise AcquisitionError(
+                    "observation_gate_unavailable",
+                    "ArtifactSink requires the canonical ObservationGate",
+                )
+            sink = self.artifact_sink_factory(definition)
+            artifact = AcquisitionArtifact(
+                task_id=task.task_id,
+                source_id=task.source_id,
+                worker_ref="worker-http",
+                target_uri=capture.url,
+                locator="blob",
+                capture_locator="blob",
+                body=capture.body,
+                content_type=capture.content_type or "application/octet-stream",
+                fetched_at=datetime.fromtimestamp(capture.retrieved_at, tz=UTC),
+                transport="http",
+                producer="source-connector",
+                producer_version="0.1.0",
+                metadata={
+                    "parser_hint": definition.parser,
+                    "parser_is_identity": definition.parser_is_identity,
+                    "source_name": definition.name,
+                    "query": capture.query,
+                    "page": capture.page,
+                    "page_count": ceiling,
+                    "status": capture.status,
+                    "truncated": capture.truncated,
+                    "elapsed_s": round(capture.elapsed_s, 6),
+                    "redirected_from": list(capture.redirected_from),
+                    "entity_hints": list(definition.entity_hints),
+                    "applies_to": list(definition.applies_to),
+                },
+            )
+            accepted = await sink.accept(
+                artifact,
+                tenant_id=task.tenant_id,
+                investigation_id=task.investigation_id or None,
+                work_id=task.task_id,
+                time_basis=time_basis,
+            )
+            return {
+                "event_type": "observation.created",
+                "event_version": "2.0",
+                "event_id": accepted.event_id or "",
+                "observation_id": accepted.observation_id,
+                "tenant_id": task.tenant_id,
+                "source_id": capture.source_id,
+                "task_id": task.task_id,
+                "investigation_id": task.investigation_id,
+                "content_digest": accepted.content_digest,
+                "raw_ref": accepted.raw_ref,
+                "capture_id": accepted.capture_id,
+                "locator": accepted.locator,
+                "lifecycle": "created",
+                "artifact_sink_accepted": True,
+                **enrichment,
+            }
 
         if self.gate is None:
             # No gate: the pre-WP-C shape, preserved so the module stays usable
