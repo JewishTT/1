@@ -174,6 +174,7 @@ export interface TimelineItem {
   epistemic_state: "TRUE_ONLY" | "FALSE_ONLY" | "BOTH" | "NEITHER";
   evidence_refs: string[];
   conflict_refs: string[];
+  knowledge_time?: { from: string | null; until: string | null };
 }
 
 export interface GraphNode {
@@ -194,6 +195,7 @@ export interface GraphEdge {
   evidence_refs: string[];
   lineage_roots: string[];
   review_state: string;
+  relation_type?: string;
 }
 
 export interface GraphProjection {
@@ -365,7 +367,7 @@ export async function getCoverage(caseId: string): Promise<CoverageLedger> {
   return request(`/${encodeURIComponent(caseId)}/coverage`);
 }
 
-export async function listClaims(caseId: string, limit = 50, cursor?: string): Promise<{ case_id: string; claims: Claim[] }> {
+export async function listClaims(caseId: string, limit = 50, cursor?: string): Promise<{ case_id: string; claims: Claim[]; next_cursor?: string | null; source_of_truth?: string }> {
   const qs = new URLSearchParams({ limit: String(limit) });
   if (cursor) qs.set("cursor", cursor);
   return request(`/${encodeURIComponent(caseId)}/claims?${qs}`);
