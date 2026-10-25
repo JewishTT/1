@@ -188,6 +188,20 @@ class PersonCasePolicy:
                     detail=reason,
                 )
 
+        # Search/discovery tools can locate candidate URLs, but their result snippets
+        # are not primary evidence. Every approved scope must include a separately
+        # eligible evidence source; discovery-only providers are optional additions.
+        evidence_sources = [
+            sid for sid in allowed_source_ids
+            if self._sources.get(sid, {}).get("result_role") != "DISCOVERY_ONLY"
+        ]
+        if not evidence_sources:
+            return PolicyDecision(
+                allowed=False,
+                reason_code="BLOCKED_POLICY",
+                detail="scope contains only discovery sources; select an eligible evidence source",
+            )
+
         # Expiry must be in the future.
         if expires_at:
             try:
