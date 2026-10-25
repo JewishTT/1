@@ -14,6 +14,8 @@ memory-backed store cannot be wired into production by accident.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import json
 
 import enum
@@ -36,12 +38,6 @@ from context_engine.obligations import (
     ResearchObligation,
 )
 
-#: Obligation id prefix used to store person-case case metadata as a durable
-#: obligation record, reusing the existing obligation table without a new schema owner.
-CASE_META_OBLIGATION_ID_PREFIX = "CASE_META:"
-
-#: Action id prefix used to record dispatch intents, reusing the existing action table.
-DISPATCH_INTENT_ACTION_ID_PREFIX = "DISPATCH_INTENT:"
 
 
 class StoreDurability(enum.StrEnum):
@@ -305,8 +301,12 @@ class ContextStore(ABC):
         self._person_case_meta_index: dict[str, dict[str, Any]] = getattr(
             self, "_person_case_meta_index", {}
         )
+        previous = self._person_case_meta_index.get(case_id, {})
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
         self._person_case_meta_index[case_id] = {
             "case_id": case_id,
+            "created_at": previous.get("created_at", now),
+            "updated_at": now,
             "tenant_id": tenant_id,
             "purpose_code": purpose_code,
             "basis_ref": basis_ref,
