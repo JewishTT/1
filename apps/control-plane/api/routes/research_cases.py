@@ -12,7 +12,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import TenantContext, resolve_tenant
+from api.auth import Role, TenantContext, resolve_tenant
 from services.research_case_policy import PersonCasePolicy, PolicyDecision
 from services.research_case_service import (
     BudgetNotReserved,
@@ -60,7 +60,7 @@ class CreateCaseRequest(BaseModel):
     purpose_text: str = Field(..., min_length=1, max_length=2000)
     basis_ref: str = Field(..., min_length=1)
     launch_profile: str = "PUBLIC_PROFESSIONAL"
-    subject_anchors: list[SubjectAnchor] = Field(default_factory=list)
+    subject_anchors: list[SubjectAnchor] = Field(default_factory=list, min_length=1)
     jurisdictions: list[str] = Field(default_factory=list)
     valid_time: ValidTime = Field(default_factory=ValidTime)
     claim_families: list[str] = Field(default_factory=list)
@@ -74,6 +74,21 @@ class CreateCaseRequest(BaseModel):
 class ApproveCaseRequest(BaseModel):
     scope_digest: str = Field(..., pattern="^sha256:[0-9a-f]{64}$")
     scope_revision: int = Field(default=1, ge=1)
+
+
+class ReviseScopeRequest(BaseModel):
+    purpose_code: str = Field(..., min_length=1, max_length=100)
+    purpose_text: str = Field(..., min_length=1, max_length=2000)
+    basis_ref: str = Field(..., min_length=1, max_length=500)
+    launch_profile: str = "PUBLIC_PROFESSIONAL"
+    subject_anchors: list[SubjectAnchor] = Field(..., min_length=1, max_length=100)
+    jurisdictions: list[str] = Field(default_factory=list, max_length=50)
+    valid_time: ValidTime = Field(default_factory=ValidTime)
+    claim_families: list[str] = Field(default_factory=list, max_length=100)
+    allowed_source_ids: list[str] = Field(default_factory=list, max_length=100)
+    denied_claim_families: list[str] = Field(default_factory=list, max_length=100)
+    budget_ref: str | None = None
+    expires_at: str | None = None
 
 
 class PlanCaseResponse(BaseModel):
@@ -97,7 +112,7 @@ class PauseCaseResponse(BaseModel):
 
 
 class CloseCaseRequest(BaseModel):
-    disposition: str = Field(..., description="COMPLETE|PARTIAL|BLOCKED|CANCELLED|CLOSED_WITH_NO_FINDING")
+    disposition: str = Field(..., pattern="^(COMPLETE|PARTIAL|BLOCKED|CANCELLED|CLOSED_WITH_NO_FINDING)$")
     report: dict | None = None
 
 
@@ -110,6 +125,7 @@ async def create_research_case(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
     """Create a draft research case. No collection."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
     try:
         return await svc.create_case(
@@ -121,7 +137,7 @@ async def create_research_case(
             launch_profile=body.launch_profile,
             subject_anchors=[a.model_dump() for a in body.subject_anchors],
             jurisdictions=body.jurisdictions,
-            valid_time=body.valid_time.model_dump(),
+            valid_time=body.valid_time.model_dump(by_alias=True),
             claim_families=body.claim_families,
             allowed_source_ids=body.allowed_source_ids,
             denied_claim_families=body.denied_claim_families,
@@ -138,67 +154,45 @@ async def get_research_case(
     case_id: str,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
-    """Read case + scope digest/state; tenant membership required."""
+    """Read a tenant-scoped case through its application service."""
     svc = _get_service()
-    # Read through the service/store; tenant membership checked inside.
-    context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
-    if context is None:
-        raise HTTPException(status_code=404, detail="case not found")
-    if context.tenant_id != ctx.tenant_id:
-        # Same external error shape to avoid cross-tenant enumeration.
-        raise HTTPException(status_code=404, detail="case not found")
-    return {
-        "case_id": context.context_id,
-        "tenant_id": context.tenant_id,
-        "state": context.state.value,
-        "purpose_code": context.purpose_code,
-        "purpose_text": context.question,
-        "basis_ref": context.basis_ref,
-        "scope_digest": context.scope_digest,
-        "scope_revision": context.scope_revision,
-        "launch_profile": context.launch_profile,
-        "claim_families": list(context.claim_families),
-        "allowed_source_ids": list(context.allowed_source_ids),
-        "approved": context.approved,
-        "created_at": context.created_at,
-        "updated_at": context.updated_at,
-        "expires_at": context.expires_at,
-    }
+    try:
+        return await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
 
 
 @router.patch("/{case_id}/scope")
 async def propose_scope_revision(
     case_id: str,
-    body: ApproveCaseRequest,
+    body: ReviseScopeRequest,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
-    """Propose new scope revision; invalidates pending tasks; re-approval required."""
+    """Append a new scope revision and invalidate the previous approval."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
-    context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
-    if context is None:
-        raise HTTPException(status_code=404, detail="case not found")
-    if context.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="case not found")
-
-    new_revision = context.scope_revision + 1
-    updated = context.__class__(
-        **{
-            **context.__dict__,
-            "scope_digest": body.scope_digest,
-            "scope_revision": new_revision,
-            "approved": False,
-            "state": context.state.value,  # stays in current state but needs re-approval
-            "updated_at": context.updated_at,
-        }
-    )
-    await svc._store.put_context(updated)  # type: ignore[attr-defined]
-    return {
-        "case_id": case_id,
-        "scope_revision": new_revision,
-        "scope_digest": body.scope_digest,
-        "re_approval_required": True,
-        "stale_scope_behavior": "CANCELLED_STALE_SCOPE",
-    }
+    try:
+        return await svc.revise_scope(
+            case_id=case_id,
+            tenant_id=ctx.tenant_id,
+            actor_id=ctx.user_id,
+            purpose_code=body.purpose_code,
+            purpose_text=body.purpose_text,
+            basis_ref=body.basis_ref,
+            launch_profile=body.launch_profile,
+            subject_anchors=[anchor.model_dump() for anchor in body.subject_anchors],
+            jurisdictions=body.jurisdictions,
+            valid_time=body.valid_time.model_dump(by_alias=True),
+            claim_families=body.claim_families,
+            allowed_source_ids=body.allowed_source_ids,
+            denied_claim_families=body.denied_claim_families,
+            budget_ref=body.budget_ref,
+            expires_at=body.expires_at,
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
+    except CaseServiceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/{case_id}/approve")
@@ -208,6 +202,7 @@ async def approve_research_case(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
     """Approver stamps authority/scope/policy digest."""
+    ctx.require_role(Role.ADMIN)
     svc = _get_service()
     try:
         return await svc.approve_case(
@@ -229,6 +224,7 @@ async def plan_research_case(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> PlanCaseResponse:
     """Compile questions and return preview obligations/capabilities/cost. No network side effects."""
+    ctx.require_role(Role.VIEWER, Role.ANALYST, Role.ADMIN)
     svc = _get_service()
     try:
         result = await svc.plan_case(case_id=case_id, tenant_id=ctx.tenant_id)
@@ -248,6 +244,7 @@ async def run_research_case(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
     """Enqueue only approved plan/action refs; idempotent request key required."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
     try:
         return await svc.run_case(
@@ -272,6 +269,7 @@ async def pause_research_case(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> PauseCaseResponse:
     """Cancel or pause dispatch; preserve partial results."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
     try:
         return await svc.pause_case(case_id=case_id, tenant_id=ctx.tenant_id)
@@ -395,6 +393,7 @@ async def create_identity_review(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
     """Append review decision and rationale; no direct merge side effect."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
     context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
     if context is None or context.tenant_id != ctx.tenant_id:
@@ -416,6 +415,7 @@ async def create_claim_dispute(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
     """Contest/retract/qualify a claim with reason; append-only."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
     context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
     if context is None or context.tenant_id != ctx.tenant_id:
@@ -437,6 +437,7 @@ async def generate_report(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
     """Generate report from admitted claims/coverage; model synthesis optional."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
     context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
     if context is None or context.tenant_id != ctx.tenant_id:
@@ -456,6 +457,7 @@ async def close_research_case(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
     """Terminal state + CompletionReport; requires open obligations dispositioned."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
     try:
         return await svc.close_case(
@@ -477,6 +479,7 @@ async def retention_action(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
     """Policy-governed export/redaction/retention/delete workflow with audit trail."""
+    ctx.require_role(Role.ADMIN)
     svc = _get_service()
     context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
     if context is None or context.tenant_id != ctx.tenant_id:
