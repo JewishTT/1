@@ -107,5 +107,7 @@ def test_runtime_bootstrap_matches_the_migration_contract() -> None:
         "updated_at",
     ):
         assert constraint in sql, f"runtime schema bootstrap and migration contract drifted: {constraint}"
-    assert "primary key (tenant_id, case_id, idempotency_key)" in sql
-    assert "run_id text not null unique" in sql
+    assert re.search(
+        r"primary key\\s*\\(\\s*tenant_id,\\s*case_id,\\s*idempotency_key\\s*\\)", sql
+    )
+    assert re.search(r"run_id\\s+text\\s+not null\\s+unique", sql)
