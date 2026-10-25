@@ -554,40 +554,63 @@ class PostgresResearchCaseProjectionProvider:
     ) -> dict[str, Any]:
         context, _metadata = await self._case(case_id, tenant_id)
         limit = max(1, min(int(limit), 500))
-        statement = select(RelationClaim).where(
-            RelationClaim.tenant_id == tenant_id,
-            RelationClaim.investigation_id == context.investigation_id,
+        # Keep pagination stable while epistemic links are computed against the whole
+        # bounded case result set, not just whichever page happened to be requested.
+        all_rows = await self._relation_rows(
+            tenant_id=tenant_id,
+            investigation_id=context.investigation_id,
+            limit=5000,
+        )
+        truncated = len(all_rows) > 5000
+        all_rows = all_rows[:5000]
+        all_rows.sort(
+            key=lambda row: (_iso(row.created_at) or "", str(row.relation_id)),
+            reverse=False,
+        )
+        all_rows.sort(
+            key=lambda row: (
+                row.created_at is not None,
+                row.created_at.timestamp() if row.created_at is not None else 0,
+            ),
+            reverse=True,
+        )
+        # A stable tiebreaker is required because created_at has finite precision.
+        all_rows.sort(key=lambda row: str(row.relation_id))
+        all_rows.sort(
+            key=lambda row: row.created_at.timestamp() if row.created_at is not None else 0,
+            reverse=True,
         )
         if cursor:
             cursor_created_at, cursor_relation_id = _cursor_decode(cursor)
-            statement = statement.where(
-                or_(
-                    RelationClaim.created_at < cursor_created_at,
-                    and_(
-                        RelationClaim.created_at == cursor_created_at,
-                        RelationClaim.relation_id > cursor_relation_id,
-                    ),
+            all_rows = [
+                row for row in all_rows
+                if row.created_at is not None
+                and (
+                    row.created_at < cursor_created_at
+                    or (
+                        row.created_at == cursor_created_at
+                        and str(row.relation_id) > cursor_relation_id
+                    )
                 )
-            )
-        statement = statement.order_by(
-            RelationClaim.created_at.desc(), RelationClaim.relation_id.asc()
-        ).limit(limit + 1)
-        async with self._session_factory() as session:
-            try:
-                result = await session.execute(statement)
-                rows = list(result.scalars().all())
-            except SQLAlchemyError as exc:
-                raise ProjectionUnavailable(
-                    f"canonical relation-claim projection read failed ({type(exc).__name__})"
-                ) from exc
-        has_more = len(rows) > limit
-        rows = rows[:limit]
-        claims = [self._claim_view(case_id, row) for row in rows]
+            ]
+        has_more = len(all_rows) > limit
+        rows = all_rows[:limit]
+        all_ids = {str(row.relation_id) for row in all_rows}
+        # Also include claims already passed by this cursor where available in the
+        # bounded source result; contradiction refs remain resolvable across pages.
+        claims = [self._claim_view(case_id, row, all_ids) for row in rows]
         next_cursor = _cursor_encode(rows[-1].created_at, rows[-1].relation_id) if has_more and rows else None
-        return {"claims": claims, "next_cursor": next_cursor, "source_of_truth": "postgres:relation_claim"}
+        return {
+            "claims": claims,
+            "next_cursor": next_cursor,
+            "truncated": truncated,
+            "source_of_truth": "postgres:relation_claim",
+        }
 
     @staticmethod
-    def _claim_view(case_id: str, row: RelationClaim) -> dict[str, Any]:
+    def _claim_view(
+        case_id: str, row: RelationClaim, all_relation_ids: set[str] | None = None
+    ) -> dict[str, Any]:
         observations = [str(ref) for ref in _json_list(row.observation_refs) if str(ref)]
         assertions = [str(ref) for ref in _json_list(row.assertion_refs) if str(ref)]
         evidence = list(dict.fromkeys([*observations, *assertions]))
@@ -606,6 +629,7 @@ class PostgresResearchCaseProjectionProvider:
             },
             # RelationClaim has no polarity column; don't invent one.
             "polarity": "unknown",
+            "epistemic_state": _epistemic_state(row, all_relation_ids or {row.relation_id}),
             "state": _claim_state(row.status),
             "valid_time": _valid_time(row),
             "evidence_refs": evidence,
