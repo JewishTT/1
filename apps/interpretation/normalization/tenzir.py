@@ -98,14 +98,16 @@ class TenzirSettings:
                 "TENZIR_NODE_URL must not embed credentials, query parameters or a fragment",
             )
         local_hosts = {"localhost", "127.0.0.1", "::1"}
-        if (
-            parsed.scheme == "http"
-            and (parsed.hostname or "").lower() not in local_hosts
-            and not self.allow_insecure_http
-        ):
+        host_is_loopback = (parsed.hostname or "").lower() in local_hosts
+        if parsed.scheme == "http" and not host_is_loopback and not self.allow_insecure_http:
             raise TenzirError(
                 "tenzir_insecure_transport",
                 "non-loopback Tenzir HTTP requires TENZIR_ALLOW_INSECURE_HTTP=true; use HTTPS in production",
+            )
+        if (parsed.scheme == "https" or not host_is_loopback) and not self.token.strip():
+            raise TenzirError(
+                "tenzir_token_missing",
+                "HTTPS and non-loopback Tenzir endpoints require TENZIR_NODE_TOKEN",
             )
         if self.timeout_seconds <= 0 or not math.isfinite(self.timeout_seconds):
             raise TenzirError("tenzir_config_invalid", "TENZIR_TIMEOUT_SECONDS must be positive and finite")
@@ -242,16 +244,20 @@ class TenzirNodeNormalizer:
 
         normalized: list[dict[str, Any] | None] = [None] * len(records)
         offset = 0
+        # The input records are escaped once into TQL literals and again into the
+        # JSON REST body. Budget conservatively for both encodings and pipeline syntax
+        # so a nominally bounded batch is not rejected only after compilation.
+        fixed_overhead = 2 * len(_TQL_TRANSFORM.encode("utf-8")) + 512
         while offset < len(records):
             chunk: list[Mapping[str, Any]] = []
-            chunk_bytes = 0
+            chunk_bytes = fixed_overhead
             while offset + len(chunk) < len(records) and len(chunk) < self.settings.max_batch_records:
                 candidate = records[offset + len(chunk)]
                 event = {name: candidate.get(name) for name in _PROTECTED_FIELDS}
                 event["_platform_ordinal"] = offset + len(chunk)
                 rendered = _tql_literal(event)
-                candidate_bytes = len(rendered.encode("utf-8")) + 2
-                if candidate_bytes > self.settings.max_request_bytes:
+                candidate_bytes = 2 * len(rendered.encode("utf-8")) + 8
+                if candidate_bytes + fixed_overhead > self.settings.max_request_bytes:
                     raise TenzirError(
                         "tenzir_input_limit",
                         f"record {offset + len(chunk)} alone exceeds TENZIR_MAX_REQUEST_BYTES",
