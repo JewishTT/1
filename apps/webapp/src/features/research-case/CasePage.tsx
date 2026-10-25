@@ -165,7 +165,7 @@ export function CasePage() {
             ) : obligations.length === 0 ? (
               <div className="text-xs text-slate-500 text-center py-8">No declared obligations.</div>
             ) : (
-              <ObligationsBoard obligations={obligations} caseId={caseData.case_id} />
+              <ObligationsBoard obligations={obligations} />
             )}
           </div>
         </aside>
