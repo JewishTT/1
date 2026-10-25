@@ -100,14 +100,21 @@ class PlanCaseResponse(BaseModel):
     required_capabilities: list[str] = Field(default_factory=list)
     capabilities_preview: list[str]
     capability_gaps: list[dict] = Field(default_factory=list)
+    actions: list[dict] = Field(default_factory=list)
+    policy_digest: str = ""
+    rejected_catalogue_definitions: dict = Field(default_factory=dict)
     plan_state: str
     ready_to_dispatch: bool
     no_network_side_effects: bool = True
 
 
 class RunCaseRequest(BaseModel):
-    idempotency_key: str = Field(..., min_length=1)
-    approved_action_refs: list[str] = Field(default_factory=list)
+    idempotency_key: str = Field(..., min_length=1, max_length=200)
+    approved_action_refs: list[str] = Field(default_factory=list, min_length=1, max_length=100)
+
+
+class ApproveActionsRequest(BaseModel):
+    action_refs: list[str] = Field(..., min_length=1, max_length=100)
 
 
 class PauseCaseResponse(BaseModel):
@@ -235,6 +242,43 @@ async def plan_research_case(
         return PlanCaseResponse(**result)
     except CaseNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CaseNotApproved as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except CaseServiceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/{case_id}/actions")
+async def list_research_case_actions(
+    case_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """List current action leaves for analyst review; stale proposal versions are hidden."""
+    svc = _get_service()
+    try:
+        return await svc.list_actions(case_id=case_id, tenant_id=ctx.tenant_id)
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
+
+
+@router.post("/{case_id}/actions/approve")
+async def approve_research_case_actions(
+    case_id: str,
+    body: ApproveActionsRequest,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """Admin approval creates immutable action versions tied to current scope and policy."""
+    ctx.require_role(Role.ADMIN)
+    svc = _get_service()
+    try:
+        return await svc.approve_actions(
+            case_id=case_id,
+            tenant_id=ctx.tenant_id,
+            approver_id=ctx.user_id,
+            action_refs=body.action_refs,
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
     except CaseNotApproved as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except CaseServiceError as exc:
