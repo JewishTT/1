@@ -22,6 +22,9 @@ jobs:
       - name: Typecheck and build the web application
         working-directory: apps/webapp
         run: npm run build
-      - name: Run web application tests
+      - name: Run Feature 034 API client contract tests
+        working-directory: apps/webapp
+        run: npm test -- src/features/research-case/api.test.ts
+      - name: Run complete web application test suite
         working-directory: apps/webapp
         run: npm test
