@@ -338,7 +338,7 @@ class ObservationConsumer:
                         raise_on_failure=True,
                     )
                     stream_written = await bridge.append_stream(
-                        interpreted, interpreted.resolved_entities, sequence_base=0
+                        interpreted, interpreted.resolved_entities, sequence_base=0, raise_on_failure=True
                     )
                     interpretation = {
                         **interpreted.as_dict(),
