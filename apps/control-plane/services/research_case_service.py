@@ -11,6 +11,7 @@ import hashlib
 import json
 import uuid
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -27,6 +28,7 @@ from context_engine.person_case_profile import (
 )
 from domain.investigation_context import (
     ContextEngineError,
+    ContextRevision,
     InvestigationContext,
     InvestigationState,
     ObligationStatus,
@@ -126,25 +128,40 @@ class ResearchCaseService:
         # Fail closed: policy must be loaded before any case is created.
         policy = self._require_policy()
 
+        if not subject_anchors or any(
+            not str(anchor.get("kind", "")).strip()
+            or not str(anchor.get("value", "")).strip()
+            for anchor in subject_anchors
+        ):
+            raise CaseServiceError("at least one typed, non-empty subject anchor is required")
+
         scope_payload = {
             "purpose_code": purpose_code,
+            "purpose_text": purpose_text,
+            "basis_ref": basis_ref,
             "launch_profile": launch_profile,
-            "claim_families": claim_families,
-            "allowed_source_ids": allowed_source_ids,
-            "valid_time": valid_time,
+            "subject_anchors": subject_anchors,
             "jurisdictions": jurisdictions,
+            "valid_time": valid_time,
+            "claim_families": claim_families,
+            "denied_claim_families": denied_claim_families or [],
+            "allowed_source_ids": allowed_source_ids,
+            "budget_ref": budget_ref,
+            "expires_at": expires_at,
         }
-        scope_digest = self._digest(json.dumps(scope_payload, sort_keys=True))
+        scope_digest = self._digest(
+            json.dumps(scope_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        )
 
         # The InvestigationContext identity is content-addressed over
         # tenant_id + investigation_id + title + scope_refs. context_id is
         # computed by the model itself; we never pass a random one.
-        case_id = f"case-{uuid.uuid4().hex[:12]}"
+        investigation_id = f"case-{uuid.uuid4().hex[:12]}"
         now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
         context = InvestigationContext(
             tenant_id=tenant_id,
-            investigation_id=case_id,
+            investigation_id=investigation_id,
             title=f"Person case: {purpose_text[:80]}",
             scope_refs=tuple(a.get("value", "") for a in subject_anchors),
             question=purpose_text,
@@ -153,10 +170,27 @@ class ResearchCaseService:
             created_at=now,
         )
 
-        # Store person-case-specific fields as durable metadata on the context.
-        # The model carries only canonical fields; person-case extensions live
-        # in a sidecar record keyed by case_id.
+        # The externally visible case identifier is the canonical context address,
+        # not the random investigation_id. Every route and obligation must use the same
+        # key that ContextStore.get_context() actually addresses.
+        case_id = context.context_id
         await self._store.put_context(context)
+        revision = ContextRevision(
+            context_id=context.context_id,
+            revision=await self._store.next_revision_number(context.context_id),
+            parent_revision=(await self._store.next_revision_number(context.context_id)) - 1,
+            state=context.state,
+            snapshot={
+                "context": context.to_dict(),
+                "person_case_scope": scope_payload,
+                "scope_digest": scope_digest,
+                "scope_revision": 1,
+            },
+            operator_actions=(created_by,),
+            rules_version="feature-034-v1",
+            mode="deterministic",
+        )
+        await self._store.append_revision(revision)
         await self._store.put_person_case_metadata(
             case_id=case_id,
             tenant_id=tenant_id,
@@ -173,6 +207,7 @@ class ResearchCaseService:
             expires_at=expires_at,
             valid_time=valid_time,
             jurisdictions=jurisdictions,
+            subject_anchors=subject_anchors,
         )
 
         # Create initial obligations.
@@ -196,6 +231,36 @@ class ResearchCaseService:
             "scope_revision": 1,
             "created_at": now,
             "obligation_count": len(obligations),
+        }
+
+    async def get_case(self, *, case_id: str, tenant_id: str) -> dict[str, Any]:
+        """Return canonical context plus its tenant-bound person-case sidecar."""
+        context = await self._store.get_context(case_id)
+        if context is None or context.tenant_id != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None or meta.get("tenant_id") != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        return {
+            "case_id": context.context_id,
+            "tenant_id": context.tenant_id,
+            "state": context.state.value,
+            "purpose_code": meta["purpose_code"],
+            "purpose_text": context.question,
+            "basis_ref": meta["basis_ref"],
+            "scope_digest": meta["scope_digest"],
+            "scope_revision": meta["scope_revision"],
+            "launch_profile": meta["launch_profile"],
+            "claim_families": list(meta["claim_families"]),
+            "denied_claim_families": list(meta.get("denied_claim_families", [])),
+            "allowed_source_ids": list(meta["allowed_source_ids"]),
+            "subject_anchors": [dict(a) for a in meta.get("subject_anchors", [])],
+            "jurisdictions": list(meta.get("jurisdictions", [])),
+            "valid_time": dict(meta.get("valid_time", {})),
+            "budget_ref": meta.get("budget_ref"),
+            "approved": bool(meta["approved"]),
+            "created_at": context.created_at,
+            "expires_at": meta.get("expires_at"),
         }
 
     # -- approval -----------------------------------------------------------
@@ -222,8 +287,14 @@ class ResearchCaseService:
         # Fail closed: re-validate against policy every time.
         policy = self._require_policy()
         meta = await self._store.get_person_case_metadata(case_id)
-        if meta is None:
+        if meta is None or meta.get("tenant_id") != tenant_id:
             raise CaseNotFound(f"case {case_id} metadata not found")
+        if scope_revision != int(meta.get("scope_revision", 0)):
+            raise CaseServiceError("SCOPE_STALE: approval revision does not match current scope")
+        if scope_digest != meta.get("scope_digest"):
+            raise CaseServiceError("SCOPE_STALE: approval digest does not match current scope")
+        if not approver_id.strip():
+            raise CaseServiceError("approver identity is required")
 
         decision = policy.validate_case_scope(
             case_id=case_id,
@@ -258,6 +329,7 @@ class ResearchCaseService:
             expires_at=meta.get("expires_at"),
             valid_time=meta.get("valid_time", {}),
             jurisdictions=list(meta.get("jurisdictions", [])),
+            subject_anchors=list(meta.get("subject_anchors", [])),
         )
 
         return {
@@ -430,16 +502,11 @@ class ResearchCaseService:
             expires_at=meta.get("expires_at"),
             valid_time=meta.get("valid_time", {}),
             jurisdictions=list(meta.get("jurisdictions", [])),
+            subject_anchors=list(meta.get("subject_anchors", [])),
         )
 
-        # Suspend the context state.
-        updated = context.__class__(
-            **{
-                **context.__dict__,
-                "state": InvestigationState.SUSPENDED,
-                "created_at": context.created_at,
-            }
-        )
+        # Suspend the canonical context without relying on __dict__ on a slots dataclass.
+        updated = replace(context, state=InvestigationState.SUSPENDED)
         await self._store.put_context(updated)
         return {"case_id": case_id, "state": "PAUSED"}
 
@@ -467,13 +534,7 @@ class ResearchCaseService:
                 f"cannot close: {len(undisposed)} open obligations not dispositioned"
             )
 
-        updated = context.__class__(
-            **{
-                **context.__dict__,
-                "state": InvestigationState.CLOSED,
-                "created_at": context.created_at,
-            }
-        )
+        updated = replace(context, state=InvestigationState.CLOSED)
         await self._store.put_context(updated)
 
         return {
