@@ -133,7 +133,7 @@ def test_transform_is_additive_and_records_the_reproducible_pipeline_digest() ->
     assert "normalized_field_path = field.to_lower()" in definition
     assert "value.length_chars()" in definition
     assert "value.length_bytes()" in definition
-    assert "value.match_regex("^[+-]?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$")" in definition
+    assert 'value.match_regex("^[+-]?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$")' in definition
     assert "byte_span_width" in definition
     assert "ocsf_cast" not in definition
     assert "address_refusal" in definition
