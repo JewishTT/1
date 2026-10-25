@@ -441,6 +441,10 @@ class PostgresResearchCaseProjectionProvider:
                     state = "DISPATCH_REJECTED"
                     reason_code = str(failures[-1].get("verdict") or "DISPATCH_NOT_PUBLISHED")
                     finished_at = None
+                elif attempts:
+                    state = "DISPATCH_PENDING_ACKNOWLEDGEMENT"
+                    reason_code = "BROKER_ACK_NOT_RECORDED"
+                    finished_at = None
                 elif action.status == "approved":
                     state = "APPROVED_NOT_DISPATCHED"
                     reason_code = "NO_DISPATCH_INTENT"
@@ -501,7 +505,7 @@ class PostgresResearchCaseProjectionProvider:
             overall = "OBSERVATIONS_RECEIVED" if states == {"OBSERVATIONS_RECEIVED"} else "PARTIAL"
         elif "DISPATCH_ACKNOWLEDGED_AWAITING_OBSERVATIONS" in states:
             overall = "AWAITING_WORKER_OUTCOME"
-        elif states.intersection({"AWAITING_ACTION_APPROVAL", "APPROVED_NOT_DISPATCHED", "DISPATCH_REJECTED"}):
+        elif states.intersection({"AWAITING_ACTION_APPROVAL", "APPROVED_NOT_DISPATCHED", "DISPATCH_REJECTED", "DISPATCH_PENDING_ACKNOWLEDGEMENT"}):
             overall = "PLANNED"
         elif states.intersection({"NO_ELIGIBLE_ACTIONS"}):
             overall = "BLOCKED_CAPABILITY"
@@ -794,6 +798,25 @@ class PostgresResearchCaseProjectionProvider:
                 "relation_type": row.relation_type,
             })
         max_nodes = 500
+        # Graph current-state view emits the latest revision for a logical relation.
+        # Historical revisions remain available to the claims/timeline projections.
+        latest_edges: dict[str, dict[str, Any]] = {}
+        row_by_id = {str(row.relation_id): row for row in rows}
+        for edge in edges:
+            relation = row_by_id[edge["id"]]
+            logical_id = str(relation.logical_relation_id)
+            previous = latest_edges.get(logical_id)
+            if previous is None:
+                latest_edges[logical_id] = edge
+            else:
+                previous_row = row_by_id[previous["id"]]
+                if int(relation.revision_number or 0) > int(previous_row.revision_number or 0):
+                    latest_edges[logical_id] = edge
+        edges = [
+            edge for edge in latest_edges.values()
+            if str(row_by_id[edge["id"]].status or "active").lower()
+            not in {"retracted", "withdrawn", "superseded"}
+        ]
         truncated = len(nodes) > max_nodes or len(edges) > 1000
         nodes = nodes[:max_nodes]
         kept = {node["id"] for node in nodes}
