@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["adapters", "contracts", "discovery", "dispatcher", "frontier", "observation_gate", "runtime", "sources", "worker_browser", "worker_http"]
-py-modules = ["artifact_sink", "cc_extract", "cc_plan", "entity_search", "evidence_writer", "registry", "source_query_set", "stream", "worker_acquisition", "worker_service"]
+py-modules = ["artifact_sink", "case_execution_guard", "cc_extract", "cc_plan", "entity_search", "evidence_writer", "registry", "source_query_set", "stream", "worker_acquisition", "worker_service"]
 
 [project]
 name = "cognitive-acquisition"
