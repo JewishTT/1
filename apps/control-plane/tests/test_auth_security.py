@@ -123,6 +123,13 @@ async def test_development_headers_never_grant_admin(monkeypatch: pytest.MonkeyP
 
 
 def test_expiration_and_identity_claims_are_mandatory() -> None:
+    with pytest.raises(ValueError):
+        _verify_jwt(
+            _token(_payload(exp=float("nan"))),
+            secret=SECRET,
+            issuer=ISSUER,
+            audience=AUDIENCE,
+        )
     payload = _payload()
     del payload["exp"]
     with pytest.raises(ValueError):
