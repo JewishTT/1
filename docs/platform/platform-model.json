@@ -200,7 +200,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 220,
+      "python_modules": 222,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -332,6 +332,7 @@
         "apps.control-plane.services.query_planner",
         "apps.control-plane.services.reobservation",
         "apps.control-plane.services.research_case_policy",
+        "apps.control-plane.services.research_case_projection",
         "apps.control-plane.services.research_case_runtime",
         "apps.control-plane.services.research_case_service",
         "apps.control-plane.services.review",
@@ -373,6 +374,7 @@
         "apps.control-plane.tests.integration.test_tools_api",
         "apps.control-plane.tests.test_auth_security",
         "apps.control-plane.tests.test_research_case_invariants",
+        "apps.control-plane.tests.test_research_case_projection",
         "apps.control-plane.tests.unit.test_action_memory",
         "apps.control-plane.tests.unit.test_approval_gate",
         "apps.control-plane.tests.unit.test_assembly_structural_conflict",
@@ -400,9 +402,7 @@
         "apps.control-plane.tests.unit.test_monitor",
         "apps.control-plane.tests.unit.test_network_analytics",
         "apps.control-plane.tests.unit.test_ontology_registry",
-        "apps.control-plane.tests.unit.test_postgres_context_store",
-        "apps.control-plane.tests.unit.test_producer_binding_golden_path",
-        "apps.control-plane.tests.unit.test_query_degradation"
+        "apps.control-plane.tests.unit.test_postgres_context_store"
       ]
     },
     {
@@ -427,7 +427,7 @@
     {
       "name": "interpretation",
       "description": "Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.",
-      "python_modules": 109,
+      "python_modules": 112,
       "typescript_modules": 0,
       "modules": [
         "apps.interpretation",
@@ -475,6 +475,7 @@
         "apps.interpretation.extractors.util",
         "apps.interpretation.ner",
         "apps.interpretation.normalization.canonical",
+        "apps.interpretation.normalization.tenzir",
         "apps.interpretation.observation_consumer",
         "apps.interpretation.parsers",
         "apps.interpretation.parsers.documents",
@@ -538,6 +539,8 @@
         "apps.interpretation.tests.test_signal_kind_channels",
         "apps.interpretation.tests.test_signal_nary_contract",
         "apps.interpretation.tests.test_syntactic_producer",
+        "apps.interpretation.tests.test_tenzir_live",
+        "apps.interpretation.tests.test_tenzir_normalization",
         "apps.interpretation.tests.test_warc_reader"
       ]
     },
@@ -1053,7 +1056,7 @@
       "name": "webapp",
       "description": "React analyst surfaces: investigation, search, entity, finding, ops, lineage.",
       "python_modules": 0,
-      "typescript_modules": 253,
+      "typescript_modules": 254,
       "modules": []
     },
     {
@@ -1096,33 +1099,33 @@
     }
   ],
   "import_graph": {
-    "module_count": 972,
-    "edge_count": 2685,
+    "module_count": 977,
+    "edge_count": 2695,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 845,
+      "stdlib:__future__": 850,
       "stdlib:abc": 3,
       "stdlib:argparse": 18,
       "stdlib:ast": 26,
-      "stdlib:asyncio": 63,
-      "stdlib:base64": 8,
+      "stdlib:asyncio": 64,
+      "stdlib:base64": 9,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 236,
+      "stdlib:collections": 238,
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 387,
-      "stdlib:datetime": 181,
+      "stdlib:dataclasses": 388,
+      "stdlib:datetime": 183,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
       "stdlib:enum": 117,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 117,
+      "stdlib:hashlib": 119,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 9,
@@ -1132,15 +1135,15 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 183,
+      "stdlib:json": 185,
       "stdlib:logging": 21,
-      "stdlib:math": 40,
-      "stdlib:os": 63,
+      "stdlib:math": 41,
+      "stdlib:os": 65,
       "stdlib:pathlib": 303,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 90,
-      "stdlib:secrets": 1,
+      "stdlib:re": 92,
+      "stdlib:secrets": 2,
       "stdlib:shlex": 1,
       "stdlib:shutil": 14,
       "stdlib:socket": 9,
@@ -1152,13 +1155,13 @@
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 17,
       "stdlib:threading": 17,
-      "stdlib:time": 28,
+      "stdlib:time": 29,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
-      "stdlib:types": 27,
-      "stdlib:typing": 350,
+      "stdlib:types": 29,
+      "stdlib:typing": 354,
       "stdlib:unicodedata": 6,
-      "stdlib:urllib": 36,
+      "stdlib:urllib": 39,
       "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -1196,14 +1199,14 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 257,
+      "third-party:pytest": 260,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 122,
+      "third-party:sqlalchemy": 124,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
       "third-party:trafilatura": 1,
@@ -3675,6 +3678,11 @@
         "via": "context_engine.person_case_profile"
       },
       {
+        "from": "apps/control-plane/api/routes/research_cases.py",
+        "to": "apps/control-plane/services/research_case_projection.py",
+        "via": "services.research_case_projection"
+      },
+      {
         "from": "apps/control-plane/api/routes/resolutions.py",
         "to": "apps/shared/events/kafka.py",
         "via": "events.kafka"
@@ -4218,6 +4226,11 @@
         "from": "apps/control-plane/composition.py",
         "to": "apps/control-plane/services/research_case_runtime.py",
         "via": "services.research_case_runtime"
+      },
+      {
+        "from": "apps/control-plane/composition.py",
+        "to": "apps/control-plane/services/research_case_projection.py",
+        "via": "services.research_case_projection"
       },
       {
         "from": "apps/control-plane/composition.py",
@@ -5795,6 +5808,16 @@
         "via": "domain.investigation_context"
       },
       {
+        "from": "apps/control-plane/services/research_case_projection.py",
+        "to": "apps/control-plane/context_engine/obligations.py",
+        "via": "context_engine.obligations"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_projection.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
         "from": "apps/control-plane/services/research_case_runtime.py",
         "to": "apps/control-plane/context_engine/obligations.py",
         "via": "context_engine.obligations"
@@ -6608,6 +6631,11 @@
         "from": "apps/control-plane/tests/test_research_case_invariants.py",
         "to": "apps/control-plane/api/routes/research_cases.py",
         "via": "api.routes.research_cases"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_projection.py",
+        "to": "apps/control-plane/services/research_case_projection.py",
+        "via": "services.research_case_projection"
       },
       {
         "from": "apps/control-plane/tests/unit/test_action_memory.py",
@@ -8401,6 +8429,16 @@
       },
       {
         "from": "apps/interpretation/observation_consumer/__init__.py",
+        "to": "apps/interpretation/normalization/tenzir.py",
+        "via": "normalization.tenzir"
+      },
+      {
+        "from": "apps/interpretation/observation_consumer/__init__.py",
+        "to": "apps/interpretation/normalization/tenzir.py",
+        "via": "normalization.tenzir"
+      },
+      {
+        "from": "apps/interpretation/observation_consumer/__init__.py",
         "to": "apps/interpretation/parsers/payload/registry.py",
         "via": "parsers.payload.registry"
       },
@@ -9055,6 +9093,11 @@
         "via": "observation_consumer"
       },
       {
+        "from": "apps/interpretation/tests/test_observation_consumer.py",
+        "to": "apps/interpretation/normalization/tenzir.py",
+        "via": "normalization.tenzir"
+      },
+      {
         "from": "apps/interpretation/tests/test_parser_adapter.py",
         "to": "apps/interpretation/parsers/registry.py",
         "via": "parsers.registry"
@@ -9518,6 +9561,16 @@
         "from": "apps/interpretation/tests/test_syntactic_producer.py",
         "to": "apps/interpretation/extractors/signals/protocol.py",
         "via": "extractors.signals.protocol"
+      },
+      {
+        "from": "apps/interpretation/tests/test_tenzir_live.py",
+        "to": "apps/interpretation/normalization/tenzir.py",
+        "via": "normalization.tenzir"
+      },
+      {
+        "from": "apps/interpretation/tests/test_tenzir_normalization.py",
+        "to": "apps/interpretation/normalization/tenzir.py",
+        "via": "normalization.tenzir"
       },
       {
         "from": "apps/interpretation/tests/test_warc_reader.py",
@@ -16370,6 +16423,21 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/test_research_case_projection.py",
+        "tests": 6,
+        "test_names": [
+          "test_coverage_does_not_conflate_not_planned_with_no_results",
+          "test_coverage_exposes_the_persisted_capability_gap_after_planning",
+          "test_claim_state_and_polarity_are_not_inferred_from_a_stored_relation",
+          "test_as_of_projection_excludes_claims_with_unknown_knowledge_time",
+          "test_claim_cursor_is_stable_and_rejects_invalid_input",
+          "test_coverage_links_broker_ack_to_the_real_observation_row"
+        ],
+        "targets": [
+          "apps/control-plane/services/research_case_projection.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_action_memory.py",
         "tests": 19,
         "test_names": [
@@ -17748,7 +17816,7 @@
       },
       {
         "path": "apps/interpretation/tests/test_observation_consumer.py",
-        "tests": 20,
+        "tests": 23,
         "test_names": [
           "test_reads_raw_and_parses",
           "test_reads_the_capture_it_was_given",
@@ -17769,9 +17837,13 @@
           "test_refusal_codes_are_classified",
           "test_handle_never_raises_on_bad_data",
           "test_mints_no_entity_and_no_claim",
-          "test_does_not_type_anything"
+          "test_does_not_type_anything",
+          "test_tenzir_output_is_persisted_separately_from_raw_evidence",
+          "test_tenzir_failure_is_explicit_but_does_not_erase_native_parse",
+          "test_tenzir_is_not_reexecuted_for_a_redelivered_observation"
         ],
         "targets": [
+          "apps/interpretation/normalization/tenzir.py",
           "apps/interpretation/observation_consumer/__init__.py",
           "apps/shared/events/__init__.py"
         ]
@@ -18353,6 +18425,39 @@
           "apps/shared/domain/predicate_signature.py",
           "apps/shared/domain/predicate_voice.py",
           "apps/shared/domain/signal_basis.py"
+        ]
+      },
+      {
+        "path": "apps/interpretation/tests/test_tenzir_live.py",
+        "tests": 1,
+        "test_names": [
+          "test_live_tenzir_node_compiles_tql_and_preserves_source_records"
+        ],
+        "targets": [
+          "apps/interpretation/normalization/tenzir.py"
+        ]
+      },
+      {
+        "path": "apps/interpretation/tests/test_tenzir_normalization.py",
+        "tests": 14,
+        "test_names": [
+          "test_disabled_is_an_explicit_noop_without_a_new_dependency",
+          "test_enabled_requires_an_explicit_endpoint",
+          "test_remote_plain_http_is_refused_by_default",
+          "test_remote_plain_http_requires_an_explicit_development_override",
+          "test_remote_endpoint_requires_a_node_token",
+          "test_node_url_rejects_an_api_path_to_prevent_double_prefixing",
+          "test_node_client_calls_the_versioned_rest_api",
+          "test_tql_literals_escape_source_strings_and_reject_injected_field_names",
+          "test_transform_is_additive_and_records_the_reproducible_pipeline_digest",
+          "test_normalizer_preserves_evidence_and_chunks_by_bounded_record_count",
+          "test_normalizer_refuses_source_field_mutation",
+          "test_normalizer_refuses_dropped_records",
+          "test_normalizer_rejects_invalid_output_width",
+          "test_empty_input_does_not_create_a_pipeline"
+        ],
+        "targets": [
+          "apps/interpretation/normalization/tenzir.py"
         ]
       },
       {
@@ -22699,7 +22804,7 @@
         "targets": []
       }
     ],
-    "total": 5196
+    "total": 5220
   },
   "contracts": {
     "python": [
@@ -23826,47 +23931,47 @@
         {
           "method": "GET",
           "path": "/{case_id}/coverage",
-          "lineno": 383
+          "lineno": 395
         },
         {
           "method": "GET",
           "path": "/{case_id}/claims",
-          "lineno": 396
+          "lineno": 410
         },
         {
           "method": "GET",
           "path": "/{case_id}/timeline",
-          "lineno": 411
+          "lineno": 427
         },
         {
           "method": "GET",
           "path": "/{case_id}/graph",
-          "lineno": 431
+          "lineno": 448
         },
         {
           "method": "POST",
           "path": "/{case_id}/identity-reviews",
-          "lineno": 449
+          "lineno": 468
         },
         {
           "method": "POST",
           "path": "/{case_id}/claim-disputes",
-          "lineno": 473
+          "lineno": 492
         },
         {
           "method": "POST",
           "path": "/{case_id}/report",
-          "lineno": 497
+          "lineno": 516
         },
         {
           "method": "POST",
           "path": "/{case_id}/close",
-          "lineno": 519
+          "lineno": 538
         },
         {
           "method": "POST",
           "path": "/{case_id}/retention-action",
-          "lineno": 541
+          "lineno": 560
         }
       ]
     },
@@ -28249,6 +28354,7 @@
             "apps/interpretation/extractors/util.py",
             "apps/interpretation/ner/__init__.py",
             "apps/interpretation/normalization/canonical.py",
+            "apps/interpretation/normalization/tenzir.py",
             "apps/interpretation/observation_consumer/__init__.py",
             "apps/interpretation/parsers/__init__.py",
             "apps/interpretation/parsers/documents.py",
@@ -28312,9 +28418,11 @@
             "apps/interpretation/tests/test_signal_kind_channels.py",
             "apps/interpretation/tests/test_signal_nary_contract.py",
             "apps/interpretation/tests/test_syntactic_producer.py",
+            "apps/interpretation/tests/test_tenzir_live.py",
+            "apps/interpretation/tests/test_tenzir_normalization.py",
             "apps/interpretation/tests/test_warc_reader.py"
           ],
-          "module_count": 109
+          "module_count": 112
         },
         {
           "id": "investigations",
@@ -28904,6 +29012,7 @@
             "apps/control-plane/services/query_planner.py",
             "apps/control-plane/services/reobservation.py",
             "apps/control-plane/services/research_case_policy.py",
+            "apps/control-plane/services/research_case_projection.py",
             "apps/control-plane/services/research_case_runtime.py",
             "apps/control-plane/services/research_case_service.py",
             "apps/control-plane/services/search_backends.py",
@@ -28944,6 +29053,7 @@
             "apps/control-plane/tests/integration/test_tools_api.py",
             "apps/control-plane/tests/test_auth_security.py",
             "apps/control-plane/tests/test_research_case_invariants.py",
+            "apps/control-plane/tests/test_research_case_projection.py",
             "apps/control-plane/tests/unit/test_action_memory.py",
             "apps/control-plane/tests/unit/test_approval_gate.py",
             "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -29060,7 +29170,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 277
+          "module_count": 279
         },
         {
           "id": "webapp",
@@ -29147,6 +29257,7 @@
             "apps/webapp/src/evidence/rawPayload.ts",
             "apps/webapp/src/evidence/types.ts",
             "apps/webapp/src/evidence/useEvidenceRecords.ts",
+            "apps/webapp/src/features/research-case/CaseAnalyticsPanel.tsx",
             "apps/webapp/src/features/research-case/CasePage.tsx",
             "apps/webapp/src/features/research-case/CaseSetup.tsx",
             "apps/webapp/src/features/research-case/ClaimsTable.tsx",
@@ -29323,7 +29434,7 @@
             "apps/webapp/src/workspace/useWorkState.ts",
             "apps/webapp/vite.config.ts"
           ],
-          "module_count": 253
+          "module_count": 254
         }
       ],
       "event_names_sample": [
@@ -30434,12 +30545,14 @@
             "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
             "apps/control-plane/services/model_gateway.py",
             "apps/control-plane/services/research_case_policy.py",
+            "apps/control-plane/services/research_case_projection.py",
             "apps/control-plane/services/research_case_runtime.py",
             "apps/control-plane/services/research_case_service.py",
             "apps/control-plane/tests/test_research_case_invariants.py",
+            "apps/control-plane/tests/test_research_case_projection.py",
             "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
           ],
-          "module_count": 12,
+          "module_count": 14,
           "capabilities": []
         }
       ]
@@ -32091,8 +32204,8 @@
       {
         "path": "apps/control-plane/api/routes/research_cases.py",
         "status": "IMPLEMENTED",
-        "loc": 567,
-        "callables": 22,
+        "loc": 586,
+        "callables": 23,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -32325,7 +32438,7 @@
       {
         "path": "apps/control-plane/composition.py",
         "status": "IMPLEMENTED",
-        "loc": 500,
+        "loc": 512,
         "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
@@ -33091,6 +33204,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/services/research_case_projection.py",
+        "status": "IMPLEMENTED",
+        "loc": 943,
+        "callables": 25,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/services/research_case_runtime.py",
         "status": "IMPLEMENTED",
         "loc": 682,
@@ -33102,7 +33224,7 @@
       {
         "path": "apps/control-plane/services/research_case_service.py",
         "status": "IMPLEMENTED",
-        "loc": 1285,
+        "loc": 1324,
         "callables": 18,
         "stubs": 0,
         "not_implemented": 0,
@@ -33465,6 +33587,15 @@
         "status": "TEST",
         "loc": 241,
         "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/test_research_case_projection.py",
+        "status": "TEST",
+        "loc": 282,
+        "callables": 27,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -34432,10 +34563,19 @@
         "markers": []
       },
       {
+        "path": "apps/interpretation/normalization/tenzir.py",
+        "status": "IMPLEMENTED",
+        "loc": 508,
+        "callables": 12,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/interpretation/observation_consumer/__init__.py",
         "status": "IMPLEMENTED",
-        "loc": 365,
-        "callables": 14,
+        "loc": 478,
+        "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -34834,8 +34974,8 @@
       {
         "path": "apps/interpretation/tests/test_observation_consumer.py",
         "status": "TEST",
-        "loc": 293,
-        "callables": 24,
+        "loc": 415,
+        "callables": 32,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -35000,6 +35140,24 @@
         "status": "TEST",
         "loc": 1698,
         "callables": 66,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/interpretation/tests/test_tenzir_live.py",
+        "status": "TEST",
+        "loc": 76,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/interpretation/tests/test_tenzir_normalization.py",
+        "status": "TEST",
+        "loc": 251,
+        "callables": 22,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -37813,8 +37971,8 @@
       {
         "path": "apps/shared/storage/s3.py",
         "status": "IMPLEMENTED",
-        "loc": 138,
-        "callables": 10,
+        "loc": 174,
+        "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -39545,12 +39703,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 527,
+      "IMPLEMENTED": 529,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 90,
-      "TEST": 322,
+      "TEST": 325,
       "MIGRATION": 15,
-      "total": 972
+      "total": 977
     }
   },
   "reachability": {
@@ -40608,6 +40766,10 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/control-plane/services/research_case_projection.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/control-plane/services/research_case_runtime.py",
         "status": "PRODUCTION"
       },
@@ -40769,6 +40931,10 @@
       },
       {
         "path": "apps/control-plane/tests/test_research_case_invariants.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/test_research_case_projection.py",
         "status": "TEST"
       },
       {
@@ -41196,6 +41362,10 @@
         "status": "TEST_ONLY"
       },
       {
+        "path": "apps/interpretation/normalization/tenzir.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/interpretation/observation_consumer/__init__.py",
         "status": "PRODUCTION"
       },
@@ -41445,6 +41615,14 @@
       },
       {
         "path": "apps/interpretation/tests/test_syntactic_producer.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/interpretation/tests/test_tenzir_live.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/interpretation/tests/test_tenzir_normalization.py",
         "status": "TEST"
       },
       {
@@ -43481,11 +43659,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 390,
+      "PRODUCTION": 392,
       "TEST_ONLY": 143,
       "ORPHAN": 117,
-      "TEST": 322,
-      "total": 972
+      "TEST": 325,
+      "total": 977
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -44843,7 +45021,7 @@
       },
       "acquisition.request": {
         "lane": "acquisition",
-        "files": 12,
+        "files": 13,
         "producer_files": 9
       },
       "admission.decided": {
@@ -45088,7 +45266,7 @@
       },
       "observation.created": {
         "lane": "observation",
-        "files": 23,
+        "files": 24,
         "producer_files": 8
       },
       "observation.duplicate": {
@@ -51691,6 +51869,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "edb58f673f959ca3",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/research_cases.py",
+        "object": "apps/control-plane/services/research_case_projection.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/research_cases.py",
+          "via": "services.research_case_projection"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "077fe3158ddcaa9a",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/resolutions.py",
@@ -53104,6 +53295,19 @@
         "evidence": {
           "file": "apps/control-plane/composition.py",
           "via": "services.research_case_runtime"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "473c9953b9b8f68f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/composition.py",
+        "object": "apps/control-plane/services/research_case_projection.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/composition.py",
+          "via": "services.research_case_projection"
         },
         "confidence": 1.0
       },
@@ -57203,6 +57407,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "e0cdee40823e720a",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_projection.py",
+        "object": "apps/control-plane/context_engine/obligations.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_projection.py",
+          "via": "context_engine.obligations"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9ca12fc56d09e914",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_projection.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_projection.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "70cd4e98a0f6bc99",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/research_case_runtime.py",
@@ -59318,6 +59548,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/test_research_case_invariants.py",
           "via": "api.routes.research_cases"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "de34b287ba43da78",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_projection.py",
+        "object": "apps/control-plane/services/research_case_projection.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_projection.py",
+          "via": "services.research_case_projection"
         },
         "confidence": 1.0
       },
@@ -63976,6 +64219,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "7aca051191bb7bd9",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/observation_consumer/__init__.py",
+        "object": "apps/interpretation/normalization/tenzir.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/observation_consumer/__init__.py",
+          "via": "normalization.tenzir"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7aca051191bb7bd9",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/observation_consumer/__init__.py",
+        "object": "apps/interpretation/normalization/tenzir.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/observation_consumer/__init__.py",
+          "via": "normalization.tenzir"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "7acc82b8f9dfebce",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/interpretation/observation_consumer/__init__.py",
@@ -65679,6 +65948,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "bde5c96ec7e325c8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_observation_consumer.py",
+        "object": "apps/interpretation/normalization/tenzir.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_observation_consumer.py",
+          "via": "normalization.tenzir"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3ac7273116b8b5bd",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/interpretation/tests/test_parser_adapter.py",
@@ -66884,6 +67166,32 @@
         "evidence": {
           "file": "apps/interpretation/tests/test_syntactic_producer.py",
           "via": "extractors.signals.protocol"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ac9c0b0d619b27de",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_tenzir_live.py",
+        "object": "apps/interpretation/normalization/tenzir.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_tenzir_live.py",
+          "via": "normalization.tenzir"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c7c2e35f56f9acb8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_tenzir_normalization.py",
+        "object": "apps/interpretation/normalization/tenzir.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_tenzir_normalization.py",
+          "via": "normalization.tenzir"
         },
         "confidence": 1.0
       },
@@ -81911,7 +82219,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 385
+          "line": 397
         },
         "confidence": 1.0
       },
@@ -81924,7 +82232,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 398
+          "line": 412
         },
         "confidence": 1.0
       },
@@ -81937,7 +82245,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 413
+          "line": 429
         },
         "confidence": 1.0
       },
@@ -81950,7 +82258,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 433
+          "line": 450
         },
         "confidence": 1.0
       },
@@ -81963,7 +82271,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 451
+          "line": 470
         },
         "confidence": 1.0
       },
@@ -81976,7 +82284,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 475
+          "line": 494
         },
         "confidence": 1.0
       },
@@ -81989,7 +82297,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 499
+          "line": 518
         },
         "confidence": 1.0
       },
@@ -82002,7 +82310,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 521
+          "line": 540
         },
         "confidence": 1.0
       },
@@ -82015,7 +82323,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 543
+          "line": 562
         },
         "confidence": 1.0
       },
@@ -86306,6 +86614,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "6e89633c47c136b6",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_projection.py",
+        "object": "apps/control-plane/services/research_case_projection.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_projection.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3c80d1d52a84b093",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_action_memory.py",
@@ -88478,6 +88798,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "7faffe65d637ec01",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_observation_consumer.py",
+        "object": "apps/interpretation/normalization/tenzir.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_observation_consumer.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "9220873f7d13c137",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/interpretation/tests/test_observation_consumer.py",
@@ -89410,6 +89742,30 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/interpretation/tests/test_syntactic_producer.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "bf02ae39a909513d",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_tenzir_live.py",
+        "object": "apps/interpretation/normalization/tenzir.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_tenzir_live.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7c2f1b2553820bb3",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_tenzir_normalization.py",
+        "object": "apps/interpretation/normalization/tenzir.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_tenzir_normalization.py"
         },
         "confidence": 1.0
       },
@@ -98585,6 +98941,18 @@
         "confidence": 0.7
       },
       {
+        "fact_id": "b0d66f58bd448a56",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "034-person-research-case",
+        "object": "apps/control-plane/services/research_case_projection.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/034-person-research-case/spec.md"
+        },
+        "confidence": 0.7
+      },
+      {
         "fact_id": "0a4765ed99c4080a",
         "kind": "SPEC_CITES_MODULE",
         "subject": "034-person-research-case",
@@ -98621,6 +98989,18 @@
         "confidence": 0.7
       },
       {
+        "fact_id": "6039659fb1248297",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "034-person-research-case",
+        "object": "apps/control-plane/tests/test_research_case_projection.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/034-person-research-case/spec.md"
+        },
+        "confidence": 0.7
+      },
+      {
         "fact_id": "4a501adb7b9910fc",
         "kind": "SPEC_CITES_MODULE",
         "subject": "034-person-research-case",
@@ -98634,44 +99014,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4201,
-      "static_facts": 3913,
-      "inferred": 288,
+      "facts_total": 4217,
+      "static_facts": 3927,
+      "inferred": 290,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 972,
-    "typescript_modules": 253,
+    "python_modules": 977,
+    "typescript_modules": 254,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2685,
-    "test_files": 325,
-    "test_functions": 5196,
+    "import_edges": 2695,
+    "test_files": 328,
+    "test_functions": 5220,
     "untested_modules": 258,
     "http_routes": 176
   },
   "evidence_stats": {
-    "facts_total": 4201,
-    "static_facts": 3913,
-    "inferred": 288,
+    "facts_total": 4217,
+    "static_facts": 3927,
+    "inferred": 290,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 527,
+    "IMPLEMENTED": 529,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 90,
-    "TEST": 322,
+    "TEST": 325,
     "MIGRATION": 15,
-    "total": 972
+    "total": 977
   },
   "reachability_summary": {
-    "PRODUCTION": 390,
+    "PRODUCTION": 392,
     "TEST_ONLY": 143,
     "ORPHAN": 117,
-    "TEST": 322,
-    "total": 972
+    "TEST": 325,
+    "total": 977
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",

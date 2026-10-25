@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **220** · TypeScript modules: **0**
+Python modules: **222** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -227,7 +227,7 @@ apps.feedback.tests.test_frontier_loop
 
 Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.
 
-Python modules: **109** · TypeScript modules: **0**
+Python modules: **112** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -545,7 +545,7 @@ tools.strip_zero_inventory
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **253**
+Python modules: **0** · TypeScript modules: **254**
 
 
 ## `zero`

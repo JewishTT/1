@@ -166,15 +166,15 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 | POST | `/{case_id}/run` | 286 |
 | POST | `/{case_id}/pause` | 312 |
 | GET | `/{case_id}/obligations` | 328 |
-| GET | `/{case_id}/coverage` | 383 |
-| GET | `/{case_id}/claims` | 396 |
-| GET | `/{case_id}/timeline` | 411 |
-| GET | `/{case_id}/graph` | 431 |
-| POST | `/{case_id}/identity-reviews` | 449 |
-| POST | `/{case_id}/claim-disputes` | 473 |
-| POST | `/{case_id}/report` | 497 |
-| POST | `/{case_id}/close` | 519 |
-| POST | `/{case_id}/retention-action` | 541 |
+| GET | `/{case_id}/coverage` | 395 |
+| GET | `/{case_id}/claims` | 410 |
+| GET | `/{case_id}/timeline` | 427 |
+| GET | `/{case_id}/graph` | 448 |
+| POST | `/{case_id}/identity-reviews` | 468 |
+| POST | `/{case_id}/claim-disputes` | 492 |
+| POST | `/{case_id}/report` | 516 |
+| POST | `/{case_id}/close` | 538 |
+| POST | `/{case_id}/retention-action` | 560 |
 
 ## `resolutions` — `apps/control-plane/api/routes/resolutions.py`
 

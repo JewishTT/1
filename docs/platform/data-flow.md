@@ -205,6 +205,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/db/migrations/versions/027_person_research_case_records.py` | Structured case scope and dispatch idempotency records for Feature 034. |
 | `apps/control-plane/db/temporal_materialization.py` | SQLAlchemy persistence adapter for temporal materialization projections. |
 | `apps/control-plane/services/research_case_policy.py` | Person case policy gate (Feature 034). |
+| `apps/control-plane/services/research_case_projection.py` | Durable read projections for Feature 034. |
 | `apps/control-plane/services/research_case_runtime.py` | Durable Feature 034 budget reservations and the existing Layer-0 dispatcher adapter. |
 | `apps/control-plane/services/research_case_service.py` | Person case application service (Feature 034). |
 | `apps/control-plane/services/search_backends.py` | Real query backends for the search plane (T026, US2). |
@@ -212,7 +213,6 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/services/temporal_materialization_service.py` | Control-plane service facade for deterministic temporal materialization. |
 | `apps/control-plane/tests/contract/test_context_graph_contract.py` | What the Context Graph is required to refuse, and what it must never confuse. |
 | `apps/control-plane/tests/integration/test_closed_research_loop.py` | WP-A: the research loop must be able to close, and say why. |
-| `apps/control-plane/tests/integration/test_temporal_materialization_api.py` | API integration tests for temporal materialization. |
 
 ## Closed loop / frontier
 

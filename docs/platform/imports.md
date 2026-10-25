@@ -1,6 +1,6 @@
 # Import graph
 
-972 Python modules, 2685 resolved local edges.
+977 Python modules, 2695 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,29 +10,29 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 845 |
-| `dataclasses` | stdlib | 387 |
-| `typing` | stdlib | 350 |
+| `__future__` | stdlib | 850 |
+| `dataclasses` | stdlib | 388 |
+| `typing` | stdlib | 354 |
 | `pathlib` | stdlib | 303 |
-| `pytest` | third-party | 257 |
+| `pytest` | third-party | 260 |
 | `sys` | stdlib | 248 |
-| `collections` | stdlib | 236 |
-| `json` | stdlib | 183 |
-| `datetime` | stdlib | 181 |
-| `sqlalchemy` | third-party | 122 |
+| `collections` | stdlib | 238 |
+| `json` | stdlib | 185 |
+| `datetime` | stdlib | 183 |
+| `sqlalchemy` | third-party | 124 |
+| `hashlib` | stdlib | 119 |
 | `enum` | stdlib | 117 |
-| `hashlib` | stdlib | 117 |
-| `re` | stdlib | 90 |
+| `re` | stdlib | 92 |
 | `fastapi` | third-party | 66 |
-| `asyncio` | stdlib | 63 |
-| `os` | stdlib | 63 |
+| `os` | stdlib | 65 |
+| `asyncio` | stdlib | 64 |
 | `uuid` | stdlib | 48 |
-| `math` | stdlib | 40 |
-| `urllib` | stdlib | 36 |
+| `math` | stdlib | 41 |
+| `urllib` | stdlib | 39 |
 | `pydantic` | third-party | 34 |
 | `importlib` | stdlib | 29 |
-| `time` | stdlib | 28 |
-| `types` | stdlib | 27 |
+| `time` | stdlib | 29 |
+| `types` | stdlib | 29 |
 | `ast` | stdlib | 26 |
 | `io` | stdlib | 25 |
 | `numpy` | third-party | 23 |
@@ -49,7 +49,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `confluent_kafka` | third-party | 14 |
 | `temporalio` | third-party | 13 |
 | `itertools` | stdlib | 11 |
-| `functools` | stdlib | 9 |
+| `base64` | stdlib | 9 |
 
 ## Optional capability probes
 

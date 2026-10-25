@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 390 |
+| PRODUCTION | 392 |
 | TEST_ONLY | 143 |
 | ORPHAN | 117 |
-| TEST | 322 |
+| TEST | 325 |
 
 ## Entrypoints (production roots)
 
