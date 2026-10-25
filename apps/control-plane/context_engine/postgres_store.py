@@ -172,6 +172,45 @@ _DDL = (
     CREATE INDEX IF NOT EXISTS ix_memory_obligation
         ON context_action_memory (obligation_id)
     """,
+    """
+    CREATE TABLE IF NOT EXISTS person_case_budget_reservations (
+        reservation_id  TEXT PRIMARY KEY,
+        tenant_id       TEXT NOT NULL,
+        case_id         TEXT NOT NULL,
+        investigation_id TEXT NOT NULL,
+        budget_id       TEXT NOT NULL,
+        idempotency_key TEXT NOT NULL,
+        scope_digest    TEXT NOT NULL,
+        policy_digest   TEXT NOT NULL,
+        request_count   INTEGER NOT NULL,
+        raw_bytes       BIGINT NOT NULL,
+        record_count    BIGINT NOT NULL,
+        concurrency     INTEGER NOT NULL,
+        wall_seconds    INTEGER NOT NULL,
+        state           TEXT NOT NULL DEFAULT 'RESERVED',
+        payload         JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+        UNIQUE (tenant_id, case_id, idempotency_key),
+        CHECK (tenant_id <> ''),
+        CHECK (case_id <> ''),
+        CHECK (budget_id <> ''),
+        CHECK (request_count > 0),
+        CHECK (raw_bytes > 0),
+        CHECK (record_count > 0),
+        CHECK (concurrency > 0),
+        CHECK (wall_seconds > 0),
+        CHECK (state IN ('RESERVED', 'PUBLISHED', 'RELEASED', 'FAILED'))
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS ix_person_case_budget_reservations_budget_state
+        ON person_case_budget_reservations (budget_id, state)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS ix_person_case_budget_reservations_case_scope
+        ON person_case_budget_reservations (tenant_id, case_id, scope_digest)
+    """,
 )
 
 
