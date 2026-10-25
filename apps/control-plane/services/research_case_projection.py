@@ -141,6 +141,36 @@ def _valid_time(row: RelationClaim) -> dict[str, Any]:
     }
 
 
+def _latest_logical_revisions(rows: list[RelationClaim]) -> list[RelationClaim]:
+    """Select the latest visible revision per logical relation without rewriting history."""
+    latest: dict[str, RelationClaim] = {}
+    for row in rows:
+        logical_id = str(row.logical_relation_id or row.relation_id)
+        previous = latest.get(logical_id)
+        if previous is None:
+            latest[logical_id] = row
+            continue
+        current_key = (
+            int(row.revision_number or 0),
+            _instant(row.known_from) or _instant(row.created_at) or datetime.min.replace(tzinfo=UTC),
+            str(row.relation_id),
+        )
+        previous_key = (
+            int(previous.revision_number or 0),
+            _instant(previous.known_from) or _instant(previous.created_at) or datetime.min.replace(tzinfo=UTC),
+            str(previous.relation_id),
+        )
+        if current_key > previous_key:
+            latest[logical_id] = row
+    return sorted(
+        latest.values(),
+        key=lambda row: (
+            -(_instant(row.created_at).timestamp() if _instant(row.created_at) is not None else 0),
+            str(row.relation_id),
+        ),
+    )
+
+
 def _claim_state(status: Any) -> str:
     normalized = str(status or "").strip().lower()
     if normalized in {"admitted", "accepted"}:
@@ -785,6 +815,11 @@ class PostgresResearchCaseProjectionProvider:
         rows = await self._claims_for_case(
             case_id=case_id, tenant_id=tenant_id, as_of=as_of, limit=5000
         )
+        rows = [
+            row for row in _latest_logical_revisions(rows)
+            if str(row.status or "active").lower()
+            not in {"retracted", "withdrawn", "superseded"}
+        ]
         if kinds:
             wanted = {str(kind).strip().lower() for kind in kinds if str(kind).strip()}
             rows = [
@@ -870,25 +905,8 @@ class PostgresResearchCaseProjectionProvider:
                 "relation_type": row.relation_type,
             })
         max_nodes = 500
-        # Graph current-state view emits the latest revision for a logical relation.
-        # Historical revisions remain available to the claims/timeline projections.
-        latest_edges: dict[str, dict[str, Any]] = {}
+        # The current-state graph only contains the latest visible claim revision.
         row_by_id = {str(row.relation_id): row for row in rows}
-        for edge in edges:
-            relation = row_by_id[edge["id"]]
-            logical_id = str(relation.logical_relation_id)
-            previous = latest_edges.get(logical_id)
-            if previous is None:
-                latest_edges[logical_id] = edge
-            else:
-                previous_row = row_by_id[previous["id"]]
-                if int(relation.revision_number or 0) > int(previous_row.revision_number or 0):
-                    latest_edges[logical_id] = edge
-        edges = [
-            edge for edge in latest_edges.values()
-            if str(row_by_id[edge["id"]].status or "active").lower()
-            not in {"retracted", "withdrawn", "superseded"}
-        ]
         truncated = len(nodes) > max_nodes or len(edges) > 1000
         nodes = nodes[:max_nodes]
         kept = {node["id"] for node in nodes}
