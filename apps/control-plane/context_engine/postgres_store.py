@@ -98,9 +98,11 @@ _DDL = (
     CREATE TABLE IF NOT EXISTS person_case_metadata (
         case_id    TEXT PRIMARY KEY,
         tenant_id  TEXT NOT NULL,
-        payload    JSONB NOT NULL,
+        payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CHECK (case_id <> ''),
+        CHECK (tenant_id <> '')
     )
     """,
     """
@@ -115,9 +117,15 @@ _DDL = (
         run_id           TEXT NOT NULL UNIQUE,
         scope_digest     TEXT NOT NULL,
         policy_digest    TEXT NOT NULL,
-        payload          JSONB NOT NULL,
+        payload          JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-        PRIMARY KEY (tenant_id, case_id, idempotency_key)
+        updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (tenant_id, case_id, idempotency_key),
+        CHECK (tenant_id <> ''),
+        CHECK (case_id <> ''),
+        CHECK (idempotency_key <> ''),
+        CHECK (length(scope_digest) = 71 AND scope_digest LIKE 'sha256:%'),
+        CHECK (length(policy_digest) = 71 AND policy_digest LIKE 'sha256:%')
     )
     """,
     """
