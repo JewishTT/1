@@ -70,7 +70,7 @@ export function CaseSetup() {
     setClaimFamiliesText(existingCase.claim_families.join(", "));
     setSourceIdsText(existingCase.allowed_source_ids.join(", "));
     setDeniedFamiliesText(existingCase.denied_claim_families.join(", "));
-    setBudgetRef("");
+    setBudgetRef(existingCase.budget_ref ?? "");
     setExpiresAt(existingCase.expires_at ?? "");
     const firstAnchor = existingCase.subject_anchors[0];
     if (firstAnchor) {
@@ -128,8 +128,8 @@ export function CaseSetup() {
     event.preventDefault();
     setFormError(null);
     const payload = body();
-    if (!payload.purpose_code || !payload.purpose_text || !payload.basis_ref || !payload.subject_anchors[0]?.value) {
-      setFormError("Purpose code, purpose text, authority-basis reference and a non-empty typed anchor are required.");
+    if (!payload.purpose_code || !payload.purpose_text || !payload.basis_ref || !payload.budget_ref || !payload.subject_anchors[0]?.value) {
+      setFormError("Purpose code, purpose text, authority-basis reference, existing budget ID and a non-empty typed anchor are required.");
       return;
     }
     if (isEditing) reviseMutation.mutate(payload);
@@ -224,8 +224,8 @@ export function CaseSetup() {
 
         <section className="space-y-3 border-t border-slate-200 pt-4">
           <h2 className="font-semibold">Execution controls</h2>
-          <Field label="Budget reservation reference (optional; a reference alone is not a reservation)">
-            <input value={budgetRef} onChange={(e) => setBudgetRef(e.target.value)} className={inputClass} />
+          <Field label="Existing budget ID (required for approval and execution)">
+            <input value={budgetRef} onChange={(e) => setBudgetRef(e.target.value)} required className={inputClass} />
           </Field>
           <Field label="Scope expiry (ISO date/time, optional)">
             <input value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className={inputClass} />
