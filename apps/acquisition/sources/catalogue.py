@@ -189,6 +189,11 @@ class SourceDefinition:
     #: alongside a number, so a bare float is never read as a measurement (U3's rule about
     #: numbers without semantics, applied to source declarations).
     detection_power_method: str = ""
+    #: Source independence family and temporal basis are explicit provenance fields,
+    #: not inferred from the runtime name or URL. A raw-first capture path refuses a
+    #: definition that does not declare an acceptable family.
+    source_family: str = ""
+    time_basis: str = ""
 
     def __post_init__(self) -> None:
         if self.detection_power is None:
@@ -439,6 +444,8 @@ def load_source(path: Path) -> SourceDefinition:
         definition=dict(raw),
         detection_power=_declared_detection_power(raw),
         detection_power_method=str(raw.get("detection_power_method") or "").strip(),
+        source_family=str(raw.get("source_family") or "").strip(),
+        time_basis=str(raw.get("time_basis") or "").strip(),
     )
 
 
