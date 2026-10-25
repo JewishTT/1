@@ -336,6 +336,7 @@ class Platform:
         try:
             from services.research_case_service import ResearchCaseService
             from services.research_case_runtime import CaseDispatchExecutor, PostgresCaseBudgetService
+            from services.research_case_projection import PostgresResearchCaseProjectionProvider
 
             budget_service = (
                 PostgresCaseBudgetService(self.session_factory)
@@ -347,6 +348,16 @@ class Platform:
                 if self.person_case_policy is not None and self.health.catalogue == "ready"
                 else None
             )
+            projection_provider = (
+                PostgresResearchCaseProjectionProvider(
+                    session_factory=self.session_factory,
+                    context_store=self.store,
+                    policy=self.person_case_policy,
+                )
+                if self.session_factory is not None and self.store is not None
+                and self.person_case_policy is not None
+                else None
+            )
             self.research_case_service = ResearchCaseService(
                 store=self.store,
                 loop=self.loop,
@@ -354,8 +365,9 @@ class Platform:
                 model_gateway=self.model_gateway,
                 budget_service=budget_service,
                 dispatch_executor=dispatch_executor,
+                projection_provider=projection_provider,
             )
-            if budget_service is not None and dispatch_executor is not None and self.health.person_case_policy == "ready":
+            if budget_service is not None and dispatch_executor is not None and projection_provider is not None and self.health.person_case_policy == "ready":
                 # This means a durable reservation and broker-acknowledged request can be
                 # attempted. It does not claim that a worker consumed the message or that
                 # raw evidence passed the worker's ArtifactSink/ObservationGate.
