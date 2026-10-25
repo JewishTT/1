@@ -563,36 +563,32 @@ class PostgresResearchCaseProjectionProvider:
         )
         truncated = len(all_rows) > 5000
         all_rows = all_rows[:5000]
-        all_rows.sort(
-            key=lambda row: (_iso(row.created_at) or "", str(row.relation_id)),
-            reverse=False,
-        )
+        # Newest first, deterministic relation id tie-break; missing creation time
+        # stays at the end and is never silently assigned an invented timestamp.
         all_rows.sort(
             key=lambda row: (
-                row.created_at is not None,
-                row.created_at.timestamp() if row.created_at is not None else 0,
-            ),
-            reverse=True,
-        )
-        # A stable tiebreaker is required because created_at has finite precision.
-        all_rows.sort(key=lambda row: str(row.relation_id))
-        all_rows.sort(
-            key=lambda row: row.created_at.timestamp() if row.created_at is not None else 0,
-            reverse=True,
+                -_instant(row.created_at).timestamp()
+                if _instant(row.created_at) is not None
+                else float("inf"),
+                str(row.relation_id),
+            )
         )
         if cursor:
             cursor_created_at, cursor_relation_id = _cursor_decode(cursor)
-            all_rows = [
-                row for row in all_rows
-                if row.created_at is not None
-                and (
-                    row.created_at < cursor_created_at
+
+            def after_cursor(row: RelationClaim) -> bool:
+                created_at = _instant(row.created_at)
+                if created_at is None:
+                    return False
+                return (
+                    created_at < cursor_created_at
                     or (
-                        row.created_at == cursor_created_at
+                        created_at == cursor_created_at
                         and str(row.relation_id) > cursor_relation_id
                     )
                 )
-            ]
+
+            all_rows = [row for row in all_rows if after_cursor(row)]
         has_more = len(all_rows) > limit
         rows = all_rows[:limit]
         all_ids = {str(row.relation_id) for row in all_rows}
