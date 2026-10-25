@@ -548,6 +548,39 @@ class PostgresResearchCaseProjectionProvider:
         ]
         return rows[: max(1, min(int(limit), 5000))]
 
+    async def _observations_for_claims(
+        self,
+        *,
+        tenant_id: str,
+        investigation_id: str,
+        claims: list[RelationClaim],
+    ) -> dict[str, Observation]:
+        observation_ids = sorted({
+            str(ref)
+            for claim in claims
+            for ref in _json_list(claim.observation_refs)
+            if str(ref)
+        })
+        if not observation_ids:
+            return {}
+        async with self._session_factory() as session:
+            try:
+                result = await session.execute(
+                    select(Observation).where(
+                        Observation.tenant_id == tenant_id,
+                        Observation.investigation_id == investigation_id,
+                        Observation.observation_id.in_(observation_ids),
+                    )
+                )
+                return {
+                    str(row.observation_id): row
+                    for row in result.scalars().all()
+                }
+            except SQLAlchemyError as exc:
+                raise ProjectionUnavailable(
+                    f"evidence observation lookup failed ({type(exc).__name__})"
+                ) from exc
+
     async def list_claims(
         self,
         *,
@@ -567,6 +600,7 @@ class PostgresResearchCaseProjectionProvider:
         )
         truncated = len(all_rows) > 5000
         all_rows = all_rows[:5000]
+        all_relation_ids = {str(row.relation_id) for row in all_rows}
         # Newest first, deterministic relation id tie-break; missing creation time
         # stays at the end and is never silently assigned an invented timestamp.
         all_rows.sort(
@@ -595,10 +629,17 @@ class PostgresResearchCaseProjectionProvider:
             all_rows = [row for row in all_rows if after_cursor(row)]
         has_more = len(all_rows) > limit
         rows = all_rows[:limit]
-        all_ids = {str(row.relation_id) for row in all_rows}
-        # Also include claims already passed by this cursor where available in the
-        # bounded source result; contradiction refs remain resolvable across pages.
-        claims = [self._claim_view(case_id, row, all_ids) for row in rows]
+        observations_by_id = await self._observations_for_claims(
+            tenant_id=tenant_id,
+            investigation_id=context.investigation_id,
+            claims=rows,
+        )
+        # Contradictions are checked against the bounded case result set, including rows
+        # on pages before/after the current cursor.
+        claims = [
+            self._claim_view(case_id, row, all_relation_ids, observations_by_id)
+            for row in rows
+        ]
         next_cursor = _cursor_encode(rows[-1].created_at, rows[-1].relation_id) if has_more and rows else None
         return {
             "claims": claims,
@@ -609,11 +650,29 @@ class PostgresResearchCaseProjectionProvider:
 
     @staticmethod
     def _claim_view(
-        case_id: str, row: RelationClaim, all_relation_ids: set[str] | None = None
+        case_id: str,
+        row: RelationClaim,
+        all_relation_ids: set[str] | None = None,
+        observations_by_id: Mapping[str, Observation] | None = None,
     ) -> dict[str, Any]:
         observations = [str(ref) for ref in _json_list(row.observation_refs) if str(ref)]
         assertions = [str(ref) for ref in _json_list(row.assertion_refs) if str(ref)]
         evidence = list(dict.fromkeys([*observations, *assertions]))
+        stored_observations = observations_by_id or {}
+        primary_observation = next(
+            (stored_observations[ref] for ref in observations if ref in stored_observations),
+            None,
+        )
+        if primary_observation is not None:
+            source_ref = (
+                f"{primary_observation.source_id}: {primary_observation.uri}"
+                if primary_observation.source_id and primary_observation.uri
+                else str(primary_observation.uri or primary_observation.source_id or primary_observation.observation_id)
+            )
+        else:
+            # Missing observation join is visible; the evidence ref stays available
+            # in evidence_refs rather than being mislabeled as a source URL.
+            source_ref = "unresolved observation reference" if observations else "no observation source linked"
         return {
             "claim_id": row.relation_id,
             "case_id": case_id,
@@ -633,7 +692,7 @@ class PostgresResearchCaseProjectionProvider:
             "state": _claim_state(row.status),
             "valid_time": _valid_time(row),
             "evidence_refs": evidence,
-            "source_ref": observations[0] if observations else "",
+            "source_ref": source_ref,
             "extractor_ref": row.extraction_version or "relation-claim-store",
             "extractor_version": row.extraction_version or row.schema_version or "unknown",
             "published_at": _iso(row.published_at),
