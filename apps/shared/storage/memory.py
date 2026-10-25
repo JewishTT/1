@@ -1,10 +1,11 @@
-"""In-memory content-addressed object store (hermetic substitute for s3).
+"""In-memory content-addressed object store (hermetic substitute for S3).
 
-Mirrors the ``storage.s3.ObjectStore`` surface used by ``events.observation_gate``
-and the lake writer: ``put_raw_dedup`` (idempotent by sha256), ``exists`,
-``ref_uri`` — plus introspection helpers so hermetic tests can assert what was
-written. Same immutability discipline (I-1): identical bytes → same key; the
-gate's three-way split (R-08) is exercised identically to a real backend.
+Mirrors the ``storage.s3.ObjectStore`` raw and derived write surfaces used by
+the observation gate, interpretation consumer and lake writer. Both
+``put_raw_dedup`` and ``put_derived_dedup`` are idempotent by SHA-256 but use
+separate namespaces so derived transforms cannot masquerade as fetched evidence.
+Introspection helpers let hermetic tests assert the same immutability and lineage
+contracts as a real backend.
 """
 
 from __future__ import annotations
