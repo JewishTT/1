@@ -150,8 +150,11 @@ class TestConsumerProcesses:
         """§63: traceable to the parser that read it."""
         consumer = ObservationConsumer(store=_Store())
         result = await consumer.handle(envelope())
-        assert "structured_fields" in result.derived_ref
-        assert CONSUMER_VERSION in result.derived_ref
+        assert result.derived_ref.startswith("s3://bucket/derived/acme/")
+        manifest = json.loads(store.derived_writes[-1]["body"].decode("utf-8"))
+        assert "structured_fields" in manifest["parser_ref"]
+        assert CONSUMER_VERSION in manifest["parser_ref"]
+        assert manifest["raw_ref"].startswith("s3://bucket/raw/")
 
     @pytest.mark.asyncio
     async def test_unknown_parser_is_not_guessed(self):
@@ -159,7 +162,40 @@ class TestConsumerProcesses:
         consumer = ObservationConsumer(store=_Store())
         result = await consumer.handle(envelope(parser_hint="no_such_parser"))
         assert result.status == "processed"
-        assert "text_lines" in result.derived_ref
+        manifest = json.loads(store.derived_writes[-1]["body"].decode("utf-8"))
+        assert "text_lines" in manifest["parser_ref"]
+
+
+class _RecordingResultWriter:
+    def __init__(self, error: Exception | None = None) -> None:
+        self.rows: list[tuple[Any, Any]] = []
+        self.error = error
+
+    async def persist(self, envelope, result):
+        if self.error is not None:
+            raise self.error
+        self.rows.append((envelope, result))
+
+
+class TestProcessingResultDurability:
+    @pytest.mark.asyncio
+    async def test_result_writer_is_called_before_handle_returns(self):
+        writer = _RecordingResultWriter()
+        consumer = ObservationConsumer(store=_Store(), result_writer=writer)
+        result = await consumer.handle(envelope())
+        assert len(writer.rows) == 1
+        assert writer.rows[0][1] is result
+        assert result.derived_ref.startswith("s3://bucket/derived/acme/")
+
+    @pytest.mark.asyncio
+    async def test_result_writer_failure_bubbles_and_does_not_cache_success(self):
+        store = _Store()
+        writer = _RecordingResultWriter(RuntimeError("postgres is down"))
+        consumer = ObservationConsumer(store=store, result_writer=writer)
+        with pytest.raises(RuntimeError, match="postgres is down"):
+            await consumer.handle(envelope())
+        assert consumer.result_for(envelope().observation_id) is None
+        assert len(store.reads) == 1
 
 
 class TestConsumerIsIdempotent:
