@@ -22,6 +22,7 @@ jobs:
           apps/interpretation/tests/test_tenzir_normalization.py
           apps/interpretation/tests/test_observation_consumer.py
           apps/interpretation/tests/test_tenzir_live.py
+          apps/shared/tests/contract/test_storage.py
           -q
       - name: Start the pinned Tenzir Node with loopback-only development API
         run: |
