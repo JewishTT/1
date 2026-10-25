@@ -15,6 +15,8 @@ import { ExperimentContainer } from "./containers/ExperimentContainer";
 import { EconomicsContainer } from "./containers/EconomicsContainer";
 import { NetworkAnalysisContainer } from "./containers/NetworkAnalysisContainer";
 import { DossierContainer } from "./containers/DossierContainer";
+import { CasePage } from "./features/research-case/CasePage";
+import { CaseSetup } from "./features/research-case/CaseSetup";
 
 /**
  * The shell is mounted here, at the root, rather than per-route.
@@ -114,6 +116,11 @@ export function App() {
         <Route path="hypotheses" element={<HypothesisContainer />} />
         <Route path="experiments" element={<ExperimentContainer />} />
         <Route path="dossier" element={<DossierContainer />} />
+        {/* Feature 034: create, revise, inspect, plan and explicitly block unsupported execution. */}
+        <Route path="research-cases" element={<Navigate to="/research-cases/new" replace />} />
+        <Route path="research-cases/new" element={<CaseSetup />} />
+        <Route path="research-cases/:caseId/setup" element={<CaseSetup />} />
+        <Route path="research-cases/:caseId" element={<CasePage />} />
         {/* Anything unrecognised lands on the board rather than on a blank page: a
             mistyped URL is a mistake, not a reason to render nothing and leave the
             analyst without a way forward. */}
