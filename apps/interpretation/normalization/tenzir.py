@@ -41,7 +41,13 @@ NORMALIZATION_VERSION = "tenzir-observed-fields-v1"
 # are checked after the Tenzir run and cannot be overwritten.
 _TQL_TRANSFORM = (
     "normalized_field_path = field.to_lower()\n"
-    "normalized_value_type = value_type.to_lower()"
+    "normalized_value_type = value_type.to_lower()\n"
+    "value_length_chars = value.length_chars()\n"
+    "value_length_bytes = value.length_bytes()\n"
+    "value_is_numeric_lexeme = value.is_numeric()\n"
+    "has_nonempty_surface = value.trim() != \"\"\n"
+    "byte_span_width = byte_span.get(1) - byte_span.get(0) if byte_span != null else null\n"
+    "structural_role = \"container\" if value_type == \"nested\" else \"null\" if value_type == \"null\" else \"surface\""
 )
 _PIPELINE_DIGEST = "sha256:" + hashlib.sha256(
     (NORMALIZATION_VERSION + "\n" + _TQL_TRANSFORM).encode("utf-8")
@@ -364,20 +370,50 @@ class TenzirNodeNormalizer:
                             )
                     normalized_path = data.get("normalized_field_path")
                     normalized_type = data.get("normalized_value_type")
-                    if not isinstance(normalized_path, str) or not isinstance(normalized_type, str):
+                    derived = {
+                        "field_path": normalized_path,
+                        "value_type": normalized_type,
+                        "value_length_chars": data.get("value_length_chars"),
+                        "value_length_bytes": data.get("value_length_bytes"),
+                        "value_is_numeric_lexeme": data.get("value_is_numeric_lexeme"),
+                        "has_nonempty_surface": data.get("has_nonempty_surface"),
+                        "byte_span_width": data.get("byte_span_width"),
+                        "structural_role": data.get("structural_role"),
+                    }
+                    if (
+                        not isinstance(normalized_path, str)
+                        or not isinstance(normalized_type, str)
+                        or not isinstance(derived["value_length_chars"], int)
+                        or not isinstance(derived["value_length_bytes"], int)
+                        or not isinstance(derived["value_is_numeric_lexeme"], bool)
+                        or not isinstance(derived["has_nonempty_surface"], bool)
+                        or (
+                            derived["byte_span_width"] is not None
+                            and not isinstance(derived["byte_span_width"], int)
+                        )
+                        or derived["structural_role"] not in {"container", "null", "surface"}
+                    ):
                         raise TenzirError(
                             "tenzir_output_invalid",
-                            f"Tenzir omitted derived structural columns at ordinal {ordinal}",
+                            f"Tenzir omitted or mistyped derived structural columns at ordinal {ordinal}",
+                        )
+                    span = original.get("byte_span")
+                    expected_width = (
+                        int(span[1]) - int(span[0])
+                        if isinstance(span, list) and len(span) == 2
+                        else None
+                    )
+                    if derived["byte_span_width"] != expected_width:
+                        raise TenzirError(
+                            "tenzir_output_invalid",
+                            f"Tenzir computed an inconsistent byte span width at ordinal {ordinal}",
                         )
                     rows.append((
                         ordinal,
                         {
                             "ordinal": ordinal,
                             "record": original,
-                            "normalized": {
-                                "field_path": normalized_path,
-                                "value_type": normalized_type,
-                            },
+                            "normalized": derived,
                         },
                     ))
                     if len(rows) > len(records):
