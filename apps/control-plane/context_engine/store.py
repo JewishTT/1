@@ -344,28 +344,35 @@ class ContextStore(ABC):
         approved_action_refs: list[str],
         scope_digest: str,
         policy_digest: str,
-    ) -> None:
-        """Record a dispatch intent as a durable action record.
-
-        Reuses the existing ``research_actions`` table (no new schema owner).
-        """
-        from context_engine.obligations import ResearchAction
-
-        intent_action = ResearchAction(
-            obligation_id=f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}",
-            proposed_method="__dispatch_intent__",
-            runtime_ref="",
-            expected_information_gain=0.0,
-            estimated_cost=0.0,
-            priority=0.0,
-            capability_requirements=tuple(approved_action_refs),
-            requires_operator_approval=False,
-            status="proposed",
-            task_id=run_id,
-            realised_gain=None,
-            action_id=f"{DISPATCH_INTENT_ACTION_ID_PREFIX}{run_id}",
+    ) -> dict[str, Any]:
+        """Reference idempotency ledger; production uses the PostgreSQL override."""
+        if not all((case_id, tenant_id, run_id, idempotency_key, scope_digest, policy_digest)):
+            raise ContextEngineError("dispatch_intent_incomplete", "dispatch intent is missing identity or digest fields")
+        key = (tenant_id, case_id, idempotency_key)
+        proposed = {
+            "case_id": case_id,
+            "tenant_id": tenant_id,
+            "run_id": run_id,
+            "idempotency_key": idempotency_key,
+            "approved_action_refs": sorted(set(approved_action_refs)),
+            "scope_digest": scope_digest,
+            "policy_digest": policy_digest,
+        }
+        self._person_case_dispatch_index: dict[tuple[str, str, str], dict[str, Any]] = getattr(
+            self, "_person_case_dispatch_index", {}
         )
-        await self.put_action(intent_action)
+        previous = self._person_case_dispatch_index.get(key)
+        if previous is not None:
+            for field in ("approved_action_refs", "scope_digest", "policy_digest"):
+                if previous[field] != proposed[field]:
+                    raise ContextEngineError(
+                        "idempotency_key_reused",
+                        f"idempotency key was reused with different {field}",
+                    )
+            return {**previous, "created": False}
+        self._person_case_dispatch_index[key] = proposed
+        return {**proposed, "created": True}
+
 
 
 class InMemoryContextStore(ContextStore):
