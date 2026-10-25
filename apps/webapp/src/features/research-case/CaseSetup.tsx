@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ApiError } from "../../lib/http";
@@ -273,7 +274,7 @@ function formatError(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown request failure";
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return <label className="block space-y-1 text-sm"><span className="block text-slate-700">{label}</span>{children}</label>;
 }
 
