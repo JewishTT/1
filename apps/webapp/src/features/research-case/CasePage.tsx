@@ -10,6 +10,7 @@
  */
 
 import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
@@ -18,6 +19,7 @@ import {
   CloseCaseRequest,
   Obligation,
   CoverageLedger,
+  CaseActions,
 } from "./api";
 import { useResearchCaseView } from "./store";
 import { ErrorView, LoadingView } from "../../ui/Feedback";
@@ -40,6 +42,8 @@ export function CasePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { selectedTab, setSelectedTab } = useResearchCaseView();
+  const [selectedActionRefs, setSelectedActionRefs] = useState<string[]>([]);
+  const [runIdempotencyKey, setRunIdempotencyKey] = useState<string | null>(null);
 
   const { data: caseData, isLoading: caseLoading, error: caseError } = useQuery<ResearchCase>({
     queryKey: ["research-case", caseId],
@@ -63,12 +67,55 @@ export function CasePage() {
     enabled: !!caseId,
   });
 
+  const { data: actionsData, isLoading: actionsLoading, error: actionsError } = useQuery<CaseActions>({
+    queryKey: ["research-case-actions", caseId],
+    queryFn: () => api.listActions(caseId!),
+    enabled: !!caseId,
+  });
+
   const planMutation = useMutation({
     mutationFn: () => api.planCase(caseId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["research-case-obligations", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["research-case-actions", caseId] });
     },
   });
+
+  const approveActionsMutation = useMutation({
+    mutationFn: (actionRefs: string[]) => api.approveActions(caseId!, actionRefs),
+    onSuccess: (result) => {
+      setSelectedActionRefs(result.approved_action_refs);
+      queryClient.invalidateQueries({ queryKey: ["research-case-actions", caseId] });
+    },
+  });
+
+  const runMutation = useMutation({
+    mutationFn: (input: { actionRefs: string[]; key: string }) =>
+      api.runCase(caseId!, {
+        idempotency_key: input.key,
+        approved_action_refs: input.actionRefs,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["research-case", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["research-case-actions", caseId] });
+    },
+  });
+
+  const currentActions = actionsData?.actions ?? [];
+  const proposedActions = currentActions.filter(
+    (action) => action.status === "proposed" && action.requires_operator_approval,
+  );
+  const approvedActions = currentActions.filter(
+    (action) => action.status === "approved" && !action.requires_operator_approval,
+  );
+
+  useEffect(() => {
+    const currentIds = new Set(currentActions.map((action) => action.action_id));
+    setSelectedActionRefs((previous) => previous.filter((id) => currentIds.has(id)));
+    if (selectedActionRefs.length === 0 && proposedActions.length > 0) {
+      setSelectedActionRefs(proposedActions.map((action) => action.action_id));
+    }
+  }, [actionsData]);
 
   const closeMutation = useMutation({
     mutationFn: (body: CloseCaseRequest) => api.closeCase(caseId!, body),
@@ -100,17 +147,12 @@ export function CasePage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {caseData.state !== "APPROVED" && caseData.state !== "RUNNING" && (
-            <button
-              onClick={() => {
-                // Open approval flow handled by CaseSetup modal/path
-                navigate(`/research-cases/${caseId}/setup`);
-              }}
-              className="px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded hover:bg-slate-800"
-            >
-              Approve
-            </button>
-          )}
+          <button
+            onClick={() => navigate(`/research-cases/${caseId}/setup`)}
+            className="px-3 py-1.5 text-sm font-medium bg-slate-900 text-white rounded hover:bg-slate-800"
+          >
+            {caseData.approved ? "Revise scope" : "Review / approve scope"}
+          </button>
           {caseData.state === "APPROVED" && (
             <button
               onClick={() => planMutation.mutate()}
@@ -120,7 +162,7 @@ export function CasePage() {
               {planMutation.isPending ? "Planning…" : "Plan case"}
             </button>
           )}
-          {caseData.state === "RUNNING" && (
+          {(caseData.state === "RUNNING" || caseData.state === "QUEUED") && (
             <button
               onClick={() => api.pauseCase(caseId!).then(() => queryClient.invalidateQueries({ queryKey: ["research-case", caseId] }))}
               className="px-3 py-1.5 text-sm font-medium bg-amber-600 text-white rounded hover:bg-amber-700"
@@ -189,6 +231,134 @@ export function CasePage() {
             </div>
           )}
 
+          <section className="mb-4 rounded border border-slate-300 bg-white p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="font-semibold">Source-bound actions</h2>
+                <p className="mt-1 text-xs text-slate-600">
+                  Every action is tied to one policy-approved source, claim family, scope digest and policy digest.
+                  Approval is a separate admin decision. Queueing reserves budget before publishing to Kafka.
+                </p>
+              </div>
+              <button
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["research-case-actions", caseId] })}
+                className="rounded border border-slate-300 px-2 py-1 text-xs"
+              >
+                Refresh
+              </button>
+            </div>
+            {actionsLoading ? (
+              <p className="mt-3 text-sm text-slate-500">Loading action proposals…</p>
+            ) : actionsError ? (
+              <p className="mt-3 text-sm text-red-700">
+                Actions unavailable: {actionsError instanceof Error ? actionsError.message : "request failed"}
+              </p>
+            ) : currentActions.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">No current source-bound actions. Approve the scope, then select Plan case.</p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {currentActions.map((action) => {
+                  const selectable = action.status === "proposed" && action.requires_operator_approval;
+                  const approved = action.status === "approved" && !action.requires_operator_approval;
+                  return (
+                    <label key={action.action_id} className="flex items-start gap-2 rounded border border-slate-200 p-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedActionRefs.includes(action.action_id)}
+                        disabled={!selectable && !approved}
+                        onChange={(event) => setSelectedActionRefs((previous) =>
+                          event.target.checked
+                            ? [...new Set([...previous, action.action_id])]
+                            : previous.filter((id) => id !== action.action_id)
+                        )}
+                        className="mt-1"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-semibold">{action.status.toUpperCase()}</span>
+                          <span className="text-xs text-slate-500">{action.source_id} → {action.catalogue_source_id}</span>
+                          <span className="text-xs text-slate-500">{action.claim_family ?? "claim family not declared"}</span>
+                        </span>
+                        <span className="mt-1 block break-all text-xs font-mono text-slate-500">{action.action_id}</span>
+                        <span className="mt-1 block text-sm">{action.proposed_method}</span>
+                        <span className="mt-1 block break-words text-xs text-slate-600">Query: {action.query}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={() => approveActionsMutation.mutate(
+                  selectedActionRefs.filter((id) => proposedActions.some((action) => action.action_id === id))
+                )}
+                disabled={
+                  approveActionsMutation.isPending ||
+                  selectedActionRefs.filter((id) => proposedActions.some((action) => action.action_id === id)).length === 0
+                }
+                className="rounded bg-indigo-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {approveActionsMutation.isPending ? "Approving…" : "Approve selected actions (admin)"}
+              </button>
+              <button
+                onClick={() => {
+                  const actionRefs = selectedActionRefs.filter((id) => approvedActions.some((action) => action.action_id === id));
+                  if (actionRefs.length === 0) return;
+                  const key = runIdempotencyKey ?? `case-run-${crypto.randomUUID()}`;
+                  setRunIdempotencyKey(key);
+                  runMutation.mutate({ actionRefs, key });
+                }}
+                disabled={
+                  runMutation.isPending ||
+                  selectedActionRefs.filter((id) => approvedActions.some((action) => action.action_id === id)).length === 0 ||
+                  !caseData.approved
+                }
+                className="rounded bg-emerald-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {runMutation.isPending ? "Queueing…" : "Reserve budget + queue selected actions"}
+              </button>
+            </div>
+            {approveActionsMutation.error && (
+              <p role="alert" className="mt-2 text-sm text-red-700">
+                Approval failed: {approveActionsMutation.error instanceof Error ? approveActionsMutation.error.message : "request failed"}
+              </p>
+            )}
+            {runMutation.data && (
+              <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3">
+                <h3 className="text-sm font-semibold">Dispatch result: {runMutation.data.state}</h3>
+                <p className="mt-1 break-all text-xs text-slate-600">Run ID: {runMutation.data.run_id}</p>
+                <p className="mt-1 break-all text-xs text-slate-600">Idempotency key: {runMutation.data.idempotency_key}</p>
+                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs">{JSON.stringify(runMutation.data.dispatch ?? {}, null, 2)}</pre>
+                {runMutation.data.state === "QUEUED" && (
+                  <p className="mt-2 text-xs text-emerald-800">
+                    Kafka acknowledged the acquisition request(s). This is queued work, not proof the worker has finished capture or extraction.
+                  </p>
+                )}
+                {runMutation.data.state === "BLOCKED_DISPATCH" && (
+                  <p className="mt-2 text-xs text-red-800">No acquisition request was acknowledged. The case remains approved.</p>
+                )}
+              </div>
+            )}
+            {runMutation.error && (
+              <p role="alert" className="mt-2 text-sm text-red-700">
+                Run blocked: {runMutation.error instanceof Error ? runMutation.error.message : "request failed"}
+              </p>
+            )}
+            {planMutation.data && (
+              <p className="mt-3 text-xs text-slate-600">
+                Plan state: {planMutation.data.plan_state}. {planMutation.data.ready_to_dispatch
+                  ? "Runtime and source policy allow reviewed actions to be queued after budget reservation."
+                  : "Dispatch is blocked until the reported capability/runtime gaps are resolved."}
+              </p>
+            )}
+            {planMutation.data?.capability_gaps.map((gap) => (
+              <p key={gap.obligation_id} className="mt-2 text-xs text-amber-800">
+                {gap.obligation_id}: {gap.claim_families?.join(", ") || gap.required?.join(", ") || "eligible source"} — {gap.detail}
+              </p>
+            ))}
+          </section>
+
           {/* View selector tabs */}
           <div className="flex flex-wrap gap-1 border-t border-slate-200 pt-4 mt-6">
             {(["overview", "claims", "analytics"] as ViewId[]).map((id) => (
@@ -240,6 +410,7 @@ function policyStateChip(state: string): string {
   switch (state) {
     case "APPROVED": return "bg-green-100 text-green-800";
     case "RUNNING": return "bg-blue-100 text-blue-800";
+    case "QUEUED": return "bg-indigo-100 text-indigo-800";
     case "PAUSED": return "bg-amber-100 text-amber-800";
     case "PARTIAL": return "bg-amber-100 text-amber-800";
     case "BLOCKED": return "bg-red-100 text-red-800";
