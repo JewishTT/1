@@ -50,6 +50,76 @@ async def test_live_tenzir_node_compiles_tql_and_preserves_source_records() -> N
             "address": "",
             "address_refusal": "field_value_is_nested",
         },
+        {
+            "field": '$["Enabled"]',
+            "value": "true",
+            "value_type": "string",
+            "byte_span": [40, 44],
+            "depth": 1,
+            "label": "VALUE",
+            "address": "occ-enabled-1",
+            "address_refusal": "",
+        },
+        {
+            "field": '$["Email"]',
+            "value": "ops@example.test",
+            "value_type": "string",
+            "byte_span": [80, 96],
+            "depth": 1,
+            "label": "VALUE",
+            "address": "occ-email-1",
+            "address_refusal": "",
+        },
+        {
+            "field": '$["Website"]',
+            "value": "https://example.test/path",
+            "value_type": "string",
+            "byte_span": [100, 125],
+            "depth": 1,
+            "label": "VALUE",
+            "address": "occ-website-1",
+            "address_refusal": "",
+        },
+        {
+            "field": '$["Id"]',
+            "value": "550e8400-e29b-41d4-a716-446655440000",
+            "value_type": "string",
+            "byte_span": [130, 166],
+            "depth": 1,
+            "label": "VALUE",
+            "address": "occ-id-1",
+            "address_refusal": "",
+        },
+        {
+            "field": '$["Digest"]',
+            "value": "a" * 64,
+            "value_type": "string",
+            "byte_span": [170, 234],
+            "depth": 1,
+            "label": "VALUE",
+            "address": "occ-digest-1",
+            "address_refusal": "",
+        },
+        {
+            "field": '$["Empty"]',
+            "value": "",
+            "value_type": "string",
+            "byte_span": [240, 240],
+            "depth": 1,
+            "label": "VALUE",
+            "address": "occ-empty-1",
+            "address_refusal": "",
+        },
+        {
+            "field": '$["Null"]',
+            "value": "",
+            "value_type": "null",
+            "byte_span": None,
+            "depth": 1,
+            "label": "VALUE",
+            "address": "occ-null-1",
+            "address_refusal": "",
+        },
     ]
     settings = TenzirSettings(
         node_url=endpoint,
@@ -72,4 +142,8 @@ async def test_live_tenzir_node_compiles_tql_and_preserves_source_records() -> N
     assert normalized.records[1]["normalized"]["value_is_numeric_lexeme"] is True
     assert normalized.records[1]["normalized"]["structural_role"] == "surface"
     assert normalized.records[2]["normalized"]["structural_role"] == "container"
+    assert [item["normalized"]["value_shape"] for item in normalized.records] == [
+        "text", "numeric", "container", "boolean", "email_like",
+        "url_like", "uuid_like", "hex_digest_like", "empty", "null",
+    ]
     assert normalized.records[2]["normalized"]["byte_span_width"] is None
