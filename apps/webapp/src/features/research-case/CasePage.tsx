@@ -220,7 +220,7 @@ export function CasePage() {
               </p>
               {planMutation.data.capability_gaps.map((gap) => (
                 <div key={gap.obligation_id} className="mt-2 text-sm text-amber-800">
-                  {gap.obligation_id}: missing {gap.required.join(", ")} — {gap.detail}
+                  {gap.obligation_id}: {gap.claim_families?.join(", ") || gap.required?.join(", ") || "eligible source"} — {gap.detail}
                 </div>
               ))}
             </section>
