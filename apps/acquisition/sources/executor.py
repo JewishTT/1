@@ -266,6 +266,17 @@ class HttpSourceExecutor:
         session = await self._session()
         method = str(source.tool.get("method") or "GET").upper()
         headers = {str(k): str(v) for k, v in (source.tool.get("headers") or {}).items()}
+        if source.source_id == "crossref_doi" or source.name == "crossref_doi":
+            # Crossref expects a reachable operator contact for its polite pool. The
+            # YAML's historical sample address is documentation only and must never be
+            # sent on a live request.
+            contact = os.environ.get("COGNITIVE_CROSSREF_MAILTO", "").strip()
+            if not contact or "@" not in contact or contact.endswith(".local"):
+                raise AcquisitionError(
+                    "missing_contact_email",
+                    "Crossref requests require a real COGNITIVE_CROSSREF_MAILTO contact email",
+                )
+            headers["User-Agent"] = f"cognitive-substrate/034 (mailto:{contact})"
         # Only forwarded when a source actually declares basic auth. Passing auth=None
         # to every request would be harmless against httpx but changes the call
         # signature every transport double has to match, for a feature 120+ of the
