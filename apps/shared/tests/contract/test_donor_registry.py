@@ -198,8 +198,20 @@ def workspace_members(root: Path = ROOT) -> set[str]:
 
 
 def vendored_donor_names(root: Path = ROOT) -> list[str]:
-    """Every directory under ``donors/``, which is the set the gate must cover."""
-    return sorted(p.name for p in (root / "donors").iterdir() if p.is_dir())
+    """Materialized donor checkouts under ``donors/``.
+
+    A bare Git checkout can contain empty directories for uninitialized git submodules.
+    Those paths are already recorded in the registry but their source trees are not present
+    to inspect. Treating an empty submodule mount as a materialized checkout made CI demand
+    that the registry omit its own 108 declared submodules. A checkout is considered present
+    only when its directory contains files; the inventory/count assertions below continue to
+    validate the registered set when submodules are not materialized.
+    """
+    return sorted(
+        path.name
+        for path in (root / "donors").iterdir()
+        if path.is_dir() and any(path.iterdir())
+    )
 
 
 # ---------------------------------------------------------------------------
