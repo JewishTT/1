@@ -245,10 +245,20 @@ class ResearchCaseService:
         meta = await self._store.get_person_case_metadata(case_id)
         if meta is None or meta.get("tenant_id") != tenant_id:
             raise CaseNotFound(f"case {case_id} not found")
+        if context.state == InvestigationState.CLOSED:
+            case_state = "CLOSED"
+        elif context.state == InvestigationState.SUSPENDED:
+            case_state = "PAUSED"
+        elif context.state == InvestigationState.ACTIVE:
+            case_state = "RUNNING"
+        elif meta.get("approved"):
+            case_state = "APPROVED"
+        else:
+            case_state = "DRAFT"
         return {
             "case_id": context.context_id,
             "tenant_id": context.tenant_id,
-            "state": context.state.value,
+            "state": case_state,
             "purpose_code": meta["purpose_code"],
             "purpose_text": context.question,
             "basis_ref": meta["basis_ref"],
@@ -264,7 +274,122 @@ class ResearchCaseService:
             "budget_ref": meta.get("budget_ref"),
             "approved": bool(meta["approved"]),
             "created_at": context.created_at,
+            "updated_at": context.created_at,
             "expires_at": meta.get("expires_at"),
+        }
+
+    async def revise_scope(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        actor_id: str,
+        purpose_code: str,
+        purpose_text: str,
+        basis_ref: str,
+        launch_profile: str,
+        subject_anchors: list[dict[str, str]],
+        jurisdictions: list[str],
+        valid_time: dict[str, Any],
+        claim_families: list[str],
+        allowed_source_ids: list[str],
+        denied_claim_families: list[str],
+        budget_ref: str | None,
+        expires_at: str | None,
+    ) -> dict[str, Any]:
+        """Replace the declared scope as a new revision and invalidate approval."""
+        context = await self._store.get_context(case_id)
+        if context is None or context.tenant_id != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        if context.state == InvestigationState.CLOSED:
+            raise CaseServiceError("a closed case cannot receive a new scope revision")
+        if not actor_id.strip():
+            raise CaseServiceError("scope revision actor is required")
+        if launch_profile not in {
+            PUBLIC_PROFESSIONAL,
+            PUBLIC_ROLE_REVIEW,
+            CONSENTED_RECORDS,
+            AUTHORISED_CASE,
+        }:
+            raise CaseServiceError(f"unknown launch profile: {launch_profile}")
+        if not subject_anchors or any(
+            not str(anchor.get("kind", "")).strip()
+            or not str(anchor.get("value", "")).strip()
+            for anchor in subject_anchors
+        ):
+            raise CaseServiceError("at least one typed, non-empty subject anchor is required")
+
+        previous = await self._store.get_person_case_metadata(case_id)
+        if previous is None or previous.get("tenant_id") != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        policy = self._require_policy()
+        policy_revision = str(policy._policy.get("metadata", {}).get("version", "1"))
+        scope_revision = int(previous.get("scope_revision", 0)) + 1
+        scope_payload = self._scope_material(
+            tenant_id=tenant_id,
+            purpose_code=purpose_code,
+            purpose_text=purpose_text,
+            basis_ref=basis_ref,
+            launch_profile=launch_profile,
+            subject_anchors=subject_anchors,
+            jurisdictions=jurisdictions,
+            valid_time=valid_time,
+            claim_families=claim_families,
+            denied_claim_families=denied_claim_families,
+            allowed_source_ids=allowed_source_ids,
+            budget_ref=budget_ref,
+            expires_at=expires_at,
+            policy_revision=policy_revision,
+        )
+        scope_digest = self._digest(
+            json.dumps(scope_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        )
+        updated_context = replace(
+            context,
+            question=purpose_text,
+            state=InvestigationState.UNINVESTIGATED,
+            policy_snapshot_ref=policy_revision,
+        )
+        # Existing context identity is stable; mutable scope lives in its append-only
+        # revision snapshot and the canonical metadata sidecar.
+        await self._store.put_context(updated_context)
+        await self._store.put_person_case_metadata(
+            case_id=case_id,
+            tenant_id=tenant_id,
+            purpose_code=purpose_code,
+            basis_ref=basis_ref,
+            launch_profile=launch_profile,
+            claim_families=claim_families,
+            allowed_source_ids=allowed_source_ids,
+            denied_claim_families=denied_claim_families,
+            scope_digest=scope_digest,
+            scope_revision=scope_revision,
+            approved=False,
+            budget_ref=budget_ref,
+            expires_at=expires_at,
+            valid_time=valid_time,
+            jurisdictions=jurisdictions,
+            subject_anchors=subject_anchors,
+        )
+        await self._append_case_revision(
+            context=updated_context,
+            snapshot={
+                "context": updated_context.to_dict(),
+                "person_case_scope": scope_payload,
+                "scope_digest": scope_digest,
+                "scope_revision": scope_revision,
+                "approved": False,
+                "supersedes_scope_revision": previous.get("scope_revision"),
+            },
+            actor=actor_id,
+            rule="scope_revision",
+        )
+        return {
+            "case_id": case_id,
+            "scope_revision": scope_revision,
+            "scope_digest": scope_digest,
+            "re_approval_required": True,
+            "stale_scope_behavior": "CANCELLED_STALE_SCOPE",
         }
 
     # -- approval -----------------------------------------------------------
@@ -299,6 +424,8 @@ class ResearchCaseService:
             raise CaseServiceError("SCOPE_STALE: approval digest does not match current scope")
         if not approver_id.strip():
             raise CaseServiceError("approver identity is required")
+        if self._current_scope_digest(context, meta) != meta.get("scope_digest"):
+            raise CaseServiceError("SCOPE_STALE: current scope does not match its stored digest")
 
         decision = policy.validate_case_scope(
             case_id=case_id,
@@ -314,6 +441,8 @@ class ResearchCaseService:
         )
         if not decision.allowed:
             raise CaseServiceError(f"BLOCKED_POLICY: {decision.detail}")
+        if str(decision.policy_revision) != str(context.policy_snapshot_ref):
+            raise CaseServiceError("POLICY_STALE: policy revision changed; revise the scope before approval")
 
         # Update metadata (durable). The context itself is not mutated for
         # approval; approval lives in the person-case sidecar record.
@@ -334,6 +463,35 @@ class ResearchCaseService:
             valid_time=meta.get("valid_time", {}),
             jurisdictions=list(meta.get("jurisdictions", [])),
             subject_anchors=list(meta.get("subject_anchors", [])),
+        )
+        await self._append_case_revision(
+            context=context,
+            snapshot={
+                "context": context.to_dict(),
+                "person_case_scope": self._scope_material(
+                    tenant_id=tenant_id,
+                    purpose_code=str(meta["purpose_code"]),
+                    purpose_text=context.question,
+                    basis_ref=str(meta["basis_ref"]),
+                    launch_profile=str(meta["launch_profile"]),
+                    subject_anchors=list(meta.get("subject_anchors", [])),
+                    jurisdictions=list(meta.get("jurisdictions", [])),
+                    valid_time=dict(meta.get("valid_time", {})),
+                    claim_families=list(meta.get("claim_families", [])),
+                    denied_claim_families=list(meta.get("denied_claim_families", [])),
+                    allowed_source_ids=list(meta.get("allowed_source_ids", [])),
+                    budget_ref=meta.get("budget_ref"),
+                    expires_at=meta.get("expires_at"),
+                    policy_revision=str(context.policy_snapshot_ref),
+                ),
+                "scope_digest": scope_digest,
+                "scope_revision": scope_revision,
+                "approved": True,
+                "approved_by": approver_id,
+                "policy_revision": str(decision.policy_revision),
+            },
+            actor=approver_id,
+            rule="approve_scope",
         )
 
         return {
