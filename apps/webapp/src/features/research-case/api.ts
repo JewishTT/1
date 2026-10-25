@@ -24,6 +24,7 @@ export type CaseState =
   | "AWAITING_APPROVAL"
   | "APPROVED"
   | "RUNNING"
+  | "QUEUED"
   | "PAUSED"
   | "PARTIAL"
   | "COMPLETE"
@@ -276,16 +277,47 @@ export async function approveCase(caseId: string, body: ApproveCaseRequest): Pro
   });
 }
 
+export interface ResearchAction {
+  action_id: string;
+  obligation_id: string;
+  proposed_method: string;
+  runtime_ref: string;
+  expected_information_gain: number;
+  estimated_cost: number;
+  priority: number;
+  capability_requirements: string[];
+  requires_operator_approval: boolean;
+  status: "proposed" | "approved" | "rejected" | string;
+  source_id: string;
+  catalogue_source_id: string;
+  query: string;
+  parent_action_id: string;
+  scope_digest: string;
+  policy_digest: string;
+  claim_family?: string;
+}
+
+export interface CaseActions {
+  case_id: string;
+  scope_digest: string;
+  scope_revision: number;
+  policy_digest: string;
+  actions: ResearchAction[];
+}
+
 export interface CasePlan {
   case_id: string;
   tenant_id: string;
   scope_digest: string;
   scope_revision: number;
+  policy_digest: string;
   obligations: Obligation[];
+  actions: ResearchAction[];
   required_capabilities: string[];
   capabilities_preview: string[];
-  capability_gaps: Array<{ obligation_id: string; required: string[]; detail: string }>;
-  plan_state: "BLOCKED_CAPABILITY" | "BLOCKED_RUNTIME" | "READY_FOR_REVIEW" | string;
+  capability_gaps: Array<{ obligation_id: string; claim_families?: string[]; detail: string; required?: string[] }>;
+  rejected_catalogue_definitions: Record<string, string[]>;
+  plan_state: "BLOCKED_CAPABILITY" | "BLOCKED_RUNTIME" | "BLOCKED_NO_ACTIONS" | "READY_FOR_REVIEW" | string;
   ready_to_dispatch: boolean;
   no_network_side_effects: boolean;
 }
@@ -297,6 +329,20 @@ export async function planCase(caseId: string): Promise<CasePlan> {
 export interface RunCaseRequest {
   idempotency_key: string;
   approved_action_refs: string[];
+}
+
+export async function listActions(caseId: string): Promise<CaseActions> {
+  return request(`/${encodeURIComponent(caseId)}/actions`);
+}
+
+export async function approveActions(
+  caseId: string,
+  action_refs: string[],
+): Promise<{ case_id: string; approved_by: string; approved_action_refs: string[]; scope_digest: string; policy_digest: string }> {
+  return request(`/${encodeURIComponent(caseId)}/actions/approve`, {
+    method: "POST",
+    body: JSON.stringify({ action_refs }),
+  });
 }
 
 export async function runCase(caseId: string, body: RunCaseRequest): Promise<{ case_id: string; run_id: string; idempotency_key: string; state: string; dispatch_intent_created: boolean; dispatch?: Record<string, unknown> }> {
@@ -387,6 +433,8 @@ export const api = {
   proposeScopeRevision,
   approveCase,
   planCase,
+  listActions,
+  approveActions,
   runCase,
   pauseCase,
   listObligations,
