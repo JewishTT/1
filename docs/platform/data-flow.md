@@ -201,8 +201,10 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` | Alembic migration for temporal materialization persistence (feature 014). |
 | `apps/control-plane/db/migrations/versions/016_relation_evidence_graph.py` | Alembic migration for relation & evidence graph fabric persistence (feature 016). |
 | `apps/control-plane/db/migrations/versions/025_context_graph.py` | Context graph persistence: nodes, edges, decisions (025). |
+| `apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py` | Durable reservation ledger for Feature 034 (revision 026). |
 | `apps/control-plane/db/temporal_materialization.py` | SQLAlchemy persistence adapter for temporal materialization projections. |
 | `apps/control-plane/services/research_case_policy.py` | Person case policy gate (Feature 034). |
+| `apps/control-plane/services/research_case_runtime.py` | Durable Feature 034 budget reservations and the existing Layer-0 dispatcher adapter. |
 | `apps/control-plane/services/research_case_service.py` | Person case application service (Feature 034). |
 | `apps/control-plane/services/search_backends.py` | Real query backends for the search plane (T026, US2). |
 | `apps/control-plane/services/temporal_materialization_dispatch.py` | Temporal launch seam for entity-created temporal materialization. |
@@ -211,8 +213,6 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/tests/integration/test_closed_research_loop.py` | WP-A: the research loop must be able to close, and say why. |
 | `apps/control-plane/tests/integration/test_temporal_materialization_api.py` | API integration tests for temporal materialization. |
 | `apps/control-plane/tests/test_research_case_invariants.py` | Regression tests for the formerly broken Feature 034 case lifecycle. |
-| `apps/control-plane/tests/unit/test_science_tda.py` | API tests: /api/science/invariant — Takens + VR persistence (011, FR-009). |
-| `apps/control-plane/tests/unit/test_search_core_selection.py` | The bm25s core is reachable from production, not only by hand-wiring it. |
 
 ## Closed loop / frontier
 

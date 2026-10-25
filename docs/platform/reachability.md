@@ -6,9 +6,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 388 |
-| TEST_ONLY | 144 |
-| ORPHAN | 115 |
+| PRODUCTION | 390 |
+| TEST_ONLY | 143 |
+| ORPHAN | 116 |
 | TEST | 321 |
 
 ## Entrypoints (production roots)
@@ -52,7 +52,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**144** modules are reached only by tests.
+**143** modules are reached only by tests.
 
 | Module |
 |---|
@@ -71,7 +71,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/adapters/stormcrawler/collect.py` |
 | `apps/acquisition/adapters/warc/__init__.py` |
 | `apps/acquisition/adapters/warc/collect.py` |
-| `apps/acquisition/dispatcher/plan_driver.py` |
 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/registry.py` |
 | `apps/acquisition/source_query_set.py` |
@@ -203,7 +202,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**115** modules are imported by neither production nor tests.
+**116** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -245,6 +244,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/023_derivation_enforcement.py` |
 | `apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py` |
 | `apps/control-plane/db/migrations/versions/025_context_graph.py` |
+| `apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py` |
 | `apps/control-plane/db/relation_claim_store.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |

@@ -893,6 +893,7 @@
           "apps/control-plane/db/migrations/versions/023_derivation_enforcement.py",
           "apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py",
           "apps/control-plane/db/migrations/versions/025_context_graph.py",
+          "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
           "apps/control-plane/db/session.py",
@@ -930,6 +931,7 @@
           "apps/control-plane/services/query_planner.py",
           "apps/control-plane/services/reobservation.py",
           "apps/control-plane/services/research_case_policy.py",
+          "apps/control-plane/services/research_case_runtime.py",
           "apps/control-plane/services/research_case_service.py",
           "apps/control-plane/services/search_backends.py",
           "apps/control-plane/services/series_lifecycle.py",
@@ -1084,7 +1086,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 273
+        "module_count": 275
       },
       {
         "id": "webapp",
@@ -2454,12 +2456,14 @@
           "apps/admission/resolution/blocking.py",
           "apps/control-plane/api/routes/research_cases.py",
           "apps/control-plane/context_engine/person_case_profile.py",
+          "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
           "apps/control-plane/services/model_gateway.py",
           "apps/control-plane/services/research_case_policy.py",
+          "apps/control-plane/services/research_case_runtime.py",
           "apps/control-plane/services/research_case_service.py",
           "apps/control-plane/tests/test_research_case_invariants.py"
         ],
-        "module_count": 8,
+        "module_count": 10,
         "capabilities": []
       }
     ]

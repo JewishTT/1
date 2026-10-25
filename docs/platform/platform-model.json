@@ -200,7 +200,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 216,
+      "python_modules": 218,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -291,6 +291,7 @@
         "apps.control-plane.db.migrations.versions.023_derivation_enforcement",
         "apps.control-plane.db.migrations.versions.024_investigation_entity_membership",
         "apps.control-plane.db.migrations.versions.025_context_graph",
+        "apps.control-plane.db.migrations.versions.026_person_research_case_runtime",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
         "apps.control-plane.db.session",
@@ -330,6 +331,7 @@
         "apps.control-plane.services.query_planner",
         "apps.control-plane.services.reobservation",
         "apps.control-plane.services.research_case_policy",
+        "apps.control-plane.services.research_case_runtime",
         "apps.control-plane.services.research_case_service",
         "apps.control-plane.services.review",
         "apps.control-plane.services.search_backends",
@@ -400,9 +402,7 @@
         "apps.control-plane.tests.unit.test_producer_binding_golden_path",
         "apps.control-plane.tests.unit.test_query_degradation",
         "apps.control-plane.tests.unit.test_query_fusion",
-        "apps.control-plane.tests.unit.test_rank_fusion_wiring",
-        "apps.control-plane.tests.unit.test_reobservation",
-        "apps.control-plane.tests.unit.test_science_tda"
+        "apps.control-plane.tests.unit.test_rank_fusion_wiring"
       ]
     },
     {
@@ -1096,33 +1096,33 @@
     }
   ],
   "import_graph": {
-    "module_count": 968,
-    "edge_count": 2671,
+    "module_count": 970,
+    "edge_count": 2684,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 841,
+      "stdlib:__future__": 843,
       "stdlib:abc": 3,
       "stdlib:argparse": 18,
       "stdlib:ast": 26,
-      "stdlib:asyncio": 62,
+      "stdlib:asyncio": 63,
       "stdlib:base64": 8,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 235,
+      "stdlib:collections": 236,
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 387,
-      "stdlib:datetime": 179,
+      "stdlib:datetime": 181,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
       "stdlib:enum": 117,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 115,
+      "stdlib:hashlib": 117,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 9,
@@ -1132,9 +1132,9 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 181,
+      "stdlib:json": 183,
       "stdlib:logging": 21,
-      "stdlib:math": 39,
+      "stdlib:math": 40,
       "stdlib:os": 63,
       "stdlib:pathlib": 302,
       "stdlib:queue": 1,
@@ -1156,9 +1156,9 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 27,
-      "stdlib:typing": 349,
+      "stdlib:typing": 350,
       "stdlib:unicodedata": 6,
-      "stdlib:urllib": 32,
+      "stdlib:urllib": 36,
       "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -1167,7 +1167,7 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 18,
+      "third-party:alembic": 19,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
@@ -1203,7 +1203,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 117,
+      "third-party:sqlalchemy": 120,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
       "third-party:trafilatura": 1,
@@ -1798,6 +1798,16 @@
         "from": "apps/acquisition/sources/connector.py",
         "to": "apps/shared/domain/relation_identity.py",
         "via": "domain.relation_identity"
+      },
+      {
+        "from": "apps/acquisition/sources/connector.py",
+        "to": "apps/shared/domain/acquisition_artifact.py",
+        "via": "domain.acquisition_artifact"
+      },
+      {
+        "from": "apps/acquisition/sources/connector.py",
+        "to": "apps/shared/domain/capture.py",
+        "via": "domain.capture"
       },
       {
         "from": "apps/acquisition/sources/executor.py",
@@ -4206,6 +4216,11 @@
       },
       {
         "from": "apps/control-plane/composition.py",
+        "to": "apps/control-plane/services/research_case_runtime.py",
+        "via": "services.research_case_runtime"
+      },
+      {
+        "from": "apps/control-plane/composition.py",
         "to": "apps/control-plane/services/cycle_service.py",
         "via": "services.cycle_service"
       },
@@ -5780,6 +5795,46 @@
         "via": "domain.investigation_context"
       },
       {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/control-plane/context_engine/obligations.py",
+        "via": "context_engine.obligations"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/acquisition/sources/catalogue.py",
+        "via": "sources.catalogue"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/acquisition/sources/catalogue.py",
+        "via": "sources.catalogue"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/acquisition/dispatcher/plan_driver.py",
+        "via": "dispatcher.plan_driver"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/acquisition/dispatcher/kafka_producer.py",
+        "via": "dispatcher.kafka_producer"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/acquisition/dispatcher/scheduler.py",
+        "via": "dispatcher.scheduler"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/acquisition/sources/connector.py",
+        "via": "sources.connector"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
+      },
+      {
         "from": "apps/control-plane/services/research_case_service.py",
         "to": "apps/control-plane/context_engine/obligations.py",
         "via": "context_engine.obligations"
@@ -5803,6 +5858,16 @@
         "from": "apps/control-plane/services/research_case_service.py",
         "to": "apps/control-plane/context_engine/loop.py",
         "via": "context_engine.loop"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_service.py",
+        "to": "apps/acquisition/sources/catalogue.py",
+        "via": "sources.catalogue"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_service.py",
+        "to": "apps/control-plane/services/research_case_runtime.py",
+        "via": "services.research_case_runtime"
       },
       {
         "from": "apps/control-plane/services/review.py",
@@ -23699,82 +23764,92 @@
         {
           "method": "GET",
           "path": "/{case_id}",
-          "lineno": 154
+          "lineno": 161
         },
         {
           "method": "PATCH",
           "path": "/{case_id}/scope",
-          "lineno": 167
+          "lineno": 174
         },
         {
           "method": "POST",
           "path": "/{case_id}/approve",
-          "lineno": 200
+          "lineno": 207
         },
         {
           "method": "POST",
           "path": "/{case_id}/plan",
-          "lineno": 223
+          "lineno": 230
+        },
+        {
+          "method": "GET",
+          "path": "/{case_id}/actions",
+          "lineno": 249
+        },
+        {
+          "method": "POST",
+          "path": "/{case_id}/actions/approve",
+          "lineno": 262
         },
         {
           "method": "POST",
           "path": "/{case_id}/run",
-          "lineno": 242
+          "lineno": 286
         },
         {
           "method": "POST",
           "path": "/{case_id}/pause",
-          "lineno": 268
+          "lineno": 312
         },
         {
           "method": "GET",
           "path": "/{case_id}/obligations",
-          "lineno": 284
+          "lineno": 328
         },
         {
           "method": "GET",
           "path": "/{case_id}/coverage",
-          "lineno": 339
+          "lineno": 383
         },
         {
           "method": "GET",
           "path": "/{case_id}/claims",
-          "lineno": 352
+          "lineno": 396
         },
         {
           "method": "GET",
           "path": "/{case_id}/timeline",
-          "lineno": 367
+          "lineno": 411
         },
         {
           "method": "GET",
           "path": "/{case_id}/graph",
-          "lineno": 387
+          "lineno": 431
         },
         {
           "method": "POST",
           "path": "/{case_id}/identity-reviews",
-          "lineno": 405
+          "lineno": 449
         },
         {
           "method": "POST",
           "path": "/{case_id}/claim-disputes",
-          "lineno": 429
+          "lineno": 473
         },
         {
           "method": "POST",
           "path": "/{case_id}/report",
-          "lineno": 453
+          "lineno": 497
         },
         {
           "method": "POST",
           "path": "/{case_id}/close",
-          "lineno": 475
+          "lineno": 519
         },
         {
           "method": "POST",
           "path": "/{case_id}/retention-action",
-          "lineno": 497
+          "lineno": 541
         }
       ]
     },
@@ -27768,6 +27843,7 @@
     "apps/control-plane/db/migrations/versions/023_derivation_enforcement.py",
     "apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py",
     "apps/control-plane/db/migrations/versions/025_context_graph.py",
+    "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
     "apps/control-plane/db/relation_claim_store.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
@@ -27785,6 +27861,7 @@
     "apps/control-plane/services/materialization_outbox_relay.py",
     "apps/control-plane/services/model_gateway.py",
     "apps/control-plane/services/pow_run.py",
+    "apps/control-plane/services/research_case_runtime.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
@@ -27873,11 +27950,9 @@
     "apps/shared/semantic/regime.py",
     "apps/shared/semantic/regime_store.py",
     "apps/shared/semantic/registry.py",
-    "apps/shared/semantic/shacl.py",
-    "apps/shared/semantic/validation.py",
-    "apps/shared/semantic/vocabularies.py"
+    "apps/shared/semantic/shacl.py"
   ],
-  "untested_count": 255,
+  "untested_count": 257,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -28773,6 +28848,7 @@
             "apps/control-plane/db/migrations/versions/023_derivation_enforcement.py",
             "apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py",
             "apps/control-plane/db/migrations/versions/025_context_graph.py",
+            "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
             "apps/control-plane/db/session.py",
@@ -28810,6 +28886,7 @@
             "apps/control-plane/services/query_planner.py",
             "apps/control-plane/services/reobservation.py",
             "apps/control-plane/services/research_case_policy.py",
+            "apps/control-plane/services/research_case_runtime.py",
             "apps/control-plane/services/research_case_service.py",
             "apps/control-plane/services/search_backends.py",
             "apps/control-plane/services/series_lifecycle.py",
@@ -28964,7 +29041,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 273
+          "module_count": 275
         },
         {
           "id": "webapp",
@@ -30334,12 +30411,14 @@
             "apps/admission/resolution/blocking.py",
             "apps/control-plane/api/routes/research_cases.py",
             "apps/control-plane/context_engine/person_case_profile.py",
+            "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
             "apps/control-plane/services/model_gateway.py",
             "apps/control-plane/services/research_case_policy.py",
+            "apps/control-plane/services/research_case_runtime.py",
             "apps/control-plane/services/research_case_service.py",
             "apps/control-plane/tests/test_research_case_invariants.py"
           ],
-          "module_count": 8,
+          "module_count": 10,
           "capabilities": []
         }
       ]
@@ -30968,7 +31047,7 @@
       {
         "path": "apps/acquisition/dispatcher/scheduler.py",
         "status": "IMPLEMENTED",
-        "loc": 293,
+        "loc": 299,
         "callables": 9,
         "stubs": 2,
         "not_implemented": 0,
@@ -31116,7 +31195,7 @@
       {
         "path": "apps/acquisition/sources/catalogue.py",
         "status": "IMPLEMENTED",
-        "loc": 496,
+        "loc": 503,
         "callables": 18,
         "stubs": 0,
         "not_implemented": 0,
@@ -31125,7 +31204,7 @@
       {
         "path": "apps/acquisition/sources/connector.py",
         "status": "IMPLEMENTED",
-        "loc": 264,
+        "loc": 350,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
@@ -31991,8 +32070,8 @@
       {
         "path": "apps/control-plane/api/routes/research_cases.py",
         "status": "IMPLEMENTED",
-        "loc": 523,
-        "callables": 20,
+        "loc": 567,
+        "callables": 22,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -32225,7 +32304,7 @@
       {
         "path": "apps/control-plane/composition.py",
         "status": "IMPLEMENTED",
-        "loc": 472,
+        "loc": 500,
         "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
@@ -32344,7 +32423,7 @@
       {
         "path": "apps/control-plane/context_engine/obligations.py",
         "status": "IMPLEMENTED",
-        "loc": 1052,
+        "loc": 1081,
         "callables": 44,
         "stubs": 0,
         "not_implemented": 0,
@@ -32362,8 +32441,8 @@
       {
         "path": "apps/control-plane/context_engine/postgres_store.py",
         "status": "IMPLEMENTED",
-        "loc": 820,
-        "callables": 42,
+        "loc": 918,
+        "callables": 43,
         "stubs": 0,
         "not_implemented": 0,
         "markers": [
@@ -32400,8 +32479,8 @@
       {
         "path": "apps/control-plane/context_engine/store.py",
         "status": "IMPLEMENTED",
-        "loc": 503,
-        "callables": 49,
+        "loc": 526,
+        "callables": 50,
         "stubs": 18,
         "not_implemented": 0,
         "markers": []
@@ -32611,6 +32690,15 @@
         "status": "MIGRATION",
         "loc": 282,
         "callables": 8,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
+        "status": "MIGRATION",
+        "loc": 80,
+        "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -32966,8 +33054,17 @@
       {
         "path": "apps/control-plane/services/research_case_policy.py",
         "status": "IMPLEMENTED",
-        "loc": 346,
-        "callables": 11,
+        "loc": 416,
+        "callables": 15,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/services/research_case_runtime.py",
+        "status": "IMPLEMENTED",
+        "loc": 682,
+        "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -32975,8 +33072,8 @@
       {
         "path": "apps/control-plane/services/research_case_service.py",
         "status": "IMPLEMENTED",
-        "loc": 948,
-        "callables": 15,
+        "loc": 1285,
+        "callables": 18,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -39409,12 +39506,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 526,
+      "IMPLEMENTED": 527,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 90,
       "TEST": 321,
-      "MIGRATION": 13,
-      "total": 968
+      "MIGRATION": 14,
+      "total": 970
     }
   },
   "reachability": {
@@ -39577,7 +39674,7 @@
       },
       {
         "path": "apps/acquisition/dispatcher/plan_driver.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/acquisition/dispatcher/regional.py",
@@ -40308,6 +40405,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/db/relation_claim_store.py",
         "status": "ORPHAN"
       },
@@ -40461,6 +40562,10 @@
       },
       {
         "path": "apps/control-plane/services/research_case_policy.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/control-plane/services/research_case_runtime.py",
         "status": "PRODUCTION"
       },
       {
@@ -43329,11 +43434,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 388,
-      "TEST_ONLY": 144,
-      "ORPHAN": 115,
+      "PRODUCTION": 390,
+      "TEST_ONLY": 143,
+      "ORPHAN": 116,
       "TEST": 321,
-      "total": 968
+      "total": 970
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -43351,7 +43456,6 @@
       "apps/acquisition/adapters/stormcrawler/collect.py",
       "apps/acquisition/adapters/warc/__init__.py",
       "apps/acquisition/adapters/warc/collect.py",
-      "apps/acquisition/dispatcher/plan_driver.py",
       "apps/acquisition/dispatcher/regional.py",
       "apps/acquisition/registry.py",
       "apps/acquisition/source_query_set.py",
@@ -43520,6 +43624,7 @@
       "apps/control-plane/db/migrations/versions/023_derivation_enforcement.py",
       "apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py",
       "apps/control-plane/db/migrations/versions/025_context_graph.py",
+      "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
       "apps/control-plane/db/relation_claim_store.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
@@ -44690,8 +44795,8 @@
       },
       "acquisition.request": {
         "lane": "acquisition",
-        "files": 11,
-        "producer_files": 8
+        "files": 12,
+        "producer_files": 9
       },
       "admission.decided": {
         "lane": "admission",
@@ -46659,6 +46764,32 @@
         "evidence": {
           "file": "apps/acquisition/sources/connector.py",
           "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "26af9c9a1224c015",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/sources/connector.py",
+        "object": "apps/shared/domain/acquisition_artifact.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/sources/connector.py",
+          "via": "domain.acquisition_artifact"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9edaca6b1b333dde",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/sources/connector.py",
+        "object": "apps/shared/domain/capture.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/sources/connector.py",
+          "via": "domain.capture"
         },
         "confidence": 1.0
       },
@@ -52916,6 +53047,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "29bb94876a49989f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/composition.py",
+        "object": "apps/control-plane/services/research_case_runtime.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/composition.py",
+          "via": "services.research_case_runtime"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "87eb2aa991537956",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/composition.py",
@@ -57011,6 +57155,110 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "70cd4e98a0f6bc99",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/control-plane/context_engine/obligations.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "context_engine.obligations"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3352804e9302c79a",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "sources.catalogue"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3352804e9302c79a",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "sources.catalogue"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "590a129a8f9777f8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/acquisition/dispatcher/plan_driver.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "dispatcher.plan_driver"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f04fed71ae9e2b1d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/acquisition/dispatcher/kafka_producer.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "dispatcher.kafka_producer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b4a5943805230e6d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/acquisition/dispatcher/scheduler.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "dispatcher.scheduler"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e0f477547e2f3450",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/acquisition/sources/connector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "sources.connector"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "40b0c969eb532f50",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "aef2771bb1e6de38",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/research_case_service.py",
@@ -57072,6 +57320,32 @@
         "evidence": {
           "file": "apps/control-plane/services/research_case_service.py",
           "via": "context_engine.loop"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0cdb090e68e22af7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_service.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_service.py",
+          "via": "sources.catalogue"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "1ab56acd1b2345af",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_service.py",
+        "object": "apps/control-plane/services/research_case_runtime.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_service.py",
+          "via": "services.research_case_runtime"
         },
         "confidence": 1.0
       },
@@ -81459,7 +81733,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 156
+          "line": 163
         },
         "confidence": 1.0
       },
@@ -81472,7 +81746,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 169
+          "line": 176
         },
         "confidence": 1.0
       },
@@ -81485,7 +81759,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 202
+          "line": 209
         },
         "confidence": 1.0
       },
@@ -81498,7 +81772,33 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 225
+          "line": 232
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "feec9e6e9e5af0f0",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "GET /{case_id}/actions",
+        "object": "apps/control-plane/api/routes/research_cases.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/research_cases.py",
+          "line": 251
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2f044afc27ebfbf2",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "POST /{case_id}/actions/approve",
+        "object": "apps/control-plane/api/routes/research_cases.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/research_cases.py",
+          "line": 264
         },
         "confidence": 1.0
       },
@@ -81511,7 +81811,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 244
+          "line": 288
         },
         "confidence": 1.0
       },
@@ -81524,7 +81824,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 270
+          "line": 314
         },
         "confidence": 1.0
       },
@@ -81537,7 +81837,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 286
+          "line": 330
         },
         "confidence": 1.0
       },
@@ -81550,7 +81850,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 341
+          "line": 385
         },
         "confidence": 1.0
       },
@@ -81563,7 +81863,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 354
+          "line": 398
         },
         "confidence": 1.0
       },
@@ -81576,7 +81876,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 369
+          "line": 413
         },
         "confidence": 1.0
       },
@@ -81589,7 +81889,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 389
+          "line": 433
         },
         "confidence": 1.0
       },
@@ -81602,7 +81902,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 407
+          "line": 451
         },
         "confidence": 1.0
       },
@@ -81615,7 +81915,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 431
+          "line": 475
         },
         "confidence": 1.0
       },
@@ -81628,7 +81928,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 455
+          "line": 499
         },
         "confidence": 1.0
       },
@@ -81641,7 +81941,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 477
+          "line": 521
         },
         "confidence": 1.0
       },
@@ -81654,7 +81954,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 499
+          "line": 543
         },
         "confidence": 1.0
       },
@@ -98164,6 +98464,18 @@
         "confidence": 0.7
       },
       {
+        "fact_id": "fc77854ced01ba8f",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "034-person-research-case",
+        "object": "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/034-person-research-case/spec.md"
+        },
+        "confidence": 0.7
+      },
+      {
         "fact_id": "41fe7513e54cf09a",
         "kind": "SPEC_CITES_MODULE",
         "subject": "034-person-research-case",
@@ -98180,6 +98492,18 @@
         "kind": "SPEC_CITES_MODULE",
         "subject": "034-person-research-case",
         "object": "apps/control-plane/services/research_case_policy.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/034-person-research-case/spec.md"
+        },
+        "confidence": 0.7
+      },
+      {
+        "fact_id": "0a4765ed99c4080a",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "034-person-research-case",
+        "object": "apps/control-plane/services/research_case_runtime.py",
         "status": "INFERRED",
         "method": "docstring_reference",
         "evidence": {
@@ -98213,44 +98537,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4180,
-      "static_facts": 3896,
-      "inferred": 284,
+      "facts_total": 4197,
+      "static_facts": 3911,
+      "inferred": 286,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 968,
+    "python_modules": 970,
     "typescript_modules": 253,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2671,
+    "import_edges": 2684,
     "test_files": 324,
     "test_functions": 5193,
-    "untested_modules": 255,
-    "http_routes": 174
+    "untested_modules": 257,
+    "http_routes": 176
   },
   "evidence_stats": {
-    "facts_total": 4180,
-    "static_facts": 3896,
-    "inferred": 284,
+    "facts_total": 4197,
+    "static_facts": 3911,
+    "inferred": 286,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 526,
+    "IMPLEMENTED": 527,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 90,
     "TEST": 321,
-    "MIGRATION": 13,
-    "total": 968
+    "MIGRATION": 14,
+    "total": 970
   },
   "reachability_summary": {
-    "PRODUCTION": 388,
-    "TEST_ONLY": 144,
-    "ORPHAN": 115,
+    "PRODUCTION": 390,
+    "TEST_ONLY": 143,
+    "ORPHAN": 116,
     "TEST": 321,
-    "total": 968
+    "total": 970
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -98304,7 +98628,6 @@
     "apps/acquisition/adapters/stormcrawler/collect.py",
     "apps/acquisition/adapters/warc/__init__.py",
     "apps/acquisition/adapters/warc/collect.py",
-    "apps/acquisition/dispatcher/plan_driver.py",
     "apps/acquisition/dispatcher/regional.py",
     "apps/acquisition/registry.py",
     "apps/acquisition/source_query_set.py",
@@ -98473,6 +98796,7 @@
     "apps/control-plane/db/migrations/versions/023_derivation_enforcement.py",
     "apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py",
     "apps/control-plane/db/migrations/versions/025_context_graph.py",
+    "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
     "apps/control-plane/db/relation_claim_store.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
