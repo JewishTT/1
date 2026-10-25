@@ -342,7 +342,14 @@ class Platform:
                 policy=self.person_case_policy,
                 model_gateway=self.model_gateway,
             )
-            self.health.research_case_service = "ready"
+            # CRUD/policy approval is composed, but execution is deliberately not
+            # advertised as ready until budget, ArtifactSink, ObservationGate and the
+            # acknowledged acquisition dispatcher are injected together.
+            self.health.research_case_service = "degraded"
+            self.health.notes.append(
+                "research-case execution blocked: budget, ArtifactSink, ObservationGate "
+                "and dispatch executor are not composed"
+            )
         except Exception as exc:  # noqa: BLE001
             self.health.research_case_service = "absent"
             self.health.notes.append(f"research case service unavailable: {exc}")
