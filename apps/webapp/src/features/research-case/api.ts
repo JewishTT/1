@@ -240,8 +240,18 @@ export interface RetentionAction {
 
 // ── Endpoints ──────────────────────────────────────────────────────
 
-export async function createCase(body: CreateCaseRequest): Promise<ResearchCase> {
-  return request("", "", { method: "POST", body: JSON.stringify(body) });
+export interface CreatedResearchCase {
+  case_id: string;
+  tenant_id: string;
+  state: "DRAFT";
+  scope_digest: string;
+  scope_revision: number;
+  created_at: string;
+  obligation_count: number;
+}
+
+export async function createCase(body: CreateCaseRequest): Promise<CreatedResearchCase> {
+  return request("", { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function getCase(caseId: string): Promise<ResearchCase> {
@@ -367,3 +377,25 @@ export async function retentionAction(caseId: string, body: { action: string }):
     body: JSON.stringify(body),
   });
 }
+
+
+/** Stable feature facade for components; named functions remain directly testable. */
+export const api = {
+  createCase,
+  getCase,
+  proposeScopeRevision,
+  approveCase,
+  planCase,
+  runCase,
+  pauseCase,
+  listObligations,
+  getCoverage,
+  listClaims,
+  getTimeline,
+  getGraph,
+  createIdentityReview,
+  createClaimDispute,
+  generateReport,
+  closeCase,
+  retentionAction,
+};
