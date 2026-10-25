@@ -2,7 +2,7 @@
 
 Every defect below is a claim tied to re-checkable evidence (a file and a regex). `platform_model/gaps.py` re-reads the tree and a contract test fails if any open gap's evidence no longer holds. This is the replacement for the old free-text `KNOWN_GAPS`.
 
-**12** open gaps; **0** stale/resolved (must be zero — the test fails otherwise).
+**10** open gaps; **0** stale/resolved (must be zero — the test fails otherwise).
 
 ## Layer 0 — collection
 
@@ -20,8 +20,6 @@ Every defect below is a claim tied to re-checkable evidence (a file and a regex)
 
 | ID | Severity | Status | Claim | Evidence |
 |---|---|---|---|---|
-| `auth-anonymous-admin` | critical | OPEN | An anonymous request (no bearer token) resolves to Role.ADMIN. | `apps/control-plane/api/auth.py` |
-| `auth-unverified-token` | critical | OPEN | The bearer path parses the token with json.loads; no signature/exp/aud check. | `apps/control-plane/api/auth.py` |
 | `roe-in-memory-registry` | critical | OPEN | Rules-of-Engagement sign-off is written to an in-process registry, not durable storage. | `apps/control-plane/api/routes/specops_roe.py` |
 | `alembic-head-is-not-a-base` | high | OPEN | The first Alembic revision has down_revision=None, so upgrade head builds no pre-014 table. | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` |
 | `create-tables-in-production-path` | high | OPEN | Operational code creates schema with Base.metadata.create_all, not Alembic. | `apps/control-plane/services/temporal_materialization_dispatch.py` |
@@ -40,4 +38,6 @@ Formerly-recorded gaps whose fix must stay in place; a regression flips the guar
 | `context-engine-was-in-memory-only` | GUARDED | CognitiveLoop ran entirely on InMemoryContextStore; the fix is a Postgres store. |
 | `investigation-workflow-was-unregistered` | GUARDED | InvestigationWorkflow/RecrawlWorkflow were declared but never registered. |
 | `all-downgrades-were-not-implemented` | GUARDED | Every migration downgrade raised NotImplementedError. |
+| `auth-anonymous-admin` | GUARDED | Anonymous requests fail closed; explicit development identity does not grant ADMIN. |
+| `auth-unverified-token` | GUARDED | HS256 signature, issuer, audience and temporal claims are checked before identity is accepted. |
 | `ci-sync-installed-no-test-runner` | GUARDED | CI ran `uv sync --locked` and installed no test runner. |
