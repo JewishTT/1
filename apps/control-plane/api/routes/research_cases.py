@@ -7,7 +7,7 @@ directly to raw DB or model provider.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -44,7 +44,7 @@ def _get_service() -> ResearchCaseService:
 
 
 class SubjectAnchor(BaseModel):
-    kind: str = Field(..., description="public_name|orcid|openalex_author_id|doi_author_record|official_profile_url")
+    kind: Literal["public_name", "orcid", "openalex_author_id", "doi_author_record", "official_profile_url"]
     value: str
     evidence_ref: str | None = None
 
@@ -284,30 +284,54 @@ async def list_obligations(
     case_id: str,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
-    """Obligations plus current state, refs, blocker reason."""
+    """Read canonical obligations; family labels come from the case profile criteria."""
     svc = _get_service()
-    context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
-    if context is None or context.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="case not found")
-    obligations = await svc._store.open_obligations(case_id)  # type: ignore[attr-defined]
+    try:
+        case_view = await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
+    obligations = await svc._store.obligations(case_id)  # type: ignore[attr-defined]
+    from context_engine.person_case_profile import profile_for
+
+    profile = profile_for(case_view["launch_profile"])
+    family_by_criterion = {
+        template.code: template.claim_family for template in profile.obligations
+    }
     return {
         "case_id": case_id,
         "tenant_id": ctx.tenant_id,
+        "scope_revision": case_view["scope_revision"],
         "obligations": [
             {
-                "obligation_id": o.obligation_id,
-                "question": o.question,
-                "claim_family": o.claim_family,
-                "state": o.status.value,
-                "required_capabilities": list(o.required_capabilities),
-                "satisfaction_condition": o.satisfaction_condition,
-                "scope_condition": o.scope_condition,
-                "priority": o.priority,
-                "priority_basis": o.priority_basis,
+                "obligation_id": obligation.obligation_id,
+                "question": obligation.question,
+                "claim_families": sorted({
+                    family_by_criterion[criterion.criterion_id]
+                    for criterion in obligation.acceptance_criteria
+                    if criterion.criterion_id in family_by_criterion
+                }),
+                "state": obligation.status.value,
+                "required_capabilities": list(obligation.required_capabilities),
+                "eligible_capabilities": list(obligation.eligible_capabilities),
+                "satisfaction_criteria": list(obligation.satisfaction_criteria),
+                "rationale": obligation.rationale,
+                "priority": obligation.priority,
+                "priority_basis": obligation.priority_basis,
             }
-            for o in obligations
+            for obligation in obligations
         ],
     }
+
+
+def _require_projection(svc: ResearchCaseService, name: str):
+    provider = getattr(svc, "_projection_provider", None)
+    method = getattr(provider, name, None) if provider is not None else None
+    if not callable(method):
+        raise HTTPException(
+            status_code=503,
+            detail=f"{name} projection is not composed; refusing to return synthetic data",
+        )
+    return method
 
 
 @router.get("/{case_id}/coverage")
@@ -317,11 +341,10 @@ async def get_coverage(
 ) -> dict:
     """Source/claim-family/temporal coverage ledger."""
     svc = _get_service()
-    context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
-    if context is None or context.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="case not found")
-    coverage = await svc._store.coverage_ledger(case_id)  # type: ignore[attr-defined]
-    return {"case_id": case_id, "scope_revision": context.scope_revision, "coverage": coverage}
+    case_view = await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    reader = _require_projection(svc, "coverage_ledger")
+    coverage = await reader(case_id=case_id, tenant_id=ctx.tenant_id)
+    return {"case_id": case_id, "scope_revision": case_view["scope_revision"], "coverage": coverage}
 
 
 @router.get("/{case_id}/claims")
@@ -333,10 +356,9 @@ async def list_claims(
 ) -> dict:
     """Claims/contradictions with stable pagination and evidence refs."""
     svc = _get_service()
-    context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
-    if context is None or context.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="case not found")
-    claims = await svc._store.list_claims(case_id, limit=limit, cursor=cursor)  # type: ignore[attr-defined]
+    await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    reader = _require_projection(svc, "list_claims")
+    claims = await reader(case_id=case_id, tenant_id=ctx.tenant_id, limit=limit, cursor=cursor)
     return {"case_id": case_id, "claims": claims}
 
 
@@ -351,15 +373,11 @@ async def get_timeline(
 ) -> dict:
     """Dual-temporal query: valid time and observation/capture time."""
     svc = _get_service()
-    context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
-    if context is None or context.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="case not found")
-    timeline = await svc._store.timeline(  # type: ignore[attr-defined]
-        case_id=case_id,
-        valid_from=valid_from,
-        valid_until=valid_until,
-        as_of=as_of,
-        limit=limit,
+    await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    reader = _require_projection(svc, "timeline")
+    timeline = await reader(
+        case_id=case_id, tenant_id=ctx.tenant_id,
+        valid_from=valid_from, valid_until=valid_until, as_of=as_of, limit=limit,
     )
     return {"case_id": case_id, "timeline": timeline}
 
@@ -374,16 +392,12 @@ async def get_graph(
 ) -> dict:
     """Case-scoped nodes/edges; hard max depth and node count."""
     svc = _get_service()
-    context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
-    if context is None or context.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="case not found")
-    graph = await svc._store.graph(  # type: ignore[attr-defined]
-        case_id=case_id,
-        as_of=as_of,
-        depth=depth,
-        kinds=kinds.split(",") if kinds else None,
+    await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    reader = _require_projection(svc, "graph")
+    return await reader(
+        case_id=case_id, tenant_id=ctx.tenant_id, as_of=as_of,
+        depth=depth, kinds=kinds.split(",") if kinds else None,
     )
-    return graph
 
 
 @router.post("/{case_id}/identity-reviews")
