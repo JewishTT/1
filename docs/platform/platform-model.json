@@ -35207,7 +35207,7 @@
       {
         "path": "apps/interpretation/tests/test_observation_consumer.py",
         "status": "TEST",
-        "loc": 458,
+        "loc": 459,
         "callables": 36,
         "stubs": 0,
         "not_implemented": 0,
