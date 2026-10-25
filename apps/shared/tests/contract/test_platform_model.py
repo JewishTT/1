@@ -100,7 +100,7 @@ KNOWN_UNDECLARED_DEPENDENCIES = frozenset()
 #: imported inside ``try/except ImportError``, so the platform works without them; they
 #: are listed here because "the platform can run without it" is a decision someone made,
 #: not an accident.
-KNOWN_OPTIONAL_PROBES = frozenset({"pyshacl", "pyzbar", "rdflib"})
+KNOWN_OPTIONAL_PROBES = frozenset({"pyshacl", "pyzbar", "tantivy"})
 
 #: Generated narrative documents that live outside ``docs/platform/``. They are rendered
 #: from the model by ``platform_model/narrative.py`` and are part of the drift gate, so a
