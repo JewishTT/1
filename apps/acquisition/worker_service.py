@@ -18,6 +18,7 @@ from typing import Any
 from confluent_kafka import Consumer, KafkaError
 
 from config.settings import get_settings
+from artifact_sink import ArtifactSink
 from dispatcher.kafka_producer import KafkaProducer, ensure_topics
 from events import event_envelope_pb2 as pb
 from events.content_router import ContentRouter
@@ -87,9 +88,7 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
         evidence_writer = PostgresAcquisitionEvidenceWriter(session_factory)
 
         def sink_factory(definition):
-            return __import__(
-                "artifact_sink", fromlist=["ArtifactSink"]
-            ).ArtifactSink(
+            return ArtifactSink(
                 gate=gate,
                 store=object_store,
                 source_family=definition.source_family,
