@@ -155,6 +155,7 @@ export interface Claim {
   predicate: string;
   object_payload: unknown;
   polarity: "positive" | "negative" | "unknown";
+  epistemic_state?: "TRUE_ONLY" | "FALSE_ONLY" | "BOTH" | "NEITHER";
   state: "proposed" | "admitted" | "contested" | "retracted" | "superseded";
   valid_time: ValidTime;
   evidence_refs: string[];
@@ -298,7 +299,7 @@ export interface RunCaseRequest {
   approved_action_refs: string[];
 }
 
-export async function runCase(caseId: string, body: RunCaseRequest): Promise<{ case_id: string; run_id: string; idempotency_key: string; state: string; actions_proposed: string[]; awaiting_approval: string[] }> {
+export async function runCase(caseId: string, body: RunCaseRequest): Promise<{ case_id: string; run_id: string; idempotency_key: string; state: string; dispatch_intent_created: boolean; dispatch?: Record<string, unknown> }> {
   return request(`/${encodeURIComponent(caseId)}/run`, {
     method: "POST",
     body: JSON.stringify(body),
