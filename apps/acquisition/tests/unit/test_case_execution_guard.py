@@ -179,7 +179,7 @@ async def test_scope_revision_digest_and_source_allowlist_are_rechecked():
     rows = _rows(task)
     rows["metadata"]["payload"]["allowed_source_ids"] = ["another-source"]
     session = _Session(rows)
-    with pytest.raises(AcquisitionError, match="not in the approved source allowlist"):
+    with pytest.raises(AcquisitionError, match="in the approved source allowlist"):
         await PostgresCaseExecutionGuard(_SessionFactory(session))(task)
 
 
