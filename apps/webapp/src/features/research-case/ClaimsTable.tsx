@@ -70,8 +70,8 @@ export function ClaimsTable({ caseId }: ClaimsTableProps) {
                   {c.valid_time.from ?? "—"} → {c.valid_time.until ?? "—"} ({c.valid_time.precision})
                 </td>
                 <td className="px-3 py-2">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${EPISTEMIC_CHIP["BOTH"]}`}>
-                    BOTH
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${EPISTEMIC_CHIP[c.epistemic_state ?? "NEITHER"]}`}>
+                    {c.epistemic_state ?? "NOT_COMPUTED"}
                   </span>
                 </td>
                 <td className="px-3 py-2">
