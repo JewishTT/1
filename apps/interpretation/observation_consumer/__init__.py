@@ -335,14 +335,28 @@ class ObservationConsumer:
                         raw_ref=raw_ref,
                         capture_id=capture_id,
                         locator=locator,
+                        raise_on_failure=True,
+                    )
+                    stream_written = await bridge.append_stream(
+                        interpreted, interpreted.resolved_entities, sequence_base=0
                     )
                     interpretation = {
                         **interpreted.as_dict(),
                         "status": "persisted" if persisted else "persistence_failed",
                         "persisted": bool(persisted),
-                        "detail": "" if persisted else "InterpretationBridge refused or failed its canonical transaction",
+                        "stream_records_written": int(stream_written),
+                        "stream_state": (
+                            "written" if stream_written >= len(interpreted.resolved_entities)
+                            else "degraded"
+                        ),
+                        "detail": (
+                            "" if persisted and stream_written >= len(interpreted.resolved_entities)
+                            else "canonical entity stream is incomplete; review processing result"
+                        ),
                     }
-            except Exception as exc:  # noqa: BLE001 - semantic failure remains explicit
+            except Exception as exc:  # noqa: BLE001 - retryable database failure must not ack
+                if getattr(exc, "retryable", False):
+                    raise
                 interpretation = {
                     "status": "failed",
                     "persisted": False,
