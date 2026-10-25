@@ -179,6 +179,29 @@ class _RecordingResultWriter:
         self.rows.append((envelope, result))
 
 
+class TestRetryableInterpretationFailures:
+    @pytest.mark.asyncio
+    async def test_retryable_canonical_failure_escapes_handle_without_result_write(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        class RetryablePersistenceFailure(RuntimeError):
+            retryable = True
+
+        store = _Store()
+        writer = _RecordingResultWriter()
+        consumer = ObservationConsumer(store=store, result_writer=writer)
+
+        async def fail_before_canonical_commit(_envelope):
+            raise RetryablePersistenceFailure("entity transaction unavailable")
+
+        monkeypatch.setattr(consumer, "_process", fail_before_canonical_commit)
+        with pytest.raises(RetryablePersistenceFailure, match="entity transaction unavailable"):
+            await consumer.handle(envelope())
+
+        assert writer.rows == []
+        assert consumer.result_for(envelope().observation_id) is None
+
+
 class TestProcessingResultDurability:
     @pytest.mark.asyncio
     async def test_result_writer_is_called_before_handle_returns(self):
