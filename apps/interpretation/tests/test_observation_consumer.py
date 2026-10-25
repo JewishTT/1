@@ -8,10 +8,12 @@ replay - and negative properties are exactly what a happy-path test misses.
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import pathlib
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -23,6 +25,7 @@ from observation_consumer import (
     CONSUMER_VERSION,
     ObservationConsumer,
 )
+from normalization.tenzir import TenzirNormalization
 
 SEARX_RESULT = {
     "url": "https://github.com/topics/event-driven",
@@ -40,10 +43,26 @@ class _Store:
     def __init__(self, body: bytes = RAW) -> None:
         self.body = body
         self.reads: list[tuple[str, str]] = []
+        self.derived_writes: list[dict[str, Any]] = []
 
     async def read_range(self, *, bucket: str, key: str, offset: int = 0, length=None) -> bytes:
         self.reads.append((bucket, key))
         return self.body
+
+    async def put_derived_dedup(self, body: bytes, *, tenant_id: str, meta=None):
+        digest = hashlib.sha256(body).hexdigest()
+        ref = SimpleNamespace(
+            uri=f"s3://bucket/derived/{tenant_id}/202610/{digest}",
+            sha256=digest,
+            size=len(body),
+        )
+        self.derived_writes.append({
+            "body": body,
+            "tenant_id": tenant_id,
+            "meta": dict(meta or {}),
+            "ref": ref,
+        })
+        return ref, False
 
 
 def envelope(
@@ -290,3 +309,105 @@ class TestConsumerDoesNotOverreach:
         # A type claim would surface as one; there is no such field.
         assert not hasattr(result, "entity_type")
         assert "email" not in json.dumps(result.to_dict()).lower()
+
+
+
+class _FakeTenzir:
+    async def normalize_records(self, records):
+        copies = [dict(row) for row in records]
+        output = []
+        for index, row in enumerate(copies):
+            value = row["value"]
+            span = row["byte_span"]
+            output.append({
+                "ordinal": index,
+                "record": row,
+                "normalized": {
+                    "field_path": row["field"].lower(),
+                    "value_type": row["value_type"].lower(),
+                    "value_length_chars": len(value),
+                    "value_length_bytes": len(value.encode("utf-8")),
+                    "value_is_numeric_lexeme": value.isnumeric(),
+                    "has_nonempty_surface": bool(value.strip()),
+                    "byte_span_width": span[1] - span[0] if span is not None else None,
+                    "structural_role": (
+                        "container" if row["value_type"] == "nested"
+                        else "null" if row["value_type"] == "null"
+                        else "surface"
+                    ),
+                },
+            })
+        return TenzirNormalization(
+            records=output,
+            pipeline_digest="sha256:" + "d" * 64,
+            engine_version="6.19.1",
+        )
+
+
+class TestOptionalTenzirNormalization:
+    @pytest.mark.asyncio
+    async def test_tenzir_output_is_persisted_separately_from_raw_evidence(self):
+        store = _Store()
+        tenzir = _FakeTenzir()
+        consumer = ObservationConsumer(store=store, tenzir=tenzir)
+
+        result = await consumer.handle(envelope())
+
+        assert result.status == "processed"
+        assert result.record_count > 1
+        assert result.mention_count > 0
+        assert result.normalization is not None
+        assert result.normalization["status"] == "processed"
+        assert result.normalization["engine"] == "tenzir-node"
+        assert result.normalization["engine_version"] == "6.19.1"
+        assert result.normalization["pipeline_digest"] == "sha256:" + "d" * 64
+        assert result.normalization["normalization_ref"].startswith("s3://bucket/derived/acme/")
+        assert len(store.derived_writes) == 1
+        write = store.derived_writes[0]
+        assert write["tenant_id"] == "acme"
+        manifest = json.loads(write["body"].decode("utf-8"))
+        assert manifest["observation_id"] == "OBS-" + "a" * 32
+        assert manifest["raw_ref"] == "s3://bucket/raw/tenant/202609/abc"
+        assert manifest["pipeline_digest"] == "sha256:" + "d" * 64
+        assert manifest["record_count"] == result.record_count
+        assert len(manifest["records"]) == result.record_count
+        for record in manifest["records"]:
+            assert record["record"]["byte_span"] is None or len(record["record"]["byte_span"]) == 2
+            assert record["normalized"]["value_length_chars"] >= 0
+
+    @pytest.mark.asyncio
+    async def test_tenzir_failure_is_explicit_but_does_not_erase_native_parse(self):
+        class BrokenTenzir:
+            async def normalize_records(self, records):
+                raise RuntimeError("Tenzir node is unavailable")
+
+        store = _Store()
+        result = await ObservationConsumer(store=store, tenzir=BrokenTenzir()).handle(envelope())
+
+        assert result.status == "processed"
+        assert result.record_count > 1
+        assert result.normalization is not None
+        assert result.normalization["status"] == "failed"
+        assert result.normalization["failure_code"] == "tenzir_normalization_failed"
+        assert "unavailable" in result.normalization["detail"]
+        assert store.derived_writes == []
+
+    @pytest.mark.asyncio
+    async def test_tenzir_is_not_reexecuted_for_a_redelivered_observation(self):
+        class CountingTenzir(_FakeTenzir):
+            def __init__(self):
+                self.calls = 0
+
+            async def normalize_records(self, records):
+                self.calls += 1
+                return await super().normalize_records(records)
+
+        store = _Store()
+        tenzir = CountingTenzir()
+        consumer = ObservationConsumer(store=store, tenzir=tenzir)
+        first = await consumer.handle(envelope())
+        second = await consumer.handle(envelope())
+
+        assert first is second
+        assert tenzir.calls == 1
+        assert len(store.derived_writes) == 1
