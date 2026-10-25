@@ -328,7 +328,7 @@ class ResearchCaseService:
         if previous is None or previous.get("tenant_id") != tenant_id:
             raise CaseNotFound(f"case {case_id} not found")
         policy = self._require_policy()
-        policy_revision = str(policy._policy.get("metadata", {}).get("version", "1"))
+        policy_revision = policy.policy_revision
         scope_revision = int(previous.get("scope_revision", 0)) + 1
         scope_payload = self._scope_material(
             tenant_id=tenant_id,
