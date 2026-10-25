@@ -107,9 +107,18 @@ def test_remote_plain_http_is_refused_by_default() -> None:
 def test_remote_plain_http_requires_an_explicit_development_override() -> None:
     settings = TenzirSettings(
         node_url="http://tenzir.internal:5160",
+        token="test-token",
         allow_insecure_http=True,
     )
     assert settings.node_url == "http://tenzir.internal:5160"
+
+
+def test_remote_endpoint_requires_a_node_token() -> None:
+    with pytest.raises(TenzirError, match="tenzir_token_missing"):
+        TenzirSettings(
+            node_url="http://tenzir.internal:5160",
+            allow_insecure_http=True,
+        )
 
 
 def test_tql_literals_escape_source_strings_and_reject_injected_field_names() -> None:
