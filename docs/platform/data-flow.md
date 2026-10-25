@@ -202,6 +202,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/db/migrations/versions/016_relation_evidence_graph.py` | Alembic migration for relation & evidence graph fabric persistence (feature 016). |
 | `apps/control-plane/db/migrations/versions/025_context_graph.py` | Context graph persistence: nodes, edges, decisions (025). |
 | `apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py` | Durable reservation ledger for Feature 034 (revision 026). |
+| `apps/control-plane/db/migrations/versions/027_person_research_case_records.py` | Structured case scope and dispatch idempotency records for Feature 034. |
 | `apps/control-plane/db/temporal_materialization.py` | SQLAlchemy persistence adapter for temporal materialization projections. |
 | `apps/control-plane/services/research_case_policy.py` | Person case policy gate (Feature 034). |
 | `apps/control-plane/services/research_case_runtime.py` | Durable Feature 034 budget reservations and the existing Layer-0 dispatcher adapter. |
@@ -212,7 +213,6 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/tests/contract/test_context_graph_contract.py` | What the Context Graph is required to refuse, and what it must never confuse. |
 | `apps/control-plane/tests/integration/test_closed_research_loop.py` | WP-A: the research loop must be able to close, and say why. |
 | `apps/control-plane/tests/integration/test_temporal_materialization_api.py` | API integration tests for temporal materialization. |
-| `apps/control-plane/tests/test_research_case_invariants.py` | Regression tests for the formerly broken Feature 034 case lifecycle. |
 
 ## Closed loop / frontier
 

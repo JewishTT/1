@@ -7,11 +7,11 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python / TypeScript / Rust modules | 970 / 253 / 15 |
+| Python / TypeScript / Rust modules | 971 / 253 / 15 |
 | Resolved import edges | 2684 |
 | HTTP routes / routers | 176 / 33 |
 | Test files / functions | 324 / 5193 |
-| Evidence facts (static) | 4197 |
+| Evidence facts (static) | 4198 |
 
 ## Implementation maturity
 
@@ -23,7 +23,7 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
 | PACKAGE_INIT | 90 |
-| MIGRATION | 14 |
+| MIGRATION | 15 |
 | TEST | 321 |
 
 See [maturity.md](maturity.md).
@@ -34,7 +34,7 @@ See [maturity.md](maturity.md).
 |---|---|
 | PRODUCTION | 390 |
 | TEST_ONLY | 143 |
-| ORPHAN | 116 |
+| ORPHAN | 117 |
 | TEST | 321 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
@@ -128,4 +128,4 @@ Specs whose task list shows 0 checked but whose number is cited by real modules 
 | `024-context-driven-continuous-intelligence` | 0/168 | 24 |
 | `030-global-platform-upgrade` | 0/152 | 24 |
 | `032-global-upgrade-execution` | 0/84 | 8 |
-| `034-person-research-case` | 0/76 | 10 |
+| `034-person-research-case` | 0/76 | 11 |

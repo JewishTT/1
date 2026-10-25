@@ -1,8 +1,8 @@
 {
   "stats": {
-    "facts_total": 4197,
+    "facts_total": 4198,
     "static_facts": 3911,
-    "inferred": 286,
+    "inferred": 287,
     "intended": 0
   },
   "facts": [
@@ -53202,6 +53202,18 @@
       "kind": "SPEC_CITES_MODULE",
       "subject": "034-person-research-case",
       "object": "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs/034-person-research-case/spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "d6189be890270c68",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "034-person-research-case",
+      "object": "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {

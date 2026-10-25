@@ -8,7 +8,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 |---|---|
 | PRODUCTION | 390 |
 | TEST_ONLY | 143 |
-| ORPHAN | 116 |
+| ORPHAN | 117 |
 | TEST | 321 |
 
 ## Entrypoints (production roots)
@@ -202,7 +202,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**116** modules are imported by neither production nor tests.
+**117** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -245,6 +245,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py` |
 | `apps/control-plane/db/migrations/versions/025_context_graph.py` |
 | `apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py` |
+| `apps/control-plane/db/migrations/versions/027_person_research_case_records.py` |
 | `apps/control-plane/db/relation_claim_store.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |

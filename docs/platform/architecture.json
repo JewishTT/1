@@ -894,6 +894,7 @@
           "apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py",
           "apps/control-plane/db/migrations/versions/025_context_graph.py",
           "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
+          "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
           "apps/control-plane/db/session.py",
@@ -1086,7 +1087,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 275
+        "module_count": 276
       },
       {
         "id": "webapp",
@@ -2457,13 +2458,14 @@
           "apps/control-plane/api/routes/research_cases.py",
           "apps/control-plane/context_engine/person_case_profile.py",
           "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
+          "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
           "apps/control-plane/services/model_gateway.py",
           "apps/control-plane/services/research_case_policy.py",
           "apps/control-plane/services/research_case_runtime.py",
           "apps/control-plane/services/research_case_service.py",
           "apps/control-plane/tests/test_research_case_invariants.py"
         ],
-        "module_count": 10,
+        "module_count": 11,
         "capabilities": []
       }
     ]
