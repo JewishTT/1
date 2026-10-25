@@ -382,6 +382,18 @@ def _require_projection(svc: ResearchCaseService, name: str):
     return method
 
 
+async def _read_projection(awaitable):
+    """Map known projection failures to explicit API status codes, not fake results."""
+    from services.research_case_projection import ProjectionUnavailable
+
+    try:
+        return await awaitable
+    except ProjectionUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.get("/{case_id}/coverage")
 async def get_coverage(
     case_id: str,
@@ -391,8 +403,10 @@ async def get_coverage(
     svc = _get_service()
     case_view = await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
     reader = _require_projection(svc, "coverage_ledger")
-    coverage = await reader(case_id=case_id, tenant_id=ctx.tenant_id)
-    return {"case_id": case_id, "scope_revision": case_view["scope_revision"], "coverage": coverage}
+    coverage = await _read_projection(
+        reader(case_id=case_id, tenant_id=ctx.tenant_id)
+    )
+    return coverage
 
 
 @router.get("/{case_id}/claims")
@@ -406,8 +420,10 @@ async def list_claims(
     svc = _get_service()
     await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
     reader = _require_projection(svc, "list_claims")
-    claims = await reader(case_id=case_id, tenant_id=ctx.tenant_id, limit=limit, cursor=cursor)
-    return {"case_id": case_id, "claims": claims}
+    claims = await _read_projection(
+        reader(case_id=case_id, tenant_id=ctx.tenant_id, limit=limit, cursor=cursor)
+    )
+    return {"case_id": case_id, **claims}
 
 
 @router.get("/{case_id}/timeline")
@@ -423,11 +439,12 @@ async def get_timeline(
     svc = _get_service()
     await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
     reader = _require_projection(svc, "timeline")
-    timeline = await reader(
-        case_id=case_id, tenant_id=ctx.tenant_id,
-        valid_from=valid_from, valid_until=valid_until, as_of=as_of, limit=limit,
+    return await _read_projection(
+        reader(
+            case_id=case_id, tenant_id=ctx.tenant_id,
+            valid_from=valid_from, valid_until=valid_until, as_of=as_of, limit=limit,
+        )
     )
-    return {"case_id": case_id, "timeline": timeline}
 
 
 @router.get("/{case_id}/graph")
@@ -442,9 +459,11 @@ async def get_graph(
     svc = _get_service()
     await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
     reader = _require_projection(svc, "graph")
-    return await reader(
-        case_id=case_id, tenant_id=ctx.tenant_id, as_of=as_of,
-        depth=depth, kinds=kinds.split(",") if kinds else None,
+    return await _read_projection(
+        reader(
+            case_id=case_id, tenant_id=ctx.tenant_id, as_of=as_of,
+            depth=depth, kinds=kinds.split(",") if kinds else None,
+        )
     )
 
 
