@@ -401,8 +401,11 @@ class TestOptionalTenzirNormalization:
         assert result.normalization["engine_version"] == "6.19.1"
         assert result.normalization["pipeline_digest"] == "sha256:" + "d" * 64
         assert result.normalization["normalization_ref"].startswith("s3://bucket/derived/acme/")
-        assert len(store.derived_writes) == 1
-        write = store.derived_writes[0]
+        assert len(store.derived_writes) == 2
+        native = json.loads(store.derived_writes[0]["body"].decode("utf-8"))
+        assert native["schema"] == "cognitive.parsed-observation/v1"
+        assert native["raw_content_sha256"]
+        write = store.derived_writes[-1]
         assert write["tenant_id"] == "acme"
         manifest = json.loads(write["body"].decode("utf-8"))
         assert manifest["observation_id"] == "OBS-" + "a" * 32
@@ -429,7 +432,9 @@ class TestOptionalTenzirNormalization:
         assert result.normalization["status"] == "failed"
         assert result.normalization["failure_code"] == "tenzir_normalization_failed"
         assert "unavailable" in result.normalization["detail"]
-        assert store.derived_writes == []
+        assert len(store.derived_writes) == 2
+        native = json.loads(store.derived_writes[0]["body"].decode("utf-8"))
+        assert native["schema"] == "cognitive.parsed-observation/v1"
 
     @pytest.mark.asyncio
     async def test_tenzir_is_not_reexecuted_for_a_redelivered_observation(self):
