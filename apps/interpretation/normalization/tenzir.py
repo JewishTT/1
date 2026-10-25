@@ -97,6 +97,8 @@ class TenzirSettings:
                 "tenzir_config_invalid",
                 "TENZIR_NODE_URL must not embed credentials, query parameters or a fragment",
             )
+        if parsed.path not in {"", "/"}:
+            raise TenzirError("tenzir_config_invalid", "TENZIR_NODE_URL must be the node origin, without an API path")
         local_hosts = {"localhost", "127.0.0.1", "::1"}
         host_is_loopback = (parsed.hostname or "").lower() in local_hosts
         if parsed.scheme == "http" and not host_is_loopback and not self.allow_insecure_http:
@@ -467,7 +469,7 @@ class TenzirNodeNormalizer:
         if self.settings.token:
             headers["X-Tenzir-Token"] = self.settings.token
         request = Request(
-            self.settings.node_url.rstrip("/") + "/" + path.lstrip("/"),
+            self.settings.node_url.rstrip("/") + "/api/v0/" + path.lstrip("/"),
             data=body,
             headers=headers,
             method="POST",
