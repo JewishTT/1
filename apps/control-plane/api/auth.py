@@ -12,6 +12,7 @@ import enum
 import hashlib
 import hmac
 import json
+import math
 import os
 import re
 import time
@@ -85,13 +86,18 @@ def _verify_jwt(token: str, *, secret: bytes, issuer: str, audience: str) -> Ten
     now = time.time()
 
     exp = claims.get("exp")
-    if isinstance(exp, bool) or not isinstance(exp, (int, float)) or exp <= now:
+    if (
+        isinstance(exp, bool)
+        or not isinstance(exp, (int, float))
+        or not math.isfinite(exp)
+        or exp <= now
+    ):
         raise ValueError("missing or expired exp claim")
     for time_claim in ("iat", "nbf"):
         value = claims.get(time_claim)
         if value is None:
             continue
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
             raise ValueError(f"invalid {time_claim} claim")
         if time_claim == "iat" and value > now + 30:
             raise ValueError("iat is in the future")
