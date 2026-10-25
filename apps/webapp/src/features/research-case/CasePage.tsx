@@ -78,8 +78,8 @@ export function CasePage() {
     },
   });
 
-  if (caseLoading) return <LoadingView />;
-  if (caseError || !caseData) return <ErrorView error={caseError} />;
+  if (caseLoading) return <LoadingView message="Loading research case…" />;
+  if (caseError || !caseData) return <ErrorView error={caseError instanceof Error ? caseError.message : "Unable to load research case"} />;
   const obligations: Obligation[] = obligationsData?.obligations ?? [];
 
   return (
