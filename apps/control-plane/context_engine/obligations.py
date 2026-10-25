@@ -770,6 +770,8 @@ class ResearchAction:
     source_id: str = ""
     query: str = ""
     parent_action_id: str = ""
+    scope_digest: str = ""
+    policy_digest: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "capability_requirements", tuple(self.capability_requirements))
@@ -812,6 +814,10 @@ class ResearchAction:
             material["query"] = self.query
         if self.parent_action_id:
             material["parent_action_id"] = self.parent_action_id
+        if self.scope_digest:
+            material["scope_digest"] = self.scope_digest
+        if self.policy_digest:
+            material["policy_digest"] = self.policy_digest
         return material
 
     def address(self) -> str:
@@ -841,6 +847,8 @@ class ResearchAction:
             source_id=str(data.get("source_id", "")),
             query=str(data.get("query", "")),
             parent_action_id=str(data.get("parent_action_id", "")),
+            scope_digest=str(data.get("scope_digest", "")),
+            policy_digest=str(data.get("policy_digest", "")),
         )
 
     def to_dict(self) -> dict[str, Any]:
