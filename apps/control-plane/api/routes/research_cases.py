@@ -97,7 +97,11 @@ class PlanCaseResponse(BaseModel):
     scope_digest: str
     scope_revision: int
     obligations: list[dict]
+    required_capabilities: list[str] = Field(default_factory=list)
     capabilities_preview: list[str]
+    capability_gaps: list[dict] = Field(default_factory=list)
+    plan_state: str
+    ready_to_dispatch: bool
     no_network_side_effects: bool = True
 
 
@@ -412,6 +416,8 @@ async def create_identity_review(
     context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
     if context is None or context.tenant_id != ctx.tenant_id:
         raise HTTPException(status_code=404, detail="case not found")
+    if not callable(getattr(svc._store, "record_identity_review", None)):
+        raise HTTPException(status_code=503, detail="record_identity_review is not backed by a durable canonical store implementation")
     review_id = await svc._store.record_identity_review(  # type: ignore[attr-defined]
         case_id=case_id,
         tenant_id=ctx.tenant_id,
@@ -434,6 +440,8 @@ async def create_claim_dispute(
     context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
     if context is None or context.tenant_id != ctx.tenant_id:
         raise HTTPException(status_code=404, detail="case not found")
+    if not callable(getattr(svc._store, "record_claim_dispute", None)):
+        raise HTTPException(status_code=503, detail="record_claim_dispute is not backed by a durable canonical store implementation")
     dispute_id = await svc._store.record_claim_dispute(  # type: ignore[attr-defined]
         case_id=case_id,
         claim_id=body.get("claim_id"),
@@ -456,6 +464,8 @@ async def generate_report(
     context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
     if context is None or context.tenant_id != ctx.tenant_id:
         raise HTTPException(status_code=404, detail="case not found")
+    if not callable(getattr(svc._store, "generate_report", None)):
+        raise HTTPException(status_code=503, detail="generate_report is not backed by a durable canonical store implementation")
     report_id = await svc._store.generate_report(  # type: ignore[attr-defined]
         case_id=case_id,
         tenant_id=ctx.tenant_id,
@@ -498,6 +508,8 @@ async def retention_action(
     context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
     if context is None or context.tenant_id != ctx.tenant_id:
         raise HTTPException(status_code=404, detail="case not found")
+    if not callable(getattr(svc._store, "retention_action", None)):
+        raise HTTPException(status_code=503, detail="retention_action is not backed by a durable canonical store implementation")
     action_id = await svc._store.retention_action(  # type: ignore[attr-defined]
         case_id=case_id,
         tenant_id=ctx.tenant_id,
