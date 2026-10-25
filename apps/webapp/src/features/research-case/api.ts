@@ -109,11 +109,15 @@ export interface ReviseScopeRequest extends CreateCaseRequest {
 export interface Obligation {
   obligation_id: string;
   question: string;
-  claim_family: string;
+  claim_family?: string | null;
+  claim_families?: string[];
   state: string;
   required_capabilities: string[];
-  satisfaction_condition: string;
-  scope_condition: string;
+  eligible_capabilities?: string[];
+  satisfaction_condition?: string | string[];
+  satisfaction_criteria?: string[];
+  scope_condition?: string;
+  rationale?: string;
   priority: number;
   priority_basis: string;
 }
@@ -261,7 +265,21 @@ export async function approveCase(caseId: string, body: ApproveCaseRequest): Pro
   });
 }
 
-export async function planCase(caseId: string): Promise<{ case_id: string; tenant_id: string; scope_digest: string; scope_revision: number; obligations: Obligation[]; capabilities_preview: string[]; no_network_side_effects: boolean }> {
+export interface CasePlan {
+  case_id: string;
+  tenant_id: string;
+  scope_digest: string;
+  scope_revision: number;
+  obligations: Obligation[];
+  required_capabilities: string[];
+  capabilities_preview: string[];
+  capability_gaps: Array<{ obligation_id: string; required: string[]; detail: string }>;
+  plan_state: "BLOCKED_CAPABILITY" | "BLOCKED_RUNTIME" | "READY_FOR_REVIEW" | string;
+  ready_to_dispatch: boolean;
+  no_network_side_effects: boolean;
+}
+
+export async function planCase(caseId: string): Promise<CasePlan> {
   return request(`/${encodeURIComponent(caseId)}/plan`, { method: "POST" });
 }
 
