@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **219** · TypeScript modules: **0**
+Python modules: **220** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 

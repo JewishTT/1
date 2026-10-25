@@ -1,6 +1,6 @@
 # Tests
 
-324 test files, 5193 test functions. 258 platform modules are not targeted by any test.
+325 test files, 5196 test functions. 258 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -100,6 +100,7 @@
 | `apps/control-plane/tests/unit/test_migration_017_forward_only.py` | 17 | `apps/control-plane/db/schema.py`, `apps/shared/config/settings.py` |
 | `apps/control-plane/tests/unit/test_migration_020_universal_relation.py` | 16 | `apps/control-plane/db/schema.py`, `apps/shared/domain/relation_candidate.py` |
 | `apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py` | 9 | `apps/control-plane/api/routes/entities.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/session.py`, `apps/shared/config/settings.py` |
+| `apps/control-plane/tests/unit/test_migration_027_person_case_records.py` | 3 | `apps/control-plane/context_engine/postgres_store.py` |
 | `apps/control-plane/tests/unit/test_migration_forward_only.py` | 5 | — |
 | `apps/control-plane/tests/unit/test_modifier_mismatch.py` | 9 | `apps/control-plane/modifier/__init__.py` |
 | `apps/control-plane/tests/unit/test_monitor.py` | 11 | `apps/control-plane/cp_domain/investigation.py` |

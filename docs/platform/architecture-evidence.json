@@ -1,8 +1,8 @@
 {
   "stats": {
-    "facts_total": 4198,
-    "static_facts": 3911,
-    "inferred": 287,
+    "facts_total": 4201,
+    "static_facts": 3913,
+    "inferred": 288,
     "intended": 0
   },
   "facts": [
@@ -15109,6 +15109,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
         "via": "db.session"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "29a540a5ad9f1535",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+      "object": "apps/control-plane/context_engine/postgres_store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+        "via": "context_engine.postgres_store"
       },
       "confidence": 1.0
     },
@@ -41855,6 +41868,18 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "01cad5d3fcf4648d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+      "object": "apps/control-plane/context_engine/postgres_store.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "48f25c59f7da78e6",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/control-plane/tests/unit/test_modifier_mismatch.py",
@@ -53274,6 +53299,18 @@
       "kind": "SPEC_CITES_MODULE",
       "subject": "034-person-research-case",
       "object": "apps/control-plane/tests/test_research_case_invariants.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs/034-person-research-case/spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "4a501adb7b9910fc",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "034-person-research-case",
+      "object": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {

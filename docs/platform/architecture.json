@@ -993,6 +993,7 @@
           "apps/control-plane/tests/unit/test_migration_017_forward_only.py",
           "apps/control-plane/tests/unit/test_migration_020_universal_relation.py",
           "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
+          "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
           "apps/control-plane/tests/unit/test_migration_forward_only.py",
           "apps/control-plane/tests/unit/test_modifier_mismatch.py",
           "apps/control-plane/tests/unit/test_monitor.py",
@@ -1087,7 +1088,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 276
+        "module_count": 277
       },
       {
         "id": "webapp",
@@ -2463,9 +2464,10 @@
           "apps/control-plane/services/research_case_policy.py",
           "apps/control-plane/services/research_case_runtime.py",
           "apps/control-plane/services/research_case_service.py",
-          "apps/control-plane/tests/test_research_case_invariants.py"
+          "apps/control-plane/tests/test_research_case_invariants.py",
+          "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
         ],
-        "module_count": 11,
+        "module_count": 12,
         "capabilities": []
       }
     ]

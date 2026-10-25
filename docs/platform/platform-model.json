@@ -200,7 +200,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 219,
+      "python_modules": 220,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -394,6 +394,7 @@
         "apps.control-plane.tests.unit.test_migration_017_forward_only",
         "apps.control-plane.tests.unit.test_migration_020_universal_relation",
         "apps.control-plane.tests.unit.test_migration_024_investigation_entity_membership",
+        "apps.control-plane.tests.unit.test_migration_027_person_case_records",
         "apps.control-plane.tests.unit.test_migration_forward_only",
         "apps.control-plane.tests.unit.test_modifier_mismatch",
         "apps.control-plane.tests.unit.test_monitor",
@@ -401,8 +402,7 @@
         "apps.control-plane.tests.unit.test_ontology_registry",
         "apps.control-plane.tests.unit.test_postgres_context_store",
         "apps.control-plane.tests.unit.test_producer_binding_golden_path",
-        "apps.control-plane.tests.unit.test_query_degradation",
-        "apps.control-plane.tests.unit.test_query_fusion"
+        "apps.control-plane.tests.unit.test_query_degradation"
       ]
     },
     {
@@ -1096,11 +1096,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 971,
-    "edge_count": 2684,
+    "module_count": 972,
+    "edge_count": 2685,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 844,
+      "stdlib:__future__": 845,
       "stdlib:abc": 3,
       "stdlib:argparse": 18,
       "stdlib:ast": 26,
@@ -1127,8 +1127,8 @@
       "stdlib:hmac": 3,
       "stdlib:html": 9,
       "stdlib:http": 5,
-      "stdlib:importlib": 28,
-      "stdlib:inspect": 19,
+      "stdlib:importlib": 29,
+      "stdlib:inspect": 20,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
@@ -1136,10 +1136,10 @@
       "stdlib:logging": 21,
       "stdlib:math": 40,
       "stdlib:os": 63,
-      "stdlib:pathlib": 302,
+      "stdlib:pathlib": 303,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 89,
+      "stdlib:re": 90,
       "stdlib:secrets": 1,
       "stdlib:shlex": 1,
       "stdlib:shutil": 14,
@@ -1148,7 +1148,7 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 15,
-      "stdlib:sys": 247,
+      "stdlib:sys": 248,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 17,
       "stdlib:threading": 17,
@@ -7033,6 +7033,11 @@
         "from": "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
         "to": "apps/control-plane/db/session.py",
         "via": "db.session"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+        "to": "apps/control-plane/context_engine/postgres_store.py",
+        "via": "context_engine.postgres_store"
       },
       {
         "from": "apps/control-plane/tests/unit/test_modifier_mismatch.py",
@@ -16919,6 +16924,18 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+        "tests": 3,
+        "test_names": [
+          "test_027_is_forward_only_and_single_head",
+          "test_027_adds_exactly_the_two_owned_case_record_tables",
+          "test_runtime_bootstrap_matches_the_migration_contract"
+        ],
+        "targets": [
+          "apps/control-plane/context_engine/postgres_store.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_migration_forward_only.py",
         "tests": 5,
         "test_names": [
@@ -22682,7 +22699,7 @@
         "targets": []
       }
     ],
-    "total": 5193
+    "total": 5196
   },
   "contracts": {
     "python": [
@@ -28948,6 +28965,7 @@
             "apps/control-plane/tests/unit/test_migration_017_forward_only.py",
             "apps/control-plane/tests/unit/test_migration_020_universal_relation.py",
             "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
+            "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
             "apps/control-plane/tests/unit/test_migration_forward_only.py",
             "apps/control-plane/tests/unit/test_modifier_mismatch.py",
             "apps/control-plane/tests/unit/test_monitor.py",
@@ -29042,7 +29060,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 276
+          "module_count": 277
         },
         {
           "id": "webapp",
@@ -30418,9 +30436,10 @@
             "apps/control-plane/services/research_case_policy.py",
             "apps/control-plane/services/research_case_runtime.py",
             "apps/control-plane/services/research_case_service.py",
-            "apps/control-plane/tests/test_research_case_invariants.py"
+            "apps/control-plane/tests/test_research_case_invariants.py",
+            "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
           ],
-          "module_count": 11,
+          "module_count": 12,
           "capabilities": []
         }
       ]
@@ -32443,7 +32462,7 @@
       {
         "path": "apps/control-plane/context_engine/postgres_store.py",
         "status": "IMPLEMENTED",
-        "loc": 918,
+        "loc": 926,
         "callables": 43,
         "stubs": 0,
         "not_implemented": 0,
@@ -33639,6 +33658,15 @@
         "status": "TEST",
         "loc": 447,
         "callables": 17,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+        "status": "TEST",
+        "loc": 113,
+        "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -37875,7 +37903,7 @@
       {
         "path": "apps/shared/tests/contract/test_donor_registry.py",
         "status": "TEST",
-        "loc": 723,
+        "loc": 729,
         "callables": 42,
         "stubs": 0,
         "not_implemented": 0,
@@ -39520,9 +39548,9 @@
       "IMPLEMENTED": 527,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 90,
-      "TEST": 321,
+      "TEST": 322,
       "MIGRATION": 15,
-      "total": 971
+      "total": 972
     }
   },
   "reachability": {
@@ -40825,6 +40853,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
         "status": "TEST"
       },
       {
@@ -43452,8 +43484,8 @@
       "PRODUCTION": 390,
       "TEST_ONLY": 143,
       "ORPHAN": 117,
-      "TEST": 321,
-      "total": 971
+      "TEST": 322,
+      "total": 972
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -60391,6 +60423,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
           "via": "db.session"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "29a540a5ad9f1535",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+        "object": "apps/control-plane/context_engine/postgres_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+          "via": "context_engine.postgres_store"
         },
         "confidence": 1.0
       },
@@ -87137,6 +87182,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "01cad5d3fcf4648d",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+        "object": "apps/control-plane/context_engine/postgres_store.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "48f25c59f7da78e6",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_modifier_mismatch.py",
@@ -98562,47 +98619,59 @@
           "spec": "specs/034-person-research-case/spec.md"
         },
         "confidence": 0.7
+      },
+      {
+        "fact_id": "4a501adb7b9910fc",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "034-person-research-case",
+        "object": "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/034-person-research-case/spec.md"
+        },
+        "confidence": 0.7
       }
     ],
     "stats": {
-      "facts_total": 4198,
-      "static_facts": 3911,
-      "inferred": 287,
+      "facts_total": 4201,
+      "static_facts": 3913,
+      "inferred": 288,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 971,
+    "python_modules": 972,
     "typescript_modules": 253,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2684,
-    "test_files": 324,
-    "test_functions": 5193,
+    "import_edges": 2685,
+    "test_files": 325,
+    "test_functions": 5196,
     "untested_modules": 258,
     "http_routes": 176
   },
   "evidence_stats": {
-    "facts_total": 4198,
-    "static_facts": 3911,
-    "inferred": 287,
+    "facts_total": 4201,
+    "static_facts": 3913,
+    "inferred": 288,
     "intended": 0
   },
   "maturity_summary": {
     "IMPLEMENTED": 527,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 90,
-    "TEST": 321,
+    "TEST": 322,
     "MIGRATION": 15,
-    "total": 971
+    "total": 972
   },
   "reachability_summary": {
     "PRODUCTION": 390,
     "TEST_ONLY": 143,
     "ORPHAN": 117,
-    "TEST": 321,
-    "total": 971
+    "TEST": 322,
+    "total": 972
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
