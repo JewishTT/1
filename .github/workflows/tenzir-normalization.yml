@@ -21,4 +21,33 @@ jobs:
           .venv/bin/python -m pytest
           apps/interpretation/tests/test_tenzir_normalization.py
           apps/interpretation/tests/test_observation_consumer.py
+          apps/interpretation/tests/test_tenzir_live.py
           -q
+      - name: Start the pinned Tenzir Node with loopback-only development API
+        run: |
+          docker run --detach --name tenzir-node --publish 127.0.0.1:5160:5160 \
+            --entrypoint tenzir-node ghcr.io/tenzir/tenzir:6.19.1 \
+            '--commands=web server --mode=dev --bind=0.0.0.0'
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl --silent --show-error --output /dev/null http://127.0.0.1:5160/ping 2>/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            docker logs tenzir-node
+            exit 1
+          fi
+      - name: Execute TQL against the real Tenzir Node
+        env:
+          TENZIR_LIVE_NODE_URL: http://127.0.0.1:5160
+          TENZIR_NODE_VERSION: 6.19.1
+        run: >-
+          .venv/bin/python -m pytest
+          apps/interpretation/tests/test_tenzir_live.py
+          -q
+      - name: Stop Tenzir Node
+        if: always()
+        run: docker rm --force tenzir-node || true
