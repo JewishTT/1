@@ -80,6 +80,7 @@ class ResearchCaseService:
         artifact_sink: Any = None,
         observation_gate: Any = None,
         dispatch_executor: Any = None,
+        projection_provider: Any = None,
     ) -> None:
         self._store = store
         self._loop = loop
@@ -89,6 +90,7 @@ class ResearchCaseService:
         self._artifact_sink = artifact_sink
         self._observation_gate = observation_gate
         self._dispatch_executor = dispatch_executor
+        self._projection_provider = projection_provider
 
     def _require_policy(self) -> PersonCasePolicy:
         """Fail closed when the policy gate is not loaded."""
@@ -805,12 +807,49 @@ class ResearchCaseService:
         else:
             status = "READY_FOR_REVIEW"
 
+        plan_material = {
+            "case_id": case_id,
+            "scope_digest": scope_digest,
+            "scope_revision": int(meta["scope_revision"]),
+            "policy_digest": policy_digest,
+            "action_refs": sorted(action.action_id for action in actions),
+            "capability_gaps": capability_gaps,
+            "plan_state": status,
+        }
+        plan_digest = self._digest(
+            json.dumps(plan_material, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        )
+        revisions = await self._store.revisions(case_id)
+        latest_snapshot = (
+            revisions[-1].snapshot
+            if revisions and isinstance(revisions[-1].snapshot, Mapping)
+            else {}
+        )
+        if latest_snapshot.get("plan_digest") != plan_digest:
+            await self._append_case_revision(
+                context=context,
+                snapshot={
+                    "context": context.to_dict(),
+                    "scope_digest": scope_digest,
+                    "scope_revision": meta["scope_revision"],
+                    "policy_digest": policy_digest,
+                    "plan_digest": plan_digest,
+                    "plan_state": status,
+                    "proposed_action_refs": sorted(action.action_id for action in actions),
+                    "capability_gaps": capability_gaps,
+                    "no_network_side_effects": True,
+                },
+                actor="system:planner",
+                rule="plan_case",
+            )
+
         return {
             "case_id": case_id,
             "tenant_id": tenant_id,
             "scope_digest": scope_digest,
             "scope_revision": meta["scope_revision"],
             "policy_digest": policy_digest,
+            "plan_digest": plan_digest,
             "obligations": obligation_views,
             "actions": actions,
             "required_capabilities": sorted(required_caps),
