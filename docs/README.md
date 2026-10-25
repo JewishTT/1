@@ -106,7 +106,7 @@ cd apps/webapp && pnpm test                       # UI suite
 
 Machine-checked: each row is verified against the tree by a contract test.
 
-Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; `pytest apps/shared/tests/contract/test_platform_gaps.py` fails if any open gap's evidence stops holding. **12** open gaps.
+Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; `pytest apps/shared/tests/contract/test_platform_gaps.py` fails if any open gap's evidence stops holding. **10** open gaps.
 
 ### Layer 0 — collection
 
@@ -124,8 +124,6 @@ Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; 
 
 | ID | Severity | Claim | Evidence |
 | --- | --- | --- | --- |
-| `auth-anonymous-admin` | critical | An anonymous request (no bearer token) resolves to Role.ADMIN. | `apps/control-plane/api/auth.py` |
-| `auth-unverified-token` | critical | The bearer path parses the token with json.loads; no signature/exp/aud check. | `apps/control-plane/api/auth.py` |
 | `roe-in-memory-registry` | critical | Rules-of-Engagement sign-off is written to an in-process registry, not durable storage. | `apps/control-plane/api/routes/specops_roe.py` |
 | `alembic-head-is-not-a-base` | high | The first Alembic revision has down_revision=None, so upgrade head builds no pre-014 table. | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` |
 | `create-tables-in-production-path` | high | Operational code creates schema with Base.metadata.create_all, not Alembic. | `apps/control-plane/services/temporal_materialization_dispatch.py` |
