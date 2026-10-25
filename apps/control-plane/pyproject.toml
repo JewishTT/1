@@ -36,6 +36,9 @@ dependencies = [
 [dependency-groups]
 dev = [ "pytest>=8.2", "pytest-asyncio>=0.23", "ruff>=0.5" ]
 
+[project.scripts]
+cognitive-observation-consumer = "services.observation_consumer_runner:main"
+
 [tool.uv.sources]
 cognitive-shared = { workspace = true }
 cognitive-science = { workspace = true }
