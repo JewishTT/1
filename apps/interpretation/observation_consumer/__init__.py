@@ -79,6 +79,7 @@ class ProcessingResult:
     truncated: bool = False
     failure_code: str = ""
     detail: str = ""
+    normalization: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -98,6 +99,8 @@ class ProcessingResult:
         if self.failure_code:
             out["failure_code"] = self.failure_code
             out["detail"] = self.detail
+        if self.normalization is not None:
+            out["normalization"] = dict(self.normalization)
         return out
 
 
@@ -111,9 +114,18 @@ class ObservationConsumer:
         source_family: str = "",
         processing_run_id: str = "",
         segment_ref: str = "segment:0",
+        tenzir: Any | None = None,
     ) -> None:
         self._store = store
         self._source_family = source_family
+        self._tenzir = tenzir
+        self._tenzir_configuration_error: Any = None
+        if tenzir is None:
+            try:
+                from normalization.tenzir import TenzirNodeNormalizer
+                self._tenzir = TenzirNodeNormalizer.from_env()
+            except Exception as exc:  # optional stage must report its failure, not block native extraction
+                self._tenzir_configuration_error = exc
         self._run_id = processing_run_id or f"proc-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
         # Mention-addressing refs (§26 of the 021 mention contract). Taken from the
         # capture being read rather than generated, so an ``MN-`` names a parser
@@ -198,6 +210,24 @@ class ObservationConsumer:
         records = payload.records
         mentions = self._bind(payload)
 
+        # The existing parser owns source positions and occurrence identities.
+        # Tenzir is a second, additive pass: it may derive structural statistics,
+        # but it cannot mint mentions, rewrite byte spans, or become the source of
+        # truth for claims. A Tenzir failure is surfaced in the processing manifest
+        # while the canonical parser result remains available.
+        parser_ref = (
+            f"{CONSUMER_NAME}/{CONSUMER_VERSION}"
+            f"#declared={payload.declared_parser or 'none'}"
+            f"#routed={payload.routed_to}"
+        )
+        normalization = await self._normalize_with_tenzir(
+            envelope=envelope,
+            records=records,
+            capture_id=capture_id,
+            raw_ref=raw_ref,
+            parser_ref=parser_ref,
+        )
+
         # §63 wants every observation traceable to a parser version. The payload
         # layer reports *which* parser ran (``declared_parser``) and where it
         # routed to, but carries no version field of its own - so the reference
@@ -205,12 +235,6 @@ class ObservationConsumer:
         # the pair that actually determines the interpretation. Inventing a
         # "parser_version" attribute that does not exist is how a manifest ends up
         # naming a version nobody can reproduce.
-        parser_ref = (
-            f"{CONSUMER_NAME}/{CONSUMER_VERSION}"
-            f"#declared={payload.declared_parser or 'none'}"
-            f"#routed={payload.routed_to}"
-        )
-
         return self._result(
             envelope,
             STATUS_PROCESSED,
@@ -220,7 +244,94 @@ class ObservationConsumer:
             record_count=len(records),
             mention_count=mentions,
             truncated=bool(getattr(payload, "truncated", False)),
+            normalization=normalization,
         )
+
+    async def _normalize_with_tenzir(
+        self,
+        *,
+        envelope: pb.EventEnvelope,
+        records: Any,
+        capture_id: str,
+        raw_ref: str,
+        parser_ref: str,
+    ) -> dict[str, Any] | None:
+        if self._tenzir_configuration_error is not None:
+            exc = self._tenzir_configuration_error
+            return {
+                "status": "failed",
+                "engine": "tenzir-node",
+                "failure_code": str(getattr(exc, "code", "tenzir_config_invalid")),
+                "detail": str(getattr(exc, "detail", exc))[:400],
+            }
+        if self._tenzir is None:
+            return None
+        try:
+            from normalization.tenzir import NORMALIZATION_SCHEMA, TenzirError
+
+            normalized = await self._tenzir.normalize_records(
+                [record.to_dict() for record in records]
+            )
+            manifest = {
+                "schema": NORMALIZATION_SCHEMA,
+                "observation_id": envelope.observation_id,
+                "capture_id": capture_id,
+                "tenant_id": envelope.tenant_id,
+                "source_id": envelope.source_id,
+                "raw_ref": raw_ref,
+                "parser_ref": parser_ref,
+                "engine": normalized.engine,
+                "engine_version": normalized.engine_version,
+                "pipeline_version": "tenzir-observed-fields-v1",
+                "pipeline_digest": normalized.pipeline_digest,
+                "record_count": normalized.record_count,
+                "records": normalized.records,
+            }
+            body = json.dumps(
+                manifest,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            put_derived = getattr(self._store, "put_derived_dedup", None)
+            if not callable(put_derived):
+                raise TenzirError(
+                    "tenzir_derived_store_unavailable",
+                    "ObjectStore has no put_derived_dedup method for immutable derived output",
+                )
+            ref, existed = await put_derived(
+                body,
+                tenant_id=envelope.tenant_id,
+                meta={
+                    "schema": NORMALIZATION_SCHEMA,
+                    "observation_id": envelope.observation_id,
+                    "capture_id": capture_id,
+                    "raw_ref": raw_ref,
+                    "pipeline_digest": normalized.pipeline_digest,
+                    "engine": normalized.engine,
+                    "engine_version": normalized.engine_version,
+                },
+            )
+            return {
+                "status": "processed",
+                "engine": normalized.engine,
+                "engine_version": normalized.engine_version,
+                "schema": NORMALIZATION_SCHEMA,
+                "pipeline_version": "tenzir-observed-fields-v1",
+                "pipeline_digest": normalized.pipeline_digest,
+                "record_count": normalized.record_count,
+                "normalization_ref": ref.uri,
+                "content_digest": ref.sha256,
+                "byte_length": ref.size,
+                "already_stored": existed,
+            }
+        except Exception as exc:  # optional acceleration failures never erase native parse results
+            return {
+                "status": "failed",
+                "engine": "tenzir-node",
+                "failure_code": str(getattr(exc, "code", "tenzir_normalization_failed")),
+                "detail": str(getattr(exc, "detail", exc))[:400],
+            }
 
     def _parse(self, body: bytes, content_type: Any, declared_parser: str):
         """Hand the bytes to the payload layer and nothing else.
