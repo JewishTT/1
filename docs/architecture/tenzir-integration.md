@@ -12,7 +12,7 @@ The native `parsers.payload` implementation owns byte spans, unknown-field reten
 
 ## What the adapter actually does
 
-`apps/interpretation/normalization/tenzir.py` sends already-parsed `ObservedField` records to a Tenzir Node using its versioned REST API. The reviewed TQL transform adds structural annotations: case-normalized field paths and value types, character/byte lengths, lexical numeric shape, non-empty surface state, byte-span width, and a coarse structural role.
+`apps/interpretation/normalization/tenzir.py` sends already-parsed `ObservedField` records to a Tenzir Node using its versioned REST API. The reviewed TQL transform adds structural annotations: case-normalized field paths and value types, character/byte lengths, numeric lexical shape, non-empty surface state, byte-span width, a coarse structural role, and a versioned `value_shape` hint (`container`, `null`, `empty`, `numeric`, `boolean`, `email_like`, `url_like`, `uuid_like`, `hex_digest_like`, or `text`). These are lexical/structural hints for downstream profiling, not assertions that the observed string is a valid email/URL/identifier or a semantic type.
 
 The returned rows are checked against the original records. Protected source fields must be present and byte-for-byte/value-equivalent, every input ordinal must appear exactly once, output order/cardinality is verified, and the recorded span width must equal the parser's span width. Tenzir output is written as an immutable, content-addressed derived manifest using the existing object-store deduplication path. The manifest records the observation/capture/raw refs, parser reference, Node version, TQL pipeline version and digest.
 
