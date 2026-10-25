@@ -62,6 +62,19 @@ class AcquisitionTask:
     #: dropped between planning and execution.
     query_ref: str = ""
     constraints: tuple[Mapping[str, Any], ...] = ()
+    # Feature 034 scope/approval binding. These are carried end-to-end in the request
+    # envelope so the worker can revalidate against PostgreSQL immediately before I/O.
+    case_id: str = ""
+    scope_digest: str = ""
+    policy_digest: str = ""
+    policy_revision: str = ""
+    scope_revision: int = 0
+    budget_reservation_id: str = ""
+    idempotency_key: str = ""
+    run_id: str = ""
+    case_policy_source_id: str = ""
+    approved_action_ref: str = ""
+    action_id: str = ""
 
     def to_task(self) -> dict[str, Any]:
         return {
@@ -75,6 +88,17 @@ class AcquisitionTask:
             "runtime_ref": self.runtime_ref,
             "query_ref": self.query_ref,
             "constraints": [dict(item) for item in self.constraints],
+            "case_id": self.case_id,
+            "scope_digest": self.scope_digest,
+            "policy_digest": self.policy_digest,
+            "policy_revision": self.policy_revision,
+            "scope_revision": self.scope_revision,
+            "budget_reservation_id": self.budget_reservation_id,
+            "idempotency_key": self.idempotency_key,
+            "run_id": self.run_id,
+            "case_policy_source_id": self.case_policy_source_id,
+            "approved_action_ref": self.approved_action_ref,
+            "action_id": self.action_id,
         }
 
 
