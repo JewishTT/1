@@ -26,32 +26,16 @@ import { useResearchCaseView } from "./store";
 import { ErrorView, LoadingView } from "../../ui/Feedback";
 import { ObligationsBoard } from "./ObligationsBoard";
 import { SubjectOverview } from "./SubjectOverview";
-import { ClaimsTable } from "./ClaimsTable";
-import { TimelineView } from "./TimelineView";
-import { GraphView } from "./GraphView";
-import { SourceLineageView } from "./SourceLineageView";
-import { ACHMatrix } from "./ACHMatrix";
-import { ReportPreview } from "./ReportPreview";
-import { EvidenceInspector } from "./EvidenceInspector";
-import { CoverageBar } from "./CoverageBar";
 
 type ViewId =
   | "overview"
   | "claims"
-  | "timeline"
-  | "graph"
-  | "sources"
-  | "ach"
-  | "report";
+  | "analytics";
 
 const VIEW_LABELS: Record<ViewId, string> = {
   overview: "Overview",
   claims: "Claims",
-  timeline: "Timeline",
-  graph: "Graph",
-  sources: "Sources",
-  ach: "ACH",
-  report: "Report",
+  analytics: "Analytics (not available)",
 };
 
 export function CasePage() {
@@ -72,6 +56,23 @@ export function CasePage() {
     enabled: !!caseId,
   });
 
+  const {
+    data: obligationsData,
+    isLoading: obligationsLoading,
+    error: obligationsError,
+  } = useQuery({
+    queryKey: ["research-case-obligations", caseId],
+    queryFn: () => api.listObligations(caseId!),
+    enabled: !!caseId,
+  });
+
+  const planMutation = useMutation({
+    mutationFn: () => api.planCase(caseId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["research-case-obligations", caseId] });
+    },
+  });
+
   const approveMutation = useMutation({
     mutationFn: ({ digest, revision }: { digest: string; revision: number }) =>
       api.approveCase(caseId!, { scope_digest: digest, scope_revision: revision }),
@@ -90,9 +91,7 @@ export function CasePage() {
 
   if (caseLoading) return <LoadingView />;
   if (caseError || !caseData) return <ErrorView error={caseError} />;
-  if (coverageLoading) return <LoadingView />;
-
-  const obligations: Obligation[] = caseData.state === "APPROVED" || caseData.state === "RUNNING" ? [] : [];
+  const obligations: Obligation[] = obligationsData?.obligations ?? [];
   const coverageItems: CoverageItem[] = coverage?.items ?? [];
 
   return (
@@ -124,6 +123,15 @@ export function CasePage() {
               Approve
             </button>
           )}
+          {caseData.state === "APPROVED" && (
+            <button
+              onClick={() => planMutation.mutate()}
+              disabled={planMutation.isPending}
+              className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {planMutation.isPending ? "Planning…" : "Plan case"}
+            </button>
+          )}
           {caseData.state === "RUNNING" && (
             <button
               onClick={() => api.pauseCase(caseId!).then(() => queryClient.invalidateQueries({ queryKey: ["research-case", caseId] }))}
@@ -150,10 +158,14 @@ export function CasePage() {
             <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Obligations</h2>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {obligations.length === 0 ? (
-              <div className="text-xs text-slate-500 text-center py-8">
-                No obligations. Plan the case first.
+            {obligationsLoading ? (
+              <div className="text-xs text-slate-500 text-center py-8">Loading obligations…</div>
+            ) : obligationsError ? (
+              <div className="text-xs text-red-700 text-center py-8">
+                Obligations are unavailable: {obligationsError instanceof Error ? obligationsError.message : "request failed"}
               </div>
+            ) : obligations.length === 0 ? (
+              <div className="text-xs text-slate-500 text-center py-8">No declared obligations.</div>
             ) : (
               <ObligationsBoard obligations={obligations} caseId={caseData.case_id} />
             )}
@@ -163,16 +175,35 @@ export function CasePage() {
         {/* Main view */}
         <main className="flex-1 overflow-y-auto p-6">
           {selectedTab === "overview" && <SubjectOverview caseId={caseData.case_id} />}
-          {selectedTab === "claims" && <ClaimsTable caseId={caseData.case_id} />}
-          {selectedTab === "timeline" && <TimelineView caseId={caseData.case_id} />}
-          {selectedTab === "graph" && <GraphView caseId={caseData.case_id} />}
-          {selectedTab === "sources" && <SourceLineageView caseId={caseData.case_id} />}
-          {selectedTab === "ach" && <ACHMatrix caseId={caseData.case_id} />}
-          {selectedTab === "report" && <ReportPreview caseId={caseData.case_id} />}
+          {selectedTab === "claims" && (
+            <UnavailablePanel title="Claims" detail="The durable claim projection is not composed yet. The API returns 503 rather than fabricated claims." />
+          )}
+          {selectedTab === "analytics" && (
+            <UnavailablePanel title="Graph, timeline, source lineage and report" detail="These projections are not wired to canonical evidence in this deployment. No synthetic graph or coverage metrics are shown." />
+          )}
+          {planMutation.data && (
+            <section className="mb-4 rounded border border-slate-300 bg-white p-4">
+              <h2 className="font-semibold">Plan result: {planMutation.data.plan_state}</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Required capabilities: {planMutation.data.required_capabilities.join(", ") || "none declared"}.
+                {planMutation.data.ready_to_dispatch ? " Runtime is ready for reviewed actions." : " Dispatch remains blocked."}
+              </p>
+              {planMutation.data.capability_gaps.map((gap) => (
+                <div key={gap.obligation_id} className="mt-2 text-sm text-amber-800">
+                  {gap.obligation_id}: missing {gap.required.join(", ")} — {gap.detail}
+                </div>
+              ))}
+            </section>
+          )}
+          {planMutation.error && (
+            <div className="mb-4 rounded border border-red-300 bg-white p-3 text-sm text-red-700">
+              Planning failed: {planMutation.error instanceof Error ? planMutation.error.message : "request failed"}
+            </div>
+          )}
 
           {/* View selector tabs */}
           <div className="flex flex-wrap gap-1 border-t border-slate-200 pt-4 mt-6">
-            {(["overview", "claims", "timeline", "graph", "sources", "ach", "report"] as ViewId[]).map((id) => (
+            {(["overview", "claims", "analytics"] as ViewId[]).map((id) => (
               <button
                 key={id}
                 onClick={() => setSelectedTab(id)}
@@ -188,22 +219,32 @@ export function CasePage() {
           </div>
         </main>
 
-        {/* Right: evidence inspector */}
-        <aside className="w-96 border-l border-slate-200 bg-white flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-slate-200">
-            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Evidence Inspector</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <EvidenceInspector caseId={caseData.case_id} />
-          </div>
-        </aside>
+        {/* Evidence inspector is intentionally not rendered until a durable span reader is composed. */}
       </div>
 
       {/* Footer: coverage */}
       <footer className="flex-shrink-0 border-t border-slate-200 bg-white px-4 py-2">
-        <CoverageBar items={coverageItems} />
+        {coverage ? (
+          <div className="text-xs text-slate-600">
+            Coverage ledger: {coverage.overall_state} — {coverage.items.length} records.
+          </div>
+        ) : (
+          <div className="text-xs text-amber-800">
+            Coverage ledger unavailable{caseData.state !== "DRAFT" ? " — canonical projection is not composed" : " until an acquisition/coverage path is composed"}.
+            {coverageError ? ` ${coverageError instanceof Error ? coverageError.message : "request failed"}` : ""}
+          </div>
+        )}
       </footer>
     </div>
+  );
+}
+
+function UnavailablePanel({ title, detail }: { title: string; detail: string }) {
+  return (
+    <section className="rounded border border-slate-300 bg-white p-5">
+      <h2 className="text-sm font-semibold">{title}</h2>
+      <p className="mt-2 text-sm text-slate-600">{detail}</p>
+    </section>
   );
 }
 
@@ -211,6 +252,7 @@ function policyStateChip(state: string): string {
   switch (state) {
     case "APPROVED": return "bg-green-100 text-green-800";
     case "RUNNING": return "bg-blue-100 text-blue-800";
+    case "PAUSED": return "bg-amber-100 text-amber-800";
     case "PARTIAL": return "bg-amber-100 text-amber-800";
     case "BLOCKED": return "bg-red-100 text-red-800";
     case "CLOSED": return "bg-slate-100 text-slate-800";
