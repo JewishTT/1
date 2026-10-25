@@ -578,6 +578,8 @@ class PostgresContextStore(ContextStore):
             "approved_action_refs": actions,
             "scope_digest": scope_digest,
             "policy_digest": policy_digest,
+            "state": "PREPARED",
+            "outcome": None,
         }
         async with self._session() as conn:
             inserted = await self._fetch(
@@ -628,6 +630,63 @@ class PostgresContextStore(ContextStore):
                 raise ValueError("idempotency key was reused with a different scope, policy or action set")
             await self._commit(conn)
             return {**existing, "created": False}
+
+    async def mark_person_case_dispatch_intent(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        idempotency_key: str,
+        state: str,
+        outcome: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Persist the broker publication result in the durable idempotency record."""
+        await self.ensure_schema()
+        if state not in {"PREPARED", "PUBLISHED", "PARTIAL", "FAILED"}:
+            raise ValueError(f"unsupported dispatch state: {state}")
+        async with self._session() as conn:
+            rows = await self._fetch(
+                conn,
+                """
+                SELECT payload FROM person_case_dispatch_intents
+                WHERE tenant_id = :tenant_id AND case_id = :case_id
+                  AND idempotency_key = :idempotency_key
+                FOR UPDATE
+                """,
+                {
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                },
+            )
+            if not rows:
+                raise ValueError("dispatch intent is not recorded")
+            payload = rows[0]["payload"]
+            if isinstance(payload, str):
+                payload = json.loads(payload)
+            updated = {
+                **dict(payload),
+                "state": state,
+                "outcome": dict(outcome or {}),
+                "updated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            }
+            await self._exec(
+                conn,
+                """
+                UPDATE person_case_dispatch_intents
+                SET payload = CAST(:payload AS jsonb)
+                WHERE tenant_id = :tenant_id AND case_id = :case_id
+                  AND idempotency_key = :idempotency_key
+                """,
+                {
+                    "payload": _json(updated),
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                },
+            )
+            await self._commit(conn)
+            return {**updated, "created": False}
 
     # -- contexts -----------------------------------------------------------
 
