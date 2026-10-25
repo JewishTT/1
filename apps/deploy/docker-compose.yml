@@ -260,7 +260,7 @@ services:
   # token; never expose this development listener to a LAN or the public Internet.
   tenzir-node:
     profiles: ["tenzir"]
-    image: ghcr.io/tenzir/tenzir:6.19.1
+    image: ghcr.io/tenzir/tenzir:v6.19.1
     entrypoint: ["tenzir-node"]
     command: ["--commands=web server --mode=dev --bind=0.0.0.0"]
     ports: ["127.0.0.1:5160:5160"]
