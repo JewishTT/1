@@ -135,20 +135,23 @@ class ResearchCaseService:
         ):
             raise CaseServiceError("at least one typed, non-empty subject anchor is required")
 
-        scope_payload = {
-            "purpose_code": purpose_code,
-            "purpose_text": purpose_text,
-            "basis_ref": basis_ref,
-            "launch_profile": launch_profile,
-            "subject_anchors": subject_anchors,
-            "jurisdictions": jurisdictions,
-            "valid_time": valid_time,
-            "claim_families": claim_families,
-            "denied_claim_families": denied_claim_families or [],
-            "allowed_source_ids": allowed_source_ids,
-            "budget_ref": budget_ref,
-            "expires_at": expires_at,
-        }
+        policy_revision = str(policy._policy.get("metadata", {}).get("version", "1"))
+        scope_payload = self._scope_material(
+            tenant_id=tenant_id,
+            purpose_code=purpose_code,
+            purpose_text=purpose_text,
+            basis_ref=basis_ref,
+            launch_profile=launch_profile,
+            subject_anchors=subject_anchors,
+            jurisdictions=jurisdictions,
+            valid_time=valid_time,
+            claim_families=claim_families,
+            denied_claim_families=denied_claim_families or [],
+            allowed_source_ids=allowed_source_ids,
+            budget_ref=budget_ref,
+            expires_at=expires_at,
+            policy_revision=policy_revision,
+        )
         scope_digest = self._digest(
             json.dumps(scope_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         )
@@ -166,7 +169,7 @@ class ResearchCaseService:
             scope_refs=tuple(a.get("value", "") for a in subject_anchors),
             question=purpose_text,
             state=InvestigationState.UNINVESTIGATED,
-            policy_snapshot_ref=policy._policy.get("metadata", {}).get("version", "1"),
+            policy_snapshot_ref=policy_revision,
             created_at=now,
         )
 
@@ -175,10 +178,11 @@ class ResearchCaseService:
         # key that ContextStore.get_context() actually addresses.
         case_id = context.context_id
         await self._store.put_context(context)
+        revision_number = await self._store.next_revision_number(context.context_id)
         revision = ContextRevision(
             context_id=context.context_id,
-            revision=await self._store.next_revision_number(context.context_id),
-            parent_revision=(await self._store.next_revision_number(context.context_id)) - 1,
+            revision=revision_number,
+            parent_revision=revision_number - 1,
             state=context.state,
             snapshot={
                 "context": context.to_dict(),
@@ -361,8 +365,9 @@ class ResearchCaseService:
             raise CaseServiceError("cross-tenant access denied")
 
         meta = await self._store.get_person_case_metadata(case_id)
-        if meta is None or not meta.get("approved"):
+        if meta is None or meta.get("tenant_id") != tenant_id or not meta.get("approved"):
             raise CaseNotApproved(f"case {case_id} is not approved")
+        await self._validate_current_scope(context=context, meta=meta)
 
         obligations = await self._store.obligations(case_id)
         return {
@@ -414,8 +419,9 @@ class ResearchCaseService:
             raise CaseServiceError("cross-tenant access denied")
 
         meta = await self._store.get_person_case_metadata(case_id)
-        if meta is None or not meta.get("approved"):
+        if meta is None or meta.get("tenant_id") != tenant_id or not meta.get("approved"):
             raise CaseNotApproved(f"case {case_id} is not approved")
+        await self._validate_current_scope(context=context, meta=meta)
 
         # Budget reservation must exist before dispatch.
         if self._budget_service is not None:
@@ -546,6 +552,115 @@ class ResearchCaseService:
         }
 
     # -- helpers ------------------------------------------------------------
+
+    @staticmethod
+    def _scope_material(
+        *,
+        tenant_id: str,
+        purpose_code: str,
+        purpose_text: str,
+        basis_ref: str,
+        launch_profile: str,
+        subject_anchors: list[dict[str, str]],
+        jurisdictions: list[str],
+        valid_time: dict[str, Any],
+        claim_families: list[str],
+        denied_claim_families: list[str],
+        allowed_source_ids: list[str],
+        budget_ref: str | None,
+        expires_at: str | None,
+        policy_revision: str,
+    ) -> dict[str, Any]:
+        """Canonical material bound to approval and every downstream task."""
+        return {
+            "tenant_id": tenant_id,
+            "purpose_code": purpose_code,
+            "purpose_text": purpose_text,
+            "basis_ref": basis_ref,
+            "launch_profile": launch_profile,
+            "subject_anchors": [dict(a) for a in subject_anchors],
+            "jurisdictions": list(jurisdictions),
+            "valid_time": dict(valid_time),
+            "claim_families": list(claim_families),
+            "denied_claim_families": list(denied_claim_families),
+            "allowed_source_ids": list(allowed_source_ids),
+            "budget_ref": budget_ref,
+            "expires_at": expires_at,
+            "policy_revision": str(policy_revision),
+        }
+
+    def _current_scope_digest(
+        self,
+        context: InvestigationContext,
+        meta: Mapping[str, Any],
+    ) -> str:
+        payload = self._scope_material(
+            tenant_id=context.tenant_id,
+            purpose_code=str(meta["purpose_code"]),
+            purpose_text=context.question,
+            basis_ref=str(meta["basis_ref"]),
+            launch_profile=str(meta["launch_profile"]),
+            subject_anchors=list(meta.get("subject_anchors", [])),
+            jurisdictions=list(meta.get("jurisdictions", [])),
+            valid_time=dict(meta.get("valid_time", {})),
+            claim_families=list(meta.get("claim_families", [])),
+            denied_claim_families=list(meta.get("denied_claim_families", [])),
+            allowed_source_ids=list(meta.get("allowed_source_ids", [])),
+            budget_ref=meta.get("budget_ref"),
+            expires_at=meta.get("expires_at"),
+            policy_revision=str(context.policy_snapshot_ref),
+        )
+        return self._digest(
+            json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        )
+
+    async def _validate_current_scope(
+        self,
+        *,
+        context: InvestigationContext,
+        meta: Mapping[str, Any],
+    ) -> None:
+        """Reject stale or no-longer-authorized scope before planning or dispatch."""
+        if self._current_scope_digest(context, meta) != meta.get("scope_digest"):
+            raise CaseServiceError("SCOPE_STALE: stored scope no longer matches its digest")
+        policy = self._require_policy()
+        decision = policy.validate_case_scope(
+            case_id=context.context_id,
+            tenant_id=context.tenant_id,
+            purpose_code=str(meta["purpose_code"]),
+            basis_ref=meta.get("basis_ref"),
+            scope_digest=str(meta["scope_digest"]),
+            scope_revision=int(meta["scope_revision"]),
+            claim_families=list(meta.get("claim_families", [])),
+            allowed_source_ids=list(meta.get("allowed_source_ids", [])),
+            expires_at=meta.get("expires_at"),
+            launch_profile=str(meta["launch_profile"]),
+        )
+        if not decision.allowed:
+            raise CaseServiceError(f"BLOCKED_POLICY: {decision.detail}")
+        if str(decision.policy_revision) != str(context.policy_snapshot_ref):
+            raise CaseServiceError("POLICY_STALE: policy revision changed; scope needs review")
+
+    async def _append_case_revision(
+        self,
+        *,
+        context: InvestigationContext,
+        snapshot: dict[str, Any],
+        actor: str,
+        rule: str,
+    ) -> None:
+        revision_number = await self._store.next_revision_number(context.context_id)
+        revision = ContextRevision(
+            context_id=context.context_id,
+            revision=revision_number,
+            parent_revision=revision_number - 1,
+            state=context.state,
+            snapshot=snapshot,
+            operator_actions=(f"{rule}:{actor}",),
+            rules_version="feature-034-v1",
+            mode="deterministic",
+        )
+        await self._store.append_revision(revision)
 
     @staticmethod
     def _digest(material: str) -> str:
