@@ -20,7 +20,7 @@ def loaded_policy(monkeypatch: pytest.MonkeyPatch) -> PersonCasePolicy:
     monkeypatch.setenv("COGNITIVE_CROSSREF_MAILTO", "research-tests@example.org")
     policy = PersonCasePolicy()
     policy_path = (
-        Path(__file__).resolve().parents[1]
+        Path(__file__).resolve().parents[2]
         / "acquisition"
         / "policies"
         / "person_case_sources.yaml"
