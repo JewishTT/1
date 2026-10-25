@@ -106,6 +106,23 @@ _DDL = (
         ON person_case_metadata (tenant_id, case_id)
     """,
     """
+    CREATE TABLE IF NOT EXISTS person_case_dispatch_intents (
+        tenant_id        TEXT NOT NULL,
+        case_id          TEXT NOT NULL,
+        idempotency_key  TEXT NOT NULL,
+        run_id           TEXT NOT NULL UNIQUE,
+        scope_digest     TEXT NOT NULL,
+        policy_digest    TEXT NOT NULL,
+        payload          JSONB NOT NULL,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (tenant_id, case_id, idempotency_key)
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS ix_person_case_dispatch_case
+        ON person_case_dispatch_intents (tenant_id, case_id, created_at)
+    """,
+    """
     CREATE TABLE IF NOT EXISTS research_actions (
         action_id     TEXT PRIMARY KEY,
         obligation_id TEXT NOT NULL,
@@ -490,6 +507,81 @@ class PostgresContextStore(ContextStore):
             {"case_id": case_id},
         )
         return dict(payload) if isinstance(payload, Mapping) else None
+
+    async def put_person_case_dispatch_intent(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        run_id: str,
+        idempotency_key: str,
+        approved_action_refs: list[str],
+        scope_digest: str,
+        policy_digest: str,
+    ) -> dict[str, Any]:
+        """Atomically persist a run intent once per tenant/case/idempotency key."""
+        await self.ensure_schema()
+        if not all((case_id, tenant_id, run_id, idempotency_key, scope_digest, policy_digest)):
+            raise ValueError("dispatch intent is missing identity or digest fields")
+        actions = sorted(set(approved_action_refs))
+        payload = {
+            "case_id": case_id,
+            "tenant_id": tenant_id,
+            "run_id": run_id,
+            "idempotency_key": idempotency_key,
+            "approved_action_refs": actions,
+            "scope_digest": scope_digest,
+            "policy_digest": policy_digest,
+        }
+        async with self._session() as conn:
+            inserted = await self._fetch(
+                conn,
+                """
+                INSERT INTO person_case_dispatch_intents
+                    (tenant_id, case_id, idempotency_key, run_id, scope_digest, policy_digest, payload)
+                VALUES
+                    (:tenant_id, :case_id, :idempotency_key, :run_id, :scope_digest, :policy_digest,
+                     CAST(:payload AS jsonb))
+                ON CONFLICT (tenant_id, case_id, idempotency_key) DO NOTHING
+                RETURNING payload
+                """,
+                {
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                    "run_id": run_id,
+                    "scope_digest": scope_digest,
+                    "policy_digest": policy_digest,
+                    "payload": _json(payload),
+                },
+            )
+            if inserted:
+                await self._commit(conn)
+                return {**dict(inserted[0]["payload"]), "created": True}
+
+            existing_rows = await self._fetch(
+                conn,
+                """
+                SELECT payload FROM person_case_dispatch_intents
+                WHERE tenant_id = :tenant_id AND case_id = :case_id AND idempotency_key = :idempotency_key
+                """,
+                {
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                },
+            )
+            if not existing_rows:
+                raise RuntimeError("dispatch intent conflict could not be reconciled")
+            existing = dict(existing_rows[0]["payload"])
+            if (
+                existing.get("scope_digest") != scope_digest
+                or existing.get("policy_digest") != policy_digest
+                or sorted(set(existing.get("approved_action_refs", []))) != actions
+            ):
+                raise ValueError("idempotency key was reused with a different scope, policy or action set")
+            await self._commit(conn)
+            return {**existing, "created": False}
 
     # -- contexts -----------------------------------------------------------
 
