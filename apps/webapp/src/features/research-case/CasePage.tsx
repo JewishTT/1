@@ -25,6 +25,8 @@ import { useResearchCaseView } from "./store";
 import { ErrorView, LoadingView } from "../../ui/Feedback";
 import { ObligationsBoard } from "./ObligationsBoard";
 import { SubjectOverview } from "./SubjectOverview";
+import { ClaimsTable } from "./ClaimsTable";
+import { CaseAnalyticsPanel } from "./CaseAnalyticsPanel";
 
 type ViewId =
   | "overview"
@@ -34,7 +36,7 @@ type ViewId =
 const VIEW_LABELS: Record<ViewId, string> = {
   overview: "Overview",
   claims: "Claims",
-  analytics: "Analytics (not available)",
+  analytics: "Graph & Timeline",
 };
 
 export function CasePage() {
@@ -213,12 +215,8 @@ export function CasePage() {
         {/* Main view */}
         <main className="flex-1 overflow-y-auto p-6">
           {selectedTab === "overview" && <SubjectOverview caseId={caseData.case_id} />}
-          {selectedTab === "claims" && (
-            <UnavailablePanel title="Claims" detail="The durable claim projection is not composed yet. The API returns 503 rather than fabricated claims." />
-          )}
-          {selectedTab === "analytics" && (
-            <UnavailablePanel title="Graph, timeline, source lineage and report" detail="These projections are not wired to canonical evidence in this deployment. No synthetic graph or coverage metrics are shown." />
-          )}
+          {selectedTab === "claims" && <ClaimsTable caseId={caseData.case_id} />}
+          {selectedTab === "analytics" && <CaseAnalyticsPanel caseId={caseData.case_id} />}
           {planMutation.data && (
             <section className="mb-4 rounded border border-slate-300 bg-white p-4">
               <h2 className="font-semibold">Plan result: {planMutation.data.plan_state}</h2>
