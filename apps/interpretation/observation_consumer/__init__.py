@@ -446,6 +446,7 @@ class ObservationConsumer:
         truncated: bool = False,
         failure_code: str = "",
         detail: str = "",
+        normalization: dict[str, Any] | None = None,
     ) -> ProcessingResult:
         return ProcessingResult(
             processing_run_id=self._run_id,
@@ -462,6 +463,7 @@ class ObservationConsumer:
             truncated=truncated,
             failure_code=failure_code,
             detail=detail,
+            normalization=normalization,
         )
 
     def _fail(self, envelope: pb.EventEnvelope, code: str, detail: str) -> ProcessingResult:
