@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import os
 from typing import Any
 
 import yaml
@@ -79,6 +80,7 @@ class PersonCasePolicy:
                 f"source policy YAML invalid: {exc}",
             ) from exc
         spec = self._policy.get("spec", {})
+        self._sources = {}
         for src in spec.get("source_profiles", []):
             self._sources[str(src.get("source_id"))] = src
         self._loaded = True
@@ -159,26 +161,31 @@ class PersonCasePolicy:
                     detail=f"claim family {cf} is excluded for this vertical",
                 )
 
-        # Source allowlist: every source must exist in the policy.
+        # Every requested claim must belong to the vertical's declared ontology.
+        profile_spec = profile_for(launch_profile)
+        for claim_family in claim_families:
+            if claim_family not in profile_spec.allowed_claim_families:
+                return PolicyDecision(
+                    allowed=False,
+                    reason_code="BLOCKED_POLICY",
+                    detail=f"claim family {claim_family} is not allowed for this profile",
+                )
+
+        # An approved scope must have at least one policy-eligible source. A discovery
+        # engine may propose URLs, but it is never silently treated as an evidence source.
+        if not allowed_source_ids:
+            return PolicyDecision(
+                allowed=False,
+                reason_code="BLOCKED_POLICY",
+                detail="no source selected; cannot approve a collection scope",
+            )
         for sid in allowed_source_ids:
-            if sid not in self._sources:
+            reason = self._source_block_reason(sid, launch_profile)
+            if reason:
                 return PolicyDecision(
                     allowed=False,
                     reason_code="BLOCKED_POLICY",
-                    detail=f"source {sid} not in source policy allowlist",
-                )
-            src = self._sources[sid]
-            if launch_profile not in src.get("allowed_case_profiles", []):
-                return PolicyDecision(
-                    allowed=False,
-                    reason_code="BLOCKED_POLICY",
-                    detail=f"source {sid} not allowed for profile {launch_profile}",
-                )
-            if not src.get("enabled", False):
-                return PolicyDecision(
-                    allowed=False,
-                    reason_code="BLOCKED_POLICY",
-                    detail=f"source {sid} is disabled in policy",
+                    detail=reason,
                 )
 
         # Expiry must be in the future.
@@ -206,13 +213,66 @@ class PersonCasePolicy:
             policy_revision=self._policy.get("metadata", {}).get("version", "1"),
         )
 
+    def _source_block_reason(self, source_id: str, launch_profile: str) -> str | None:
+        """One fail-closed gate shared by approval and per-source eligibility."""
+        src = self._sources.get(source_id)
+        if src is None:
+            return f"source {source_id} is not in the policy allowlist"
+        if launch_profile not in self._policy.get("spec", {}).get("case_profiles", []):
+            return f"launch profile {launch_profile} is not approved by current policy"
+        if launch_profile not in src.get("allowed_case_profiles", []):
+            return f"source {source_id} is not allowed for profile {launch_profile}"
+        if not src.get("enabled", False):
+            return f"source {source_id} is disabled in policy"
+
+        runtime_ref = str(src.get("runtime_ref", "")).strip()
+        operation = str(src.get("operation", "")).strip()
+        parser = str(src.get("required_response_parser", "")).strip()
+        if not runtime_ref or not operation or not parser:
+            return f"source {source_id} has an incomplete runtime/operation/parser manifest"
+
+        term_status = str(src.get("term_status", "")).strip()
+        allowed_terms = {"PUBLIC_METADATA_API_DOCUMENTED", "DEPLOYMENT_POLICY"}
+        if term_status not in allowed_terms:
+            return f"source {source_id} terms are not attested for use ({term_status or 'missing'})"
+        term_ref = str(src.get("term_policy_ref", "")).strip()
+        if not term_ref or term_ref.lower().startswith("owner-attestation-required"):
+            return f"source {source_id} has no accepted terms-policy reference"
+        if term_status == "DEPLOYMENT_POLICY" and not term_ref.startswith("deployment-policy:"):
+            return f"source {source_id} requires an explicit deployment-policy reference"
+
+        license_status = str(src.get("license_status", "")).strip()
+        allowed_licenses = {
+            "PUBLIC_METADATA_ONLY_ABSTRACTS_SEPARATELY_GATED",
+            "NOT_APPLICABLE_INTERNAL_DISCOVERY",
+        }
+        if license_status not in allowed_licenses:
+            return f"source {source_id} licence status is not approved ({license_status or 'missing'})"
+
+        egress_hosts = src.get("egress_hosts")
+        if not isinstance(egress_hosts, list) or not egress_hosts or any(
+            not isinstance(host, str) or not host.strip() for host in egress_hosts
+        ):
+            return f"source {source_id} has no explicit egress-host allowlist"
+
+        required_env = src.get("required_env", [])
+        if not isinstance(required_env, list):
+            return f"source {source_id} required_env manifest is invalid"
+        missing_env = [
+            name for name in required_env
+            if not isinstance(name, str) or not name.strip() or not os.getenv(name, "").strip()
+        ]
+        if missing_env:
+            return f"source {source_id} is missing required environment: {', '.join(missing_env)}"
+        return None
+
     def source_eligible(
         self,
         *,
         source_id: str,
         launch_profile: str,
     ) -> SourceEligibility:
-        """Whether a source may be used for a given launch profile."""
+        """Whether a source passes the exact same gate used for approval."""
         if not self._loaded:
             return SourceEligibility(
                 source_id=source_id,
@@ -220,33 +280,19 @@ class PersonCasePolicy:
                 reason_code="BLOCKED_POLICY",
                 detail="source policy not loaded",
             )
-        src = self._sources.get(source_id)
-        if src is None:
+        reason = self._source_block_reason(source_id, launch_profile)
+        if reason:
             return SourceEligibility(
                 source_id=source_id,
                 eligible=False,
-                reason_code="SOURCE_UNAVAILABLE",
-                detail=f"source {source_id} not in policy",
-            )
-        if launch_profile not in src.get("allowed_case_profiles", []):
-            return SourceEligibility(
-                source_id=source_id,
-                eligible=False,
-                reason_code="POLICY_BLOCKED",
-                detail=f"source {source_id} not allowed for profile {launch_profile}",
-            )
-        if not src.get("enabled", False):
-            return SourceEligibility(
-                source_id=source_id,
-                eligible=False,
-                reason_code="SOURCE_UNAVAILABLE",
-                detail=f"source {source_id} disabled",
+                reason_code="BLOCKED_POLICY",
+                detail=reason,
             )
         return SourceEligibility(
             source_id=source_id,
             eligible=True,
             reason_code=None,
-            detail="eligible",
+            detail="eligible under current policy",
         )
 
     def scope_stale(
