@@ -1,8 +1,8 @@
 {
   "stats": {
-    "facts_total": 4167,
-    "static_facts": 3884,
-    "inferred": 283,
+    "facts_total": 4180,
+    "static_facts": 3896,
+    "inferred": 284,
     "intended": 0
   },
   "facts": [
@@ -6338,6 +6338,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "9d140181f25afc98",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/research_cases.py",
+      "object": "apps/control-plane/context_engine/person_case_profile.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/research_cases.py",
+        "via": "context_engine.person_case_profile"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "077fe3158ddcaa9a",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/routes/resolutions.py",
@@ -8379,6 +8392,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "c30f45ee5ba06939",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/context_engine/person_case_profile.py",
+      "object": "apps/shared/domain/investigation_context.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/context_engine/person_case_profile.py",
+        "via": "domain.investigation_context"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "00406ae47a3a063f",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/context_engine/postgres_store.py",
@@ -8531,32 +8557,6 @@
       "evidence": {
         "file": "apps/control-plane/context_engine/store.py",
         "via": "domain.investigation_context"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "df861b3e02dee470",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/control-plane/context_engine/store.py",
-      "object": "apps/control-plane/context_engine/obligations.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/control-plane/context_engine/store.py",
-        "via": "context_engine.obligations"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "df861b3e02dee470",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/control-plane/context_engine/store.py",
-      "object": "apps/control-plane/context_engine/obligations.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/control-plane/context_engine/store.py",
-        "via": "context_engine.obligations"
       },
       "confidence": 1.0
     },
@@ -13757,6 +13757,84 @@
       "evidence": {
         "file": "apps/control-plane/tests/test_auth_security.py",
         "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "81fa521231ec88ea",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/context_engine/person_case_profile.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py",
+        "via": "context_engine.person_case_profile"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "613ddf952ad5b9a2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/context_engine/store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py",
+        "via": "context_engine.store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9b8c3a09adadde56",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/services/research_case_policy.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py",
+        "via": "services.research_case_policy"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "162e363bdfbfeed8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/services/research_case_service.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py",
+        "via": "services.research_case_service"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4117bbe6558d11c5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3c52f428ec5243e6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/api/routes/research_cases.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py",
+        "via": "api.routes.research_cases"
       },
       "confidence": 1.0
     },
@@ -36220,7 +36298,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 136
+        "line": 156
       },
       "confidence": 1.0
     },
@@ -36246,7 +36324,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 204
+        "line": 202
       },
       "confidence": 1.0
     },
@@ -36259,7 +36337,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 226
+        "line": 225
       },
       "confidence": 1.0
     },
@@ -36285,7 +36363,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 269
+        "line": 270
       },
       "confidence": 1.0
     },
@@ -36298,7 +36376,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 284
+        "line": 286
       },
       "confidence": 1.0
     },
@@ -36311,7 +36389,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 315
+        "line": 341
       },
       "confidence": 1.0
     },
@@ -36324,7 +36402,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 329
+        "line": 354
       },
       "confidence": 1.0
     },
@@ -36337,7 +36415,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 345
+        "line": 369
       },
       "confidence": 1.0
     },
@@ -36350,7 +36428,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 369
+        "line": 389
       },
       "confidence": 1.0
     },
@@ -36363,7 +36441,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 391
+        "line": 407
       },
       "confidence": 1.0
     },
@@ -36376,7 +36454,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 412
+        "line": 431
       },
       "confidence": 1.0
     },
@@ -36389,7 +36467,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 433
+        "line": 455
       },
       "confidence": 1.0
     },
@@ -36402,7 +36480,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 452
+        "line": 477
       },
       "confidence": 1.0
     },
@@ -36415,7 +36493,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 473
+        "line": 499
       },
       "confidence": 1.0
     },
@@ -40630,6 +40708,78 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/test_auth_security.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ff37f4c1b4512886",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "aa829837e4677762",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/api/routes/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d4e68afa34a35eca",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/context_engine/person_case_profile.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "034fecad98787519",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/context_engine/store.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4611b7e754801a20",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/services/research_case_policy.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7ee2573266acca37",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/services/research_case_service.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py"
       },
       "confidence": 1.0
     },
@@ -52881,6 +53031,18 @@
       "kind": "SPEC_CITES_MODULE",
       "subject": "034-person-research-case",
       "object": "apps/control-plane/services/research_case_service.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs/034-person-research-case/spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "706aac20ef17c07b",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "034-person-research-case",
+      "object": "apps/control-plane/tests/test_research_case_invariants.py",
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {

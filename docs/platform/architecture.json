@@ -968,6 +968,7 @@
           "apps/control-plane/tests/integration/test_tenancy.py",
           "apps/control-plane/tests/integration/test_tools_api.py",
           "apps/control-plane/tests/test_auth_security.py",
+          "apps/control-plane/tests/test_research_case_invariants.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
           "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -1083,7 +1084,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 272
+        "module_count": 273
       },
       {
         "id": "webapp",
@@ -1171,9 +1172,11 @@
           "apps/webapp/src/evidence/types.ts",
           "apps/webapp/src/evidence/useEvidenceRecords.ts",
           "apps/webapp/src/features/research-case/CasePage.tsx",
+          "apps/webapp/src/features/research-case/CaseSetup.tsx",
           "apps/webapp/src/features/research-case/ClaimsTable.tsx",
           "apps/webapp/src/features/research-case/ObligationsBoard.tsx",
           "apps/webapp/src/features/research-case/SubjectOverview.tsx",
+          "apps/webapp/src/features/research-case/api.test.ts",
           "apps/webapp/src/features/research-case/api.ts",
           "apps/webapp/src/features/research-case/store.ts",
           "apps/webapp/src/ghostline/GhostlineCanvas.tsx",
@@ -1344,7 +1347,7 @@
           "apps/webapp/src/workspace/useWorkState.ts",
           "apps/webapp/vite.config.ts"
         ],
-        "module_count": 251
+        "module_count": 253
       }
     ],
     "event_names_sample": [
@@ -2453,9 +2456,10 @@
           "apps/control-plane/context_engine/person_case_profile.py",
           "apps/control-plane/services/model_gateway.py",
           "apps/control-plane/services/research_case_policy.py",
-          "apps/control-plane/services/research_case_service.py"
+          "apps/control-plane/services/research_case_service.py",
+          "apps/control-plane/tests/test_research_case_invariants.py"
         ],
-        "module_count": 7,
+        "module_count": 8,
         "capabilities": []
       }
     ]

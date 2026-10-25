@@ -210,9 +210,9 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/tests/contract/test_context_graph_contract.py` | What the Context Graph is required to refuse, and what it must never confuse. |
 | `apps/control-plane/tests/integration/test_closed_research_loop.py` | WP-A: the research loop must be able to close, and say why. |
 | `apps/control-plane/tests/integration/test_temporal_materialization_api.py` | API integration tests for temporal materialization. |
+| `apps/control-plane/tests/test_research_case_invariants.py` | Regression tests for the formerly broken Feature 034 case lifecycle. |
 | `apps/control-plane/tests/unit/test_science_tda.py` | API tests: /api/science/invariant — Takens + VR persistence (011, FR-009). |
 | `apps/control-plane/tests/unit/test_search_core_selection.py` | The bm25s core is reachable from production, not only by hand-wiring it. |
-| `apps/control-plane/tests/unit/test_search_fusion_api.py` | The fusion strategy is reachable over HTTP, not only in-process (T004, D6). |
 
 ## Closed loop / frontier
 

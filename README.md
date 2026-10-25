@@ -13,14 +13,14 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 967 |
-| TypeScript modules | 251 |
+| Python modules | 968 |
+| TypeScript modules | 253 |
 | Rust source files / crates | 15 / 9 |
-| Resolved local import edges | 2665 |
+| Resolved local import edges | 2671 |
 | HTTP routes / routers | 174 / 33 |
 | Event types / lanes | 99 / 29 |
-| Test files / test functions | 323 / 5187 |
-| Untested platform modules | 258 |
+| Test files / test functions | 324 / 5193 |
+| Untested platform modules | 255 |
 
 ## Components
 
@@ -30,7 +30,7 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 215 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 216 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
 | `interpretation` | 109 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
@@ -40,7 +40,7 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | `shared` | 194 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 10 | 0 | 0 | Generators, capability/owner/donor tools, probes. |
-| `webapp` | 0 | 251 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| `webapp` | 0 | 253 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Quick start

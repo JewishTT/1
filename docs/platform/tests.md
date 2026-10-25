@@ -1,6 +1,6 @@
 # Tests
 
-323 test files, 5187 test functions. 258 platform modules are not targeted by any test.
+324 test files, 5193 test functions. 255 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -78,6 +78,7 @@
 | `apps/control-plane/tests/integration/test_tenancy.py` | 6 | `apps/shared/isolation.py` |
 | `apps/control-plane/tests/integration/test_tools_api.py` | 8 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/tests/test_auth_security.py` | 6 | `apps/control-plane/api/auth.py` |
+| `apps/control-plane/tests/test_research_case_invariants.py` | 6 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/person_case_profile.py`, `apps/control-plane/context_engine/store.py` |
 | `apps/control-plane/tests/unit/test_action_memory.py` | 19 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/contracts/stage_outcome.py` |
 | `apps/control-plane/tests/unit/test_approval_gate.py` | 7 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/loop.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/domain/investigation_context.py` |
 | `apps/control-plane/tests/unit/test_assembly_structural_conflict.py` | 24 | `apps/control-plane/semantic_path/__init__.py`, `apps/control-plane/semantic_path/assembly.py`, `apps/interpretation/extractors/signals/__init__.py`, `apps/interpretation/extractors/signals/protocol.py` |

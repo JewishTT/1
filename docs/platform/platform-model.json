@@ -200,7 +200,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 215,
+      "python_modules": 216,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -369,6 +369,7 @@
         "apps.control-plane.tests.integration.test_tenancy",
         "apps.control-plane.tests.integration.test_tools_api",
         "apps.control-plane.tests.test_auth_security",
+        "apps.control-plane.tests.test_research_case_invariants",
         "apps.control-plane.tests.unit.test_action_memory",
         "apps.control-plane.tests.unit.test_approval_gate",
         "apps.control-plane.tests.unit.test_assembly_structural_conflict",
@@ -401,8 +402,7 @@
         "apps.control-plane.tests.unit.test_query_fusion",
         "apps.control-plane.tests.unit.test_rank_fusion_wiring",
         "apps.control-plane.tests.unit.test_reobservation",
-        "apps.control-plane.tests.unit.test_science_tda",
-        "apps.control-plane.tests.unit.test_search_core_selection"
+        "apps.control-plane.tests.unit.test_science_tda"
       ]
     },
     {
@@ -1053,7 +1053,7 @@
       "name": "webapp",
       "description": "React analyst surfaces: investigation, search, entity, finding, ops, lineage.",
       "python_modules": 0,
-      "typescript_modules": 251,
+      "typescript_modules": 253,
       "modules": []
     },
     {
@@ -1096,11 +1096,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 967,
-    "edge_count": 2665,
+    "module_count": 968,
+    "edge_count": 2671,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 840,
+      "stdlib:__future__": 841,
       "stdlib:abc": 3,
       "stdlib:argparse": 18,
       "stdlib:ast": 26,
@@ -1114,8 +1114,8 @@
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 386,
-      "stdlib:datetime": 177,
+      "stdlib:dataclasses": 387,
+      "stdlib:datetime": 179,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1132,11 +1132,11 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 180,
+      "stdlib:json": 181,
       "stdlib:logging": 21,
       "stdlib:math": 39,
-      "stdlib:os": 62,
-      "stdlib:pathlib": 301,
+      "stdlib:os": 63,
+      "stdlib:pathlib": 302,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 89,
@@ -1178,7 +1178,7 @@
       "third-party:docx": 2,
       "third-party:duckdb": 5,
       "third-party:extruct": 1,
-      "third-party:fastapi": 64,
+      "third-party:fastapi": 66,
       "third-party:google": 5,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
@@ -1196,7 +1196,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 256,
+      "third-party:pytest": 257,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -3660,6 +3660,11 @@
         "via": "services.research_case_service"
       },
       {
+        "from": "apps/control-plane/api/routes/research_cases.py",
+        "to": "apps/control-plane/context_engine/person_case_profile.py",
+        "via": "context_engine.person_case_profile"
+      },
+      {
         "from": "apps/control-plane/api/routes/resolutions.py",
         "to": "apps/shared/events/kafka.py",
         "via": "events.kafka"
@@ -4445,6 +4450,11 @@
         "via": "context_engine.obligations"
       },
       {
+        "from": "apps/control-plane/context_engine/person_case_profile.py",
+        "to": "apps/shared/domain/investigation_context.py",
+        "via": "domain.investigation_context"
+      },
+      {
         "from": "apps/control-plane/context_engine/postgres_store.py",
         "to": "apps/shared/domain/investigation_context.py",
         "via": "domain.investigation_context"
@@ -4503,16 +4513,6 @@
         "from": "apps/control-plane/context_engine/store.py",
         "to": "apps/shared/domain/investigation_context.py",
         "via": "domain.investigation_context"
-      },
-      {
-        "from": "apps/control-plane/context_engine/store.py",
-        "to": "apps/control-plane/context_engine/obligations.py",
-        "via": "context_engine.obligations"
-      },
-      {
-        "from": "apps/control-plane/context_engine/store.py",
-        "to": "apps/control-plane/context_engine/obligations.py",
-        "via": "context_engine.obligations"
       },
       {
         "from": "apps/control-plane/context_engine/store.py",
@@ -6513,6 +6513,36 @@
         "from": "apps/control-plane/tests/test_auth_security.py",
         "to": "apps/control-plane/api/auth.py",
         "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_invariants.py",
+        "to": "apps/control-plane/context_engine/person_case_profile.py",
+        "via": "context_engine.person_case_profile"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_invariants.py",
+        "to": "apps/control-plane/context_engine/store.py",
+        "via": "context_engine.store"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_invariants.py",
+        "to": "apps/control-plane/services/research_case_policy.py",
+        "via": "services.research_case_policy"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_invariants.py",
+        "to": "apps/control-plane/services/research_case_service.py",
+        "via": "services.research_case_service"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_invariants.py",
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_invariants.py",
+        "to": "apps/control-plane/api/routes/research_cases.py",
+        "via": "api.routes.research_cases"
       },
       {
         "from": "apps/control-plane/tests/unit/test_action_memory.py",
@@ -16250,6 +16280,26 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/test_research_case_invariants.py",
+        "tests": 6,
+        "test_names": [
+          "test_create_uses_canonical_context_id_and_structured_metadata",
+          "test_approval_requires_exact_digest_and_policy_attestation",
+          "test_scope_revision_changes_digest_and_invalidates_approval",
+          "test_scope_digest_binds_tenant_and_anchor",
+          "test_source_policy_fails_closed_for_unattested_sources",
+          "test_api_create_read_obligations_and_projection_fail_closed"
+        ],
+        "targets": [
+          "apps/control-plane/api/auth.py",
+          "apps/control-plane/api/routes/__init__.py",
+          "apps/control-plane/context_engine/person_case_profile.py",
+          "apps/control-plane/context_engine/store.py",
+          "apps/control-plane/services/research_case_policy.py",
+          "apps/control-plane/services/research_case_service.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_action_memory.py",
         "tests": 19,
         "test_names": [
@@ -22567,7 +22617,7 @@
         "targets": []
       }
     ],
-    "total": 5187
+    "total": 5193
   },
   "contracts": {
     "python": [
@@ -23649,7 +23699,7 @@
         {
           "method": "GET",
           "path": "/{case_id}",
-          "lineno": 134
+          "lineno": 154
         },
         {
           "method": "PATCH",
@@ -23659,12 +23709,12 @@
         {
           "method": "POST",
           "path": "/{case_id}/approve",
-          "lineno": 202
+          "lineno": 200
         },
         {
           "method": "POST",
           "path": "/{case_id}/plan",
-          "lineno": 224
+          "lineno": 223
         },
         {
           "method": "POST",
@@ -23674,57 +23724,57 @@
         {
           "method": "POST",
           "path": "/{case_id}/pause",
-          "lineno": 267
+          "lineno": 268
         },
         {
           "method": "GET",
           "path": "/{case_id}/obligations",
-          "lineno": 282
+          "lineno": 284
         },
         {
           "method": "GET",
           "path": "/{case_id}/coverage",
-          "lineno": 313
+          "lineno": 339
         },
         {
           "method": "GET",
           "path": "/{case_id}/claims",
-          "lineno": 327
+          "lineno": 352
         },
         {
           "method": "GET",
           "path": "/{case_id}/timeline",
-          "lineno": 343
+          "lineno": 367
         },
         {
           "method": "GET",
           "path": "/{case_id}/graph",
-          "lineno": 367
+          "lineno": 387
         },
         {
           "method": "POST",
           "path": "/{case_id}/identity-reviews",
-          "lineno": 389
+          "lineno": 405
         },
         {
           "method": "POST",
           "path": "/{case_id}/claim-disputes",
-          "lineno": 410
+          "lineno": 429
         },
         {
           "method": "POST",
           "path": "/{case_id}/report",
-          "lineno": 431
+          "lineno": 453
         },
         {
           "method": "POST",
           "path": "/{case_id}/close",
-          "lineno": 450
+          "lineno": 475
         },
         {
           "method": "POST",
           "path": "/{case_id}/retention-action",
-          "lineno": 471
+          "lineno": 497
         }
       ]
     },
@@ -27698,7 +27748,6 @@
     "apps/control-plane/context_engine/context_graph_store.py",
     "apps/control-plane/context_engine/fabric_runner.py",
     "apps/control-plane/context_engine/fabric_store.py",
-    "apps/control-plane/context_engine/person_case_profile.py",
     "apps/control-plane/context_engine/query_cycle.py",
     "apps/control-plane/context_engine/return_path.py",
     "apps/control-plane/context_engine/worldline.py",
@@ -27736,8 +27785,6 @@
     "apps/control-plane/services/materialization_outbox_relay.py",
     "apps/control-plane/services/model_gateway.py",
     "apps/control-plane/services/pow_run.py",
-    "apps/control-plane/services/research_case_policy.py",
-    "apps/control-plane/services/research_case_service.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
@@ -27825,9 +27872,12 @@
     "apps/shared/semantic/profiles.py",
     "apps/shared/semantic/regime.py",
     "apps/shared/semantic/regime_store.py",
-    "apps/shared/semantic/registry.py"
+    "apps/shared/semantic/registry.py",
+    "apps/shared/semantic/shacl.py",
+    "apps/shared/semantic/validation.py",
+    "apps/shared/semantic/vocabularies.py"
   ],
-  "untested_count": 258,
+  "untested_count": 255,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -28798,6 +28848,7 @@
             "apps/control-plane/tests/integration/test_tenancy.py",
             "apps/control-plane/tests/integration/test_tools_api.py",
             "apps/control-plane/tests/test_auth_security.py",
+            "apps/control-plane/tests/test_research_case_invariants.py",
             "apps/control-plane/tests/unit/test_action_memory.py",
             "apps/control-plane/tests/unit/test_approval_gate.py",
             "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -28913,7 +28964,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 272
+          "module_count": 273
         },
         {
           "id": "webapp",
@@ -29001,9 +29052,11 @@
             "apps/webapp/src/evidence/types.ts",
             "apps/webapp/src/evidence/useEvidenceRecords.ts",
             "apps/webapp/src/features/research-case/CasePage.tsx",
+            "apps/webapp/src/features/research-case/CaseSetup.tsx",
             "apps/webapp/src/features/research-case/ClaimsTable.tsx",
             "apps/webapp/src/features/research-case/ObligationsBoard.tsx",
             "apps/webapp/src/features/research-case/SubjectOverview.tsx",
+            "apps/webapp/src/features/research-case/api.test.ts",
             "apps/webapp/src/features/research-case/api.ts",
             "apps/webapp/src/features/research-case/store.ts",
             "apps/webapp/src/ghostline/GhostlineCanvas.tsx",
@@ -29174,7 +29227,7 @@
             "apps/webapp/src/workspace/useWorkState.ts",
             "apps/webapp/vite.config.ts"
           ],
-          "module_count": 251
+          "module_count": 253
         }
       ],
       "event_names_sample": [
@@ -30283,9 +30336,10 @@
             "apps/control-plane/context_engine/person_case_profile.py",
             "apps/control-plane/services/model_gateway.py",
             "apps/control-plane/services/research_case_policy.py",
-            "apps/control-plane/services/research_case_service.py"
+            "apps/control-plane/services/research_case_service.py",
+            "apps/control-plane/tests/test_research_case_invariants.py"
           ],
-          "module_count": 7,
+          "module_count": 8,
           "capabilities": []
         }
       ]
@@ -31937,8 +31991,8 @@
       {
         "path": "apps/control-plane/api/routes/research_cases.py",
         "status": "IMPLEMENTED",
-        "loc": 494,
-        "callables": 19,
+        "loc": 523,
+        "callables": 20,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -32171,7 +32225,7 @@
       {
         "path": "apps/control-plane/composition.py",
         "status": "IMPLEMENTED",
-        "loc": 465,
+        "loc": 472,
         "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
@@ -32299,7 +32353,7 @@
       {
         "path": "apps/control-plane/context_engine/person_case_profile.py",
         "status": "IMPLEMENTED",
-        "loc": 246,
+        "loc": 291,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -32308,8 +32362,8 @@
       {
         "path": "apps/control-plane/context_engine/postgres_store.py",
         "status": "IMPLEMENTED",
-        "loc": 630,
-        "callables": 39,
+        "loc": 820,
+        "callables": 42,
         "stubs": 0,
         "not_implemented": 0,
         "markers": [
@@ -32346,7 +32400,7 @@
       {
         "path": "apps/control-plane/context_engine/store.py",
         "status": "IMPLEMENTED",
-        "loc": 535,
+        "loc": 503,
         "callables": 49,
         "stubs": 18,
         "not_implemented": 0,
@@ -32912,8 +32966,8 @@
       {
         "path": "apps/control-plane/services/research_case_policy.py",
         "status": "IMPLEMENTED",
-        "loc": 286,
-        "callables": 10,
+        "loc": 346,
+        "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -32921,8 +32975,8 @@
       {
         "path": "apps/control-plane/services/research_case_service.py",
         "status": "IMPLEMENTED",
-        "loc": 492,
-        "callables": 9,
+        "loc": 948,
+        "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -33275,6 +33329,15 @@
         "status": "TEST",
         "loc": 144,
         "callables": 10,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/test_research_case_invariants.py",
+        "status": "TEST",
+        "loc": 241,
+        "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -39349,9 +39412,9 @@
       "IMPLEMENTED": 526,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 90,
-      "TEST": 320,
+      "TEST": 321,
       "MIGRATION": 13,
-      "total": 967
+      "total": 968
     }
   },
   "reachability": {
@@ -40554,6 +40617,10 @@
       },
       {
         "path": "apps/control-plane/tests/test_auth_security.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/test_research_case_invariants.py",
         "status": "TEST"
       },
       {
@@ -43265,8 +43332,8 @@
       "PRODUCTION": 388,
       "TEST_ONLY": 144,
       "ORPHAN": 115,
-      "TEST": 320,
-      "total": 967
+      "TEST": 321,
+      "total": 968
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -51432,6 +51499,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "9d140181f25afc98",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/research_cases.py",
+        "object": "apps/control-plane/context_engine/person_case_profile.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/research_cases.py",
+          "via": "context_engine.person_case_profile"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "077fe3158ddcaa9a",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/resolutions.py",
@@ -53473,6 +53553,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "c30f45ee5ba06939",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/context_engine/person_case_profile.py",
+        "object": "apps/shared/domain/investigation_context.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/context_engine/person_case_profile.py",
+          "via": "domain.investigation_context"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "00406ae47a3a063f",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/context_engine/postgres_store.py",
@@ -53625,32 +53718,6 @@
         "evidence": {
           "file": "apps/control-plane/context_engine/store.py",
           "via": "domain.investigation_context"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "df861b3e02dee470",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/control-plane/context_engine/store.py",
-        "object": "apps/control-plane/context_engine/obligations.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/control-plane/context_engine/store.py",
-          "via": "context_engine.obligations"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "df861b3e02dee470",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/control-plane/context_engine/store.py",
-        "object": "apps/control-plane/context_engine/obligations.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/control-plane/context_engine/store.py",
-          "via": "context_engine.obligations"
         },
         "confidence": 1.0
       },
@@ -58851,6 +58918,84 @@
         "evidence": {
           "file": "apps/control-plane/tests/test_auth_security.py",
           "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "81fa521231ec88ea",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/context_engine/person_case_profile.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py",
+          "via": "context_engine.person_case_profile"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "613ddf952ad5b9a2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/context_engine/store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py",
+          "via": "context_engine.store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9b8c3a09adadde56",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/services/research_case_policy.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py",
+          "via": "services.research_case_policy"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "162e363bdfbfeed8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/services/research_case_service.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py",
+          "via": "services.research_case_service"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "4117bbe6558d11c5",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py",
+          "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3c52f428ec5243e6",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/api/routes/research_cases.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py",
+          "via": "api.routes.research_cases"
         },
         "confidence": 1.0
       },
@@ -81314,7 +81459,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 136
+          "line": 156
         },
         "confidence": 1.0
       },
@@ -81340,7 +81485,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 204
+          "line": 202
         },
         "confidence": 1.0
       },
@@ -81353,7 +81498,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 226
+          "line": 225
         },
         "confidence": 1.0
       },
@@ -81379,7 +81524,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 269
+          "line": 270
         },
         "confidence": 1.0
       },
@@ -81392,7 +81537,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 284
+          "line": 286
         },
         "confidence": 1.0
       },
@@ -81405,7 +81550,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 315
+          "line": 341
         },
         "confidence": 1.0
       },
@@ -81418,7 +81563,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 329
+          "line": 354
         },
         "confidence": 1.0
       },
@@ -81431,7 +81576,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 345
+          "line": 369
         },
         "confidence": 1.0
       },
@@ -81444,7 +81589,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 369
+          "line": 389
         },
         "confidence": 1.0
       },
@@ -81457,7 +81602,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 391
+          "line": 407
         },
         "confidence": 1.0
       },
@@ -81470,7 +81615,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 412
+          "line": 431
         },
         "confidence": 1.0
       },
@@ -81483,7 +81628,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 433
+          "line": 455
         },
         "confidence": 1.0
       },
@@ -81496,7 +81641,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 452
+          "line": 477
         },
         "confidence": 1.0
       },
@@ -81509,7 +81654,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 473
+          "line": 499
         },
         "confidence": 1.0
       },
@@ -85724,6 +85869,78 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/control-plane/tests/test_auth_security.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ff37f4c1b4512886",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "aa829837e4677762",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/api/routes/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d4e68afa34a35eca",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/context_engine/person_case_profile.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "034fecad98787519",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/context_engine/store.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "4611b7e754801a20",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/services/research_case_policy.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7ee2573266acca37",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/services/research_case_service.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py"
         },
         "confidence": 1.0
       },
@@ -97981,47 +98198,59 @@
           "spec": "specs/034-person-research-case/spec.md"
         },
         "confidence": 0.7
+      },
+      {
+        "fact_id": "706aac20ef17c07b",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "034-person-research-case",
+        "object": "apps/control-plane/tests/test_research_case_invariants.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/034-person-research-case/spec.md"
+        },
+        "confidence": 0.7
       }
     ],
     "stats": {
-      "facts_total": 4167,
-      "static_facts": 3884,
-      "inferred": 283,
+      "facts_total": 4180,
+      "static_facts": 3896,
+      "inferred": 284,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 967,
-    "typescript_modules": 251,
+    "python_modules": 968,
+    "typescript_modules": 253,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2665,
-    "test_files": 323,
-    "test_functions": 5187,
-    "untested_modules": 258,
+    "import_edges": 2671,
+    "test_files": 324,
+    "test_functions": 5193,
+    "untested_modules": 255,
     "http_routes": 174
   },
   "evidence_stats": {
-    "facts_total": 4167,
-    "static_facts": 3884,
-    "inferred": 283,
+    "facts_total": 4180,
+    "static_facts": 3896,
+    "inferred": 284,
     "intended": 0
   },
   "maturity_summary": {
     "IMPLEMENTED": 526,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 90,
-    "TEST": 320,
+    "TEST": 321,
     "MIGRATION": 13,
-    "total": 967
+    "total": 968
   },
   "reachability_summary": {
     "PRODUCTION": 388,
     "TEST_ONLY": 144,
     "ORPHAN": 115,
-    "TEST": 320,
-    "total": 967
+    "TEST": 321,
+    "total": 968
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",

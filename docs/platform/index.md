@@ -9,20 +9,20 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 967 |
-| TypeScript modules | 251 |
+| Python modules | 968 |
+| TypeScript modules | 253 |
 | Rust crates | 9 |
 | Rust source files | 15 |
-| Import edges (local) | 2665 |
+| Import edges (local) | 2671 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 323 |
-| Test functions | 5187 |
-| Untested platform modules | 258 |
+| Test files | 324 |
+| Test functions | 5193 |
+| Untested platform modules | 255 |
 | HTTP routes | 174 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
 | Capabilities | 30 |
@@ -52,7 +52,7 @@ committed model no longer matches the tree.
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| control-plane | 215 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| control-plane | 216 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
 | interpretation | 109 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |
@@ -62,5 +62,5 @@ committed model no longer matches the tree.
 | shared | 194 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops | 30 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | tools | 10 | 0 | Generators, capability/owner/donor tools, probes. |
-| webapp | 0 | 251 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| webapp | 0 | 253 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | zero | 30 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

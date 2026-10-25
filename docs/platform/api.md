@@ -157,22 +157,22 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/{case_id}` | 134 |
+| GET | `/{case_id}` | 154 |
 | PATCH | `/{case_id}/scope` | 167 |
-| POST | `/{case_id}/approve` | 202 |
-| POST | `/{case_id}/plan` | 224 |
+| POST | `/{case_id}/approve` | 200 |
+| POST | `/{case_id}/plan` | 223 |
 | POST | `/{case_id}/run` | 242 |
-| POST | `/{case_id}/pause` | 267 |
-| GET | `/{case_id}/obligations` | 282 |
-| GET | `/{case_id}/coverage` | 313 |
-| GET | `/{case_id}/claims` | 327 |
-| GET | `/{case_id}/timeline` | 343 |
-| GET | `/{case_id}/graph` | 367 |
-| POST | `/{case_id}/identity-reviews` | 389 |
-| POST | `/{case_id}/claim-disputes` | 410 |
-| POST | `/{case_id}/report` | 431 |
-| POST | `/{case_id}/close` | 450 |
-| POST | `/{case_id}/retention-action` | 471 |
+| POST | `/{case_id}/pause` | 268 |
+| GET | `/{case_id}/obligations` | 284 |
+| GET | `/{case_id}/coverage` | 339 |
+| GET | `/{case_id}/claims` | 352 |
+| GET | `/{case_id}/timeline` | 367 |
+| GET | `/{case_id}/graph` | 387 |
+| POST | `/{case_id}/identity-reviews` | 405 |
+| POST | `/{case_id}/claim-disputes` | 429 |
+| POST | `/{case_id}/report` | 453 |
+| POST | `/{case_id}/close` | 475 |
+| POST | `/{case_id}/retention-action` | 497 |
 
 ## `resolutions` — `apps/control-plane/api/routes/resolutions.py`
 

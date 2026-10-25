@@ -21,11 +21,11 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python / TypeScript / Rust modules | 967 / 251 / 15 |
+| Python / TypeScript / Rust modules | 968 / 253 / 15 |
 | HTTP routes | 174 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 323 / 5187 |
+| Test files / functions | 324 / 5193 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -60,7 +60,7 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 215 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 216 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
 | `interpretation` | 109 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
@@ -70,7 +70,7 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `shared` | 194 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 10 | 0 | 0 | Generators, capability/owner/donor tools, probes. |
-| `webapp` | 0 | 251 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| `webapp` | 0 | 253 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Event model
