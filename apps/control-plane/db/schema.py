@@ -3068,3 +3068,58 @@ class ContextDecisionRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (Index("ix_context_decisions_tenant", "tenant_id", "created_at"),)
+
+
+
+class ProcessingResultRow(Base):
+    """Durable result of consuming one immutable observation.
+
+    The unique tenant/observation/consumer/version key makes redelivery idempotent,
+    while processing_run_id groups a consumer execution across many observations.
+    """
+    __tablename__ = "processing_results"
+
+    processing_result_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    processing_run_id: Mapped[str] = mapped_column(String(96), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    investigation_id: Mapped[str | None] = mapped_column(String(36))
+    observation_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    capture_id: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    raw_ref: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    consumer: Mapped[str] = mapped_column(String(128), nullable=False)
+    consumer_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    derived_ref: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    locator: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    record_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    mention_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    truncated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    failure_code: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    detail: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    normalization: Mapped[dict | None] = mapped_column(JSONB)
+    interpretation: Mapped[dict | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "observation_id",
+            "consumer",
+            "consumer_version",
+            name="uq_processing_result_observation_consumer",
+        ),
+        Index("ix_processing_result_tenant_case", "tenant_id", "investigation_id", "processed_at"),
+        Index("ix_processing_result_status", "tenant_id", "status", "processed_at"),
+        CheckConstraint("tenant_id <> ''", name="ck_processing_result_tenant"),
+        CheckConstraint("observation_id <> ''", name="ck_processing_result_observation"),
+        CheckConstraint("consumer <> ''", name="ck_processing_result_consumer"),
+        CheckConstraint("consumer_version <> ''", name="ck_processing_result_consumer_version"),
+        CheckConstraint("status IN ('processed','skipped_replay','refused')", name="ck_processing_result_status"),
+        CheckConstraint("record_count >= 0 AND mention_count >= 0", name="ck_processing_result_counts"),
+    )
