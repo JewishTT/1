@@ -62,7 +62,7 @@ def _fake_tenzir(
                     "normalized_value_type": record["value_type"].lower(),
                     "value_length_chars": len(value),
                     "value_length_bytes": len(value.encode("utf-8")),
-                    "value_is_numeric_lexeme": value.isnumeric(),
+                    "value_is_numeric_lexeme": bool(re.fullmatch(r"[+-]?[0-9]+(?:[.][0-9]+)?(?:[eE][+-]?[0-9]+)?", value)),
                     "has_nonempty_surface": bool(value.strip()),
                     "byte_span_width": span[1] - span[0] if span is not None else None,
                     "structural_role": (
@@ -133,7 +133,7 @@ def test_transform_is_additive_and_records_the_reproducible_pipeline_digest() ->
     assert "normalized_field_path = field.to_lower()" in definition
     assert "value.length_chars()" in definition
     assert "value.length_bytes()" in definition
-    assert "value.is_numeric()" in definition
+    assert "value.match_regex("^[+-]?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$")" in definition
     assert "byte_span_width" in definition
     assert "ocsf_cast" not in definition
     assert "address_refusal" in definition
