@@ -32,6 +32,7 @@ from urllib.request import Request, urlopen
 
 NORMALIZATION_SCHEMA = "cognitive.observed-field-normalization/v1"
 NORMALIZATION_ENGINE = "tenzir-node"
+TENZIR_API_PREFIX = "/api/v0"
 NORMALIZATION_VERSION = "tenzir-observed-fields-v1"
 
 # Keep this transformation intentionally additive. Never use ocsf_cast / ocsf_trim
@@ -469,7 +470,7 @@ class TenzirNodeNormalizer:
         if self.settings.token:
             headers["X-Tenzir-Token"] = self.settings.token
         request = Request(
-            self.settings.node_url.rstrip("/") + "/api/v0/" + path.lstrip("/"),
+            self.settings.node_url.rstrip("/") + TENZIR_API_PREFIX + "/" + path.lstrip("/"),
             data=body,
             headers=headers,
             method="POST",
