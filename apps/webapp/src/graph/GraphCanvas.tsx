@@ -334,7 +334,14 @@ export function GraphCanvas({
      * the layout, which is exactly the kind of silent state loss the graph must not do.
      */
     if (live && !isCytoscapeDestroyed(live)) {
-      if (live.container() !== host) live.mount(host);
+      if (live.container() !== host) {
+        const mount = (live as unknown as { mount?: unknown }).mount;
+        // A deliberately partial engine adapter (for example a test double) may not
+        // implement mounting. It cannot be moved to another host, but it must not
+        // crash the surrounding React tree during StrictMode repair.
+        if (typeof mount !== "function") return;
+        mount.call(live, host);
+      }
       return;
     }
 
