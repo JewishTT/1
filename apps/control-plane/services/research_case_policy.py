@@ -49,6 +49,22 @@ class SourceEligibility:
     detail: str
 
 
+# Policy files retain their historical concise vocabulary; Feature 034 uses
+# more explicit ontology names. This bridge is versioned with the policy code so
+# source capability checks never silently broaden into "any source can answer any claim".
+_POLICY_CLAIM_ALIASES: dict[str, frozenset[str]] = {
+    "public_name_as_published": frozenset({"public_name", "public_bio"}),
+    "public_professional_role": frozenset({"public_role", "public_bio"}),
+    "public_organization_affiliation": frozenset({"public_affiliation"}),
+    "public_authorship_or_publication": frozenset({"publication"}),
+    "public_statement_or_official_action": frozenset({"public_statement", "official_decision"}),
+    "public_award_or_appointment": frozenset({"public_award", "public_role"}),
+    "public_event_participation": frozenset({"public_event", "public_statement"}),
+    "public_registry_record": frozenset({"public_registry_record", "official_decision"}),
+    "source_document_metadata": frozenset({"source_document_metadata", "publication"}),
+}
+
+
 class PersonCasePolicy:
     """Fail-closed policy gate for person-research cases."""
 
@@ -188,6 +204,20 @@ class PersonCasePolicy:
                     detail=reason,
                 )
 
+        # Every declared claim family needs at least one evidence source whose
+        # source policy explicitly supports it. Search engines are not evidence providers.
+        for claim_family in claim_families:
+            if not self.eligible_evidence_sources(
+                claim_family=claim_family,
+                source_ids=allowed_source_ids,
+                launch_profile=launch_profile,
+            ):
+                return PolicyDecision(
+                    allowed=False,
+                    reason_code="BLOCKED_POLICY",
+                    detail=f"no approved evidence source supports claim family {claim_family}",
+                )
+
         # Search/discovery tools can locate candidate URLs, but their result snippets
         # are not primary evidence. Every approved scope must include a separately
         # eligible evidence source; discovery-only providers are optional additions.
@@ -279,6 +309,33 @@ class PersonCasePolicy:
         if missing_env:
             return f"source {source_id} is missing required environment: {', '.join(missing_env)}"
         return None
+
+    @staticmethod
+    def _source_supports_claim_family(source: Mapping[str, Any], claim_family: str) -> bool:
+        if source.get("result_role") == "DISCOVERY_ONLY":
+            return False
+        declared = source.get("allowed_claim_families", [])
+        if not isinstance(declared, list) or not declared:
+            return False
+        aliases = _POLICY_CLAIM_ALIASES.get(claim_family, frozenset({claim_family}))
+        return bool(aliases.intersection(str(item) for item in declared))
+
+    def eligible_evidence_sources(
+        self,
+        *,
+        claim_family: str,
+        source_ids: list[str],
+        launch_profile: str,
+    ) -> tuple[str, ...]:
+        """Return only approved, enabled evidence sources declared to support a claim family."""
+        out = []
+        for source_id in source_ids:
+            source = self._sources.get(source_id, {})
+            if self._source_block_reason(source_id, launch_profile) is not None:
+                continue
+            if self._source_supports_claim_family(source, claim_family):
+                out.append(source_id)
+        return tuple(sorted(out))
 
     def source_eligible(
         self,
