@@ -1100,7 +1100,7 @@
   ],
   "import_graph": {
     "module_count": 977,
-    "edge_count": 2695,
+    "edge_count": 2697,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 850,
@@ -12998,6 +12998,16 @@
         "via": "storage.s3"
       },
       {
+        "from": "apps/shared/tests/contract/test_storage.py",
+        "to": "apps/shared/storage/memory.py",
+        "via": "storage.memory"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_storage.py",
+        "to": "apps/shared/storage/s3.py",
+        "via": "storage.s3"
+      },
+      {
         "from": "apps/shared/tests/integration/test_redpanda_emission.py",
         "to": "apps/shared/events/event_envelope_pb2.py",
         "via": "events.event_envelope_pb2"
@@ -21018,16 +21028,18 @@
       },
       {
         "path": "apps/shared/tests/contract/test_storage.py",
-        "tests": 6,
+        "tests": 7,
         "test_names": [
           "test_sha256_deterministic",
           "test_sha256_matches_stdlib",
           "test_raw_object_ref_frozen",
           "test_ref_uri_format",
           "test_store_constructor_from_settings",
-          "test_ym_format"
+          "test_ym_format",
+          "test_derived_artifacts_use_a_separate_content_addressed_namespace"
         ],
         "targets": [
+          "apps/shared/storage/memory.py",
           "apps/shared/storage/s3.py"
         ]
       },
@@ -22805,7 +22817,7 @@
         "targets": []
       }
     ],
-    "total": 5221
+    "total": 5222
   },
   "contracts": {
     "python": [
@@ -37963,8 +37975,8 @@
       {
         "path": "apps/shared/storage/memory.py",
         "status": "IMPLEMENTED",
-        "loc": 85,
-        "callables": 11,
+        "loc": 118,
+        "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -38208,8 +38220,8 @@
       {
         "path": "apps/shared/tests/contract/test_storage.py",
         "status": "TEST",
-        "loc": 66,
-        "callables": 6,
+        "loc": 141,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -76102,6 +76114,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "c071d4bf04a9bf52",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/contract/test_storage.py",
+        "object": "apps/shared/storage/memory.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/contract/test_storage.py",
+          "via": "storage.memory"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "5390f89f777057e2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/contract/test_storage.py",
+        "object": "apps/shared/storage/s3.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/contract/test_storage.py",
+          "via": "storage.s3"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "467c15de1b80d612",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/shared/tests/integration/test_redpanda_emission.py",
@@ -92951,6 +92989,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "f419e401bff751a5",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/shared/tests/contract/test_storage.py",
+        "object": "apps/shared/storage/memory.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/shared/tests/contract/test_storage.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3c9ab0b0b356337d",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/shared/tests/contract/test_storage.py",
@@ -99015,8 +99065,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4217,
-      "static_facts": 3927,
+      "facts_total": 4220,
+      "static_facts": 3930,
       "inferred": 290,
       "intended": 0
     }
@@ -99027,15 +99077,15 @@
     "typescript_modules": 254,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2695,
+    "import_edges": 2697,
     "test_files": 328,
-    "test_functions": 5221,
+    "test_functions": 5222,
     "untested_modules": 258,
     "http_routes": 176
   },
   "evidence_stats": {
-    "facts_total": 4217,
-    "static_facts": 3927,
+    "facts_total": 4220,
+    "static_facts": 3930,
     "inferred": 290,
     "intended": 0
   },

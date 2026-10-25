@@ -13,7 +13,7 @@ committed model no longer matches the tree.
 | TypeScript modules | 254 |
 | Rust crates | 9 |
 | Rust source files | 15 |
-| Import edges (local) | 2695 |
+| Import edges (local) | 2697 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
@@ -21,7 +21,7 @@ committed model no longer matches the tree.
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
 | Test files | 328 |
-| Test functions | 5221 |
+| Test functions | 5222 |
 | Untested platform modules | 258 |
 | HTTP routes | 176 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |

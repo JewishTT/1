@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4217,
-    "static_facts": 3927,
+    "facts_total": 4220,
+    "static_facts": 3930,
     "inferred": 290,
     "intended": 0
   },
@@ -30609,6 +30609,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "c071d4bf04a9bf52",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/contract/test_storage.py",
+      "object": "apps/shared/storage/memory.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/contract/test_storage.py",
+        "via": "storage.memory"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5390f89f777057e2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/contract/test_storage.py",
+      "object": "apps/shared/storage/s3.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/contract/test_storage.py",
+        "via": "storage.s3"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "467c15de1b80d612",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/shared/tests/integration/test_redpanda_emission.py",
@@ -47454,6 +47480,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/shared/tests/contract/test_statement.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f419e401bff751a5",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/shared/tests/contract/test_storage.py",
+      "object": "apps/shared/storage/memory.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/shared/tests/contract/test_storage.py"
       },
       "confidence": 1.0
     },
