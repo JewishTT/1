@@ -17,4 +17,4 @@ jobs:
       - name: Install the locked workspace
         run: uv sync --locked --all-packages --all-groups
       - name: Run authentication security contracts
-        run: .venv/bin/python -m pytest apps/control-plane/tests/test_auth_security.py -q
+        run: .venv/bin/python -m pytest apps/control-plane/tests/test_auth_security.py apps/control-plane/tests/test_research_case_invariants.py -q
