@@ -24,6 +24,7 @@ export type CaseState =
   | "AWAITING_APPROVAL"
   | "APPROVED"
   | "RUNNING"
+  | "PAUSED"
   | "PARTIAL"
   | "COMPLETE"
   | "BLOCKED"
@@ -82,7 +83,7 @@ export interface CreateCaseRequest {
   purpose_text: string;
   basis_ref: string;
   launch_profile?: LaunchProfile;
-  subject_anchors?: SubjectAnchor[];
+  subject_anchors: SubjectAnchor[];
   jurisdictions?: string[];
   valid_time?: ValidTime;
   claim_families?: ClaimFamily[];
