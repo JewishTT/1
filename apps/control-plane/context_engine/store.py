@@ -20,7 +20,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from domain.investigation_context import (
+from domain.investigation_context import ContextEngineError, (
     ContextEngineError,
     ContextRevision,
     InvestigationContext,
@@ -286,92 +286,51 @@ class ContextStore(ABC):
         expires_at: str | None,
         valid_time: dict[str, Any],
         jurisdictions: list[str],
+        subject_anchors: list[dict[str, str]] | None = None,
     ) -> None:
-        """Store person-case case metadata as a durable obligation record.
+        """Persist the vertical metadata through the store's metadata contract.
 
-        Reuses the existing ``research_obligations`` table (no new schema owner).
-        The record is keyed by ``CASE_META:{case_id}`` and carries all
-        person-case-specific fields that do not belong on ``InvestigationContext``.
+        The reference store keeps this sidecar in memory. Durable store implementations
+        must override this pair with a database-backed record. Do not mint a fake
+        ResearchObligation to hold metadata: it pollutes the analyst's obligation list
+        and loses the actual values after a process restart.
         """
-        from context_engine.obligations import KnowledgeType, SaturationState
-
-        meta_obligation = ResearchObligation(
-            obligation_id=f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}",
-            context_id=case_id,
-            question="__person_case_metadata__",
-            claim_family="__person_case_metadata__",
-            required_evidence_types=(),
-            capabilities=(),
-            scope_condition="",
-            satisfaction_condition="",
-            state=ObligationStatus.OPEN,
-            knowledge_type=KnowledgeType.ATTRIBUTE,
-            priority=0.0,
-            priority_basis="unestimated",
-            saturation=SaturationState(
-                coverage=0.0,
-                coverage_known=False,
-                marginal_gain=0.0,
-                marginal_gain_known=False,
-                distinct_sources=0,
-                source_diversity=0,
-                stopping_condition="metadata",
-                coverage_threshold=1.0,
-                marginal_gain_threshold=0.05,
-            ),
-        )
-        # Encode all metadata in the obligation's mutable fields so it survives
-        # a round trip through to_dict/from_dict.
-        await self.put_obligation(meta_obligation)
-        # Store the rich metadata in the obligation's source_refs / acceptance
-        # criteria is not structured enough; instead keep a parallel in-process
-        # index keyed by case_id for the common case. Subclasses may override
-        # for durable cross-process lookup.
+        if not case_id or not tenant_id:
+            raise ContextEngineError(
+                "person_case_identity_missing",
+                "case_id and tenant_id are required for case metadata",
+            )
         self._person_case_meta_index: dict[str, dict[str, Any]] = getattr(
             self, "_person_case_meta_index", {}
         )
         self._person_case_meta_index[case_id] = {
+            "case_id": case_id,
             "tenant_id": tenant_id,
             "purpose_code": purpose_code,
             "basis_ref": basis_ref,
             "launch_profile": launch_profile,
-            "claim_families": claim_families,
-            "allowed_source_ids": allowed_source_ids,
-            "denied_claim_families": denied_claim_families,
+            "claim_families": list(claim_families),
+            "allowed_source_ids": list(allowed_source_ids),
+            "denied_claim_families": list(denied_claim_families),
             "scope_digest": scope_digest,
-            "scope_revision": scope_revision,
-            "approved": approved,
+            "scope_revision": int(scope_revision),
+            "approved": bool(approved),
             "budget_ref": budget_ref,
             "expires_at": expires_at,
-            "valid_time": valid_time,
-            "jurisdictions": jurisdictions,
+            "valid_time": dict(valid_time),
+            "jurisdictions": list(jurisdictions),
+            "subject_anchors": [dict(a) for a in (subject_anchors or [])],
         }
 
     async def get_person_case_metadata(self, case_id: str) -> dict[str, Any] | None:
-        """Retrieve person-case case metadata, or None if not stored."""
+        """Retrieve the complete case sidecar, or None if it is not stored."""
         index = getattr(self, "_person_case_meta_index", {})
-        if case_id in index:
-            return index[case_id]
-        # Fall back to the durable obligation record for cross-process lookup.
-        obligation = await self.get_obligation(f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}")
-        if obligation is None or obligation.claim_family != "__person_case_metadata__":
+        value = index.get(case_id)
+        if value is None:
             return None
-        return {
-            "tenant_id": obligation.context_id,  # best effort
-            "purpose_code": obligation.question,
-            "basis_ref": "",
-            "launch_profile": obligation.target_knowledge_type.value,
-            "claim_families": list(obligation.required_capabilities),
-            "allowed_source_ids": list(obligation.eligible_capabilities),
-            "denied_claim_families": [],
-            "scope_digest": obligation.satisfaction_criteria[0] if obligation.satisfaction_criteria else "",
-            "scope_revision": 1,
-            "approved": obligation.status == ObligationStatus.SATISFIED,
-            "budget_ref": None,
-            "expires_at": None,
-            "valid_time": {},
-            "jurisdictions": [],
-        }
+        # Return a detached representation so callers cannot mutate durable/reference
+        # state without going through put_person_case_metadata.
+        return json.loads(json.dumps(value))
 
     async def put_person_case_dispatch_intent(
         self,
