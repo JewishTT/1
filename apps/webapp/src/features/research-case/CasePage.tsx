@@ -20,7 +20,6 @@ import {
   CloseCaseRequest,
   Obligation,
   CoverageLedger,
-  CoverageItem,
 } from "./api";
 import { useResearchCaseView } from "./store";
 import { ErrorView, LoadingView } from "../../ui/Feedback";
@@ -50,7 +49,7 @@ export function CasePage() {
     enabled: !!caseId,
   });
 
-  const { data: coverage, isLoading: coverageLoading } = useQuery<CoverageLedger>({
+  const { data: coverage, error: coverageError } = useQuery<CoverageLedger>({
     queryKey: ["research-case-coverage", caseId],
     queryFn: () => api.getCoverage(caseId!),
     enabled: !!caseId,
@@ -92,7 +91,6 @@ export function CasePage() {
   if (caseLoading) return <LoadingView />;
   if (caseError || !caseData) return <ErrorView error={caseError} />;
   const obligations: Obligation[] = obligationsData?.obligations ?? [];
-  const coverageItems: CoverageItem[] = coverage?.items ?? [];
 
   return (
     <div className="research-case h-screen flex flex-col bg-slate-50 text-slate-900">
