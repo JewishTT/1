@@ -65,7 +65,7 @@ export function ClaimsTable({ caseId }: ClaimsTableProps) {
             claims.map((c) => (
               <tr key={c.claim_id} className="hover:bg-slate-50">
                 <td className="px-3 py-2 truncate max-w-[260px]">{c.subject_mention} {c.predicate}</td>
-                <td className="px-3 py-2 truncate max-w-[160px]">{String(c.object_payload)}</td>
+                <td className="px-3 py-2 truncate max-w-[160px]">{formatObject(c.object_payload)}</td>
                 <td className="px-3 py-2 text-slate-600 truncate">
                   {c.valid_time.from ?? "—"} → {c.valid_time.until ?? "—"} ({c.valid_time.precision})
                 </td>
@@ -87,4 +87,16 @@ export function ClaimsTable({ caseId }: ClaimsTableProps) {
       </table>
     </div>
   );
+}
+
+
+function formatObject(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "[unrenderable stored object]";
+  }
 }
