@@ -54,7 +54,7 @@ See [golden-path.md](golden-path.md) for the capability map and the build plan.
 
 ## Gaps (machine-checked)
 
-**12** open, machine-checked gaps. See [gaps.md](gaps.md).
+**10** open, machine-checked gaps. See [gaps.md](gaps.md).
 
 ## Event coverage
 
