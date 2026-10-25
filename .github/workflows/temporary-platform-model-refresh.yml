@@ -1,3 +1,4 @@
+# Temporary bootstrap: regenerated model files are committed, then this workflow is removed.
 name: temporary-platform-model-refresh
 on:
   push:
