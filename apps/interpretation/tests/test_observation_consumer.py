@@ -402,12 +402,20 @@ class TestOptionalTenzirNormalization:
         assert result.normalization["pipeline_digest"] == "sha256:" + "d" * 64
         assert result.normalization["normalization_ref"].startswith("s3://bucket/derived/acme/")
         assert len(store.derived_writes) == 2
-        native = json.loads(store.derived_writes[0]["body"].decode("utf-8"))
-        assert native["schema"] == "cognitive.parsed-observation/v1"
+        decoded = [
+            (write, json.loads(write["body"].decode("utf-8")))
+            for write in store.derived_writes
+        ]
+        native = next(
+            manifest for _write, manifest in decoded
+            if manifest.get("schema") == "cognitive.parsed-observation/v1"
+        )
         assert native["raw_content_sha256"]
-        write = store.derived_writes[-1]
+        write, manifest = next(
+            (item, manifest) for item, manifest in decoded
+            if manifest.get("schema") == "cognitive.observed-field-normalization/v2"
+        )
         assert write["tenant_id"] == "acme"
-        manifest = json.loads(write["body"].decode("utf-8"))
         assert manifest["observation_id"] == "OBS-" + "a" * 32
         assert manifest["raw_ref"] == "s3://bucket/raw/tenant/202609/abc"
         assert manifest["pipeline_digest"] == "sha256:" + "d" * 64
