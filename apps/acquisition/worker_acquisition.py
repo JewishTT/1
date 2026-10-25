@@ -449,7 +449,53 @@ class AcquisitionWorker:
                     duplicates.append(observation_id)
                     continue
 
+                if event.get("artifact_sink_accepted"):
+                    # ArtifactSink has already committed Capture + Observation and
+                    # the gate has published the canonical protobuf envelope. Never
+                    # publish the returned read-model dict a second time.
+                    if not event.get("event_published") or not event.get("event_topic"):
+                        failure = Failure(
+                            code="observation_event_not_acknowledged",
+                            reason="ArtifactSink completed without broker-confirmed observation publication",
+                            topic=TOPIC_QUARANTINE,
+                            source_id=task.source_id,
+                            task_id=task.task_id,
+                        )
+                        failures.append(failure)
+                        self._route(failure, envelope)
+                        break
+                    try:
+                        await require_stored_evidence(event, store=self.store)
+                    except UnstoredEvidenceRefusal as refusal:
+                        self.unstored_observations.append(refusal)
+                        failure = Failure(
+                            code=refusal.code,
+                            reason=str(refusal.detail),
+                            topic=TOPIC_QUARANTINE,
+                            source_id=task.source_id,
+                            task_id=task.task_id,
+                        )
+                        failures.append(failure)
+                        self._route(failure, envelope)
+                        break
+                    observations.append(event)
+                    self.seen.add(observation_id)
+                    continue
+
+                refused_before = len(self.unstored_observations)
                 await self._publish_observation(event)
+                if len(self.unstored_observations) > refused_before:
+                    refusal = self.unstored_observations[-1]
+                    failures.append(
+                        Failure(
+                            code=refusal.code,
+                            reason=str(refusal.detail),
+                            topic=TOPIC_QUARANTINE,
+                            source_id=task.source_id,
+                            task_id=task.task_id,
+                        )
+                    )
+                    break
                 self.seen.add(observation_id)
                 observations.append(event)
         except AcquisitionError as exc:
