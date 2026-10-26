@@ -20,6 +20,7 @@ import {
   Obligation,
   CoverageLedger,
   CaseActions,
+  CompletionReport,
 } from "./api";
 import { useResearchCaseView } from "./store";
 import { ErrorView, LoadingView } from "../../ui/Feedback";
@@ -27,6 +28,7 @@ import { ObligationsBoard } from "./ObligationsBoard";
 import { SubjectOverview } from "./SubjectOverview";
 import { ClaimsTable } from "./ClaimsTable";
 import { CaseAnalyticsPanel } from "./CaseAnalyticsPanel";
+import { CaseContextAndArtifacts } from "./CaseContextAndArtifacts";
 
 type ViewId =
   | "overview"
@@ -127,11 +129,37 @@ export function CasePage() {
     });
   }, [actionsData?.actions]);
 
+  const latestReportId = (() => {
+    const reportRef = caseData?.latest_report_ref as { report_id?: unknown } | undefined;
+    return typeof reportRef?.report_id === "string" ? reportRef.report_id : null;
+  })();
+
+  const reportQuery = useQuery<CompletionReport>({
+    queryKey: ["research-case-report", caseId, latestReportId],
+    queryFn: () => api.getReport(caseId!, latestReportId!),
+    enabled: !!caseId && !!latestReportId,
+  });
+
+  const reportMutation = useMutation({
+    mutationFn: () => api.generateReport(caseId!),
+    onSuccess: async (report) => {
+      queryClient.setQueryData(["research-case-report", caseId, report.report_id], report);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["research-case", caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["research-case-coverage", caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["research-case-artifacts", caseId] }),
+      ]);
+    },
+  });
+
   const closeMutation = useMutation({
-    mutationFn: (body: CloseCaseRequest) => api.closeCase(caseId!, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["research-case", caseId] });
-      navigate(`/research-cases/${caseId}`);
+    mutationFn: (input: { disposition: string; reportId: string }) =>
+      api.closeCase(caseId!, {
+        disposition: input.disposition,
+        report: { report_id: input.reportId },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["research-case", caseId] });
     },
   });
 
@@ -181,11 +209,11 @@ export function CasePage() {
             </button>
           )}
           <button
-            onClick={() => closeMutation.mutate({ disposition: "CLOSED_WITH_NO_FINDING", report: {} })}
-            disabled={closeMutation.isPending}
-            className="px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+            onClick={() => reportMutation.mutate()}
+            disabled={reportMutation.isPending || caseData.state === "CLOSED"}
+            className="px-3 py-1.5 text-sm font-medium bg-indigo-700 text-white rounded hover:bg-indigo-800 disabled:opacity-50"
           >
-            Close
+            {reportMutation.isPending ? "Building report…" : "Generate report"}
           </button>
         </div>
       </header>
@@ -214,9 +242,114 @@ export function CasePage() {
 
         {/* Main view */}
         <main className="flex-1 overflow-y-auto p-6">
-          {selectedTab === "overview" && <SubjectOverview caseId={caseData.case_id} />}
+          {selectedTab === "overview" && (
+            <div className="space-y-4">
+              <SubjectOverview caseId={caseData.case_id} />
+              <CaseContextAndArtifacts caseId={caseData.case_id} caseData={caseData} />
+            </div>
+          )}
           {selectedTab === "claims" && <ClaimsTable caseId={caseData.case_id} />}
           {selectedTab === "analytics" && <CaseAnalyticsPanel caseId={caseData.case_id} />}
+          {(reportMutation.error || reportQuery.error) && (
+            <section role="alert" className="mb-4 rounded border border-red-300 bg-white p-3 text-sm text-red-700">
+              Report operation failed: {(
+                reportMutation.error ?? reportQuery.error
+              ) instanceof Error ? (reportMutation.error ?? reportQuery.error as Error).message : "request failed"}
+            </section>
+          )}
+          {(reportMutation.data || reportQuery.data) && (() => {
+            const report = reportMutation.data ?? reportQuery.data!;
+            const reportCase = report.case;
+            const matchesCurrentScope = reportCase.scope_digest === caseData.scope_digest
+              && reportCase.scope_revision === caseData.scope_revision;
+            const closable = matchesCurrentScope && (
+              report.status === "BLOCKED"
+              || ((report.status === "COMPLETE" || report.status === "PARTIAL")
+                && Number(report.summary.open_obligations ?? 0) === 0)
+            );
+            return (
+              <section className="mb-4 rounded border border-slate-300 bg-white p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-semibold">Completion report · {report.status}</h2>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {report.report_id} · {report.report_digest} · generated {report.generated_at}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-700">
+                      {report.summary.findings ?? 0} grounded admitted findings · {report.summary.relation_claim_candidates ?? 0} relation-claim candidates · {report.summary.open_obligations ?? 0} open obligations
+                    </p>
+                    {!matchesCurrentScope && (
+                      <p className="mt-2 text-sm text-red-700">
+                        This report is stale because the case scope has changed. Generate a new report.
+                      </p>
+                    )}
+                  </div>
+                  {closable && (
+                    <button
+                      onClick={() => closeMutation.mutate({ disposition: report.status, reportId: report.report_id })}
+                      disabled={closeMutation.isPending || caseData.state === "CLOSED"}
+                      className="rounded bg-red-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {closeMutation.isPending ? "Closing…" : "Close with persisted report"}
+                    </button>
+                  )}
+                </div>
+                {closeMutation.error && (
+                  <p role="alert" className="mt-3 text-sm text-red-700">
+                    Close blocked: {closeMutation.error instanceof Error ? closeMutation.error.message : "request failed"}
+                  </p>
+                )}
+                {report.findings.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    <h3 className="text-sm font-semibold">Admitted, span-grounded findings</h3>
+                    {report.findings.map((finding, index) => {
+                      const statement = String(finding.statement ?? "Untitled finding");
+                      const spans = Array.isArray(finding.evidence_spans)
+                        ? finding.evidence_spans as Array<Record<string, unknown>>
+                        : [];
+                      return (
+                        <article key={String(finding.finding_id ?? index)} className="rounded border border-slate-200 p-3">
+                          <p className="text-sm font-medium">{statement}</p>
+                          {spans.map((span, spanIndex) => (
+                            <blockquote key={String(span.mention_id ?? spanIndex)} className="mt-2 border-l-2 border-slate-300 pl-3 text-xs text-slate-700">
+                              “{String(span.exact_quote ?? span.surface ?? "No exact quote available")}”
+                              <div className="mt-1 break-all text-slate-500">
+                                {String(span.source_url ?? "source URL unavailable")} · {String(span.observation_id ?? "")}
+                              </div>
+                            </blockquote>
+                          ))}
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-slate-600">
+                    No factual finding qualifies for inclusion yet. Extracted relations remain review candidates until admitted and grounded to a verified raw-byte span.
+                  </p>
+                )}
+                {report.relation_claims.length > 0 && (
+                  <details className="mt-4">
+                    <summary className="cursor-pointer text-sm font-semibold">Relation claim review queue ({report.relation_claims.length})</summary>
+                    <div className="mt-2 space-y-2">
+                      {report.relation_claims.map((claim, index) => (
+                        <div key={String(claim.claim_id ?? index)} className="rounded bg-slate-50 p-3 text-xs">
+                          <div className="font-medium">{String(claim.status ?? "unknown")} · {String(claim.predicate ?? "relation")}</div>
+                          <div className="mt-1 break-words">{JSON.stringify(claim.subject)} → {JSON.stringify(claim.object)}</div>
+                          <div className="mt-1 text-slate-500">{String(claim.disposition ?? "requires review")} · {String(claim.claim_id ?? "")}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-xs font-semibold text-slate-600">Limitations and source coverage</summary>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-600">
+                    {report.limitations.map((limitation, index) => <li key={index}>{limitation}</li>)}
+                  </ul>
+                </details>
+              </section>
+            );
+          })()}
           {planMutation.data && (
             <section className="mb-4 rounded border border-slate-300 bg-white p-4">
               <h2 className="font-semibold">Plan result: {planMutation.data.plan_state}</h2>
