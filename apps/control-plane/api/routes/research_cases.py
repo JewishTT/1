@@ -740,15 +740,50 @@ async def close_research_case(
     """Terminal state + CompletionReport; requires open obligations dispositioned."""
     ctx.require_role(Role.ANALYST, Role.ADMIN)
     svc = _get_service()
+    if _report_service is None:
+        raise HTTPException(status_code=503, detail="completion report service is not composed")
+    report_ref = body.report if isinstance(body.report, dict) else {}
+    report_id = str(report_ref.get("report_id") or "").strip()
+    if not report_id:
+        raise HTTPException(status_code=400, detail="close requires the ID of a persisted completion report")
+
     try:
+        report = await _report_service.get_report(
+            case_id=case_id, report_id=report_id, tenant_id=ctx.tenant_id
+        )
+        case_view = await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+        report_case = report.get("case") if isinstance(report.get("case"), dict) else {}
+        if (
+            report_case.get("scope_digest") != case_view.get("scope_digest")
+            or int(report_case.get("scope_revision", -1)) != int(case_view.get("scope_revision", -2))
+        ):
+            raise HTTPException(status_code=409, detail="completion report is stale for the current case scope")
+
+        expected_status = {
+            "COMPLETE": "COMPLETE",
+            "PARTIAL": "PARTIAL",
+            "BLOCKED": "BLOCKED",
+        }.get(body.disposition)
+        if expected_status and report.get("status") != expected_status:
+            raise HTTPException(
+                status_code=400,
+                detail=f"disposition {body.disposition} does not match persisted report status {report.get('status')}",
+            )
+        if body.disposition == "CLOSED_WITH_NO_FINDING":
+            summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
+            if any(int(summary.get(key, 0) or 0) for key in ("findings", "relation_claim_candidates", "observations")):
+                raise HTTPException(
+                    status_code=400,
+                    detail="CLOSED_WITH_NO_FINDING is only valid when the persisted report contains no findings, relation candidates or observations",
+                )
         return await svc.close_case(
             case_id=case_id,
             tenant_id=ctx.tenant_id,
             disposition=body.disposition,
-            report=body.report,
+            report=report,
         )
     except CaseNotFound as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=404, detail="case or report not found") from exc
     except CaseServiceError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
