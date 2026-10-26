@@ -1,10 +1,11 @@
-"""In-memory content-addressed object store (hermetic substitute for s3).
+"""In-memory content-addressed object store (hermetic substitute for S3).
 
-Mirrors the ``storage.s3.ObjectStore`` surface used by ``events.observation_gate``
-and the lake writer: ``put_raw_dedup`` (idempotent by sha256), ``exists`,
-``ref_uri`` — plus introspection helpers so hermetic tests can assert what was
-written. Same immutability discipline (I-1): identical bytes → same key; the
-gate's three-way split (R-08) is exercised identically to a real backend.
+Mirrors the ``storage.s3.ObjectStore`` raw and derived write surfaces used by
+the observation gate, interpretation consumer and lake writer. Both
+``put_raw_dedup`` and ``put_derived_dedup`` are idempotent by SHA-256 but use
+separate namespaces so derived transforms cannot masquerade as fetched evidence.
+Introspection helpers let hermetic tests assert the same immutability and lineage
+contracts as a real backend.
 """
 
 from __future__ import annotations
@@ -45,6 +46,38 @@ class MemoryObjectStore:
         return (
             RawObjectRef(
                 uri=self.ref_uri(sha256=digest, tenant_id=tenant_id, year_month=ym),
+                sha256=digest,
+                size=len(body),
+                tenant_prefix=f"{tenant_id}/{ym}",
+                year_month=ym,
+            ),
+            existed,
+        )
+
+    async def put_derived_dedup(
+        self, body: bytes, *, tenant_id: str, meta: dict | None = None
+    ) -> tuple[RawObjectRef, bool]:
+        """Mirror ObjectStore's separate immutable derived-object namespace."""
+        if not tenant_id or not tenant_id.strip():
+            raise ValueError("tenant_id is required for derived artifact storage")
+        if not isinstance(body, bytes):
+            raise TypeError("derived artifact body must be bytes")
+        digest = sha256_bytes(body)
+        ym = self._ym()
+        key = f"derived/{tenant_id}/{ym}/{digest}"
+        existed = key in self._objects
+        if not existed:
+            self._objects[key] = body
+            if meta:
+                self._meta[f"derived-meta/{tenant_id}/{ym}/{digest}.json"] = dict(meta)
+        return (
+            RawObjectRef(
+                uri=self.ref_uri(
+                    sha256=digest,
+                    tenant_id=tenant_id,
+                    year_month=ym,
+                    kind="derived",
+                ),
                 sha256=digest,
                 size=len(body),
                 tenant_prefix=f"{tenant_id}/{ym}",

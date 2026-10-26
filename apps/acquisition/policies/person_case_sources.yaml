@@ -78,6 +78,7 @@ spec:
       retention_class: case_evidence_standard
       enabled: false
     - source_id: crossref_works
+      catalogue_source_id: crossref_doi
       runtime_ref: http
       operation: record_lookup
       upstream_base: https://api.crossref.org/works

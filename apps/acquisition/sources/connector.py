@@ -14,7 +14,7 @@ differently tomorrow without re-fetching anything.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterable, Mapping
+from collections.abc import AsyncIterator, Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -62,6 +62,19 @@ class AcquisitionTask:
     #: dropped between planning and execution.
     query_ref: str = ""
     constraints: tuple[Mapping[str, Any], ...] = ()
+    # Feature 034 scope/approval binding. These are carried end-to-end in the request
+    # envelope so the worker can revalidate against PostgreSQL immediately before I/O.
+    case_id: str = ""
+    scope_digest: str = ""
+    policy_digest: str = ""
+    policy_revision: str = ""
+    scope_revision: int = 0
+    budget_reservation_id: str = ""
+    idempotency_key: str = ""
+    run_id: str = ""
+    case_policy_source_id: str = ""
+    approved_action_ref: str = ""
+    action_id: str = ""
 
     def to_task(self) -> dict[str, Any]:
         return {
@@ -75,6 +88,17 @@ class AcquisitionTask:
             "runtime_ref": self.runtime_ref,
             "query_ref": self.query_ref,
             "constraints": [dict(item) for item in self.constraints],
+            "case_id": self.case_id,
+            "scope_digest": self.scope_digest,
+            "policy_digest": self.policy_digest,
+            "policy_revision": self.policy_revision,
+            "scope_revision": self.scope_revision,
+            "budget_reservation_id": self.budget_reservation_id,
+            "idempotency_key": self.idempotency_key,
+            "run_id": self.run_id,
+            "case_policy_source_id": self.case_policy_source_id,
+            "approved_action_ref": self.approved_action_ref,
+            "action_id": self.action_id,
         }
 
 
@@ -160,9 +184,15 @@ class SourceConnector:
         executor: HttpSourceExecutor | None = None,
         *,
         gate: Any | None = None,
+        artifact_sink_factory: Callable[[SourceDefinition], Any] | None = None,
     ) -> None:
         self.executor = executor or HttpSourceExecutor()
         self.gate = gate
+        # Production can route each source through ArtifactSink without teaching this
+        # transport layer how a particular storage backend or identity provider works.
+        # The factory receives the validated, declarative source definition so the
+        # capture's independence family and time basis are never inferred from its URL.
+        self.artifact_sink_factory = artifact_sink_factory
 
     def definition_for(self, source_id: str) -> SourceDefinition | None:
         definitions, _ = load_catalogue()
@@ -220,6 +250,88 @@ class SourceConnector:
             "entity_hints": list(definition.entity_hints),
             "contact": definition.contact,
         }
+
+        if self.artifact_sink_factory is not None:
+            # The one production path: immutable raw object first, then a first-class
+            # Capture, then an Observation through the gate. The gate owns event identity
+            # and broker publication; the worker must not build a second event.
+            from datetime import UTC, datetime
+            from domain.acquisition_artifact import AcquisitionArtifact
+            from domain.capture import CaptureTimeBasis
+
+            if not definition.source_family or not definition.time_basis:
+                raise AcquisitionError(
+                    "source_capture_provenance_missing",
+                    f"{definition.name} must declare source_family and time_basis before "
+                    "it can enter the raw-first ArtifactSink path",
+                )
+            try:
+                time_basis = CaptureTimeBasis(definition.time_basis)
+            except ValueError as exc:
+                raise AcquisitionError(
+                    "source_time_basis_invalid",
+                    f"{definition.name} declares unknown time_basis {definition.time_basis!r}",
+                ) from exc
+            if self.gate is None:
+                raise AcquisitionError(
+                    "observation_gate_unavailable",
+                    "ArtifactSink requires the canonical ObservationGate",
+                )
+            sink = self.artifact_sink_factory(definition)
+            artifact = AcquisitionArtifact(
+                task_id=task.task_id,
+                source_id=task.source_id,
+                worker_ref="worker-http",
+                target_uri=capture.url,
+                locator="blob",
+                capture_locator="blob",
+                body=capture.body,
+                content_type=capture.content_type or "application/octet-stream",
+                fetched_at=datetime.fromtimestamp(capture.retrieved_at, tz=UTC),
+                transport="http",
+                producer="source-connector",
+                producer_version="0.1.0",
+                metadata={
+                    "parser_hint": definition.parser,
+                    "parser_is_identity": definition.parser_is_identity,
+                    "source_name": definition.name,
+                    "query": capture.query,
+                    "page": capture.page,
+                    "page_count": ceiling,
+                    "status": capture.status,
+                    "truncated": capture.truncated,
+                    "elapsed_s": round(capture.elapsed_s, 6),
+                    "redirected_from": list(capture.redirected_from),
+                    "entity_hints": list(definition.entity_hints),
+                    "applies_to": list(definition.applies_to),
+                },
+            )
+            accepted = await sink.accept(
+                artifact,
+                tenant_id=task.tenant_id,
+                investigation_id=task.investigation_id or None,
+                work_id=task.task_id,
+                time_basis=time_basis,
+            )
+            return {
+                "event_type": "observation.created",
+                "event_version": "2.0",
+                "event_id": accepted.event_id or "",
+                "observation_id": accepted.observation_id,
+                "tenant_id": task.tenant_id,
+                "source_id": capture.source_id,
+                "task_id": task.task_id,
+                "investigation_id": task.investigation_id,
+                "content_digest": accepted.content_digest,
+                "raw_ref": accepted.raw_ref,
+                "capture_id": accepted.capture_id,
+                "locator": accepted.locator,
+                "lifecycle": "created",
+                "artifact_sink_accepted": True,
+                "event_topic": accepted.topic or "",
+                "event_published": bool(accepted.event_id and accepted.topic),
+                **enrichment,
+            }
 
         if self.gate is None:
             # No gate: the pre-WP-C shape, preserved so the module stays usable

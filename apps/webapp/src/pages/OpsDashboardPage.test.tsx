@@ -24,14 +24,14 @@ describe("OpsDashboardPage", () => {
     render(<OpsDashboardPage metrics={METRICS} />);
     expect(screen.getByTestId("ops-dashboard")).toBeInTheDocument();
     expect(screen.getByTestId("op-throughput")).toHaveTextContent(/142/);
-    expect(screen.getByTestId("op-useful obs")).toHaveTextContent(/1\s?048\s?576/);
+    expect(screen.getByTestId("op-useful obs")).toHaveTextContent(/1(?:,|\s)?048(?:,|\s)?576/);
     expect(screen.getByTestId("op-cost / 1M obs")).toHaveTextContent("$3.75");
   });
 
   it("renders lags, queues and storage", () => {
     render(<OpsDashboardPage metrics={METRICS} />);
     expect(screen.getByTestId("lag")).toHaveTextContent("8.4s");
-    expect(screen.getByTestId("queues")).toHaveTextContent(/24\s?318/);
+    expect(screen.getByTestId("queues")).toHaveTextContent(/24(?:,|\s)?318/);
     expect(screen.getByTestId("storage")).toHaveTextContent(/512\.0 MB/);
   });
 

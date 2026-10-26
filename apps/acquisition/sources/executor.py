@@ -121,11 +121,40 @@ def _digest(data: bytes) -> str:
 
 
 def resolve_query(tool: Mapping[str, Any], query: str) -> str:
-    """Substitute the query into the URL. The resolved URL is the request's identity."""
+    """Substitute a query as URL-encoded data, never as raw URL syntax.
+
+    Source definitions commonly carry placeholders in query parameters. Interpolating
+    a user-supplied subject literally lets ampersands, fragments or reserved characters
+    modify the request's target instead of remaining the query value.
+    """
+    from urllib.parse import quote
+
     url = str(tool.get("url") or "")
     if not url:
         raise AcquisitionError("source_has_no_url", "definition declares no url")
-    return url.replace("{query}", query).replace("%7Bquery%7D", query)
+    encoded = quote(str(query), safe="")
+    return url.replace("{query}", encoded).replace("%7Bquery%7D", encoded).replace(
+        "%7bquery%7d", encoded
+    )
+
+
+def request_headers(source: SourceDefinition) -> dict[str, str]:
+    """Build headers with required operator identity for documented public APIs."""
+    headers = {
+        str(key): str(value)
+        for key, value in (source.tool.get("headers") or {}).items()
+    }
+    if source.source_id == "crossref_doi" or source.name == "crossref_doi":
+        # Crossref's polite pool requires a reachable operator contact. The YAML
+        # sample address is historical documentation and must not be sent upstream.
+        contact = os.environ.get("COGNITIVE_CROSSREF_MAILTO", "").strip()
+        if not contact or "@" not in contact or contact.endswith(".local"):
+            raise AcquisitionError(
+                "missing_contact_email",
+                "Crossref requests require a real COGNITIVE_CROSSREF_MAILTO contact email",
+            )
+        headers["User-Agent"] = f"cognitive-substrate/034 (mailto:{contact})"
+    return headers
 
 
 def _refuse_blocked_host(url: str) -> None:
@@ -265,7 +294,7 @@ class HttpSourceExecutor:
         _refuse_blocked_host(base_url)
         session = await self._session()
         method = str(source.tool.get("method") or "GET").upper()
-        headers = {str(k): str(v) for k, v in (source.tool.get("headers") or {}).items()}
+        headers = request_headers(source)
         # Only forwarded when a source actually declares basic auth. Passing auth=None
         # to every request would be harmless against httpx but changes the call
         # signature every transport double has to match, for a feature 120+ of the

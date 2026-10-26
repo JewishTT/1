@@ -8,10 +8,13 @@ replay - and negative properties are exactly what a happy-path test misses.
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import pathlib
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -23,6 +26,7 @@ from observation_consumer import (
     CONSUMER_VERSION,
     ObservationConsumer,
 )
+from normalization.tenzir import TenzirNormalization
 
 SEARX_RESULT = {
     "url": "https://github.com/topics/event-driven",
@@ -40,10 +44,26 @@ class _Store:
     def __init__(self, body: bytes = RAW) -> None:
         self.body = body
         self.reads: list[tuple[str, str]] = []
+        self.derived_writes: list[dict[str, Any]] = []
 
     async def read_range(self, *, bucket: str, key: str, offset: int = 0, length=None) -> bytes:
         self.reads.append((bucket, key))
         return self.body
+
+    async def put_derived_dedup(self, body: bytes, *, tenant_id: str, meta=None):
+        digest = hashlib.sha256(body).hexdigest()
+        ref = SimpleNamespace(
+            uri=f"s3://bucket/derived/{tenant_id}/202610/{digest}",
+            sha256=digest,
+            size=len(body),
+        )
+        self.derived_writes.append({
+            "body": body,
+            "tenant_id": tenant_id,
+            "meta": dict(meta or {}),
+            "ref": ref,
+        })
+        return ref, False
 
 
 def envelope(
@@ -128,18 +148,79 @@ class TestConsumerProcesses:
     @pytest.mark.asyncio
     async def test_derived_ref_names_the_parser_and_version(self):
         """§63: traceable to the parser that read it."""
-        consumer = ObservationConsumer(store=_Store())
+        store = _Store()
+        consumer = ObservationConsumer(store=store)
         result = await consumer.handle(envelope())
-        assert "structured_fields" in result.derived_ref
-        assert CONSUMER_VERSION in result.derived_ref
+        assert result.derived_ref.startswith("s3://bucket/derived/acme/")
+        manifest = json.loads(store.derived_writes[-1]["body"].decode("utf-8"))
+        assert "structured_fields" in manifest["parser_ref"]
+        assert CONSUMER_VERSION in manifest["parser_ref"]
+        assert manifest["raw_ref"].startswith("s3://bucket/raw/")
 
     @pytest.mark.asyncio
     async def test_unknown_parser_is_not_guessed(self):
         """An undeclared parser takes the text route and records a refusal."""
-        consumer = ObservationConsumer(store=_Store())
+        store = _Store()
+        consumer = ObservationConsumer(store=store)
         result = await consumer.handle(envelope(parser_hint="no_such_parser"))
         assert result.status == "processed"
-        assert "text_lines" in result.derived_ref
+        manifest = json.loads(store.derived_writes[-1]["body"].decode("utf-8"))
+        assert "text_lines" in manifest["parser_ref"]
+
+
+class _RecordingResultWriter:
+    def __init__(self, error: Exception | None = None) -> None:
+        self.rows: list[tuple[Any, Any]] = []
+        self.error = error
+
+    async def persist(self, envelope, result):
+        if self.error is not None:
+            raise self.error
+        self.rows.append((envelope, result))
+
+
+class TestRetryableInterpretationFailures:
+    @pytest.mark.asyncio
+    async def test_retryable_canonical_failure_escapes_handle_without_result_write(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        class RetryablePersistenceFailure(RuntimeError):
+            retryable = True
+
+        store = _Store()
+        writer = _RecordingResultWriter()
+        consumer = ObservationConsumer(store=store, result_writer=writer)
+
+        async def fail_before_canonical_commit(_envelope):
+            raise RetryablePersistenceFailure("entity transaction unavailable")
+
+        monkeypatch.setattr(consumer, "_process", fail_before_canonical_commit)
+        with pytest.raises(RetryablePersistenceFailure, match="entity transaction unavailable"):
+            await consumer.handle(envelope())
+
+        assert writer.rows == []
+        assert consumer.result_for(envelope().observation_id) is None
+
+
+class TestProcessingResultDurability:
+    @pytest.mark.asyncio
+    async def test_result_writer_is_called_before_handle_returns(self):
+        writer = _RecordingResultWriter()
+        consumer = ObservationConsumer(store=_Store(), result_writer=writer)
+        result = await consumer.handle(envelope())
+        assert len(writer.rows) == 1
+        assert writer.rows[0][1] is result
+        assert result.derived_ref.startswith("s3://bucket/derived/acme/")
+
+    @pytest.mark.asyncio
+    async def test_result_writer_failure_bubbles_and_does_not_cache_success(self):
+        store = _Store()
+        writer = _RecordingResultWriter(RuntimeError("postgres is down"))
+        consumer = ObservationConsumer(store=store, result_writer=writer)
+        with pytest.raises(RuntimeError, match="postgres is down"):
+            await consumer.handle(envelope())
+        assert consumer.result_for(envelope().observation_id) is None
+        assert len(store.reads) == 1
 
 
 class TestConsumerIsIdempotent:
@@ -290,3 +371,119 @@ class TestConsumerDoesNotOverreach:
         # A type claim would surface as one; there is no such field.
         assert not hasattr(result, "entity_type")
         assert "email" not in json.dumps(result.to_dict()).lower()
+
+
+
+class _FakeTenzir:
+    async def normalize_records(self, records):
+        copies = [dict(row) for row in records]
+        output = []
+        for index, row in enumerate(copies):
+            value = row["value"]
+            span = row["byte_span"]
+            output.append({
+                "ordinal": index,
+                "record": row,
+                "normalized": {
+                    "field_path": row["field"].lower(),
+                    "value_type": row["value_type"].lower(),
+                    "value_length_chars": len(value),
+                    "value_length_bytes": len(value.encode("utf-8")),
+                    "value_is_numeric_lexeme": value.isnumeric(),
+                    "has_nonempty_surface": bool(value.strip()),
+                    "byte_span_width": span[1] - span[0] if span is not None else None,
+                    "structural_role": (
+                        "container" if row["value_type"] == "nested"
+                        else "null" if row["value_type"] == "null"
+                        else "surface"
+                    ),
+                },
+            })
+        return TenzirNormalization(
+            records=output,
+            pipeline_digest="sha256:" + "d" * 64,
+            engine_version="6.19.1",
+        )
+
+
+class TestOptionalTenzirNormalization:
+    @pytest.mark.asyncio
+    async def test_tenzir_output_is_persisted_separately_from_raw_evidence(self):
+        store = _Store()
+        tenzir = _FakeTenzir()
+        consumer = ObservationConsumer(store=store, tenzir=tenzir)
+
+        result = await consumer.handle(envelope())
+
+        assert result.status == "processed"
+        assert result.record_count > 1
+        assert result.mention_count > 0
+        assert result.normalization is not None
+        assert result.normalization["status"] == "processed"
+        assert result.normalization["engine"] == "tenzir-node"
+        assert result.normalization["engine_version"] == "6.19.1"
+        assert result.normalization["pipeline_digest"] == "sha256:" + "d" * 64
+        assert result.normalization["normalization_ref"].startswith("s3://bucket/derived/acme/")
+        assert len(store.derived_writes) == 2
+        decoded = [
+            (write, json.loads(write["body"].decode("utf-8")))
+            for write in store.derived_writes
+        ]
+        native = next(
+            manifest for _write, manifest in decoded
+            if manifest.get("schema") == "cognitive.parsed-observation/v1"
+        )
+        assert native["raw_content_sha256"]
+        write, manifest = next(
+            (item, manifest) for item, manifest in decoded
+            if manifest.get("schema") == "cognitive.observed-field-normalization/v2"
+        )
+        assert write["tenant_id"] == "acme"
+        assert manifest["observation_id"] == "OBS-" + "a" * 32
+        assert manifest["raw_ref"] == "s3://bucket/raw/tenant/202609/abc"
+        assert manifest["pipeline_digest"] == "sha256:" + "d" * 64
+        assert manifest["record_count"] == result.record_count
+        assert len(manifest["records"]) == result.record_count
+        for record in manifest["records"]:
+            assert record["record"]["byte_span"] is None or len(record["record"]["byte_span"]) == 2
+            assert record["normalized"]["value_length_chars"] >= 0
+
+    @pytest.mark.asyncio
+    async def test_tenzir_failure_is_explicit_but_does_not_erase_native_parse(self):
+        class BrokenTenzir:
+            async def normalize_records(self, records):
+                raise RuntimeError("Tenzir node is unavailable")
+
+        store = _Store()
+        result = await ObservationConsumer(store=store, tenzir=BrokenTenzir()).handle(envelope())
+
+        assert result.status == "processed"
+        assert result.record_count > 1
+        assert result.normalization is not None
+        assert result.normalization["status"] == "failed"
+        assert result.normalization["failure_code"] == "tenzir_normalization_failed"
+        assert "unavailable" in result.normalization["detail"]
+        assert len(store.derived_writes) == 1
+        native = json.loads(store.derived_writes[0]["body"].decode("utf-8"))
+        assert native["schema"] == "cognitive.parsed-observation/v1"
+
+    @pytest.mark.asyncio
+    async def test_tenzir_is_not_reexecuted_for_a_redelivered_observation(self):
+        class CountingTenzir(_FakeTenzir):
+            def __init__(self):
+                self.calls = 0
+
+            async def normalize_records(self, records):
+                self.calls += 1
+                return await super().normalize_records(records)
+
+        store = _Store()
+        tenzir = CountingTenzir()
+        consumer = ObservationConsumer(store=store, tenzir=tenzir)
+        first = await consumer.handle(envelope())
+        second = await consumer.handle(envelope())
+
+        assert first is second
+        assert tenzir.calls == 1
+        # Native parser output plus one normalized sidecar; replay must not repeat either.
+        assert len(store.derived_writes) == 2

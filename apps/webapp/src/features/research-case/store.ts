@@ -10,7 +10,7 @@ import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
 
 export interface ResearchCaseViewState {
-  selectedTab: "overview" | "claims" | "timeline" | "graph" | "sources" | "ach" | "report";
+  selectedTab: "overview" | "claims" | "analytics";
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   graphDepth: number;
@@ -40,7 +40,7 @@ export const useResearchCaseView = create<ResearchCaseViewState>()(
         setSelectedNode: (id) => set({ selectedNodeId: id }),
         setSelectedEdge: (id) => set({ selectedEdgeId: id }),
         setGraphDepth: (depth) => set({ graphDepth: depth }),
-        togglePossibleMatch: set((s) => ({ showPossibleMatch: !s.showPossibleMatch })),
+        togglePossibleMatch: () => set((s) => ({ showPossibleMatch: !s.showPossibleMatch })),
         setEpistemicFilter: (filters) => set({ epistemicFilter: filters }),
       }),
       { name: "research-case-view" },

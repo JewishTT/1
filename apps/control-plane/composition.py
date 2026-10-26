@@ -129,6 +129,8 @@ class Platform:
     model_gateway: Any = None
     person_case_policy: Any = None
     research_case_service: Any = None
+    research_case_artifact_service: Any = None
+    research_case_report_service: Any = None
     #: Reader class for the return path. Held as a class rather than an instance because the
     #: instance is per-call (one session per read), and ``slots=True`` rejects attributes
     #: that were not declared as fields.
@@ -332,17 +334,77 @@ class Platform:
             log.warning("person-case policy unavailable: %s", exc)
 
     async def _build_research_case_service(self) -> None:
-        """Build the Feature 034 research case application service."""
+        """Compose the person-case application service over canonical storage and acquisition."""
         try:
             from services.research_case_service import ResearchCaseService
+            from services.research_case_runtime import CaseDispatchExecutor, PostgresCaseBudgetService
+            from services.research_case_projection import PostgresResearchCaseProjectionProvider
+            from services.research_case_artifacts import ResearchCaseArtifactService
+            from services.research_case_reports import ResearchCaseReportService
 
+            budget_service = (
+                PostgresCaseBudgetService(self.session_factory)
+                if self.session_factory is not None and self.store is not None
+                else None
+            )
+            dispatch_executor = (
+                CaseDispatchExecutor(policy=self.person_case_policy)
+                if self.person_case_policy is not None and self.health.catalogue == "ready"
+                else None
+            )
+            projection_provider = (
+                PostgresResearchCaseProjectionProvider(
+                    session_factory=self.session_factory,
+                    context_store=self.store,
+                    policy=self.person_case_policy,
+                )
+                if self.session_factory is not None and self.store is not None
+                and self.person_case_policy is not None
+                else None
+            )
             self.research_case_service = ResearchCaseService(
                 store=self.store,
                 loop=self.loop,
                 policy=self.person_case_policy,
                 model_gateway=self.model_gateway,
+                budget_service=budget_service,
+                dispatch_executor=dispatch_executor,
+                projection_provider=projection_provider,
             )
-            self.health.research_case_service = "ready"
+            if self.session_factory is not None and self.store is not None and projection_provider is not None:
+                self.research_case_artifact_service = ResearchCaseArtifactService(
+                    context_store=self.store,
+                    session_factory=self.session_factory,
+                )
+                self.research_case_report_service = ResearchCaseReportService(
+                    context_store=self.store,
+                    session_factory=self.session_factory,
+                    projection_provider=projection_provider,
+                )
+
+            if budget_service is not None and dispatch_executor is not None and projection_provider is not None and self.health.person_case_policy == "ready":
+                # This means a durable reservation and broker-acknowledged request can be
+                # attempted. It does not claim that a worker consumed the message or that
+                # raw evidence passed the worker's ArtifactSink/ObservationGate.
+                self.health.research_case_service = "degraded"
+                self.health.notes.append(
+                    "research-case dispatcher composed; runtime success requires an existing tenant budget, "
+                    "broker acknowledgement and downstream worker/evidence confirmation"
+                )
+            else:
+                self.health.research_case_service = "degraded"
+                missing = []
+                if budget_service is None:
+                    missing.append("durable PostgreSQL budget reservation")
+                if dispatch_executor is None:
+                    missing.append("source catalogue and case-policy dispatcher")
+                if self.store is None:
+                    missing.append("canonical PostgreSQL ContextStore")
+                if self.person_case_policy is None:
+                    missing.append("loaded person-case source policy")
+                self.health.notes.append(
+                    "research-case execution blocked: " + ", ".join(missing or ["runtime dependencies unavailable"])
+                )
         except Exception as exc:  # noqa: BLE001
             self.health.research_case_service = "absent"
             self.health.notes.append(f"research case service unavailable: {exc}")

@@ -201,18 +201,18 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` | Alembic migration for temporal materialization persistence (feature 014). |
 | `apps/control-plane/db/migrations/versions/016_relation_evidence_graph.py` | Alembic migration for relation & evidence graph fabric persistence (feature 016). |
 | `apps/control-plane/db/migrations/versions/025_context_graph.py` | Context graph persistence: nodes, edges, decisions (025). |
+| `apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py` | Durable reservation ledger for Feature 034 (revision 026). |
+| `apps/control-plane/db/migrations/versions/027_person_research_case_records.py` | Structured case scope and dispatch idempotency records for Feature 034. |
 | `apps/control-plane/db/temporal_materialization.py` | SQLAlchemy persistence adapter for temporal materialization projections. |
+| `apps/control-plane/services/research_case_artifacts.py` | Static research-case artifacts over the canonical raw-first acquisition path. |
 | `apps/control-plane/services/research_case_policy.py` | Person case policy gate (Feature 034). |
+| `apps/control-plane/services/research_case_projection.py` | Durable read projections for Feature 034. |
+| `apps/control-plane/services/research_case_reports.py` | Evidence-grounded, durable completion reports for Feature 034. |
+| `apps/control-plane/services/research_case_runtime.py` | Durable Feature 034 budget reservations and the existing Layer-0 dispatcher adapter. |
 | `apps/control-plane/services/research_case_service.py` | Person case application service (Feature 034). |
 | `apps/control-plane/services/search_backends.py` | Real query backends for the search plane (T026, US2). |
 | `apps/control-plane/services/temporal_materialization_dispatch.py` | Temporal launch seam for entity-created temporal materialization. |
 | `apps/control-plane/services/temporal_materialization_service.py` | Control-plane service facade for deterministic temporal materialization. |
-| `apps/control-plane/tests/contract/test_context_graph_contract.py` | What the Context Graph is required to refuse, and what it must never confuse. |
-| `apps/control-plane/tests/integration/test_closed_research_loop.py` | WP-A: the research loop must be able to close, and say why. |
-| `apps/control-plane/tests/integration/test_temporal_materialization_api.py` | API integration tests for temporal materialization. |
-| `apps/control-plane/tests/unit/test_science_tda.py` | API tests: /api/science/invariant — Takens + VR persistence (011, FR-009). |
-| `apps/control-plane/tests/unit/test_search_core_selection.py` | The bm25s core is reachable from production, not only by hand-wiring it. |
-| `apps/control-plane/tests/unit/test_search_fusion_api.py` | The fusion strategy is reachable over HTTP, not only in-process (T004, D6). |
 
 ## Closed loop / frontier
 
@@ -243,7 +243,11 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/api/routes/dossier.py` | Dossier API — the surface an analyst actually reads. |
 | `apps/control-plane/api/routes/findings.py` | Finding overview API (T053, US2, FR-032). |
 | `apps/control-plane/context_engine/dossier_store.py` | Making a sweep survive the process, and survive being asked about again afterwards. |
+| `apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py` | Durable static case artifacts and evidence-linked completion reports. |
+| `apps/control-plane/services/research_case_reports.py` | Evidence-grounded, durable completion reports for Feature 034. |
+| `apps/control-plane/tests/test_research_case_reports.py` | Evidence-grounded completion-report contracts for Feature 034. |
 | `apps/control-plane/tests/unit/test_dossier_store.py` | The round trip that decides whether a dossier survives its process. |
+| `apps/control-plane/tests/unit/test_migration_029_case_artifact_report_records.py` | Migration contract for immutable static case artifacts and completion reports. |
 | `apps/science/context/dossier.py` | Dossier assembly: the one artefact an analyst actually reads. |
 | `apps/science/robustness/report.py` | Flip rates, sensitivity and noise regions (T129, US6, FR-011). |
 | `apps/science/tests/contract/test_dossier_contract.py` | Contract: the dossier is the honest end of the pipeline (spec 026). |

@@ -200,6 +200,90 @@ class ObservationGate:
             self._producer.produce(topic_for(event_type), env, key=observation_id)
         return observation
 
+    def publish_record_event(
+        self,
+        observation: dict,
+        *,
+        producer: str = "observation-gate",
+        producer_version: str = GATE_PRODUCER_VERSION,
+    ) -> Any | None:
+        """Publish a previously persisted record observation using its canonical address.
+
+        The caller must persist Capture and Observation first when a durable writer is
+        configured. Event IDs are deterministic; a retry may safely publish the same
+        event again because consumers deduplicate by event_id/observation_id.
+        """
+        if self._producer is None:
+            self.last_emitted = None
+            return None
+
+        observation_id = str(observation.get("observation_id") or "").strip()
+        capture_id = str(observation.get("capture_id") or "").strip()
+        raw_ref = str(observation.get("raw_ref") or "").strip()
+        locator = str(observation.get("locator") or "").strip()
+        tenant_id = str(observation.get("tenant_id") or "").strip()
+        if not all((observation_id, capture_id, raw_ref, locator, tenant_id)):
+            raise ValueError("cannot publish an observation without observation/capture/raw/locator/tenant refs")
+
+        event_type = "observation.created"
+        payload = json.dumps(
+            {
+                "capture_id": capture_id,
+                "observation_id": observation_id,
+                "locator": locator,
+                "record_digest": str(observation.get("record_digest") or ""),
+                "raw_ref": raw_ref,
+                "parser_hint": str(observation.get("parser_hint") or ""),
+                "tenant_id": tenant_id,
+                "source_id": str(observation.get("source_id") or ""),
+                "content_type": str(observation.get("content_type") or ""),
+                "runtime_producer": producer,
+                "runtime_producer_version": producer_version,
+                "investigation_id": str(observation.get("investigation_id") or ""),
+                "work_id": str(observation.get("work_id") or ""),
+                "region_id": str(observation.get("region_id") or ""),
+                "record_metadata": dict(observation.get("record_metadata") or {}),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+        event_id = event_id_for(
+            event_type=event_type,
+            event_version="2.0",
+            observation_id=observation_id,
+            producer=producer,
+            producer_version=producer_version,
+            lifecycle="created",
+        )
+        env = build_envelope(
+            event_type=event_type,
+            event_version="2.0",
+            producer=producer,
+            producer_version=producer_version,
+            payload=payload,
+            investigation_id=str(observation.get("investigation_id") or ""),
+            observation_id=observation_id,
+            event_id=event_id,
+            tenant_id=tenant_id,
+            source_id=str(observation.get("source_id") or ""),
+            work_id=str(observation.get("work_id") or ""),
+            region_id=str(observation.get("region_id") or ""),
+        )
+        topic = topic_for(event_type)
+        publish_sync = getattr(self._producer, "publish_sync", None)
+        if callable(publish_sync):
+            publish_sync(topic, env, key=observation_id, event_type=event_type)
+        else:
+            self._producer.produce(topic, env, key=observation_id)
+            flush = getattr(self._producer, "flush", None)
+            if callable(flush):
+                remaining = flush(15.0)
+                if isinstance(remaining, int) and remaining > 0:
+                    raise RuntimeError(f"observation event was not acknowledged: {remaining} pending")
+        self.last_emitted = {"event_id": event_id, "topic": topic}
+        return env
+
     async def ingest_record(
         self,
         *,
@@ -217,19 +301,19 @@ class ObservationGate:
         record_metadata: dict | None = None,
         producer: str = "observation-gate",
         producer_version: str = GATE_PRODUCER_VERSION,
+        publish_event: bool = True,
     ) -> dict:
-        """Address one record inside an already-stored capture (§9).
+        """Address one record inside an already-stored capture.
 
-        Deliberately does **not** re-store the blob. The bytes are already in the
-        ObjectStore under ``raw_ref`` and re-uploading them per record would turn
-        a thousand-record Airbyte stream into a thousand writes of the same body.
-        What this adds is a second, finer address: the capture says what came
-        back, this says which part of it is being observed.
-
-        The record's own metadata is retained verbatim when supplied, and *only*
-        then: §62 forbids deleting a field nobody anticipated, and the raw
-        artifact remains the source of truth for anything omitted.
+        The raw bytes are already durable under ``raw_ref``; this operation creates
+        the finer record address without storing the blob a second time. When
+        ``publish_event=False``, a caller may commit Capture + Observation in the
+        same transaction before invoking ``publish_record_event``.
         """
+        if not all((capture_id, record_locator, record_digest, tenant_id, raw_ref)):
+            raise ValueError(
+                "capture_id, record_locator, record_digest, tenant_id and raw_ref are required"
+            )
         identity = ObservationIdentity.for_record(
             tenant_id=tenant_id,
             capture_id=capture_id,
@@ -239,10 +323,16 @@ class ObservationGate:
         observation_id = identity.observation_id
         existing = self._observations.get(observation_id)
         if existing is not None:
-            # §12: a replay of one record is the same observation, not a second
-            # one. Returning the stored record is what makes the consumer
-            # idempotent without a dedup table keyed on something else.
+            # A replay keeps the same address. Republishing that deterministic event
+            # is safe and lets a caller recover from a publish failure after commit.
+            if publish_event:
+                self.publish_record_event(
+                    existing,
+                    producer=producer,
+                    producer_version=producer_version,
+                )
             return existing
+
         observation = {
             "observation_id": observation_id,
             "tenant_id": tenant_id,
@@ -254,6 +344,8 @@ class ObservationGate:
             "locator": record_locator,
             "record_digest": record_digest,
             "content_type": content_type,
+            "raw_ref": raw_ref,
+            "parser_hint": parser_hint,
             "status": "created",
             "duplicate": False,
             "provenance": {
@@ -264,74 +356,17 @@ class ObservationGate:
             },
         }
         if record_metadata is not None:
-            observation["record_metadata"] = record_metadata
-        # I-1: immutable from here.
+            observation["record_metadata"] = dict(record_metadata)
+
+        # The gate's in-process index is a cache only. Production persistence is
+        # owned by ArtifactSink's injected evidence writer before event publication.
         self._observations[observation_id] = observation
-        if self._producer is not None:
-            event_type = "observation.created"
-            env = build_envelope(
-                event_type=event_type,
-                event_version="2.0",
+        if publish_event:
+            self.publish_record_event(
+                observation,
                 producer=producer,
                 producer_version=producer_version,
-                # §69: the payload is *refs only*, and §69 shows the shape -
-                # capture_id, observation_id, raw_ref, locator. This used to put a
-                # bare locator string here, which left a consumer holding an
-                # observation it could not resolve to bytes: it knew which record
-                # it was looking at and had no way to fetch what that record was.
-                # That is release blocker "observation without raw lineage" by
-                # another name, and it made the whole downstream stage unable to
-                # run. Sorted keys, so the payload is byte-stable for a given set
-                # of refs and a replay of the same record emits the same message.
-                payload=json.dumps(
-                    {
-                        "capture_id": capture_id,
-                        "observation_id": observation_id,
-                        "locator": record_locator,
-                        "record_digest": record_digest,
-                        # The record's bytes are the capture's bytes (§9 - this
-                        # path does not re-store them), so the lineage pointer is
-                        # the capture's raw_ref, passed in by the caller that wrote
-                        # it. Without it the event named a record and no way to
-                        # fetch it, which is §160's "observation without raw
-                        # lineage" and left the consumer unable to run at all.
-                        "raw_ref": raw_ref,
-                        # §63: the parser declaration that reads this record. Not
-                        # inferred here - the sink passes whatever the source
-                        # definition declared, and an absent hint stays absent so
-                        # the payload layer records its own refusal instead of this
-                        # method guessing a parser from the producer name.
-                        "parser_hint": parser_hint,
-                        "tenant_id": tenant_id,
-                        "source_id": source_id or "",
-                        "content_type": content_type or "",
-                        "runtime_producer": producer,
-                        "runtime_producer_version": producer_version,
-                        "investigation_id": investigation_id or "",
-                        "work_id": work_id or "",
-                    },
-                    sort_keys=True,
-                    separators=(",", ":"),
-                    ensure_ascii=False,
-                ).encode("utf-8"),
-                investigation_id=investigation_id,
-                observation_id=observation_id,
-                tenant_id=tenant_id,
-                source_id=source_id or "",
-                work_id=work_id or "",
-                region_id=region_id or "",
-                event_id=event_id_for(
-                    event_type=event_type,
-                    event_version="2.0",
-                    observation_id=observation_id,
-                    producer=producer,
-                    producer_version=producer_version,
-                    lifecycle="created",
-                ),
             )
-            topic = topic_for(event_type)
-            self._producer.produce(topic, env, key=observation_id)
-            self.last_emitted = {"event_id": env.event_id, "topic": topic}
         return observation
 
     #: Named ``ingest`` historically; §9 asks for the blob-level seam to be

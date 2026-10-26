@@ -1,6 +1,6 @@
 # Tests
 
-322 test files, 5181 test functions. 268 platform modules are not targeted by any test.
+334 test files, 5250 test functions. 265 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -18,23 +18,26 @@
 | `apps/acquisition/tests/integration/test_worker.py` | 5 | `apps/control-plane/services/source_registry.py` |
 | `apps/acquisition/tests/test_connector_registry.py` | 13 | `apps/acquisition/registry.py` |
 | `apps/acquisition/tests/unit/test_acquisition_artifact_sink.py` | 39 | `apps/acquisition/artifact_sink.py`, `apps/shared/domain/acquisition_artifact.py`, `apps/shared/domain/capture.py`, `apps/shared/domain/observation_identity.py` |
-| `apps/acquisition/tests/unit/test_acquisition_worker.py` | 31 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/connector.py`, `apps/acquisition/sources/executor.py`, `apps/acquisition/worker_acquisition.py` |
+| `apps/acquisition/tests/unit/test_acquisition_worker.py` | 33 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/connector.py`, `apps/acquisition/sources/executor.py`, `apps/acquisition/worker_acquisition.py` |
 | `apps/acquisition/tests/unit/test_adapter_onboarding.py` | 3 | `apps/acquisition/adapters/commoncrawl/__init__.py`, `apps/acquisition/adapters/commoncrawl/index.py`, `apps/acquisition/adapters/registry.py`, `apps/acquisition/adapters/scrapy/__init__.py` |
 | `apps/acquisition/tests/unit/test_airbyte_runtime.py` | 28 | `apps/acquisition/runtime/__init__.py`, `apps/acquisition/runtime/airbyte.py`, `apps/shared/domain/acquisition_artifact.py` |
 | `apps/acquisition/tests/unit/test_archival_worker.py` | 8 | `apps/acquisition/worker_http/archival.py` |
 | `apps/acquisition/tests/unit/test_bbot_process_boundary.py` | 15 | `apps/acquisition/runtime/bbot.py` |
 | `apps/acquisition/tests/unit/test_bbot_runtime.py` | 25 | `apps/acquisition/runtime/__init__.py`, `apps/acquisition/runtime/bbot.py`, `apps/acquisition/runtime/record_stream.py` |
 | `apps/acquisition/tests/unit/test_browser_fabric.py` | 8 | `apps/acquisition/worker_browser/fabric.py` |
+| `apps/acquisition/tests/unit/test_case_execution_guard.py` | 5 | `apps/acquisition/case_execution_guard.py`, `apps/acquisition/sources/connector.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_cc_extract.py` | 10 | `apps/acquisition/cc_extract.py` |
 | `apps/acquisition/tests/unit/test_cc_index.py` | 3 | `apps/acquisition/adapters/commoncrawl/index.py` |
 | `apps/acquisition/tests/unit/test_cc_plan.py` | 12 | `apps/acquisition/cc_plan.py` |
 | `apps/acquisition/tests/unit/test_engine_adapters.py` | 6 | `apps/acquisition/adapters/browsertrix/__init__.py`, `apps/acquisition/adapters/browsertrix/collect.py`, `apps/acquisition/adapters/heritrix/__init__.py`, `apps/acquisition/adapters/heritrix/collect.py` |
 | `apps/acquisition/tests/unit/test_entity_search.py` | 4 | `apps/acquisition/entity_search.py` |
+| `apps/acquisition/tests/unit/test_evidence_writer.py` | 2 | `apps/acquisition/evidence_writer.py` |
 | `apps/acquisition/tests/unit/test_primproc_runtime.py` | 32 | `apps/acquisition/runtime/__init__.py`, `apps/acquisition/runtime/primproc.py`, `apps/shared/domain/acquisition_artifact.py` |
 | `apps/acquisition/tests/unit/test_region_backpressure.py` | 7 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/tests/unit/test_render_pipeline.py` | 6 | `apps/acquisition/worker_browser/renderer.py` |
 | `apps/acquisition/tests/unit/test_replay_journal.py` | 5 | `apps/acquisition/observation_gate/replay.py` |
 | `apps/acquisition/tests/unit/test_source_catalogue_full.py` | 15 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
+| `apps/acquisition/tests/unit/test_source_executor_contracts.py` | 4 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_source_query_set.py` | 12 | `apps/acquisition/cc_plan.py`, `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py` |
 | `apps/acquisition/tests/unit/test_warc_adapter.py` | 3 | `apps/acquisition/adapters/warc/collect.py` |
 | `apps/admission/tests/contract/test_no_auto_merge.py` | 25 | `apps/admission/engine/admission.py`, `apps/admission/engine/calibration.py`, `apps/admission/resolution/blocking.py`, `apps/admission/resolution/candidate.py` |
@@ -48,9 +51,9 @@
 | `apps/admission/tests/test_statement_consumer.py` | 5 | `apps/admission/engine/assertions.py`, `apps/shared/domain/__init__.py`, `apps/shared/domain/statement.py` |
 | `apps/admission/tests/unit/test_cluster_transitivity.py` | 13 | `apps/admission/resolution/cluster.py`, `apps/admission/resolution/decision_store.py`, `apps/admission/resolution/gate.py`, `apps/admission/resolution/span.py` |
 | `apps/admission/tests/unit/test_splink_adapter.py` | 20 | `apps/admission/resolution/candidate.py`, `apps/admission/resolution/splink_adapter.py` |
-| `apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py` | 2 | `apps/acquisition/adapters/scrapy/stream.py`, `apps/acquisition/adapters/warc/collect.py`, `apps/shared/events/content_router.py`, `apps/shared/events/observation_gate.py` |
-| `apps/bulk-ingestion/tests/unit/test_backfill.py` | 5 | `apps/shared/network/commoncrawl.py` |
-| `apps/bulk-ingestion/tests/unit/test_historical_replay.py` | 5 | `apps/shared/network/commoncrawl.py` |
+| `apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py` | 2 | `apps/acquisition/adapters/scrapy/stream.py`, `apps/acquisition/adapters/warc/collect.py`, `apps/bulk-ingestion/historical/replay.py`, `apps/shared/events/content_router.py` |
+| `apps/bulk-ingestion/tests/unit/test_backfill.py` | 5 | `apps/bulk-ingestion/backfill.py`, `apps/bulk-ingestion/historical/replay.py`, `apps/shared/network/commoncrawl.py` |
+| `apps/bulk-ingestion/tests/unit/test_historical_replay.py` | 5 | `apps/bulk-ingestion/historical/replay.py`, `apps/shared/network/commoncrawl.py` |
 | `apps/control-plane/tests/contract/test_context_graph_contract.py` | 21 | `apps/control-plane/context_engine/context_graph.py` |
 | `apps/control-plane/tests/integration/__init__.py` | 0 | — |
 | `apps/control-plane/tests/integration/test_cc_temporality_api.py` | 3 | `apps/control-plane/api/main.py`, `apps/control-plane/services/cc_temporality.py`, `apps/zero/zero/cc_capture.py` |
@@ -77,6 +80,10 @@
 | `apps/control-plane/tests/integration/test_temporal_materialization_api.py` | 3 | `apps/control-plane/api/routes/entities.py`, `apps/control-plane/api/routes/temporal_materializations.py` |
 | `apps/control-plane/tests/integration/test_tenancy.py` | 6 | `apps/shared/isolation.py` |
 | `apps/control-plane/tests/integration/test_tools_api.py` | 8 | `apps/control-plane/api/main.py` |
+| `apps/control-plane/tests/test_auth_security.py` | 6 | `apps/control-plane/api/auth.py` |
+| `apps/control-plane/tests/test_research_case_invariants.py` | 7 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/person_case_profile.py`, `apps/control-plane/context_engine/store.py` |
+| `apps/control-plane/tests/test_research_case_projection.py` | 6 | `apps/control-plane/services/research_case_projection.py` |
+| `apps/control-plane/tests/test_research_case_reports.py` | 5 | `apps/control-plane/services/research_case_artifacts.py`, `apps/control-plane/services/research_case_reports.py`, `apps/shared/contracts/evidence_span.py` |
 | `apps/control-plane/tests/unit/test_action_memory.py` | 19 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/contracts/stage_outcome.py` |
 | `apps/control-plane/tests/unit/test_approval_gate.py` | 7 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/loop.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/domain/investigation_context.py` |
 | `apps/control-plane/tests/unit/test_assembly_structural_conflict.py` | 24 | `apps/control-plane/semantic_path/__init__.py`, `apps/control-plane/semantic_path/assembly.py`, `apps/interpretation/extractors/signals/__init__.py`, `apps/interpretation/extractors/signals/protocol.py` |
@@ -98,6 +105,9 @@
 | `apps/control-plane/tests/unit/test_migration_017_forward_only.py` | 17 | `apps/control-plane/db/schema.py`, `apps/shared/config/settings.py` |
 | `apps/control-plane/tests/unit/test_migration_020_universal_relation.py` | 16 | `apps/control-plane/db/schema.py`, `apps/shared/domain/relation_candidate.py` |
 | `apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py` | 9 | `apps/control-plane/api/routes/entities.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/session.py`, `apps/shared/config/settings.py` |
+| `apps/control-plane/tests/unit/test_migration_027_person_case_records.py` | 3 | `apps/control-plane/context_engine/postgres_store.py` |
+| `apps/control-plane/tests/unit/test_migration_028_processing_results.py` | 3 | `apps/control-plane/db/schema.py` |
+| `apps/control-plane/tests/unit/test_migration_029_case_artifact_report_records.py` | 3 | — |
 | `apps/control-plane/tests/unit/test_migration_forward_only.py` | 5 | — |
 | `apps/control-plane/tests/unit/test_modifier_mismatch.py` | 9 | `apps/control-plane/modifier/__init__.py` |
 | `apps/control-plane/tests/unit/test_monitor.py` | 11 | `apps/control-plane/cp_domain/investigation.py` |
@@ -121,9 +131,9 @@
 | `apps/control-plane/tests/unit/test_us1_core.py` | 15 | `apps/control-plane/cp_domain/investigation.py`, `apps/control-plane/cp_domain/policy.py`, `apps/control-plane/services/policy_service.py`, `apps/control-plane/services/source_registry.py` |
 | `apps/control-plane/tests/unit/test_us3_ops.py` | 7 | `apps/control-plane/services/audit.py`, `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/tests/unit/test_workflows.py` | 16 | `apps/control-plane/services/__init__.py`, `apps/control-plane/workflows/__init__.py`, `apps/control-plane/workflows/investigation.py`, `apps/control-plane/workflows/temporal_materialization.py` |
-| `apps/feedback/tests/test_branches.py` | 10 | `apps/shared/scoring/scorer.py` |
-| `apps/feedback/tests/test_feedback.py` | 8 | — |
-| `apps/feedback/tests/test_frontier_loop.py` | 2 | `apps/control-plane/db/schema.py`, `apps/control-plane/db/session.py`, `apps/control-plane/services/frontier.py`, `apps/shared/scoring/scorer.py` |
+| `apps/feedback/tests/test_branches.py` | 10 | `apps/feedback/feedback/__init__.py`, `apps/feedback/feedback/branch/entity.py`, `apps/feedback/feedback/branch/finding.py`, `apps/feedback/feedback/branch/source.py` |
+| `apps/feedback/tests/test_feedback.py` | 8 | `apps/feedback/feedback_engine.py`, `apps/feedback/stopping.py` |
+| `apps/feedback/tests/test_frontier_loop.py` | 2 | `apps/control-plane/db/schema.py`, `apps/control-plane/db/session.py`, `apps/control-plane/services/frontier.py`, `apps/feedback/feedback/__init__.py` |
 | `apps/interpretation/tests/conftest.py` | 0 | `apps/interpretation/dictionaries/build_mini.py` |
 | `apps/interpretation/tests/contract/__init__.py` | 0 | — |
 | `apps/interpretation/tests/contract/test_dictionary_entities.py` | 7 | `apps/interpretation/dictionaries/__init__.py`, `apps/interpretation/extractors/dictionary_entities.py`, `apps/interpretation/extractors/orgs.py`, `apps/interpretation/extractors/places.py` |
@@ -138,7 +148,7 @@
 | `apps/interpretation/tests/test_deterministic_extraction.py` | 16 | `apps/interpretation/dictionaries/__init__.py`, `apps/interpretation/dictionaries/build_mini.py`, `apps/interpretation/extractors/lane.py`, `apps/interpretation/extractors/language.py` |
 | `apps/interpretation/tests/test_evidence_manifest.py` | 14 | `apps/interpretation/evidence/manifest.py` |
 | `apps/interpretation/tests/test_mention_binding_seam.py` | 16 | `apps/interpretation/extractors/signals/__init__.py`, `apps/interpretation/extractors/signals/lexical.py`, `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/mentions.py` |
-| `apps/interpretation/tests/test_observation_consumer.py` | 20 | `apps/interpretation/observation_consumer/__init__.py`, `apps/shared/events/__init__.py` |
+| `apps/interpretation/tests/test_observation_consumer.py` | 26 | `apps/interpretation/normalization/tenzir.py`, `apps/interpretation/observation_consumer/__init__.py`, `apps/shared/events/__init__.py` |
 | `apps/interpretation/tests/test_parser_adapter.py` | 17 | `apps/interpretation/parsers/registry.py` |
 | `apps/interpretation/tests/test_payload_binding.py` | 14 | `apps/interpretation/parsers/payload/__init__.py`, `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/relation_participant.py` |
 | `apps/interpretation/tests/test_payload_detection.py` | 15 | `apps/interpretation/parsers/payload/__init__.py` |
@@ -157,6 +167,8 @@
 | `apps/interpretation/tests/test_signal_kind_channels.py` | 11 | `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_signal_nary_contract.py` | 32 | `apps/interpretation/extractors/signals/signal.py`, `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/predicate_hypothesis.py`, `apps/shared/domain/predicate_signature.py` |
 | `apps/interpretation/tests/test_syntactic_producer.py` | 58 | `apps/interpretation/extractors/signals/mentions.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
+| `apps/interpretation/tests/test_tenzir_live.py` | 1 | `apps/interpretation/normalization/tenzir.py` |
+| `apps/interpretation/tests/test_tenzir_normalization.py` | 15 | `apps/interpretation/normalization/tenzir.py` |
 | `apps/interpretation/tests/test_warc_reader.py` | 44 | `apps/interpretation/parsers/warc.py` |
 | `apps/projection/tests/contract/test_search_projection_manifest.py` | 9 | `apps/projection/search/index.py`, `apps/projection/search/projector.py`, `apps/shared/contracts/projection_manifest.py` |
 | `apps/projection/tests/contract/test_tda_bridge_contract.py` | 30 | `apps/projection/graph/adjacency.py`, `apps/projection/tda/__init__.py`, `apps/projection/tda/bridge.py`, `apps/projection/tda/pipeline.py` |
@@ -257,7 +269,7 @@
 | `apps/shared/tests/contract/test_single_publication_path.py` | 9 | — |
 | `apps/shared/tests/contract/test_stage_outcome.py` | 52 | `apps/shared/contracts/error_codes.py`, `apps/shared/contracts/stage_outcome.py` |
 | `apps/shared/tests/contract/test_statement.py` | 3 | `apps/shared/domain/__init__.py` |
-| `apps/shared/tests/contract/test_storage.py` | 6 | `apps/shared/storage/s3.py` |
+| `apps/shared/tests/contract/test_storage.py` | 7 | `apps/shared/storage/memory.py`, `apps/shared/storage/s3.py` |
 | `apps/shared/tests/integration/__init__.py` | 0 | — |
 | `apps/shared/tests/integration/test_idempotency.py` | 3 | — |
 | `apps/shared/tests/integration/test_infra_connectivity.py` | 6 | — |
@@ -354,6 +366,7 @@
 | `apps/acquisition/adapters/sec_edgar.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
 | `apps/acquisition/observation_gate/__init__.py` |
+| `apps/acquisition/policies/__init__.py` |
 | `apps/acquisition/runtime/external_tool.py` |
 | `apps/acquisition/runtime/searxng.py` |
 | `apps/acquisition/sources/__init__.py` |
@@ -364,14 +377,12 @@
 | `apps/acquisition/worker-dataset/acquire.py` |
 | `apps/acquisition/worker_browser/__init__.py` |
 | `apps/acquisition/worker_http/__init__.py` |
+| `apps/acquisition/worker_service.py` |
 | `apps/admission/engine/__init__.py` |
 | `apps/admission/independence/__init__.py` |
 | `apps/admission/resolution/__init__.py` |
-| `apps/bulk-ingestion/backfill.py` |
 | `apps/bulk-ingestion/historical/__init__.py` |
-| `apps/bulk-ingestion/historical/replay.py` |
 | `apps/control-plane/__init__.py` |
-| `apps/control-plane/api/auth.py` |
 | `apps/control-plane/api/path_shim.py` |
 | `apps/control-plane/api/routes/connectors.py` |
 | `apps/control-plane/api/routes/discovery.py` |
@@ -395,3 +406,4 @@
 | `apps/control-plane/api/routes/science_tda.py` |
 | `apps/control-plane/api/routes/science_temporal.py` |
 | `apps/control-plane/api/routes/search.py` |
+| `apps/control-plane/api/routes/search_rebuild.py` |

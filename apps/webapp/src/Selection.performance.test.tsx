@@ -3,7 +3,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { InvestigationWorkspaceRoute } from "./Workbench";
+import { InvestigationRoute } from "./Workbench";
 import { DEFAULT_PANE_WIDTHS, useWorkspace } from "./workspace/store";
 import { OPEN_TIME_RANGE } from "./workspace/types";
 
@@ -27,7 +27,7 @@ function renderShell() {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={["/investigations/42"]}>
         <Routes>
-          <Route path="/investigations/:id" element={<InvestigationWorkspaceRoute />} />
+          <Route path="/investigations/:id" element={<InvestigationRoute id="42" />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,

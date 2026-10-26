@@ -14,6 +14,10 @@ memory-backed store cannot be wired into production by accident.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
+import json
+
 import enum
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
@@ -34,12 +38,6 @@ from context_engine.obligations import (
     ResearchObligation,
 )
 
-#: Obligation id prefix used to store person-case case metadata as a durable
-#: obligation record, reusing the existing obligation table without a new schema owner.
-CASE_META_OBLIGATION_ID_PREFIX = "CASE_META:"
-
-#: Action id prefix used to record dispatch intents, reusing the existing action table.
-DISPATCH_INTENT_ACTION_ID_PREFIX = "DISPATCH_INTENT:"
 
 
 class StoreDurability(enum.StrEnum):
@@ -286,92 +284,63 @@ class ContextStore(ABC):
         expires_at: str | None,
         valid_time: dict[str, Any],
         jurisdictions: list[str],
+        subject_anchors: list[dict[str, str]] | None = None,
+        context_amendments: list[dict[str, Any]] | None = None,
+        dynamic_invariant_anchors: list[dict[str, Any]] | None = None,
+        static_artifact_refs: list[dict[str, Any]] | None = None,
+        latest_report_ref: dict[str, Any] | None = None,
     ) -> None:
-        """Store person-case case metadata as a durable obligation record.
+        """Persist the vertical metadata through the store's metadata contract.
 
-        Reuses the existing ``research_obligations`` table (no new schema owner).
-        The record is keyed by ``CASE_META:{case_id}`` and carries all
-        person-case-specific fields that do not belong on ``InvestigationContext``.
+        The reference store keeps this sidecar in memory. Durable store implementations
+        must override this pair with a database-backed record. Do not mint a fake
+        ResearchObligation to hold metadata: it pollutes the analyst's obligation list
+        and loses the actual values after a process restart.
         """
-        from context_engine.obligations import KnowledgeType, SaturationState
-
-        meta_obligation = ResearchObligation(
-            obligation_id=f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}",
-            context_id=case_id,
-            question="__person_case_metadata__",
-            claim_family="__person_case_metadata__",
-            required_evidence_types=(),
-            capabilities=(),
-            scope_condition="",
-            satisfaction_condition="",
-            state=ObligationStatus.OPEN,
-            knowledge_type=KnowledgeType.ATTRIBUTE,
-            priority=0.0,
-            priority_basis="unestimated",
-            saturation=SaturationState(
-                coverage=0.0,
-                coverage_known=False,
-                marginal_gain=0.0,
-                marginal_gain_known=False,
-                distinct_sources=0,
-                source_diversity=0,
-                stopping_condition="metadata",
-                coverage_threshold=1.0,
-                marginal_gain_threshold=0.05,
-            ),
-        )
-        # Encode all metadata in the obligation's mutable fields so it survives
-        # a round trip through to_dict/from_dict.
-        await self.put_obligation(meta_obligation)
-        # Store the rich metadata in the obligation's source_refs / acceptance
-        # criteria is not structured enough; instead keep a parallel in-process
-        # index keyed by case_id for the common case. Subclasses may override
-        # for durable cross-process lookup.
+        if not case_id or not tenant_id:
+            raise ContextEngineError(
+                "person_case_identity_missing",
+                "case_id and tenant_id are required for case metadata",
+            )
         self._person_case_meta_index: dict[str, dict[str, Any]] = getattr(
             self, "_person_case_meta_index", {}
         )
+        previous = self._person_case_meta_index.get(case_id, {})
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
         self._person_case_meta_index[case_id] = {
+            "case_id": case_id,
+            "created_at": previous.get("created_at", now),
+            "updated_at": now,
             "tenant_id": tenant_id,
             "purpose_code": purpose_code,
             "basis_ref": basis_ref,
             "launch_profile": launch_profile,
-            "claim_families": claim_families,
-            "allowed_source_ids": allowed_source_ids,
-            "denied_claim_families": denied_claim_families,
+            "claim_families": list(claim_families),
+            "allowed_source_ids": list(allowed_source_ids),
+            "denied_claim_families": list(denied_claim_families),
             "scope_digest": scope_digest,
-            "scope_revision": scope_revision,
-            "approved": approved,
+            "scope_revision": int(scope_revision),
+            "approved": bool(approved),
             "budget_ref": budget_ref,
             "expires_at": expires_at,
-            "valid_time": valid_time,
-            "jurisdictions": jurisdictions,
+            "valid_time": dict(valid_time),
+            "jurisdictions": list(jurisdictions),
+            "subject_anchors": [dict(a) for a in (subject_anchors if subject_anchors is not None else previous.get("subject_anchors", []))],
+            "context_amendments": [dict(a) for a in (context_amendments if context_amendments is not None else previous.get("context_amendments", []))],
+            "dynamic_invariant_anchors": [dict(a) for a in (dynamic_invariant_anchors if dynamic_invariant_anchors is not None else previous.get("dynamic_invariant_anchors", []))],
+            "static_artifact_refs": [dict(a) for a in (static_artifact_refs if static_artifact_refs is not None else previous.get("static_artifact_refs", []))],
+            "latest_report_ref": dict(latest_report_ref if latest_report_ref is not None else previous.get("latest_report_ref", {})),
         }
 
     async def get_person_case_metadata(self, case_id: str) -> dict[str, Any] | None:
-        """Retrieve person-case case metadata, or None if not stored."""
+        """Retrieve the complete case sidecar, or None if it is not stored."""
         index = getattr(self, "_person_case_meta_index", {})
-        if case_id in index:
-            return index[case_id]
-        # Fall back to the durable obligation record for cross-process lookup.
-        obligation = await self.get_obligation(f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}")
-        if obligation is None or obligation.claim_family != "__person_case_metadata__":
+        value = index.get(case_id)
+        if value is None:
             return None
-        return {
-            "tenant_id": obligation.context_id,  # best effort
-            "purpose_code": obligation.question,
-            "basis_ref": "",
-            "launch_profile": obligation.target_knowledge_type.value,
-            "claim_families": list(obligation.required_capabilities),
-            "allowed_source_ids": list(obligation.eligible_capabilities),
-            "denied_claim_families": [],
-            "scope_digest": obligation.satisfaction_criteria[0] if obligation.satisfaction_criteria else "",
-            "scope_revision": 1,
-            "approved": obligation.status == ObligationStatus.SATISFIED,
-            "budget_ref": None,
-            "expires_at": None,
-            "valid_time": {},
-            "jurisdictions": [],
-        }
+        # Return a detached representation so callers cannot mutate durable/reference
+        # state without going through put_person_case_metadata.
+        return json.loads(json.dumps(value))
 
     async def put_person_case_dispatch_intent(
         self,
@@ -383,28 +352,58 @@ class ContextStore(ABC):
         approved_action_refs: list[str],
         scope_digest: str,
         policy_digest: str,
-    ) -> None:
-        """Record a dispatch intent as a durable action record.
-
-        Reuses the existing ``research_actions`` table (no new schema owner).
-        """
-        from context_engine.obligations import ResearchAction
-
-        intent_action = ResearchAction(
-            obligation_id=f"{CASE_META_OBLIGATION_ID_PREFIX}{case_id}",
-            proposed_method="__dispatch_intent__",
-            runtime_ref="",
-            expected_information_gain=0.0,
-            estimated_cost=0.0,
-            priority=0.0,
-            capability_requirements=tuple(approved_action_refs),
-            requires_operator_approval=False,
-            status="proposed",
-            task_id=run_id,
-            realised_gain=None,
-            action_id=f"{DISPATCH_INTENT_ACTION_ID_PREFIX}{run_id}",
+    ) -> dict[str, Any]:
+        """Reference idempotency ledger; production uses the PostgreSQL override."""
+        if not all((case_id, tenant_id, run_id, idempotency_key, scope_digest, policy_digest)):
+            raise ContextEngineError("dispatch_intent_incomplete", "dispatch intent is missing identity or digest fields")
+        key = (tenant_id, case_id, idempotency_key)
+        proposed = {
+            "case_id": case_id,
+            "tenant_id": tenant_id,
+            "run_id": run_id,
+            "idempotency_key": idempotency_key,
+            "approved_action_refs": sorted(set(approved_action_refs)),
+            "scope_digest": scope_digest,
+            "policy_digest": policy_digest,
+            "state": "PREPARED",
+            "outcome": None,
+        }
+        self._person_case_dispatch_index: dict[tuple[str, str, str], dict[str, Any]] = getattr(
+            self, "_person_case_dispatch_index", {}
         )
-        await self.put_action(intent_action)
+        previous = self._person_case_dispatch_index.get(key)
+        if previous is not None:
+            for field in ("approved_action_refs", "scope_digest", "policy_digest"):
+                if previous[field] != proposed[field]:
+                    raise ContextEngineError(
+                        "idempotency_key_reused",
+                        f"idempotency key was reused with different {field}",
+                    )
+            return {**previous, "created": False}
+        self._person_case_dispatch_index[key] = proposed
+        return {**proposed, "created": True}
+
+    async def mark_person_case_dispatch_intent(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        idempotency_key: str,
+        state: str,
+        outcome: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Record the broker outcome without deleting the idempotency ledger."""
+        if state not in {"PREPARED", "PUBLISHED", "PARTIAL", "FAILED"}:
+            raise ContextEngineError("dispatch_state_invalid", f"unsupported dispatch state {state}")
+        index = getattr(self, "_person_case_dispatch_index", {})
+        key = (tenant_id, case_id, idempotency_key)
+        current = index.get(key)
+        if current is None:
+            raise ContextEngineError("dispatch_intent_missing", "dispatch intent is not recorded")
+        updated = {**current, "state": state, "outcome": dict(outcome or {})}
+        index[key] = updated
+        return {**updated, "created": False}
+
 
 
 class InMemoryContextStore(ContextStore):

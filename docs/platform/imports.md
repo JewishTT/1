@@ -1,6 +1,6 @@
 # Import graph
 
-966 Python modules, 2664 resolved local edges.
+994 Python modules, 2755 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,46 +10,46 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 839 |
-| `dataclasses` | stdlib | 386 |
-| `typing` | stdlib | 349 |
-| `pathlib` | stdlib | 301 |
-| `pytest` | third-party | 255 |
-| `sys` | stdlib | 247 |
-| `collections` | stdlib | 235 |
-| `json` | stdlib | 179 |
-| `datetime` | stdlib | 177 |
+| `__future__` | stdlib | 866 |
+| `dataclasses` | stdlib | 388 |
+| `typing` | stdlib | 362 |
+| `pathlib` | stdlib | 309 |
+| `pytest` | third-party | 264 |
+| `sys` | stdlib | 250 |
+| `collections` | stdlib | 240 |
+| `json` | stdlib | 191 |
+| `datetime` | stdlib | 188 |
+| `sqlalchemy` | third-party | 144 |
+| `hashlib` | stdlib | 126 |
 | `enum` | stdlib | 117 |
-| `sqlalchemy` | third-party | 117 |
-| `hashlib` | stdlib | 113 |
-| `re` | stdlib | 88 |
-| `asyncio` | stdlib | 62 |
-| `fastapi` | third-party | 62 |
-| `os` | stdlib | 61 |
+| `re` | stdlib | 95 |
+| `os` | stdlib | 68 |
+| `asyncio` | stdlib | 67 |
+| `fastapi` | third-party | 66 |
 | `uuid` | stdlib | 48 |
-| `math` | stdlib | 38 |
+| `urllib` | stdlib | 43 |
+| `math` | stdlib | 41 |
 | `pydantic` | third-party | 34 |
-| `urllib` | stdlib | 32 |
-| `importlib` | stdlib | 28 |
-| `types` | stdlib | 27 |
+| `types` | stdlib | 32 |
+| `importlib` | stdlib | 31 |
+| `time` | stdlib | 29 |
 | `ast` | stdlib | 26 |
-| `time` | stdlib | 26 |
 | `io` | stdlib | 25 |
+| `logging` | stdlib | 23 |
 | `numpy` | third-party | 23 |
-| `logging` | stdlib | 21 |
+| `alembic` | third-party | 22 |
+| `inspect` | stdlib | 21 |
 | `httpx` | third-party | 20 |
-| `inspect` | stdlib | 19 |
-| `alembic` | declared-not-installed | 18 |
 | `argparse` | stdlib | 18 |
 | `tempfile` | stdlib | 17 |
 | `threading` | stdlib | 17 |
-| `warcio` | declared-not-installed | 15 |
+| `confluent_kafka` | third-party | 16 |
 | `subprocess` | stdlib | 15 |
+| `warcio` | third-party | 15 |
 | `shutil` | stdlib | 14 |
-| `confluent_kafka` | third-party | 14 |
 | `temporalio` | third-party | 13 |
 | `itertools` | stdlib | 11 |
-| `functools` | stdlib | 9 |
+| `yaml` | third-party | 10 |
 
 ## Optional capability probes
 
@@ -59,9 +59,9 @@ that is switched off in this environment.
 
 | Package | Probe sites |
 |---|---|
-| `rdflib` | 2 |
 | `pyshacl` | 1 |
 | `pyzbar` | 1 |
+| `tantivy` | 1 |
 
 ## Import roots
 
@@ -80,10 +80,12 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `api` | `apps/control-plane/api/__init__.py` |
 | `application` | `apps/control-plane/application` |
 | `artifact_sink` | `apps/acquisition/artifact_sink.py` |
+| `backfill` | `apps/bulk-ingestion/backfill.py` |
 | `badges` | `apps/control-plane/badges/__init__.py` |
 | `beliefs` | `apps/science/beliefs/__init__.py` |
 | `bench` | `bench/bench/__init__.py` |
 | `bulk_ingestion` | `apps/bulk-ingestion` |
+| `case_execution_guard` | `apps/acquisition/case_execution_guard.py` |
 | `causal` | `apps/science/causal/__init__.py` |
 | `cc_extract` | `apps/acquisition/cc_extract.py` |
 | `cc_plan` | `apps/acquisition/cc_plan.py` |
@@ -105,12 +107,15 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `errors` | `apps/science/errors.py` |
 | `events` | `apps/shared/events/__init__.py` |
 | `evidence` | `apps/interpretation/evidence/__init__.py` |
+| `evidence_writer` | `apps/acquisition/evidence_writer.py` |
 | `experiments` | `apps/science/experiments/__init__.py` |
 | `extractors` | `apps/interpretation/extractors/__init__.py` |
-| `feedback` | `apps/feedback` |
+| `feedback` | `apps/feedback/feedback/__init__.py` |
+| `feedback_engine` | `apps/feedback/feedback_engine.py` |
 | `fixtures` | `apps/science/fixtures/__init__.py` |
 | `frontier` | `apps/acquisition/frontier` |
 | `graph` | `apps/projection/graph/__init__.py` |
+| `historical` | `apps/bulk-ingestion/historical/__init__.py` |
 | `hypotheses` | `apps/science/hypotheses/__init__.py` |
 | `ids` | `apps/shared/ids/__init__.py` |
 | `independence` | `apps/admission/independence/__init__.py` |
@@ -151,13 +156,13 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `sources` | `apps/acquisition/sources/__init__.py` |
 | `spatial` | `apps/projection/spatial` |
 | `specops` | `apps/specops/__init__.py` |
+| `stopping` | `apps/feedback/stopping.py` |
 | `storage` | `apps/shared/storage/__init__.py` |
 | `store` | `apps/science/store.py` |
 | `stream` | `apps/acquisition/stream.py` |
 | `streaming` | `apps/science/streaming` |
 | `streams` | `apps/projection/streams/__init__.py` |
 | `structure` | `apps/science/structure/__init__.py` |
-| `target` | `apps/acquisition/target` |
 | `tda` | `apps/projection/tda/__init__.py` |
 | `temporal` | `apps/science/temporal/__init__.py` |
 | `tools` | `apps/shared/tools` |

@@ -51,7 +51,7 @@ recognised and not republished.
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable, Mapping
+from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
@@ -186,6 +186,81 @@ class RequestParser:
             raise AcquisitionError("request_without_task_id", "request names no task_id")
         if not source_id:
             raise AcquisitionError("request_without_source_id", "request names no source_id")
+
+        # Feature 034 requests are authority-bound work, not generic URLs. Preserve
+        # every signed-off scope field through the protobuf/JSON bridge, and reject a
+        # partially serialized case request instead of silently downgrading it to an
+        # ordinary acquisition task.
+        binding_fields = (
+            "case_id",
+            "scope_digest",
+            "policy_digest",
+            "policy_revision",
+            "scope_revision",
+            "budget_reservation_id",
+            "idempotency_key",
+            "run_id",
+            "case_policy_source_id",
+            "approved_action_ref",
+            "action_id",
+        )
+        case_bound = any(
+            data.get(name) not in (None, "", 0)
+            for name in binding_fields
+        )
+        binding: dict[str, Any] = {}
+        if case_bound:
+            missing = [
+                name for name in binding_fields
+                if data.get(name) in (None, "", 0)
+            ]
+            if missing:
+                raise AcquisitionError(
+                    "case_dispatch_binding_missing",
+                    f"case-bound request is missing fields: {', '.join(missing)}",
+                )
+            try:
+                scope_revision = int(data["scope_revision"])
+            except (TypeError, ValueError) as exc:
+                raise AcquisitionError(
+                    "case_dispatch_binding_invalid", "scope_revision must be a positive integer"
+                ) from exc
+            if scope_revision < 1:
+                raise AcquisitionError(
+                    "case_dispatch_binding_invalid", "scope_revision must be a positive integer"
+                )
+            if str(data["approved_action_ref"]) != str(data["action_id"]):
+                raise AcquisitionError(
+                    "case_dispatch_binding_invalid",
+                    "approved_action_ref and action_id must identify the same approved action",
+                )
+            envelope_tenant = str(getattr(envelope, "tenant_id", "") or "")
+            payload_tenant = str(data.get("tenant_id") or "")
+            if not envelope_tenant or not payload_tenant or envelope_tenant != payload_tenant:
+                raise AcquisitionError(
+                    "case_dispatch_tenant_mismatch",
+                    "case-bound request tenant must match the top-level envelope tenant",
+                )
+            envelope_investigation = str(getattr(envelope, "investigation_id", "") or "")
+            payload_investigation = str(data.get("investigation_id") or "")
+            if not envelope_investigation or envelope_investigation != payload_investigation:
+                raise AcquisitionError(
+                    "case_dispatch_investigation_mismatch",
+                    "case-bound request investigation must match the top-level envelope investigation",
+                )
+            binding = {
+                "case_id": str(data["case_id"]),
+                "scope_digest": str(data["scope_digest"]),
+                "policy_digest": str(data["policy_digest"]),
+                "policy_revision": str(data["policy_revision"]),
+                "scope_revision": scope_revision,
+                "budget_reservation_id": str(data["budget_reservation_id"]),
+                "idempotency_key": str(data["idempotency_key"]),
+                "run_id": str(data["run_id"]),
+                "case_policy_source_id": str(data["case_policy_source_id"]),
+                "approved_action_ref": str(data["approved_action_ref"]),
+                "action_id": str(data["action_id"]),
+            }
         return AcquisitionTask(
             task_id=task_id,
             source_id=source_id,
@@ -201,6 +276,7 @@ class RequestParser:
             constraints=tuple(
                 dict(item) for item in (data.get("constraints") or []) if isinstance(item, dict)
             ),
+            **binding,
         )
 
 
@@ -241,12 +317,16 @@ class AcquisitionWorker:
         runtimes: Mapping[str, Any] | None = None,
         config_dir: str | None = None,
         store: Any | None = None,
+        preflight: Callable[[AcquisitionTask], Awaitable[None]] | None = None,
     ) -> None:
         self.connector = connector or SourceConnector()
         self.sink = sink
         #: Object store the producer is expected to have written through. Used only
         #: to resolve a raw reference, never to write: the gate owns writes.
         self.store = store
+        # A production preflight rechecks case approval, scope/policy revision, action
+        # approval and budget immediately before invoking any source adapter.
+        self.preflight = preflight
         #: Observations refused for naming no evidence, in order. Counted rather than
         #: dropped, so "zero yield" is distinguishable from "yield we refused to
         #: publish" -- two very different facts about the platform's health.
@@ -407,6 +487,21 @@ class AcquisitionWorker:
                 failures=(failure,),
             )
 
+        if self.preflight is not None and task.case_id:
+            try:
+                # Database/transport exceptions intentionally bubble up: the runner must
+                # leave the Kafka offset uncommitted. Only typed policy refusals are
+                # routed to quarantine and acknowledged as handled failures.
+                await self.preflight(task)
+            except AcquisitionError as exc:
+                failure = classify_error(exc, source_id=task.source_id, task_id=task.task_id)
+                self._route(failure, envelope)
+                return ObservationResult(
+                    task_id=task.task_id,
+                    source_id=task.source_id,
+                    failures=(failure,),
+                )
+
         # Replay of a request whose observations are already published is a no-op.
         # Keyed on the request's own identity, which is stable across a replay,
         # because the content-addressed observation id is not knowable until the
@@ -449,7 +544,53 @@ class AcquisitionWorker:
                     duplicates.append(observation_id)
                     continue
 
+                if event.get("artifact_sink_accepted"):
+                    # ArtifactSink has already committed Capture + Observation and
+                    # the gate has published the canonical protobuf envelope. Never
+                    # publish the returned read-model dict a second time.
+                    if not event.get("event_published") or not event.get("event_topic"):
+                        failure = Failure(
+                            code="observation_event_not_acknowledged",
+                            reason="ArtifactSink completed without broker-confirmed observation publication",
+                            topic=TOPIC_QUARANTINE,
+                            source_id=task.source_id,
+                            task_id=task.task_id,
+                        )
+                        failures.append(failure)
+                        self._route(failure, envelope)
+                        break
+                    try:
+                        await require_stored_evidence(event, store=self.store)
+                    except UnstoredEvidenceRefusal as refusal:
+                        self.unstored_observations.append(refusal)
+                        failure = Failure(
+                            code=refusal.code,
+                            reason=str(refusal.detail),
+                            topic=TOPIC_QUARANTINE,
+                            source_id=task.source_id,
+                            task_id=task.task_id,
+                        )
+                        failures.append(failure)
+                        self._route(failure, envelope)
+                        break
+                    observations.append(event)
+                    self.seen.add(observation_id)
+                    continue
+
+                refused_before = len(self.unstored_observations)
                 await self._publish_observation(event)
+                if len(self.unstored_observations) > refused_before:
+                    refusal = self.unstored_observations[-1]
+                    failures.append(
+                        Failure(
+                            code=refusal.code,
+                            reason=str(refusal.detail),
+                            topic=TOPIC_QUARANTINE,
+                            source_id=task.source_id,
+                            task_id=task.task_id,
+                        )
+                    )
+                    break
                 self.seen.add(observation_id)
                 observations.append(event)
         except AcquisitionError as exc:

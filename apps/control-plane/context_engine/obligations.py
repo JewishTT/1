@@ -748,7 +748,12 @@ class ResearchObligation:
 
 @dataclass(frozen=True, slots=True)
 class ResearchAction:
-    """FR-036. A candidate means of satisfying an obligation. Never executed here."""
+    """FR-036. A candidate means of satisfying an obligation. Never executed here.
+
+    Source/query fields are present for source-bound planner actions. They are omitted
+    from address material when empty so previously persisted generic actions keep their
+    original content address. Approval produces a new immutable action with a parent ref.
+    """
 
     obligation_id: str
     proposed_method: str
@@ -762,6 +767,12 @@ class ResearchAction:
     task_id: str = ""
     realised_gain: float | None = None
     action_id: str = ""
+    source_id: str = ""
+    catalogue_source_id: str = ""
+    query: str = ""
+    parent_action_id: str = ""
+    scope_digest: str = ""
+    policy_digest: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "capability_requirements", tuple(self.capability_requirements))
@@ -783,7 +794,7 @@ class ResearchAction:
             )
 
     def _material(self) -> dict[str, Any]:
-        return {
+        material: dict[str, Any] = {
             "obligation_id": self.obligation_id,
             "proposed_method": self.proposed_method,
             "runtime_ref": self.runtime_ref,
@@ -796,6 +807,21 @@ class ResearchAction:
             "task_id": self.task_id,
             "realised_gain": self.realised_gain,
         }
+        # Backward-compatible addressing: old generic actions did not declare
+        # these extension fields, so empty values do not alter their action_id.
+        if self.source_id:
+            material["source_id"] = self.source_id
+        if self.catalogue_source_id:
+            material["catalogue_source_id"] = self.catalogue_source_id
+        if self.query:
+            material["query"] = self.query
+        if self.parent_action_id:
+            material["parent_action_id"] = self.parent_action_id
+        if self.scope_digest:
+            material["scope_digest"] = self.scope_digest
+        if self.policy_digest:
+            material["policy_digest"] = self.policy_digest
+        return material
 
     def address(self) -> str:
         return ACTION_ID_PREFIX + digest128(canonical_material(self._material()))
@@ -807,23 +833,26 @@ class ResearchAction:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ResearchAction:
-        """Rebuild from :meth:`to_dict`.
-
-        Added for the durable store. Every sibling in this module already had the pair,
-        and an action that can be written but not read cannot survive a restart, so the
-        asymmetry was a gap in the contract rather than a missing convenience.
-        """
+        """Rebuild exactly the fields used by to_dict and address()."""
         return cls(
             action_id=str(data.get("action_id", "")),
             obligation_id=str(data.get("obligation_id", "")),
             proposed_method=str(data.get("proposed_method", "")),
-            rationale=str(data.get("rationale", "")),
-            expected_gain=float(data.get("expected_gain", 0.0)),
+            runtime_ref=str(data.get("runtime_ref", "")),
+            expected_information_gain=float(data.get("expected_information_gain", 0.0)),
+            estimated_cost=float(data.get("estimated_cost", 0.0)),
+            priority=float(data.get("priority", 0.5)),
             capability_requirements=tuple(data.get("capability_requirements", ())),
             requires_operator_approval=bool(data.get("requires_operator_approval", True)),
             status=str(data.get("status", "proposed")),
             task_id=str(data.get("task_id", "")),
             realised_gain=data.get("realised_gain"),
+            source_id=str(data.get("source_id", "")),
+            catalogue_source_id=str(data.get("catalogue_source_id", "")),
+            query=str(data.get("query", "")),
+            parent_action_id=str(data.get("parent_action_id", "")),
+            scope_digest=str(data.get("scope_digest", "")),
+            policy_digest=str(data.get("policy_digest", "")),
         )
 
     def to_dict(self) -> dict[str, Any]:

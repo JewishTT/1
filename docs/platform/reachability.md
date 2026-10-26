@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 388 |
-| TEST_ONLY | 144 |
-| ORPHAN | 115 |
-| TEST | 319 |
+| PRODUCTION | 400 |
+| TEST_ONLY | 143 |
+| ORPHAN | 120 |
+| TEST | 331 |
 
 ## Entrypoints (production roots)
 
@@ -22,10 +22,12 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/_prove_tools.py` |
 | `apps/acquisition/sources/append_parse_blocks.py` |
 | `apps/acquisition/worker_acquisition.py` |
+| `apps/acquisition/worker_service.py` |
 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/composition.py` |
 | `apps/control-plane/semantic_path/corpus.py` |
 | `apps/control-plane/semantic_path/record_corpus.py` |
+| `apps/control-plane/services/observation_consumer_runner.py` |
 | `apps/control-plane/services/pow_run.py` |
 | `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/workflows/worker.py` |
@@ -52,7 +54,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**144** modules are reached only by tests.
+**143** modules are reached only by tests.
 
 | Module |
 |---|
@@ -71,7 +73,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/adapters/stormcrawler/collect.py` |
 | `apps/acquisition/adapters/warc/__init__.py` |
 | `apps/acquisition/adapters/warc/collect.py` |
-| `apps/acquisition/dispatcher/plan_driver.py` |
 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/registry.py` |
 | `apps/acquisition/source_query_set.py` |
@@ -203,7 +204,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**115** modules are imported by neither production nor tests.
+**120** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -215,6 +216,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/adapters/scrapy/spider.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
 | `apps/acquisition/observation_gate/__init__.py` |
+| `apps/acquisition/policies/__init__.py` |
 | `apps/acquisition/sources/__init__.py` |
 | `apps/acquisition/worker-dataset/__init__.py` |
 | `apps/acquisition/worker-dataset/acquire.py` |
@@ -245,12 +247,16 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/023_derivation_enforcement.py` |
 | `apps/control-plane/db/migrations/versions/024_investigation_entity_membership.py` |
 | `apps/control-plane/db/migrations/versions/025_context_graph.py` |
+| `apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py` |
+| `apps/control-plane/db/migrations/versions/027_person_research_case_records.py` |
+| `apps/control-plane/db/migrations/versions/028_observation_processing_results.py` |
+| `apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py` |
 | `apps/control-plane/db/relation_claim_store.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |
 | `apps/control-plane/services/__init__.py` |
-| `apps/control-plane/services/interpretation_bridge.py` |
+| `apps/control-plane/services/acquisition_evidence.py` |
 | `apps/control-plane/services/specops_catalog.py` |
 | `apps/control-plane/workflows/__init__.py` |
 | `apps/interpretation/__init__.py` |

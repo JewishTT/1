@@ -1,0 +1,56 @@
+name: tenzir-normalization-contract
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  tenzir-normalization:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install the locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Run Tenzir adapter and consumer contracts
+        run: >-
+          .venv/bin/python -m pytest
+          apps/interpretation/tests/test_tenzir_normalization.py
+          apps/interpretation/tests/test_observation_consumer.py
+          apps/interpretation/tests/test_tenzir_live.py
+          apps/shared/tests/contract/test_storage.py
+          -q
+      - name: Start the pinned Tenzir Node with loopback-only development API
+        run: |
+          docker run --detach --name tenzir-node --publish 127.0.0.1:5160:5160 \
+            --entrypoint tenzir-node ghcr.io/tenzir/tenzir:v6.19.1 \
+            '--commands=web server --mode=dev --bind=0.0.0.0'
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl --silent --show-error --output /dev/null --request POST --header "Content-Type: application/json" --data "{}" http://127.0.0.1:5160/api/v0/ping 2>/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            docker logs tenzir-node
+            exit 1
+          fi
+      - name: Execute TQL against the real Tenzir Node
+        env:
+          TENZIR_LIVE_NODE_URL: http://127.0.0.1:5160
+          TENZIR_NODE_VERSION: 6.19.1
+        run: >-
+          .venv/bin/python -m pytest
+          apps/interpretation/tests/test_tenzir_live.py
+          -q
+      - name: Stop Tenzir Node
+        if: always()
+        run: docker rm --force tenzir-node || true

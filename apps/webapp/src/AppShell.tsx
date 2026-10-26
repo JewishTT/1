@@ -78,7 +78,20 @@ export function WorkStateBar() {
   // clipped "Hypotheses" down to "Hypol" — an idle caption is not worth an unreadable
   // navigation. The scope chips on the page already show that nothing is open.
   if (investigationId === null) {
-    return null;
+    // Selection is global state (§68), not a child of an open investigation.
+    // Keep the shell chrome compact when there is no investigation, but never
+    // hide the global selection from the top bar.
+    if (!selection) return null;
+    return (
+      <div className="ui-topbar-work" data-testid="work-state-bar">
+        <div className="ui-topbar-investigation">
+          <span className="ui-pane-title">Selection</span>
+          <Badge tone="gold" role="classification" testId="topbar-selection">
+            {selection.kind} {selection.id}
+          </Badge>
+        </div>
+      </div>
+    );
   }
 
   return (

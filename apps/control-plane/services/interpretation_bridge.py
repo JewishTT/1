@@ -50,6 +50,12 @@ from services.document_adapter import NORMALIZATION_VERSION, ONTOLOGY_VERSION
 log = logging.getLogger(__name__)
 
 
+class InterpretationPersistenceError(RuntimeError):
+    """A canonical entity/relation write failed and must be retried before offset commit."""
+
+    retryable = True
+
+
 @dataclass(frozen=True, slots=True)
 class InterpretationResult:
     """What one document produced, all the way through persistence."""
@@ -65,6 +71,8 @@ class InterpretationResult:
     dropped_kinds: tuple[str, ...] = ()
     persisted: bool = False
     reason: str = ""
+    document: Any = field(default=None, repr=False, compare=False)
+    resolved_entities: tuple[Any, ...] = field(default=(), repr=False, compare=False)
 
     @property
     def produced_nothing(self) -> bool:
@@ -141,6 +149,7 @@ class InterpretationBridge:
         investigation_id: str = "",
         source_id: str = "",
         observed_at: str = "",
+        observation_id: str | None = None,
     ) -> InterpretationResult:
         """Extract and resolve, without touching the database.
 
@@ -157,11 +166,12 @@ class InterpretationBridge:
         )
 
         digest = hashlib.sha256(body).hexdigest()
+        stable_observation_id = observation_id or observation_id_for(digest, self._store.tenant_id)
         artifact = kind_of_media_type(content_type).value
         extraction = extract_deterministic(body)
         if not extraction.mentions:
             return InterpretationResult(
-                observation_id=observation_id_for(digest, self._store.tenant_id),
+                observation_id=stable_observation_id,
                 content_hash=digest,
                 content_type=content_type,
                 artifact_kind=artifact,
@@ -187,7 +197,7 @@ class InterpretationBridge:
             tenant_id=self._store.tenant_id,
         )
         return InterpretationResult(
-            observation_id=observation_id_for(digest, self._store.tenant_id),
+            observation_id=stable_observation_id,
             content_hash=digest,
             content_type=content_type,
             artifact_kind=artifact,
@@ -199,6 +209,8 @@ class InterpretationBridge:
             ),
             dropped_kinds=document.dropped_unknown_kinds,
             reason="" if resolved else "every mention was refused an identity",
+            document=document,
+            resolved_entities=tuple(resolved),
         )
 
     # -- 4. persist -----------------------------------------------------------
@@ -214,6 +226,10 @@ class InterpretationBridge:
         source_id: str = "",
         uri: str = "",
         task_id: str = "",
+        raw_ref: str = "",
+        capture_id: str = "",
+        locator: str = "",
+        raise_on_failure: bool = False,
     ) -> bool:
         """Write the observation, its entities, their versions, relations and stream rows.
 
@@ -226,8 +242,11 @@ class InterpretationBridge:
         from db.schema import Candidate as CandidateRow
         from db.schema import Entity as EntityRow
         from db.schema import EntityVersion as EntityVersionRow
+        from db.schema import Mention as MentionRow
         from db.schema import Observation as ObservationRow
         from db.schema import RelationClaim as RelationClaimRow
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
 
         session = self._store.session_factory()
         try:
@@ -243,6 +262,11 @@ class InterpretationBridge:
                 )
             )
             if existing.scalar_one_or_none() is None:
+                if not raw_ref or not raw_ref.startswith("s3://"):
+                    raise ValueError(
+                        "InterpretationBridge requires the persisted raw_ref; symbolic sha256:// "
+                        "references are not acceptable evidence"
+                    )
                 session.add(
                     ObservationRow(
                         observation_id=result.observation_id,
@@ -251,7 +275,7 @@ class InterpretationBridge:
                         source_id=source_id or None,
                         task_id=task_id or None,
                         uri=uri or None,
-                        raw_ref=f"sha256://{result.content_hash}",
+                        raw_ref=raw_ref,
                         content_hash=result.content_hash,
                         content_type=result.content_type or None,
                         status="created",
@@ -260,11 +284,104 @@ class InterpretationBridge:
                             "artifact_kind": result.artifact_kind,
                             "mentions": result.mentions,
                             "extraction_version": "interpretation-bridge-v1",
+                            "capture_id": capture_id,
+                            "locator": locator,
+                            "raw_ref": raw_ref,
                         },
                     )
                 )
 
+            # Persist each mention and its typed span in the same transaction as the
+            # Observation/Entity/RelationClaim. A mint digest alone is not source lineage.
+            # If offsets do not select the exact surface from the immutable raw body, retain
+            # the mention but explicitly mark it ungrounded rather than guessing.
+            if document is not None:
+                try:
+                    raw_text = body.decode("utf-8")
+                except UnicodeDecodeError:
+                    raw_text = ""
+                blob_digest = "sha256:" + hashlib.sha256(body).hexdigest()
+                source_uri = str(uri or locator or "unresolved-source-locator")
+                for mention in getattr(document, "mentions", ()):
+                    span_payload: dict[str, Any] = {
+                        "status": "ungrounded",
+                        "reason": str(getattr(mention, "span_reason", "") or "span not verified against immutable raw bytes"),
+                        "selector_semantics_version": "",
+                    }
+                    span = getattr(mention, "span", None)
+                    semantics = str(getattr(mention, "span_semantics", "") or "")
+                    if (
+                        span is not None
+                        and semantics == "document_char"
+                        and raw_text
+                        and len(span) == 2
+                    ):
+                        start_offset, end_offset = int(span[0]), int(span[1])
+                        surface = str(getattr(mention, "surface", "") or "")
+                        if (
+                            start_offset >= 0
+                            and end_offset > start_offset
+                            and end_offset <= len(raw_text)
+                            and raw_text[start_offset:end_offset] == surface
+                        ):
+                            evidence_span = EvidenceSpanRef(
+                                observation_ref=result.observation_id,
+                                blob_digest=blob_digest,
+                                selector=CharSpan(
+                                    start=start_offset,
+                                    end=end_offset,
+                                    encoding="utf-8",
+                                    units="document_char",
+                                ),
+                                source_locator=SourceLocator(
+                                    uri=source_uri,
+                                    fragment=f"char_span={start_offset}:{end_offset}",
+                                ),
+                                selector_semantics_version="char_span/1",
+                            )
+                            span_payload = {
+                                "status": "grounded",
+                                "start": start_offset,
+                                "end": end_offset,
+                                "surface": surface,
+                                "selector_semantics_version": evidence_span.selector_semantics_version,
+                                "evidence_span": evidence_span.as_dict(),
+                            }
+                        else:
+                            span_payload["reason"] = (
+                                "declared document-character offsets do not select the exact mention surface in raw UTF-8 bytes"
+                            )
+                    mention_id = str(getattr(mention, "mention_id", "") or "")
+                    surface = str(getattr(mention, "surface", "") or "")
+                    if not mention_id or not surface:
+                        continue
+                    canonical_surface = str(
+                        getattr(document, "canonical_by_mention", {}).get(mention_id, "") or ""
+                    )
+                    mention_values = {
+                        "mention_id": mention_id,
+                        "observation_id": result.observation_id,
+                        "tenant_id": self._store.tenant_id,
+                        "surface_form": surface,
+                        "normalized_form": canonical_surface or surface,
+                        "transliteration_variants": [],
+                        "script": None,
+                        "language": None,
+                        "normalization_version": NORMALIZATION_VERSION,
+                        "type_hypothesis": str(getattr(mention, "kind", "") or "") or None,
+                        "extractor_version": "interpretation-bridge-v1",
+                        "offsets": span_payload,
+                    }
+                    await session.execute(
+                        pg_insert(MentionRow)
+                        .values(**mention_values)
+                        .on_conflict_do_nothing(index_elements=[MentionRow.mention_id])
+                    )
+
+            mention_to_entity: dict[str, str] = {}
             for entity in resolved:
+                # The canonical entity reference is what relation projections can resolve.
+                # Preserve the mention anchor independently for source-span lineage.
                 # A referent, so an unresolved mention is still storable. The resolver mints
                 # no id for it, and refusing to store it left the graph structurally empty.
                 entity_type = coerce_entity_type(entity.kind).value
@@ -276,6 +393,9 @@ class InterpretationBridge:
                     scope_id=investigation_id or "default",
                 )
                 verdict = str(getattr(entity, "verdict", "") or "")
+                anchor_mention_id = str(getattr(entity, "anchor_mention_id", "") or "")
+                if anchor_mention_id:
+                    mention_to_entity[anchor_mention_id] = entity_id
                 row = await session.execute(
                     select(EntityRow).where(
                         EntityRow.entity_id == entity_id,
@@ -355,8 +475,16 @@ class InterpretationBridge:
                             investigation_id=investigation_id or None,
                             relation_type=relation.relation_type,
                             arity_mode="BINARY",
-                            subject_ref=relation.subject_mention_id,
-                            object_ref=relation.object_mention_id,
+                            subject_ref=mention_to_entity.get(
+                                relation.subject_mention_id, relation.subject_mention_id
+                            ),
+                            object_ref=mention_to_entity.get(
+                                relation.object_mention_id, relation.object_mention_id
+                            ),
+                            role_bindings=[
+                                {"role": "subject", "mention_id": relation.subject_mention_id},
+                                {"role": "object", "mention_id": relation.object_mention_id},
+                            ],
                             observation_refs=[result.observation_id],
                             ontology_version=ONTOLOGY_VERSION,
                             normalization_version=NORMALIZATION_VERSION,
@@ -369,9 +497,14 @@ class InterpretationBridge:
 
             await session.commit()
             return True
-        except Exception as exc:  # noqa: BLE001 - a write failure is reported, not raised
+        except Exception as exc:  # noqa: BLE001 - caller chooses fail-closed retry semantics
             await session.rollback()
             log.warning("persist failed for %s: %s", result.observation_id, exc)
+            if raise_on_failure:
+                raise InterpretationPersistenceError(
+                    f"canonical entity/relation persistence failed for {result.observation_id}: "
+                    f"{type(exc).__name__}: {exc}"
+                ) from exc
             return False
         finally:
             await session.close()
@@ -379,7 +512,12 @@ class InterpretationBridge:
     # -- 5. stream ------------------------------------------------------------
 
     async def append_stream(
-        self, result: InterpretationResult, resolved: Sequence[Any], *, sequence_base: int = 0
+        self,
+        result: InterpretationResult,
+        resolved: Sequence[Any],
+        *,
+        sequence_base: int = 0,
+        raise_on_failure: bool = False,
     ) -> int:
         """Append one stream record per entity. This is what makes an invariant derivable.
 
@@ -440,9 +578,14 @@ class InterpretationBridge:
                 )
                 written += 1
             await session.commit()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 - fail closed when the caller requires the stream
             await session.rollback()
             log.warning("stream append failed for %s: %s", result.observation_id, exc)
+            if raise_on_failure:
+                raise InterpretationPersistenceError(
+                    f"entity stream persistence failed for {result.observation_id}: "
+                    f"{type(exc).__name__}: {exc}"
+                ) from exc
             return 0
         finally:
             await session.close()

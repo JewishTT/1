@@ -132,11 +132,13 @@ class ArtifactSink:
         store: Any,
         source_family: str = "",
         recorded_by: str = "acquisition-worker",
+        evidence_writer: Any | None = None,
     ) -> None:
         self._gate = gate
         self._store = store
         self._source_family = source_family
         self._recorded_by = recorded_by
+        self._evidence_writer = evidence_writer
         self._accepted: list[AcceptedArtifact] = []
 
     @property
@@ -193,7 +195,10 @@ class ArtifactSink:
                 content_digest=digest,
                 content_length=artifact.byte_length,
                 media_type=artifact.content_type or "",
-                fetched_at=artifact.fetched_at,
+                # A platform upload has a receipt time, but it is not a source fetch.
+                # Keep that receipt in record metadata; Capture.fetched_at is populated
+                # only when the platform actually performed a retrieval (FR-025).
+                fetched_at=artifact.fetched_at if time_basis == CaptureTimeBasis.FETCH else None,
                 time_basis=time_basis,
                 transport=artifact.transport,
                 recorded_by=self._recorded_by,
@@ -235,17 +240,49 @@ class ArtifactSink:
                     "target_uri": artifact.target_uri,
                     "task_id": artifact.task_id,
                     "worker_ref": artifact.worker_ref,
-                    "fetched_at": artifact.fetched_at.isoformat(),
+                    "received_at": artifact.fetched_at.isoformat(),
+                    "fetched_at": (
+                        artifact.fetched_at.isoformat()
+                        if time_basis == CaptureTimeBasis.FETCH
+                        else None
+                    ),
+                    "capture_time_basis": time_basis.value,
                     # §62: vendor fields the platform did not map are retained
                     # rather than dropped, and the raw artifact stays the source
                     # of truth for anything not listed here.
                     **({"runtime_metadata": dict(artifact.metadata)} if artifact.metadata else {}),
                 },
+                publish_event=self._evidence_writer is None,
             )
-        except (ArtifactContractError, ObservationIdentityError) as exc:
+        except (ArtifactContractError, ObservationIdentityError, ValueError) as exc:
             raise ArtifactSinkError(
                 STAGE_OBSERVATION, getattr(exc, "code", "observation_rejected"), str(exc)
             ) from exc
+
+        # An Observation event must never overtake its relational evidence rows.
+        # The raw object already exists; persist Capture + Observation in one DB
+        # transaction, then publish through the Gate's single envelope builder.
+        if self._evidence_writer is not None:
+            try:
+                await self._evidence_writer.persist(
+                    capture=capture,
+                    observation=observation,
+                    raw_ref=ref.uri,
+                )
+            except Exception as exc:  # noqa: BLE001 - no event without durable evidence
+                raise ArtifactSinkError(
+                    STAGE_OBSERVATION,
+                    "evidence_persist_failed",
+                    f"{type(exc).__name__}: {exc}",
+                ) from exc
+            try:
+                self._gate.publish_record_event(observation)
+            except Exception as exc:  # noqa: BLE001 - the DB rows stay durable and replayable
+                raise ArtifactSinkError(
+                    STAGE_PUBLISH,
+                    "observation_publish_failed",
+                    f"{type(exc).__name__}: {exc}",
+                ) from exc
 
         # --- 4. the address the consumer will look the event up by ------------
         event_id: str | None = None

@@ -157,22 +157,30 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/{case_id}` | 134 |
-| PATCH | `/{case_id}/scope` | 167 |
-| POST | `/{case_id}/approve` | 202 |
-| POST | `/{case_id}/plan` | 224 |
-| POST | `/{case_id}/run` | 242 |
-| POST | `/{case_id}/pause` | 267 |
-| GET | `/{case_id}/obligations` | 282 |
-| GET | `/{case_id}/coverage` | 313 |
-| GET | `/{case_id}/claims` | 327 |
-| GET | `/{case_id}/timeline` | 343 |
-| GET | `/{case_id}/graph` | 367 |
-| POST | `/{case_id}/identity-reviews` | 389 |
-| POST | `/{case_id}/claim-disputes` | 410 |
-| POST | `/{case_id}/report` | 431 |
-| POST | `/{case_id}/close` | 450 |
-| POST | `/{case_id}/retention-action` | 471 |
+| GET | `/{case_id}` | 188 |
+| PATCH | `/{case_id}/scope` | 201 |
+| POST | `/{case_id}/context/amendments` | 234 |
+| POST | `/{case_id}/invariants` | 258 |
+| POST | `/{case_id}/approve` | 283 |
+| POST | `/{case_id}/plan` | 306 |
+| GET | `/{case_id}/actions` | 325 |
+| POST | `/{case_id}/actions/approve` | 338 |
+| POST | `/{case_id}/run` | 362 |
+| POST | `/{case_id}/pause` | 388 |
+| POST | `/{case_id}/artifacts` | 404 |
+| GET | `/{case_id}/artifacts` | 453 |
+| GET | `/{case_id}/artifacts/{artifact_id}/download` | 470 |
+| GET | `/{case_id}/obligations` | 501 |
+| GET | `/{case_id}/coverage` | 568 |
+| GET | `/{case_id}/claims` | 583 |
+| GET | `/{case_id}/timeline` | 600 |
+| GET | `/{case_id}/graph` | 621 |
+| POST | `/{case_id}/identity-reviews` | 641 |
+| POST | `/{case_id}/claim-disputes` | 665 |
+| POST | `/{case_id}/report` | 689 |
+| GET | `/{case_id}/reports/{report_id}` | 712 |
+| POST | `/{case_id}/close` | 732 |
+| POST | `/{case_id}/retention-action` | 789 |
 
 ## `resolutions` — `apps/control-plane/api/routes/resolutions.py`
 

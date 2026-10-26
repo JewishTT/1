@@ -1,0 +1,36 @@
+name: auth-security-contract
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  auth-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install the locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Compile control-plane, acquisition, interpretation and shared packages
+        run: .venv/bin/python -m compileall -q apps/control-plane apps/acquisition apps/interpretation apps/shared
+      - name: Run authentication, migration, acquisition and interpretation contracts
+        run: >-
+          .venv/bin/python -m pytest
+          apps/control-plane/tests/test_auth_security.py
+          apps/control-plane/tests/test_research_case_invariants.py
+          apps/control-plane/tests/unit/test_migration_027_person_case_records.py
+          apps/control-plane/tests/unit/test_migration_028_processing_results.py
+          apps/control-plane/tests/test_research_case_projection.py
+          apps/control-plane/tests/test_research_case_reports.py
+          apps/control-plane/tests/unit/test_migration_029_case_artifact_report_records.py
+          apps/acquisition/tests/unit/test_acquisition_worker.py
+          apps/acquisition/tests/unit/test_source_executor_contracts.py
+          apps/acquisition/tests/unit/test_case_execution_guard.py
+          apps/acquisition/tests/unit/test_evidence_writer.py
+          apps/interpretation/tests/test_observation_consumer.py
+          -q

@@ -85,7 +85,10 @@ async def lifespan(app: FastAPI):
         # Wire the Feature 034 research-case router to the assembled service + policy.
         if assembled.research_case_service is not None:
             research_cases.configure(
-                assembled.research_case_service, assembled.person_case_policy
+                assembled.research_case_service,
+                assembled.person_case_policy,
+                artifact_service=assembled.research_case_artifact_service,
+                report_service=assembled.research_case_report_service,
             )
             log.info("research-cases router configured")
         else:

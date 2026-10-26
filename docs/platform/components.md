@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **98** · TypeScript modules: **0**
+Python modules: **105** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -46,11 +46,11 @@ apps.acquisition.adapters.stormcrawler.collect
 apps.acquisition.adapters.warc
 apps.acquisition.adapters.warc.collect
 apps.acquisition.artifact_sink
+apps.acquisition.case_execution_guard
 apps.acquisition.cc_extract
 apps.acquisition.cc_plan
 apps.acquisition.dispatcher
 apps.acquisition.dispatcher.kafka_producer
-apps.acquisition.dispatcher.plan_driver
 ```
 
 </details>
@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **214** · TypeScript modules: **0**
+Python modules: **232** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -227,7 +227,7 @@ apps.feedback.tests.test_frontier_loop
 
 Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.
 
-Python modules: **109** · TypeScript modules: **0**
+Python modules: **112** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -545,7 +545,7 @@ tools.strip_zero_inventory
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **251**
+Python modules: **0** · TypeScript modules: **255**
 
 
 ## `zero`

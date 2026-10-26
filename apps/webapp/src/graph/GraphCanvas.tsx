@@ -29,6 +29,22 @@ import { useGraphModel } from "./useGraphModel";
 import "./graph.css";
 
 /**
+ * Cytoscape is dynamically imported and test doubles are intentionally lightweight.
+ * Guard the optional lifecycle method so a partially implemented adapter cannot break
+ * the whole React tree during StrictMode teardown.
+ */
+function isCytoscapeDestroyed(engine: cytoscape.Core): boolean {
+  const probe = (engine as unknown as { destroyed?: unknown }).destroyed;
+  return typeof probe === "function" ? Boolean(probe.call(engine)) : false;
+}
+
+function destroyCytoscape(engine: cytoscape.Core): void {
+  if (isCytoscapeDestroyed(engine)) return;
+  const destroy = (engine as unknown as { destroy?: unknown }).destroy;
+  if (typeof destroy === "function") destroy.call(engine);
+}
+
+/**
  * GraphCanvas (§14, §16–§22, §81).
  *
  * A PRIMARY CANVAS, NOT A WIDGET IN A CARD. It fills the centre pane. The
@@ -243,7 +259,7 @@ export function GraphCanvas({
       const bump = (k: string) => { D[k] = (D[k] ?? 0) + 1; };
       bump("called");
       const live = cyRef.current;
-      if (live && !live.destroyed()) { return; }
+      if (live && !isCytoscapeDestroyed(live)) { return; }
       if (disposed && !host?.isConnected) { return; }
 
       /* The container is resolved fresh, and only if it is actually in the document.
@@ -289,8 +305,8 @@ export function GraphCanvas({
       disposed = true;
       const live = cyRef.current;
       (window as unknown as Record<string, number>).__cyDestroyed =
-        (((window as unknown as Record<string, number>).__cyDestroyed) || 0) + (live && !live.destroyed() ? 1 : 0);
-      if (live && !live.destroyed()) live.destroy();
+        (((window as unknown as Record<string, number>).__cyDestroyed) || 0) + (live && !isCytoscapeDestroyed(live) ? 1 : 0);
+      if (live) destroyCytoscape(live);
       if (cyRef.current === live) cyRef.current = null;
     };
   }, [applyBaseStyle]);
@@ -317,8 +333,15 @@ export function GraphCanvas({
      * that is actually on screen. Rebuilding instead would throw the graph away and re-solve
      * the layout, which is exactly the kind of silent state loss the graph must not do.
      */
-    if (live && !live.destroyed()) {
-      if (live.container() !== host) live.mount(host);
+    if (live && !isCytoscapeDestroyed(live)) {
+      if (live.container() !== host) {
+        const mount = (live as unknown as { mount?: unknown }).mount;
+        // A deliberately partial engine adapter (for example a test double) may not
+        // implement mounting. It cannot be moved to another host, but it must not
+        // crash the surrounding React tree during StrictMode repair.
+        if (typeof mount !== "function") return;
+        mount.call(live, host);
+      }
       return;
     }
 
@@ -883,7 +906,7 @@ function applyElements(
 
 /** Run a layout over the live elements. Unanimated by design (§67). */
 export function applyLayout(cy: cytoscape.Core | null, layout: LayoutName): void {
-  if (!cy || cy.destroyed()) return;
+  if (!cy || isCytoscapeDestroyed(cy)) return;
   const nodes = cy.nodes();
   if (nodes.length === 0) return;
   const ids = nodes.map((node) => node.id());

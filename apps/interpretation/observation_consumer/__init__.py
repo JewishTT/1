@@ -30,6 +30,7 @@ identity already answers the question.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -79,6 +80,8 @@ class ProcessingResult:
     truncated: bool = False
     failure_code: str = ""
     detail: str = ""
+    normalization: dict[str, Any] | None = None
+    interpretation: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -98,6 +101,10 @@ class ProcessingResult:
         if self.failure_code:
             out["failure_code"] = self.failure_code
             out["detail"] = self.detail
+        if self.normalization is not None:
+            out["normalization"] = dict(self.normalization)
+        if self.interpretation is not None:
+            out["interpretation"] = dict(self.interpretation)
         return out
 
 
@@ -111,9 +118,22 @@ class ObservationConsumer:
         source_family: str = "",
         processing_run_id: str = "",
         segment_ref: str = "segment:0",
+        tenzir: Any | None = None,
+        result_writer: Any | None = None,
+        interpretation_bridge_factory: Any | None = None,
     ) -> None:
         self._store = store
         self._source_family = source_family
+        self._tenzir = tenzir
+        self._result_writer = result_writer
+        self._interpretation_bridge_factory = interpretation_bridge_factory
+        self._tenzir_configuration_error: Any = None
+        if tenzir is None:
+            try:
+                from normalization.tenzir import TenzirNodeNormalizer
+                self._tenzir = TenzirNodeNormalizer.from_env()
+            except Exception as exc:  # optional stage must report its failure, not block native extraction
+                self._tenzir_configuration_error = exc
         self._run_id = processing_run_id or f"proc-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
         # Mention-addressing refs (§26 of the 021 mention contract). Taken from the
         # capture being read rather than generated, so an ``MN-`` names a parser
@@ -158,9 +178,18 @@ class ObservationConsumer:
             result = await self._process(envelope)
         except ConsumerContractError as exc:
             result = self._fail(envelope, exc.code, exc.message)
-        except Exception as exc:  # noqa: BLE001 - classified, never swallowed
+        except Exception as exc:  # noqa: BLE001 - typed infrastructure failures stay retryable
+            if getattr(exc, "retryable", False):
+                # The runner commits the Kafka offset only after handle() returns. A
+                # canonical database failure must therefore bubble out unchanged.
+                raise
             result = self._fail(envelope, "downstream", f"{type(exc).__name__}: {exc}")
 
+        # The durable write sits outside the data-problem catch above. If PostgreSQL
+        # is unavailable, propagate the infrastructure failure so the Kafka runner does
+        # not commit the input offset; replay will deterministically upsert this result.
+        if self._result_writer is not None:
+            await self._result_writer.persist(envelope, result)
         self._results[observation_id] = result
         return result
 
@@ -198,29 +227,245 @@ class ObservationConsumer:
         records = payload.records
         mentions = self._bind(payload)
 
-        # §63 wants every observation traceable to a parser version. The payload
-        # layer reports *which* parser ran (``declared_parser``) and where it
-        # routed to, but carries no version field of its own - so the reference
-        # here is this consumer's version plus the parser it selected, which is
-        # the pair that actually determines the interpretation. Inventing a
-        # "parser_version" attribute that does not exist is how a manifest ends up
-        # naming a version nobody can reproduce.
+        # The existing parser owns source positions and occurrence identities.
+        # Tenzir is a second, additive pass: it may derive structural statistics,
+        # but it cannot mint mentions, rewrite byte spans, or become the source of
+        # truth for claims. A Tenzir failure is surfaced in the processing manifest
+        # while the canonical parser result remains available.
         parser_ref = (
             f"{CONSUMER_NAME}/{CONSUMER_VERSION}"
             f"#declared={payload.declared_parser or 'none'}"
             f"#routed={payload.routed_to}"
         )
+        normalization = await self._normalize_with_tenzir(
+            envelope=envelope,
+            records=records,
+            capture_id=capture_id,
+            raw_ref=raw_ref,
+            parser_ref=parser_ref,
+        )
+
+        # Store a concrete immutable parser result. A symbolic path is not a replayable artifact.
+        try:
+            record_values = [
+                record.to_dict() if callable(getattr(record, "to_dict", None))
+                else dict(record) if isinstance(record, dict)
+                else {"value": str(record)}
+                for record in records
+            ]
+            manifest = {
+                "schema": "cognitive.parsed-observation/v1",
+                "observation_id": envelope.observation_id,
+                "capture_id": capture_id,
+                "tenant_id": envelope.tenant_id,
+                "investigation_id": envelope.investigation_id,
+                "source_id": envelope.source_id,
+                "task_id": envelope.work_id,
+                "raw_ref": raw_ref,
+                "raw_content_sha256": hashlib.sha256(body).hexdigest(),
+                "locator": locator,
+                "parser_ref": parser_ref,
+                "declared_parser": str(payload.declared_parser or ""),
+                "routed_to": str(payload.routed_to or ""),
+                "record_count": len(records),
+                "mention_count": mentions,
+                "truncated": bool(getattr(payload, "truncated", False)),
+                "records": record_values,
+                "normalization_ref": (
+                    normalization.get("normalization_ref")
+                    if isinstance(normalization, dict) else None
+                ),
+            }
+            put_derived = getattr(self._store, "put_derived_dedup", None)
+            if not callable(put_derived):
+                raise ConsumerContractError(
+                    FAILURE_RAW_UNREADABLE,
+                    "ObjectStore does not provide put_derived_dedup; parsed output cannot be durably addressed",
+                )
+            manifest_bytes = json.dumps(
+                manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            ).encode("utf-8")
+            derived_object, _already_stored = await put_derived(
+                manifest_bytes,
+                tenant_id=envelope.tenant_id,
+                meta={
+                    "schema": manifest["schema"],
+                    "observation_id": envelope.observation_id,
+                    "capture_id": capture_id,
+                    "raw_ref": raw_ref,
+                    "parser_ref": parser_ref,
+                },
+            )
+        except ConsumerContractError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - no symbolic success on failed artifact writes
+            raise ConsumerContractError(
+                FAILURE_RAW_UNREADABLE,
+                f"derived parse manifest could not be persisted: {type(exc).__name__}: {exc}",
+            ) from exc
+
+        interpretation: dict[str, Any] | None = None
+        if self._interpretation_bridge_factory is not None:
+            try:
+                bridge = self._interpretation_bridge_factory(
+                    envelope=envelope, record_metadata=record_meta
+                )
+                interpreted = bridge.interpret(
+                    body,
+                    capture_ref=capture_id,
+                    content_type=str(content_type or ""),
+                    investigation_id=str(envelope.investigation_id or ""),
+                    source_id=str(envelope.source_id or ""),
+                    observed_at=str(record_meta.get("fetched_at") or ""),
+                    observation_id=str(envelope.observation_id),
+                )
+                if interpreted.document is None:
+                    interpretation = {
+                        **interpreted.as_dict(),
+                        "status": "no_mentions",
+                        "persisted": False,
+                        "detail": interpreted.reason or "deterministic extractor returned no mentions",
+                    }
+                else:
+                    persisted = await bridge.persist(
+                        body,
+                        interpreted,
+                        document=interpreted.document,
+                        resolved=interpreted.resolved_entities,
+                        investigation_id=str(envelope.investigation_id or ""),
+                        source_id=str(envelope.source_id or ""),
+                        uri=str(record_meta.get("target_uri") or record_meta.get("url") or ""),
+                        task_id=str(record_meta.get("task_id") or envelope.work_id or ""),
+                        raw_ref=raw_ref,
+                        capture_id=capture_id,
+                        locator=locator,
+                        raise_on_failure=True,
+                    )
+                    stream_written = await bridge.append_stream(
+                        interpreted, interpreted.resolved_entities, sequence_base=0, raise_on_failure=True
+                    )
+                    interpretation = {
+                        **interpreted.as_dict(),
+                        "status": "persisted" if persisted else "persistence_failed",
+                        "persisted": bool(persisted),
+                        "stream_records_written": int(stream_written),
+                        "stream_state": (
+                            "written" if stream_written >= len(interpreted.resolved_entities)
+                            else "degraded"
+                        ),
+                        "detail": (
+                            "" if persisted and stream_written >= len(interpreted.resolved_entities)
+                            else "canonical entity stream is incomplete; review processing result"
+                        ),
+                    }
+            except Exception as exc:  # noqa: BLE001 - retryable database failure must not ack
+                if getattr(exc, "retryable", False):
+                    raise
+                interpretation = {
+                    "status": "failed",
+                    "persisted": False,
+                    "failure_code": "interpretation_bridge_failed",
+                    "detail": f"{type(exc).__name__}: {exc}"[:400],
+                }
 
         return self._result(
             envelope,
             STATUS_PROCESSED,
-            derived_ref=f"parsed:{parser_ref}",
+            derived_ref=derived_object.uri,
             capture_id=capture_id,
             locator=locator,
             record_count=len(records),
             mention_count=mentions,
             truncated=bool(getattr(payload, "truncated", False)),
+            normalization=normalization,
+            interpretation=interpretation,
         )
+
+    async def _normalize_with_tenzir(
+        self,
+        *,
+        envelope: pb.EventEnvelope,
+        records: Any,
+        capture_id: str,
+        raw_ref: str,
+        parser_ref: str,
+    ) -> dict[str, Any] | None:
+        if self._tenzir_configuration_error is not None:
+            exc = self._tenzir_configuration_error
+            return {
+                "status": "failed",
+                "engine": "tenzir-node",
+                "failure_code": str(getattr(exc, "code", "tenzir_config_invalid")),
+                "detail": str(getattr(exc, "detail", exc))[:400],
+            }
+        if self._tenzir is None:
+            return None
+        try:
+            from normalization.tenzir import NORMALIZATION_SCHEMA, TenzirError
+
+            normalized = await self._tenzir.normalize_records(
+                [record.to_dict() for record in records]
+            )
+            manifest = {
+                "schema": NORMALIZATION_SCHEMA,
+                "observation_id": envelope.observation_id,
+                "capture_id": capture_id,
+                "tenant_id": envelope.tenant_id,
+                "source_id": envelope.source_id,
+                "raw_ref": raw_ref,
+                "parser_ref": parser_ref,
+                "engine": normalized.engine,
+                "engine_version": normalized.engine_version,
+                "pipeline_version": "tenzir-observed-fields-v2",
+                "pipeline_digest": normalized.pipeline_digest,
+                "record_count": normalized.record_count,
+                "records": normalized.records,
+            }
+            body = json.dumps(
+                manifest,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            put_derived = getattr(self._store, "put_derived_dedup", None)
+            if not callable(put_derived):
+                raise TenzirError(
+                    "tenzir_derived_store_unavailable",
+                    "ObjectStore has no put_derived_dedup method for immutable derived output",
+                )
+            ref, existed = await put_derived(
+                body,
+                tenant_id=envelope.tenant_id,
+                meta={
+                    "schema": NORMALIZATION_SCHEMA,
+                    "observation_id": envelope.observation_id,
+                    "capture_id": capture_id,
+                    "raw_ref": raw_ref,
+                    "pipeline_digest": normalized.pipeline_digest,
+                    "engine": normalized.engine,
+                    "engine_version": normalized.engine_version,
+                },
+            )
+            return {
+                "status": "processed",
+                "engine": normalized.engine,
+                "engine_version": normalized.engine_version,
+                "schema": NORMALIZATION_SCHEMA,
+                "pipeline_version": "tenzir-observed-fields-v2",
+                "pipeline_digest": normalized.pipeline_digest,
+                "record_count": normalized.record_count,
+                "normalization_ref": ref.uri,
+                "content_digest": ref.sha256,
+                "byte_length": ref.size,
+                "already_stored": existed,
+            }
+        except Exception as exc:  # optional acceleration failures never erase native parse results
+            return {
+                "status": "failed",
+                "engine": "tenzir-node",
+                "failure_code": str(getattr(exc, "code", "tenzir_normalization_failed")),
+                "detail": str(getattr(exc, "detail", exc))[:400],
+            }
 
     def _parse(self, body: bytes, content_type: Any, declared_parser: str):
         """Hand the bytes to the payload layer and nothing else.
@@ -335,6 +580,8 @@ class ObservationConsumer:
         truncated: bool = False,
         failure_code: str = "",
         detail: str = "",
+        normalization: dict[str, Any] | None = None,
+        interpretation: dict[str, Any] | None = None,
     ) -> ProcessingResult:
         return ProcessingResult(
             processing_run_id=self._run_id,
@@ -351,6 +598,8 @@ class ObservationConsumer:
             truncated=truncated,
             failure_code=failure_code,
             detail=detail,
+            normalization=normalization,
+            interpretation=interpretation,
         )
 
     def _fail(self, envelope: pb.EventEnvelope, code: str, detail: str) -> ProcessingResult:

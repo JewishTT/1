@@ -60,7 +60,7 @@ _None: every declared capability has a module in the tree._
 
 ## Untested modules
 
-268 platform modules are not imported by any test. Sample:
+265 platform modules are not imported by any test. Sample:
 
 | Module |
 |---|
@@ -83,6 +83,7 @@ _None: every declared capability has a module in the tree._
 | `apps/acquisition/adapters/sec_edgar.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
 | `apps/acquisition/observation_gate/__init__.py` |
+| `apps/acquisition/policies/__init__.py` |
 | `apps/acquisition/runtime/external_tool.py` |
 | `apps/acquisition/runtime/searxng.py` |
 | `apps/acquisition/sources/__init__.py` |
@@ -93,17 +94,16 @@ _None: every declared capability has a module in the tree._
 | `apps/acquisition/worker-dataset/acquire.py` |
 | `apps/acquisition/worker_browser/__init__.py` |
 | `apps/acquisition/worker_http/__init__.py` |
+| `apps/acquisition/worker_service.py` |
 | `apps/admission/engine/__init__.py` |
 | `apps/admission/independence/__init__.py` |
 | `apps/admission/resolution/__init__.py` |
-| `apps/bulk-ingestion/backfill.py` |
 | `apps/bulk-ingestion/historical/__init__.py` |
-| `apps/bulk-ingestion/historical/replay.py` |
 | `apps/control-plane/__init__.py` |
-| `apps/control-plane/api/auth.py` |
 | `apps/control-plane/api/path_shim.py` |
 | `apps/control-plane/api/routes/connectors.py` |
 | `apps/control-plane/api/routes/discovery.py` |
+| `apps/control-plane/api/routes/dossier.py` |
 
 ## Unresolved imports (by evidence)
 

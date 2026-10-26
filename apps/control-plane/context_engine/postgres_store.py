@@ -38,6 +38,8 @@ semantics: the engine still computes, this only remembers.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import json
 import re
 from collections.abc import Mapping
@@ -93,6 +95,44 @@ _DDL = (
         ON research_obligations (context_id)
     """,
     """
+    CREATE TABLE IF NOT EXISTS person_case_metadata (
+        case_id    TEXT PRIMARY KEY,
+        tenant_id  TEXT NOT NULL,
+        payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CHECK (case_id <> ''),
+        CHECK (tenant_id <> '')
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS ix_person_case_metadata_tenant
+        ON person_case_metadata (tenant_id, case_id)
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS person_case_dispatch_intents (
+        tenant_id        TEXT NOT NULL,
+        case_id          TEXT NOT NULL,
+        idempotency_key  TEXT NOT NULL,
+        run_id           TEXT NOT NULL UNIQUE,
+        scope_digest     TEXT NOT NULL,
+        policy_digest    TEXT NOT NULL,
+        payload          JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (tenant_id, case_id, idempotency_key),
+        CHECK (tenant_id <> ''),
+        CHECK (case_id <> ''),
+        CHECK (idempotency_key <> ''),
+        CHECK (length(scope_digest) = 71 AND scope_digest LIKE 'sha256:%'),
+        CHECK (length(policy_digest) = 71 AND policy_digest LIKE 'sha256:%')
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS ix_person_case_dispatch_case
+        ON person_case_dispatch_intents (tenant_id, case_id, created_at)
+    """,
+    """
     CREATE TABLE IF NOT EXISTS research_actions (
         action_id     TEXT PRIMARY KEY,
         obligation_id TEXT NOT NULL,
@@ -139,6 +179,45 @@ _DDL = (
     """
     CREATE INDEX IF NOT EXISTS ix_memory_obligation
         ON context_action_memory (obligation_id)
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS person_case_budget_reservations (
+        reservation_id  TEXT PRIMARY KEY,
+        tenant_id       TEXT NOT NULL,
+        case_id         TEXT NOT NULL,
+        investigation_id TEXT NOT NULL,
+        budget_id       TEXT NOT NULL,
+        idempotency_key TEXT NOT NULL,
+        scope_digest    TEXT NOT NULL,
+        policy_digest   TEXT NOT NULL,
+        request_count   INTEGER NOT NULL,
+        raw_bytes       BIGINT NOT NULL,
+        record_count    BIGINT NOT NULL,
+        concurrency     INTEGER NOT NULL,
+        wall_seconds    INTEGER NOT NULL,
+        state           TEXT NOT NULL DEFAULT 'RESERVED',
+        payload         JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+        UNIQUE (tenant_id, case_id, idempotency_key),
+        CHECK (tenant_id <> ''),
+        CHECK (case_id <> ''),
+        CHECK (budget_id <> ''),
+        CHECK (request_count > 0),
+        CHECK (raw_bytes > 0),
+        CHECK (record_count > 0),
+        CHECK (concurrency > 0),
+        CHECK (wall_seconds > 0),
+        CHECK (state IN ('RESERVED', 'PUBLISHED', 'RELEASED', 'FAILED'))
+    )
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS ix_person_case_budget_reservations_budget_state
+        ON person_case_budget_reservations (budget_id, state)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS ix_person_case_budget_reservations_case_scope
+        ON person_case_budget_reservations (tenant_id, case_id, scope_digest)
     """,
 )
 
@@ -399,6 +478,231 @@ class PostgresContextStore(ContextStore):
         result = commit()
         if hasattr(result, "__await__"):
             await result
+
+    # -- person-case metadata (Feature 034) ----------------------------------
+
+    async def put_person_case_metadata(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        purpose_code: str,
+        basis_ref: str,
+        launch_profile: str,
+        claim_families: list[str],
+        allowed_source_ids: list[str],
+        denied_claim_families: list[str],
+        scope_digest: str,
+        scope_revision: int,
+        approved: bool,
+        budget_ref: str | None,
+        expires_at: str | None,
+        valid_time: dict[str, Any],
+        jurisdictions: list[str],
+        subject_anchors: list[dict[str, str]] | None = None,
+        context_amendments: list[dict[str, Any]] | None = None,
+        dynamic_invariant_anchors: list[dict[str, Any]] | None = None,
+        static_artifact_refs: list[dict[str, Any]] | None = None,
+        latest_report_ref: dict[str, Any] | None = None,
+    ) -> None:
+        """Durably upsert case metadata, refusing a cross-tenant key collision."""
+        await self.ensure_schema()
+        if not case_id or not tenant_id:
+            raise ValueError("case_id and tenant_id are required")
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        previous = await self.get_person_case_metadata(case_id)
+        created_at = previous.get("created_at", now) if previous else now
+        payload = {
+            "case_id": case_id,
+            "tenant_id": tenant_id,
+            "created_at": created_at,
+            "updated_at": now,
+            "purpose_code": purpose_code,
+            "basis_ref": basis_ref,
+            "launch_profile": launch_profile,
+            "claim_families": list(claim_families),
+            "allowed_source_ids": list(allowed_source_ids),
+            "denied_claim_families": list(denied_claim_families),
+            "scope_digest": scope_digest,
+            "scope_revision": int(scope_revision),
+            "approved": bool(approved),
+            "budget_ref": budget_ref,
+            "expires_at": expires_at,
+            "valid_time": dict(valid_time),
+            "jurisdictions": list(jurisdictions),
+            "subject_anchors": [dict(a) for a in (subject_anchors if subject_anchors is not None else (previous or {}).get("subject_anchors", []))],
+            "context_amendments": [dict(a) for a in (context_amendments if context_amendments is not None else (previous or {}).get("context_amendments", []))],
+            "dynamic_invariant_anchors": [dict(a) for a in (dynamic_invariant_anchors if dynamic_invariant_anchors is not None else (previous or {}).get("dynamic_invariant_anchors", []))],
+            "static_artifact_refs": [dict(a) for a in (static_artifact_refs if static_artifact_refs is not None else (previous or {}).get("static_artifact_refs", []))],
+            "latest_report_ref": dict(latest_report_ref if latest_report_ref is not None else (previous or {}).get("latest_report_ref", {})),
+        }
+        sql = """
+            INSERT INTO person_case_metadata
+                (case_id, tenant_id, payload)
+            VALUES (:case_id, :tenant_id, CAST(:payload AS jsonb))
+            ON CONFLICT (case_id) DO UPDATE SET
+                tenant_id = EXCLUDED.tenant_id,
+                payload = EXCLUDED.payload,
+                updated_at = now()
+            WHERE person_case_metadata.tenant_id = EXCLUDED.tenant_id
+            RETURNING tenant_id
+        """
+        async with self._session() as conn:
+            rows = await self._fetch(
+                conn,
+                sql,
+                {
+                    "case_id": case_id,
+                    "tenant_id": tenant_id,
+                    "payload": _json(payload),
+                },
+            )
+            if not rows:
+                raise ValueError("case metadata belongs to another tenant")
+            await self._commit(conn)
+
+    async def get_person_case_metadata(self, case_id: str) -> dict[str, Any] | None:
+        """Read the structured, tenant-tagged sidecar from PostgreSQL."""
+        await self.ensure_schema()
+        payload = await self._first(
+            "SELECT payload FROM person_case_metadata WHERE case_id = :case_id",
+            {"case_id": case_id},
+        )
+        return dict(payload) if isinstance(payload, Mapping) else None
+
+    async def put_person_case_dispatch_intent(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        run_id: str,
+        idempotency_key: str,
+        approved_action_refs: list[str],
+        scope_digest: str,
+        policy_digest: str,
+    ) -> dict[str, Any]:
+        """Atomically persist a run intent once per tenant/case/idempotency key."""
+        await self.ensure_schema()
+        if not all((case_id, tenant_id, run_id, idempotency_key, scope_digest, policy_digest)):
+            raise ValueError("dispatch intent is missing identity or digest fields")
+        actions = sorted(set(approved_action_refs))
+        payload = {
+            "case_id": case_id,
+            "tenant_id": tenant_id,
+            "run_id": run_id,
+            "idempotency_key": idempotency_key,
+            "approved_action_refs": actions,
+            "scope_digest": scope_digest,
+            "policy_digest": policy_digest,
+            "state": "PREPARED",
+            "outcome": None,
+        }
+        async with self._session() as conn:
+            inserted = await self._fetch(
+                conn,
+                """
+                INSERT INTO person_case_dispatch_intents
+                    (tenant_id, case_id, idempotency_key, run_id, scope_digest, policy_digest, payload)
+                VALUES
+                    (:tenant_id, :case_id, :idempotency_key, :run_id, :scope_digest, :policy_digest,
+                     CAST(:payload AS jsonb))
+                ON CONFLICT (tenant_id, case_id, idempotency_key) DO NOTHING
+                RETURNING payload
+                """,
+                {
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                    "run_id": run_id,
+                    "scope_digest": scope_digest,
+                    "policy_digest": policy_digest,
+                    "payload": _json(payload),
+                },
+            )
+            if inserted:
+                await self._commit(conn)
+                return {**dict(inserted[0]["payload"]), "created": True}
+
+            existing_rows = await self._fetch(
+                conn,
+                """
+                SELECT payload FROM person_case_dispatch_intents
+                WHERE tenant_id = :tenant_id AND case_id = :case_id AND idempotency_key = :idempotency_key
+                """,
+                {
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                },
+            )
+            if not existing_rows:
+                raise RuntimeError("dispatch intent conflict could not be reconciled")
+            existing = dict(existing_rows[0]["payload"])
+            if (
+                existing.get("scope_digest") != scope_digest
+                or existing.get("policy_digest") != policy_digest
+                or sorted(set(existing.get("approved_action_refs", []))) != actions
+            ):
+                raise ValueError("idempotency key was reused with a different scope, policy or action set")
+            await self._commit(conn)
+            return {**existing, "created": False}
+
+    async def mark_person_case_dispatch_intent(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        idempotency_key: str,
+        state: str,
+        outcome: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Persist the broker publication result in the durable idempotency record."""
+        await self.ensure_schema()
+        if state not in {"PREPARED", "PUBLISHED", "PARTIAL", "FAILED"}:
+            raise ValueError(f"unsupported dispatch state: {state}")
+        async with self._session() as conn:
+            rows = await self._fetch(
+                conn,
+                """
+                SELECT payload FROM person_case_dispatch_intents
+                WHERE tenant_id = :tenant_id AND case_id = :case_id
+                  AND idempotency_key = :idempotency_key
+                FOR UPDATE
+                """,
+                {
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                },
+            )
+            if not rows:
+                raise ValueError("dispatch intent is not recorded")
+            payload = rows[0]["payload"]
+            if isinstance(payload, str):
+                payload = json.loads(payload)
+            updated = {
+                **dict(payload),
+                "state": state,
+                "outcome": dict(outcome or {}),
+                "updated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            }
+            await self._exec(
+                conn,
+                """
+                UPDATE person_case_dispatch_intents
+                SET payload = CAST(:payload AS jsonb)
+                WHERE tenant_id = :tenant_id AND case_id = :case_id
+                  AND idempotency_key = :idempotency_key
+                """,
+                {
+                    "payload": _json(updated),
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                },
+            )
+            await self._commit(conn)
+            return {**updated, "created": False}
 
     # -- contexts -----------------------------------------------------------
 

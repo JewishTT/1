@@ -117,6 +117,42 @@ class ObjectStore:
         async with self._s3() as s3:
             await s3.put_object(Bucket=bucket, Key=key, Body=body)
 
+    async def put_derived_dedup(
+        self, body: bytes, *, tenant_id: str, meta: dict | None = None
+    ) -> tuple[RawObjectRef, bool]:
+        """Store immutable derived bytes in a separate content-addressed namespace.
+
+        Raw evidence writes keep their existing path. Derived output is addressed as
+        s3://<bucket>/derived/<tenant>/<yyyymm>/<sha256>, so transforms can never
+        overwrite or masquerade as the fetched source bytes. The caller supplies
+        provenance metadata such as raw_ref and the transform digest.
+        """
+        if not tenant_id or not tenant_id.strip():
+            raise ValueError("tenant_id is required for derived artifact storage")
+        if not isinstance(body, bytes):
+            raise TypeError("derived artifact body must be bytes")
+        digest = sha256_bytes(body)
+        ym = self._ym()
+        key = f"derived/{tenant_id}/{ym}/{digest}"
+        ref = RawObjectRef(
+            uri=self.ref_uri(sha256=digest, tenant_id=tenant_id, year_month=ym, kind="derived"),
+            sha256=digest,
+            size=len(body),
+            tenant_prefix=f"{tenant_id}/{ym}",
+            year_month=ym,
+        )
+        if await self.exists(key):
+            return ref, True
+        await self._put(self.raw_bucket, key, body)
+        if meta:
+            meta_key = f"derived-meta/{tenant_id}/{ym}/{digest}.json"
+            await self._put(
+                self.raw_bucket,
+                meta_key,
+                json.dumps(meta, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str).encode("utf-8"),
+            )
+        return ref, False
+
     async def read_range(self, *, bucket: str, key: str, offset: int = 0, length: int | None = None) -> bytes:
         """Range read without loading the whole object (T093 archive retrieval).
 

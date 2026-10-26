@@ -37,20 +37,6 @@ def _ev(path: str, regex: str, *, expect: str = "present", min_count: int = 1) -
 GAPS: list[dict] = [
     # -- cross-cutting: security boundary ------------------------------------
     {
-        "id": "auth-anonymous-admin",
-        "layer": "x",
-        "severity": "critical",
-        "claim": "An anonymous request (no bearer token) resolves to Role.ADMIN.",
-        "evidence": [_ev("apps/control-plane/api/auth.py", r"roles=\{Role\.ADMIN\}")],
-    },
-    {
-        "id": "auth-unverified-token",
-        "layer": "x",
-        "severity": "critical",
-        "claim": "The bearer path parses the token with json.loads; no signature/exp/aud check.",
-        "evidence": [_ev("apps/control-plane/api/auth.py", r"json\.loads\(token\)")],
-    },
-    {
         "id": "roe-in-memory-registry",
         "layer": "x",
         "severity": "critical",
@@ -158,6 +144,25 @@ RESOLVED_CLAIMS: list[dict] = [
             _ev(".github/workflows/donor-registry.yml", r"uv sync --locked --all-packages --all-groups", expect="present"),
         ],
         "note": "Both workflows now install all packages and groups. This entry guards the fix.",
+    },
+    {
+        "id": "auth-anonymous-admin",
+        "claim": "Anonymous requests must not receive an administrator role.",
+        "evidence": [
+            _ev("apps/control-plane/api/auth.py", r'raise HTTPException\(status_code=401, detail="bearer token required"\)'),
+            _ev("apps/control-plane/api/auth.py", r"roles=frozenset\(\{Role\.ANALYST\}\)"),
+        ],
+        "note": "A request without bearer credentials fails closed; the explicit development adapter never grants ADMIN.",
+    },
+    {
+        "id": "auth-unverified-token",
+        "claim": "JWT claims must be signed and validated before they can establish identity or role.",
+        "evidence": [
+            _ev("apps/control-plane/api/auth.py", r"def _verify_jwt"),
+            _ev("apps/control-plane/api/auth.py", r"hmac\.compare_digest"),
+            _ev("apps/control-plane/api/auth.py", r"json\.loads\(token\)", expect="absent"),
+        ],
+        "note": "Only HS256 is accepted; signature, issuer, audience and time claims are verified before payload use.",
     },
 ]
 
