@@ -195,7 +195,10 @@ class ArtifactSink:
                 content_digest=digest,
                 content_length=artifact.byte_length,
                 media_type=artifact.content_type or "",
-                fetched_at=artifact.fetched_at,
+                # A platform upload has a receipt time, but it is not a source fetch.
+                # Keep that receipt in record metadata; Capture.fetched_at is populated
+                # only when the platform actually performed a retrieval (FR-025).
+                fetched_at=artifact.fetched_at if time_basis == CaptureTimeBasis.FETCH else None,
                 time_basis=time_basis,
                 transport=artifact.transport,
                 recorded_by=self._recorded_by,
@@ -237,7 +240,13 @@ class ArtifactSink:
                     "target_uri": artifact.target_uri,
                     "task_id": artifact.task_id,
                     "worker_ref": artifact.worker_ref,
-                    "fetched_at": artifact.fetched_at.isoformat(),
+                    "received_at": artifact.fetched_at.isoformat(),
+                    "fetched_at": (
+                        artifact.fetched_at.isoformat()
+                        if time_basis == CaptureTimeBasis.FETCH
+                        else None
+                    ),
+                    "capture_time_basis": time_basis.value,
                     # §62: vendor fields the platform did not map are retained
                     # rather than dropped, and the raw artifact stays the source
                     # of truth for anything not listed here.
