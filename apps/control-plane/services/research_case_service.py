@@ -405,6 +405,217 @@ class ResearchCaseService:
             "stale_scope_behavior": "CANCELLED_STALE_SCOPE",
         }
 
+    async def append_context_amendment(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        actor_id: str,
+        body: str,
+        rationale: str = "",
+        kind: str = "context",
+    ) -> dict[str, Any]:
+        """Append context text immutably and require approval of the new scope."""
+        allowed_kinds = {"context", "query_hint", "constraint", "question"}
+        body = str(body or "").strip()
+        rationale = str(rationale or "").strip()
+        if kind not in allowed_kinds:
+            raise CaseServiceError(f"unsupported context amendment kind: {kind}")
+        if not body or len(body) > 4000:
+            raise CaseServiceError("context amendment must contain 1..4000 characters")
+        if not actor_id.strip():
+            raise CaseServiceError("context amendment actor is required")
+
+        context = await self._store.get_context(case_id)
+        if context is None or context.tenant_id != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        if context.state == InvestigationState.CLOSED:
+            raise CaseServiceError("a closed case cannot receive a context amendment")
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None or meta.get("tenant_id") != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+
+        amendments = list(meta.get("context_amendments", []))
+        created_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        material = json.dumps(
+            {
+                "case_id": case_id,
+                "tenant_id": tenant_id,
+                "actor_id": actor_id,
+                "kind": kind,
+                "body": body,
+                "rationale": rationale,
+                "ordinal": len(amendments) + 1,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        amendment = {
+            "amendment_id": "CAM-" + hashlib.sha256(material.encode("utf-8")).hexdigest()[:32],
+            "ordinal": len(amendments) + 1,
+            "kind": kind,
+            "body": body,
+            "rationale": rationale,
+            "created_by": actor_id,
+            "created_at": created_at,
+        }
+        amendments.append(amendment)
+        return await self._persist_scope_extension(
+            context=context,
+            meta=meta,
+            actor_id=actor_id,
+            context_amendments=amendments,
+            dynamic_invariant_anchors=list(meta.get("dynamic_invariant_anchors", [])),
+            extension={"kind": "context_amendment", "value": amendment},
+        )
+
+    async def add_dynamic_invariant_anchor(
+        self,
+        *,
+        case_id: str,
+        tenant_id: str,
+        actor_id: str,
+        kind: str,
+        value: str,
+        evidence_ref: str = "",
+        note: str = "",
+    ) -> dict[str, Any]:
+        """Append an unresolved dynamic anchor; it never auto-admits or merges identity."""
+        allowed_kinds = {
+            "public_name", "orcid", "openalex_author_id", "doi_author_record",
+            "official_profile_url", "public_organization", "publication", "public_role",
+        }
+        kind, value = str(kind or "").strip(), str(value or "").strip()
+        evidence_ref, note = str(evidence_ref or "").strip(), str(note or "").strip()
+        if kind not in allowed_kinds:
+            raise CaseServiceError(f"unsupported dynamic invariant anchor kind: {kind}")
+        if not value or len(value) > 1000:
+            raise CaseServiceError("dynamic invariant anchor value must contain 1..1000 characters")
+        if not actor_id.strip():
+            raise CaseServiceError("dynamic invariant anchor actor is required")
+
+        context = await self._store.get_context(case_id)
+        if context is None or context.tenant_id != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+        if context.state == InvestigationState.CLOSED:
+            raise CaseServiceError("a closed case cannot receive a dynamic invariant anchor")
+        meta = await self._store.get_person_case_metadata(case_id)
+        if meta is None or meta.get("tenant_id") != tenant_id:
+            raise CaseNotFound(f"case {case_id} not found")
+
+        anchors = list(meta.get("dynamic_invariant_anchors", []))
+        created_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        anchor_material = f"{case_id}|{tenant_id}|{kind}|{value}|{evidence_ref}|{len(anchors) + 1}"
+        anchor = {
+            "anchor_id": "DIA-" + hashlib.sha256(anchor_material.encode("utf-8")).hexdigest()[:32],
+            "ordinal": len(anchors) + 1,
+            "kind": kind,
+            "value": value,
+            "evidence_ref": evidence_ref,
+            "note": note,
+            "state": "UNRESOLVED",
+            "admitted_entity_id": None,
+            "created_by": actor_id,
+            "created_at": created_at,
+        }
+        anchors.append(anchor)
+        return await self._persist_scope_extension(
+            context=context,
+            meta=meta,
+            actor_id=actor_id,
+            context_amendments=list(meta.get("context_amendments", [])),
+            dynamic_invariant_anchors=anchors,
+            extension={"kind": "dynamic_invariant_anchor", "value": anchor},
+        )
+
+    async def _persist_scope_extension(
+        self,
+        *,
+        context: InvestigationContext,
+        meta: Mapping[str, Any],
+        actor_id: str,
+        context_amendments: list[dict[str, Any]],
+        dynamic_invariant_anchors: list[dict[str, Any]],
+        extension: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Persist a new append-only context revision and invalidate the old approval."""
+        case_id, tenant_id = context.context_id, context.tenant_id
+        policy = self._require_policy()
+        policy_revision = policy.policy_revision
+        scope_revision = int(meta.get("scope_revision", 0)) + 1
+        scope_payload = self._scope_material(
+            tenant_id=tenant_id,
+            purpose_code=str(meta["purpose_code"]),
+            purpose_text=context.question,
+            basis_ref=str(meta["basis_ref"]),
+            launch_profile=str(meta["launch_profile"]),
+            subject_anchors=list(meta.get("subject_anchors", [])),
+            jurisdictions=list(meta.get("jurisdictions", [])),
+            valid_time=dict(meta.get("valid_time", {})),
+            claim_families=list(meta.get("claim_families", [])),
+            denied_claim_families=list(meta.get("denied_claim_families", [])),
+            allowed_source_ids=list(meta.get("allowed_source_ids", [])),
+            budget_ref=meta.get("budget_ref"),
+            expires_at=meta.get("expires_at"),
+            policy_revision=policy_revision,
+            context_amendments=context_amendments,
+            dynamic_invariant_anchors=dynamic_invariant_anchors,
+        )
+        scope_digest = self._digest(
+            json.dumps(scope_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        )
+        updated_context = replace(
+            context,
+            state=InvestigationState.UNINVESTIGATED,
+            policy_snapshot_ref=policy_revision,
+        )
+        await self._store.put_context(updated_context)
+        await self._store.put_person_case_metadata(
+            case_id=case_id,
+            tenant_id=tenant_id,
+            purpose_code=str(meta["purpose_code"]),
+            basis_ref=str(meta["basis_ref"]),
+            launch_profile=str(meta["launch_profile"]),
+            claim_families=list(meta.get("claim_families", [])),
+            allowed_source_ids=list(meta.get("allowed_source_ids", [])),
+            denied_claim_families=list(meta.get("denied_claim_families", [])),
+            scope_digest=scope_digest,
+            scope_revision=scope_revision,
+            approved=False,
+            budget_ref=meta.get("budget_ref"),
+            expires_at=meta.get("expires_at"),
+            valid_time=dict(meta.get("valid_time", {})),
+            jurisdictions=list(meta.get("jurisdictions", [])),
+            subject_anchors=list(meta.get("subject_anchors", [])),
+            context_amendments=context_amendments,
+            dynamic_invariant_anchors=dynamic_invariant_anchors,
+            static_artifact_refs=list(meta.get("static_artifact_refs", [])),
+            latest_report_ref=dict(meta.get("latest_report_ref", {})),
+        )
+        await self._append_case_revision(
+            context=updated_context,
+            snapshot={
+                "context": updated_context.to_dict(),
+                "person_case_scope": scope_payload,
+                "scope_digest": scope_digest,
+                "scope_revision": scope_revision,
+                "approved": False,
+                "extension": extension,
+                "supersedes_scope_revision": meta.get("scope_revision"),
+            },
+            actor=actor_id,
+            rule=str(extension.get("kind") or "scope_extension"),
+        )
+        return {
+            "case_id": case_id,
+            "scope_revision": scope_revision,
+            "scope_digest": scope_digest,
+            "re_approval_required": True,
+            "extension": extension,
+            "stale_scope_behavior": "STALE_SCOPE_ACTIONS_EXCLUDED",
+        }
+
     # -- approval -----------------------------------------------------------
 
     async def approve_case(
