@@ -57,6 +57,54 @@ export interface ValidTime {
   precision: "instant" | "day" | "month" | "year" | "unknown";
 }
 
+export interface ContextAmendment {
+  amendment_id: string;
+  ordinal: number;
+  kind: "context" | "query_hint" | "constraint" | "question";
+  body: string;
+  rationale: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface DynamicInvariantAnchor {
+  anchor_id: string;
+  ordinal: number;
+  kind: string;
+  value: string;
+  evidence_ref: string;
+  note: string;
+  state: "UNRESOLVED" | "REVIEWED" | "ADMITTED" | string;
+  admitted_entity_id: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface CaseArtifact {
+  artifact_id: string;
+  case_id: string;
+  capture_id: string;
+  observation_id: string;
+  raw_ref: string;
+  content_digest: string;
+  byte_length: number;
+  content_type: string;
+  filename: string;
+  caption: string;
+  artifact_kind: string;
+  uploaded_by: string;
+  created_at: string | null;
+  download_path: string;
+  processing_state?: string;
+}
+
+export interface CaseReportRef {
+  report_id: string;
+  report_digest: string;
+  status: "COMPLETE" | "PARTIAL" | "BLOCKED" | string;
+  created_at: string;
+}
+
 export interface ResearchCase {
   case_id: string;
   tenant_id: string;
@@ -66,6 +114,10 @@ export interface ResearchCase {
   basis_ref: string;
   launch_profile: LaunchProfile;
   subject_anchors: SubjectAnchor[];
+  context_amendments?: ContextAmendment[];
+  dynamic_invariant_anchors?: DynamicInvariantAnchor[];
+  static_artifact_refs?: CaseArtifact[];
+  latest_report_ref?: CaseReportRef | Record<string, unknown>;
   jurisdictions: string[];
   valid_time: ValidTime;
   claim_families: ClaimFamily[];
@@ -402,10 +454,72 @@ export async function createClaimDispute(caseId: string, body: { claim_id: strin
   });
 }
 
-export async function generateReport(caseId: string, body: { approved_finding_ids: string[] }): Promise<{ report_id: string; case_id: string }> {
+export interface CompletionReport {
+  report_id: string;
+  report_digest: string;
+  status: "COMPLETE" | "PARTIAL" | "BLOCKED" | string;
+  generated_at: string;
+  summary: Record<string, number>;
+  findings: Array<Record<string, unknown>>;
+  relation_claims: Array<Record<string, unknown>>;
+  obligations: Array<Record<string, unknown>>;
+  source_inventory: Record<string, unknown>;
+  coverage: CoverageLedger;
+  processing: Array<Record<string, unknown>>;
+  static_artifacts: CaseArtifact[];
+  limitations: string[];
+}
+
+export async function generateReport(caseId: string): Promise<CompletionReport> {
   return request(`/${encodeURIComponent(caseId)}/report`, {
     method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function getReport(caseId: string, reportId: string): Promise<CompletionReport> {
+  return request(
+    `/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(reportId)}`,
+  );
+}
+
+export async function appendContextAmendment(
+  caseId: string,
+  body: { body: string; rationale?: string; kind: ContextAmendment["kind"] },
+): Promise<{ case_id: string; scope_revision: number; scope_digest: string; re_approval_required: boolean; extension: { kind: string; value: ContextAmendment }; stale_scope_behavior: string }> {
+  return request(`/${encodeURIComponent(caseId)}/context/amendments`, {
+    method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export async function addDynamicInvariantAnchor(
+  caseId: string,
+  body: { kind: string; value: string; evidence_ref?: string; note?: string },
+): Promise<{ case_id: string; scope_revision: number; scope_digest: string; re_approval_required: boolean; extension: { kind: string; value: DynamicInvariantAnchor }; stale_scope_behavior: string }> {
+  return request(`/${encodeURIComponent(caseId)}/invariants`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function listArtifacts(caseId: string): Promise<{ case_id: string; artifacts: CaseArtifact[]; count: number; source_of_truth: string }> {
+  return request(`/${encodeURIComponent(caseId)}/artifacts`);
+}
+
+export async function uploadArtifact(
+  caseId: string,
+  file: File,
+  caption = "",
+): Promise<CaseArtifact> {
+  return request(`/${encodeURIComponent(caseId)}/artifacts`, {
+    method: "POST",
+    body: file,
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+      "X-Artifact-Filename": encodeURIComponent(file.name),
+      "X-Artifact-Caption": encodeURIComponent(caption),
+    },
   });
 }
 
@@ -445,6 +559,12 @@ export const api = {
   listClaims,
   getTimeline,
   getGraph,
+  appendContextAmendment,
+  addDynamicInvariantAnchor,
+  listArtifacts,
+  uploadArtifact,
+  generateReport,
+  getReport,
   createIdentityReview,
   createClaimDispute,
   generateReport,
