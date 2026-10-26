@@ -156,6 +156,8 @@ class ResearchCaseService:
             budget_ref=budget_ref,
             expires_at=expires_at,
             policy_revision=policy_revision,
+            context_amendments=[],
+            dynamic_invariant_anchors=[],
         )
         scope_digest = self._digest(
             json.dumps(scope_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -274,6 +276,10 @@ class ResearchCaseService:
             "denied_claim_families": list(meta.get("denied_claim_families", [])),
             "allowed_source_ids": list(meta["allowed_source_ids"]),
             "subject_anchors": [dict(a) for a in meta.get("subject_anchors", [])],
+            "context_amendments": [dict(a) for a in meta.get("context_amendments", [])],
+            "dynamic_invariant_anchors": [dict(a) for a in meta.get("dynamic_invariant_anchors", [])],
+            "static_artifact_refs": [dict(a) for a in meta.get("static_artifact_refs", [])],
+            "latest_report_ref": dict(meta.get("latest_report_ref", {})),
             "jurisdictions": list(meta.get("jurisdictions", [])),
             "valid_time": dict(meta.get("valid_time", {})),
             "budget_ref": meta.get("budget_ref"),
@@ -345,6 +351,8 @@ class ResearchCaseService:
             budget_ref=budget_ref,
             expires_at=expires_at,
             policy_revision=policy_revision,
+            context_amendments=list(previous.get("context_amendments", [])),
+            dynamic_invariant_anchors=list(previous.get("dynamic_invariant_anchors", [])),
         )
         scope_digest = self._digest(
             json.dumps(scope_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -488,6 +496,8 @@ class ResearchCaseService:
                     budget_ref=meta.get("budget_ref"),
                     expires_at=meta.get("expires_at"),
                     policy_revision=str(context.policy_snapshot_ref),
+                    context_amendments=list(meta.get("context_amendments", [])),
+                    dynamic_invariant_anchors=list(meta.get("dynamic_invariant_anchors", [])),
                 ),
                 "scope_digest": scope_digest,
                 "scope_revision": scope_revision,
@@ -739,7 +749,22 @@ class ResearchCaseService:
                         gap_reasons.append("no non-empty anchor for query compilation")
                         continue
 
-                    query = query_anchor
+                    query_fragments = [query_anchor]
+                    query_fragments.extend(
+                        str(item.get("body", "")).strip()
+                        for item in meta.get("context_amendments", [])
+                        if isinstance(item, Mapping)
+                        and item.get("kind") == "query_hint"
+                        and str(item.get("body", "")).strip()
+                    )
+                    query_fragments.extend(
+                        str(item.get("value", "")).strip()
+                        for item in meta.get("dynamic_invariant_anchors", [])
+                        if isinstance(item, Mapping)
+                        and item.get("kind") in {"orcid", "openalex_author_id", "doi_author_record"}
+                        and str(item.get("value", "")).strip()
+                    )
+                    query = " ".join(dict.fromkeys(query_fragments))[:500]
                     action = ResearchAction(
                         obligation_id=obligation.obligation_id,
                         proposed_method=(
@@ -1226,6 +1251,8 @@ class ResearchCaseService:
         budget_ref: str | None,
         expires_at: str | None,
         policy_revision: str,
+        context_amendments: list[dict[str, Any]] | None = None,
+        dynamic_invariant_anchors: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Canonical material bound to approval and every downstream task."""
         return {
@@ -1243,6 +1270,8 @@ class ResearchCaseService:
             "budget_ref": budget_ref,
             "expires_at": expires_at,
             "policy_revision": str(policy_revision),
+            "context_amendments": [dict(item) for item in (context_amendments or [])],
+            "dynamic_invariant_anchors": [dict(item) for item in (dynamic_invariant_anchors or [])],
         }
 
     def _current_scope_digest(
@@ -1265,6 +1294,8 @@ class ResearchCaseService:
             budget_ref=meta.get("budget_ref"),
             expires_at=meta.get("expires_at"),
             policy_revision=str(context.policy_snapshot_ref),
+            context_amendments=list(meta.get("context_amendments", [])),
+            dynamic_invariant_anchors=list(meta.get("dynamic_invariant_anchors", [])),
         )
         return self._digest(
             json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
