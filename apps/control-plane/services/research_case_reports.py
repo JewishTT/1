@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from typing import Any, Mapping
 from urllib.parse import urlsplit
 
-from sqlalchemy import select, text
+from sqlalchemy import or_, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from contracts.evidence_span import EvidenceSpanRef, SpanContractError, StoredDocument
@@ -135,6 +135,7 @@ class ResearchCaseReportService:
         self,
         *,
         tenant_id: str,
+        investigation_id: str,
         claim_rows: list[RelationClaim],
     ) -> tuple[dict[str, Mention], dict[str, Observation], dict[str, Entity]]:
         mention_ids: set[str] = set()
@@ -165,14 +166,26 @@ class ResearchCaseReportService:
                         )
                     )
                     mentions = {str(item.mention_id): item for item in result.scalars().all()}
+                # The report inventory is the full case observation ledger, not merely
+                # the subset referenced by a relation claim. Include direct claim refs too
+                # for legacy observations whose investigation_id was never backfilled.
+                observation_scope = [
+                    Observation.investigation_id == investigation_id
+                ]
                 if observation_ids:
-                    result = await session.execute(
-                        select(Observation).where(
-                            Observation.tenant_id == tenant_id,
-                            Observation.observation_id.in_(sorted(observation_ids)),
-                        )
+                    observation_scope.append(
+                        Observation.observation_id.in_(sorted(observation_ids))
                     )
-                    observations = {str(item.observation_id): item for item in result.scalars().all()}
+                result = await session.execute(
+                    select(Observation).where(
+                        Observation.tenant_id == tenant_id,
+                        or_(*observation_scope),
+                    )
+                )
+                observations = {
+                    str(item.observation_id): item
+                    for item in result.scalars().all()
+                }
                 if entity_ids:
                     result = await session.execute(
                         select(Entity).where(
@@ -273,7 +286,7 @@ class ResearchCaseReportService:
                 "captured_at": _stamp(observation.created_at),
                 "published_at": None,
             }
-        except (SpanContractError, UnicodeDecodeError, ValueError, CaseReportError) as exc:
+        except Exception as exc:  # noqa: BLE001 - source/object-store failure means ungrounded, not factual
             return {
                 "status": "ungrounded",
                 "mention_id": mention.mention_id,
@@ -300,7 +313,9 @@ class ResearchCaseReportService:
             tenant_id=tenant_id, investigation_id=context.investigation_id
         )
         mentions, observations, entities = await self._load_evidence_rows(
-            tenant_id=tenant_id, claim_rows=claim_rows
+            tenant_id=tenant_id,
+            investigation_id=context.investigation_id,
+            claim_rows=claim_rows,
         )
         processing_rows = await self._load_processing_results(
             tenant_id=tenant_id, investigation_id=context.investigation_id
