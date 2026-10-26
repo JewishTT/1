@@ -500,6 +500,10 @@ class PostgresContextStore(ContextStore):
         valid_time: dict[str, Any],
         jurisdictions: list[str],
         subject_anchors: list[dict[str, str]] | None = None,
+        context_amendments: list[dict[str, Any]] | None = None,
+        dynamic_invariant_anchors: list[dict[str, Any]] | None = None,
+        static_artifact_refs: list[dict[str, Any]] | None = None,
+        latest_report_ref: dict[str, Any] | None = None,
     ) -> None:
         """Durably upsert case metadata, refusing a cross-tenant key collision."""
         await self.ensure_schema()
@@ -526,7 +530,11 @@ class PostgresContextStore(ContextStore):
             "expires_at": expires_at,
             "valid_time": dict(valid_time),
             "jurisdictions": list(jurisdictions),
-            "subject_anchors": [dict(a) for a in (subject_anchors or [])],
+            "subject_anchors": [dict(a) for a in (subject_anchors if subject_anchors is not None else (previous or {}).get("subject_anchors", []))],
+            "context_amendments": [dict(a) for a in (context_amendments if context_amendments is not None else (previous or {}).get("context_amendments", []))],
+            "dynamic_invariant_anchors": [dict(a) for a in (dynamic_invariant_anchors if dynamic_invariant_anchors is not None else (previous or {}).get("dynamic_invariant_anchors", []))],
+            "static_artifact_refs": [dict(a) for a in (static_artifact_refs if static_artifact_refs is not None else (previous or {}).get("static_artifact_refs", []))],
+            "latest_report_ref": dict(latest_report_ref if latest_report_ref is not None else (previous or {}).get("latest_report_ref", {})),
         }
         sql = """
             INSERT INTO person_case_metadata
