@@ -16,7 +16,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import {
   ResearchCase,
-  CloseCaseRequest,
   Obligation,
   CoverageLedger,
   CaseActions,
@@ -28,7 +27,6 @@ import { ObligationsBoard } from "./ObligationsBoard";
 import { SubjectOverview } from "./SubjectOverview";
 import { ClaimsTable } from "./ClaimsTable";
 import { CaseAnalyticsPanel } from "./CaseAnalyticsPanel";
-import { CaseContextAndArtifacts } from "./CaseContextAndArtifacts";
 import { CaseContextAndArtifacts } from "./CaseContextAndArtifacts";
 
 type ViewId =
@@ -287,7 +285,7 @@ export function CasePage() {
                   </div>
                   {closable && (
                     <button
-                      onClick={() => closeMutation.mutate({ disposition: report.status, reportId: report.report_id })}
+                      onClick={() => closeMutation.mutate({ disposition: report.status as "COMPLETE" | "PARTIAL" | "BLOCKED", reportId: report.report_id })}
                       disabled={closeMutation.isPending || caseData.state === "CLOSED"}
                       className="rounded bg-red-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                     >
