@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 397 |
+| PRODUCTION | 400 |
 | TEST_ONLY | 143 |
-| ORPHAN | 118 |
-| TEST | 327 |
+| ORPHAN | 120 |
+| TEST | 331 |
 
 ## Entrypoints (production roots)
 
@@ -204,7 +204,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**118** modules are imported by neither production nor tests.
+**120** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -216,6 +216,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/adapters/scrapy/spider.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
 | `apps/acquisition/observation_gate/__init__.py` |
+| `apps/acquisition/policies/__init__.py` |
 | `apps/acquisition/sources/__init__.py` |
 | `apps/acquisition/worker-dataset/__init__.py` |
 | `apps/acquisition/worker-dataset/acquire.py` |
@@ -249,6 +250,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py` |
 | `apps/control-plane/db/migrations/versions/027_person_research_case_records.py` |
 | `apps/control-plane/db/migrations/versions/028_observation_processing_results.py` |
+| `apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py` |
 | `apps/control-plane/db/relation_claim_store.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |

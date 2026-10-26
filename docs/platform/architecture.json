@@ -123,6 +123,7 @@
           "apps/acquisition/adapters/warc/__init__.py",
           "apps/acquisition/adapters/warc/collect.py",
           "apps/acquisition/artifact_sink.py",
+          "apps/acquisition/case_execution_guard.py",
           "apps/acquisition/cc_extract.py",
           "apps/acquisition/cc_plan.py",
           "apps/acquisition/dispatcher/__init__.py",
@@ -134,6 +135,7 @@
           "apps/acquisition/evidence_writer.py",
           "apps/acquisition/observation_gate/__init__.py",
           "apps/acquisition/observation_gate/replay.py",
+          "apps/acquisition/policies/__init__.py",
           "apps/acquisition/registry.py",
           "apps/acquisition/runtime/__init__.py",
           "apps/acquisition/runtime/airbyte.py",
@@ -167,6 +169,7 @@
           "apps/acquisition/tests/unit/test_bbot_process_boundary.py",
           "apps/acquisition/tests/unit/test_bbot_runtime.py",
           "apps/acquisition/tests/unit/test_browser_fabric.py",
+          "apps/acquisition/tests/unit/test_case_execution_guard.py",
           "apps/acquisition/tests/unit/test_cc_extract.py",
           "apps/acquisition/tests/unit/test_cc_index.py",
           "apps/acquisition/tests/unit/test_cc_plan.py",
@@ -178,6 +181,7 @@
           "apps/acquisition/tests/unit/test_render_pipeline.py",
           "apps/acquisition/tests/unit/test_replay_journal.py",
           "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+          "apps/acquisition/tests/unit/test_source_executor_contracts.py",
           "apps/acquisition/tests/unit/test_source_query_set.py",
           "apps/acquisition/tests/unit/test_warc_adapter.py",
           "apps/acquisition/worker-dataset/__init__.py",
@@ -226,7 +230,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 137
+        "module_count": 141
       },
       {
         "id": "interpretation",
@@ -902,6 +906,7 @@
           "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
           "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
           "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
+          "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
           "apps/control-plane/db/session.py",
@@ -941,8 +946,10 @@
           "apps/control-plane/services/processing_result_store.py",
           "apps/control-plane/services/query_planner.py",
           "apps/control-plane/services/reobservation.py",
+          "apps/control-plane/services/research_case_artifacts.py",
           "apps/control-plane/services/research_case_policy.py",
           "apps/control-plane/services/research_case_projection.py",
+          "apps/control-plane/services/research_case_reports.py",
           "apps/control-plane/services/research_case_runtime.py",
           "apps/control-plane/services/research_case_service.py",
           "apps/control-plane/services/search_backends.py",
@@ -984,6 +991,7 @@
           "apps/control-plane/tests/test_auth_security.py",
           "apps/control-plane/tests/test_research_case_invariants.py",
           "apps/control-plane/tests/test_research_case_projection.py",
+          "apps/control-plane/tests/test_research_case_reports.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
           "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -1007,6 +1015,7 @@
           "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
           "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
           "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+          "apps/control-plane/tests/unit/test_migration_029_case_artifact_report_records.py",
           "apps/control-plane/tests/unit/test_migration_forward_only.py",
           "apps/control-plane/tests/unit/test_modifier_mismatch.py",
           "apps/control-plane/tests/unit/test_monitor.py",
@@ -1101,7 +1110,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 284
+        "module_count": 289
       },
       {
         "id": "webapp",
@@ -1189,6 +1198,7 @@
           "apps/webapp/src/evidence/types.ts",
           "apps/webapp/src/evidence/useEvidenceRecords.ts",
           "apps/webapp/src/features/research-case/CaseAnalyticsPanel.tsx",
+          "apps/webapp/src/features/research-case/CaseContextAndArtifacts.tsx",
           "apps/webapp/src/features/research-case/CasePage.tsx",
           "apps/webapp/src/features/research-case/CaseSetup.tsx",
           "apps/webapp/src/features/research-case/ClaimsTable.tsx",
@@ -1365,7 +1375,7 @@
           "apps/webapp/src/workspace/useWorkState.ts",
           "apps/webapp/vite.config.ts"
         ],
-        "module_count": 254
+        "module_count": 255
       }
     ],
     "event_names_sample": [
@@ -1415,6 +1425,7 @@
       "architecture.json",
       "archive.org",
       "argumentation.rank",
+      "artifact.bin",
       "artifact.capture_register",
       "artifact.observation_ingest",
       "artifact.publish",
@@ -1422,6 +1433,7 @@
       "assembly.py",
       "assertion.created",
       "atrium.example",
+      "attachment.bin",
       "attr.name",
       "attr.type",
       "audit.access",
@@ -1436,6 +1448,7 @@
       "bbot.event",
       "bbot.recon",
       "bench.json",
+      "big.bin",
       "big.wav",
       "blog.example.org",
       "bootstrap.servers",
@@ -1555,6 +1568,7 @@
       "domain.statement",
       "donors.md",
       "downstream.json",
+      "empty.txt",
       "enable.auto.commit",
       "enable.auto.offset.store",
       "enable.idempotence",
@@ -1564,11 +1578,7 @@
       "entity.extract",
       "entity.freeze",
       "entity.observed",
-      "entity.resolved",
-      "entity.series.projected",
-      "entity.state.projected",
-      "entity.stream",
-      "entity.stream.appended"
+      "entity.resolved"
     ]
   },
   "context_map": {
@@ -2468,7 +2478,9 @@
         "tasks_checked": 0,
         "tasks_total": 76,
         "modules": [
+          "apps/acquisition/case_execution_guard.py",
           "apps/acquisition/dispatcher/scheduler.py",
+          "apps/acquisition/tests/unit/test_case_execution_guard.py",
           "apps/admission/resolution/blocking.py",
           "apps/control-plane/api/routes/research_cases.py",
           "apps/control-plane/context_engine/person_case_profile.py",
@@ -2477,13 +2489,15 @@
           "apps/control-plane/services/model_gateway.py",
           "apps/control-plane/services/research_case_policy.py",
           "apps/control-plane/services/research_case_projection.py",
+          "apps/control-plane/services/research_case_reports.py",
           "apps/control-plane/services/research_case_runtime.py",
           "apps/control-plane/services/research_case_service.py",
           "apps/control-plane/tests/test_research_case_invariants.py",
           "apps/control-plane/tests/test_research_case_projection.py",
+          "apps/control-plane/tests/test_research_case_reports.py",
           "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
         ],
-        "module_count": 14,
+        "module_count": 18,
         "capabilities": []
       }
     ]

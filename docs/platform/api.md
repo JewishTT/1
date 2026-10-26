@@ -157,24 +157,30 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/{case_id}` | 161 |
-| PATCH | `/{case_id}/scope` | 174 |
-| POST | `/{case_id}/approve` | 207 |
-| POST | `/{case_id}/plan` | 230 |
-| GET | `/{case_id}/actions` | 249 |
-| POST | `/{case_id}/actions/approve` | 262 |
-| POST | `/{case_id}/run` | 286 |
-| POST | `/{case_id}/pause` | 312 |
-| GET | `/{case_id}/obligations` | 328 |
-| GET | `/{case_id}/coverage` | 395 |
-| GET | `/{case_id}/claims` | 410 |
-| GET | `/{case_id}/timeline` | 427 |
-| GET | `/{case_id}/graph` | 448 |
-| POST | `/{case_id}/identity-reviews` | 468 |
-| POST | `/{case_id}/claim-disputes` | 492 |
-| POST | `/{case_id}/report` | 516 |
-| POST | `/{case_id}/close` | 538 |
-| POST | `/{case_id}/retention-action` | 560 |
+| GET | `/{case_id}` | 188 |
+| PATCH | `/{case_id}/scope` | 201 |
+| POST | `/{case_id}/context/amendments` | 234 |
+| POST | `/{case_id}/invariants` | 258 |
+| POST | `/{case_id}/approve` | 283 |
+| POST | `/{case_id}/plan` | 306 |
+| GET | `/{case_id}/actions` | 325 |
+| POST | `/{case_id}/actions/approve` | 338 |
+| POST | `/{case_id}/run` | 362 |
+| POST | `/{case_id}/pause` | 388 |
+| POST | `/{case_id}/artifacts` | 404 |
+| GET | `/{case_id}/artifacts` | 453 |
+| GET | `/{case_id}/artifacts/{artifact_id}/download` | 470 |
+| GET | `/{case_id}/obligations` | 501 |
+| GET | `/{case_id}/coverage` | 568 |
+| GET | `/{case_id}/claims` | 583 |
+| GET | `/{case_id}/timeline` | 600 |
+| GET | `/{case_id}/graph` | 621 |
+| POST | `/{case_id}/identity-reviews` | 641 |
+| POST | `/{case_id}/claim-disputes` | 665 |
+| POST | `/{case_id}/report` | 689 |
+| GET | `/{case_id}/reports/{report_id}` | 712 |
+| POST | `/{case_id}/close` | 732 |
+| POST | `/{case_id}/retention-action` | 789 |
 
 ## `resolutions` — `apps/control-plane/api/routes/resolutions.py`
 

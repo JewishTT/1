@@ -1,6 +1,6 @@
 # Import graph
 
-985 Python modules, 2719 resolved local edges.
+994 Python modules, 2755 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,35 +10,35 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 858 |
+| `__future__` | stdlib | 866 |
 | `dataclasses` | stdlib | 388 |
-| `typing` | stdlib | 359 |
-| `pathlib` | stdlib | 304 |
-| `pytest` | third-party | 261 |
-| `sys` | stdlib | 249 |
-| `collections` | stdlib | 239 |
-| `json` | stdlib | 188 |
-| `datetime` | stdlib | 185 |
-| `sqlalchemy` | third-party | 135 |
-| `hashlib` | stdlib | 122 |
+| `typing` | stdlib | 362 |
+| `pathlib` | stdlib | 309 |
+| `pytest` | third-party | 264 |
+| `sys` | stdlib | 250 |
+| `collections` | stdlib | 240 |
+| `json` | stdlib | 191 |
+| `datetime` | stdlib | 188 |
+| `sqlalchemy` | third-party | 144 |
+| `hashlib` | stdlib | 126 |
 | `enum` | stdlib | 117 |
-| `re` | stdlib | 93 |
+| `re` | stdlib | 95 |
+| `os` | stdlib | 68 |
 | `asyncio` | stdlib | 67 |
-| `os` | stdlib | 67 |
 | `fastapi` | third-party | 66 |
 | `uuid` | stdlib | 48 |
+| `urllib` | stdlib | 43 |
 | `math` | stdlib | 41 |
-| `urllib` | stdlib | 39 |
 | `pydantic` | third-party | 34 |
-| `importlib` | stdlib | 30 |
-| `types` | stdlib | 30 |
+| `types` | stdlib | 32 |
+| `importlib` | stdlib | 31 |
 | `time` | stdlib | 29 |
 | `ast` | stdlib | 26 |
 | `io` | stdlib | 25 |
 | `logging` | stdlib | 23 |
 | `numpy` | third-party | 23 |
+| `alembic` | third-party | 22 |
 | `inspect` | stdlib | 21 |
-| `alembic` | third-party | 21 |
 | `httpx` | third-party | 20 |
 | `argparse` | stdlib | 18 |
 | `tempfile` | stdlib | 17 |
@@ -49,7 +49,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `shutil` | stdlib | 14 |
 | `temporalio` | third-party | 13 |
 | `itertools` | stdlib | 11 |
-| `base64` | stdlib | 9 |
+| `yaml` | third-party | 10 |
 
 ## Optional capability probes
 
@@ -85,6 +85,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `beliefs` | `apps/science/beliefs/__init__.py` |
 | `bench` | `bench/bench/__init__.py` |
 | `bulk_ingestion` | `apps/bulk-ingestion` |
+| `case_execution_guard` | `apps/acquisition/case_execution_guard.py` |
 | `causal` | `apps/science/causal/__init__.py` |
 | `cc_extract` | `apps/acquisition/cc_extract.py` |
 | `cc_plan` | `apps/acquisition/cc_plan.py` |
