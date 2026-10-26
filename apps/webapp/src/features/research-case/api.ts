@@ -567,7 +567,6 @@ export const api = {
   getReport,
   createIdentityReview,
   createClaimDispute,
-  generateReport,
   closeCase,
   retentionAction,
 };
