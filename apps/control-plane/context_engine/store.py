@@ -285,6 +285,10 @@ class ContextStore(ABC):
         valid_time: dict[str, Any],
         jurisdictions: list[str],
         subject_anchors: list[dict[str, str]] | None = None,
+        context_amendments: list[dict[str, Any]] | None = None,
+        dynamic_invariant_anchors: list[dict[str, Any]] | None = None,
+        static_artifact_refs: list[dict[str, Any]] | None = None,
+        latest_report_ref: dict[str, Any] | None = None,
     ) -> None:
         """Persist the vertical metadata through the store's metadata contract.
 
@@ -321,7 +325,11 @@ class ContextStore(ABC):
             "expires_at": expires_at,
             "valid_time": dict(valid_time),
             "jurisdictions": list(jurisdictions),
-            "subject_anchors": [dict(a) for a in (subject_anchors or [])],
+            "subject_anchors": [dict(a) for a in (subject_anchors if subject_anchors is not None else previous.get("subject_anchors", []))],
+            "context_amendments": [dict(a) for a in (context_amendments if context_amendments is not None else previous.get("context_amendments", []))],
+            "dynamic_invariant_anchors": [dict(a) for a in (dynamic_invariant_anchors if dynamic_invariant_anchors is not None else previous.get("dynamic_invariant_anchors", []))],
+            "static_artifact_refs": [dict(a) for a in (static_artifact_refs if static_artifact_refs is not None else previous.get("static_artifact_refs", []))],
+            "latest_report_ref": dict(latest_report_ref if latest_report_ref is not None else previous.get("latest_report_ref", {})),
         }
 
     async def get_person_case_metadata(self, case_id: str) -> dict[str, Any] | None:
