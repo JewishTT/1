@@ -20,6 +20,7 @@ import {
   CoverageLedger,
   CaseActions,
   CompletionReport,
+  CloseCaseRequest,
 } from "./api";
 import { useResearchCaseView } from "./store";
 import { ErrorView, LoadingView } from "../../ui/Feedback";
@@ -152,7 +153,7 @@ export function CasePage() {
   });
 
   const closeMutation = useMutation({
-    mutationFn: (input: { disposition: string; reportId: string }) =>
+    mutationFn: (input: { disposition: CloseCaseRequest["disposition"]; reportId: string }) =>
       api.closeCase(caseId!, {
         disposition: input.disposition,
         report: { report_id: input.reportId },
