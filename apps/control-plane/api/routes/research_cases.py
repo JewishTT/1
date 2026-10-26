@@ -8,8 +8,9 @@ directly to raw DB or model provider.
 from __future__ import annotations
 
 from typing import Annotated, Literal
+from urllib.parse import quote, unquote
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, Field
 
 from api.auth import Role, TenantContext, resolve_tenant
@@ -26,12 +27,22 @@ router = APIRouter(prefix="/research-cases", tags=["research-cases"])
 
 _service: ResearchCaseService | None = None
 _policy: PersonCasePolicy | None = None
+_artifact_service: Any = None
+_report_service: Any = None
 
 
-def configure(service: ResearchCaseService, policy: PersonCasePolicy | None = None) -> None:
-    global _service, _policy
+def configure(
+    service: ResearchCaseService,
+    policy: PersonCasePolicy | None = None,
+    *,
+    artifact_service: Any = None,
+    report_service: Any = None,
+) -> None:
+    global _service, _policy, _artifact_service, _report_service
     _service = service
     _policy = policy
+    _artifact_service = artifact_service
+    _report_service = report_service
 
 
 def _get_service() -> ResearchCaseService:
@@ -47,6 +58,22 @@ class SubjectAnchor(BaseModel):
     kind: Literal["public_name", "orcid", "openalex_author_id", "doi_author_record", "official_profile_url"]
     value: str
     evidence_ref: str | None = None
+
+
+class ContextAmendmentRequest(BaseModel):
+    body: str = Field(..., min_length=1, max_length=4000)
+    rationale: str = Field(default="", max_length=2000)
+    kind: Literal["context", "query_hint", "constraint", "question"] = "context"
+
+
+class DynamicInvariantAnchorRequest(BaseModel):
+    kind: Literal[
+        "public_name", "orcid", "openalex_author_id", "doi_author_record",
+        "official_profile_url", "public_organization", "publication", "public_role",
+    ]
+    value: str = Field(..., min_length=1, max_length=1000)
+    evidence_ref: str = Field(default="", max_length=1000)
+    note: str = Field(default="", max_length=2000)
 
 
 class ValidTime(BaseModel):
@@ -206,6 +233,55 @@ async def propose_scope_revision(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.post("/{case_id}/context/amendments", status_code=201)
+async def append_context_amendment(
+    case_id: str,
+    body: ContextAmendmentRequest,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """Append an immutable context amendment and invalidate stale approval."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
+    svc = _get_service()
+    try:
+        return await svc.append_context_amendment(
+            case_id=case_id,
+            tenant_id=ctx.tenant_id,
+            actor_id=ctx.user_id,
+            body=body.body,
+            rationale=body.rationale,
+            kind=body.kind,
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
+    except CaseServiceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{case_id}/invariants", status_code=201)
+async def add_dynamic_invariant_anchor(
+    case_id: str,
+    body: DynamicInvariantAnchorRequest,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """Append an unresolved dynamic anchor; canonical admission stays a separate decision."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
+    svc = _get_service()
+    try:
+        return await svc.add_dynamic_invariant_anchor(
+            case_id=case_id,
+            tenant_id=ctx.tenant_id,
+            actor_id=ctx.user_id,
+            kind=body.kind,
+            value=body.value,
+            evidence_ref=body.evidence_ref,
+            note=body.note,
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
+    except CaseServiceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.post("/{case_id}/approve")
 async def approve_research_case(
     case_id: str,
@@ -325,6 +401,103 @@ async def pause_research_case(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except CaseServiceError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{case_id}/artifacts", status_code=201)
+async def upload_case_artifact(
+    case_id: str,
+    request: Request,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """Upload exact original bytes through the existing raw-first ArtifactSink."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
+    if _artifact_service is None:
+        raise HTTPException(status_code=503, detail="case artifact service is not composed")
+
+    from services.research_case_artifacts import MAX_ARTIFACT_BYTES, CaseArtifactError
+
+    body = bytearray()
+    async for chunk in request.stream():
+        if not chunk:
+            continue
+        if len(body) + len(chunk) > MAX_ARTIFACT_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"artifact exceeds the {MAX_ARTIFACT_BYTES}-byte upload limit",
+            )
+        body.extend(chunk)
+
+    filename = unquote(request.headers.get("x-artifact-filename", "attachment.bin"))
+    caption = unquote(request.headers.get("x-artifact-caption", ""))
+    content_type = request.headers.get("content-type", "application/octet-stream")
+    try:
+        return await _artifact_service.upload(
+            case_id=case_id,
+            tenant_id=ctx.tenant_id,
+            actor_id=ctx.user_id,
+            filename=filename,
+            content_type=content_type,
+            caption=caption,
+            body=bytes(body),
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case or artifact not found") from exc
+    except CaseArtifactError as exc:
+        detail = str(exc)
+        status_code = (
+            413 if "upload limit" in detail or "exceeds the" in detail
+            else 400 if "empty" in detail or "actor is required" in detail
+            else 503
+        )
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+
+@router.get("/{case_id}/artifacts")
+async def list_case_artifacts(
+    case_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """List case attachments by tenant-scoped canonical evidence metadata."""
+    ctx.require_role(Role.VIEWER, Role.ANALYST, Role.ADMIN)
+    if _artifact_service is None:
+        raise HTTPException(status_code=503, detail="case artifact service is not composed")
+    try:
+        return await _artifact_service.list_artifacts(
+            case_id=case_id, tenant_id=ctx.tenant_id
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
+
+
+@router.get("/{case_id}/artifacts/{artifact_id}/download")
+async def download_case_artifact(
+    case_id: str,
+    artifact_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> Response:
+    """Return the verified raw bytes; never serve a cross-tenant object reference."""
+    ctx.require_role(Role.VIEWER, Role.ANALYST, Role.ADMIN)
+    if _artifact_service is None:
+        raise HTTPException(status_code=503, detail="case artifact service is not composed")
+    try:
+        artifact, body = await _artifact_service.download(
+            case_id=case_id, artifact_id=artifact_id, tenant_id=ctx.tenant_id
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="artifact not found") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"artifact verification failed: {exc}") from exc
+    filename = str(artifact.get("filename") or "artifact.bin")
+    return Response(
+        content=body,
+        media_type=str(artifact.get("content_type") or "application/octet-stream"),
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}",
+            "X-Content-SHA256": str(artifact.get("content_digest") or ""),
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.get("/{case_id}/obligations")
@@ -515,26 +688,47 @@ async def create_claim_dispute(
     return {"dispute_id": dispute_id, "event": "claim_dispute.recorded"}
 
 
-@router.post("/{case_id}/report")
+@router.post("/{case_id}/report", status_code=201)
 async def generate_report(
     case_id: str,
     body: dict,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict:
-    """Generate report from admitted claims/coverage; model synthesis optional."""
+    """Build and store a reproducible report from canonical observations, spans and claims."""
     ctx.require_role(Role.ANALYST, Role.ADMIN)
-    svc = _get_service()
-    context = await svc._store.get_context(case_id)  # type: ignore[attr-defined]
-    if context is None or context.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="case not found")
-    if not callable(getattr(svc._store, "generate_report", None)):
-        raise HTTPException(status_code=503, detail="generate_report is not backed by a durable canonical store implementation")
-    report_id = await svc._store.generate_report(  # type: ignore[attr-defined]
-        case_id=case_id,
-        tenant_id=ctx.tenant_id,
-        approved_finding_ids=body.get("approved_finding_ids", []),
-    )
-    return {"report_id": report_id, "case_id": case_id}
+    if _report_service is None:
+        raise HTTPException(status_code=503, detail="case report service is not composed")
+    try:
+        return await _report_service.generate(
+            case_id=case_id, tenant_id=ctx.tenant_id, actor_id=ctx.user_id
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="case not found") from exc
+    except Exception as exc:
+        from services.research_case_reports import CaseReportError
+        if isinstance(exc, CaseReportError):
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise
+
+
+@router.get("/{case_id}/reports/{report_id}")
+async def get_case_report(
+    case_id: str,
+    report_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """Retrieve one immutable tenant-scoped completion report."""
+    ctx.require_role(Role.VIEWER, Role.ANALYST, Role.ADMIN)
+    if _report_service is None:
+        raise HTTPException(status_code=503, detail="case report service is not composed")
+    try:
+        return await _report_service.get_report(
+            case_id=case_id, report_id=report_id, tenant_id=ctx.tenant_id
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail="report not found") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"report retrieval failed: {exc}") from exc
 
 
 @router.post("/{case_id}/close")
