@@ -29,6 +29,7 @@ import { SubjectOverview } from "./SubjectOverview";
 import { ClaimsTable } from "./ClaimsTable";
 import { CaseAnalyticsPanel } from "./CaseAnalyticsPanel";
 import { CaseContextAndArtifacts } from "./CaseContextAndArtifacts";
+import { CaseContextAndArtifacts } from "./CaseContextAndArtifacts";
 
 type ViewId =
   | "overview"
