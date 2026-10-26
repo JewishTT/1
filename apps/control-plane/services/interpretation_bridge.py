@@ -242,8 +242,11 @@ class InterpretationBridge:
         from db.schema import Candidate as CandidateRow
         from db.schema import Entity as EntityRow
         from db.schema import EntityVersion as EntityVersionRow
+        from db.schema import Mention as MentionRow
         from db.schema import Observation as ObservationRow
         from db.schema import RelationClaim as RelationClaimRow
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
 
         session = self._store.session_factory()
         try:
@@ -287,6 +290,93 @@ class InterpretationBridge:
                         },
                     )
                 )
+
+            # Persist each mention and its typed span in the same transaction as the
+            # Observation/Entity/RelationClaim. A mint digest alone is not source lineage.
+            # If offsets do not select the exact surface from the immutable raw body, retain
+            # the mention but explicitly mark it ungrounded rather than guessing.
+            if document is not None:
+                try:
+                    raw_text = body.decode("utf-8")
+                except UnicodeDecodeError:
+                    raw_text = ""
+                blob_digest = "sha256:" + hashlib.sha256(body).hexdigest()
+                source_uri = str(uri or locator or "unresolved-source-locator")
+                for mention in getattr(document, "mentions", ()):
+                    span_payload: dict[str, Any] = {
+                        "status": "ungrounded",
+                        "reason": str(getattr(mention, "span_reason", "") or "span not verified against immutable raw bytes"),
+                        "selector_semantics_version": "",
+                    }
+                    span = getattr(mention, "span", None)
+                    semantics = str(getattr(mention, "span_semantics", "") or "")
+                    if (
+                        span is not None
+                        and semantics == "document_char"
+                        and raw_text
+                        and len(span) == 2
+                    ):
+                        start_offset, end_offset = int(span[0]), int(span[1])
+                        surface = str(getattr(mention, "surface", "") or "")
+                        if (
+                            start_offset >= 0
+                            and end_offset > start_offset
+                            and end_offset <= len(raw_text)
+                            and raw_text[start_offset:end_offset] == surface
+                        ):
+                            evidence_span = EvidenceSpanRef(
+                                observation_ref=result.observation_id,
+                                blob_digest=blob_digest,
+                                selector=CharSpan(
+                                    start=start_offset,
+                                    end=end_offset,
+                                    encoding="utf-8",
+                                    units="document_char",
+                                ),
+                                source_locator=SourceLocator(
+                                    uri=source_uri,
+                                    fragment=f"char_span={start_offset}:{end_offset}",
+                                ),
+                                selector_semantics_version="char_span/1",
+                            )
+                            span_payload = {
+                                "status": "grounded",
+                                "start": start_offset,
+                                "end": end_offset,
+                                "surface": surface,
+                                "selector_semantics_version": evidence_span.selector_semantics_version,
+                                "evidence_span": evidence_span.as_dict(),
+                            }
+                        else:
+                            span_payload["reason"] = (
+                                "declared document-character offsets do not select the exact mention surface in raw UTF-8 bytes"
+                            )
+                    mention_id = str(getattr(mention, "mention_id", "") or "")
+                    surface = str(getattr(mention, "surface", "") or "")
+                    if not mention_id or not surface:
+                        continue
+                    canonical_surface = str(
+                        getattr(document, "canonical_by_mention", {}).get(mention_id, "") or ""
+                    )
+                    mention_values = {
+                        "mention_id": mention_id,
+                        "observation_id": result.observation_id,
+                        "tenant_id": self._store.tenant_id,
+                        "surface_form": surface,
+                        "normalized_form": canonical_surface or surface,
+                        "transliteration_variants": [],
+                        "script": None,
+                        "language": None,
+                        "normalization_version": NORMALIZATION_VERSION,
+                        "type_hypothesis": str(getattr(mention, "kind", "") or "") or None,
+                        "extractor_version": "interpretation-bridge-v1",
+                        "offsets": span_payload,
+                    }
+                    await session.execute(
+                        pg_insert(MentionRow)
+                        .values(**mention_values)
+                        .on_conflict_do_nothing(index_elements=[MentionRow.mention_id])
+                    )
 
             mention_to_entity: dict[str, str] = {}
             for entity in resolved:
