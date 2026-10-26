@@ -458,6 +458,18 @@ export interface CompletionReport {
   report_id: string;
   report_digest: string;
   status: "COMPLETE" | "PARTIAL" | "BLOCKED" | string;
+  case: {
+    case_id: string;
+    tenant_id: string;
+    investigation_id: string;
+    purpose_code: string;
+    purpose_text: string;
+    basis_ref: string;
+    launch_profile: LaunchProfile;
+    scope_digest: string;
+    scope_revision: number;
+    approved: boolean;
+  };
   generated_at: string;
   summary: Record<string, number>;
   findings: Array<Record<string, unknown>>;
@@ -524,8 +536,8 @@ export async function uploadArtifact(
 }
 
 export interface CloseCaseRequest {
-  disposition: string;
-  report?: Record<string, unknown>;
+  disposition: "COMPLETE" | "PARTIAL" | "BLOCKED" | "CANCELLED" | "CLOSED_WITH_NO_FINDING";
+  report: { report_id: string };
 }
 
 export async function closeCase(caseId: string, body: CloseCaseRequest): Promise<{ case_id: string; state: string; disposition: string; report: Record<string, unknown>; closed_at: string }> {
