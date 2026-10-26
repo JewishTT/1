@@ -1,114 +1,60 @@
 # Tenzir in Layer 1: structural dataflow, not semantic truth
 
-Status: **integrated behind an opt-in feature flag; live-node validation still required**.
+Status: **integrated behind an opt-in feature flag; live TQL contract tested against the pinned Node in CI; production-scale throughput is not yet benchmarked.**
 
 ## Decision
 
-Tenzir Node is the structural batch/stream execution engine for a derived stage after
-the platform's lossless payload parser. It does not replace acquisition, the
-Observation Gate, raw storage, exact-span parsing, mention binding, relation extraction,
-entity resolution, case policy or graph projection.
+Tenzir Node is a structural dataflow engine for a derived stage after the platform's lossless payload parser. It does not replace acquisition, the Observation Gate, raw storage, exact-span parsing, mention binding, relation extraction, entity resolution, case policy or graph projection.
 
-Upstream reference: [Tenzir Query Language](https://tenzir.com/docs/explanations/language/),
-[launch pipeline API](https://tenzir.com/docs/reference/api/node/pipelines/launch-pipeline/),
-[read pipeline output API](https://tenzir.com/docs/reference/api/node/pipeline-output/read-pipeline-output/),
-and [API security modes](https://tenzir.com/docs/guides/node-setup/start-the-api/).
+Upstream references: [Tenzir Query Language](https://tenzir.com/docs/explanations/language/), [launch pipeline API](https://tenzir.com/docs/reference/api/node/pipelines/launch-pipeline/), [read pipeline output API](https://tenzir.com/docs/reference/api/node/pipeline-output/read-pipeline-output/), and [API security modes](https://tenzir.com/docs/guides/node-setup/start-the-api/).
 
 ## Existing native path
 
-1. **ArtifactSink** writes immutable source bytes to **ObjectStore**; **ObservationGate**
-   mints the capture/observation references and emits **observation.created**.
-2. **apps/interpretation/observation_consumer** loads the bytes named by **raw_ref** and
-   uses **parsers.payload** to produce **ObservedField** records, including source byte
-   spans and an address or a named refusal.
-3. **extractors.payload** uses those records for explicit hypotheses and structural
-   relations. It remains the authority for mention/occurrence semantics.
-4. The optional Tenzir stage receives the serialized **ObservedField** records, computes
-   structural features, and stores an immutable derived artifact. It creates no
-   observations, mentions, entities, relation claims or graph edges.
+1. **ArtifactSink** stores immutable source bytes using the existing ObjectStore; **ObservationGate** mints capture/observation references and emits the canonical event.
+2. `apps/interpretation/observation_consumer` resolves `raw_ref` and invokes the native `parsers.payload` layer to create `ObservedField` records. Each preserves the exact source byte span and a deferred occurrence address or a named refusal.
+3. **`extractors.payload` remains authoritative** for cited type hypotheses and structure-derived signals; the existing semantic interpretation bridge remains responsible for semantic mention/entity/relation work.
+4. The optional Tenzir stage receives serialized `ObservedField` records, derives structural annotations, then persists a separate immutable, content-addressed artifact. It creates no canonical observations, mentions, entities, relation claims or graph edges.
 
-## What Tenzir computes
+Tenzir's output is currently a **sidecar projection**: its values are recorded for downstream profiling/streaming consumers, but are not promoted to semantic type hypotheses or passed as authority into entity resolution. That is deliberate.
 
-The versioned TQL transform is **tenzir-observed-fields-v1**. It adds these derived
-columns while preserving the original record in full:
+## What the pinned TQL transform computes
 
-- lowercase field path and value-type view;
-- value character count and UTF-8 byte count;
-- whether the observed string is a numeric lexeme (a lexical feature, not a semantic
-  type assertion);
-- whether the surface is non-empty after whitespace trimming;
-- width of the original byte span, when a span exists;
-- a coarse structural role (container, null, surface) based on the parser's observed
-  value type.
+The current transform is `tenzir-observed-fields-v2`. It adds:
 
-These are structural features for later joins, schema comparison and streaming filters.
-They are not confidence, identity or truth. In particular, this transform does not
-run OCSF casts or trims, because a target-schema projection may discard fields that
-are unknown to that schema, while Cognitive requires open-world source fields to remain
-reachable.
+- lowercase field-path and value-type views;
+- character count and UTF-8 byte count;
+- numeric-lexeme and non-empty-surface flags;
+- byte-span width, checked against the native parser's original span;
+- coarse structural role (`container`, `null`, `surface`);
+- a lexical/structural `value_shape` hint: `container`, `null`, `empty`, `numeric`, `boolean`, `email_like`, `url_like`, `uuid_like`, `hex_digest_like`, or `text`.
 
-## Preservation contract
+These are **not semantic assertions**. For example, `email_like` does not prove an email address exists, and a numeric-looking lexeme does not say whether its source-defined meaning is a count, port, coordinate or something else. No confidence, identity, truth or authorization is derived.
 
-The adapter rejects results that:
-- drop or duplicate an input ordinal;
-- alter or omit any protected source field (field, value, value_type, byte_span, depth,
-  label, address, address_refusal);
-- omit or mistype the derived structural columns;
-- calculate a span width that disagrees with the original byte offsets;
-- exceed configured request, response, record-count or time limits.
+The adapter uses the versioned Tenzir Node REST API, bounded TQL batches and typed literal serialization; callers cannot submit arbitrary TQL through the case API. It refuses outputs that change/drop protected fields, omit/duplicate an ordinal, produce an inconsistent byte-span width, or violate output-size/type contracts. The returned artifact records the observation/capture/raw references, parser reference, Tenzir version and pipeline digest.
 
-The original parser result is always retained as the primary extraction output. If
-Tenzir is unavailable or fails its output contract, the processing result records
-normalization.status = failed and the error code, but the native parser path remains
-available. A successful Tenzir pass produces a separate S3/MinIO content-addressed
-object under derived/<tenant>/<yyyymm>/<sha256>, with its original raw_ref,
-observation/capture ids, parser reference, TQL pipeline digest and Tenzir version.
-The original raw artifact is never overwritten.
+## Preservation and failure semantics
 
-## Runtime boundary and configuration
+- Native parse output and the original raw evidence remain authoritative and independently addressable.
+- Tenzir output is stored separately through the existing content-addressed derived-object path.
+- Tenzir errors are represented in the processing result; they do not erase or replace a successful native parse.
+- The adapter has finite request/response, output record, per-batch, timeout and pipeline-lifetime bounds.
 
-Tenzir remains off unless TENZIR_ENABLED=true. The local profile is started with:
+The dedicated `tenzir-normalization-contract` workflow runs adapter/consumer contracts **and** launches the pinned `ghcr.io/tenzir/tenzir:v6.19.1` Node to compile and execute the actual TQL transform. This is live-node functional acceptance, not proof of production-scale throughput.
 
-~~~bash
+## Runtime configuration and security
+
+Tenzir is disabled by default. Example local setup:
+
+```bash
 docker compose -f apps/deploy/docker-compose.yml --profile tenzir up -d tenzir-node
-~~~
+```
 
-For a local host-run interpretation worker:
+Set `TENZIR_ENABLED=true` for the interpretation consumer and `TENZIR_NODE_URL=http://localhost:5160`. The URL must be the Node origin without an API path; the adapter supplies `/api/v0`.
 
-~~~dotenv
-TENZIR_ENABLED=true
-TENZIR_NODE_URL=http://localhost:5160
-TENZIR_NODE_VERSION=6.19.1
-TENZIR_MAX_BATCH_RECORDS=256
-TENZIR_MAX_REQUEST_BYTES=2000000
-TENZIR_MAX_RESPONSE_BYTES=4000000
-TENZIR_MAX_OUTPUT_RECORDS=4096
-TENZIR_TIMEOUT_SECONDS=45
-~~~
+The Compose API uses Tenzir developer mode bound to host loopback. **Local/CI only**: developer mode bypasses TLS and token authentication. Never expose it beyond loopback. A deployed Node must use a trusted HTTPS endpoint and secret-managed `TENZIR_NODE_TOKEN`; non-loopback plain HTTP is rejected unless the explicit development-only `TENZIR_ALLOW_INSECURE_HTTP=true` override is set.
 
-The compose API runs in Tenzir developer mode, which bypasses API authentication and
-TLS; therefore it is bound to host loopback only. Never expose that listener beyond the
-local machine. Production must configure Tenzir server/upstream/mTLS mode, HTTPS and a
-node token (TENZIR_NODE_TOKEN), and set TENZIR_NODE_URL to the trusted TLS endpoint.
-TENZIR_ALLOW_INSECURE_HTTP=true is an explicit development-only escape hatch for a
-private non-loopback HTTP endpoint; it is not appropriate for production.
+## Production-scale gate
 
-Resource limits are local admission bounds for each invocation, not a global tenant
-budget. Case collection budgets still belong to the existing control-plane reservation
-service; Tenzir cannot increase those limits or initiate additional source acquisition.
+This is a real execution integration, but the current implementation starts a hidden interactive pipeline for each bounded batch. Tenzir's long-lived streaming capability is not yet being fully exploited, and pipeline-start overhead, throughput and tail latency have not been measured under realistic event volumes.
 
-## Performance posture and remaining gate
-
-The first adapter submits bounded batches through Tenzir's interactive pipeline API
-(POST /pipeline/launch then POST /serve) and deletes hidden pipelines on failure;
-hidden pipelines also have a finite TTL. This is a concrete execution path, not a
-Python imitation of TQL, but creating one pipeline per batch has overhead. Measure
-throughput and tail latency on realistic record distributions before enabling it for
-high-volume workloads. If pipeline startup dominates, the next step is a long-lived
-Tenzir input endpoint / persistent pipeline and backpressure-aware streaming, not
-loosening batch limits or buffering an unbounded case in memory.
-
-CI includes contract tests for configuration, safe literal construction, chunking,
-preservation, output completeness and native-consumer fallback. A real-node acceptance
-run against the pinned Tenzir image is still required before assigning LIVE_PROVEN
-status; mocks prove adapter contracts, not that a deployed node accepts the TQL program.
+The next scale step should be a long-lived Tenzir pipeline consuming a versioned durable stream contract, with bounded buffering/backpressure, durable side-output and explicit consumer acknowledgements. Before enabling it broadly, validate restart/replay/idempotency, poison-input isolation, per-tenant resource accounting, raw/derived lineage and end-to-end persisted-result correctness. Do not route canonical extraction or entity resolution through Tenzir until those gates pass.
