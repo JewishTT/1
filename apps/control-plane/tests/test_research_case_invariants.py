@@ -238,3 +238,47 @@ def test_api_create_read_obligations_and_projection_fail_closed(
         coverage = client.get(f"/api/v1/research-cases/{case_id}/coverage")
         assert coverage.status_code == 503, coverage.text
         assert "not composed" in coverage.json()["detail"]
+
+
+
+@pytest.mark.asyncio
+async def test_context_amendment_and_dynamic_anchor_append_scope_revision(service) -> None:
+    svc, store = service
+    created = await svc.create_case(**_create_args())
+    case_id = created["case_id"]
+
+    amendment = await svc.append_context_amendment(
+        case_id=case_id,
+        tenant_id="tenant-test-034",
+        actor_id="analyst-test",
+        body="Prefer DOI-backed author records for the declared publication question.",
+        rationale="Narrow the next plan to explicit source identifiers.",
+        kind="query_hint",
+    )
+    assert amendment["scope_revision"] == 2
+    assert amendment["re_approval_required"] is True
+    assert amendment["extension"]["value"]["kind"] == "query_hint"
+
+    invariant = await svc.add_dynamic_invariant_anchor(
+        case_id=case_id,
+        tenant_id="tenant-test-034",
+        actor_id="analyst-test",
+        kind="orcid",
+        value="0000-0002-1825-0097",
+        evidence_ref="operator:reviewed-anchor",
+        note="Public professional author identifier; identity admission is still required.",
+    )
+    assert invariant["scope_revision"] == 3
+    assert invariant["re_approval_required"] is True
+    assert invariant["extension"]["value"]["state"] == "UNRESOLVED"
+    assert invariant["extension"]["value"]["admitted_entity_id"] is None
+
+    view = await svc.get_case(case_id=case_id, tenant_id="tenant-test-034")
+    assert view["approved"] is False
+    assert view["scope_revision"] == 3
+    assert [item["ordinal"] for item in view["context_amendments"]] == [1]
+    assert [item["ordinal"] for item in view["dynamic_invariant_anchors"]] == [1]
+    assert view["scope_digest"] != created["scope_digest"]
+    revisions = await store.revisions(case_id)
+    assert [revision.revision for revision in revisions] == [1, 2, 3]
+    assert all(revision.is_auditable for revision in revisions)
