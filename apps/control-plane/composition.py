@@ -129,6 +129,8 @@ class Platform:
     model_gateway: Any = None
     person_case_policy: Any = None
     research_case_service: Any = None
+    research_case_artifact_service: Any = None
+    research_case_report_service: Any = None
     #: Reader class for the return path. Held as a class rather than an instance because the
     #: instance is per-call (one session per read), and ``slots=True`` rejects attributes
     #: that were not declared as fields.
@@ -337,6 +339,8 @@ class Platform:
             from services.research_case_service import ResearchCaseService
             from services.research_case_runtime import CaseDispatchExecutor, PostgresCaseBudgetService
             from services.research_case_projection import PostgresResearchCaseProjectionProvider
+            from services.research_case_artifacts import ResearchCaseArtifactService
+            from services.research_case_reports import ResearchCaseReportService
 
             budget_service = (
                 PostgresCaseBudgetService(self.session_factory)
@@ -367,6 +371,17 @@ class Platform:
                 dispatch_executor=dispatch_executor,
                 projection_provider=projection_provider,
             )
+            if self.session_factory is not None and self.store is not None and projection_provider is not None:
+                self.research_case_artifact_service = ResearchCaseArtifactService(
+                    context_store=self.store,
+                    session_factory=self.session_factory,
+                )
+                self.research_case_report_service = ResearchCaseReportService(
+                    context_store=self.store,
+                    session_factory=self.session_factory,
+                    projection_provider=projection_provider,
+                )
+
             if budget_service is not None and dispatch_executor is not None and projection_provider is not None and self.health.person_case_policy == "ready":
                 # This means a durable reservation and broker-acknowledged request can be
                 # attempted. It does not claim that a worker consumed the message or that
