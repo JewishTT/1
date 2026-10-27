@@ -4,11 +4,10 @@ import type { ReactNode } from "react";
  * DataTable shell (§60).
  *
  * Deliberately a shell, not a data grid: it owns the *semantics* an analyst
- * needs from a table in this workbench — column headers with sort state,
- * row selection wired to the global selection model, a mono column for
- * identifiers, and keyboard row navigation — and takes cell content as
- * children. Sorting, virtualisation and column resizing belong to the views
- * that know their data (stages 3–8); adding them here would mean guessing.
+ * needs from a table in this workbench — a real caption, semantic column
+ * headers, row selection, monospace identifiers and keyboard row navigation.
+ * Sorting, virtualisation and column resizing belong to the views that know
+ * their data (stages 3–8); this shell does not pretend to implement them.
  *
  * Callers: the activity layer's event table, and the object/evidence tables in
  * stages 4 and 5.
@@ -21,8 +20,6 @@ export interface DataTableColumn<T> {
   /** Right-align numeric columns; mono for anything copyable. */
   align?: "start" | "end";
   mono?: boolean;
-  /** Value used for sorting. Omit for a column that never sorts. */
-  sortValue?: (row: T) => string | number;
   width?: string;
   render: (row: T) => ReactNode;
 }
