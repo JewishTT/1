@@ -389,6 +389,13 @@ describe("UI normalization — GhostLine keeps semantics without decorative glow
     expect(normalization).toContain(".ui-root .ui-gl-subhead .ui-pane-title");
     expect(normalization).toContain("color: var(--ui-text-secondary)");
   });
+
+  it("removes HUD corner brackets and shared holographic readout text glow", () => {
+    expect(normalization).toContain(".ui-root .ui-holo-bracket::before");
+    expect(normalization).toContain(".ui-root .ui-holo-bracket::after");
+    expect(normalization).toContain(".ui-root .ui-holo-readout-value");
+    expect(normalization).toContain("content: none");
+  });
 });
 
 
