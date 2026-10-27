@@ -427,3 +427,20 @@ describe("UI normalization — token ownership and cascade order", () => {
     expect(bridge).not.toMatch(/#[0-9a-f]{3,8}\b/i);
   });
 });
+
+
+describe("UI normalization — pane-contained payloads and media", () => {
+  const normalization = readShipped("styles", "normalization.css");
+
+  it("contains preformatted payloads and long inline identifiers", () => {
+    expect(normalization).toContain(".ui-root pre");
+    expect(normalization).toContain("overflow: auto");
+    expect(normalization).toContain("overflow-wrap: anywhere");
+    expect(normalization).toContain("overscroll-behavior: contain");
+  });
+
+  it("prevents oversized media from widening the workbench", () => {
+    expect(normalization).toContain(".ui-root :where(img, video, canvas)");
+    expect(normalization).toContain("max-width: 100%");
+  });
+});
