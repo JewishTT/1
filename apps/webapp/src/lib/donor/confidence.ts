@@ -39,11 +39,11 @@ export const CONFIDENCE_ROLE: Record<Confidence, ConfidenceRole> = {
   asserted: "muted",
 };
 
-/** The `--c-*` token each role resolves to. */
+/** The `--ui-*` token each role resolves to. */
 export const CONFIDENCE_TOKEN: Record<ConfidenceRole, string> = {
-  success: "--c-success",
-  warning: "--c-warning",
-  muted: "--c-muted",
+  success: "--ui-accent",
+  warning: "--ui-gold",
+  muted: "--ui-text-secondary",
 };
 
 export function confidenceFromScore(score: number): Confidence {
@@ -56,7 +56,7 @@ export function confidenceLabel(score: number): string {
   return CONFIDENCE_LABEL[confidenceFromScore(score)];
 }
 
-/** The token reference for a tier's colour, e.g. `var(--c-success)`. */
+/** The token reference for a tier's colour, e.g. `var(--ui-accent)`. */
 export function confidenceColorVar(confidence: Confidence): string {
   return `var(${CONFIDENCE_TOKEN[CONFIDENCE_ROLE[confidence]]})`;
 }
