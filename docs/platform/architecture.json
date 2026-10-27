@@ -950,6 +950,7 @@
           "apps/control-plane/services/pow_run.py",
           "apps/control-plane/services/processing_result_store.py",
           "apps/control-plane/services/query_planner.py",
+          "apps/control-plane/services/relation_projection_rebuild.py",
           "apps/control-plane/services/relation_projection_relay.py",
           "apps/control-plane/services/reobservation.py",
           "apps/control-plane/services/research_case_artifacts.py",
@@ -1121,7 +1122,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 298
+        "module_count": 299
       },
       {
         "id": "webapp",

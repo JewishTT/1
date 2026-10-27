@@ -13,14 +13,14 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 1005 |
+| Python modules | 1006 |
 | TypeScript modules | 255 |
 | Rust source files / crates | 15 / 9 |
-| Resolved local import edges | 2801 |
+| Resolved local import edges | 2806 |
 | HTTP routes / routers | 182 / 33 |
 | Event types / lanes | 99 / 29 |
 | Test files / test functions | 339 / 5268 |
-| Untested platform modules | 267 |
+| Untested platform modules | 268 |
 
 ## Components
 
@@ -30,7 +30,7 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 239 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 240 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
 | `interpretation` | 112 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |

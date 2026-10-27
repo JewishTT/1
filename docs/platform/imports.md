@@ -1,6 +1,6 @@
 # Import graph
 
-1005 Python modules, 2801 resolved local edges.
+1006 Python modules, 2806 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,20 +10,20 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 876 |
+| `__future__` | stdlib | 877 |
 | `dataclasses` | stdlib | 390 |
-| `typing` | stdlib | 365 |
+| `typing` | stdlib | 366 |
 | `pathlib` | stdlib | 314 |
 | `pytest` | third-party | 267 |
 | `sys` | stdlib | 254 |
 | `collections` | stdlib | 240 |
 | `json` | stdlib | 192 |
 | `datetime` | stdlib | 190 |
-| `sqlalchemy` | third-party | 157 |
+| `sqlalchemy` | third-party | 158 |
 | `hashlib` | stdlib | 126 |
 | `enum` | stdlib | 118 |
 | `re` | stdlib | 95 |
-| `asyncio` | stdlib | 69 |
+| `asyncio` | stdlib | 70 |
 | `os` | stdlib | 68 |
 | `fastapi` | third-party | 66 |
 | `uuid` | stdlib | 48 |
@@ -40,7 +40,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `numpy` | third-party | 23 |
 | `inspect` | stdlib | 21 |
 | `httpx` | third-party | 20 |
-| `argparse` | stdlib | 18 |
+| `argparse` | stdlib | 19 |
 | `tempfile` | stdlib | 17 |
 | `threading` | stdlib | 17 |
 | `confluent_kafka` | third-party | 16 |

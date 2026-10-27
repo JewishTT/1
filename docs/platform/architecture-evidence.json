@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4358,
-    "static_facts": 4064,
+    "facts_total": 4363,
+    "static_facts": 4069,
     "inferred": 294,
     "intended": 0
   },
@@ -12613,6 +12613,71 @@
       "evidence": {
         "file": "apps/control-plane/services/query_planner.py",
         "via": "scoring.fusion"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "49f8b2206b9f0c0c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/control-plane/db/relation_claim_store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "db.relation_claim_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a110d44228828c9b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d4b6c701eb0b6c60",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/control-plane/db/session.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "db.session"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ae8efe67f518a89d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/projection/graph/claim_projection.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "graph.claim_projection"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4df3f62887338fd2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/projection/graph/neo4j.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "graph.neo4j"
       },
       "confidence": 1.0
     },

@@ -207,7 +207,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 239,
+      "python_modules": 240,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -345,6 +345,7 @@
         "apps.control-plane.services.pow_run",
         "apps.control-plane.services.processing_result_store",
         "apps.control-plane.services.query_planner",
+        "apps.control-plane.services.relation_projection_rebuild",
         "apps.control-plane.services.relation_projection_relay",
         "apps.control-plane.services.reobservation",
         "apps.control-plane.services.research_case_artifacts",
@@ -408,8 +409,7 @@
         "apps.control-plane.tests.unit.test_dossier_store",
         "apps.control-plane.tests.unit.test_enrichment_service",
         "apps.control-plane.tests.unit.test_entity_stream_persistence",
-        "apps.control-plane.tests.unit.test_fabric_anchor_guard",
-        "apps.control-plane.tests.unit.test_fabric_endpoints"
+        "apps.control-plane.tests.unit.test_fabric_anchor_guard"
       ]
     },
     {
@@ -1110,15 +1110,15 @@
     }
   ],
   "import_graph": {
-    "module_count": 1005,
-    "edge_count": 2801,
+    "module_count": 1006,
+    "edge_count": 2806,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 876,
+      "stdlib:__future__": 877,
       "stdlib:abc": 3,
-      "stdlib:argparse": 18,
+      "stdlib:argparse": 19,
       "stdlib:ast": 26,
-      "stdlib:asyncio": 69,
+      "stdlib:asyncio": 70,
       "stdlib:base64": 9,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
@@ -1171,7 +1171,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 33,
-      "stdlib:typing": 365,
+      "stdlib:typing": 366,
       "stdlib:unicodedata": 6,
       "stdlib:urllib": 43,
       "stdlib:uuid": 48,
@@ -1219,7 +1219,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 157,
+      "third-party:sqlalchemy": 158,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
       "third-party:trafilatura": 1,
@@ -6089,6 +6089,31 @@
         "from": "apps/control-plane/services/query_planner.py",
         "to": "apps/shared/scoring/fusion.py",
         "via": "scoring.fusion"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_rebuild.py",
+        "to": "apps/control-plane/db/relation_claim_store.py",
+        "via": "db.relation_claim_store"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_rebuild.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_rebuild.py",
+        "to": "apps/control-plane/db/session.py",
+        "via": "db.session"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_rebuild.py",
+        "to": "apps/projection/graph/claim_projection.py",
+        "via": "graph.claim_projection"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_rebuild.py",
+        "to": "apps/projection/graph/neo4j.py",
+        "via": "graph.neo4j"
       },
       {
         "from": "apps/control-plane/services/relation_projection_relay.py",
@@ -28722,6 +28747,7 @@
     "apps/control-plane/services/observation_consumer_runner.py",
     "apps/control-plane/services/pow_run.py",
     "apps/control-plane/services/processing_result_store.py",
+    "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/relation_projection_relay.py",
     "apps/control-plane/services/research_case_runtime.py",
     "apps/control-plane/services/specops_catalog.py",
@@ -28801,10 +28827,9 @@
     "apps/shared/events/registry.py",
     "apps/shared/ids/gen.py",
     "apps/shared/network/__init__.py",
-    "apps/shared/observability/__init__.py",
-    "apps/shared/scoring/metrics.py"
+    "apps/shared/observability/__init__.py"
   ],
-  "untested_count": 267,
+  "untested_count": 268,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -29757,6 +29782,7 @@
             "apps/control-plane/services/pow_run.py",
             "apps/control-plane/services/processing_result_store.py",
             "apps/control-plane/services/query_planner.py",
+            "apps/control-plane/services/relation_projection_rebuild.py",
             "apps/control-plane/services/relation_projection_relay.py",
             "apps/control-plane/services/reobservation.py",
             "apps/control-plane/services/research_case_artifacts.py",
@@ -29928,7 +29954,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 298
+          "module_count": 299
         },
         {
           "id": "webapp",
@@ -33720,7 +33746,7 @@
       {
         "path": "apps/control-plane/db/relation_claim_store.py",
         "status": "IMPLEMENTED",
-        "loc": 577,
+        "loc": 576,
         "callables": 25,
         "stubs": 0,
         "not_implemented": 1,
@@ -34084,9 +34110,18 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/services/relation_projection_rebuild.py",
+        "status": "IMPLEMENTED",
+        "loc": 128,
+        "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/services/relation_projection_relay.py",
         "status": "IMPLEMENTED",
-        "loc": 202,
+        "loc": 250,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
@@ -36207,9 +36242,9 @@
       {
         "path": "apps/projection/graph/abstraction.py",
         "status": "IMPLEMENTED",
-        "loc": 304,
-        "callables": 27,
-        "stubs": 5,
+        "loc": 359,
+        "callables": 31,
+        "stubs": 7,
         "not_implemented": 0,
         "markers": []
       },
@@ -36225,8 +36260,8 @@
       {
         "path": "apps/projection/graph/claim_projection.py",
         "status": "IMPLEMENTED",
-        "loc": 61,
-        "callables": 2,
+        "loc": 97,
+        "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -36234,8 +36269,8 @@
       {
         "path": "apps/projection/graph/neo4j.py",
         "status": "IMPLEMENTED",
-        "loc": 195,
-        "callables": 11,
+        "loc": 235,
+        "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40718,12 +40753,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 541,
+      "IMPLEMENTED": 542,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
       "TEST": 336,
       "MIGRATION": 19,
-      "total": 1005
+      "total": 1006
     }
   },
   "reachability": {
@@ -41831,6 +41866,10 @@
       {
         "path": "apps/control-plane/services/query_planner.py",
         "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/control-plane/services/relation_projection_rebuild.py",
+        "status": "ORPHAN"
       },
       {
         "path": "apps/control-plane/services/relation_projection_relay.py",
@@ -44790,9 +44829,9 @@
     "summary": {
       "PRODUCTION": 402,
       "TEST_ONLY": 145,
-      "ORPHAN": 122,
+      "ORPHAN": 123,
       "TEST": 336,
-      "total": 1005
+      "total": 1006
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -44992,6 +45031,7 @@
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
       "apps/control-plane/services/__init__.py",
       "apps/control-plane/services/acquisition_evidence.py",
+      "apps/control-plane/services/relation_projection_rebuild.py",
       "apps/control-plane/services/relation_projection_relay.py",
       "apps/control-plane/services/specops_catalog.py",
       "apps/control-plane/workflows/__init__.py",
@@ -59241,6 +59281,71 @@
         "evidence": {
           "file": "apps/control-plane/services/query_planner.py",
           "via": "scoring.fusion"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "49f8b2206b9f0c0c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+        "object": "apps/control-plane/db/relation_claim_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_rebuild.py",
+          "via": "db.relation_claim_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a110d44228828c9b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_rebuild.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d4b6c701eb0b6c60",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+        "object": "apps/control-plane/db/session.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_rebuild.py",
+          "via": "db.session"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ae8efe67f518a89d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+        "object": "apps/projection/graph/claim_projection.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_rebuild.py",
+          "via": "graph.claim_projection"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "4df3f62887338fd2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+        "object": "apps/projection/graph/neo4j.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_rebuild.py",
+          "via": "graph.neo4j"
         },
         "confidence": 1.0
       },
@@ -101954,44 +102059,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4358,
-      "static_facts": 4064,
+      "facts_total": 4363,
+      "static_facts": 4069,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 1005,
+    "python_modules": 1006,
     "typescript_modules": 255,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2801,
+    "import_edges": 2806,
     "test_files": 339,
     "test_functions": 5268,
-    "untested_modules": 267,
+    "untested_modules": 268,
     "http_routes": 182
   },
   "evidence_stats": {
-    "facts_total": 4358,
-    "static_facts": 4064,
+    "facts_total": 4363,
+    "static_facts": 4069,
     "inferred": 294,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 541,
+    "IMPLEMENTED": 542,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
     "TEST": 336,
     "MIGRATION": 19,
-    "total": 1005
+    "total": 1006
   },
   "reachability_summary": {
     "PRODUCTION": 402,
     "TEST_ONLY": 145,
-    "ORPHAN": 122,
+    "ORPHAN": 123,
     "TEST": 336,
-    "total": 1005
+    "total": 1006
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -102229,6 +102334,7 @@
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
     "apps/control-plane/services/__init__.py",
     "apps/control-plane/services/acquisition_evidence.py",
+    "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/relation_projection_relay.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/workflows/__init__.py",
