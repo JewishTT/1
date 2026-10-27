@@ -149,3 +149,121 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Corporate surface normalization ─────────────────────────────────────
+ * The CI/SpecOps canvas predates the normative visual contract and introduced
+ * gradients, translucent blur, luminous edges and travelling highlights.
+ * Keep its interaction/layout classes intact while normalizing its material:
+ * flat semantic surfaces, restrained borders, no decorative motion.
+ */
+.ui-root .ui-cicanvas,
+.ui-root .ui-cicanvas.ui-holo-field {
+  background: var(--ui-bg);
+  border: 0;
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head,
+.ui-root .ui-ci-panel,
+.ui-root .ui-gl-deck,
+.ui-root .ui-holo,
+.ui-root .ui-holo-edge,
+.ui-root .ui-holo-bracket,
+.ui-root .ui-gl-provenance {
+  color: var(--ui-text);
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  text-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head .ui-tabs {
+  background: var(--ui-bg-sunken);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head .ui-tab {
+  border-radius: var(--ui-radius-1);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head .ui-tab[aria-selected="true"] {
+  color: var(--ui-text);
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head .ui-tab[aria-selected="true"]::after,
+.ui-root .ui-ci-panel::after,
+.ui-root .ui-holo-sweep::after,
+.ui-root .ui-holo-edge::before,
+.ui-root .ui-holo-bracket::before,
+.ui-root .ui-holo-bracket::after {
+  content: none;
+  animation: none;
+}
+
+.ui-root .ui-ci-panel-head {
+  border-bottom-color: var(--ui-border);
+}
+
+.ui-root .ui-ci-panel-head .ui-pane-title {
+  color: var(--ui-text-secondary);
+  text-shadow: none;
+}
+
+.ui-root .ui-ci-panel :where(button, [role="button"]):focus-visible,
+.ui-root .ui-cicanvas :where(button, [role="tab"]):focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.ui-root .ui-holo-rise,
+.ui-root .ui-holo-live,
+.ui-root .ui-holo-ambient,
+.ui-root .ui-ci-panel {
+  animation: none;
+}
+
+.ui-root .ui-holo-field::before,
+.ui-root .ui-holo-field::after,
+.ui-root .ui-cicanvas::before,
+.ui-root .ui-cicanvas::after {
+  content: none;
+}
+
+@media (max-width: 767px) {
+  .ui-root .ui-cicanvas {
+    min-width: 0;
+    padding: 0;
+  }
+
+  .ui-root .ui-cicanvas-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ui-root .ui-cicanvas-head .ui-tabs {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .ui-root .ui-cicanvas-head .ui-tab {
+    flex: 0 0 auto;
+  }
+
+  .ui-root .ui-ci-panel {
+    min-width: 0;
+    padding: var(--ui-space-3);
+  }
+}
