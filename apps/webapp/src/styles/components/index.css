@@ -1204,3 +1204,78 @@
   outline: 2px solid var(--ui-focus-ring);
   outline-offset: 2px;
 }
+
+
+/* ── Radio group ────────────────────────────────────────────────────── */
+.ui-root .ui-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ui-root .ui-radio-group legend {
+  margin-bottom: var(--ui-space-1);
+  padding: 0;
+}
+
+.ui-root .ui-radio-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  min-width: 0;
+}
+
+.ui-root .ui-radio-group[data-orientation="horizontal"] .ui-radio-options {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3) var(--ui-space-5);
+}
+
+.ui-root .ui-radio {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--ui-space-3);
+  min-width: 0;
+  color: var(--ui-text-secondary);
+  font-size: var(--ui-text-sm);
+  cursor: pointer;
+}
+
+.ui-root .ui-radio input {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin: 2px 0 0;
+  accent-color: var(--ui-accent);
+}
+
+.ui-root .ui-radio input:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.ui-root .ui-radio input:disabled,
+.ui-root .ui-radio:has(input:disabled) {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.ui-root .ui-radio-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--ui-space-1);
+}
+
+.ui-root .ui-radio-label {
+  color: var(--ui-text);
+}
+
+.ui-root .ui-radio-description {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-text-xs);
+}
