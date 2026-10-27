@@ -15,6 +15,7 @@ from sqlalchemy.dialects.postgresql.dml import Insert
 from db.relation_claim_store import CLAIM_JSONB_COLUMNS, SqlRelationClaimStore, _validation_column
 from db.schema import RelationClaim as RelationClaimRow
 from db.schema import RelationClaimProjectionOutbox
+from services.relation_projection_relay import _finish
 
 
 class _Result:
@@ -93,3 +94,54 @@ async def test_non_valid_verdict_is_durable_without_admission_enqueue() -> None:
     assert len(session.statements) == 2
     assert session.statements[1].table.name == "relation_claim_projection_outbox"
     assert session.committed is True
+
+
+
+class _AsyncFinishSession:
+    def __init__(self, row):
+        self.row = row
+        self.commits = 0
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def execute(self, statement):
+        return _Result(self.row)
+
+    async def commit(self):
+        self.commits += 1
+
+
+class _AsyncFinishFactory:
+    def __init__(self, session):
+        self.session = session
+
+    def __call__(self):
+        return self.session
+
+
+@pytest.mark.asyncio
+async def test_old_relay_lease_cannot_overwrite_concurrent_revalidation() -> None:
+    row = SimpleNamespace(
+        outbox_id="claimproj-1",
+        status="PENDING",
+        attempts=5,
+        lease_expires_at=None,
+        last_error="",
+        available_at=None,
+    )
+    session = _AsyncFinishSession(row)
+
+    await _finish(
+        _AsyncFinishFactory(session),
+        "claimproj-1",
+        status="DISPATCHED",
+        expected_attempt=4,
+    )
+
+    assert row.status == "PENDING"
+    assert row.attempts == 5
+    assert session.commits == 0
