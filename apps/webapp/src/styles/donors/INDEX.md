@@ -7,9 +7,8 @@ in a header above the copied content. License status must be reviewed before pro
 ## Import policy
 
 `layers.css` (in `src/styles/`)
-imports only the **scoped** vendor stylesheets — selectors prefixed with a vendor
-namespace (`.v2-*`, `.hori-timeline`, `.sidenav`, etc.) that cannot collide with the
-app's own `index.css` classes. Files that set **global** selectors (`body`, `:root`,
+imports only active first-party styles and scoped adapters. Donor files with no
+mounted class usage remain reference-only even if their selectors are namespaced. Files that set **global** selectors (`body`, `:root`,
 `*`, `tr`, `a`, form controls) are vendored here for attribution/reference and for
 selective token adoption, but are **not** globally imported, so they never clobber the
 app's own dark theme.
@@ -17,12 +16,12 @@ app's own dark theme.
 | Donor | File(s) | License | Imported? |
 |-------|---------|---------|-----------|
 | PANO | `pano/pano-tokens.css` | CC BY-NC-4.0 | no (reference only; license review required before production use) |
-| vitni | `vitni/v2.css`, `vitni/search.css`, `vitni/evidence-reports.css` | Apache-2.0 | yes (scoped `.v2-*`) |
+| vitni | `vitni/v2.css`, `vitni/search.css`, `vitni/evidence-reports.css` | Apache-2.0 | no (no mounted `.v2-*` class usage; review adapter is tokenized in `bridge/vitni.css`) |
 | vitni | `vitni/index.css` (global `:root`/`body`) | Apache-2.0 | no (tokens reference) |
 | SpiderFoot | `spiderfoot/dark.css`, `spiderfoot/spiderfoot.css` | MIT | no (global `body`/`tr`/`a`) |
 | NetForensicAI | `netforensicai/style.css` | Apache-2.0 | no (global `body`/`*`) |
 | kafSIEM | `kafSIEM/theme.css`, `kafSIEM/index.css`, `kafSIEM/mobile.css` | Apache-2.0 | no (needs Tailwind v4 `@theme`) |
-| reNgine | `rengine/custom.css`, `rengine/timeline.css`, `rengine/scrollspyNav.css` | MIT | timeline/scrollspyNav yes; custom.css no (global) |
+| reNgine | `rengine/custom.css`, `rengine/timeline.css`, `rengine/scrollspyNav.css` | MIT | no (no mounted `.hori-timeline` / `.sidenav` usage; reference-only) |
 
 > **PANO note:** PANO ships no `.css` files; its geometry/color palette lives in
 > `ui/styles/{node_style,edge_style,timeline_style,map_styles}.py`. Those values were
