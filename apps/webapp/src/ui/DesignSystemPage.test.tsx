@@ -14,6 +14,22 @@ describe("DesignSystemPage", () => {
     expect(screen.getByRole("region", { name: "Navigation & selected state" })).toBeInTheDocument();
   });
 
+  it("provides labelled multiline text and checkbox controls", () => {
+    render(<DesignSystemPage />);
+
+    const context = screen.getByLabelText("Investigation context");
+    expect(context.tagName).toBe("TEXTAREA");
+    fireEvent.change(context, { target: { value: "Illustrative context only" } });
+    expect(context).toHaveValue("Illustrative context only");
+
+    const includeRejected = screen.getByLabelText("Include rejected evidence");
+    expect(includeRejected).toBeChecked();
+    fireEvent.click(includeRejected);
+    expect(includeRejected).not.toBeChecked();
+    expect(context).toHaveAttribute("aria-describedby");
+    expect(includeRejected).toHaveAttribute("aria-describedby");
+  });
+
   it("demonstrates filterable, keyboard-selectable tabular data", () => {
     render(<DesignSystemPage />);
     fireEvent.click(screen.getByRole("tab", { name: /Data & state/ }));
