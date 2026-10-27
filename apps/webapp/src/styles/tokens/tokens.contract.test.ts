@@ -324,7 +324,7 @@ describe("UI normalization — responsive shell and accessible interaction", () 
   const normalization = readShipped("styles", "normalization.css");
 
   it("keeps the shell grid row content-sized when the topbar wraps", () => {
-    const narrow = normalization.split("@media (max-width: 1023px)")[1]?.split("@media")[0] ?? "";
+    const narrow = normalization.split("@media (max-width: 1023px)").slice(-1)[0]?.split("@media")[0] ?? "";
     expect(narrow).toContain(".ui-root.ui-shell");
     expect(narrow).toContain("grid-template-rows: auto minmax(0, 1fr) auto");
     expect(narrow).toContain(".ui-root .ui-topnav");
@@ -340,7 +340,7 @@ describe("UI normalization — responsive shell and accessible interaction", () 
   });
 
   it("constrains the command palette to a phone viewport", () => {
-    const phone = normalization.split("@media (max-width: 767px)")[1] ?? "";
+    const phone = normalization.split("@media (max-width: 767px)").slice(-1)[0] ?? "";
     expect(phone).toContain("width: 100%");
     expect(phone).toContain("max-height: 84dvh");
     expect(phone).toContain("overflow-y: auto");
