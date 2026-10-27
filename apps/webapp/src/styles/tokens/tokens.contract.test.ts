@@ -481,3 +481,27 @@ describe("UI normalization — theme-owned overlay scrims", () => {
     expect(components).not.toMatch(/rgba?\(/i);
   });
 });
+
+
+describe("UI normalization — scoped donor palettes", () => {
+  it("maps SpiderFoot and NetForensicAI colors to canonical tokens", () => {
+    const spiderfoot = readShipped("styles", "scoped", "spiderfoot.css");
+    const netforensicai = readShipped("styles", "scoped", "netforensicai.css");
+    for (const stylesheet of [spiderfoot, netforensicai]) {
+      expect(stylesheet).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+      expect(stylesheet).not.toMatch(/rgba?\(/i);
+    }
+    expect(spiderfoot).toContain("--sf-panel: var(--ui-surface-1)");
+    expect(spiderfoot).toContain("--sf-cyan: var(--ui-analytical)");
+    expect(netforensicai).toContain("--panel: var(--ui-surface-1)");
+    expect(netforensicai).toContain("--accent: var(--ui-analytical)");
+  });
+
+  it("preserves donor namespace boundaries and allows SpiderFoot zebra rows", () => {
+    const spiderfoot = readShipped("styles", "scoped", "spiderfoot.css");
+    const netforensicai = readShipped("styles", "scoped", "netforensicai.css");
+    expect(spiderfoot).toContain(".sf-scope table");
+    expect(netforensicai).toContain(".nfa-scope .panel");
+    expect(spiderfoot).not.toContain("background-color: var(--sf-panel) !important");
+  });
+});
