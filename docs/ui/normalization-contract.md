@@ -14,7 +14,7 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 
 ## Layering
 
-`styles/tokens/` owns palette, typography, spacing, density and motion values. Existing component styles own component-specific layout. `styles/normalization.css` is a narrow compatibility layer for cross-cutting interaction, typography, overflow and accessibility rules. It must not become a second component library or override domain semantics.
+`styles/tokens/` owns palette, typography, spacing, density and motion values. Existing component styles own component-specific layout. `styles/normalization.css` is a narrow compatibility layer for cross-cutting interaction, typography, overflow and accessibility rules. It must not become a second component library or override domain semantics. Its only intentional selector exception to `.ui-root` scoping is `.ui-palette-root`, the first-party command-palette portal mounted outside the workbench subtree.
 
 ## Visual sweep
 
@@ -38,4 +38,4 @@ The sweep captures each SpecOps panel, the light theme, and GhostLine at the nor
 
 ## Scope note
 
-The normalization layer is intentionally scoped to `.ui-root`. Legacy pages and scoped donor styles remain isolated until they are migrated surface-by-surface; broad global selectors would create cross-layer regressions and are not an acceptable shortcut.
+The normalization layer is scoped to `.ui-root`, with the explicit `.ui-palette-root` portal exception for the command palette. Legacy pages and scoped donor styles remain isolated until they are migrated surface-by-surface; broad global selectors would create cross-layer regressions and are not an acceptable shortcut.
