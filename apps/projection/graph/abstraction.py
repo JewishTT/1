@@ -268,9 +268,12 @@ class InMemoryGraphStore:
         """
         out: set[str] = set()
         stored_node = self._nodes.get(node_id)
-        if tenant_id and stored_node is not None:
-            if stored_node.properties.get("tenant_id") != tenant_id:
-                return []
+        if (
+            tenant_id
+            and stored_node is not None
+            and stored_node.properties.get("tenant_id") != tenant_id
+        ):
+            return []
         for e in self._adj.get(node_id, set()):
             if tenant_id and e.properties.get("tenant_id") not in (None, tenant_id):
                 continue
@@ -289,9 +292,8 @@ class InMemoryGraphStore:
 
     def node(self, node_id: str, *, tenant_id: str | None = None) -> GraphNode | None:
         node = self._nodes.get(node_id)
-        if tenant_id and node is not None:
-            if node.properties.get("tenant_id") != tenant_id:
-                return None
+        if tenant_id and node is not None and node.properties.get("tenant_id") != tenant_id:
+            return None
         return node
 
     def nodes(self) -> list[GraphNode]:

@@ -65,7 +65,9 @@ class ObjectStore:
         ym = year_month or self._ym()
         return f"s3://{self.raw_bucket}/{kind}/{tenant_id}/{ym}/{sha256}"
 
-    async def put_raw(self, body: bytes, *, tenant_id: str, meta: dict | None = None) -> RawObjectRef:
+    async def put_raw(
+        self, body: bytes, *, tenant_id: str, meta: dict | None = None
+    ) -> RawObjectRef:
         """Store raw bytes content-addressed; dedup on hash; immutability guard."""
         ref, _existed = await self.put_raw_dedup(body, tenant_id=tenant_id, meta=meta)
         return ref
@@ -227,11 +229,19 @@ class ObjectStore:
             await self._put(
                 self.raw_bucket,
                 meta_key,
-                json.dumps(meta, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str).encode("utf-8"),
+                json.dumps(
+                    meta,
+                    sort_keys=True,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    default=str,
+                ).encode("utf-8"),
             )
         return ref, False
 
-    async def read_range(self, *, bucket: str, key: str, offset: int = 0, length: int | None = None) -> bytes:
+    async def read_range(
+        self, *, bucket: str, key: str, offset: int = 0, length: int | None = None
+    ) -> bytes:
         """Range read without loading the whole object (T093 archive retrieval).
 
         ``length=None`` streams from ``offset`` to the end (Open-ended HTTP range

@@ -187,7 +187,9 @@ class ObservationLake:
                 raise ProjectionRebuildableError("legacy lake manifest contains cross-tenant row")
             row_month = self._partition_of(row.collected_at)
             if row_month != ym:
-                raise ProjectionRebuildableError("legacy lake manifest contains cross-partition row")
+                raise ProjectionRebuildableError(
+                    "legacy lake manifest contains cross-partition row"
+                )
             body = self._encode_rows([row])
             digest = sha256_bytes(body)
             await self._store.put_immutable_object(

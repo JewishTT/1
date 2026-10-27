@@ -18,13 +18,14 @@ from typing import Any
 from domain import enforce_projection_provenance
 from domain.relation_identity import digest128
 from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.schema import RelationClaim as RelationClaimRow
-from db.schema import RelationClaimRevision as RelationClaimRevisionRow
 from db.schema import RelationClaimProjectionOutbox as RelationClaimProjectionOutboxRow
+from db.schema import RelationClaimRevision as RelationClaimRevisionRow
 
 CLAIM_JSONB_COLUMNS = frozenset(
     {

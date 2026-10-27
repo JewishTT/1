@@ -27,7 +27,7 @@ class Neo4jGraphStore:
             raise RuntimeError("Neo4jGraphStore requires a neo4j.Driver instance")
 
     @classmethod
-    def from_settings(cls) -> "Neo4jGraphStore":
+    def from_settings(cls) -> Neo4jGraphStore:
         """Build the production adapter from the shared service settings."""
         from config.settings import get_settings
         try:

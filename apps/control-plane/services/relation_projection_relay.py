@@ -5,6 +5,8 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from graph.claim_projection import project_admitted_claim
+from graph.neo4j import Neo4jGraphStore
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -12,8 +14,6 @@ from db.relation_claim_store import SqlRelationClaimStore
 from db.schema import RelationClaim as RelationClaimRow
 from db.schema import RelationClaimProjectionOutbox
 from db.session import create_tables, make_session_factory
-from graph.claim_projection import project_admitted_claim
-from graph.neo4j import Neo4jGraphStore
 
 
 LEASE = timedelta(minutes=10)
@@ -155,7 +155,7 @@ async def relay_relation_projection_outbox(
                 )
                 await _finish(factory, item["outbox_id"], status="DISPATCHED")
                 counts["projected"] += 1
-            except Exception as exc:
+            except (ValueError, RuntimeError, OSError, TimeoutError) as exc:
                 backoff = min(300, 2 ** min(int(item["attempts"]), 8))
                 await _finish(
                     factory,
@@ -198,4 +198,4 @@ def main() -> None:
     asyncio.run(run_relation_projection_relay_forever())
 
 
-__all__ = ["relay_relation_projection_outbox", "run_relation_projection_relay_forever", "main"]
+__all__ = ["main", "relay_relation_projection_outbox", "run_relation_projection_relay_forever"]

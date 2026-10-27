@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from domain.relation_identity import RelationArityMode
 from graph.abstraction import GraphStore
+from domain.relation_identity import RelationArityMode
 from graph.relation_store import GraphProjectionBridge
 
 
@@ -46,7 +46,12 @@ def project_admitted_claim(
 
     if _value(getattr(claim, "arity_mode", "")) == RelationArityMode.NARY.value:
         graph_store.write_hyperedge(bridge.to_hyperedge(claim), provenance)
-        return {"relation_id": str(claim.relation_id), "nodes": len(nodes), "edges": 0, "hyperedges": 1}
+        return {
+            "relation_id": str(claim.relation_id),
+            "nodes": len(nodes),
+            "edges": 0,
+            "hyperedges": 1,
+        }
 
     graph_store.write_edge(bridge.to_edge(claim), provenance)
     return {"relation_id": str(claim.relation_id), "nodes": len(nodes), "edges": 1, "hyperedges": 0}
