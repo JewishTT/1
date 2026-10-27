@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from graph.abstraction import GraphStore
 from domain.relation_identity import RelationArityMode
+from graph.abstraction import GraphStore
 from graph.relation_store import GraphProjectionBridge
 
 

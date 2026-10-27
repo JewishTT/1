@@ -56,21 +56,23 @@ async def _claim_batch(
         .with_for_update(skip_locked=True)
     )
     rows = list(result.scalars().all())
+    claimed = []
     for row in rows:
         row.status = "DISPATCHING"
         row.attempts += 1
         row.lease_expires_at = moment + LEASE
         row.last_error = ""
+        claimed.append(
+            {
+                "outbox_id": row.outbox_id,
+                "tenant_id": row.tenant_id,
+                "relation_id": row.relation_id,
+                "attempts": row.attempts,
+            }
+        )
+    # Copy primitives before commit; SQLAlchemy may expire ORM rows on commit.
     await session.commit()
-    return [
-        {
-            "outbox_id": row.outbox_id,
-            "tenant_id": row.tenant_id,
-            "relation_id": row.relation_id,
-            "attempts": row.attempts,
-        }
-        for row in rows
-    ]
+    return claimed
 
 
 async def _finish(

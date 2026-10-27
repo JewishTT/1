@@ -483,7 +483,7 @@ class SqlRelationClaimStore:
 
         payload = _validation_payload(result)
         setattr(row, column, payload)
-        outbox_id = "claimproj-" + digest128(f"{tenant_id}\\x00{relation_id}")
+        outbox_id = "claimproj-" + digest128(f"{tenant_id}\x00{relation_id}")
         statement = pg_insert(RelationClaimProjectionOutboxRow).values(
             outbox_id=outbox_id,
             tenant_id=tenant_id,
