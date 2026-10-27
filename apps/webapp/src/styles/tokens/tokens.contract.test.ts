@@ -397,6 +397,7 @@ describe("UI normalization — GhostLine keeps semantics without decorative glow
     expect(normalization).toContain(".ui-root .ui-holo-bracket::before");
     expect(normalization).toContain(".ui-root .ui-holo-bracket::after");
     expect(normalization).toContain(".ui-root .ui-holo-readout-value");
+    expect(normalization).toContain(".ui-root .ui-holo-heading::after");
     expect(normalization).toContain("content: none");
   });
 });
