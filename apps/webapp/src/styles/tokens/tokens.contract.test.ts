@@ -534,3 +534,32 @@ describe("UI normalization — Vitni review/lineage bridge", () => {
     expect(bridge).not.toMatch(/box-shadow:\s*0\s+0/i);
   });
 });
+
+
+describe("UI normalization — legacy shell compatibility", () => {
+  it("maps legacy chrome aliases to canonical tokens inside the workbench root", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    expect(normalization).toContain("--c-bg: var(--ui-bg)");
+    expect(normalization).toContain("--c-surface: var(--ui-surface-1)");
+    expect(normalization).toContain("--c-danger: var(--ui-danger)");
+    expect(normalization).toContain("--c-warning: var(--ui-gold)");
+    expect(normalization).toContain("--acc-glow: none");
+  });
+
+  it("removes legacy body overlays above the modern shell without globally restyling other pages", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    expect(normalization).toContain("body:has(.ui-root)::before");
+    expect(normalization).toContain("body:has(.ui-root)::after");
+    expect(normalization).toContain("display: none");
+    expect(normalization).toContain(".ui-root .panel::before");
+  });
+
+  it("keeps legacy selection and event semantics while removing decorative glow", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    expect(normalization).toContain('.ui-root .node-card[data-selected="true"]');
+    expect(normalization).toContain('.ui-root .feed-item[data-kind="science.invariant"]');
+    expect(normalization).toContain("border-color: var(--ui-analytical)");
+    expect(normalization).toContain("border-color: var(--ui-danger)");
+    expect(normalization).toContain("animation: none");
+  });
+});
