@@ -1327,3 +1327,78 @@
 .ui-root .ui-table th[aria-sort="descending"] {
   color: var(--ui-text);
 }
+
+
+/* ── Toast notification item ─────────────────────────────────────────── */
+.ui-root .ui-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-3);
+  width: min(100%, 440px);
+  min-width: 0;
+  padding: var(--ui-space-4);
+  color: var(--ui-text);
+  background: var(--ui-surface-raised);
+  border: 1px solid var(--ui-border);
+  border-inline-start: 3px solid var(--ui-analytical);
+  border-radius: var(--ui-radius-3);
+  box-shadow: var(--ui-elevation-2);
+}
+
+.ui-root .ui-toast[data-tone="success"] {
+  border-inline-start-color: var(--ui-accent);
+}
+
+.ui-root .ui-toast[data-tone="warning"] {
+  border-inline-start-color: var(--ui-gold);
+}
+
+.ui-root .ui-toast[data-tone="danger"] {
+  border-inline-start-color: var(--ui-danger);
+}
+
+.ui-root .ui-toast-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--ui-hit-min);
+  height: var(--ui-hit-min);
+  color: var(--ui-analytical);
+}
+
+.ui-root .ui-toast[data-tone="success"] .ui-toast-icon {
+  color: var(--ui-accent);
+}
+
+.ui-root .ui-toast[data-tone="warning"] .ui-toast-icon {
+  color: var(--ui-gold);
+}
+
+.ui-root .ui-toast[data-tone="danger"] .ui-toast-icon {
+  color: var(--ui-danger);
+}
+
+.ui-root .ui-toast-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ui-root .ui-toast-title {
+  margin: 0 0 var(--ui-space-1);
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-semibold);
+}
+
+.ui-root .ui-toast-message {
+  color: var(--ui-text-secondary);
+  font-size: var(--ui-text-sm);
+}
+
+.ui-root .ui-toast-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  margin-top: var(--ui-space-3);
+}
