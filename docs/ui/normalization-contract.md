@@ -8,7 +8,7 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 2. **One global density.** `data-density` is applied at the document root and shell. Tables, graph labels, timeline lanes, evidence rows, controls and spacing must derive from the same density tokens.
 3. **One typography contract.** UI prose uses the sans token; identifiers, digests, timestamps and copyable values use the mono token. Numeric data uses tabular figures.
 4. **One interaction contract.** Keyboard focus is always visible, icon-only actions have an accessible name, disabled controls are visibly disabled, and reduced-motion preferences are respected.
-5. **One responsive boundary.** Workbench columns and long data values may shrink or scroll; they must not force the application shell wider than the viewport.
+5. **One responsive boundary.** Workbench columns and long data values may shrink or scroll; they must not force the application shell wider than the viewport. Below 1024px the shell header becomes content-sized and wraps; work-state counts remain present rather than being clipped or silently hidden. The command palette and canvas toolbar must fit phone-sized viewports.
 6. **One source of truth for server state.** TanStack Query owns fetched data; Zustand owns selection, density, panel layout and transient UI state.
 7. **No invented data.** Empty, unavailable, loading, stale and failed states must remain distinct. Never turn unavailable data into a numeric zero or fabricate operational telemetry.
 
@@ -21,12 +21,14 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 - [ ] All visual colors resolve to canonical tokens; no decorative purple/magenta, gradients, glow or glass effects.
 - [ ] Compact / standard / comfortable density changes every data surface consistently.
 - [ ] 1440×900, 1920×1080 and 2560×1440 are checked; at 1024px the workspace remains usable without horizontal page overflow.
+- [ ] At 1023px and below, the topbar grid row grows with wrapped content; navigation and work-state readouts do not overlap.
+- [ ] At 767px and below, canvas actions wrap, the command palette stays within the viewport, and long lists scroll internally.
 - [ ] Keyboard-only operation exposes a visible focus indicator and all icon-only actions have accessible names.
 - [ ] Reduced-motion preference is respected.
 - [ ] Numeric columns use tabular numerals; machine identifiers use the mono token.
 - [ ] Loading, empty, unavailable, stale and error states are truthful and visually distinct.
 - [ ] Server data remains in Query; selection and local layout remain in Zustand.
-- [ ] Existing tests, typecheck, lint and production build pass before merge.
+- [ ] Responsive normalization contract tests pass, alongside existing tests, typecheck, lint and production build before merge.
 
 ## Scope note
 
