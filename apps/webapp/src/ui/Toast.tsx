@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Button } from "./Button";
+import { IconButton } from "./Button";
 import { Icon } from "./Icon";
 
 export type ToastTone = "info" | "success" | "warning" | "danger";
@@ -46,11 +46,7 @@ export function Toast({
         <div className="ui-toast-message">{message}</div>
         {actions ? <div className="ui-toast-actions">{actions}</div> : null}
       </div>
-      {onDismiss ? (
-        <Button size="sm" variant="ghost" icon="close" onClick={onDismiss} aria-label="Dismiss notification">
-          <span className="ui-sr-only">Dismiss notification</span>
-        </Button>
-      ) : null}
+      {onDismiss ? <IconButton icon="close" label="Dismiss notification" size="sm" onClick={onDismiss} /> : null}
     </div>
   );
 }
