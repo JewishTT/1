@@ -68,3 +68,22 @@ whole graph projection path operationally complete.
 - Stream membership remains one row per observation/entity/extraction version.
 - Immutable lake row appends are covered by concurrency and legacy-promotion tests; Iceberg/Parquet catalog and end-to-end consumer wiring remain separate acceptance gates.
 - The VALID-only outbox relay is present; the explicit candidate-to-admission caller, live Postgres/Neo4j integration, and graph rebuild-from-canonical-claims proof remain open.
+
+
+## Reconciliation and canonical rebuild
+
+The VALID-claim relay now queues every durable validation verdict, not just VALID
+ones. An invalid or inactive current revision clears that logical relation's
+binary edge/hyperedge projection; a newer revision's own outbox entry is the only
+one allowed to mutate the logical relation, so stale outbox work cannot clobber a
+newer revision. Lease completion is conditional on the claimed attempt generation,
+which prevents a slow worker from overwriting a re-enqueue caused by concurrent
+revalidation.
+
+A tenant-scoped canonical rebuild is available as
+`cognitive-relation-projection-rebuild --tenant-id TENANT`. It clears derived
+Neo4j projection nodes for that tenant, then rebuilds from the latest SQL revision
+per logical relation whose durable validation is VALID and whose status is active.
+The rebuild is idempotent and rerunnable after failure, but **not a blue/green
+atomic swap**: queries can observe a partial projection while it runs. Run it
+during a maintenance window until generation-switched projections are implemented.

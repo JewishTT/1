@@ -27,6 +27,7 @@ jobs:
           .venv/bin/python -m pytest
           apps/projection/tests/test_lakehouse.py
           apps/projection/tests/unit/test_claim_projection.py
+          apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py
           apps/projection/tests/unit/test_neo4j_relation_write.py
           apps/projection/tests/unit/test_relation_store.py
           apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py
@@ -47,5 +48,6 @@ jobs:
           apps/control-plane/db/schema.py
           apps/control-plane/db/relation_claim_store.py
           apps/control-plane/services/relation_projection_relay.py
+          apps/control-plane/services/relation_projection_rebuild.py
           apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py
           apps/control-plane/tests/unit/test_relation_projection_migration.py

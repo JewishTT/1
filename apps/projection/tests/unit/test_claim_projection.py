@@ -12,7 +12,7 @@ import pytest
 from domain.relation_claim import RelationClaim, RelationRoleBinding
 from domain.relation_identity import RelationArityMode
 from graph.abstraction import InMemoryGraphStore
-from graph.claim_projection import project_admitted_claim
+from graph.claim_projection import project_admitted_claim, reconcile_claim_projection
 from graph.relation_store import RelationClaimService
 
 pytestmark = pytest.mark.unit
@@ -95,3 +95,31 @@ def test_claim_without_observation_provenance_is_refused_before_writes() -> None
         project_admitted_claim(graph, claim, validation_record={"verdict": "valid"})
     assert graph.nodes() == []
     assert graph.edges() == []
+
+
+
+def test_rejected_verdict_removes_previous_projection_for_logical_relation() -> None:
+    graph = InMemoryGraphStore()
+    claim = _claim()
+    valid = {"verdict": "VALID", "recorded_at": "2026-10-27T00:00:00+00:00"}
+    rejected = {"verdict": "REJECTED", "reasons": [{"code": "EVIDENCE_REVOKED"}]}
+
+    assert reconcile_claim_projection(graph, claim, validation_record=valid)["projected"] is True
+    assert len(graph.edges()) == 1
+
+    outcome = reconcile_claim_projection(graph, claim, validation_record=rejected)
+    assert outcome["projected"] is False
+    assert outcome["cleared"] == 1
+    assert graph.edges() == []
+    assert graph.hyperedges() == []
+
+
+def test_replaying_nary_claim_does_not_duplicate_hyperedge_membership() -> None:
+    graph = InMemoryGraphStore()
+    claim = _claim(nary=True)
+    first = reconcile_claim_projection(graph, claim, validation_record={"verdict": "VALID"})
+    second = reconcile_claim_projection(graph, claim, validation_record={"verdict": "VALID"})
+    assert first["projected"] is True
+    assert second["projected"] is True
+    assert len(graph.hyperedges()) == 1
+    assert len(graph.member_hyperedges("person-1")) == 1

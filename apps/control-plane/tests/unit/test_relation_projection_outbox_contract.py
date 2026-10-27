@@ -76,6 +76,7 @@ async def test_valid_verdict_and_outbox_enqueue_commit_together() -> None:
     assert insertion.table.name == "relation_claim_projection_outbox"
     sql = str(insertion.compile(dialect=postgresql.dialect()))
     assert "ON CONFLICT ON CONSTRAINT uq_relation_claim_projection_outbox_claim" in sql
+    assert "DO UPDATE SET status" in sql
     assert session.committed is True
 
 
@@ -89,5 +90,6 @@ async def test_non_valid_verdict_is_durable_without_admission_enqueue() -> None:
         result={"verdict": "REJECTED", "layers": {}, "reasons": [{"code": "R1"}]},
     )
     assert session.row.validation_record["verdict"] == "REJECTED"
-    assert len(session.statements) == 1
+    assert len(session.statements) == 2
+    assert session.statements[1].table.name == "relation_claim_projection_outbox"
     assert session.committed is True

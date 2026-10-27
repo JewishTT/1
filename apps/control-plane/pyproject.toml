@@ -39,6 +39,7 @@ dev = [ "pytest>=8.2", "pytest-asyncio>=0.23", "ruff>=0.5" ]
 [project.scripts]
 cognitive-observation-consumer = "services.observation_consumer_runner:main"
 cognitive-relation-projection-relay = "services.relation_projection_relay:main"
+cognitive-relation-projection-rebuild = "services.relation_projection_rebuild:main"
 
 [tool.uv.sources]
 cognitive-shared = { workspace = true }
