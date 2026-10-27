@@ -10,6 +10,7 @@ import {
   IconButton,
   Input,
   LoadingView,
+  Panel,
   Select,
   Skeleton,
   StatusDot,
@@ -148,18 +149,20 @@ export function DesignSystemPage() {
             </div>
           </section>
 
-          <section className="ui-kit-card" aria-labelledby="ui-kit-selection">
-            <div className="ui-kit-card-head">
-              <div><p className="ui-meta">04 / SELECTION</p><h2 id="ui-kit-selection">Navigation & selected state</h2></div>
-              <span className="ui-kit-count">Shared behavior</span>
-            </div>
+          <Panel
+            eyebrow="04 / SELECTION"
+            title="Navigation & selected state"
+            actions={<Badge tone="neutral">Shared behavior</Badge>}
+            variant="flat"
+            testId="ui-kit-panel"
+          >
             <div className="ui-kit-mini-rail">
               <Button variant="ghost" icon="view-overview" onClick={() => setTab("primitives")}>Overview surface</Button>
               <Button variant="ghost" icon="view-graph" onClick={() => setTab("data")}>Graph / data</Button>
               <Button variant="ghost" icon="view-evidence" onClick={() => setTab("feedback")}>Evidence / state</Button>
             </div>
             <p className="ui-kit-note">Selection is an accent border and token wash, never a glow.</p>
-          </section>
+          </Panel>
         </div>
       ) : null}
 
