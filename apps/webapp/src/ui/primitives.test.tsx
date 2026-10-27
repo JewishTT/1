@@ -334,6 +334,7 @@ describe("DataTable — shell semantics", () => {
   it("renders a captioned table", () => {
     render(<DataTable caption="Observations" columns={columns} rows={rows} rowId={(row) => row.id} />);
     expect(screen.getByRole("table", { name: "Observations" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Observations table" })).toHaveAttribute("tabindex", "0");
     expect(screen.getAllByRole("row")).toHaveLength(3); // header + 2
   });
 
