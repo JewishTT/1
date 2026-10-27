@@ -14,6 +14,7 @@ function ModalHarness() {
         open={open}
         onClose={() => setOpen(false)}
         title="Confirm acquisition"
+        testId="confirm-modal"
         description="Review the scope before submitting the task."
         actions={<button type="button">Confirm action</button>}
       >
@@ -51,7 +52,7 @@ describe("Modal", () => {
   it("closes from the backdrop when configured to do so", () => {
     render(<ModalHarness />);
     fireEvent.click(screen.getByRole("button", { name: "Open modal" }));
-    fireEvent.mouseDown(screen.getByTestId("undefined-scrim"));
+    fireEvent.mouseDown(screen.getByTestId("confirm-modal-scrim"));
     expect(screen.queryByRole("dialog", { name: "Confirm acquisition" })).not.toBeInTheDocument();
   });
 });
