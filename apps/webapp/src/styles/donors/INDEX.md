@@ -16,10 +16,13 @@ app's own dark theme.
 | Donor | File(s) | License | Imported? |
 |-------|---------|---------|-----------|
 | PANO | `pano/pano-tokens.css` | CC BY-NC-4.0 | no (reference only; license review required before production use) |
-| vitni | `vitni/v2.css`, `vitni/search.css`, `vitni/evidence-reports.css` | Apache-2.0 | no (no mounted `.v2-*` class usage; review adapter is tokenized in `bridge/vitni.css`) |
+| vitni | `vitni/v2.css`, `vitni/search.css`, `vitni/evidence-reports.css` | Apache-2.0 | no (no mounted `.v2-*` class usage) |
+| vitni adapter | `bridge/vitni.css` | Apache-2.0 | yes (scoped to `.ui-root`, canonical tokens) |
 | vitni | `vitni/index.css` (global `:root`/`body`) | Apache-2.0 | no (tokens reference) |
-| SpiderFoot | `spiderfoot/dark.css`, `spiderfoot/spiderfoot.css` | MIT | no (global `body`/`tr`/`a`) |
-| NetForensicAI | `netforensicai/style.css` | Apache-2.0 | no (global `body`/`*`) |
+| SpiderFoot upstream | `spiderfoot/dark.css`, `spiderfoot/spiderfoot.css` | MIT | no (global `body`/`tr`/`a`) |
+| SpiderFoot adapter | `scoped/spiderfoot.css` | MIT | yes (scoped to `.sf-scope`, canonical tokens) |
+| NetForensicAI upstream | `netforensicai/style.css` | Apache-2.0 | no (global `body`/`*`) |
+| NetForensicAI adapter | `scoped/netforensicai.css` | Apache-2.0 | yes (scoped to `.nfa-scope`, canonical tokens) |
 | kafSIEM | `kafSIEM/theme.css`, `kafSIEM/index.css`, `kafSIEM/mobile.css` | Apache-2.0 | no (needs Tailwind v4 `@theme`) |
 | reNgine | `rengine/custom.css`, `rengine/timeline.css`, `rengine/scrollspyNav.css` | MIT | no (no mounted `.hori-timeline` / `.sidenav` usage; reference-only) |
 
