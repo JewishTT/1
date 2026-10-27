@@ -20,10 +20,10 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 
 | Surface | Static audit | Runtime / visual validation |
 |---|---|---|
-| Shared shell and primitives | Token-backed typography, focus, responsive containment and scrim tokens are covered by contract tests. | Webapp build and unit/contract suite passed on an earlier head; latest head is pending CI. |
+| Shared shell and primitives | Token-backed typography, focus, responsive containment and scrim tokens are covered by contract tests; `src/ui/index.ts` exposes the public primitive API and `/ui-kit` is its live reference catalogue. | Webapp build and unit/contract suite passed on an earlier head; latest head is pending CI. |
 | CI / SpecOps and GhostLine | Runtime normalization removes legacy gradients, glow, glass, HUD brackets and decorative shadows; active/gate/outcome semantics are preserved. Source declarations remain marked as migration debt. | SpecOps sweep captures every department tab at desktop width and GhostLine across all contract widths; latest screenshots still require human review. |
 | Graph, timeline, evidence, objects and operations/source catalogue | Static stylesheet scan found no raw hex/RGB colors, gradients, text shadows or backdrop blur. Remaining shadows are tokenized elevation or semantic inset selection markers. | Full per-surface screenshot and interaction review remains pending. |
-| Legacy pages and scoped donor views | SpiderFoot and NetForensicAI donor palettes now resolve through canonical UI tokens while their `.sf-scope` / `.nfa-scope` namespaces remain isolated; contract tests guard against raw color literals and selector leaks. | Runtime screenshots and interaction review remain pending. |
+| Legacy pages and scoped donor views | Legacy `--c-*` / `--acc*` aliases resolve through canonical UI tokens inside `.ui-root`; scanline, glow, glass and gradient chrome is suppressed on known legacy surfaces while state-bearing active/event/failure borders remain semantic. SpiderFoot and NetForensicAI adapters use canonical tokens inside `.sf-scope` / `.nfa-scope`; the Vitni review/lineage adapter is `.ui-root`-scoped. | Runtime screenshots and interaction review remain pending. |
 
 ## Visual sweep
 
@@ -47,4 +47,4 @@ The SpecOps sweep captures each department panel, the light theme, and GhostLine
 
 ## Scope note
 
-The normalization layer is scoped to `.ui-root`, with the explicit `.ui-palette-root` portal exception for the command palette. Legacy pages remain isolated; donor styles use canonical tokens inside their own namespaces and still require per-surface interaction/visual review. Broad global selectors would create cross-layer regressions and are not an acceptable shortcut.
+The normalization layer is scoped to `.ui-root`, with two explicit boundary exceptions: `.ui-palette-root` (the command-palette portal outside the shell subtree) and `body:has(.ui-root)::before/after` (the legacy scanline overlays that otherwise sit above drawers and toasts). Legacy pages remain isolated; donor styles use canonical tokens inside their own namespaces and still require per-surface interaction/visual review. Broad global selectors would create cross-layer regressions and are not an acceptable shortcut.
