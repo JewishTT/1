@@ -476,3 +476,21 @@
 .ui-root .ui-holo-readout-value {
   text-shadow: none;
 }
+
+
+/* Payloads and media must remain inside the pane that owns them. A long URI,
+ * JSON line or embedded image must never become a page-level horizontal scroll.
+ */
+.ui-root pre {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.ui-root :where(code, samp, kbd) {
+  overflow-wrap: anywhere;
+}
+
+.ui-root :where(img, video, canvas) {
+  max-width: 100%;
+}
