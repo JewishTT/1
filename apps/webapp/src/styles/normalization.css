@@ -58,7 +58,7 @@
 
 .ui-root ::selection {
   color: var(--ui-text);
-  background: var(--accent-green-wash, rgba(143, 203, 100, 0.22));
+  background: var(--ui-accent-wash);
 }
 
 .ui-root :where(a) {
@@ -87,7 +87,7 @@
 }
 
 .ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport) {
-  scrollbar-color: var(--border-1) var(--bg-1);
+  scrollbar-color: var(--ui-border-strong) var(--ui-surface-1);
   scrollbar-width: thin;
 }
 
@@ -97,17 +97,17 @@
 }
 
 .ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-track {
-  background: var(--bg-1);
+  background: var(--ui-surface-1);
 }
 
 .ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-thumb {
-  background: var(--border-1);
-  border: 2px solid var(--bg-1);
+  background: var(--ui-border-strong);
+  border: 2px solid var(--ui-surface-1);
   border-radius: var(--ui-radius-2);
 }
 
 .ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: var(--ui-text-muted);
 }
 
 /* Dense data is readable by default; content must not force the shell wider. */
