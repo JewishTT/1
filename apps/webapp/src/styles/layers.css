@@ -60,3 +60,6 @@
 /* Scoped donor sheets: apply only inside the section classes below. */
 @import "./scoped/spiderfoot.css";
 @import "./scoped/netforensicai.css";
+
+/* Cross-surface UI contract: focus, numeric typography, overflow and motion. */
+@import "./normalization.css";
