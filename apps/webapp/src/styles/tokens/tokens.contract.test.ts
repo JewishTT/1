@@ -495,6 +495,8 @@ describe("UI normalization — scoped donor palettes", () => {
     expect(spiderfoot).toContain("--sf-cyan: var(--ui-analytical)");
     expect(netforensicai).toContain("--panel: var(--ui-surface-1)");
     expect(netforensicai).toContain("--accent: var(--ui-analytical)");
+    expect(netforensicai).toContain("background: var(--ui-danger-wash)");
+    expect(netforensicai).toContain("border: 1px solid var(--ui-danger-line)");
   });
 
   it("preserves donor namespace boundaries and allows SpiderFoot zebra rows", () => {
