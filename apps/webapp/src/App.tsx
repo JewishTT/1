@@ -122,8 +122,8 @@ export function App() {
         <Route path="research-cases/new" element={<CaseSetup />} />
         <Route path="research-cases/:caseId/setup" element={<CaseSetup />} />
         <Route path="research-cases/:caseId" element={<CasePage />} />
-        {/* Internal design-system reference: not part of analyst navigation. */}
-        <Route path="ui-kit" element={<DesignSystemPage />} />
+        {/* Development-only visual fixture: its demo rows must never be shipped as platform data. */}
+        {import.meta.env.DEV ? <Route path="ui-kit" element={<DesignSystemPage />} /> : null}
         {/* Anything unrecognised lands on the board rather than on a blank page: a
             mistyped URL is a mistake, not a reason to render nothing and leave the
             analyst without a way forward. */}
