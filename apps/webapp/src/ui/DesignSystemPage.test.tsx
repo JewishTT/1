@@ -10,6 +10,8 @@ describe("DesignSystemPage", () => {
     expect(screen.getByRole("heading", { name: "Buttons" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Primary action" })).toBeInTheDocument();
     expect(screen.getByRole("tablist", { name: "Component library sections" })).toBeInTheDocument();
+    expect(screen.getByTestId("ui-kit-panel")).toHaveAttribute("data-variant", "flat");
+    expect(screen.getByRole("region", { name: "Navigation & selected state" })).toBeInTheDocument();
   });
 
   it("demonstrates filterable, keyboard-selectable tabular data", () => {
