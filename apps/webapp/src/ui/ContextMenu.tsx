@@ -4,15 +4,10 @@ import { useWorkspace } from "../workspace/store";
 import { actionsForSelection, destinationForAction } from "../workspace/commands";
 
 /**
- * ContextMenu shell (§60).
- *
- * Right-click affordance over the canvas. A shell: it takes the item list from
- * the caller, closes on Escape / outside click, restores focus, and positions
- * itself inside the viewport. It does not decide *what* the items are.
- *
- * The canvas's menu is built from `actionsForSelection` (§69), so it offers the
- * same next steps as the inspector and cannot drift from it. The menu is only
- * mounted when the store holds coordinates, so it never steals selection.
+ * ContextMenu shell (§60). Opens at the workspace-owned coordinates, moves
+ * focus into the first enabled action, supports arrow/Home/End navigation,
+ * closes on Escape/outside pointer/Tab, and restores the previous focus target.
+ * The caller supplies the action vocabulary; this component owns mechanics only.
  */
 export interface ContextMenuItem {
   id: string;
@@ -25,15 +20,29 @@ export function ContextMenu({ items }: { items: ReadonlyArray<ContextMenuItem> }
   const menu = useWorkspace((state) => state.contextMenu);
   const close = useWorkspace((state) => state.closeContextMenu);
   const rootRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const menuOpen = menu !== null;
 
   useEffect(() => {
-    if (!menu) return;
+    if (!menuOpen) return;
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const firstItem = rootRef.current?.querySelector<HTMLButtonElement>(
+      'button[role="menuitem"]:not(:disabled)',
+    );
+    (firstItem ?? rootRef.current)?.focus();
+
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) close();
     };
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [menu, close]);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      previousFocusRef.current?.focus();
+      previousFocusRef.current = null;
+    };
+  }, [menuOpen, close]);
 
   if (!menu) return null;
 
@@ -41,21 +50,47 @@ export function ContextMenu({ items }: { items: ReadonlyArray<ContextMenuItem> }
   const flipX = menu.x > window.innerWidth - 220;
   const flipY = menu.y > window.innerHeight - 200;
 
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      close();
+      return;
+    }
+    if (event.key === "Tab") {
+      close();
+      return;
+    }
+
+    const enabledItems = Array.from(
+      rootRef.current?.querySelectorAll<HTMLButtonElement>('button[role="menuitem"]:not(:disabled)') ?? [],
+    );
+    if (enabledItems.length === 0) return;
+    const activeIndex = enabledItems.indexOf(document.activeElement as HTMLButtonElement);
+    let nextIndex = -1;
+
+    if (event.key === "ArrowDown") nextIndex = activeIndex < 0 ? 0 : (activeIndex + 1) % enabledItems.length;
+    else if (event.key === "ArrowUp") nextIndex = activeIndex < 0 || activeIndex === 0 ? enabledItems.length - 1 : activeIndex - 1;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = enabledItems.length - 1;
+
+    if (nextIndex >= 0) {
+      event.preventDefault();
+      enabledItems[nextIndex]?.focus();
+    }
+  };
+
   return (
     <div
       ref={rootRef}
       role="menu"
       aria-label="Object actions"
       className="ui-ctxmenu"
+      tabIndex={-1}
       style={{ left: `${menu.x}px`, top: `${menu.y}px` }}
       data-flip-x={flipX}
       data-flip-y={flipY}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          event.stopPropagation();
-          close();
-        }
-      }}
+      onKeyDown={onKeyDown}
       data-testid="context-menu"
     >
       {items.length === 0 ? (
