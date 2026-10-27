@@ -341,6 +341,9 @@ describe("UI normalization — responsive shell and accessible interaction", () 
 
   it("constrains the command palette to a phone viewport", () => {
     const phone = normalization.split("@media (max-width: 767px)").slice(-1)[0] ?? "";
+    expect(phone).toContain(".ui-palette-root {");
+    expect(phone).toContain(".ui-palette-root .ui-palette-list");
+    expect(phone).not.toContain(".ui-root .ui-palette-root");
     expect(phone).toContain("width: 100%");
     expect(phone).toContain("max-height: 84dvh");
     expect(phone).toContain("overflow-y: auto");
