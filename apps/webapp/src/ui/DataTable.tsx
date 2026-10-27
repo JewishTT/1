@@ -53,6 +53,13 @@ export function DataTable<T>({
     return <>{emptyState}</>;
   }
 
+  const activeId =
+    selectedId !== null && rows.some((row) => rowId(row) === selectedId)
+      ? selectedId
+      : rows.length > 0
+        ? rowId(rows[0]!)
+        : null;
+
   return (
     <div className="ui-table-scroll" role="region" aria-label={`${caption} table`} tabIndex={0} data-testid={testId != null ? `${testId}-scroll` : undefined}>
     <table className="ui-table" data-testid={testId}>
@@ -82,20 +89,34 @@ export function DataTable<T>({
               data-selected={selected}
               data-secondary={secondary}
               aria-selected={onRowSelect ? selected : undefined}
-              tabIndex={onRowSelect ? 0 : undefined}
+              tabIndex={onRowSelect ? (activeId === id ? 0 : -1) : undefined}
               onClick={onRowSelect ? () => onRowSelect(id) : undefined}
               onKeyDown={
                 onRowSelect
                   ? (event) => {
-                      // Rows are focusable when selectable, so Enter/Space must
-                      // activate them or keyboard users cannot reach the object.
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
                         onRowSelect(id);
+                        return;
+                      }
+
+                      const current = event.currentTarget;
+                      const rowGroup = current.parentElement;
+                      let target: HTMLTableRowElement | null = null;
+                      if (event.key === "ArrowDown") target = current.nextElementSibling as HTMLTableRowElement | null;
+                      else if (event.key === "ArrowUp") target = current.previousElementSibling as HTMLTableRowElement | null;
+                      else if (event.key === "Home") target = rowGroup?.firstElementChild as HTMLTableRowElement | null;
+                      else if (event.key === "End") target = rowGroup?.lastElementChild as HTMLTableRowElement | null;
+
+                      if (target?.dataset.rowId) {
+                        event.preventDefault();
+                        onRowSelect(target.dataset.rowId);
+                        target.focus();
                       }
                     }
                   : undefined
               }
+              data-row-id={id}
               data-testid={`row-${id}`}
             >
               {columns.map((column) => (
