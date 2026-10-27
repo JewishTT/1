@@ -16,6 +16,15 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 
 `styles/tokens/` owns palette, typography, spacing, density and motion values. Existing component styles own component-specific layout. `styles/normalization.css` is a narrow compatibility layer for cross-cutting interaction, typography, overflow and accessibility rules. It must not become a second component library or override domain semantics. Its only intentional selector exception to `.ui-root` scoping is `.ui-palette-root`, the first-party command-palette portal mounted outside the workbench subtree.
 
+## Surface audit status
+
+| Surface | Static audit | Runtime / visual validation |
+|---|---|---|
+| Shared shell and primitives | Token-backed typography, focus, responsive containment and scrim tokens are covered by contract tests. | Webapp build and unit/contract suite passed on an earlier head; latest head is pending CI. |
+| CI / SpecOps and GhostLine | Runtime normalization removes legacy gradients, glow, glass, HUD brackets and decorative shadows; active/gate/outcome semantics are preserved. Source declarations remain marked as migration debt. | SpecOps sweep captures every department tab at desktop width and GhostLine across all contract widths; latest screenshots still require human review. |
+| Graph, timeline, evidence, objects and operations/source catalogue | Static stylesheet scan found no raw hex/RGB colors, gradients, text shadows or backdrop blur. Remaining shadows are tokenized elevation or semantic inset selection markers. | Full per-surface screenshot and interaction review remains pending. |
+| Legacy pages and scoped donor views | Kept isolated; no broad global restyling was introduced. | Surface-by-surface migration remains pending. |
+
 ## Visual sweep
 
 From `apps/webapp/`, run `npm run ui:shoot:specops -- [baseUrl] [outDir]` against a running application and its fixture/backend services. The script uses Playwright's bundled Chromium by default; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` only when a system browser is required. Screenshots default to the operating system's temporary directory under `cognitive-ui-shots`.
