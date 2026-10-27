@@ -494,3 +494,37 @@
 .ui-root :where(img, video, canvas) {
   max-width: 100%;
 }
+
+
+/* CI metric strips and bars carry data, not atmosphere. Use flat token-backed
+ * fills; keep executed/failed left borders as the semantic status channel.
+ */
+.ui-root .ui-ci-metrics {
+  background: var(--ui-surface-1);
+  border-color: var(--ui-border);
+  box-shadow: none;
+}
+
+.ui-root .ui-ci-metric .op-value {
+  text-shadow: none;
+}
+
+.ui-root .ui-ci-abilities > li[data-state="executed"],
+.ui-root .ui-ci-abilities > li[data-state="failed"] {
+  box-shadow: none;
+}
+
+.ui-root .ui-ci-bar {
+  background: var(--ui-accent);
+  box-shadow: none;
+}
+
+.ui-root .ui-ci-bar-alt {
+  background: var(--ui-analytical);
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-textarea:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
