@@ -368,6 +368,36 @@ describe("DataTable — shell semantics", () => {
     expect(picked).toEqual(["OBS-1", "OBS-2"]);
   });
 
+  it("uses one tab stop and supports arrow, Home and End row navigation", () => {
+    const picked: string[] = [];
+    const props = {
+      caption: "Observations",
+      columns,
+      rows,
+      rowId: (row: (typeof rows)[number]) => row.id,
+      onRowSelect: (id: string) => picked.push(id),
+    };
+    const { rerender } = render(<DataTable {...props} selectedId="OBS-1" />);
+
+    const first = screen.getByTestId("row-OBS-1");
+    const second = screen.getByTestId("row-OBS-2");
+    expect(first).toHaveAttribute("tabindex", "0");
+    expect(second).toHaveAttribute("tabindex", "-1");
+
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+    expect(picked).toEqual(["OBS-2"]);
+    expect(second).toHaveFocus();
+    rerender(<DataTable {...props} selectedId="OBS-2" />);
+    expect(second).toHaveAttribute("tabindex", "0");
+    expect(first).toHaveAttribute("tabindex", "-1");
+
+    fireEvent.keyDown(second, { key: "Home" });
+    expect(picked).toEqual(["OBS-2", "OBS-1"]);
+    rerender(<DataTable {...props} selectedId="OBS-1" />);
+    fireEvent.keyDown(first, { key: "End" });
+    expect(picked).toEqual(["OBS-2", "OBS-1", "OBS-2"]);
+  });
+
   it("renders the empty state instead of an empty table", () => {
     render(
       <DataTable
