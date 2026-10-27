@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import {
   Badge,
   Button,
+  Checkbox,
   DataTable,
   EmptyState,
   ErrorView,
@@ -15,6 +16,7 @@ import {
   Skeleton,
   StatusDot,
   Tabs,
+  Textarea,
   Tooltip,
   type DataTableColumn,
   type WorkStatus,
@@ -125,6 +127,8 @@ export function DesignSystemPage() {
             <div className="ui-kit-field-stack">
               <Input label="Search inventory" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ID, kind or status" adornment={<Icon name="search" size={14} />} />
               <Select label="Filter by status" value={status} onValueChange={setStatus} options={STATUS_OPTIONS} />
+              <Textarea label="Investigation context" placeholder="Describe the question, scope and known constraints…" rows={3} hint="Preview only: no investigation or server record is created." />
+              <Checkbox label="Include rejected evidence" defaultChecked hint="Illustrative preference control; this demo changes no platform data." />
               <Input label="Immutable identifier" value="DEMO-OBS-0042 / 6f83…a19d" mono readOnly hint="IDs, digests, URIs and queries use monospace." />
             </div>
           </section>
