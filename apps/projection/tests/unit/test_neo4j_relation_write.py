@@ -141,7 +141,7 @@ class TestWriteEdge:
         second = list(_driver_of(store).log)[1:]
         assert first == second
         assert first[0][0].count("MERGE") == 1
-        assert "rel_id:$rel_id" in " ".join(first[0][0].split())
+        assert "rel_id: $rel_id" in " ".join(first[0][0].split())
 
     def test_two_relations_of_the_same_type_between_a_pair_stay_distinct(
         self, store: Neo4jGraphStore
@@ -179,7 +179,7 @@ class TestWriteHyperedge:
         cypher, params = driver.log[0]
         compact = " ".join(cypher.split())
         assert "MERGE (h:ProjectionNode:HyperEdge {" in compact
-        assert "rel_id: $edge_id" in compact
+        assert "h.rel_id = $edge_id" in compact
         assert "edge_id: $edge_id" in compact
         assert params["edge_id"] == edge.edge_id
         assert params["props"] == edge.properties
