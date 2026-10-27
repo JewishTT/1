@@ -97,9 +97,9 @@ export interface LoadingViewProps {
  * `Skeleton`. A file-local `LoadingView` is the reason the skeleton never reached a single
  * container: there was a loading view, it was right there, and it was already written.
  *
- * The markup is kept exactly as it was, `data-testid` included, so consolidating is invisible
- * to the tests that assert on it -- which is the point of consolidating rather than
- * restyling.
+ * Uses the same feedback surface tokens as ErrorView and exposes one polite status
+ * announcement. Callers get consistent spacing and a clear distinction between
+ * waiting and the absence/failure states.
  */
 export function LoadingView({ message }: LoadingViewProps) {
   return (
