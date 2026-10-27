@@ -117,6 +117,83 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   );
 });
 
+
+export interface RadioOption<T extends string = string> {
+  value: T;
+  label: string;
+  description?: string;
+  disabled?: boolean;
+}
+
+export interface RadioGroupProps<T extends string = string> {
+  /** Visible group name, rendered as a legend (not a placeholder). */
+  label: string;
+  /** Controlled selected value. */
+  value: T;
+  options: ReadonlyArray<RadioOption<T>>;
+  onValueChange: (value: T) => void;
+  hint?: string;
+  name?: string;
+  orientation?: "horizontal" | "vertical";
+  disabled?: boolean;
+  required?: boolean;
+  id?: string;
+}
+
+/**
+ * RadioGroup. Native radio inputs keep browser keyboard behavior, while the
+ * shared field contract owns labels, descriptions, disabled state and layout.
+ */
+export function RadioGroup<T extends string = string>({
+  label,
+  value,
+  options,
+  onValueChange,
+  hint,
+  name,
+  orientation = "vertical",
+  disabled = false,
+  required = false,
+  id,
+}: RadioGroupProps<T>) {
+  const generatedId = useId();
+  const groupId = id ?? generatedId;
+  const hintId = hint ? `${groupId}-hint` : undefined;
+  const groupName = name ?? groupId;
+
+  return (
+    <fieldset
+      className="ui-radio-group"
+      data-orientation={orientation}
+      disabled={disabled}
+      aria-describedby={hintId}
+      data-testid={id ? `${id}-group` : undefined}
+    >
+      <legend className="ui-field-label">{label}</legend>
+      <div className="ui-radio-options">
+        {options.map((option) => (
+          <label className="ui-radio" key={option.value}>
+            <input
+              type="radio"
+              name={groupName}
+              value={option.value}
+              checked={value === option.value}
+              disabled={disabled || option.disabled}
+              required={required}
+              onChange={() => onValueChange(option.value)}
+            />
+            <span className="ui-radio-copy">
+              <span className="ui-radio-label">{option.label}</span>
+              {option.description ? <span className="ui-radio-description">{option.description}</span> : null}
+            </span>
+          </label>
+        ))}
+      </div>
+      {hint ? <span className="ui-field-hint" id={hintId}>{hint}</span> : null}
+    </fieldset>
+  );
+}
+
 export interface SelectOption<T extends string = string> {
   value: T;
   label: string;
