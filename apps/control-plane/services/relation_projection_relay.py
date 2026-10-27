@@ -5,7 +5,7 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from graph.claim_projection import project_admitted_claim
+from graph.claim_projection import reconcile_claim_projection
 from graph.neo4j import Neo4jGraphStore
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -78,9 +78,15 @@ async def _finish(
     outbox_id: str,
     *,
     status: str,
+    expected_attempt: int,
     reason: str = "",
     backoff_seconds: int = 5,
 ) -> None:
+    """Finish only the lease generation that is still current.
+
+    Revalidation may put a DISPATCHING row back to PENDING while graph I/O is
+    in flight. The old worker must not overwrite that new handoff.
+    """
     async with factory() as session:
         result = await session.execute(
             select(RelationClaimProjectionOutbox).where(
@@ -89,6 +95,8 @@ async def _finish(
         )
         row = result.scalar_one_or_none()
         if row is None:
+            return
+        if row.status != "DISPATCHING" or row.attempts != expected_attempt:
             return
         row.status = status
         row.lease_expires_at = None
@@ -123,6 +131,46 @@ async def relay_relation_projection_outbox(
         for item in batch:
             try:
                 async with factory() as session:
+                    trigger_result = await session.execute(
+                        select(RelationClaimRow).where(
+                            RelationClaimRow.tenant_id == item["tenant_id"],
+                            RelationClaimRow.relation_id == item["relation_id"],
+                        )
+                    )
+                    trigger_row = trigger_result.scalar_one_or_none()
+                    if trigger_row is None:
+                        raise ValueError(
+                            "outbox points to a missing or cross-tenant relation claim"
+                        )
+                    latest_result = await session.execute(
+                        select(RelationClaimRow.relation_id)
+                        .where(
+                            RelationClaimRow.tenant_id == item["tenant_id"],
+                            RelationClaimRow.logical_relation_id
+                            == trigger_row.logical_relation_id,
+                        )
+                        .order_by(
+                            RelationClaimRow.revision_number.desc(),
+                            RelationClaimRow.created_at.desc(),
+                            RelationClaimRow.relation_id.desc(),
+                        )
+                        .limit(1)
+                    )
+                    latest_relation_id = latest_result.scalar_one_or_none()
+                    await session.commit()
+
+                # A stale outbox item cannot clobber or delete a newer revision.
+                if latest_relation_id != item["relation_id"]:
+                    await _finish(
+                        factory,
+                        item["outbox_id"],
+                        status="DISPATCHED",
+                        expected_attempt=int(item["attempts"]),
+                    )
+                    counts["skipped"] += 1
+                    continue
+
+                async with factory() as session:
                     claim_store = SqlRelationClaimStore(session)
                     claim = await claim_store.get(
                         item["relation_id"], tenant_id=item["tenant_id"]
@@ -138,29 +186,29 @@ async def relay_relation_projection_outbox(
 
                 if claim is None:
                     raise ValueError("outbox points to a missing or cross-tenant relation claim")
-                if not _valid_record(validation_record) or str(claim.status).lower() != "active":
-                    await _finish(
-                        factory,
-                        item["outbox_id"],
-                        status="SKIPPED",
-                        reason="claim is no longer VALID and active at projection time",
-                    )
-                    counts["skipped"] += 1
-                    continue
 
-                project_admitted_claim(
+                outcome = reconcile_claim_projection(
                     graph,
                     claim,
                     validation_record=validation_record,
                 )
-                await _finish(factory, item["outbox_id"], status="DISPATCHED")
-                counts["projected"] += 1
-            except (ValueError, RuntimeError, OSError, TimeoutError) as exc:
+                await _finish(
+                    factory,
+                    item["outbox_id"],
+                    status="DISPATCHED",
+                    expected_attempt=int(item["attempts"]),
+                )
+                if outcome["projected"]:
+                    counts["projected"] += 1
+                elif outcome["cleared"]:
+                    counts["skipped"] += 1
+            except Exception as exc:  # noqa: BLE001 - backend failures must trigger durable retry
                 backoff = min(300, 2 ** min(int(item["attempts"]), 8))
                 await _finish(
                     factory,
                     item["outbox_id"],
                     status="FAILED",
+                    expected_attempt=int(item["attempts"]),
                     reason=f"{type(exc).__name__}: {exc}",
                     backoff_seconds=backoff,
                 )

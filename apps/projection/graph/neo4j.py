@@ -170,6 +170,46 @@ class Neo4jGraphStore:
         data.pop("tenant_id", None)
         return GraphNode(node_id=node_id, node_type=node_type, properties=data)
 
+    def delete_logical_relation(self, tenant_id: str, logical_relation_id: str) -> int:
+        """Remove binary edges and reified hyperedges for one logical relation."""
+        if not tenant_id.strip() or not logical_relation_id.strip():
+            raise ValueError("tenant_id and logical_relation_id are required")
+        with self._driver.session() as session:
+            edge_rows = session.run(
+                "MATCH (a:ProjectionNode {tenant_id: $tenant_id})-[r]->"
+                "(b:ProjectionNode {tenant_id: $tenant_id}) "
+                "WHERE r.tenant_id = $tenant_id "
+                "AND r.logical_relation_id = $logical_relation_id "
+                "WITH collect(r) AS rels, count(r) AS deleted "
+                "FOREACH (r IN rels | DELETE r) RETURN deleted",
+                tenant_id=tenant_id,
+                logical_relation_id=logical_relation_id,
+            ).data()
+            hyper_rows = session.run(
+                "MATCH (h:ProjectionNode:HyperEdge {tenant_id: $tenant_id, "
+                "logical_relation_id: $logical_relation_id}) "
+                "WITH collect(h) AS nodes, count(h) AS deleted "
+                "FOREACH (h IN nodes | DETACH DELETE h) RETURN deleted",
+                tenant_id=tenant_id,
+                logical_relation_id=logical_relation_id,
+            ).data()
+        edges_deleted = int(edge_rows[0].get("deleted", 0)) if edge_rows else 0
+        hyperedges_deleted = int(hyper_rows[0].get("deleted", 0)) if hyper_rows else 0
+        return edges_deleted + hyperedges_deleted
+
+    def clear_tenant_projection(self, tenant_id: str) -> int:
+        """Clear a tenant's projected nodes and relations before a canonical rebuild."""
+        if not tenant_id.strip():
+            raise ValueError("tenant_id is required")
+        with self._driver.session() as session:
+            rows = session.run(
+                "MATCH (n:ProjectionNode {tenant_id: $tenant_id}) "
+                "WITH collect(n) AS nodes, count(n) AS deleted "
+                "FOREACH (n IN nodes | DETACH DELETE n) RETURN deleted",
+                tenant_id=tenant_id,
+            ).data()
+        return int(rows[0].get("deleted", 0)) if rows else 0
+
     @staticmethod
     def _sanitize(name: str) -> str:
         """Coerce a type name into a valid ASCII Cypher label.

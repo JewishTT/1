@@ -57,4 +57,40 @@ def project_admitted_claim(
     return {"relation_id": str(claim.relation_id), "nodes": len(nodes), "edges": 1, "hyperedges": 0}
 
 
-__all__ = ["project_admitted_claim"]
+def reconcile_claim_projection(
+    graph_store: GraphStore,
+    claim: Any,
+    *,
+    validation_record: dict[str, Any] | None,
+) -> dict[str, int | str | bool]:
+    """Reconcile a logical relation against its durable validation result.
+
+    Existing revisions are cleared before a current VALID active revision is
+    upserted. For rejected or inactive claims, clearing is the whole operation.
+    Outbox replay is therefore safe after a crash between graph and SQL writes.
+    """
+    tenant_id = str(getattr(claim, "tenant_id", "") or "").strip()
+    logical_id = str(getattr(claim, "logical_relation_id", "") or "").strip()
+    if not tenant_id or not logical_id:
+        raise ValueError("claim tenant_id and logical_relation_id are required")
+    cleared = graph_store.delete_logical_relation(tenant_id, logical_id)
+    valid = bool(validation_record) and _value(validation_record.get("verdict", "")) == "valid"
+    active = _value(getattr(claim, "status", "")) == "active"
+    if not valid or not active:
+        return {
+            "relation_id": str(claim.relation_id),
+            "projected": False,
+            "cleared": cleared,
+            "nodes": 0,
+            "edges": 0,
+            "hyperedges": 0,
+        }
+    projected = project_admitted_claim(
+        graph_store,
+        claim,
+        validation_record=validation_record or {},
+    )
+    return {**projected, "projected": True, "cleared": cleared}
+
+
+__all__ = ["project_admitted_claim", "reconcile_claim_projection"]

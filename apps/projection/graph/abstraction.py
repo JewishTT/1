@@ -166,6 +166,8 @@ class GraphStore(Protocol):
         tenant_id: str | None = None,
     ) -> list[str]: ...
     def node(self, node_id: str, *, tenant_id: str | None = None) -> GraphNode | None: ...
+    def delete_logical_relation(self, tenant_id: str, logical_relation_id: str) -> int: ...
+    def clear_tenant_projection(self, tenant_id: str) -> int: ...
 
 
 class InMemoryGraphStore:
@@ -295,6 +297,59 @@ class InMemoryGraphStore:
         if tenant_id and node is not None and node.properties.get("tenant_id") != tenant_id:
             return None
         return node
+
+    def delete_logical_relation(self, tenant_id: str, logical_relation_id: str) -> int:
+        """Delete projected relations for one logical claim within one tenant."""
+        removed_edges = {
+            edge for edge in self._edges
+            if edge.properties.get("tenant_id") == tenant_id
+            and edge.properties.get("logical_relation_id") == logical_relation_id
+        }
+        if removed_edges:
+            self._edges.difference_update(removed_edges)
+            for node_id in list(self._adj):
+                self._adj[node_id].difference_update(removed_edges)
+                if not self._adj[node_id]:
+                    self._adj.pop(node_id, None)
+
+        removed_hyperedges = {
+            edge_id for edge_id, edge in self._hyperedges.items()
+            if edge.properties.get("tenant_id") == tenant_id
+            and edge.properties.get("logical_relation_id") == logical_relation_id
+        }
+        for edge_id in removed_hyperedges:
+            edge = self._hyperedges.pop(edge_id)
+            for member in edge.members:
+                memberships = self._hyper_membership.get(member)
+                if memberships is not None:
+                    memberships.discard(edge_id)
+                    if not memberships:
+                        self._hyper_membership.pop(member, None)
+        return len(removed_edges) + len(removed_hyperedges)
+
+    def clear_tenant_projection(self, tenant_id: str) -> int:
+        """Remove derived graph state for a tenant before a canonical rebuild."""
+        logical_ids = {
+            str(edge.properties.get("logical_relation_id", ""))
+            for edge in self._edges
+            if edge.properties.get("tenant_id") == tenant_id
+        }
+        logical_ids.update(
+            str(edge.properties.get("logical_relation_id", ""))
+            for edge in self._hyperedges.values()
+            if edge.properties.get("tenant_id") == tenant_id
+        )
+        removed = sum(
+            self.delete_logical_relation(tenant_id, logical_id)
+            for logical_id in logical_ids
+        )
+        tenant_nodes = {
+            node_id for node_id, node in self._nodes.items()
+            if node.properties.get("tenant_id") == tenant_id
+        }
+        for node_id in tenant_nodes:
+            self._nodes.pop(node_id, None)
+        return removed + len(tenant_nodes)
 
     def nodes(self) -> list[GraphNode]:
         return list(self._nodes.values())

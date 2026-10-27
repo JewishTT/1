@@ -465,14 +465,16 @@ class SqlRelationClaimStore:
     async def record_validation(
         self, relation_id: str, *, tenant_id: str, result: Any
     ) -> None:
-        """Persist a full verdict and atomically enqueue only a VALID claim.
+        """Persist each verdict and schedule a durable projection reconciliation.
 
-        The validation JSONB and its projection outbox row share the same SQL
-        transaction. A graph worker therefore cannot observe an outbox entry
-        whose admission verdict was not durably recorded.
+        Every outcome is queued, not only VALID: a rejected or withdrawn verdict
+        must be able to remove an earlier graph projection. The verdict JSONB and
+        outbox row commit in the same SQL transaction.
         """
         model, column = _validation_column()
-        result_set = await self.session.execute(self._verdict_query(model, relation_id, tenant_id))
+        result_set = await self.session.execute(
+            self._verdict_query(model, relation_id, tenant_id)
+        )
         row = result_set.scalar_one_or_none()
         if row is None:
             raise ValueError(
@@ -481,28 +483,25 @@ class SqlRelationClaimStore:
 
         payload = _validation_payload(result)
         setattr(row, column, payload)
-        verdict = str(payload.get("verdict", "")).strip().lower()
-        if verdict == _VALID:
-            outbox_id = "claimproj-" + digest128(f"{tenant_id}\x00{relation_id}")
-            statement = pg_insert(RelationClaimProjectionOutboxRow).values(
-                outbox_id=outbox_id,
-                tenant_id=tenant_id,
-                relation_id=relation_id,
-                status="PENDING",
-                attempts=0,
-                last_error="",
-            )
-            statement = statement.on_conflict_do_update(
-                constraint="uq_relation_claim_projection_outbox_claim",
-                set_={
-                    "status": "PENDING",
-                    "available_at": func.now(),
-                    "lease_expires_at": None,
-                    "last_error": "",
-                },
-                where=RelationClaimProjectionOutboxRow.status.in_(("FAILED", "SKIPPED")),
-            )
-            await self.session.execute(statement)
+        outbox_id = "claimproj-" + digest128(f"{tenant_id}\\x00{relation_id}")
+        statement = pg_insert(RelationClaimProjectionOutboxRow).values(
+            outbox_id=outbox_id,
+            tenant_id=tenant_id,
+            relation_id=relation_id,
+            status="PENDING",
+            attempts=0,
+            last_error="",
+        )
+        statement = statement.on_conflict_do_update(
+            constraint="uq_relation_claim_projection_outbox_claim",
+            set_={
+                "status": "PENDING",
+                "available_at": func.now(),
+                "lease_expires_at": None,
+                "last_error": "",
+            },
+        )
+        await self.session.execute(statement)
         await self.session.commit()
 
     async def non_valid(self, *, tenant_id: str) -> list[dict[str, Any]]:
