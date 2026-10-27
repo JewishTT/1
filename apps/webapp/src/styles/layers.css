@@ -49,7 +49,6 @@
  * Only scoped vendor stylesheets are imported here so they cannot collide with
  * the app's own index.css. See src/styles/donors/INDEX.md for provenance/licensing.
  */
-@import "./donors/pano/pano-tokens.css";
 @import "./donors/vitni/v2.css";
 @import "./donors/vitni/search.css";
 @import "./donors/vitni/evidence-reports.css";
