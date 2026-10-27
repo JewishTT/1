@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **235** · TypeScript modules: **0**
+Python modules: **239** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -306,7 +306,7 @@ platform_model.semantic
 
 Graph abstraction, search/analytics projectors, snapshots, TDA.
 
-Python modules: **65** · TypeScript modules: **0**
+Python modules: **67** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -319,6 +319,7 @@ apps.projection.analytics.temporal_graph
 apps.projection.graph
 apps.projection.graph.abstraction
 apps.projection.graph.adjacency
+apps.projection.graph.claim_projection
 apps.projection.graph.neo4j
 apps.projection.graph.relation_store
 apps.projection.graph.snapshot
@@ -350,7 +351,6 @@ apps.projection.tda.features
 apps.projection.tda.insight
 apps.projection.tda.pipeline
 apps.projection.tda.validated
-apps.projection.temporal_materialization
 ```
 
 </details>

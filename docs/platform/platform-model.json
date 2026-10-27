@@ -207,7 +207,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 235,
+      "python_modules": 239,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -303,6 +303,7 @@
         "apps.control-plane.db.migrations.versions.028_observation_processing_results",
         "apps.control-plane.db.migrations.versions.029_person_case_artifacts_reports",
         "apps.control-plane.db.migrations.versions.030_observation_candidate_hardening",
+        "apps.control-plane.db.migrations.versions.031_relation_claim_projection_outbox",
         "apps.control-plane.db.relation_candidate_store",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
@@ -344,6 +345,7 @@
         "apps.control-plane.services.pow_run",
         "apps.control-plane.services.processing_result_store",
         "apps.control-plane.services.query_planner",
+        "apps.control-plane.services.relation_projection_relay",
         "apps.control-plane.services.reobservation",
         "apps.control-plane.services.research_case_artifacts",
         "apps.control-plane.services.research_case_policy",
@@ -407,9 +409,7 @@
         "apps.control-plane.tests.unit.test_enrichment_service",
         "apps.control-plane.tests.unit.test_entity_stream_persistence",
         "apps.control-plane.tests.unit.test_fabric_anchor_guard",
-        "apps.control-plane.tests.unit.test_fabric_endpoints",
-        "apps.control-plane.tests.unit.test_invariant_reducer",
-        "apps.control-plane.tests.unit.test_migration_016_forward_only"
+        "apps.control-plane.tests.unit.test_fabric_endpoints"
       ]
     },
     {
@@ -575,7 +575,7 @@
     {
       "name": "projection",
       "description": "Graph abstraction, search/analytics projectors, snapshots, TDA.",
-      "python_modules": 65,
+      "python_modules": 67,
       "typescript_modules": 0,
       "modules": [
         "apps.projection.analytics",
@@ -586,6 +586,7 @@
         "apps.projection.graph",
         "apps.projection.graph.abstraction",
         "apps.projection.graph.adjacency",
+        "apps.projection.graph.claim_projection",
         "apps.projection.graph.neo4j",
         "apps.projection.graph.relation_store",
         "apps.projection.graph.snapshot",
@@ -629,6 +630,7 @@
         "apps.projection.tests.test_relevance",
         "apps.projection.tests.test_streams",
         "apps.projection.tests.test_tantivy_backend",
+        "apps.projection.tests.unit.test_claim_projection",
         "apps.projection.tests.unit.test_diagram",
         "apps.projection.tests.unit.test_features",
         "apps.projection.tests.unit.test_graph_store_direction",
@@ -1108,15 +1110,15 @@
     }
   ],
   "import_graph": {
-    "module_count": 999,
-    "edge_count": 2781,
+    "module_count": 1005,
+    "edge_count": 2801,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 871,
+      "stdlib:__future__": 876,
       "stdlib:abc": 3,
       "stdlib:argparse": 18,
       "stdlib:ast": 26,
-      "stdlib:asyncio": 67,
+      "stdlib:asyncio": 69,
       "stdlib:base64": 9,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
@@ -1126,8 +1128,8 @@
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 389,
-      "stdlib:datetime": 189,
+      "stdlib:dataclasses": 390,
+      "stdlib:datetime": 190,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1144,11 +1146,11 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 191,
+      "stdlib:json": 192,
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 68,
-      "stdlib:pathlib": 311,
+      "stdlib:pathlib": 314,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 95,
@@ -1161,15 +1163,15 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 15,
-      "stdlib:sys": 252,
+      "stdlib:sys": 254,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 17,
       "stdlib:threading": 17,
       "stdlib:time": 29,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
-      "stdlib:types": 32,
-      "stdlib:typing": 363,
+      "stdlib:types": 33,
+      "stdlib:typing": 365,
       "stdlib:unicodedata": 6,
       "stdlib:urllib": 43,
       "stdlib:uuid": 48,
@@ -1180,7 +1182,7 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 23,
+      "third-party:alembic": 24,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
@@ -1198,6 +1200,7 @@
       "third-party:httpx": 20,
       "third-party:litellm": 2,
       "third-party:nameparser": 3,
+      "third-party:neo4j": 1,
       "third-party:numpy": 23,
       "third-party:openpyxl": 1,
       "third-party:opentelemetry": 5,
@@ -1209,14 +1212,14 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 265,
+      "third-party:pytest": 267,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 149,
+      "third-party:sqlalchemy": 156,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
       "third-party:trafilatura": 1,
@@ -4799,6 +4802,16 @@
       },
       {
         "from": "apps/control-plane/db/relation_claim_store.py",
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
+      },
+      {
+        "from": "apps/control-plane/db/relation_claim_store.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/db/relation_claim_store.py",
         "to": "apps/control-plane/db/schema.py",
         "via": "db.schema"
       },
@@ -6076,6 +6089,36 @@
         "from": "apps/control-plane/services/query_planner.py",
         "to": "apps/shared/scoring/fusion.py",
         "via": "scoring.fusion"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_relay.py",
+        "to": "apps/control-plane/db/relation_claim_store.py",
+        "via": "db.relation_claim_store"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_relay.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_relay.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_relay.py",
+        "to": "apps/control-plane/db/session.py",
+        "via": "db.session"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_relay.py",
+        "to": "apps/projection/graph/claim_projection.py",
+        "via": "graph.claim_projection"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_relay.py",
+        "to": "apps/projection/graph/neo4j.py",
+        "via": "graph.neo4j"
       },
       {
         "from": "apps/control-plane/services/research_case_artifacts.py",
@@ -7596,6 +7639,21 @@
         "from": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
         "to": "apps/shared/semantic/contracts.py",
         "via": "semantic.contracts"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "to": "apps/control-plane/db/relation_claim_store.py",
+        "via": "db.relation_claim_store"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
       },
       {
         "from": "apps/control-plane/tests/unit/test_reobservation.py",
@@ -10048,6 +10106,21 @@
         "via": "path_shim"
       },
       {
+        "from": "apps/projection/graph/claim_projection.py",
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
+      },
+      {
+        "from": "apps/projection/graph/claim_projection.py",
+        "to": "apps/projection/graph/abstraction.py",
+        "via": "graph.abstraction"
+      },
+      {
+        "from": "apps/projection/graph/claim_projection.py",
+        "to": "apps/projection/graph/relation_store.py",
+        "via": "graph.relation_store"
+      },
+      {
         "from": "apps/projection/graph/neo4j.py",
         "to": "apps/shared/domain/__init__.py",
         "via": "domain"
@@ -10061,6 +10134,11 @@
         "from": "apps/projection/graph/neo4j.py",
         "to": "apps/projection/graph/abstraction.py",
         "via": "abstraction"
+      },
+      {
+        "from": "apps/projection/graph/neo4j.py",
+        "to": "apps/shared/config/settings.py",
+        "via": "config.settings"
       },
       {
         "from": "apps/projection/graph/relation_store.py",
@@ -10521,6 +10599,31 @@
         "from": "apps/projection/tests/test_tantivy_backend.py",
         "to": "apps/projection/search/tantivy_backend.py",
         "via": "search.tantivy_backend"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_claim_projection.py",
+        "to": "apps/shared/domain/relation_claim.py",
+        "via": "domain.relation_claim"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_claim_projection.py",
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_claim_projection.py",
+        "to": "apps/projection/graph/abstraction.py",
+        "via": "graph.abstraction"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_claim_projection.py",
+        "to": "apps/projection/graph/claim_projection.py",
+        "via": "graph.claim_projection"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_claim_projection.py",
+        "to": "apps/projection/graph/relation_store.py",
+        "via": "graph.relation_store"
       },
       {
         "from": "apps/projection/tests/unit/test_diagram.py",
@@ -17735,6 +17838,28 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_migration.py",
+        "tests": 1,
+        "test_names": [
+          "test_claim_projection_migration_adds_verdict_and_outbox"
+        ],
+        "targets": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "tests": 4,
+        "test_names": [
+          "test_validation_record_is_a_separate_durable_jsonb_column",
+          "test_projection_outbox_has_tenant_claim_uniqueness_and_retry_lease",
+          "test_valid_verdict_and_outbox_enqueue_commit_together",
+          "test_non_valid_verdict_is_durable_without_admission_enqueue"
+        ],
+        "targets": [
+          "apps/control-plane/db/relation_claim_store.py",
+          "apps/control-plane/db/schema.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_reobservation.py",
         "tests": 9,
         "test_names": [
@@ -19124,7 +19249,7 @@
       },
       {
         "path": "apps/projection/tests/test_lakehouse.py",
-        "tests": 8,
+        "tests": 10,
         "test_names": [
           "test_append_and_rebuild_rows",
           "test_exact_repeat_idempotent",
@@ -19133,7 +19258,9 @@
           "test_tenant_isolation",
           "test_missing_partition_rejects",
           "test_partition_snapshot",
-          "test_manifest_is_json_addressable"
+          "test_partition_manifest_is_synthesized_from_immutable_rows",
+          "test_concurrent_appends_do_not_overwrite_each_other",
+          "test_legacy_manifest_is_read_and_promoted_before_append"
         ],
         "targets": [
           "apps/projection/lakehouse/river/lake.py",
@@ -19270,6 +19397,23 @@
         ]
       },
       {
+        "path": "apps/projection/tests/unit/test_claim_projection.py",
+        "tests": 4,
+        "test_names": [
+          "test_only_valid_claim_is_projected_and_replay_is_idempotent",
+          "test_non_valid_verdict_cannot_create_any_graph_state",
+          "test_nary_claim_remains_one_hyperedge_not_a_clique",
+          "test_claim_without_observation_provenance_is_refused_before_writes"
+        ],
+        "targets": [
+          "apps/projection/graph/abstraction.py",
+          "apps/projection/graph/claim_projection.py",
+          "apps/projection/graph/relation_store.py",
+          "apps/shared/domain/relation_claim.py",
+          "apps/shared/domain/relation_identity.py"
+        ]
+      },
+      {
         "path": "apps/projection/tests/unit/test_diagram.py",
         "tests": 6,
         "test_names": [
@@ -19385,7 +19529,7 @@
       },
       {
         "path": "apps/projection/tests/unit/test_neo4j_relation_write.py",
-        "tests": 13,
+        "tests": 14,
         "test_names": [
           "test_emitted_cypher_merges_on_the_relation_id",
           "test_relation_id_is_a_parameter",
@@ -19399,7 +19543,8 @@
           "test_rejects_a_cyrillic_relation_type",
           "test_rejects_an_embedded_non_ascii_character",
           "test_keeps_ascii_identifiers_untouched",
-          "test_node_merge_is_unchanged"
+          "test_node_merge_is_unchanged",
+          "test_reads_require_tenant_scope"
         ],
         "targets": [
           "apps/projection/graph/abstraction.py",
@@ -23359,7 +23504,7 @@
         "targets": []
       }
     ],
-    "total": 5256
+    "total": 5268
   },
   "contracts": {
     "python": [
@@ -28557,7 +28702,7 @@
     "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
     "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
     "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
-    "apps/control-plane/db/relation_claim_store.py",
+    "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
     "apps/control-plane/semantic_path/corpus_cases.py",
@@ -28577,6 +28722,7 @@
     "apps/control-plane/services/observation_consumer_runner.py",
     "apps/control-plane/services/pow_run.py",
     "apps/control-plane/services/processing_result_store.py",
+    "apps/control-plane/services/relation_projection_relay.py",
     "apps/control-plane/services/research_case_runtime.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
@@ -28656,10 +28802,9 @@
     "apps/shared/ids/gen.py",
     "apps/shared/network/__init__.py",
     "apps/shared/observability/__init__.py",
-    "apps/shared/scoring/metrics.py",
-    "apps/shared/semantic/__init__.py"
+    "apps/shared/scoring/metrics.py"
   ],
-  "untested_count": 266,
+  "untested_count": 267,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -29572,6 +29717,7 @@
             "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
             "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
             "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
+            "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
             "apps/control-plane/db/relation_candidate_store.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
@@ -29611,6 +29757,7 @@
             "apps/control-plane/services/pow_run.py",
             "apps/control-plane/services/processing_result_store.py",
             "apps/control-plane/services/query_planner.py",
+            "apps/control-plane/services/relation_projection_relay.py",
             "apps/control-plane/services/reobservation.py",
             "apps/control-plane/services/research_case_artifacts.py",
             "apps/control-plane/services/research_case_policy.py",
@@ -29693,6 +29840,8 @@
             "apps/control-plane/tests/unit/test_query_fusion.py",
             "apps/control-plane/tests/unit/test_rank_fusion_wiring.py",
             "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+            "apps/control-plane/tests/unit/test_relation_projection_migration.py",
+            "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
             "apps/control-plane/tests/unit/test_reobservation.py",
             "apps/control-plane/tests/unit/test_science_tda.py",
             "apps/control-plane/tests/unit/test_search_core_selection.py",
@@ -29719,6 +29868,7 @@
             "apps/projection/graph/__init__.py",
             "apps/projection/graph/abstraction.py",
             "apps/projection/graph/adjacency.py",
+            "apps/projection/graph/claim_projection.py",
             "apps/projection/graph/neo4j.py",
             "apps/projection/graph/relation_store.py",
             "apps/projection/graph/snapshot.py",
@@ -29762,6 +29912,7 @@
             "apps/projection/tests/test_relevance.py",
             "apps/projection/tests/test_streams.py",
             "apps/projection/tests/test_tantivy_backend.py",
+            "apps/projection/tests/unit/test_claim_projection.py",
             "apps/projection/tests/unit/test_diagram.py",
             "apps/projection/tests/unit/test_features.py",
             "apps/projection/tests/unit/test_graph_store_direction.py",
@@ -29777,7 +29928,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 292
+          "module_count": 298
         },
         {
           "id": "webapp",
@@ -33549,6 +33700,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
+        "status": "MIGRATION",
+        "loc": 70,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "IMPLEMENTED",
         "loc": 229,
@@ -33560,7 +33720,7 @@
       {
         "path": "apps/control-plane/db/relation_claim_store.py",
         "status": "IMPLEMENTED",
-        "loc": 559,
+        "loc": 576,
         "callables": 25,
         "stubs": 0,
         "not_implemented": 1,
@@ -33569,7 +33729,7 @@
       {
         "path": "apps/control-plane/db/schema.py",
         "status": "IMPLEMENTED",
-        "loc": 3140,
+        "loc": 3183,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -33920,6 +34080,15 @@
         "loc": 417,
         "callables": 16,
         "stubs": 1,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/services/relation_projection_relay.py",
+        "status": "IMPLEMENTED",
+        "loc": 202,
+        "callables": 6,
+        "stubs": 0,
         "not_implemented": 0,
         "markers": []
       },
@@ -34682,6 +34851,24 @@
         "status": "TEST",
         "loc": 56,
         "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_migration.py",
+        "status": "TEST",
+        "loc": 19,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "status": "TEST",
+        "loc": 94,
+        "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -36020,7 +36207,7 @@
       {
         "path": "apps/projection/graph/abstraction.py",
         "status": "IMPLEMENTED",
-        "loc": 290,
+        "loc": 302,
         "callables": 27,
         "stubs": 5,
         "not_implemented": 0,
@@ -36036,10 +36223,19 @@
         "markers": []
       },
       {
+        "path": "apps/projection/graph/claim_projection.py",
+        "status": "IMPLEMENTED",
+        "loc": 56,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/projection/graph/neo4j.py",
         "status": "IMPLEMENTED",
-        "loc": 149,
-        "callables": 7,
+        "loc": 195,
+        "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -36074,9 +36270,9 @@
       {
         "path": "apps/projection/lakehouse/river/lake.py",
         "status": "IMPLEMENTED",
-        "loc": 231,
-        "callables": 21,
-        "stubs": 5,
+        "loc": 305,
+        "callables": 22,
+        "stubs": 3,
         "not_implemented": 0,
         "markers": []
       },
@@ -36371,8 +36567,8 @@
       {
         "path": "apps/projection/tests/test_lakehouse.py",
         "status": "TEST",
-        "loc": 109,
-        "callables": 9,
+        "loc": 142,
+        "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -36423,6 +36619,15 @@
         "markers": []
       },
       {
+        "path": "apps/projection/tests/unit/test_claim_projection.py",
+        "status": "TEST",
+        "loc": 98,
+        "callables": 5,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/projection/tests/unit/test_diagram.py",
         "status": "TEST",
         "loc": 54,
@@ -36461,8 +36666,8 @@
       {
         "path": "apps/projection/tests/unit/test_neo4j_relation_write.py",
         "status": "TEST",
-        "loc": 227,
-        "callables": 25,
+        "loc": 240,
+        "callables": 26,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -38763,8 +38968,8 @@
       {
         "path": "apps/shared/storage/memory.py",
         "status": "IMPLEMENTED",
-        "loc": 118,
-        "callables": 12,
+        "loc": 144,
+        "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -38772,8 +38977,8 @@
       {
         "path": "apps/shared/storage/s3.py",
         "status": "IMPLEMENTED",
-        "loc": 174,
-        "callables": 11,
+        "loc": 252,
+        "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40513,12 +40718,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 539,
+      "IMPLEMENTED": 541,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 333,
-      "MIGRATION": 18,
-      "total": 999
+      "TEST": 336,
+      "MIGRATION": 19,
+      "total": 1005
     }
   },
   "reachability": {
@@ -41460,12 +41665,16 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/db/relation_claim_store.py",
-        "status": "ORPHAN"
+        "status": "TEST_ONLY"
       },
       {
         "path": "apps/control-plane/db/schema.py",
@@ -41622,6 +41831,10 @@
       {
         "path": "apps/control-plane/services/query_planner.py",
         "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/control-plane/services/relation_projection_relay.py",
+        "status": "ORPHAN"
       },
       {
         "path": "apps/control-plane/services/reobservation.py",
@@ -41953,6 +42166,14 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_migration.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
         "status": "TEST"
       },
       {
@@ -42552,6 +42773,10 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/projection/graph/claim_projection.py",
+        "status": "TEST_ONLY"
+      },
+      {
         "path": "apps/projection/graph/neo4j.py",
         "status": "TEST_ONLY"
       },
@@ -42721,6 +42946,10 @@
       },
       {
         "path": "apps/projection/tests/test_tantivy_backend.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/projection/tests/unit/test_claim_projection.py",
         "status": "TEST"
       },
       {
@@ -44560,10 +44789,10 @@
     ],
     "summary": {
       "PRODUCTION": 402,
-      "TEST_ONLY": 143,
-      "ORPHAN": 121,
-      "TEST": 333,
-      "total": 999
+      "TEST_ONLY": 145,
+      "ORPHAN": 122,
+      "TEST": 336,
+      "total": 1005
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -44600,6 +44829,7 @@
       "apps/control-plane/badges/__init__.py",
       "apps/control-plane/context_engine/context_graph.py",
       "apps/control-plane/context_engine/science_bridge.py",
+      "apps/control-plane/db/relation_claim_store.py",
       "apps/control-plane/db/source_query_store.py",
       "apps/control-plane/modifier/__init__.py",
       "apps/control-plane/services/acquisition_loop.py",
@@ -44632,6 +44862,7 @@
       "apps/interpretation/retrieval/retriever.py",
       "apps/projection/analytics/projector.py",
       "apps/projection/analytics/store.py",
+      "apps/projection/graph/claim_projection.py",
       "apps/projection/graph/neo4j.py",
       "apps/projection/graph/snapshot.py",
       "apps/projection/lakehouse/river/lake.py",
@@ -44755,12 +44986,13 @@
       "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
       "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
       "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
-      "apps/control-plane/db/relation_claim_store.py",
+      "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
       "apps/control-plane/services/__init__.py",
       "apps/control-plane/services/acquisition_evidence.py",
+      "apps/control-plane/services/relation_projection_relay.py",
       "apps/control-plane/services/specops_catalog.py",
       "apps/control-plane/workflows/__init__.py",
       "apps/interpretation/__init__.py",
@@ -45560,10 +45792,10 @@
             "id": "relation-claim-store",
             "title": "Relation-claim store",
             "why": "Durable persistence of relation claims and their revision chain.",
-            "status": "ORPHAN",
+            "status": "TEST_ONLY",
             "primary": "apps/control-plane/db/relation_claim_store.py",
             "missing": [],
-            "reachability": "ORPHAN",
+            "reachability": "TEST_ONLY",
             "maturity": "IMPLEMENTED"
           },
           {
@@ -45733,8 +45965,8 @@
     ],
     "summary": {
       "MISSING": 0,
-      "ORPHAN": 4,
-      "TEST_ONLY": 6,
+      "ORPHAN": 3,
+      "TEST_ONLY": 7,
       "STUB": 0,
       "PARTIAL": 0,
       "READY": 34,
@@ -45793,16 +46025,6 @@
       "title": "Layer 1 — extraction, resolution, normalization",
       "items": [
         {
-          "id": "relation-claim-store",
-          "title": "Relation-claim store",
-          "why": "Durable persistence of relation claims and their revision chain.",
-          "status": "ORPHAN",
-          "primary": "apps/control-plane/db/relation_claim_store.py",
-          "missing": [],
-          "reachability": "ORPHAN",
-          "maturity": "IMPLEMENTED"
-        },
-        {
           "id": "semantic-fabric",
           "title": "Semantic fabric",
           "why": "Ontology-as-tool, regime, operators.",
@@ -45811,6 +46033,16 @@
           "missing": [],
           "reachability": "ORPHAN",
           "maturity": "PACKAGE_INIT"
+        },
+        {
+          "id": "relation-claim-store",
+          "title": "Relation-claim store",
+          "why": "Durable persistence of relation claims and their revision chain.",
+          "status": "TEST_ONLY",
+          "primary": "apps/control-plane/db/relation_claim_store.py",
+          "missing": [],
+          "reachability": "TEST_ONLY",
+          "maturity": "IMPLEMENTED"
         },
         {
           "id": "splink-adapter",
@@ -55659,6 +55891,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "68c06fc1f640fc14",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_claim_store.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_claim_store.py",
+          "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7cfdc895a85c2c9d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_claim_store.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_claim_store.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "7cfdc895a85c2c9d",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/db/relation_claim_store.py",
@@ -58983,6 +59241,84 @@
         "evidence": {
           "file": "apps/control-plane/services/query_planner.py",
           "via": "scoring.fusion"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8844875511937906",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_relay.py",
+        "object": "apps/control-plane/db/relation_claim_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_relay.py",
+          "via": "db.relation_claim_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "6e42cec9ee45bceb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_relay.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_relay.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "6e42cec9ee45bceb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_relay.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_relay.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9dadf91493b8b1b8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_relay.py",
+        "object": "apps/control-plane/db/session.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_relay.py",
+          "via": "db.session"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b4ec5dbceebe6cac",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_relay.py",
+        "object": "apps/projection/graph/claim_projection.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_relay.py",
+          "via": "graph.claim_projection"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9d01a76afef4ac32",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_relay.py",
+        "object": "apps/projection/graph/neo4j.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_relay.py",
+          "via": "graph.neo4j"
         },
         "confidence": 1.0
       },
@@ -62935,6 +63271,45 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
           "via": "semantic.contracts"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "328321cddcebf62b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "object": "apps/control-plane/db/relation_claim_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+          "via": "db.relation_claim_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0bd187b639bb80d9",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0bd187b639bb80d9",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+          "via": "db.schema"
         },
         "confidence": 1.0
       },
@@ -69309,6 +69684,45 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "8ff704aaf01db4df",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/graph/claim_projection.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/graph/claim_projection.py",
+          "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "1481435de8c797bf",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/graph/claim_projection.py",
+        "object": "apps/projection/graph/abstraction.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/graph/claim_projection.py",
+          "via": "graph.abstraction"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9ebefbbc239be68e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/graph/claim_projection.py",
+        "object": "apps/projection/graph/relation_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/graph/claim_projection.py",
+          "via": "graph.relation_store"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "d5a41ea1f230bcb3",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/projection/graph/neo4j.py",
@@ -69344,6 +69758,19 @@
         "evidence": {
           "file": "apps/projection/graph/neo4j.py",
           "via": "abstraction"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8a4d5c5626501945",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/graph/neo4j.py",
+        "object": "apps/shared/config/settings.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/graph/neo4j.py",
+          "via": "config.settings"
         },
         "confidence": 1.0
       },
@@ -70540,6 +70967,71 @@
         "evidence": {
           "file": "apps/projection/tests/test_tantivy_backend.py",
           "via": "search.tantivy_backend"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7a19d3095054fb2f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/shared/domain/relation_claim.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py",
+          "via": "domain.relation_claim"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "56da427a4438e982",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py",
+          "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b40535aa5a4b3c03",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/projection/graph/abstraction.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py",
+          "via": "graph.abstraction"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ae610183ac5baf01",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/projection/graph/claim_projection.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py",
+          "via": "graph.claim_projection"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "32ed28cd1e38200f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/projection/graph/relation_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py",
+          "via": "graph.relation_store"
         },
         "confidence": 1.0
       },
@@ -85438,6 +85930,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "b30a021134ced645",
+        "kind": "TABLE_CLASS_DEFINED",
+        "subject": "RelationClaimProjectionOutbox",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "regex_class_base",
+        "evidence": {
+          "file": "apps/control-plane/db/schema.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "941b7adaab4d3f87",
         "kind": "TABLE_CLASS_DEFINED",
         "subject": "RelationClaimRevision",
@@ -90010,6 +90514,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "9644b4287edc340b",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "object": "apps/control-plane/db/relation_claim_store.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7b2f5235198d70f7",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "6a6401da78f04e7b",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_reobservation.py",
@@ -92466,6 +92994,66 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/projection/tests/test_tantivy_backend.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "68b60312eb5126f1",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/projection/graph/abstraction.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9960058394f2c082",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/projection/graph/claim_projection.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "587006947fd555fa",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/projection/graph/relation_store.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f1831ec7cad23e73",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/shared/domain/relation_claim.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "741ced0f90744fe2",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/projection/tests/unit/test_claim_projection.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/projection/tests/unit/test_claim_projection.py"
         },
         "confidence": 1.0
       },
@@ -101366,44 +101954,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4330,
-      "static_facts": 4036,
+      "facts_total": 4358,
+      "static_facts": 4064,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 999,
+    "python_modules": 1005,
     "typescript_modules": 255,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2781,
-    "test_files": 336,
-    "test_functions": 5256,
-    "untested_modules": 266,
+    "import_edges": 2801,
+    "test_files": 339,
+    "test_functions": 5268,
+    "untested_modules": 267,
     "http_routes": 182
   },
   "evidence_stats": {
-    "facts_total": 4330,
-    "static_facts": 4036,
+    "facts_total": 4358,
+    "static_facts": 4064,
     "inferred": 294,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 539,
+    "IMPLEMENTED": 541,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 333,
-    "MIGRATION": 18,
-    "total": 999
+    "TEST": 336,
+    "MIGRATION": 19,
+    "total": 1005
   },
   "reachability_summary": {
     "PRODUCTION": 402,
-    "TEST_ONLY": 143,
-    "ORPHAN": 121,
-    "TEST": 333,
-    "total": 999
+    "TEST_ONLY": 145,
+    "ORPHAN": 122,
+    "TEST": 336,
+    "total": 1005
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -101478,6 +102066,7 @@
     "apps/control-plane/badges/__init__.py",
     "apps/control-plane/context_engine/context_graph.py",
     "apps/control-plane/context_engine/science_bridge.py",
+    "apps/control-plane/db/relation_claim_store.py",
     "apps/control-plane/db/source_query_store.py",
     "apps/control-plane/modifier/__init__.py",
     "apps/control-plane/services/acquisition_loop.py",
@@ -101510,6 +102099,7 @@
     "apps/interpretation/retrieval/retriever.py",
     "apps/projection/analytics/projector.py",
     "apps/projection/analytics/store.py",
+    "apps/projection/graph/claim_projection.py",
     "apps/projection/graph/neo4j.py",
     "apps/projection/graph/snapshot.py",
     "apps/projection/lakehouse/river/lake.py",
@@ -101633,12 +102223,13 @@
     "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
     "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
     "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
-    "apps/control-plane/db/relation_claim_store.py",
+    "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
     "apps/control-plane/services/__init__.py",
     "apps/control-plane/services/acquisition_evidence.py",
+    "apps/control-plane/services/relation_projection_relay.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/workflows/__init__.py",
     "apps/interpretation/__init__.py",
@@ -101713,8 +102304,8 @@
   ],
   "golden_path_summary": {
     "MISSING": 0,
-    "ORPHAN": 4,
-    "TEST_ONLY": 6,
+    "ORPHAN": 3,
+    "TEST_ONLY": 7,
     "STUB": 0,
     "PARTIAL": 0,
     "READY": 34,

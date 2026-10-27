@@ -1,6 +1,6 @@
 # Tests
 
-336 test files, 5256 test functions. 266 platform modules are not targeted by any test.
+339 test files, 5268 test functions. 267 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -119,6 +119,8 @@
 | `apps/control-plane/tests/unit/test_query_fusion.py` | 11 | `apps/control-plane/services/query_planner.py` |
 | `apps/control-plane/tests/unit/test_rank_fusion_wiring.py` | 14 | `apps/control-plane/services/query_planner.py`, `apps/shared/scoring/fusion.py` |
 | `apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py` | 3 | `apps/control-plane/db/relation_candidate_store.py`, `apps/control-plane/db/schema.py`, `apps/shared/domain/relation_candidate.py`, `apps/shared/semantic/contracts.py` |
+| `apps/control-plane/tests/unit/test_relation_projection_migration.py` | 1 | — |
+| `apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py` | 4 | `apps/control-plane/db/relation_claim_store.py`, `apps/control-plane/db/schema.py` |
 | `apps/control-plane/tests/unit/test_reobservation.py` | 9 | `apps/control-plane/services/reobservation.py` |
 | `apps/control-plane/tests/unit/test_science_tda.py` | 5 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/tests/unit/test_search_core_selection.py` | 4 | `apps/control-plane/services/search_backends.py` |
@@ -174,17 +176,18 @@
 | `apps/projection/tests/contract/test_search_projection_manifest.py` | 9 | `apps/projection/search/index.py`, `apps/projection/search/projector.py`, `apps/shared/contracts/projection_manifest.py` |
 | `apps/projection/tests/contract/test_tda_bridge_contract.py` | 30 | `apps/projection/graph/adjacency.py`, `apps/projection/tda/__init__.py`, `apps/projection/tda/bridge.py`, `apps/projection/tda/pipeline.py` |
 | `apps/projection/tests/test_bm25s_backend.py` | 9 | `apps/projection/search/bm25s_backend.py`, `apps/projection/search/indexer.py`, `apps/shared/domain/__init__.py` |
-| `apps/projection/tests/test_lakehouse.py` | 8 | `apps/projection/lakehouse/river/lake.py`, `apps/shared/storage/memory.py` |
+| `apps/projection/tests/test_lakehouse.py` | 10 | `apps/projection/lakehouse/river/lake.py`, `apps/shared/storage/memory.py` |
 | `apps/projection/tests/test_metrics.py` | 21 | `apps/projection/graph/adjacency.py`, `apps/projection/metrics/community.py`, `apps/projection/metrics/hypergraph_metrics.py`, `apps/projection/metrics/network_measures.py` |
 | `apps/projection/tests/test_projection.py` | 17 | `apps/projection/analytics/projector.py`, `apps/projection/graph/abstraction.py`, `apps/projection/graph/neo4j.py`, `apps/projection/graph/snapshot.py` |
 | `apps/projection/tests/test_relevance.py` | 15 | `apps/projection/search/indexer.py`, `apps/projection/search/relevance.py`, `apps/shared/domain/__init__.py` |
 | `apps/projection/tests/test_streams.py` | 7 | `apps/projection/streams/jobs.py` |
 | `apps/projection/tests/test_tantivy_backend.py` | 7 | `apps/projection/search/index.py`, `apps/projection/search/quickwit.py`, `apps/projection/search/tantivy_backend.py`, `apps/shared/domain/__init__.py` |
+| `apps/projection/tests/unit/test_claim_projection.py` | 4 | `apps/projection/graph/abstraction.py`, `apps/projection/graph/claim_projection.py`, `apps/projection/graph/relation_store.py`, `apps/shared/domain/relation_claim.py` |
 | `apps/projection/tests/unit/test_diagram.py` | 6 | `apps/projection/tda/diagram.py` |
 | `apps/projection/tests/unit/test_features.py` | 21 | `apps/projection/tda/features.py` |
 | `apps/projection/tests/unit/test_graph_store_direction.py` | 28 | `apps/projection/graph/abstraction.py`, `apps/projection/graph/adjacency.py`, `apps/shared/domain/__init__.py` |
 | `apps/projection/tests/unit/test_h3_spatial.py` | 21 | `apps/projection/spatial/h3_index.py` |
-| `apps/projection/tests/unit/test_neo4j_relation_write.py` | 13 | `apps/projection/graph/abstraction.py`, `apps/projection/graph/neo4j.py`, `apps/shared/domain/__init__.py` |
+| `apps/projection/tests/unit/test_neo4j_relation_write.py` | 14 | `apps/projection/graph/abstraction.py`, `apps/projection/graph/neo4j.py`, `apps/shared/domain/__init__.py` |
 | `apps/projection/tests/unit/test_pipeline_directed.py` | 9 | `apps/projection/tda/pipeline.py` |
 | `apps/projection/tests/unit/test_relation_store.py` | 18 | `apps/projection/graph/relation_store.py`, `apps/projection/path_shim.py`, `apps/shared/domain/__init__.py`, `apps/shared/domain/relation_claim.py` |
 | `apps/projection/tests/unit/test_takens.py` | 5 | `apps/projection/tda/pipeline.py` |

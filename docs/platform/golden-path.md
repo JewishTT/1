@@ -9,8 +9,8 @@ Each capability is checked against the tree (`platform_model/golden_path.yaml`, 
 | READY | 34 |
 | PARTIAL | 0 |
 | STUB | 0 |
-| TEST_ONLY | 6 |
-| ORPHAN | 4 |
+| TEST_ONLY | 7 |
+| ORPHAN | 3 |
 | MISSING | 0 |
 
 ## Layer 0 — collection
@@ -50,7 +50,7 @@ Each capability is checked against the tree (`platform_model/golden_path.yaml`, 
 | `admission-engine` — Admission engine | READY | `apps/admission/engine/admission.py` | PRODUCTION | IMPLEMENTED |
 | `independence` — Source independence | READY | `apps/admission/independence/independence.py` | PRODUCTION | IMPLEMENTED |
 | `graph-invariant` — Graph invariant (entity-invariant) | READY | `apps/shared/domain/graph_invariant.py` | PRODUCTION | IMPLEMENTED |
-| `relation-claim-store` — Relation-claim store | ORPHAN | `apps/control-plane/db/relation_claim_store.py` | ORPHAN | IMPLEMENTED |
+| `relation-claim-store` — Relation-claim store | TEST_ONLY | `apps/control-plane/db/relation_claim_store.py` | TEST_ONLY | IMPLEMENTED |
 | `semantic-fabric` — Semantic fabric | ORPHAN | `apps/shared/semantic/__init__.py` | ORPHAN | PACKAGE_INIT |
 
 ## Layer 2 — context engine
@@ -96,8 +96,8 @@ Non-READY capabilities, worst-first within each layer. `MISSING` before `ORPHAN`
 
 | Capability | Status | Why it matters | Module |
 |---|---|---|---|
-| `relation-claim-store` | ORPHAN | Durable persistence of relation claims and their revision chain. | `apps/control-plane/db/relation_claim_store.py` |
 | `semantic-fabric` | ORPHAN | Ontology-as-tool, regime, operators. | `apps/shared/semantic/__init__.py` |
+| `relation-claim-store` | TEST_ONLY | Durable persistence of relation claims and their revision chain. | `apps/control-plane/db/relation_claim_store.py` |
 | `splink-adapter` | TEST_ONLY | Probabilistic linkage behind the platform's resolution contract. | `apps/admission/resolution/splink_adapter.py` |
 
 ### Layer 2 — context engine

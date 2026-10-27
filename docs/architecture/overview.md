@@ -22,11 +22,11 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 235 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 239 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
 | `interpretation` | 112 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
-| `projection` | 65 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
+| `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | `shared` | 196 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
@@ -35,7 +35,7 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `webapp` | 0 | 255 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
-999 Python modules, 255 TypeScript modules, 15 Rust source files in 9 crates.
+1005 Python modules, 255 TypeScript modules, 15 Rust source files in 9 crates.
 
 ## Key properties (Constitution invariants)
 
