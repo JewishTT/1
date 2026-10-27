@@ -28,7 +28,7 @@ export {
   type SkeletonProps,
 } from "./Feedback";
 export { Icon, type IconName } from "./Icon";
-export { Checkbox, Input, Select, Textarea, type CheckboxProps, type InputProps, type SelectOption, type SelectProps, type TextareaProps } from "./Input";
+export { Checkbox, Input, RadioGroup, Select, Textarea, type CheckboxProps, type InputProps, type RadioGroupProps, type RadioOption, type SelectOption, type SelectProps, type TextareaProps } from "./Input";
 export {
   Drawer,
   Popover,
