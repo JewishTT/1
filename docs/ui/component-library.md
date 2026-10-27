@@ -10,10 +10,10 @@ Import shared UI primitives from `apps/webapp/src/ui/index.ts`. The barrel is th
 | Classification | `Badge`, `StatusDot` | Closed semantic tone/status vocabulary; words accompany status color |
 | Forms | `Input`, `Textarea`, `Select`, `Checkbox`, `RadioGroup` | Visible labels, associated hints, stable ids, native keyboard/mobile behavior, optional monospace values |
 | Navigation | `Tabs` | Accessible tablist with roving focus and arrow/Home/End navigation |
-| Overlays | `Tooltip`, `Popover`, `Drawer` | Keyboard dismissal, labelled surfaces, one overlay convention |
+| Overlays | `Tooltip`, `Popover`, `Drawer`, `Modal` | Labelled surfaces; modal traps Tab, closes on Escape, locks body scroll and restores focus on close |
 | Surfaces | `Panel` | Shared low-radius surface, accessible heading, description and action slots |
 | Tables | `DataTable` | Caption, stable row keys, accessible ascending/descending sort, roving row focus (arrows/Home/End), selection state, bounded horizontal overflow |
-| Feedback | `EmptyState`, `Skeleton`, `LoadingView`, `ErrorView` | Honest empty/loading/failure states; retry only when meaningful |
+| Feedback | `EmptyState`, `Skeleton`, `LoadingView`, `ErrorView`, `Toast` | Honest empty/loading/failure states; retry only when meaningful |
 | Context actions | `ContextMenu` | Stable item ids, disabled states, Escape and outside-click dismissal |
 | Icons | `Icon` and `IconName` | One in-repo SVG family; no Unicode glyphs as interface iconography |
 | Vocabulary | `WorkStatus`, `statusTone` | Closed list of recognized operational states |
@@ -22,7 +22,7 @@ Domain state and behavior stay outside the primitives. The library never invents
 
 ## Visual reference
 
-Run the app and visit `/ui-kit`. This internal route is deliberately absent from analyst navigation. The page imports from the public barrel and showcases action variants, input contracts, classification/status states, data-table selection/filtering, empty/loading/error feedback and keyboard affordances.
+Run the app and visit `/ui-kit`. This internal route is deliberately absent from analyst navigation. The page imports from the public barrel and showcases action variants, input contracts, classification/status states, locally scoped density changes, sortable data-table selection/filtering, empty/loading/error feedback, modal focus handling and dismissible toast announcements.
 
 Use the page when reviewing both themes, all density modes, and the 2560×1440, 1920×1080, 1440×900, 1023px, 767px and 390px breakpoints. It is a visual fixture, not a substitute for inspecting actual investigation screens.
 
