@@ -50,6 +50,17 @@ describe("DesignSystemPage", () => {
 
     const table = screen.getByRole("table", { name: "Design system sample observations" });
     expect(within(table).getAllByRole("row")).toHaveLength(5);
+
+    const identifierHeader = within(table).getByRole("columnheader", { name: /Identifier/ });
+    fireEvent.click(within(identifierHeader).getByRole("button", { name: "Sort by Identifier" }));
+    expect(identifierHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(within(table).getAllByTestId(/^row-/).map((row) => row.getAttribute("data-row-id"))).toEqual([
+      "DEMO-ENT-0108",
+      "DEMO-FND-0006",
+      "DEMO-OBS-0042",
+      "DEMO-SRC-0027",
+    ]);
+
     fireEvent.click(screen.getByTestId("row-DEMO-ENT-0108"));
     expect(screen.getByTestId("ui-kit-selected-id")).toHaveTextContent("DEMO-ENT-0108");
 
