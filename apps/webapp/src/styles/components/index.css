@@ -514,11 +514,7 @@
 .ui-drawer-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.32);
-}
-
-[data-theme="light"] .ui-drawer-scrim {
-  background: rgba(18, 23, 20, 0.18);
+  background: var(--ui-scrim-drawer);
 }
 
 .ui-drawer {
@@ -764,11 +760,7 @@
 .ui-palette-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.42);
-}
-
-[data-theme="light"] .ui-palette-scrim {
-  background: rgba(18, 23, 20, 0.24);
+  background: var(--ui-scrim-modal);
 }
 
 .ui-palette {
