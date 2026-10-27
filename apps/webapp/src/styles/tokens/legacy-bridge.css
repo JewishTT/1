@@ -6,15 +6,15 @@
  */
 
 @theme {
-  --color-cyber: var(--accent-blue);
-  --color-cyber-hi: var(--text-primary);
-  --color-ember: var(--accent-amber);
-  --color-matri: var(--accent-green);
-  --color-crimson: var(--accent-red);
-  --color-violet: var(--text-secondary);
-  --color-magenta: var(--text-secondary);
-  --color-abyss: var(--bg-0);
-  --color-abyss-2: var(--bg-1);
-  --color-frame: var(--border-0);
-  --color-ghost: var(--text-primary);
+  --color-cyber: var(--ui-analytical);
+  --color-cyber-hi: var(--ui-text);
+  --color-ember: var(--ui-gold);
+  --color-matri: var(--ui-accent);
+  --color-crimson: var(--ui-danger);
+  --color-violet: var(--ui-text-secondary);
+  --color-magenta: var(--ui-text-secondary);
+  --color-abyss: var(--ui-bg);
+  --color-abyss-2: var(--ui-surface-1);
+  --color-frame: var(--ui-border);
+  --color-ghost: var(--ui-text);
 }
