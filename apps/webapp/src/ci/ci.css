@@ -557,3 +557,104 @@
 .ui-ci-panel[data-testid="ci-detection-panel"] {
   border-color: color-mix(in srgb, var(--ui-gold) 18%, transparent);
 }
+
+/* Corporate UI migration: retain the CI canvas structure and interaction
+ * contracts while removing the legacy holographic material. These rules live
+ * with this surface intentionally, so CSS import order cannot restore glow,
+ * blur, gradients or animated chrome after the shared normalization layer.
+ */
+.ui-cicanvas,
+.ui-cicanvas.ui-holo-field {
+  background: var(--ui-bg);
+  border: 0;
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-cicanvas-head,
+.ui-ci-panel {
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.ui-cicanvas-head .ui-tabs {
+  background: var(--ui-bg-sunken);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-cicanvas-head .ui-tab {
+  border-radius: var(--ui-radius-1);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-cicanvas-head .ui-tab[aria-selected="true"] {
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-cicanvas-head .ui-tab[aria-selected="true"]::after,
+.ui-ci-panel::after {
+  content: none;
+  animation: none;
+}
+
+.ui-ci-panel-head {
+  border-bottom-color: var(--ui-border);
+}
+
+.ui-ci-panel-head .ui-pane-title {
+  color: var(--ui-text-secondary);
+  text-shadow: none;
+}
+
+.ui-ci-panel,
+.ui-ci-panel *,
+.ui-cicanvas-head,
+.ui-cicanvas-head * {
+  text-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-cicanvas *,
+  .ui-cicanvas *::before,
+  .ui-cicanvas *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .ui-cicanvas {
+    min-width: 0;
+    padding: 0;
+  }
+
+  .ui-cicanvas-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ui-cicanvas-head .ui-tabs {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .ui-cicanvas-head .ui-tab {
+    flex: 0 0 auto;
+  }
+
+  .ui-ci-panel {
+    min-width: 0;
+    padding: var(--ui-space-3);
+  }
+}
