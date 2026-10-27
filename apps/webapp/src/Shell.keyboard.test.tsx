@@ -144,6 +144,19 @@ describe("§50 — the command palette is a working surface", () => {
     expect(screen.getByTestId("command-palette-input")).toHaveFocus();
   });
 
+  it("carries the active theme and density into the shell-level palette overlay", () => {
+    useWorkspace.setState({ theme: "light", density: "comfortable" });
+    renderShell();
+    press("k", { metaKey: true });
+
+    const palette = screen.getByTestId("command-palette");
+    expect(palette).toHaveClass("ui-root");
+    expect(palette).toHaveAttribute("data-theme", "light");
+    expect(palette).toHaveAttribute("data-density", "comfortable");
+    expect(palette.querySelector(".ui-palette-scrim")).toBeInTheDocument();
+    expect(screen.getByTestId("command-palette-input")).toBeInTheDocument();
+  });
+
   it("ranks the exact label match first as the analyst types", () => {
     renderShell();
     press("k", { metaKey: true });
