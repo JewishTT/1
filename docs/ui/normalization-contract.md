@@ -14,7 +14,7 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 
 ## Layering
 
-`styles/tokens/` owns palette, typography, spacing, density and motion values. Existing component styles own component-specific layout. `styles/normalization.css` is a narrow compatibility layer for cross-cutting interaction, typography, overflow and accessibility rules. It must not become a second component library or override domain semantics. Its only intentional selector exception to `.ui-root` scoping is `.ui-palette-root`, the first-party command-palette portal mounted outside the workbench subtree.
+`styles/tokens/` owns palette, typography, spacing, density and motion values. Existing component styles own component-specific layout. `styles/normalization.css` is a narrow compatibility layer for cross-cutting interaction, typography, overflow and accessibility rules. It must not become a second component library or override domain semantics. It keeps ordinary component rules scoped to `.ui-root`, with two explicit boundary exceptions: `.ui-palette-root` for the first-party command-palette portal mounted outside the workbench subtree, and `body:has(.ui-root)::before/after`, which disables the legacy scanline overlays only while the UI 2.0 shell is mounted. Legacy `--c-*` / `--acc*` variables are bridged to canonical tokens inside `.ui-root`; graph entity-kind tokens are deliberately not flattened.
 
 ## Surface audit status
 
