@@ -18,8 +18,8 @@ describe("DesignSystemPage", () => {
 
     const table = screen.getByRole("table", { name: "Design system sample observations" });
     expect(within(table).getAllByRole("row")).toHaveLength(5);
-    fireEvent.click(screen.getByTestId("row-ENT-0108"));
-    expect(screen.getByTestId("ui-kit-selected-id")).toHaveTextContent("ENT-0108");
+    fireEvent.click(screen.getByTestId("row-DEMO-ENT-0108"));
+    expect(screen.getByTestId("ui-kit-selected-id")).toHaveTextContent("DEMO-ENT-0108");
 
     fireEvent.change(screen.getByLabelText("Filter rows"), { target: { value: "DOES-NOT-EXIST" } });
     expect(screen.getByText("No matching records")).toBeInTheDocument();
