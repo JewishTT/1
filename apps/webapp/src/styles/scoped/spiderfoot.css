@@ -65,7 +65,7 @@
 .sf-scope .alert-info {
   border: 1px solid var(--sf-border);
   background: var(--sf-panel);
-  color: #fff;
+  color: var(--ui-text);
   padding: 8px 12px;
   border-radius: 4px;
 }
@@ -74,18 +74,18 @@
 .sf-scope .modal-content {
   background-color: var(--sf-panel);
   box-shadow: var(--ui-elevation-3);
-  color: #fff;
+  color: var(--ui-text);
   border-radius: 6px;
 }
 .sf-scope .popover-title {
   background-color: var(--sf-panel-depth);
-  color: #fff;
+  color: var(--ui-text);
 }
 .sf-scope .dropdown-menu {
   background-color: var(--sf-panel-depth);
 }
 .sf-scope .dropdown-menu > li > a {
-  color: #fff;
+  color: var(--ui-text);
 }
 .sf-scope .dropdown-menu > li > a:hover {
   background-color: var(--ui-analytical-wash);
