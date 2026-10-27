@@ -461,3 +461,16 @@
 .ui-root .ui-ci-list-row[data-outcome="abandoned"] {
   box-shadow: none;
 }
+
+
+/* The old material stylesheet adds HUD corner brackets and luminous readout
+ * text via pseudo-elements. Remove the chrome, not the state-bearing edge.
+ */
+.ui-root .ui-holo-bracket::before,
+.ui-root .ui-holo-bracket::after {
+  content: none;
+}
+
+.ui-root .ui-holo-readout-value {
+  text-shadow: none;
+}
