@@ -469,7 +469,8 @@
  * text via pseudo-elements. Remove the chrome, not the state-bearing edge.
  */
 .ui-root .ui-holo-bracket::before,
-.ui-root .ui-holo-bracket::after {
+.ui-root .ui-holo-bracket::after,
+.ui-root .ui-holo-heading::after {
   content: none;
 }
 
