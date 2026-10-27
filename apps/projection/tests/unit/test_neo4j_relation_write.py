@@ -230,3 +230,10 @@ class TestWriteNode:
             "node_id": "a",
             "props": {"label": "acme", "tenant_id": "t-1"},
         }
+
+    def test_reads_require_tenant_scope(self, store: Neo4jGraphStore) -> None:
+        with pytest.raises(ValueError, match="tenant_id"):
+            store.node("a")
+        with pytest.raises(ValueError, match="tenant_id"):
+            store.neighbors("a")
+        assert _driver_of(store).log == []

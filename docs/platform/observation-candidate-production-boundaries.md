@@ -41,15 +41,24 @@ immutable row writer is now concurrency-safe for distinct row identities, but th
 does not mean the complete production lakehouse path is connected.
 
 
-## Neo4j status: projection only, still not a production writer
+## Neo4j status: durable VALID-claim relay added; end-to-end path still gated
 
-`Neo4jGraphStore` is a driver-injected adapter; the adapter and its settings do
-not constitute a complete worker. There is no durable claim-projection checkpoint or
-transactional admission outbox in this path. Candidate hypotheses must not be written
-as graph facts. The next Neo4j integration needs to consume **admitted** claim
-revisions, project through the existing `GraphProjectionBridge`, checkpoint progress
-durably, and prove that the graph can be rebuilt from canonical records after losing
-the database. Idempotent node/edge upserts alone are not a replay protocol.
+Migration 031 adds the durable `relation_claim.validation_record` JSONB home and
+`relation_claim_projection_outbox`. The validation record and enqueue of a
+`VALID` verdict commit in one Postgres transaction; the standalone
+`cognitive-relation-projection-relay` claims rows with a lease and retries
+after expiry. It reloads the claim under its tenant, rechecks the durable verdict,
+then projects via the existing `GraphProjectionBridge`. A candidate row alone is
+never graph input. A crash between Neo4j writes and the SQL completion commit
+causes an at-least-once replay of deterministic IDs.
+
+Neo4j writes now include tenant in node/edge identity and tenant-scoped traversal
+requires an explicit tenant. Startup installs uniqueness constraints for projection
+nodes and hyperedges. These changes address the adapter/outbox boundary; they do
+**not** establish that every source reaches an explicit claim-admission call, nor
+have they been demonstrated against a live Postgres + Neo4j deployment in this PR.
+The full rebuild-from-canonical-claims proof remains required before calling the
+whole graph projection path operationally complete.
 
 ## Remaining acceptance gate
 
@@ -57,6 +66,5 @@ the database. Idempotent node/edge upserts alone are not a replay protocol.
   source metadata, context and regime.
 - No `relation_claim` can appear until an admission decision exists.
 - Stream membership remains one row per observation/entity/extraction version.
-- Lakehouse manifest concurrency is resolved before the lake is enabled in production.
-- Neo4j has a durable admitted-claim projection path and full rebuild test before
-  it is described as connected.
+- Immutable lake row appends are covered by concurrency and legacy-promotion tests; Iceberg/Parquet catalog and end-to-end consumer wiring remain separate acceptance gates.
+- The VALID-only outbox relay is present; the explicit candidate-to-admission caller, live Postgres/Neo4j integration, and graph rebuild-from-canonical-claims proof remain open.

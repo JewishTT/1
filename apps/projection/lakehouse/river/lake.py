@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 from typing import Any, Protocol
 
 from domain import ProjectionRebuildableError  # provenance invariant (I-11/I-12)
-from storage.s3 import RawObjectRef, sha256_bytes  # type: ignore[attr-defined]
+from storage.s3 import sha256_bytes  # type: ignore[attr-defined]
 
 
 @dataclass(frozen=True, slots=True)
