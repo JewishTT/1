@@ -462,3 +462,21 @@ describe("UI normalization — CI metrics and nested keyboard focus", () => {
     expect(normalization).toContain("outline: 2px solid var(--ui-focus-ring)");
   });
 });
+
+
+describe("UI normalization — theme-owned overlay scrims", () => {
+  it("declares drawer and modal scrims for dark and light themes", () => {
+    const colors = readShipped("styles", "tokens", "color.css");
+    expect(colors).toContain("--ui-scrim-drawer: rgba(0, 0, 0, 0.32)");
+    expect(colors).toContain("--ui-scrim-modal: rgba(0, 0, 0, 0.42)");
+    expect(colors).toContain("--ui-scrim-drawer: rgba(18, 23, 20, 0.18)");
+    expect(colors).toContain("--ui-scrim-modal: rgba(18, 23, 20, 0.24)");
+  });
+
+  it("keeps component styles bound to the semantic scrim tokens", () => {
+    const components = readShipped("styles", "components", "index.css");
+    expect(components).toContain("background: var(--ui-scrim-drawer)");
+    expect(components).toContain("background: var(--ui-scrim-modal)");
+    expect(components).not.toMatch(/rgba?\(/i);
+  });
+});
