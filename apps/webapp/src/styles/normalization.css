@@ -385,3 +385,75 @@
     overflow-y: auto;
   }
 }
+
+
+/* GhostLine's information architecture survives the material change. Remove
+ * decorative luminance from its nested readouts, trace rails and active cards;
+ * retain the semantic hue on status/gate edges and the visible active-state wash.
+ */
+.ui-root :where(
+  .ui-gl-subhead .ui-pane-title,
+  .ui-gl-readout-value,
+  .ui-gl-hint[data-kind="danger"]
+) {
+  text-shadow: none;
+}
+
+.ui-root :where(
+  .ui-gl-readout[data-tone="live"] .ui-gl-readout-value::after,
+  .ui-gl-stage::before,
+  .ui-gl-trace > li::before
+) {
+  box-shadow: none;
+}
+
+.ui-root :where(.ui-gl-ladder::before, .ui-gl-trace::before) {
+  background: var(--ui-border-strong);
+}
+
+.ui-root :where(.ui-gl-refusal, .ui-gl-stage, .ui-gl-trace > li, .ui-gl-turns > li) {
+  background: var(--ui-surface-1);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ui-root .ui-gl-refusal {
+  border-color: var(--ui-border);
+  border-left-color: var(--holo-hue, var(--ui-border));
+}
+
+.ui-root :where(.ui-gl-stage, .ui-gl-trace > li, .ui-gl-turns > li) {
+  border-color: var(--ui-border);
+  border-left: 2px solid var(--holo-hue, var(--ui-border));
+}
+
+.ui-root .ui-gl-card[data-active="true"] {
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-rungs > li[data-current="true"] {
+  color: var(--ui-text);
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-textarea {
+  color: var(--ui-text);
+  background: var(--ui-bg-sunken);
+  border-color: var(--ui-border);
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-textarea:focus {
+  border-color: var(--ui-focus-ring);
+  box-shadow: none;
+}
+
+.ui-root .ui-ci-list-row[data-outcome="compromised"],
+.ui-root .ui-ci-list-row[data-outcome="abandoned"] {
+  box-shadow: none;
+}
