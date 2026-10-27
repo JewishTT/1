@@ -1279,3 +1279,47 @@
   color: var(--ui-text-muted);
   font-size: var(--ui-text-xs);
 }
+
+
+.ui-root .ui-table-sort {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--ui-space-2);
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.ui-root .ui-table-sort:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--ui-radius-1);
+}
+
+.ui-root .ui-table-sort svg {
+  flex: 0 0 auto;
+  opacity: 0.35;
+  transition: transform var(--ui-motion-fast) var(--ui-ease-standard), opacity var(--ui-motion-fast) var(--ui-ease-standard);
+}
+
+.ui-root .ui-table-sort[data-direction="ascending"] svg {
+  opacity: 1;
+  transform: rotate(180deg);
+}
+
+.ui-root .ui-table-sort[data-direction="descending"] svg {
+  opacity: 1;
+}
+
+.ui-root .ui-table th[aria-sort="ascending"],
+.ui-root .ui-table th[aria-sort="descending"] {
+  color: var(--ui-text);
+}
