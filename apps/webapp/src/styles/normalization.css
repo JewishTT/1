@@ -371,16 +371,16 @@
     padding: var(--ui-space-3, 12px);
   }
 
-  .ui-root .ui-palette-root {
+  .ui-palette-root {
     padding: 8vh var(--ui-space-3, 12px) 0;
   }
 
-  .ui-root .ui-palette {
+  .ui-palette-root .ui-palette {
     width: 100%;
     max-height: 84dvh;
   }
 
-  .ui-root .ui-palette-list {
+  .ui-palette-root .ui-palette-list {
     max-height: 58dvh;
     overflow-y: auto;
   }
