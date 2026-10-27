@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "ui:shoot:specops": "node scripts/shoot-specops.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.50.0",
