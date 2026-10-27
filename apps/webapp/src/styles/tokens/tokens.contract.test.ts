@@ -387,3 +387,30 @@ describe("UI normalization — GhostLine keeps semantics without decorative glow
     expect(normalization).toContain("color: var(--ui-text-secondary)");
   });
 });
+
+
+describe("UI normalization — token ownership and cascade order", () => {
+  it("uses semantic tokens instead of embedding a second palette", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    expect(normalization).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(normalization).not.toMatch(/rgba?\(/i);
+    expect(normalization).toContain("background: var(--ui-accent-wash)");
+  });
+
+  it("loads normalization after application, legacy and scoped donor styles", () => {
+    const layers = readShipped("styles", "layers.css").trim();
+    expect(layers.endsWith('@import "./normalization.css";')).toBe(true);
+    expect(layers.indexOf('@import "./normalization.css";')).toBeGreaterThan(
+      layers.indexOf('@import "./scoped/netforensicai.css";'),
+    );
+  });
+
+  it("bridges every legacy palette name to a canonical token", () => {
+    const bridge = readShipped("styles", "tokens", "legacy-bridge.css");
+    expect(bridge).toContain("--color-cyber: var(--accent-blue)");
+    expect(bridge).toContain("--color-ember: var(--accent-amber)");
+    expect(bridge).toContain("--color-matri: var(--accent-green)");
+    expect(bridge).toContain("--color-crimson: var(--accent-red)");
+    expect(bridge).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+  });
+});
