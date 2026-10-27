@@ -23,7 +23,7 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 | Shared shell and primitives | Token-backed typography, focus, responsive containment and scrim tokens are covered by contract tests. | Webapp build and unit/contract suite passed on an earlier head; latest head is pending CI. |
 | CI / SpecOps and GhostLine | Runtime normalization removes legacy gradients, glow, glass, HUD brackets and decorative shadows; active/gate/outcome semantics are preserved. Source declarations remain marked as migration debt. | SpecOps sweep captures every department tab at desktop width and GhostLine across all contract widths; latest screenshots still require human review. |
 | Graph, timeline, evidence, objects and operations/source catalogue | Static stylesheet scan found no raw hex/RGB colors, gradients, text shadows or backdrop blur. Remaining shadows are tokenized elevation or semantic inset selection markers. | Full per-surface screenshot and interaction review remains pending. |
-| Legacy pages and scoped donor views | Kept isolated; no broad global restyling was introduced. | Surface-by-surface migration remains pending. |
+| Legacy pages and scoped donor views | SpiderFoot and NetForensicAI donor palettes now resolve through canonical UI tokens while their `.sf-scope` / `.nfa-scope` namespaces remain isolated; contract tests guard against raw color literals and selector leaks. | Runtime screenshots and interaction review remain pending. |
 
 ## Visual sweep
 
