@@ -1,27 +1,9 @@
-/* GhostLine surface — holographic deck (Feature 031).
+/* GhostLine surface layout and interaction classes.
  *
- * The material comes from `styles/holo.css`; this file places it. What GhostLine adds
- * on top of the department is a piece of vocabulary the rest of SpecOps has no
- * precedent for, and it is worth being explicit about why it gets its own treatment:
- *
- *   Everything else in this department acts on SYSTEMS. GhostLine acts on PEOPLE. It
- *   places a telephone call. So its surfaces are the ones where a careless visual is
- *   least acceptable — an operator who cannot tell a refusal from a setup gap will
- *   either dial something they should not, or think the tool is refusing them.
- *
- * Three kinds of signal therefore get three visually distinct treatments, and the
- * distinction is carried by SHAPE as well as colour (§67: colour never carries meaning
- * alone):
- *
- *   [data-kind="gate"]    the RoE gate refused. A red edge and a solid left rule.
- *                         An authorisation fact. Nothing here is retryable.
- *   [data-kind="setup"]   something is not configured or not installed. An amber edge
- *                         and a DASHED left rule, because the fix is a variable or a
- *                         package, not a decision.
- *   [data-kind="absent"]  an endpoint does not serve this. Steel, dashed, quiet.
- *
- * The dashed-vs-solid distinction on the left rule is the load-bearing one. Colour
- * alone would fail a red/amber colourblind reader exactly where it matters most.
+ * The previous holographic treatment is legacy material, not a product-level
+ * exception to the UI contract. styles/normalization.css removes its decorative
+ * glow, gradients and HUD brackets at the mounted surface boundary while this
+ * component is migrated. Preserve live/failed/refused semantics and focus states.
  */
 
 /* ── The canvas inside the department ──────────────────────────────── */
