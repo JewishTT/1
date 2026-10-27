@@ -391,11 +391,8 @@
  * decorative luminance from its nested readouts, trace rails and active cards;
  * retain the semantic hue on status/gate edges and the visible active-state wash.
  */
-.ui-root :where(
-  .ui-gl-subhead .ui-pane-title,
-  .ui-gl-readout-value,
-  .ui-gl-hint[data-kind="danger"]
-) {
+.ui-root .ui-gl-readout-value,
+.ui-root .ui-gl-hint[data-kind="danger"] {
   text-shadow: none;
 }
 
@@ -403,19 +400,21 @@
   color: var(--ui-text-secondary);
 }
 
-.ui-root :where(
-  .ui-gl-readout[data-tone="live"] .ui-gl-readout-value::after,
-  .ui-gl-stage::before,
-  .ui-gl-trace > li::before
-) {
+.ui-root .ui-gl-readout[data-tone="live"] .ui-gl-readout-value::after,
+.ui-root .ui-gl-stage::before,
+.ui-root .ui-gl-trace > li::before {
   box-shadow: none;
 }
 
-.ui-root :where(.ui-gl-ladder::before, .ui-gl-trace::before) {
+.ui-root .ui-gl-ladder::before,
+.ui-root .ui-gl-trace::before {
   background: var(--ui-border-strong);
 }
 
-.ui-root :where(.ui-gl-refusal, .ui-gl-stage, .ui-gl-trace > li, .ui-gl-turns > li) {
+.ui-root .ui-gl-refusal,
+.ui-root .ui-gl-stage,
+.ui-root .ui-gl-trace > li,
+.ui-root .ui-gl-turns > li {
   background: var(--ui-surface-1);
   box-shadow: none;
   backdrop-filter: none;
@@ -427,7 +426,9 @@
   border-left-color: var(--holo-hue, var(--ui-border));
 }
 
-.ui-root :where(.ui-gl-stage, .ui-gl-trace > li, .ui-gl-turns > li) {
+.ui-root .ui-gl-stage,
+.ui-root .ui-gl-trace > li,
+.ui-root .ui-gl-turns > li {
   border-color: var(--ui-border);
   border-left: 2px solid var(--holo-hue, var(--ui-border));
 }
