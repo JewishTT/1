@@ -2,8 +2,10 @@
  *
  * This is an adapter layer, not a second theme. All values resolve through the
  * canonical token contract in styles/tokens; no component-local palette is
- * introduced here. Keep selectors scoped to the first-party workbench so
- * legacy and provenance-scoped donor views are not accidentally restyled.
+ * introduced here. Shared first-party and explicitly enumerated legacy
+ * compatibility selectors are scoped to the mounted workbench. Donor adapters
+ * keep their own namespaces and token bridges; standalone donor stylesheets are
+ * not globally imported.
  */
 
 .ui-root {
