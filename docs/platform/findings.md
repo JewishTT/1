@@ -60,7 +60,7 @@ _None: every declared capability has a module in the tree._
 
 ## Untested modules
 
-265 platform modules are not imported by any test. Sample:
+266 platform modules are not imported by any test. Sample:
 
 | Module |
 |---|

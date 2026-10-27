@@ -42,6 +42,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 from domain.mention_occurrence_index import MentionOccurrenceKey, mint_mention_id
+from domain.relation_candidate import ExtractionStrategy, TemporalHypothesis
+from domain.relation_claim import RelationRoleBinding
+from domain.relation_identity import RelationArityMode
+from semantic.contracts import RelationRef
 from extractors.lane import extract_deterministic
 from extractors.types import ExtractionResult
 from semantic.resolution import (
@@ -117,6 +121,21 @@ class AdaptedRelation:
     subject_kind: str = ""
     object_kind: str = ""
     confidence: float = 0.5
+    relation_ref: RelationRef | None = None
+    arity_mode: RelationArityMode = RelationArityMode.DIRECTED
+    relation_surface: str = ""
+    trigger_start: int | None = None
+    trigger_end: int | None = None
+    trigger_surface: str = ""
+    supporting_spans: tuple[tuple[int, int, str, str], ...] = ()
+    role_bindings: tuple[dict[str, str], ...] = ()
+    temporal_hypothesis: TemporalHypothesis | None = None
+    observation_refs: tuple[str, ...] = ()
+    evidence_refs: tuple[str, ...] = ()
+    extraction_method: ExtractionStrategy = ExtractionStrategy.LEXICAL_PATTERN
+    extractor_version: str = ""
+    extraction_rule_id: str = ""
+    language: str = ""
 
     @property
     def predicate(self) -> str:
@@ -197,6 +216,22 @@ def _adapt_relations(
         if not subject_mid or not object_mid:
             continue
         relation_ref = getattr(reading, "relation_ref", None)
+        trigger = getattr(reading, "trigger_span", None)
+        supporting_spans = tuple(
+            (
+                int(span.start),
+                int(span.end),
+                str(getattr(span, "surface", "") or ""),
+                str(getattr(span, "mention_ref", "") or ""),
+            )
+            for span in (getattr(reading, "supporting_spans", ()) or ())
+        )
+        try:
+            declared_roles = reading.role_bindings(
+                {"subject": subject_mid, "object": object_mid}
+            )
+        except (AttributeError, TypeError, ValueError):
+            declared_roles = ()
         out.append(
             AdaptedRelation(
                 relation_type=str(getattr(relation_ref, "relation_type", "") or ""),
@@ -208,6 +243,28 @@ def _adapt_relations(
                 subject_kind=str(getattr(subject_surface, "kind", "") or ""),
                 object_kind=str(getattr(object_surface, "kind", "") or ""),
                 confidence=float(getattr(reading, "confidence", 0.5) or 0.5),
+                relation_ref=relation_ref if isinstance(relation_ref, RelationRef) else None,
+                arity_mode=RelationArityMode(getattr(reading, "arity_mode", RelationArityMode.DIRECTED)),
+                relation_surface=str(getattr(reading, "cue_surface", "") or ""),
+                trigger_start=int(trigger.start) if trigger is not None else None,
+                trigger_end=int(trigger.end) if trigger is not None else None,
+                trigger_surface=str(getattr(trigger, "surface", "") or ""),
+                supporting_spans=supporting_spans,
+                role_bindings=tuple(
+                    {
+                        "role": str(binding.role),
+                        "member_ref": str(binding.member_ref),
+                        "member_class": str(getattr(binding, "member_class", "") or ""),
+                    }
+                    for binding in declared_roles
+                ),
+                temporal_hypothesis=getattr(reading, "temporal_hypothesis", None),
+                observation_refs=tuple(str(value) for value in (getattr(reading, "observation_refs", ()) or ())),
+                evidence_refs=tuple(str(value) for value in (getattr(reading, "evidence_refs", ()) or ())),
+                extraction_method=ExtractionStrategy(getattr(reading, "extraction_method", ExtractionStrategy.LEXICAL_PATTERN)),
+                extractor_version=str(getattr(reading, "extractor_version", "") or ""),
+                extraction_rule_id=str(getattr(reading, "extraction_rule_id", "") or ""),
+                language=str(getattr(reading, "lang", "") or ""),
             )
         )
     return tuple(out)

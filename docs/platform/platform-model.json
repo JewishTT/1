@@ -207,7 +207,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 232,
+      "python_modules": 235,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -302,6 +302,8 @@
         "apps.control-plane.db.migrations.versions.027_person_research_case_records",
         "apps.control-plane.db.migrations.versions.028_observation_processing_results",
         "apps.control-plane.db.migrations.versions.029_person_case_artifacts_reports",
+        "apps.control-plane.db.migrations.versions.030_observation_candidate_hardening",
+        "apps.control-plane.db.relation_candidate_store",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
         "apps.control-plane.db.session",
@@ -407,9 +409,7 @@
         "apps.control-plane.tests.unit.test_fabric_anchor_guard",
         "apps.control-plane.tests.unit.test_fabric_endpoints",
         "apps.control-plane.tests.unit.test_invariant_reducer",
-        "apps.control-plane.tests.unit.test_migration_016_forward_only",
-        "apps.control-plane.tests.unit.test_migration_017_forward_only",
-        "apps.control-plane.tests.unit.test_migration_020_universal_relation"
+        "apps.control-plane.tests.unit.test_migration_016_forward_only"
       ]
     },
     {
@@ -804,10 +804,11 @@
     {
       "name": "shared",
       "description": "Contracts, events, domain invariants, storage, security — the substrate every app imports.",
-      "python_modules": 194,
+      "python_modules": 196,
       "typescript_modules": 0,
       "modules": [
         "apps.shared.config",
+        "apps.shared.config.kafka",
         "apps.shared.config.settings",
         "apps.shared.conftest",
         "apps.shared.contracts",
@@ -973,6 +974,7 @@
         "apps.shared.tests.unit.test_idempotent_consumer",
         "apps.shared.tests.unit.test_ids",
         "apps.shared.tests.unit.test_investigation_context",
+        "apps.shared.tests.unit.test_kafka_bootstrap",
         "apps.shared.tests.unit.test_layer_boundaries",
         "apps.shared.tests.unit.test_measured_values",
         "apps.shared.tests.unit.test_mention_occurrence_index",
@@ -1106,11 +1108,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 994,
-    "edge_count": 2755,
+    "module_count": 999,
+    "edge_count": 2781,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 866,
+      "stdlib:__future__": 871,
       "stdlib:abc": 3,
       "stdlib:argparse": 18,
       "stdlib:ast": 26,
@@ -1124,12 +1126,12 @@
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 388,
-      "stdlib:datetime": 188,
+      "stdlib:dataclasses": 389,
+      "stdlib:datetime": 189,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
-      "stdlib:enum": 117,
+      "stdlib:enum": 118,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
       "stdlib:hashlib": 126,
@@ -1146,7 +1148,7 @@
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 68,
-      "stdlib:pathlib": 309,
+      "stdlib:pathlib": 311,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 95,
@@ -1159,7 +1161,7 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 15,
-      "stdlib:sys": 250,
+      "stdlib:sys": 252,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 17,
       "stdlib:threading": 17,
@@ -1167,7 +1169,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 32,
-      "stdlib:typing": 362,
+      "stdlib:typing": 363,
       "stdlib:unicodedata": 6,
       "stdlib:urllib": 43,
       "stdlib:uuid": 48,
@@ -1178,7 +1180,7 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 22,
+      "third-party:alembic": 23,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
@@ -1207,14 +1209,14 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 264,
+      "third-party:pytest": 265,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 144,
+      "third-party:sqlalchemy": 149,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
       "third-party:trafilatura": 1,
@@ -1619,6 +1621,11 @@
         "from": "apps/acquisition/dispatcher/__init__.py",
         "to": "apps/acquisition/dispatcher/scheduler.py",
         "via": "scheduler"
+      },
+      {
+        "from": "apps/acquisition/dispatcher/kafka_producer.py",
+        "to": "apps/shared/config/kafka.py",
+        "via": "config.kafka"
       },
       {
         "from": "apps/acquisition/dispatcher/plan_driver.py",
@@ -2599,6 +2606,11 @@
         "from": "apps/acquisition/worker_service.py",
         "to": "apps/acquisition/case_execution_guard.py",
         "via": "case_execution_guard"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/shared/config/kafka.py",
+        "via": "config.kafka"
       },
       {
         "from": "apps/admission/engine/admission.py",
@@ -4746,6 +4758,41 @@
         "via": "db.schema"
       },
       {
+        "from": "apps/control-plane/db/relation_candidate_store.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/db/relation_candidate_store.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/db/relation_candidate_store.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/db/relation_candidate_store.py",
+        "to": "apps/shared/domain/evidence_context.py",
+        "via": "domain.evidence_context"
+      },
+      {
+        "from": "apps/control-plane/db/relation_candidate_store.py",
+        "to": "apps/shared/domain/relation_candidate.py",
+        "via": "domain.relation_candidate"
+      },
+      {
+        "from": "apps/control-plane/db/relation_candidate_store.py",
+        "to": "apps/shared/semantic/regime.py",
+        "via": "semantic.regime"
+      },
+      {
+        "from": "apps/control-plane/db/relation_candidate_store.py",
+        "to": "apps/shared/semantic/regime_store.py",
+        "via": "semantic.regime_store"
+      },
+      {
         "from": "apps/control-plane/db/relation_claim_store.py",
         "to": "apps/shared/domain/__init__.py",
         "via": "domain"
@@ -5492,6 +5539,26 @@
       },
       {
         "from": "apps/control-plane/services/document_adapter.py",
+        "to": "apps/shared/domain/relation_candidate.py",
+        "via": "domain.relation_candidate"
+      },
+      {
+        "from": "apps/control-plane/services/document_adapter.py",
+        "to": "apps/shared/domain/relation_claim.py",
+        "via": "domain.relation_claim"
+      },
+      {
+        "from": "apps/control-plane/services/document_adapter.py",
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
+      },
+      {
+        "from": "apps/control-plane/services/document_adapter.py",
+        "to": "apps/shared/semantic/contracts.py",
+        "via": "semantic.contracts"
+      },
+      {
+        "from": "apps/control-plane/services/document_adapter.py",
         "to": "apps/interpretation/extractors/lane.py",
         "via": "extractors.lane"
       },
@@ -5702,18 +5769,48 @@
       },
       {
         "from": "apps/control-plane/services/interpretation_bridge.py",
-        "to": "apps/control-plane/db/schema.py",
-        "via": "db.schema"
-      },
-      {
-        "from": "apps/control-plane/services/interpretation_bridge.py",
         "to": "apps/shared/contracts/evidence_span.py",
         "via": "contracts.evidence_span"
       },
       {
         "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/shared/domain/evidence_context.py",
+        "via": "domain.evidence_context"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/shared/domain/relation_candidate.py",
+        "via": "domain.relation_candidate"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/shared/domain/relation_claim.py",
+        "via": "domain.relation_claim"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/shared/semantic/regime.py",
+        "via": "semantic.regime"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/control-plane/db/relation_candidate_store.py",
+        "via": "db.relation_candidate_store"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
         "to": "apps/shared/domain/dynamics.py",
         "via": "domain.dynamics"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
       },
       {
         "from": "apps/control-plane/services/interpretation_bridge.py",
@@ -5749,6 +5846,11 @@
         "from": "apps/control-plane/services/interpretation_bridge.py",
         "to": "apps/control-plane/db/schema.py",
         "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/shared/domain/relation_candidate.py",
+        "via": "domain.relation_candidate"
       },
       {
         "from": "apps/control-plane/services/investigation_scheduler.py",
@@ -5849,6 +5951,11 @@
         "from": "apps/control-plane/services/observation_consumer_runner.py",
         "to": "apps/control-plane/services/processing_result_store.py",
         "via": "services.processing_result_store"
+      },
+      {
+        "from": "apps/control-plane/services/observation_consumer_runner.py",
+        "to": "apps/shared/config/kafka.py",
+        "via": "config.kafka"
       },
       {
         "from": "apps/control-plane/services/observation_consumer_runner.py",
@@ -7469,6 +7576,26 @@
         "from": "apps/control-plane/tests/unit/test_rank_fusion_wiring.py",
         "to": "apps/control-plane/services/query_planner.py",
         "via": "services.query_planner"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "to": "apps/control-plane/db/relation_candidate_store.py",
+        "via": "db.relation_candidate_store"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "to": "apps/shared/domain/relation_candidate.py",
+        "via": "domain.relation_candidate"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "to": "apps/shared/semantic/contracts.py",
+        "via": "semantic.contracts"
       },
       {
         "from": "apps/control-plane/tests/unit/test_reobservation.py",
@@ -13646,6 +13773,11 @@
         "via": "domain.investigation_context"
       },
       {
+        "from": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "to": "apps/shared/config/kafka.py",
+        "via": "config.kafka"
+      },
+      {
         "from": "apps/shared/tests/unit/test_layer_boundaries.py",
         "to": "apps/shared/tools/layer_boundaries.py",
         "via": "tools.layer_boundaries"
@@ -17585,6 +17717,21 @@
         "targets": [
           "apps/control-plane/services/query_planner.py",
           "apps/shared/scoring/fusion.py"
+        ]
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "tests": 3,
+        "test_names": [
+          "test_unresolved_logical_identity_is_preserved_without_a_fabricated_id",
+          "test_candidate_table_accepts_full_payload_without_a_logical_id_check",
+          "test_entity_stream_declares_a_partial_source_event_replay_key"
+        ],
+        "targets": [
+          "apps/control-plane/db/relation_candidate_store.py",
+          "apps/control-plane/db/schema.py",
+          "apps/shared/domain/relation_candidate.py",
+          "apps/shared/semantic/contracts.py"
         ]
       },
       {
@@ -22179,6 +22326,18 @@
         ]
       },
       {
+        "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "tests": 3,
+        "test_names": [
+          "test_canonical_kafka_setting_wins_over_legacy_alias",
+          "test_legacy_alias_remains_a_compatibility_fallback",
+          "test_empty_broker_list_fails_closed"
+        ],
+        "targets": [
+          "apps/shared/config/kafka.py"
+        ]
+      },
+      {
         "path": "apps/shared/tests/unit/test_layer_boundaries.py",
         "tests": 9,
         "test_names": [
@@ -23200,7 +23359,7 @@
         "targets": []
       }
     ],
-    "total": 5250
+    "total": 5256
   },
   "contracts": {
     "python": [
@@ -28397,6 +28556,7 @@
     "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
     "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
     "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
+    "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
     "apps/control-plane/db/relation_claim_store.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
@@ -28497,10 +28657,9 @@
     "apps/shared/network/__init__.py",
     "apps/shared/observability/__init__.py",
     "apps/shared/scoring/metrics.py",
-    "apps/shared/semantic/__init__.py",
-    "apps/shared/semantic/expansion.py"
+    "apps/shared/semantic/__init__.py"
   ],
-  "untested_count": 265,
+  "untested_count": 266,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -29119,6 +29278,7 @@
           ],
           "modules": [
             "apps/shared/config/__init__.py",
+            "apps/shared/config/kafka.py",
             "apps/shared/config/settings.py",
             "apps/shared/conftest.py",
             "apps/shared/contracts/__init__.py",
@@ -29284,6 +29444,7 @@
             "apps/shared/tests/unit/test_idempotent_consumer.py",
             "apps/shared/tests/unit/test_ids.py",
             "apps/shared/tests/unit/test_investigation_context.py",
+            "apps/shared/tests/unit/test_kafka_bootstrap.py",
             "apps/shared/tests/unit/test_layer_boundaries.py",
             "apps/shared/tests/unit/test_measured_values.py",
             "apps/shared/tests/unit/test_mention_occurrence_index.py",
@@ -29313,7 +29474,7 @@
             "apps/shared/workflow/__init__.py",
             "apps/shared/workflow/client.py"
           ],
-          "module_count": 194
+          "module_count": 196
         },
         {
           "id": "projection-query",
@@ -29410,6 +29571,8 @@
             "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
             "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
             "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
+            "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
+            "apps/control-plane/db/relation_candidate_store.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
             "apps/control-plane/db/session.py",
@@ -29529,6 +29692,7 @@
             "apps/control-plane/tests/unit/test_query_degradation.py",
             "apps/control-plane/tests/unit/test_query_fusion.py",
             "apps/control-plane/tests/unit/test_rank_fusion_wiring.py",
+            "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
             "apps/control-plane/tests/unit/test_reobservation.py",
             "apps/control-plane/tests/unit/test_science_tda.py",
             "apps/control-plane/tests/unit/test_search_core_selection.py",
@@ -29613,7 +29777,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 289
+          "module_count": 292
         },
         {
           "id": "webapp",
@@ -32206,7 +32370,7 @@
       {
         "path": "apps/acquisition/worker_service.py",
         "status": "IMPLEMENTED",
-        "loc": 188,
+        "loc": 190,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
@@ -33376,6 +33540,24 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
+        "status": "MIGRATION",
+        "loc": 56,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/db/relation_candidate_store.py",
+        "status": "IMPLEMENTED",
+        "loc": 229,
+        "callables": 6,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/db/relation_claim_store.py",
         "status": "IMPLEMENTED",
         "loc": 559,
@@ -33387,7 +33569,7 @@
       {
         "path": "apps/control-plane/db/schema.py",
         "status": "IMPLEMENTED",
-        "loc": 3126,
+        "loc": 3140,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -33616,7 +33798,7 @@
       {
         "path": "apps/control-plane/services/document_adapter.py",
         "status": "IMPLEMENTED",
-        "loc": 553,
+        "loc": 610,
         "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
@@ -33652,8 +33834,8 @@
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
         "status": "IMPLEMENTED",
-        "loc": 839,
-        "callables": 15,
+        "loc": 1087,
+        "callables": 18,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -33699,7 +33881,7 @@
       {
         "path": "apps/control-plane/services/observation_consumer_runner.py",
         "status": "IMPLEMENTED",
-        "loc": 166,
+        "loc": 168,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
@@ -34496,6 +34678,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "status": "TEST",
+        "loc": 56,
+        "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_reobservation.py",
         "status": "TEST",
         "loc": 107,
@@ -35175,7 +35366,7 @@
       {
         "path": "apps/interpretation/observation_consumer/__init__.py",
         "status": "IMPLEMENTED",
-        "loc": 614,
+        "loc": 615,
         "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
@@ -37624,6 +37815,15 @@
         "markers": []
       },
       {
+        "path": "apps/shared/config/kafka.py",
+        "status": "IMPLEMENTED",
+        "loc": 23,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/shared/config/settings.py",
         "status": "IMPLEMENTED",
         "loc": 95,
@@ -39125,6 +39325,15 @@
         "markers": []
       },
       {
+        "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "status": "TEST",
+        "loc": 34,
+        "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/shared/tests/unit/test_layer_boundaries.py",
         "status": "TEST",
         "loc": 126,
@@ -40304,12 +40513,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 537,
+      "IMPLEMENTED": 539,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 331,
-      "MIGRATION": 17,
-      "total": 994
+      "TEST": 333,
+      "MIGRATION": 18,
+      "total": 999
     }
   },
   "reachability": {
@@ -41247,6 +41456,14 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/control-plane/db/relation_candidate_store.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/control-plane/db/relation_claim_store.py",
         "status": "ORPHAN"
       },
@@ -41732,6 +41949,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_rank_fusion_wiring.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
         "status": "TEST"
       },
       {
@@ -43119,6 +43340,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/shared/config/kafka.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/shared/config/settings.py",
         "status": "PRODUCTION"
       },
@@ -43779,6 +44004,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/shared/tests/unit/test_layer_boundaries.py",
         "status": "TEST"
       },
@@ -44330,11 +44559,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 400,
+      "PRODUCTION": 402,
       "TEST_ONLY": 143,
-      "ORPHAN": 120,
-      "TEST": 331,
-      "total": 994
+      "ORPHAN": 121,
+      "TEST": 333,
+      "total": 999
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -44525,6 +44754,7 @@
       "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
       "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
       "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
+      "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
       "apps/control-plane/db/relation_claim_store.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
@@ -47174,6 +47404,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "cd8f98352bb2ec7b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/dispatcher/kafka_producer.py",
+        "object": "apps/shared/config/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/dispatcher/kafka_producer.py",
+          "via": "config.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "4a7e1a642a849184",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/dispatcher/plan_driver.py",
@@ -49718,6 +49961,19 @@
         "evidence": {
           "file": "apps/acquisition/worker_service.py",
           "via": "case_execution_guard"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "60837e416a11febd",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/shared/config/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "config.kafka"
         },
         "confidence": 1.0
       },
@@ -55299,6 +55555,97 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "3d84c34625898136",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_candidate_store.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_candidate_store.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3d84c34625898136",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_candidate_store.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_candidate_store.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3d84c34625898136",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_candidate_store.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_candidate_store.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "df26f6cad518358b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_candidate_store.py",
+        "object": "apps/shared/domain/evidence_context.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_candidate_store.py",
+          "via": "domain.evidence_context"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e8d8b7842b1f7b26",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_candidate_store.py",
+        "object": "apps/shared/domain/relation_candidate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_candidate_store.py",
+          "via": "domain.relation_candidate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "1d87ddbc077620f9",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_candidate_store.py",
+        "object": "apps/shared/semantic/regime.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_candidate_store.py",
+          "via": "semantic.regime"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "fa025159c928bdff",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/relation_candidate_store.py",
+        "object": "apps/shared/semantic/regime_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/relation_candidate_store.py",
+          "via": "semantic.regime_store"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "a4e415132a27fc27",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/db/relation_claim_store.py",
@@ -57236,6 +57583,58 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "6323b877ec5f61f8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/document_adapter.py",
+        "object": "apps/shared/domain/relation_candidate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/document_adapter.py",
+          "via": "domain.relation_candidate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "244853a58d226263",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/document_adapter.py",
+        "object": "apps/shared/domain/relation_claim.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/document_adapter.py",
+          "via": "domain.relation_claim"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ffe6613e03f16402",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/document_adapter.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/document_adapter.py",
+          "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0b65064b47a01d95",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/document_adapter.py",
+        "object": "apps/shared/semantic/contracts.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/document_adapter.py",
+          "via": "semantic.contracts"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "529d4b80dd933785",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/document_adapter.py",
@@ -57782,19 +58181,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "dfcbb839b52f582c",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/control-plane/services/interpretation_bridge.py",
-        "object": "apps/control-plane/db/schema.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/control-plane/services/interpretation_bridge.py",
-          "via": "db.schema"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "95946545cafbb3be",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/interpretation_bridge.py",
@@ -57808,6 +58194,84 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "1ec5c6e35c64aedf",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/shared/domain/evidence_context.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "domain.evidence_context"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "4877c3251455d31c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/shared/domain/relation_candidate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "domain.relation_candidate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "637cfb31533386be",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/shared/domain/relation_claim.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "domain.relation_claim"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b74b3e6807901bdb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d7d680e6daf96942",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/shared/semantic/regime.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "semantic.regime"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0ddc1981a3d2a03f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/control-plane/db/relation_candidate_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "db.relation_candidate_store"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "cdb0a1cbb5373d61",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/interpretation_bridge.py",
@@ -57817,6 +58281,19 @@
         "evidence": {
           "file": "apps/control-plane/services/interpretation_bridge.py",
           "via": "domain.dynamics"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "dfcbb839b52f582c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "db.schema"
         },
         "confidence": 1.0
       },
@@ -57908,6 +58385,19 @@
         "evidence": {
           "file": "apps/control-plane/services/interpretation_bridge.py",
           "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "4877c3251455d31c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/shared/domain/relation_candidate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "domain.relation_candidate"
         },
         "confidence": 1.0
       },
@@ -58168,6 +58658,19 @@
         "evidence": {
           "file": "apps/control-plane/services/observation_consumer_runner.py",
           "via": "services.processing_result_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "981cdec7ddf61d3c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/observation_consumer_runner.py",
+        "object": "apps/shared/config/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/observation_consumer_runner.py",
+          "via": "config.kafka"
         },
         "confidence": 1.0
       },
@@ -62380,6 +62883,58 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_rank_fusion_wiring.py",
           "via": "services.query_planner"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "24b536515caf3c2a",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "object": "apps/control-plane/db/relation_candidate_store.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+          "via": "db.relation_candidate_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "cc9147a95370ae7c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "accb19fac0f078e4",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "object": "apps/shared/domain/relation_candidate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+          "via": "domain.relation_candidate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "dd44bd81f24981fe",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "object": "apps/shared/semantic/contracts.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+          "via": "semantic.contracts"
         },
         "confidence": 1.0
       },
@@ -78439,6 +78994,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "00c03e79d2169bc4",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "object": "apps/shared/config/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+          "via": "config.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "6b9d8be432111ebd",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/shared/tests/unit/test_layer_boundaries.py",
@@ -89394,6 +89962,54 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "b4226f819c58f67a",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "object": "apps/control-plane/db/relation_candidate_store.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b7000afebf75c22f",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f77f6e8952a2edf3",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "object": "apps/shared/domain/relation_candidate.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "fcd31f4954fc2c87",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "object": "apps/shared/semantic/contracts.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "6a6401da78f04e7b",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_reobservation.py",
@@ -95358,6 +95974,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "8be5969a3a2d43e5",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "object": "apps/shared/config/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_kafka_bootstrap.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "21f8b74e61e94fb0",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/shared/tests/unit/test_layer_boundaries.py",
@@ -100738,44 +101366,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4299,
-      "static_facts": 4005,
+      "facts_total": 4330,
+      "static_facts": 4036,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 994,
+    "python_modules": 999,
     "typescript_modules": 255,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2755,
-    "test_files": 334,
-    "test_functions": 5250,
-    "untested_modules": 265,
+    "import_edges": 2781,
+    "test_files": 336,
+    "test_functions": 5256,
+    "untested_modules": 266,
     "http_routes": 182
   },
   "evidence_stats": {
-    "facts_total": 4299,
-    "static_facts": 4005,
+    "facts_total": 4330,
+    "static_facts": 4036,
     "inferred": 294,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 537,
+    "IMPLEMENTED": 539,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 331,
-    "MIGRATION": 17,
-    "total": 994
+    "TEST": 333,
+    "MIGRATION": 18,
+    "total": 999
   },
   "reachability_summary": {
-    "PRODUCTION": 400,
+    "PRODUCTION": 402,
     "TEST_ONLY": 143,
-    "ORPHAN": 120,
-    "TEST": 331,
-    "total": 994
+    "ORPHAN": 121,
+    "TEST": 333,
+    "total": 999
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -101004,6 +101632,7 @@
     "apps/control-plane/db/migrations/versions/027_person_research_case_records.py",
     "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
     "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
+    "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
     "apps/control-plane/db/relation_claim_store.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
