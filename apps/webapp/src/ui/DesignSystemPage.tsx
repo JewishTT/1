@@ -6,6 +6,7 @@ import {
   DataTable,
   EmptyState,
   ErrorView,
+  Icon,
   IconButton,
   Input,
   LoadingView,
@@ -26,10 +27,10 @@ type DemoRow = {
 };
 
 const SAMPLE_ROWS: DemoRow[] = [
-  { id: "OBS-0042", kind: "Observation", status: "Running", updated: "2026-10-27 20:12:04" },
-  { id: "ENT-0108", kind: "Entity", status: "Healthy", updated: "2026-10-27 20:11:51" },
-  { id: "SRC-0027", kind: "Source", status: "Queued", updated: "2026-10-27 20:10:09" },
-  { id: "FND-0006", kind: "Finding", status: "Failed", updated: "2026-10-27 19:58:33" },
+  { id: "DEMO-OBS-0042", kind: "Observation", status: "Running", updated: "2026-10-27 20:12:04" },
+  { id: "DEMO-ENT-0108", kind: "Entity", status: "Healthy", updated: "2026-10-27 20:11:51" },
+  { id: "DEMO-SRC-0027", kind: "Source", status: "Queued", updated: "2026-10-27 20:10:09" },
+  { id: "DEMO-FND-0006", kind: "Finding", status: "Failed", updated: "2026-10-27 19:58:33" },
 ];
 
 const TABLE_COLUMNS: ReadonlyArray<DataTableColumn<DemoRow>> = [
@@ -58,7 +59,7 @@ export function DesignSystemPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("primitives");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
-  const [selectedId, setSelectedId] = useState<string | null>("OBS-0042");
+  const [selectedId, setSelectedId] = useState<string | null>("DEMO-OBS-0042");
   const [clickCount, setClickCount] = useState(0);
 
   const rows = useMemo(
@@ -102,13 +103,13 @@ export function DesignSystemPage() {
             </div>
             <div className="ui-kit-button-row">
               <Button variant="primary" onClick={() => setClickCount((count) => count + 1)}>Primary action</Button>
-              <Button>Default</Button>
-              <Button variant="ghost">Ghost</Button>
-              <Button variant="danger">Destructive</Button>
+              <Button onClick={() => setClickCount((count) => count + 1)}>Default</Button>
+              <Button variant="ghost" onClick={() => setClickCount((count) => count + 1)}>Ghost</Button>
+              <Button variant="danger" onClick={() => setClickCount((count) => count + 1)}>Destructive</Button>
             </div>
             <div className="ui-kit-button-row">
-              <Button size="sm" icon="search">Search</Button>
-              <Button size="sm" icon="copy" variant="ghost">Copy ID</Button>
+              <Button size="sm" icon="search" onClick={() => setTab("data")}>Search</Button>
+              <Button size="sm" icon="copy" variant="ghost" onClick={() => { setQuery("DEMO-OBS-0042"); setTab("data"); }}>Copy ID</Button>
               <Tooltip content="An icon-only control still has an accessible name."><IconButton icon="command" label="Open command palette" /></Tooltip>
               <Button size="sm" disabled>Unavailable</Button>
             </div>
@@ -121,9 +122,9 @@ export function DesignSystemPage() {
               <span className="ui-kit-count">Native semantics</span>
             </div>
             <div className="ui-kit-field-stack">
-              <Input label="Search inventory" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ID, kind or status" adornment={<span>⌕</span>} />
+              <Input label="Search inventory" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ID, kind or status" adornment={<Icon name="search" size={14} />} />
               <Select label="Filter by status" value={status} onValueChange={setStatus} options={STATUS_OPTIONS} />
-              <Input label="Immutable identifier" value="OBS-0042 / 6f83…a19d" mono readOnly hint="IDs, digests, URIs and queries use monospace." />
+              <Input label="Immutable identifier" value="DEMO-OBS-0042 / 6f83…a19d" mono readOnly hint="IDs, digests, URIs and queries use monospace." />
             </div>
           </section>
 
@@ -166,7 +167,7 @@ export function DesignSystemPage() {
         <section className="ui-kit-card" aria-labelledby="ui-kit-table">
           <div className="ui-kit-card-head">
             <div><p className="ui-meta">05 / TABULAR DATA</p><h2 id="ui-kit-table">Data table</h2></div>
-            <span className="ui-kit-count">{rows.length} visible / {SAMPLE_ROWS.length} sample rows</span>
+            <span className="ui-kit-count">{rows.length} visible / {SAMPLE_ROWS.length} demo fixtures</span>
           </div>
           <div className="ui-kit-table-filters">
             <Input label="Filter rows" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search rows" />
@@ -174,7 +175,7 @@ export function DesignSystemPage() {
             <Button variant="ghost" onClick={() => { setQuery(""); setStatus("all"); }}>Reset filters</Button>
           </div>
           <DataTable caption="Design system sample observations" columns={TABLE_COLUMNS} rows={rows} rowId={(row) => row.id} selectedId={selectedId} onRowSelect={setSelectedId} testId="ui-kit-table" emptyState={<EmptyState title="No matching records" description="Change or clear the filters to continue." />} />
-          <p className="ui-kit-note">Selected record: <strong data-testid="ui-kit-selected-id">{selectedId ?? "none"}</strong></p>
+          <p className="ui-kit-note">Selected sample record: <strong data-testid="ui-kit-selected-id">{selectedId ?? "none"}</strong></p>
         </section>
       ) : null}
 
