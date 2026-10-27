@@ -1379,6 +1379,8 @@ class RelationClaim(Base):
     # a value. Nothing is indexed on it: reconstruction reads a claim's regime
     # by the claim's own primary key, and no read path groups claims by regime.
     regime_id: Mapped[str] = mapped_column(String(64))
+    # The full validation verdict is durable admission evidence (FR-153).
+    validation_record: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     __table_args__ = (
         Index("ix_relation_claim_tenant", "tenant_id"),
@@ -1388,6 +1390,47 @@ class RelationClaim(Base):
         Index("ix_relation_claim_object", "tenant_id", "object_ref"),
         Index("ix_relation_claim_context", "context_ref"),
         Index("uq_relation_claim_content", "tenant_id", "content_hash", unique=True),
+    )
+
+
+
+class RelationClaimProjectionOutbox(Base):
+    """Durable at-least-once handoff from a VALID claim verdict to graph projection."""
+
+    __tablename__ = "relation_claim_projection_outbox"
+
+    outbox_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    relation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="PENDING")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "relation_id", name="uq_relation_claim_projection_outbox_claim"
+        ),
+        CheckConstraint(
+            "status IN ('PENDING','DISPATCHING','DISPATCHED','FAILED','SKIPPED')",
+            name="ck_relation_claim_projection_outbox_status",
+        ),
+        CheckConstraint("attempts >= 0", name="ck_relation_claim_projection_outbox_attempts"),
+        Index(
+            "ix_relation_claim_projection_outbox_ready",
+            "status",
+            "available_at",
+            "lease_expires_at",
+        ),
     )
 
 

@@ -163,8 +163,9 @@ class GraphStore(Protocol):
         edge_type: str | None = None,
         *,
         direction: str | EdgeDirection | None = None,
+        tenant_id: str | None = None,
     ) -> list[str]: ...
-    def node(self, node_id: str) -> GraphNode | None: ...
+    def node(self, node_id: str, *, tenant_id: str | None = None) -> GraphNode | None: ...
 
 
 class InMemoryGraphStore:
@@ -255,6 +256,7 @@ class InMemoryGraphStore:
         edge_type: str | None = None,
         *,
         direction: str | EdgeDirection | None = None,
+        tenant_id: str | None = None,
     ) -> list[str]:
         """Neighbouring node ids, direction preserved (FR-010).
 
@@ -279,8 +281,12 @@ class InMemoryGraphStore:
                 out.add(e.target if e.source == node_id else e.source)
         return sorted(out)
 
-    def node(self, node_id: str) -> GraphNode | None:
-        return self._nodes.get(node_id)
+    def node(self, node_id: str, *, tenant_id: str | None = None) -> GraphNode | None:
+        node = self._nodes.get(node_id)
+        if tenant_id and node is not None:
+            if node.properties.get('tenant_id') not in (None, tenant_id):
+                return None
+        return node
 
     def nodes(self) -> list[GraphNode]:
         return list(self._nodes.values())
