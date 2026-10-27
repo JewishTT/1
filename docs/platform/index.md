@@ -9,7 +9,7 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 1006 |
+| Python modules | 1007 |
 | TypeScript modules | 255 |
 | Rust crates | 9 |
 | Rust source files | 15 |
@@ -20,8 +20,8 @@ committed model no longer matches the tree.
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 339 |
-| Test functions | 5268 |
+| Test files | 340 |
+| Test functions | 5271 |
 | Untested platform modules | 268 |
 | HTTP routes | 182 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
@@ -52,7 +52,7 @@ committed model no longer matches the tree.
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| control-plane | 240 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| control-plane | 241 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
 | interpretation | 112 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |

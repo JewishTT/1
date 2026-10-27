@@ -207,7 +207,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 240,
+      "python_modules": 241,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -1110,7 +1110,7 @@
     }
   ],
   "import_graph": {
-    "module_count": 1006,
+    "module_count": 1007,
     "edge_count": 2806,
     "external": {
       "declared-not-installed:ahocorasick": 1,
@@ -1150,7 +1150,7 @@
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 68,
-      "stdlib:pathlib": 314,
+      "stdlib:pathlib": 315,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 95,
@@ -17885,6 +17885,14 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py",
+        "tests": 1,
+        "test_names": [
+          "test_projection_rebuild_is_registered_and_reads_latest_claim_revisions"
+        ],
+        "targets": []
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_reobservation.py",
         "tests": 9,
         "test_names": [
@@ -19423,12 +19431,14 @@
       },
       {
         "path": "apps/projection/tests/unit/test_claim_projection.py",
-        "tests": 4,
+        "tests": 6,
         "test_names": [
           "test_only_valid_claim_is_projected_and_replay_is_idempotent",
           "test_non_valid_verdict_cannot_create_any_graph_state",
           "test_nary_claim_remains_one_hyperedge_not_a_clique",
-          "test_claim_without_observation_provenance_is_refused_before_writes"
+          "test_claim_without_observation_provenance_is_refused_before_writes",
+          "test_rejected_verdict_removes_previous_projection_for_logical_relation",
+          "test_replaying_nary_claim_does_not_duplicate_hyperedge_membership"
         ],
         "targets": [
           "apps/projection/graph/abstraction.py",
@@ -23529,7 +23539,7 @@
         "targets": []
       }
     ],
-    "total": 5268
+    "total": 5271
   },
   "contracts": {
     "python": [
@@ -29868,6 +29878,7 @@
             "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
             "apps/control-plane/tests/unit/test_relation_projection_migration.py",
             "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+            "apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py",
             "apps/control-plane/tests/unit/test_reobservation.py",
             "apps/control-plane/tests/unit/test_science_tda.py",
             "apps/control-plane/tests/unit/test_search_core_selection.py",
@@ -29954,7 +29965,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 299
+          "module_count": 300
         },
         {
           "id": "webapp",
@@ -34902,8 +34913,17 @@
       {
         "path": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
         "status": "TEST",
-        "loc": 94,
+        "loc": 96,
         "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py",
+        "status": "TEST",
+        "loc": 13,
+        "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -36656,8 +36676,8 @@
       {
         "path": "apps/projection/tests/unit/test_claim_projection.py",
         "status": "TEST",
-        "loc": 98,
-        "callables": 5,
+        "loc": 126,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40756,9 +40776,9 @@
       "IMPLEMENTED": 542,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 336,
+      "TEST": 337,
       "MIGRATION": 19,
-      "total": 1006
+      "total": 1007
     }
   },
   "reachability": {
@@ -42213,6 +42233,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py",
         "status": "TEST"
       },
       {
@@ -44830,8 +44854,8 @@
       "PRODUCTION": 402,
       "TEST_ONLY": 145,
       "ORPHAN": 123,
-      "TEST": 336,
-      "total": 1006
+      "TEST": 337,
+      "total": 1007
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -102067,13 +102091,13 @@
   },
   "counts": {
     "components": 16,
-    "python_modules": 1006,
+    "python_modules": 1007,
     "typescript_modules": 255,
     "rust_modules": 15,
     "rust_crates": 9,
     "import_edges": 2806,
-    "test_files": 339,
-    "test_functions": 5268,
+    "test_files": 340,
+    "test_functions": 5271,
     "untested_modules": 268,
     "http_routes": 182
   },
@@ -102087,16 +102111,16 @@
     "IMPLEMENTED": 542,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 336,
+    "TEST": 337,
     "MIGRATION": 19,
-    "total": 1006
+    "total": 1007
   },
   "reachability_summary": {
     "PRODUCTION": 402,
     "TEST_ONLY": 145,
     "ORPHAN": 123,
-    "TEST": 336,
-    "total": 1006
+    "TEST": 337,
+    "total": 1007
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",

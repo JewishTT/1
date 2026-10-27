@@ -1036,6 +1036,7 @@
           "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
           "apps/control-plane/tests/unit/test_relation_projection_migration.py",
           "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+          "apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py",
           "apps/control-plane/tests/unit/test_reobservation.py",
           "apps/control-plane/tests/unit/test_science_tda.py",
           "apps/control-plane/tests/unit/test_search_core_selection.py",
@@ -1122,7 +1123,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 299
+        "module_count": 300
       },
       {
         "id": "webapp",
