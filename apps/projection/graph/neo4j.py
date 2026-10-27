@@ -41,7 +41,21 @@ class Neo4jGraphStore:
             settings.neo4j_uri,
             auth=(settings.neo4j_user, settings.neo4j_password),
         )
-        return cls(driver)
+        store = cls(driver)
+        store.ensure_constraints()
+        return store
+
+    def ensure_constraints(self) -> None:
+        """Install tenant-scoped node identity constraints required for safe MERGE."""
+        with self._driver.session() as session:
+            session.run(
+                "CREATE CONSTRAINT projection_node_tenant_identity IF NOT EXISTS "
+                "FOR (n:ProjectionNode) REQUIRE (n.tenant_id, n.node_id) IS UNIQUE"
+            )
+            session.run(
+                "CREATE CONSTRAINT projection_hyperedge_tenant_identity IF NOT EXISTS "
+                "FOR (h:HyperEdge) REQUIRE (h.tenant_id, h.edge_id) IS UNIQUE"
+            )
 
     @staticmethod
     def _tenant_id(properties: dict, provenance: dict) -> str:
@@ -144,14 +158,15 @@ class Neo4jGraphStore:
         with self._driver.session() as session:
             rows = session.run(
                 "MATCH (n:ProjectionNode {tenant_id:$tenant_id, node_id:$id}) "
-                "RETURN n.node_id AS id, n AS full",
+                "RETURN n.node_id AS id, labels(n) AS labels, properties(n) AS full",
                 id=node_id,
                 tenant_id=tenant_id,
             ).data()
         if not rows:
             return None
         data: dict[str, Any] = dict(rows[0]["full"])
-        node_type = data.pop("_type", "Unknown")
+        labels = [str(label) for label in rows[0].get("labels", [])]
+        node_type = next((label for label in labels if label != "ProjectionNode"), "Unknown")
         data.pop("tenant_id", None)
         return GraphNode(node_id=node_id, node_type=node_type, properties=data)
 

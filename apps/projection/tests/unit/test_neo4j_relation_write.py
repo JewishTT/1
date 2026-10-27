@@ -20,7 +20,7 @@ from graph.neo4j import Neo4jGraphStore
 
 pytestmark = pytest.mark.unit
 
-PROV = {"event_id": "e1", "observation_id": "o1"}
+PROV = {"event_id": "e1", "observation_id": "o1", "tenant_id": "t-1"}
 CYRILLIC = "связан"  # not an ASCII identifier
 
 
@@ -90,13 +90,14 @@ class TestWriteEdge:
         cypher, params = driver.log[0]
         compact = " ".join(cypher.split())
         assert compact == (
-            "MATCH (a {node_id:$source}), (b {node_id:$target}) "
-            "MERGE (a)-[r:resolves_to {rel_id:$rel_id}]->(b) "
-            "SET r += $props "
-            "RETURN r"
+            "MATCH (a:ProjectionNode {tenant_id: $tenant_id, node_id: $source}), "
+            "(b:ProjectionNode {tenant_id: $tenant_id, node_id: $target}) "
+            "MERGE (a)-[r:resolves_to {tenant_id: $tenant_id, rel_id: $rel_id}]->(b) "
+            "SET r += $props RETURN r"
         )
         assert params["source"] == "a"
         assert params["target"] == "b"
+        assert params["tenant_id"] == "t-1"
 
     def test_relation_id_is_a_parameter(self, store: Neo4jGraphStore) -> None:
         store.write_edge(
@@ -124,7 +125,7 @@ class TestWriteEdge:
         )
         cypher, params = _driver_of(store).log[0]
         assert "SET r += $props" in " ".join(cypher.split())
-        assert params["props"] == payload
+        assert params["props"] == {**payload, "tenant_id": "t-1"}
 
     def test_rewrite_of_the_same_relation_id_is_idempotent(self, store: Neo4jGraphStore) -> None:
         edge = GraphEdge(
@@ -177,7 +178,7 @@ class TestWriteHyperedge:
         driver = _driver_of(store)
         cypher, params = driver.log[0]
         compact = " ".join(cypher.split())
-        assert "MERGE (h:HyperEdge {" in compact
+        assert "MERGE (h:ProjectionNode:HyperEdge {" in compact
         assert "rel_id: $edge_id" in compact
         assert "edge_id: $edge_id" in compact
         assert params["edge_id"] == edge.edge_id
@@ -221,6 +222,11 @@ class TestWriteNode:
         store.write_node(GraphNode("a", "Entity", {"label": "acme"}), PROV)
         cypher, params = _driver_of(store).log[0]
         assert " ".join(cypher.split()) == (
-            "MERGE (n:Entity {node_id: $node_id}) ON CREATE SET n += $props RETURN n"
+            "MERGE (n:ProjectionNode:Entity {tenant_id: $tenant_id, node_id: $node_id}) "
+            "ON CREATE SET n += $props RETURN n"
         )
-        assert params == {"node_id": "a", "props": {"label": "acme"}}
+        assert params == {
+            "tenant_id": "t-1",
+            "node_id": "a",
+            "props": {"label": "acme", "tenant_id": "t-1"},
+        }

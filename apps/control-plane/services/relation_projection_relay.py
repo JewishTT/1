@@ -12,8 +12,8 @@ from db.relation_claim_store import SqlRelationClaimStore
 from db.schema import RelationClaim as RelationClaimRow
 from db.schema import RelationClaimProjectionOutbox
 from db.session import create_tables, make_session_factory
-from projection.graph.claim_projection import project_admitted_claim
-from projection.graph.neo4j import Neo4jGraphStore
+from graph.claim_projection import project_admitted_claim
+from graph.neo4j import Neo4jGraphStore
 
 
 LEASE = timedelta(minutes=10)
@@ -116,7 +116,6 @@ async def relay_relation_projection_outbox(
     graph = graph_store or Neo4jGraphStore.from_settings()
     counts = {"claimed": 0, "projected": 0, "skipped": 0, "failed": 0}
     try:
-        await create_tables()
         async with factory() as session:
             batch = await _claim_batch(session, limit=limit)
         counts["claimed"] = len(batch)
