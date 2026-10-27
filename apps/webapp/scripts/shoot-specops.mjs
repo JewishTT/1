@@ -15,10 +15,11 @@
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 const BASE = process.argv[2] ?? "http://127.0.0.1:5173";
-const OUT = process.argv[3] ?? "C:/Users/tim/AppData/Local/Temp/opencode/shots";
-const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const OUT = process.argv[3] ?? join(tmpdir(), "cognitive-ui-shots");
+const CHROME = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 const PANELS = [
   ["GhostLine", "gl-runtime"],
@@ -34,7 +35,7 @@ const PANELS = [
 
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({ executablePath: CHROME, headless: true });
+const browser = await chromium.launch({ ...(CHROME ? { executablePath: CHROME } : {}), headless: true });
 const page = await browser.newPage({
   viewport: { width: 1680, height: 1050 },
   deviceScaleFactor: 2,
@@ -89,13 +90,33 @@ if (theme !== "light") problems.push(`theme toggle did not take: data-theme=${th
 await page.screenshot({ path: join(OUT, "gl-runtime-light.png") });
 process.stdout.write(`shot gl-runtime-light (theme=${theme})\n`);
 
-// Narrow viewport: the split grids collapse, and that is where a re-skin usually
-// breaks first.
+// Responsive sweep: capture the transition points named in the UI contract and
+// fail if the page itself grows wider than the viewport. Intentional table/list
+// scrolling is fine; document-level horizontal overflow is not.
 await page.getByRole("tab", { name: /GhostLine/i }).click();
-await page.setViewportSize({ width: 1100, height: 900 });
-await page.waitForTimeout(800);
-await page.screenshot({ path: join(OUT, "gl-runtime-narrow.png") });
-process.stdout.write("shot gl-runtime-narrow\n");
+for (const [width, height, label] of [
+  [1100, 900, "narrow"],
+  [1023, 900, "tablet"],
+  [767, 900, "small-tablet"],
+  [390, 844, "phone"],
+]) {
+  await page.setViewportSize({ width, height });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: join(OUT, `gl-runtime-${label}.png`) });
+  const metrics = await page.evaluate(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    return {
+      viewport: window.innerWidth,
+      document: root.scrollWidth,
+      body: body.scrollWidth,
+    };
+  });
+  process.stdout.write(`shot gl-runtime-${label} ${JSON.stringify(metrics)}\n`);
+  if (metrics.document > metrics.viewport + 1 || metrics.body > metrics.viewport + 1) {
+    problems.push(`horizontal page overflow at ${width}px: document=${metrics.document}, body=${metrics.body}`);
+  }
+}
 
 await browser.close();
 
