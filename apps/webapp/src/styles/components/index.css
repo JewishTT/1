@@ -869,10 +869,14 @@
 /* ── UI kit catalogue ───────────────────────────────────────────────── */
 .ui-root .ui-kit-page {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: var(--ui-space-6);
   min-width: 0;
+  min-height: 0;
   max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: var(--ui-space-7);
 }
 
