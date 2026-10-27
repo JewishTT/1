@@ -258,7 +258,7 @@
 }
 .nfa-scope .nar-stage.on {
   border-color: var(--accent-dim);
-  background: rgba(91, 157, 255, 0.12);
+  background: var(--accent-wash);
   color: var(--accent);
 }
 
