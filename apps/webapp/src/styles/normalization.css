@@ -798,3 +798,86 @@ body:has(.ui-root)::after {
   filter: none;
   text-shadow: none;
 }
+
+
+/* Legacy shell surfaces: preserve their layout but unify the material with
+ * the same workbench layers. These selectors are intentionally scoped because
+ * legacy classes can also appear in migrated domain components.
+ */
+body:has(.ui-root) {
+  background-color: var(--bg-0);
+  background-image: none;
+  background-attachment: initial;
+}
+
+.ui-root .sidebar,
+.ui-root .header,
+.ui-root .module-tabs {
+  background: var(--ui-surface-1);
+  border-color: var(--ui-border);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ui-root .header {
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-root .module-tabs {
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-root .module-tab {
+  border-radius: var(--ui-radius-1);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .module-tab[data-active="true"] {
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+  color: var(--ui-accent);
+}
+
+.ui-root .intel-canvas-head {
+  background: var(--ui-surface-1);
+  border-bottom-color: var(--ui-border);
+}
+
+.ui-root .header-link {
+  color: var(--ui-accent);
+  border-color: var(--ui-accent-line);
+  background: var(--ui-accent-wash);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-root .header-link:hover,
+.ui-root .op-tile::before {
+  box-shadow: none;
+}
+
+.ui-root .op-tile {
+  background: var(--ui-surface-1);
+  border-color: var(--ui-border);
+  box-shadow: none;
+}
+
+.ui-root .sb-status .dot {
+  box-shadow: none;
+}
+
+.ui-root .feed-item {
+  animation: none;
+}
+
+.ui-root .intel-feed {
+  background: var(--ui-surface-1);
+  border-top-color: var(--ui-border);
+}
+
+.ui-root .intel-inspector {
+  border-color: var(--ui-border);
+}
