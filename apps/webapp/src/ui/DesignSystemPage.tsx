@@ -12,6 +12,7 @@ import {
   Input,
   LoadingView,
   Panel,
+  RadioGroup,
   Select,
   Skeleton,
   StatusDot,
@@ -62,6 +63,7 @@ export function DesignSystemPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("primitives");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
+  const [density, setDensity] = useState<"compact" | "standard" | "comfortable">("standard");
   const [selectedId, setSelectedId] = useState<string | null>("DEMO-OBS-0042");
   const [clickCount, setClickCount] = useState(0);
 
@@ -75,7 +77,7 @@ export function DesignSystemPage() {
   );
 
   return (
-    <main className="ui-kit-page" data-testid="ui-kit-page">
+    <main className="ui-kit-page" data-density={density} data-testid="ui-kit-page">
       <header className="ui-kit-header">
         <div>
           <p className="ui-meta">COGNITIVE UI / DESIGN SYSTEM</p>
@@ -127,6 +129,19 @@ export function DesignSystemPage() {
             <div className="ui-kit-field-stack">
               <Input label="Search inventory" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ID, kind or status" adornment={<Icon name="search" size={14} />} />
               <Select label="Filter by status" value={status} onValueChange={setStatus} options={STATUS_OPTIONS} />
+              <RadioGroup
+                label="Density preview"
+                value={density}
+                onValueChange={setDensity}
+                orientation="horizontal"
+                id="ui-kit-density"
+                options={[
+                  { value: "compact", label: "Compact", description: "26px rows" },
+                  { value: "standard", label: "Standard", description: "32px rows" },
+                  { value: "comfortable", label: "Comfortable", description: "40px rows" },
+                ]}
+                hint="Changes the catalogue surface only; workspace settings remain unchanged."
+              />
               <Textarea label="Investigation context" placeholder="Describe the question, scope and known constraints…" rows={3} hint="Preview only: no investigation or server record is created." />
               <Checkbox label="Include rejected evidence" defaultChecked hint="Illustrative preference control; this demo changes no platform data." />
               <Input label="Immutable identifier" value="DEMO-OBS-0042 / 6f83…a19d" mono readOnly hint="IDs, digests, URIs and queries use monospace." />
