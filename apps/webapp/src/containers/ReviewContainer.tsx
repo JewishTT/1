@@ -18,7 +18,7 @@ import {
  * The four states were four hex literals, none of which appeared anywhere else in
  * the product — so the review panel could not follow a theme and a re-tune of the
  * token block would not reach it. These are `var()` references into the frozen
- * `--c-*` block (`styles/legacy/legacy-tokens.css`), which is the right token
+ * `--ui-*` block (`styles/legacy/legacy-tokens.css`), which is the right token
  * family for a surface that has not been migrated to `--ui-*` yet (§62, §97):
  *
  *   unreviewed  information — nobody has ruled on it, which is not a failure
@@ -31,10 +31,10 @@ import {
  * widens and the style prop loses its type.
  */
 const STATE_COLOR: Record<ReviewAssertion["review_state"], string> = {
-  unreviewed: "var(--c-accent)",
-  disputed: "var(--c-warning)",
-  rejected: "var(--c-danger)",
-  accepted: "var(--c-success)",
+  unreviewed: "var(--ui-analytical)",
+  disputed: "var(--ui-gold)",
+  rejected: "var(--ui-danger)",
+  accepted: "var(--ui-accent)",
 };
 
 const EVIDENCE_LABEL: Record<string, string> = {
