@@ -429,9 +429,16 @@ describe("UI normalization — token ownership and cascade order", () => {
   it("bridges every legacy palette name to a canonical token", () => {
     const bridge = readShipped("styles", "tokens", "legacy-bridge.css");
     expect(bridge).toContain("--color-cyber: var(--ui-analytical)");
+    expect(bridge).toContain("--color-cyber-hi: var(--ui-text)");
     expect(bridge).toContain("--color-ember: var(--ui-gold)");
     expect(bridge).toContain("--color-matri: var(--ui-accent)");
     expect(bridge).toContain("--color-crimson: var(--ui-danger)");
+    expect(bridge).toContain("--color-violet: var(--ui-text-secondary)");
+    expect(bridge).toContain("--color-magenta: var(--ui-text-secondary)");
+    expect(bridge).toContain("--color-abyss: var(--ui-bg)");
+    expect(bridge).toContain("--color-abyss-2: var(--ui-surface-1)");
+    expect(bridge).toContain("--color-frame: var(--ui-border)");
+    expect(bridge).toContain("--color-ghost: var(--ui-text)");
     expect(bridge).not.toMatch(/#[0-9a-f]{3,8}\b/i);
   });
 });
