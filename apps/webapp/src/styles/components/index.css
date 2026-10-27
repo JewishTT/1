@@ -873,8 +873,10 @@
   flex-direction: column;
   gap: var(--ui-space-6);
   min-width: 0;
+  width: 100%;
   min-height: 0;
-  max-width: 100%;
+  max-width: 1920px;
+  margin-inline: auto;
   overflow: auto;
   overscroll-behavior: contain;
   padding: var(--ui-space-7);
