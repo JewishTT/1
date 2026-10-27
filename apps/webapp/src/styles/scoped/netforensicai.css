@@ -7,21 +7,27 @@
  * Changes: Adaptation — rules prefixed with `.nfa-scope` so the donor's global
  *          selectors (body/*, forms, tables) only apply inside "evidence
  *          manifest / case-report" surfaces (EntityView + FindingView evidence
- *          panels) instead of the whole app.
+ *          panels) instead of the whole app. Palette and semantic state now
+ *          resolve through canonical UI tokens while the donor namespace stays isolated.
  */
 .nfa-scope {
-  --bg: #0f1117;
-  --panel: #171a24;
-  --panel-2: #1e2230;
-  --border: #2a2f3f;
-  --text: #e6e8ef;
-  --text-dim: #9aa0b4;
-  --accent: #5b9dff;
-  --accent-dim: #2c4a7c;
-  --ok: #4caf50;
-  --warn: #e0a030;
-  --bad: #e05a4e;
-  --mono: "SF Mono", Consolas, Menlo, monospace;
+  --bg: var(--ui-bg);
+  --panel: var(--ui-surface-1);
+  --panel-2: var(--ui-surface-2);
+  --border: var(--ui-border);
+  --text: var(--ui-text);
+  --text-dim: var(--ui-text-secondary);
+  --accent: var(--ui-analytical);
+  --accent-dim: var(--ui-analytical-wash);
+  --ok: var(--ui-accent);
+  --warn: var(--ui-gold);
+  --bad: var(--ui-danger);
+  --mono: var(--ui-font-mono);
+  --warn-wash: var(--ui-gold-wash);
+  --accent-wash: var(--ui-analytical-wash);
+  --ok-wash: var(--ui-accent-wash);
+  --bad-wash: var(--ui-danger-wash);
+  --muted-wash: color-mix(in srgb, var(--ui-text-muted) 15%, transparent);
 }
 
 .nfa-scope * {
@@ -56,7 +62,7 @@
   letter-spacing: 0.03em;
 }
 .nfa-scope tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--ui-text) 2%, transparent);
 }
 .nfa-scope .mono {
   font-family: var(--mono);
@@ -134,48 +140,48 @@
 }
 .nfa-scope .badge-open,
 .nfa-scope .badge-Open {
-  background: rgba(224, 160, 48, 0.15);
+  background: var(--warn-wash);
   color: var(--warn);
 }
 .nfa-scope .badge-investigating,
 .nfa-scope .badge-Investigating {
-  background: rgba(91, 157, 255, 0.15);
+  background: var(--accent-wash);
   color: var(--accent);
 }
 .nfa-scope .badge-closed,
 .nfa-scope .badge-Confirmed,
 .nfa-scope .badge-confirmed,
 .nfa-scope .badge-Resolved {
-  background: rgba(76, 175, 80, 0.15);
+  background: var(--ok-wash);
   color: var(--ok);
 }
 .nfa-scope .badge-Rejected,
 .nfa-scope .badge-rejected,
 .nfa-scope .badge-False-Positive {
-  background: rgba(224, 90, 78, 0.15);
+  background: var(--bad-wash);
   color: var(--bad);
 }
 .nfa-scope .badge-potential,
 .nfa-scope .badge-medium,
 .nfa-scope .badge-Medium {
-  background: rgba(224, 160, 48, 0.15);
+  background: var(--warn-wash);
   color: var(--warn);
 }
 .nfa-scope .badge-high,
 .nfa-scope .badge-High,
 .nfa-scope .badge-Critical {
-  background: rgba(224, 90, 78, 0.15);
+  background: var(--bad-wash);
   color: var(--bad);
 }
 .nfa-scope .badge-critical {
   background: var(--bad);
-  color: #fff;
+  color: var(--ui-text);
   font-weight: 700;
 }
 .nfa-scope .badge-none,
 .nfa-scope .badge-low,
 .nfa-scope .badge-Low {
-  background: rgba(154, 160, 180, 0.15);
+  background: var(--muted-wash);
   color: var(--text-dim);
 }
 
@@ -247,7 +253,7 @@
   padding: 3px 9px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  color: #5c6379;
+  color: var(--ui-text-secondary);
   white-space: nowrap;
 }
 .nfa-scope .nar-stage.on {
@@ -300,19 +306,19 @@
   text-transform: uppercase;
 }
 .nfa-scope .run-state.idle {
-  background: rgba(154, 160, 180, 0.15);
+  background: var(--muted-wash);
   color: var(--text-dim);
 }
 .nfa-scope .run-state.running {
-  background: rgba(91, 157, 255, 0.15);
+  background: var(--accent-wash);
   color: var(--accent);
 }
 .nfa-scope .run-state.ok {
-  background: rgba(76, 175, 80, 0.15);
+  background: var(--ok-wash);
   color: var(--ok);
 }
 .nfa-scope .run-state.bad {
-  background: rgba(224, 90, 78, 0.15);
+  background: var(--bad-wash);
   color: var(--bad);
 }
 
