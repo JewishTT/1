@@ -20,7 +20,7 @@ describe("Toast", () => {
     expect(toast).toHaveAttribute("data-tone", "success");
     expect(screen.getByText("Export ready")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Dismiss notification" }));
-    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
   it("announces genuine danger notifications assertively", () => {
