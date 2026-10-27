@@ -1,0 +1,151 @@
+/* COGNITIVE UI — cross-surface normalization layer.
+ *
+ * This is an adapter layer, not a second theme. All values resolve through the
+ * canonical token contract in styles/tokens; no component-local palette is
+ * introduced here. Keep selectors scoped to the first-party workbench so
+ * legacy and provenance-scoped donor views are not accidentally restyled.
+ */
+
+.ui-root {
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-density-font);
+  line-height: var(--ui-leading-normal);
+  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ui-root *,
+.ui-root *::before,
+.ui-root *::after {
+  box-sizing: border-box;
+}
+
+.ui-root :where(button, input, select, textarea) {
+  font: inherit;
+}
+
+.ui-root :where(button, [role="button"], a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ui-focus-ring, var(--accent-green-bright));
+  outline-offset: 2px;
+}
+
+.ui-root :where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+.ui-root :where(code, pre, kbd, samp, time[data-precision], [data-mono="true"], .ui-mono, .ui-id) {
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+.ui-root :where(table, [role="table"]) {
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-root :where(th, td, [role="columnheader"], [role="cell"]) {
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-root :where(input, textarea, select) {
+  min-width: 0;
+  color: var(--ui-text);
+}
+
+.ui-root ::selection {
+  color: var(--ui-text);
+  background: var(--accent-green-wash, rgba(143, 203, 100, 0.22));
+}
+
+.ui-root :where(a) {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.ui-root :where(a:hover) {
+  color: var(--ui-text);
+}
+
+.ui-root :where([data-state="selected"], [aria-selected="true"], [aria-pressed="true"]) {
+  scroll-margin-block: var(--ui-space-6, 16px);
+}
+
+.ui-root :where(.ui-panel, .ui-pane, .ui-card, .ui-section) {
+  min-width: 0;
+}
+
+.ui-root :where(.ui-truncate) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport) {
+  scrollbar-color: var(--border-1) var(--bg-1);
+  scrollbar-width: thin;
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-track {
+  background: var(--bg-1);
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-thumb {
+  background: var(--border-1);
+  border: 2px solid var(--bg-1);
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Dense data is readable by default; content must not force the shell wider. */
+.ui-root :where(.ui-shell-body, .ui-workspace, .ui-canvas, .ui-inspector, .ui-rail) {
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (max-width: 1279px) {
+  .ui-root .ui-shell-body {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 1023px) {
+  .ui-root .ui-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--ui-topbar-h, 40px);
+  }
+
+  .ui-root .ui-topbar-work {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ui-root .ui-topbar-controls {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-root *,
+  .ui-root *::before,
+  .ui-root *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
