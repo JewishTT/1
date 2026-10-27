@@ -132,6 +132,10 @@
   --ui-status-failed: var(--ui-danger);
   --ui-status-blocked: var(--ui-danger);
   --ui-status-unknown: var(--ui-steel-dim);
+
+  /* Overlay scrims are semantic surfaces, shared by drawers and modal palettes. */
+  --ui-scrim-drawer: rgba(0, 0, 0, 0.32);
+  --ui-scrim-modal: rgba(0, 0, 0, 0.42);
 }
 
 /* ── Light — a first-class theme, not an inverted dark (ui-upgrade §3.2,
@@ -217,4 +221,7 @@
   --ui-status-failed: var(--ui-danger);
   --ui-status-blocked: var(--ui-danger);
   --ui-status-unknown: var(--ui-steel-dim);
+
+  --ui-scrim-drawer: rgba(18, 23, 20, 0.18);
+  --ui-scrim-modal: rgba(18, 23, 20, 0.24);
 }
