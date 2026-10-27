@@ -557,6 +557,8 @@ describe("UI normalization — legacy shell compatibility", () => {
     expect(normalization).toContain(".ui-root .module-tabs");
     expect(normalization).toContain(".ui-root .op-tile::before");
     expect(normalization).toContain(".ui-root .panel::before");
+    const legacyCommands = readShipped("styles", "legacy", "legacy-commands.css");
+    expect(legacyCommands).not.toContain("!important");
   });
 
   it("keeps legacy selection and event semantics while removing decorative glow", () => {
