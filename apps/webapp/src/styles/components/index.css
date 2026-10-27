@@ -1151,3 +1151,56 @@
 .ui-root .ui-panel-head + .ui-panel-body {
   padding-top: var(--ui-space-4);
 }
+
+
+/* ── Multiline field and checkbox controls ──────────────────────────── */
+.ui-root .ui-textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 96px;
+  padding: var(--ui-space-4);
+  color: var(--ui-text);
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  font: inherit;
+  font-size: var(--ui-text-sm);
+  line-height: var(--ui-leading-relaxed);
+  resize: vertical;
+}
+
+.ui-root .ui-textarea[data-mono="true"] {
+  font-family: var(--ui-font-mono);
+}
+
+.ui-root .ui-textarea::placeholder {
+  color: var(--ui-text-muted);
+}
+
+.ui-root .ui-textarea:focus-visible {
+  border-color: var(--ui-focus-ring);
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 1px;
+}
+
+.ui-root .ui-check-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ui-space-2);
+  min-width: 0;
+}
+
+.ui-root .ui-check {
+  min-height: var(--ui-hit-min);
+}
+
+.ui-root .ui-check-label {
+  min-width: 0;
+}
+
+.ui-root .ui-check input:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
