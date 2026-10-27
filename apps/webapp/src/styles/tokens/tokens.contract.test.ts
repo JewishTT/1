@@ -507,3 +507,16 @@ describe("UI normalization — scoped donor palettes", () => {
     expect(spiderfoot).not.toContain("background-color: var(--sf-panel) !important");
   });
 });
+
+
+describe("UI normalization — Vitni review/lineage bridge", () => {
+  it("scopes adapter selectors and removes the donor purple/glow palette", () => {
+    const bridge = readShipped("styles", "bridge", "vitni.css");
+    expect(bridge).toContain(".ui-root .review-item");
+    expect(bridge).toContain(".ui-root .lineage-fact");
+    expect(bridge).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(bridge).not.toMatch(/rgba?\(/i);
+    expect(bridge).not.toMatch(/(?:linear|radial|conic)-gradient\(/i);
+    expect(bridge).not.toMatch(/box-shadow:\s*0\s+0/i);
+  });
+});
