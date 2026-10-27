@@ -367,7 +367,10 @@ describe("UI normalization — GhostLine keeps semantics without decorative glow
   const normalization = readShipped("styles", "normalization.css");
 
   it("flattens nested traces and refusal surfaces onto canonical tokens", () => {
-    expect(normalization).toContain(".ui-gl-refusal, .ui-gl-stage, .ui-gl-trace > li, .ui-gl-turns > li");
+    expect(normalization).toContain(".ui-root .ui-gl-refusal");
+    expect(normalization).toContain(".ui-root .ui-gl-stage");
+    expect(normalization).toContain(".ui-root .ui-gl-trace > li");
+    expect(normalization).toContain(".ui-root .ui-gl-turns > li");
     expect(normalization).toContain("background: var(--ui-surface-1)");
     expect(normalization).toContain("box-shadow: none");
   });
