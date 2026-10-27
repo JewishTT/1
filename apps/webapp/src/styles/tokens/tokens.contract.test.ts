@@ -417,6 +417,13 @@ describe("UI normalization — token ownership and cascade order", () => {
     expect(layers.indexOf('@import "./normalization.css";')).toBeGreaterThan(
       layers.indexOf('@import "./scoped/netforensicai.css";'),
     );
+    expect(layers).toContain('@import "./bridge/vitni.css";');
+    expect(layers).not.toContain('donors/pano/pano-tokens.css');
+    expect(layers).not.toContain('donors/vitni/v2.css');
+    expect(layers).not.toContain('donors/vitni/search.css');
+    expect(layers).not.toContain('donors/vitni/evidence-reports.css');
+    expect(layers).not.toContain('donors/rengine/timeline.css');
+    expect(layers).not.toContain('donors/rengine/scrollspyNav.css');
   });
 
   it("bridges every legacy palette name to a canonical token", () => {
