@@ -1219,7 +1219,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 156,
+      "third-party:sqlalchemy": 157,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
       "third-party:trafilatura": 1,
@@ -6092,6 +6092,16 @@
       },
       {
         "from": "apps/control-plane/services/relation_projection_relay.py",
+        "to": "apps/projection/graph/claim_projection.py",
+        "via": "graph.claim_projection"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_relay.py",
+        "to": "apps/projection/graph/neo4j.py",
+        "via": "graph.neo4j"
+      },
+      {
+        "from": "apps/control-plane/services/relation_projection_relay.py",
         "to": "apps/control-plane/db/relation_claim_store.py",
         "via": "db.relation_claim_store"
       },
@@ -6109,16 +6119,6 @@
         "from": "apps/control-plane/services/relation_projection_relay.py",
         "to": "apps/control-plane/db/session.py",
         "via": "db.session"
-      },
-      {
-        "from": "apps/control-plane/services/relation_projection_relay.py",
-        "to": "apps/projection/graph/claim_projection.py",
-        "via": "graph.claim_projection"
-      },
-      {
-        "from": "apps/control-plane/services/relation_projection_relay.py",
-        "to": "apps/projection/graph/neo4j.py",
-        "via": "graph.neo4j"
       },
       {
         "from": "apps/control-plane/services/research_case_artifacts.py",
@@ -10107,13 +10107,13 @@
       },
       {
         "from": "apps/projection/graph/claim_projection.py",
-        "to": "apps/shared/domain/relation_identity.py",
-        "via": "domain.relation_identity"
+        "to": "apps/projection/graph/abstraction.py",
+        "via": "graph.abstraction"
       },
       {
         "from": "apps/projection/graph/claim_projection.py",
-        "to": "apps/projection/graph/abstraction.py",
-        "via": "graph.abstraction"
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
       },
       {
         "from": "apps/projection/graph/claim_projection.py",
@@ -33720,7 +33720,7 @@
       {
         "path": "apps/control-plane/db/relation_claim_store.py",
         "status": "IMPLEMENTED",
-        "loc": 576,
+        "loc": 577,
         "callables": 25,
         "stubs": 0,
         "not_implemented": 1,
@@ -36207,7 +36207,7 @@
       {
         "path": "apps/projection/graph/abstraction.py",
         "status": "IMPLEMENTED",
-        "loc": 302,
+        "loc": 304,
         "callables": 27,
         "stubs": 5,
         "not_implemented": 0,
@@ -36225,7 +36225,7 @@
       {
         "path": "apps/projection/graph/claim_projection.py",
         "status": "IMPLEMENTED",
-        "loc": 56,
+        "loc": 61,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
@@ -36270,7 +36270,7 @@
       {
         "path": "apps/projection/lakehouse/river/lake.py",
         "status": "IMPLEMENTED",
-        "loc": 305,
+        "loc": 307,
         "callables": 22,
         "stubs": 3,
         "not_implemented": 0,
@@ -38977,7 +38977,7 @@
       {
         "path": "apps/shared/storage/s3.py",
         "status": "IMPLEMENTED",
-        "loc": 252,
+        "loc": 262,
         "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
@@ -59245,6 +59245,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "b4ec5dbceebe6cac",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_relay.py",
+        "object": "apps/projection/graph/claim_projection.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_relay.py",
+          "via": "graph.claim_projection"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9d01a76afef4ac32",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/relation_projection_relay.py",
+        "object": "apps/projection/graph/neo4j.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/relation_projection_relay.py",
+          "via": "graph.neo4j"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "8844875511937906",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/relation_projection_relay.py",
@@ -59293,32 +59319,6 @@
         "evidence": {
           "file": "apps/control-plane/services/relation_projection_relay.py",
           "via": "db.session"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "b4ec5dbceebe6cac",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/control-plane/services/relation_projection_relay.py",
-        "object": "apps/projection/graph/claim_projection.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/control-plane/services/relation_projection_relay.py",
-          "via": "graph.claim_projection"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "9d01a76afef4ac32",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/control-plane/services/relation_projection_relay.py",
-        "object": "apps/projection/graph/neo4j.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/control-plane/services/relation_projection_relay.py",
-          "via": "graph.neo4j"
         },
         "confidence": 1.0
       },
@@ -69684,19 +69684,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "8ff704aaf01db4df",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/projection/graph/claim_projection.py",
-        "object": "apps/shared/domain/relation_identity.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/projection/graph/claim_projection.py",
-          "via": "domain.relation_identity"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "1481435de8c797bf",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/projection/graph/claim_projection.py",
@@ -69706,6 +69693,19 @@
         "evidence": {
           "file": "apps/projection/graph/claim_projection.py",
           "via": "graph.abstraction"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8ff704aaf01db4df",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/graph/claim_projection.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/graph/claim_projection.py",
+          "via": "domain.relation_identity"
         },
         "confidence": 1.0
       },

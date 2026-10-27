@@ -19,7 +19,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `collections` | stdlib | 240 |
 | `json` | stdlib | 192 |
 | `datetime` | stdlib | 190 |
-| `sqlalchemy` | third-party | 156 |
+| `sqlalchemy` | third-party | 157 |
 | `hashlib` | stdlib | 126 |
 | `enum` | stdlib | 118 |
 | `re` | stdlib | 95 |
