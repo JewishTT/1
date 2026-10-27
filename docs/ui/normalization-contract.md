@@ -16,6 +16,12 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 
 `styles/tokens/` owns palette, typography, spacing, density and motion values. Existing component styles own component-specific layout. `styles/normalization.css` is a narrow compatibility layer for cross-cutting interaction, typography, overflow and accessibility rules. It must not become a second component library or override domain semantics.
 
+## Visual sweep
+
+From `apps/webapp/`, run `npm run ui:shoot:specops -- [baseUrl] [outDir]` against a running application and its fixture/backend services. The script uses Playwright's bundled Chromium by default; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` only when a system browser is required. Screenshots default to the operating system's temporary directory under `cognitive-ui-shots`.
+
+The sweep captures each SpecOps panel, the light theme, and GhostLine at 1100px, 1023px, 767px and 390px. It fails on browser console/page errors or document-level horizontal overflow. The PNGs still require human visual review; a clean script run is not proof of visual quality.
+
 ## Review checklist
 
 - [ ] All visual colors resolve to canonical tokens; no decorative purple/magenta, gradients, glow or glass effects.
