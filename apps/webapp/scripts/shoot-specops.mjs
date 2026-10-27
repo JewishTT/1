@@ -50,7 +50,8 @@ page.on("console", (m) => {
 });
 page.on("pageerror", (e) => problems.push(`pageerror: ${e.message.slice(0, 160)}`));
 
-await page.goto(`${BASE}/investigations/ci`, { waitUntil: "networkidle", timeout: 60000 });
+await page.goto(`${BASE}/investigations/ci`, { waitUntil: "domcontentloaded", timeout: 60000 });
+await page.waitForSelector('[data-testid="app-shell"]', { timeout: 20000 });
 
 // View 1: the department is a workspace view, not a route.
 await page.getByRole("tab", { name: /CI \/ SpecOps/i }).click();
@@ -95,6 +96,9 @@ process.stdout.write(`shot gl-runtime-light (theme=${theme})\n`);
 // scrolling is fine; document-level horizontal overflow is not.
 await page.getByRole("tab", { name: /GhostLine/i }).click();
 for (const [width, height, label] of [
+  [2560, 1440, "ultrawide"],
+  [1920, 1080, "wide"],
+  [1440, 900, "baseline"],
   [1100, 900, "narrow"],
   [1023, 900, "tablet"],
   [767, 900, "small-tablet"],
