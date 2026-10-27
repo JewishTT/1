@@ -57,7 +57,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="ui-table-scroll" data-testid={testId != null ? `${testId}-scroll` : undefined}>
+    <div className="ui-table-scroll" role="region" aria-label={`${caption} table`} tabIndex={0} data-testid={testId != null ? `${testId}-scroll` : undefined}>
     <table className="ui-table" data-testid={testId}>
       <caption className="ui-sr-only">{caption}</caption>
       <thead>
