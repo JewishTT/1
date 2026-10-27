@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4363,
-    "static_facts": 4069,
+    "facts_total": 4365,
+    "static_facts": 4071,
     "inferred": 294,
     "intended": 0
   },
@@ -16747,6 +16747,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
         "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0375fc66b427a988",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/services/relation_projection_relay.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "via": "services.relation_projection_relay"
       },
       "confidence": 1.0
     },
@@ -43967,6 +43980,18 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
       "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "85afce393a6a831a",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/services/relation_projection_relay.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {

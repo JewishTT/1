@@ -1,6 +1,6 @@
 # Tests
 
-340 test files, 5271 test functions. 268 platform modules are not targeted by any test.
+340 test files, 5272 test functions. 267 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -120,7 +120,7 @@
 | `apps/control-plane/tests/unit/test_rank_fusion_wiring.py` | 14 | `apps/control-plane/services/query_planner.py`, `apps/shared/scoring/fusion.py` |
 | `apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py` | 3 | `apps/control-plane/db/relation_candidate_store.py`, `apps/control-plane/db/schema.py`, `apps/shared/domain/relation_candidate.py`, `apps/shared/semantic/contracts.py` |
 | `apps/control-plane/tests/unit/test_relation_projection_migration.py` | 1 | — |
-| `apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py` | 4 | `apps/control-plane/db/relation_claim_store.py`, `apps/control-plane/db/schema.py` |
+| `apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py` | 5 | `apps/control-plane/db/relation_claim_store.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/services/relation_projection_relay.py` |
 | `apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py` | 1 | — |
 | `apps/control-plane/tests/unit/test_reobservation.py` | 9 | `apps/control-plane/services/reobservation.py` |
 | `apps/control-plane/tests/unit/test_science_tda.py` | 5 | `apps/control-plane/api/main.py` |

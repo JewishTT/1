@@ -1111,7 +1111,7 @@
   ],
   "import_graph": {
     "module_count": 1007,
-    "edge_count": 2806,
+    "edge_count": 2807,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 877,
@@ -7679,6 +7679,11 @@
         "from": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
         "to": "apps/control-plane/db/schema.py",
         "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "to": "apps/control-plane/services/relation_projection_relay.py",
+        "via": "services.relation_projection_relay"
       },
       {
         "from": "apps/control-plane/tests/unit/test_reobservation.py",
@@ -17872,16 +17877,18 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
-        "tests": 4,
+        "tests": 5,
         "test_names": [
           "test_validation_record_is_a_separate_durable_jsonb_column",
           "test_projection_outbox_has_tenant_claim_uniqueness_and_retry_lease",
           "test_valid_verdict_and_outbox_enqueue_commit_together",
-          "test_non_valid_verdict_is_durable_without_admission_enqueue"
+          "test_non_valid_verdict_is_durable_without_admission_enqueue",
+          "test_old_relay_lease_cannot_overwrite_concurrent_revalidation"
         ],
         "targets": [
           "apps/control-plane/db/relation_claim_store.py",
-          "apps/control-plane/db/schema.py"
+          "apps/control-plane/db/schema.py",
+          "apps/control-plane/services/relation_projection_relay.py"
         ]
       },
       {
@@ -23539,7 +23546,7 @@
         "targets": []
       }
     ],
-    "total": 5271
+    "total": 5272
   },
   "contracts": {
     "python": [
@@ -28758,7 +28765,6 @@
     "apps/control-plane/services/pow_run.py",
     "apps/control-plane/services/processing_result_store.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
-    "apps/control-plane/services/relation_projection_relay.py",
     "apps/control-plane/services/research_case_runtime.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
@@ -28837,9 +28843,10 @@
     "apps/shared/events/registry.py",
     "apps/shared/ids/gen.py",
     "apps/shared/network/__init__.py",
-    "apps/shared/observability/__init__.py"
+    "apps/shared/observability/__init__.py",
+    "apps/shared/scoring/metrics.py"
   ],
-  "untested_count": 268,
+  "untested_count": 267,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -34913,8 +34920,8 @@
       {
         "path": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
         "status": "TEST",
-        "loc": 96,
-        "callables": 9,
+        "loc": 148,
+        "callables": 17,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41893,7 +41900,7 @@
       },
       {
         "path": "apps/control-plane/services/relation_projection_relay.py",
-        "status": "ORPHAN"
+        "status": "TEST_ONLY"
       },
       {
         "path": "apps/control-plane/services/reobservation.py",
@@ -44852,8 +44859,8 @@
     ],
     "summary": {
       "PRODUCTION": 402,
-      "TEST_ONLY": 145,
-      "ORPHAN": 123,
+      "TEST_ONLY": 146,
+      "ORPHAN": 122,
       "TEST": 337,
       "total": 1007
     },
@@ -44899,6 +44906,7 @@
       "apps/control-plane/services/audit.py",
       "apps/control-plane/services/dispatcher.py",
       "apps/control-plane/services/layer0_pipeline.py",
+      "apps/control-plane/services/relation_projection_relay.py",
       "apps/feedback/feedback/__init__.py",
       "apps/feedback/feedback/branch/__init__.py",
       "apps/feedback/feedback/branch/entity.py",
@@ -45056,7 +45064,6 @@
       "apps/control-plane/services/__init__.py",
       "apps/control-plane/services/acquisition_evidence.py",
       "apps/control-plane/services/relation_projection_rebuild.py",
-      "apps/control-plane/services/relation_projection_relay.py",
       "apps/control-plane/services/specops_catalog.py",
       "apps/control-plane/workflows/__init__.py",
       "apps/interpretation/__init__.py",
@@ -63439,6 +63446,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
           "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0375fc66b427a988",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "object": "apps/control-plane/services/relation_projection_relay.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+          "via": "services.relation_projection_relay"
         },
         "confidence": 1.0
       },
@@ -90667,6 +90687,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "85afce393a6a831a",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "object": "apps/control-plane/services/relation_projection_relay.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "6a6401da78f04e7b",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_reobservation.py",
@@ -102083,8 +102115,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4363,
-      "static_facts": 4069,
+      "facts_total": 4365,
+      "static_facts": 4071,
       "inferred": 294,
       "intended": 0
     }
@@ -102095,15 +102127,15 @@
     "typescript_modules": 255,
     "rust_modules": 15,
     "rust_crates": 9,
-    "import_edges": 2806,
+    "import_edges": 2807,
     "test_files": 340,
-    "test_functions": 5271,
-    "untested_modules": 268,
+    "test_functions": 5272,
+    "untested_modules": 267,
     "http_routes": 182
   },
   "evidence_stats": {
-    "facts_total": 4363,
-    "static_facts": 4069,
+    "facts_total": 4365,
+    "static_facts": 4071,
     "inferred": 294,
     "intended": 0
   },
@@ -102117,8 +102149,8 @@
   },
   "reachability_summary": {
     "PRODUCTION": 402,
-    "TEST_ONLY": 145,
-    "ORPHAN": 123,
+    "TEST_ONLY": 146,
+    "ORPHAN": 122,
     "TEST": 337,
     "total": 1007
   },
@@ -102202,6 +102234,7 @@
     "apps/control-plane/services/audit.py",
     "apps/control-plane/services/dispatcher.py",
     "apps/control-plane/services/layer0_pipeline.py",
+    "apps/control-plane/services/relation_projection_relay.py",
     "apps/feedback/feedback/__init__.py",
     "apps/feedback/feedback/branch/__init__.py",
     "apps/feedback/feedback/branch/entity.py",
@@ -102359,7 +102392,6 @@
     "apps/control-plane/services/__init__.py",
     "apps/control-plane/services/acquisition_evidence.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
-    "apps/control-plane/services/relation_projection_relay.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/workflows/__init__.py",
     "apps/interpretation/__init__.py",
