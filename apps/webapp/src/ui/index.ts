@@ -38,4 +38,4 @@ export {
   type TooltipProps,
 } from "./Overlay";
 export { Tabs, type TabsItem, type TabsProps } from "./Tabs";
-export { statusTone, type StatusTone, type WorkStatus } from "./status";
+export { statusTone, type WorkStatus } from "./status";
