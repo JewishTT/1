@@ -10,7 +10,8 @@
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "ui:shoot:specops": "node scripts/shoot-specops.mjs"
+    "ui:shoot:specops": "node scripts/shoot-specops.mjs",
+    "ui:shoot:routes": "node scripts/shoot-routes.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.50.0",
