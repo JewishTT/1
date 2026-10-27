@@ -97,6 +97,15 @@ describe("routes are reachable and render something", () => {
     expect(screen.getByLabelText(/subject/i)).toBeInTheDocument();
   });
 
+  it("renders the internal component library route", async () => {
+    mountAt("/ui-kit");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("ui-kit-page")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("heading", { name: "Component library" })).toBeInTheDocument();
+  });
+
   it("sends an unknown destination to the board rather than to a blank page", async () => {
     const { container } = mountAt("/no-such-destination");
 
