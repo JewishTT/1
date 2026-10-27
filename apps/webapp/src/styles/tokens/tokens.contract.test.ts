@@ -317,3 +317,44 @@ describe("T135 — every token this codebase reads is declared in a stylesheet",
     }
   });
 });
+
+/* ── UI normalization — narrow shell and interaction contract ────────── */
+
+describe("UI normalization — responsive shell and accessible interaction", () => {
+  const normalization = readShipped("styles", "normalization.css");
+
+  it("keeps the shell grid row content-sized when the topbar wraps", () => {
+    const narrow = normalization.split("@media (max-width: 1023px)")[1]?.split("@media")[0] ?? "";
+    expect(narrow).toContain(".ui-root.ui-shell");
+    expect(narrow).toContain("grid-template-rows: auto minmax(0, 1fr) auto");
+    expect(narrow).toContain(".ui-root .ui-topnav");
+    expect(narrow).toContain(".ui-root .ui-topbar-work");
+    expect(narrow).toContain("overflow: visible");
+  });
+
+  it("does not hide work-state counts on narrow screens", () => {
+    const narrow = normalization.split("@media (max-width: 1023px)")[1]?.split("@media")[0] ?? "";
+    expect(narrow).toContain(".ui-root .ui-topbar-counts");
+    expect(narrow).toContain("flex-wrap: wrap");
+    expect(narrow).not.toMatch(/\.ui-topbar-counts\s*\{[^}]*display:\s*none/s);
+  });
+
+  it("constrains the command palette to a phone viewport", () => {
+    const phone = normalization.split("@media (max-width: 767px)")[1] ?? "";
+    expect(phone).toContain("width: 100%");
+    expect(phone).toContain("max-height: 84dvh");
+    expect(phone).toContain("overflow-y: auto");
+  });
+
+  it("retains reduced-motion support and a visible keyboard focus ring", () => {
+    expect(normalization).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(normalization).toContain(":focus-visible");
+    expect(normalization).toContain("outline: 2px solid var(--ui-focus-ring");
+  });
+
+  it("does not override semantic GhostLine gate borders with a blanket selector", () => {
+    expect(normalization).toContain("Keep GhostLine's gate/setup/absent border semantics intact.");
+    expect(normalization).not.toMatch(/\.ui-holo-edge\s*\{/);
+    expect(normalization).not.toMatch(/\.ui-holo-bracket\s*\{/);
+  });
+});
