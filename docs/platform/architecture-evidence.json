@@ -23121,19 +23121,6 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "1481435de8c797bf",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/projection/graph/claim_projection.py",
-      "object": "apps/projection/graph/abstraction.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/projection/graph/claim_projection.py",
-        "via": "graph.abstraction"
-      },
-      "confidence": 1.0
-    },
-    {
       "fact_id": "8ff704aaf01db4df",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/projection/graph/claim_projection.py",
@@ -23143,6 +23130,19 @@
       "evidence": {
         "file": "apps/projection/graph/claim_projection.py",
         "via": "domain.relation_identity"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1481435de8c797bf",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/graph/claim_projection.py",
+      "object": "apps/projection/graph/abstraction.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/graph/claim_projection.py",
+        "via": "graph.abstraction"
       },
       "confidence": 1.0
     },

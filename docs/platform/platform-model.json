@@ -10132,13 +10132,13 @@
       },
       {
         "from": "apps/projection/graph/claim_projection.py",
-        "to": "apps/projection/graph/abstraction.py",
-        "via": "graph.abstraction"
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
       },
       {
         "from": "apps/projection/graph/claim_projection.py",
-        "to": "apps/shared/domain/relation_identity.py",
-        "via": "domain.relation_identity"
+        "to": "apps/projection/graph/abstraction.py",
+        "via": "graph.abstraction"
       },
       {
         "from": "apps/projection/graph/claim_projection.py",
@@ -34132,7 +34132,7 @@
       {
         "path": "apps/control-plane/services/relation_projection_relay.py",
         "status": "IMPLEMENTED",
-        "loc": 250,
+        "loc": 252,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
@@ -69813,19 +69813,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "1481435de8c797bf",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/projection/graph/claim_projection.py",
-        "object": "apps/projection/graph/abstraction.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/projection/graph/claim_projection.py",
-          "via": "graph.abstraction"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "8ff704aaf01db4df",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/projection/graph/claim_projection.py",
@@ -69835,6 +69822,19 @@
         "evidence": {
           "file": "apps/projection/graph/claim_projection.py",
           "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "1481435de8c797bf",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/projection/graph/claim_projection.py",
+        "object": "apps/projection/graph/abstraction.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/projection/graph/claim_projection.py",
+          "via": "graph.abstraction"
         },
         "confidence": 1.0
       },
