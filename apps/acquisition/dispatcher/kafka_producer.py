@@ -41,10 +41,10 @@ PUBLISH_TIMEOUT_S = 15.0
 
 
 def brokers() -> list[str]:
-    import os
+    """Resolve broker addresses using the shared setting convention."""
+    from config.kafka import kafka_bootstrap_servers
 
-    raw = os.environ.get(BROKER_ENV, DEFAULT_BROKER)
-    return [b.strip() for b in raw.split(",") if b.strip()]
+    return kafka_bootstrap_servers().split(",")
 
 
 class ProducerError(RuntimeError):

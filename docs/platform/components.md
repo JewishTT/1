@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **232** · TypeScript modules: **0**
+Python modules: **235** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -426,12 +426,13 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **194** · TypeScript modules: **0**
+Python modules: **196** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
 ```
 apps.shared.config
+apps.shared.config.kafka
 apps.shared.config.settings
 apps.shared.conftest
 apps.shared.contracts
@@ -470,7 +471,6 @@ apps.shared.domain.relation_claim
 apps.shared.domain.relation_claim_material
 apps.shared.domain.relation_identity
 apps.shared.domain.relation_participant
-apps.shared.domain.relation_schema
 ```
 
 </details>

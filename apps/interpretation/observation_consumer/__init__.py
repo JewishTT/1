@@ -316,7 +316,7 @@ class ObservationConsumer:
                     content_type=str(content_type or ""),
                     investigation_id=str(envelope.investigation_id or ""),
                     source_id=str(envelope.source_id or ""),
-                    observed_at=str(record_meta.get("fetched_at") or ""),
+                    observed_at=str(record_meta.get("fetched_at") or envelope.produced_at or ""),
                     observation_id=str(envelope.observation_id),
                 )
                 if interpreted.document is None:
@@ -339,6 +339,7 @@ class ObservationConsumer:
                         raw_ref=raw_ref,
                         capture_id=capture_id,
                         locator=locator,
+                        observed_at=str(record_meta.get("fetched_at") or envelope.produced_at or ""),
                         raise_on_failure=True,
                     )
                     stream_written = await bridge.append_stream(

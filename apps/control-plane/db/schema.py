@@ -1089,6 +1089,11 @@ class EntityStreamRow(Base):
     entity_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     sequence: Mapped[int] = mapped_column(Integer, primary_key=True)
     record_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    # Identity of the source event, distinct from the append sequence and record hash.
+    # Historical rows receive ""; the partial index only covers new keyed rows.
+    source_event_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default=""
+    )
     kind: Mapped[str] = mapped_column(String(32))
     ts: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     payload: Mapped[dict] = mapped_column(JSONB)
@@ -1112,6 +1117,13 @@ class EntityStreamRow(Base):
             "ix_entity_stream_observation",
             "tenant_id",
             "observation_id",
+        ),
+        Index(
+            "uq_entity_stream_source_event",
+            "tenant_id",
+            "source_event_id",
+            unique=True,
+            postgresql_where=text("source_event_id <> ''"),
         ),
     )
 
@@ -2459,6 +2471,9 @@ class RelationCandidateRow(Base):
     temporal_hypothesis: Mapped[dict | None] = mapped_column(JSONB)
     role_assignments: Mapped[list | None] = mapped_column(JSONB)
     observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    candidate_payload: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -2473,7 +2488,6 @@ class RelationCandidateRow(Base):
         Index("ix_relation_candidate_pair", "tenant_id", "subject_mention_ref", "object_mention_ref"),
         Index("uq_relation_candidate_address", "tenant_id", "candidate_id", unique=True),
         CheckConstraint("tenant_id <> ''", name="ck_relation_candidate_tenant"),
-        CheckConstraint("logical_candidate_id <> ''", name="ck_relation_candidate_logical"),
         CheckConstraint(
             "subject_mention_ref <> object_mention_ref", name="ck_relation_candidate_distinct"
         ),

@@ -148,7 +148,7 @@ class InterpretationBridge:
         content_type: str = "",
         investigation_id: str = "",
         source_id: str = "",
-        observed_at: str = "",
+        observed_at: str | datetime | None = None,
         observation_id: str | None = None,
     ) -> InterpretationResult:
         """Extract and resolve, without touching the database.
@@ -186,9 +186,12 @@ class InterpretationBridge:
             investigation_id=investigation_id,
             source_id=source_id,
             source_family=self._source_family,
-            observed_at=observed_at or datetime.now(UTC).isoformat(),
+            observed_at=_coerce_datetime(observed_at),
         )
-        universe = CandidateUniverse()
+        universe = CandidateUniverse(
+            tenant_id=self._store.tenant_id,
+            investigation_id=investigation_id,
+        )
         universe.seed(document)
         batch, resolved = resolve_document(
             document,
@@ -229,6 +232,7 @@ class InterpretationBridge:
         raw_ref: str = "",
         capture_id: str = "",
         locator: str = "",
+        observed_at: str | datetime | None = None,
         raise_on_failure: bool = False,
     ) -> bool:
         """Write the observation, its entities, their versions, relations and stream rows.
@@ -244,7 +248,6 @@ class InterpretationBridge:
         from db.schema import EntityVersion as EntityVersionRow
         from db.schema import Mention as MentionRow
         from db.schema import Observation as ObservationRow
-        from db.schema import RelationClaim as RelationClaimRow
         from sqlalchemy.dialects.postgresql import insert as pg_insert
         from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
 
@@ -378,7 +381,6 @@ class InterpretationBridge:
                         .on_conflict_do_nothing(index_elements=[MentionRow.mention_id])
                     )
 
-            mention_to_entity: dict[str, str] = {}
             for entity in resolved:
                 # The canonical entity reference is what relation projections can resolve.
                 # Preserve the mention anchor independently for source-span lineage.
@@ -394,8 +396,6 @@ class InterpretationBridge:
                 )
                 verdict = str(getattr(entity, "verdict", "") or "")
                 anchor_mention_id = str(getattr(entity, "anchor_mention_id", "") or "")
-                if anchor_mention_id:
-                    mention_to_entity[anchor_mention_id] = entity_id
                 row = await session.execute(
                     select(EntityRow).where(
                         EntityRow.entity_id == entity_id,
@@ -464,35 +464,190 @@ class InterpretationBridge:
                         )
                     )
 
-            if document is not None:
+            # Extraction produces a durable hypothesis, not a relation claim. Build
+            # the evidence frame and semantic regime first, then persist the candidate
+            # through its store in this same transaction. Admission remains a separate
+            # operation with a separate owner.
+            if document is not None and document.relations:
+                from domain.evidence_context import (
+                    ContextCompleteness,
+                    ContextTrustState,
+                    EvidenceContext,
+                )
+                from domain.relation_candidate import RelationCandidate, TemporalHypothesis
+                from domain.relation_claim import RelationRoleBinding
+                from domain.relation_identity import RelationArityMode
+                from semantic.regime import SemanticCommitment, SemanticRegime
+                from db.relation_candidate_store import SqlRelationCandidateStore
+
+                observed_moment = _coerce_datetime(observed_at)
+                candidate_store = SqlRelationCandidateStore(session)
+                mentions_by_id = {
+                    str(getattr(item, "mention_id", "") or ""): item
+                    for item in getattr(document, "mentions", ())
+                }
                 for relation in document.relations:
-                    session.add(
-                        RelationClaimRow(
-                            relation_id=_relation_id(relation),
-                            logical_relation_id=_relation_id(relation),
-                            revision_number=1,
-                            tenant_id=self._store.tenant_id,
-                            investigation_id=investigation_id or None,
-                            relation_type=relation.relation_type,
-                            arity_mode="BINARY",
-                            subject_ref=mention_to_entity.get(
-                                relation.subject_mention_id, relation.subject_mention_id
-                            ),
-                            object_ref=mention_to_entity.get(
-                                relation.object_mention_id, relation.object_mention_id
-                            ),
-                            role_bindings=[
-                                {"role": "subject", "mention_id": relation.subject_mention_id},
-                                {"role": "object", "mention_id": relation.object_mention_id},
-                            ],
-                            observation_refs=[result.observation_id],
-                            ontology_version=ONTOLOGY_VERSION,
-                            normalization_version=NORMALIZATION_VERSION,
-                            extraction_version="interpretation-bridge-v1",
-                            status="EXTRACTED",
-                            confidence=float(relation.confidence),
-                            created_by="interpretation_bridge",
+                    relation_ref = getattr(relation, "relation_ref", None)
+                    if relation_ref is None:
+                        raise ValueError(
+                            "relation extraction did not provide a typed RelationRef; "
+                            "refusing to invent relation semantics"
                         )
+                    segment_ref = _evidence_segment_ref(capture_id or result.observation_id)
+                    trigger_span = _grounded_span(
+                        body,
+                        segment_ref=segment_ref,
+                        start=getattr(relation, "trigger_start", None),
+                        end=getattr(relation, "trigger_end", None),
+                        surface=str(getattr(relation, "trigger_surface", "") or ""),
+                    )
+                    supporting_spans = tuple(
+                        span
+                        for start, end, surface, mention_ref in (
+                            getattr(relation, "supporting_spans", ()) or ()
+                        )
+                        if (
+                            span := _grounded_span(
+                                body,
+                                segment_ref=segment_ref,
+                                start=start,
+                                end=end,
+                                surface=surface,
+                                mention_ref=mention_ref,
+                            )
+                        ) is not None
+                    )
+                    source_mention = mentions_by_id.get(relation.subject_mention_id)
+                    independence_group = str(
+                        getattr(source_mention, "independence_group", "") or ""
+                    )
+                    language = str(
+                        getattr(relation, "language", "")
+                        or getattr(source_mention, "language", "")
+                        or ""
+                    )
+                    frame = EvidenceContext(
+                        tenant_id=self._store.tenant_id,
+                        investigation_id=investigation_id,
+                        observation_id=result.observation_id,
+                        source_id=source_id,
+                        document_id=capture_id or raw_ref or result.observation_id,
+                        segment_id=segment_ref,
+                        observed_at=observed_moment,
+                        source_family=self._source_family,
+                        independence_group=independence_group,
+                        language=language,
+                        extraction_version=str(
+                            getattr(relation, "extractor_version", "")
+                            or "interpretation-bridge-v1"
+                        ),
+                        normalization_version=NORMALIZATION_VERSION,
+                        ontology_version=ONTOLOGY_VERSION,
+                        completeness=ContextCompleteness.PARTIAL,
+                        trust_state=ContextTrustState.UNVERIFIED,
+                    )
+                    regime = SemanticRegime(
+                        context_ref=frame.context_id,
+                        tenant_id=self._store.tenant_id,
+                        operator_ref=str(relation_ref),
+                        commitment=SemanticCommitment.TYPED,
+                        language=language,
+                        recorded_at=observed_moment,
+                        note="deterministic relation cue; no mapping profile was applied",
+                    ).with_id()
+                    arity_mode = RelationArityMode(
+                        getattr(relation, "arity_mode", RelationArityMode.DIRECTED)
+                    )
+                    role_bindings = tuple(
+                        RelationRoleBinding(
+                            role=str(binding["role"]),
+                            member_ref=str(binding["member_ref"]),
+                            member_class=str(binding.get("member_class", "") or ""),
+                        )
+                        for binding in (getattr(relation, "role_bindings", ()) or ())
+                    )
+                    # Directed candidates bind their direction through endpoints;
+                    # role assignments are not legal on that shape. The extracted
+                    # role metadata remains in the adapter boundary for later schema
+                    # validation rather than being forced into an incompatible field.
+                    if arity_mode is RelationArityMode.DIRECTED:
+                        role_bindings = ()
+                    temporal_hypothesis = getattr(relation, "temporal_hypothesis", None)
+                    if not isinstance(temporal_hypothesis, TemporalHypothesis):
+                        temporal_hypothesis = TemporalHypothesis.absent()
+                    candidate = RelationCandidate(
+                        subject_mention_ref=relation.subject_mention_id,
+                        object_mention_ref=relation.object_mention_id,
+                        relation_ref=relation_ref,
+                        arity_mode=arity_mode,
+                        role_assignments=role_bindings,
+                        relation_surface=str(
+                            getattr(relation, "relation_surface", "")
+                            or getattr(relation, "trigger_surface", "")
+                            or relation.relation_type
+                        ),
+                        context_ref=frame.context_id,
+                        semantic_regime_ref=regime.regime_id,
+                        trigger_span=trigger_span,
+                        supporting_spans=supporting_spans,
+                        extraction_method=getattr(relation, "extraction_method", "lexical_pattern"),
+                        extractor_version=str(
+                            getattr(relation, "extractor_version", "")
+                            or "interpretation-bridge-v1"
+                        ),
+                        extraction_rule_id=str(
+                            getattr(relation, "extraction_rule_id", "") or ""
+                        ),
+                        observation_refs=tuple(
+                            {
+                                result.observation_id,
+                                *(
+                                    str(ref)
+                                    for ref in (getattr(relation, "observation_refs", ()) or ())
+                                    if str(ref)
+                                ),
+                            }
+                        ),
+                        evidence_refs=tuple(
+                            {
+                                relation.subject_mention_id,
+                                relation.object_mention_id,
+                                *(
+                                    str(ref)
+                                    for ref in (getattr(relation, "evidence_refs", ()) or ())
+                                    if str(ref)
+                                ),
+                            }
+                        ),
+                        temporal_hypothesis=temporal_hypothesis,
+                        confidence=float(getattr(relation, "confidence", 0.5) or 0.5),
+                        tenant_id=self._store.tenant_id,
+                        investigation_id=investigation_id,
+                        observed_at=observed_moment,
+                        recorded_by="interpretation_bridge",
+                    ).with_id()
+                    await candidate_store.write(
+                        candidate,
+                        frame,
+                        regime,
+                        source_reading={
+                            "relation_type": relation.relation_type,
+                            "relation_surface": relation.relation_surface,
+                            "trigger_surface": relation.trigger_surface,
+                            "trigger_start": relation.trigger_start,
+                            "trigger_end": relation.trigger_end,
+                            "subject_surface": relation.subject_surface,
+                            "object_surface": relation.object_surface,
+                            "subject_kind": relation.subject_kind,
+                            "object_kind": relation.object_kind,
+                            "role": relation.role,
+                            "role_bindings": relation.role_bindings,
+                            "supporting_spans": relation.supporting_spans,
+                            "confidence": relation.confidence,
+                            "language": relation.language,
+                            "observation_refs": relation.observation_refs,
+                            "evidence_refs": relation.evidence_refs,
+                        },
                     )
 
             await session.commit()
@@ -528,6 +683,7 @@ class InterpretationBridge:
         from domain.dynamics import StreamRecord
         from sqlalchemy import func, select
 
+        from db.schema import Entity as EntityRow
         from db.schema import EntityStreamRow
 
         if not resolved:
@@ -542,6 +698,38 @@ class InterpretationBridge:
                     tenant_id=self._store.tenant_id,
                     scope_id=self._scope_id,
                 )
+                # Serialise sequence allocation per canonical entity. The partial
+                # unique event index also makes an exact redelivery an idempotent no-op.
+                durable_entity = await session.execute(
+                    select(EntityRow.entity_id)
+                    .where(
+                        EntityRow.tenant_id == self._store.tenant_id,
+                        EntityRow.entity_id == stream_id,
+                    )
+                    .with_for_update()
+                )
+                if durable_entity.scalar_one_or_none() is None:
+                    raise InterpretationPersistenceError(
+                        f"cannot append a stream row for unpersisted entity {stream_id}"
+                    )
+                # Legacy rows may contain duplicate deliveries from before source
+                # event identities existed. LIMIT 1 deliberately treats any historical
+                # matching row as "already represented" without requiring old evidence
+                # to be deleted or pretending the query returned exactly one row.
+                existing_event = await session.execute(
+                    select(EntityStreamRow.sequence)
+                    .where(
+                        EntityStreamRow.tenant_id == self._store.tenant_id,
+                        EntityStreamRow.entity_id == stream_id,
+                        EntityStreamRow.observation_id == result.observation_id,
+                        EntityStreamRow.extraction_version == "interpretation-bridge-v1",
+                        EntityStreamRow.kind == "extraction",
+                    )
+                    .order_by(EntityStreamRow.sequence)
+                    .limit(1)
+                )
+                if existing_event.scalar_one_or_none() is not None:
+                    continue
                 highest = await session.execute(
                     select(func.max(EntityStreamRow.sequence)).where(
                         EntityStreamRow.tenant_id == self._store.tenant_id,
@@ -563,12 +751,24 @@ class InterpretationBridge:
                     },
                     observation_id=result.observation_id,
                 )
+                source_event_id = hashlib.sha256(
+                    "\x1f".join(
+                        (
+                            record.tenant_id,
+                            record.entity_id,
+                            record.observation_id,
+                            "interpretation-bridge-v1",
+                            record.kind,
+                        )
+                    ).encode("utf-8")
+                ).hexdigest()
                 session.add(
                     EntityStreamRow(
                         tenant_id=record.tenant_id,
                         entity_id=record.entity_id,
                         sequence=record.sequence,
                         record_hash=record.record_hash,
+                        source_event_id=source_event_id,
                         kind=record.kind,
                         ts=datetime.now(UTC),
                         payload=record.payload,
@@ -603,7 +803,7 @@ class InterpretationBridge:
         uri: str = "",
         capture_ref: str = "",
         task_id: str = "",
-        observed_at: str = "",
+        observed_at: str | datetime | None = None,
     ) -> tuple[InterpretationResult, dict[str, tuple[str, ...]]]:
         """Fetch-free end-to-end pass. Returns ``(result, observation -> entities)``.
 
@@ -630,9 +830,12 @@ class InterpretationBridge:
             investigation_id=investigation_id,
             source_id=source_id,
             source_family=self._source_family,
-            observed_at=observed_at or datetime.now(UTC).isoformat(),
+            observed_at=observed_at,
         )
-        universe = CandidateUniverse()
+        universe = CandidateUniverse(
+            tenant_id=self._store.tenant_id,
+            investigation_id=investigation_id,
+        )
         universe.seed(document)
         _, resolved = resolve_document(
             document,
@@ -662,8 +865,11 @@ class InterpretationBridge:
             source_id=source_id,
             uri=uri,
             task_id=task_id,
+            observed_at=observed_at or None,
+            raise_on_failure=True,
         )
-        await self.append_stream(result, resolved)
+        if persisted:
+            await self.append_stream(result, resolved, raise_on_failure=True)
         result = replace(result, persisted=persisted)
 
         membership = await self.membership_for([result.observation_id])
@@ -732,6 +938,48 @@ class InterpretationBridge:
             return None
         finally:
             await session.close()
+
+
+def _coerce_datetime(value: str | datetime | None) -> datetime | None:
+    """Normalise supplied event/source time without inventing a replay-time clock."""
+    if value is None or value == "":
+        return None
+    moment = value if isinstance(value, datetime) else datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    return moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
+
+
+def _evidence_segment_ref(capture_ref: str) -> str:
+    """Stable whole-document segment address used by extracted relation spans."""
+    digest = hashlib.sha256(f"{capture_ref}|whole-document".encode("utf-8")).hexdigest()
+    return f"SEG-{digest[:32]}"
+
+
+def _grounded_span(
+    body: bytes,
+    *,
+    segment_ref: str,
+    start: int | None,
+    end: int | None,
+    surface: str,
+    mention_ref: str = "",
+):
+    """Retain a span only when it selects the exact UTF-8 bytes in the captured source."""
+    if start is None or end is None or not surface or start < 0 or end <= start or end > len(body):
+        return None
+    try:
+        selected = body[start:end].decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    if selected != surface:
+        return None
+    from domain.relation_candidate import SpanRef
+
+    return SpanRef(
+        segment_ref=segment_ref,
+        start=int(start),
+        end=int(end),
+        mention_ref=str(mention_ref or ""),
+    )
 
 
 def observation_id_for(digest: str, tenant_id: str) -> str:

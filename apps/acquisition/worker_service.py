@@ -43,10 +43,12 @@ def _postgres_dsn() -> str:
 
 
 def _consumer_config() -> dict[str, Any]:
-    brokers = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092").strip()
+    from config.kafka import kafka_bootstrap_servers
+
+    brokers = kafka_bootstrap_servers()
     group_id = os.environ.get("COGNITIVE_ACQUISITION_GROUP", "cognitive-acquisition-http-v1").strip()
-    if not brokers or not group_id:
-        raise RuntimeError("COGNITIVE_KAFKA_BROKERS and COGNITIVE_ACQUISITION_GROUP must be non-empty")
+    if not group_id:
+        raise RuntimeError("COGNITIVE_ACQUISITION_GROUP must be non-empty")
     return {
         "bootstrap.servers": brokers,
         "group.id": group_id,
