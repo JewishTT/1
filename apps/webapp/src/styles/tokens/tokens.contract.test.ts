@@ -444,3 +444,21 @@ describe("UI normalization — pane-contained payloads and media", () => {
     expect(normalization).toContain("max-width: 100%");
   });
 });
+
+
+describe("UI normalization — CI metrics and nested keyboard focus", () => {
+  const normalization = readShipped("styles", "normalization.css");
+
+  it("uses flat token-backed CI metric bars and preserves semantic outcome borders", () => {
+    expect(normalization).toContain(".ui-root .ui-ci-metrics");
+    expect(normalization).toContain(".ui-root .ui-ci-bar");
+    expect(normalization).toContain(".ui-root .ui-ci-bar-alt");
+    expect(normalization).toContain("background: var(--ui-analytical)");
+    expect(normalization).toContain('.ui-ci-abilities > li[data-state="failed"]');
+  });
+
+  it("keeps a visible keyboard ring on the GhostLine textarea", () => {
+    expect(normalization).toContain(".ui-root .ui-gl-textarea:focus-visible");
+    expect(normalization).toContain("outline: 2px solid var(--ui-focus-ring)");
+  });
+});
