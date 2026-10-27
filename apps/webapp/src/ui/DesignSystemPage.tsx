@@ -38,10 +38,10 @@ const SAMPLE_ROWS: DemoRow[] = [
 ];
 
 const TABLE_COLUMNS: ReadonlyArray<DataTableColumn<DemoRow>> = [
-  { key: "id", header: "Identifier", mono: true, width: "150px", render: (row) => row.id },
-  { key: "kind", header: "Kind", render: (row) => row.kind },
-  { key: "status", header: "Status", render: (row) => <StatusDot status={row.status} label={row.status} /> },
-  { key: "updated", header: "Last observed", mono: true, render: (row) => row.updated },
+  { key: "id", header: "Identifier", mono: true, width: "150px", sortValue: (row) => row.id, render: (row) => row.id },
+  { key: "kind", header: "Kind", sortValue: (row) => row.kind, render: (row) => row.kind },
+  { key: "status", header: "Status", sortValue: (row) => row.status, render: (row) => <StatusDot status={row.status} label={row.status} /> },
+  { key: "updated", header: "Last observed", mono: true, sortValue: (row) => row.updated, render: (row) => row.updated },
 ];
 
 const STATUS_OPTIONS = [
