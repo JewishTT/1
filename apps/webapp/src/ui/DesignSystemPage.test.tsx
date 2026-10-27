@@ -69,6 +69,25 @@ describe("DesignSystemPage", () => {
     expect(screen.queryByRole("table", { name: "Design system sample observations" })).not.toBeInTheDocument();
   });
 
+  it("previews modal focus behavior and dismissible toast announcements", () => {
+    render(<DesignSystemPage />);
+    fireEvent.click(screen.getByRole("tab", { name: /Feedback/ }));
+
+    const trigger = screen.getByRole("button", { name: "Open modal preview" });
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(screen.getByRole("dialog", { name: "Acquisition preview" })).toHaveAttribute("aria-modal", "true");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Acquisition preview" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+
+    fireEvent.click(screen.getByRole("button", { name: "Preview success toast" }));
+    expect(screen.getByTestId("ui-kit-toast")).toHaveAttribute("role", "status");
+    expect(screen.getByTestId("ui-kit-toast")).toHaveTextContent("Design-system preview only");
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss notification" }));
+    expect(screen.queryByTestId("ui-kit-toast")).not.toBeInTheDocument();
+  });
+
   it("shows consistent empty, loading and error feedback primitives", () => {
     render(<DesignSystemPage />);
     fireEvent.click(screen.getByRole("tab", { name: /Feedback/ }));
