@@ -381,4 +381,9 @@ describe("UI normalization — GhostLine keeps semantics without decorative glow
     expect(normalization).toContain(".ui-gl-readout[data-tone=\"live\"] .ui-gl-readout-value::after");
     expect(normalization).toContain("text-shadow: none");
   });
+
+  it("keeps section headings neutral; accent is reserved for semantic state", () => {
+    expect(normalization).toContain(".ui-root .ui-gl-subhead .ui-pane-title");
+    expect(normalization).toContain("color: var(--ui-text-secondary)");
+  });
 });
