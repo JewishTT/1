@@ -110,7 +110,7 @@ export function DesignSystemPage() {
             </div>
             <div className="ui-kit-button-row">
               <Button size="sm" icon="search" onClick={() => setTab("data")}>Search</Button>
-              <Button size="sm" icon="copy" variant="ghost" onClick={() => { setQuery("DEMO-OBS-0042"); setTab("data"); }}>Copy ID</Button>
+              <Button size="sm" icon="search" variant="ghost" onClick={() => { setQuery("DEMO-OBS-0042"); setTab("data"); }}>Find ID</Button>
               <Tooltip content="An icon-only control still has an accessible name."><IconButton icon="command" label="Open command palette" /></Tooltip>
               <Button size="sm" disabled>Unavailable</Button>
             </div>
@@ -186,7 +186,7 @@ export function DesignSystemPage() {
         <div className="ui-kit-grid">
           <section className="ui-kit-card" aria-labelledby="ui-kit-empty">
             <div className="ui-kit-card-head"><div><p className="ui-meta">06 / ABSENCE</p><h2 id="ui-kit-empty">Empty state</h2></div></div>
-            <EmptyState icon="view-objects" title="No entities selected" description="Select an entity from the graph or search results to inspect its evidence and relations." action={<Button variant="primary" onClick={() => setTab("primitives")}>Browse entities</Button>} />
+            <EmptyState icon="view-objects" title="No entities selected" description="Select an entity from the graph or search results to inspect its evidence and relations." action={<Button variant="primary" onClick={() => setTab("primitives")}>Back to controls</Button>} />
           </section>
           <section className="ui-kit-card" aria-labelledby="ui-kit-loading">
             <div className="ui-kit-card-head"><div><p className="ui-meta">07 / LOADING</p><h2 id="ui-kit-loading">Loading state</h2></div></div>
