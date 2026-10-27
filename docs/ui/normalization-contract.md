@@ -47,4 +47,4 @@ The SpecOps sweep captures each department panel, the light theme, and GhostLine
 
 ## Scope note
 
-The normalization layer is scoped to `.ui-root`, with the explicit `.ui-palette-root` portal exception for the command palette. Legacy pages and scoped donor styles remain isolated until they are migrated surface-by-surface; broad global selectors would create cross-layer regressions and are not an acceptable shortcut.
+The normalization layer is scoped to `.ui-root`, with the explicit `.ui-palette-root` portal exception for the command palette. Legacy pages remain isolated; donor styles use canonical tokens inside their own namespaces and still require per-surface interaction/visual review. Broad global selectors would create cross-layer regressions and are not an acceptable shortcut.
