@@ -2,9 +2,7 @@
 
 This directory contains verbatim (or minimally adapted) stylesheets pulled from the
 10 donor repositories per track 005 (US5/T031). Each file keeps its **original license**
-in a header above the copied content. Legal basis: the platform is non-commercial and
-closed-access; PANO is CC BY-NC-4.0, vitni/kafSIEM/NetForensicAI are Apache-2.0,
-SpiderFoot/reNgine are MIT.
+in a header above the copied content. License status must be reviewed before product distribution: PANO is CC BY-NC-4.0, vitni/kafSIEM/NetForensicAI are Apache-2.0, SpiderFoot/reNgine are MIT. The PANO token file is reference-only and is not imported into the runtime bundle.
 
 ## Import policy
 
@@ -18,7 +16,7 @@ app's own dark theme.
 
 | Donor | File(s) | License | Imported? |
 |-------|---------|---------|-----------|
-| PANO | `pano/pano-tokens.css` | CC BY-NC-4.0 | tokens only via layers |
+| PANO | `pano/pano-tokens.css` | CC BY-NC-4.0 | no (reference only; license review required before production use) |
 | vitni | `vitni/v2.css`, `vitni/search.css`, `vitni/evidence-reports.css` | Apache-2.0 | yes (scoped `.v2-*`) |
 | vitni | `vitni/index.css` (global `:root`/`body`) | Apache-2.0 | no (tokens reference) |
 | SpiderFoot | `spiderfoot/dark.css`, `spiderfoot/spiderfoot.css` | MIT | no (global `body`/`tr`/`a`) |
@@ -29,7 +27,8 @@ app's own dark theme.
 > **PANO note:** PANO ships no `.css` files; its geometry/color palette lives in
 > `ui/styles/{node_style,edge_style,timeline_style,map_styles}.py`. Those values were
 > converted to CSS custom properties in `pano/pano-tokens.css` (the only non-verbatim
-> file here, and flagged as such in its header).
+> file here, and flagged as such in its header). This file is not imported at runtime
+> because the CC BY-NC-4.0 terms require a license decision before commercial use.
 >
 > **kafSIEM note:** `theme.css` uses Tailwind v4 `@theme` and `color-mix()`. The webapp
 > uses plain CSS (no Tailwind), so these files are vendored for provenance; the neon
