@@ -9,13 +9,13 @@ import argparse
 import asyncio
 from typing import Any
 
+from graph.claim_projection import project_admitted_claim
+from graph.neo4j import Neo4jGraphStore
 from sqlalchemy import func, select
 
 from db.relation_claim_store import _from_row
 from db.schema import RelationClaim as RelationClaimRow
 from db.session import create_tables, make_session_factory
-from graph.claim_projection import project_admitted_claim
-from graph.neo4j import Neo4jGraphStore
 
 
 def _is_valid(record: dict[str, Any] | None) -> bool:
