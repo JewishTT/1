@@ -27,9 +27,9 @@ This document defines the normalization boundary for the COGNITIVE analyst workb
 
 ## Visual sweep
 
-From `apps/webapp/`, run `npm run ui:shoot:specops -- [baseUrl] [outDir]` against a running application and its fixture/backend services. The script uses Playwright's bundled Chromium by default; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` only when a system browser is required. Screenshots default to the operating system's temporary directory under `cognitive-ui-shots`.
+From `apps/webapp/`, run `npm run ui:shoot:specops -- [baseUrl] [outDir]` for the nested CI/SpecOps panels, or `npm run ui:shoot:routes -- https://…/route [https://…/another-route]` for any set of top-level routes. Both require a running application and usable fixture/backend services. They use Playwright's bundled Chromium by default; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` only when a system browser is required. Screenshots default to the operating system's temporary directory.
 
-The sweep captures each SpecOps panel, the light theme, and GhostLine at the normative 2560×1440, 1920×1080 and 1440×900 viewports, plus 1100px, 1023px, 767px and 390px. It fails on browser console/page errors or document-level horizontal overflow. The PNGs still require human visual review; a clean script run is not proof of visual quality.
+The SpecOps sweep captures each department panel, the light theme, and GhostLine at the normative 2560×1440, 1920×1080 and 1440×900 viewports, plus 1100px, 1023px, 767px and 390px. The route sweep captures each supplied route at 2560×1440, 1920×1080, 1440×900, 1023×900, 767×900 and 390×844. Both fail on browser console/page errors or document-level horizontal overflow; the route sweep also fails when the app shell does not mount. The PNGs still require human visual review; a clean script run is not proof of visual quality.
 
 ## Review checklist
 
