@@ -358,3 +358,27 @@ describe("UI normalization — responsive shell and accessible interaction", () 
     expect(normalization).not.toMatch(/\.ui-holo-bracket\s*\{/);
   });
 });
+
+
+describe("UI normalization — GhostLine keeps semantics without decorative glow", () => {
+  const normalization = readShipped("styles", "normalization.css");
+
+  it("flattens nested traces and refusal surfaces onto canonical tokens", () => {
+    expect(normalization).toContain(".ui-gl-refusal, .ui-gl-stage, .ui-gl-trace > li, .ui-gl-turns > li");
+    expect(normalization).toContain("background: var(--ui-surface-1)");
+    expect(normalization).toContain("box-shadow: none");
+  });
+
+  it("retains active and gate state through semantic borders and washes", () => {
+    expect(normalization).toContain(".ui-gl-card[data-active=\"true\"]");
+    expect(normalization).toContain("background: var(--ui-accent-wash)");
+    expect(normalization).toContain("border-left-color: var(--holo-hue, var(--ui-border))");
+    expect(normalization).toContain(".ui-gl-rungs > li[data-current=\"true\"]");
+  });
+
+  it("removes text glow from machine readouts while keeping the live marker", () => {
+    expect(normalization).toContain(".ui-gl-readout-value");
+    expect(normalization).toContain(".ui-gl-readout[data-tone=\"live\"] .ui-gl-readout-value::after");
+    expect(normalization).toContain("text-shadow: none");
+  });
+});
