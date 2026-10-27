@@ -113,7 +113,7 @@ async def relay_relation_projection_outbox(
     owns_factory = session_factory is None
     factory = session_factory or make_session_factory()
     owns_graph = graph_store is None
-    graph = graph_store or Neo4jGraphStore.from_settings()
+    graph = graph_store if graph_store is not None else Neo4jGraphStore.from_settings()
     counts = {"claimed": 0, "projected": 0, "skipped": 0, "failed": 0}
     try:
         async with factory() as session:

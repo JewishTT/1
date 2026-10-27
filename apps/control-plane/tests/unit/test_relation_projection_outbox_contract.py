@@ -8,6 +8,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pytest
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql.dml import Insert
 
@@ -73,7 +74,7 @@ async def test_valid_verdict_and_outbox_enqueue_commit_together() -> None:
     insertion = session.statements[1]
     assert isinstance(insertion, Insert)
     assert insertion.table.name == "relation_claim_projection_outbox"
-    sql = str(insertion.compile(dialect=__import__("sqlalchemy.dialects.postgresql").dialects.postgresql.dialect()))
+    sql = str(insertion.compile(dialect=postgresql.dialect()))
     assert "ON CONFLICT ON CONSTRAINT uq_relation_claim_projection_outbox_claim" in sql
     assert session.committed is True
 

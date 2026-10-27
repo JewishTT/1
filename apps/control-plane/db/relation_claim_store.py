@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from domain import enforce_projection_provenance
+from domain.relation_identity import digest128
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
 from sqlalchemy.exc import IntegrityError

@@ -267,7 +267,13 @@ class InMemoryGraphStore:
         declares no arity mode.
         """
         out: set[str] = set()
+        stored_node = self._nodes.get(node_id)
+        if tenant_id and stored_node is not None:
+            if stored_node.properties.get("tenant_id") != tenant_id:
+                return []
         for e in self._adj.get(node_id, set()):
+            if tenant_id and e.properties.get("tenant_id") not in (None, tenant_id):
+                continue
             if edge_type is not None and e.edge_type != edge_type:
                 continue
             wanted = _default_direction(e) if direction is None else _coerce_direction(direction)
@@ -284,7 +290,7 @@ class InMemoryGraphStore:
     def node(self, node_id: str, *, tenant_id: str | None = None) -> GraphNode | None:
         node = self._nodes.get(node_id)
         if tenant_id and node is not None:
-            if node.properties.get('tenant_id') not in (None, tenant_id):
+            if node.properties.get("tenant_id") != tenant_id:
                 return None
         return node
 
