@@ -174,8 +174,9 @@
   color: var(--bad);
 }
 .nfa-scope .badge-critical {
-  background: var(--bad);
-  color: var(--ui-text);
+  background: var(--ui-danger-wash);
+  border: 1px solid var(--ui-danger-line);
+  color: var(--ui-danger);
   font-weight: 700;
 }
 .nfa-scope .badge-none,
