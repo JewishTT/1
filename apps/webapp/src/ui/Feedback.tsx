@@ -103,8 +103,8 @@ export interface LoadingViewProps {
  */
 export function LoadingView({ message }: LoadingViewProps) {
   return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
+    <section className="ui-feedback-view" role="status" aria-live="polite" data-testid="loading-view">
+      <p className="ui-feedback-copy">{message}</p>
     </section>
   );
 }
@@ -130,10 +130,10 @@ export interface ErrorViewProps {
  */
 export function ErrorView({ error, onRetry }: ErrorViewProps) {
   return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
+    <section className="ui-feedback-view" role="alert" data-testid="error-view">
+      <p className="ui-feedback-error">Error: {error}</p>
       {onRetry ? (
-        <div className="panel-actions">
+        <div className="ui-feedback-actions">
           <Button size="sm" variant="ghost" onClick={() => void onRetry()}>
             Retry
           </Button>
