@@ -1,12 +1,14 @@
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+
+import { Icon } from "./Icon";
 
 /**
  * DataTable shell (§60).
  *
  * Deliberately a shell, not a data grid: it owns the *semantics* an analyst
- * needs from a table in this workbench — a real caption, semantic column
- * headers, row selection, monospace identifiers and keyboard row navigation.
- * Sorting, virtualisation and column resizing belong to the views that know
+ * needs from a table in this workbench — a real caption, semantic and sortable
+ * column headers, row selection, monospace identifiers and keyboard row
+ * navigation. Virtualisation and column resizing remain with views that know
  * their data (stages 3–8); this shell does not pretend to implement them.
  *
  * Callers: the activity layer's event table, and the object/evidence tables in
@@ -20,6 +22,8 @@ export interface DataTableColumn<T> {
   /** Right-align numeric columns; mono for anything copyable. */
   align?: "start" | "end";
   mono?: boolean;
+  /** Extract a comparable string/number to enable the shared sort behavior. */
+  sortValue?: (row: T) => string | number;
   width?: string;
   render: (row: T) => ReactNode;
 }
@@ -49,6 +53,25 @@ export function DataTable<T>({
   emptyState,
   testId,
 }: DataTableProps<T>) {
+  const [sort, setSort] = useState<{ key: string; direction: "ascending" | "descending" } | null>(null);
+
+  const sortedRows = useMemo(() => {
+    if (!sort) return rows;
+    const column = columns.find((candidate) => candidate.key === sort.key);
+    if (!column?.sortValue) return rows;
+
+    const direction = sort.direction === "ascending" ? 1 : -1;
+    return [...rows].sort((left, right) => {
+      const a = column.sortValue!(left);
+      const b = column.sortValue!(right);
+      const comparison =
+        typeof a === "number" && typeof b === "number"
+          ? a - b
+          : String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+      return comparison * direction;
+    });
+  }, [columns, rows, sort]);
+
   if (rows.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
@@ -56,8 +79,8 @@ export function DataTable<T>({
   const activeId =
     selectedId !== null && rows.some((row) => rowId(row) === selectedId)
       ? selectedId
-      : rows.length > 0
-        ? rowId(rows[0]!)
+      : sortedRows.length > 0
+        ? rowId(sortedRows[0]!)
         : null;
 
   return (
@@ -72,14 +95,34 @@ export function DataTable<T>({
               scope="col"
               style={column.width ? { width: column.width } : undefined}
               data-align={column.align ?? "start"}
+              aria-sort={sort?.key === column.key ? sort.direction : undefined}
             >
-              {column.header}
+              {column.sortValue ? (
+                <button
+                  type="button"
+                  className="ui-table-sort"
+                  data-direction={sort?.key === column.key ? sort.direction : "none"}
+                  aria-label={`Sort by ${column.header}`}
+                  onClick={() =>
+                    setSort((current) => ({
+                      key: column.key,
+                      direction:
+                        current?.key === column.key && current.direction === "ascending"
+                          ? "descending"
+                          : "ascending",
+                    }))
+                  }
+                >
+                  <span>{column.header}</span>
+                  <Icon name="chevron-down" size={12} />
+                </button>
+              ) : column.header}
             </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => {
+        {sortedRows.map((row) => {
           const id = rowId(row);
           const selected = selectedId === id;
           const secondary = secondaryIds.includes(id);
