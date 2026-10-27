@@ -551,6 +551,11 @@ describe("UI normalization — legacy shell compatibility", () => {
     expect(normalization).toContain("body:has(.ui-root)::before");
     expect(normalization).toContain("body:has(.ui-root)::after");
     expect(normalization).toContain("display: none");
+    expect(normalization).toContain("background-image: none");
+    expect(normalization).toContain(".ui-root .sidebar");
+    expect(normalization).toContain(".ui-root .header");
+    expect(normalization).toContain(".ui-root .module-tabs");
+    expect(normalization).toContain(".ui-root .op-tile::before");
     expect(normalization).toContain(".ui-root .panel::before");
   });
 
@@ -561,5 +566,20 @@ describe("UI normalization — legacy shell compatibility", () => {
     expect(normalization).toContain("border-color: var(--ui-analytical)");
     expect(normalization).toContain("border-color: var(--ui-danger)");
     expect(normalization).toContain("animation: none");
+  });
+});
+
+
+describe("UI normalization — RadioGroup contracts", () => {
+  it("provides labelled radio controls through the public component-library barrel", () => {
+    const input = readShipped("ui", "Input.tsx");
+    const barrel = readShipped("ui", "index.ts");
+    const styles = readShipped("styles", "components", "index.css");
+    expect(input).toContain("export interface RadioGroupProps");
+    expect(input).toContain("type=\"radio\"");
+    expect(input).toContain("<legend className=\"ui-field-label\">{label}</legend>");
+    expect(barrel).toContain("RadioGroup");
+    expect(styles).toContain(".ui-radio-group");
+    expect(styles).toContain(".ui-radio input:focus-visible");
   });
 });
