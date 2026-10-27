@@ -30,6 +30,20 @@ describe("DesignSystemPage", () => {
     expect(includeRejected).toHaveAttribute("aria-describedby");
   });
 
+  it("previews all three density modes locally without changing workspace settings", () => {
+    render(<DesignSystemPage />);
+    const page = screen.getByTestId("ui-kit-page");
+    expect(page).toHaveAttribute("data-density", "standard");
+
+    fireEvent.click(screen.getByLabelText(/Compact/));
+    expect(page).toHaveAttribute("data-density", "compact");
+    expect(screen.getByLabelText(/Compact/)).toBeChecked();
+
+    fireEvent.click(screen.getByLabelText(/Comfortable/));
+    expect(page).toHaveAttribute("data-density", "comfortable");
+    expect(screen.getByLabelText(/Comfortable/)).toBeChecked();
+  });
+
   it("demonstrates filterable, keyboard-selectable tabular data", () => {
     render(<DesignSystemPage />);
     fireEvent.click(screen.getByRole("tab", { name: /Data & state/ }));
