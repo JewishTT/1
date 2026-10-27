@@ -54,6 +54,32 @@ class MemoryObjectStore:
             existed,
         )
 
+
+    async def put_immutable_object(
+        self,
+        key: str,
+        body: bytes,
+        *,
+        tenant_id: str = "",
+        meta: dict | None = None,
+    ) -> bool:
+        """Create an immutable object; byte-identical retries return False."""
+        if not isinstance(body, bytes):
+            raise TypeError("immutable object body must be bytes")
+        existing = self._objects.get(key)
+        if existing is not None:
+            if existing != body:
+                raise ValueError(f"immutable object key collision: {key}")
+            return False
+        self._objects[key] = body
+        if meta:
+            self._meta[key] = dict(meta)
+        return True
+
+    async def list_objects(self, prefix: str) -> list[str]:
+        """Return all object keys that begin with prefix."""
+        return sorted(key for key in self._objects if key.startswith(prefix))
+
     async def put_derived_dedup(
         self, body: bytes, *, tenant_id: str, meta: dict | None = None
     ) -> tuple[RawObjectRef, bool]:

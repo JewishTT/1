@@ -910,6 +910,7 @@
           "apps/control-plane/db/migrations/versions/028_observation_processing_results.py",
           "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
           "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
+          "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
           "apps/control-plane/db/relation_candidate_store.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
@@ -949,6 +950,8 @@
           "apps/control-plane/services/pow_run.py",
           "apps/control-plane/services/processing_result_store.py",
           "apps/control-plane/services/query_planner.py",
+          "apps/control-plane/services/relation_projection_rebuild.py",
+          "apps/control-plane/services/relation_projection_relay.py",
           "apps/control-plane/services/reobservation.py",
           "apps/control-plane/services/research_case_artifacts.py",
           "apps/control-plane/services/research_case_policy.py",
@@ -1031,6 +1034,9 @@
           "apps/control-plane/tests/unit/test_query_fusion.py",
           "apps/control-plane/tests/unit/test_rank_fusion_wiring.py",
           "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+          "apps/control-plane/tests/unit/test_relation_projection_migration.py",
+          "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+          "apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py",
           "apps/control-plane/tests/unit/test_reobservation.py",
           "apps/control-plane/tests/unit/test_science_tda.py",
           "apps/control-plane/tests/unit/test_search_core_selection.py",
@@ -1057,6 +1063,7 @@
           "apps/projection/graph/__init__.py",
           "apps/projection/graph/abstraction.py",
           "apps/projection/graph/adjacency.py",
+          "apps/projection/graph/claim_projection.py",
           "apps/projection/graph/neo4j.py",
           "apps/projection/graph/relation_store.py",
           "apps/projection/graph/snapshot.py",
@@ -1100,6 +1107,7 @@
           "apps/projection/tests/test_relevance.py",
           "apps/projection/tests/test_streams.py",
           "apps/projection/tests/test_tantivy_backend.py",
+          "apps/projection/tests/unit/test_claim_projection.py",
           "apps/projection/tests/unit/test_diagram.py",
           "apps/projection/tests/unit/test_features.py",
           "apps/projection/tests/unit/test_graph_store_direction.py",
@@ -1115,7 +1123,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 292
+        "module_count": 300
       },
       {
         "id": "webapp",

@@ -1,0 +1,39 @@
+name: temporary-regenerate-platform-model
+
+on:
+  push:
+    branches: ["codex/claim-projection-outbox"]
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Sync workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Generate source-derived documentation
+        run: .venv/bin/python -m platform_model.build
+      - name: Commit generated documentation if changed
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/README.md docs/CONTRIBUTING.md docs/architecture/overview.md docs/platform
+          if git diff --cached --quiet; then
+            echo "Generated documentation is already current."
+          else
+            git commit -m "docs(platform): regenerate source-derived model [skip ci]"
+            git push origin "$BRANCH"
+          fi

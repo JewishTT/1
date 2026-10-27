@@ -7,9 +7,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | Status | Modules |
 |---|---|
 | PRODUCTION | 402 |
-| TEST_ONLY | 143 |
-| ORPHAN | 121 |
-| TEST | 333 |
+| TEST_ONLY | 146 |
+| ORPHAN | 122 |
+| TEST | 337 |
 
 ## Entrypoints (production roots)
 
@@ -54,7 +54,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**143** modules are reached only by tests.
+**146** modules are reached only by tests.
 
 | Module |
 |---|
@@ -92,12 +92,14 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/badges/__init__.py` |
 | `apps/control-plane/context_engine/context_graph.py` |
 | `apps/control-plane/context_engine/science_bridge.py` |
+| `apps/control-plane/db/relation_claim_store.py` |
 | `apps/control-plane/db/source_query_store.py` |
 | `apps/control-plane/modifier/__init__.py` |
 | `apps/control-plane/services/acquisition_loop.py` |
 | `apps/control-plane/services/audit.py` |
 | `apps/control-plane/services/dispatcher.py` |
 | `apps/control-plane/services/layer0_pipeline.py` |
+| `apps/control-plane/services/relation_projection_relay.py` |
 | `apps/feedback/feedback/__init__.py` |
 | `apps/feedback/feedback/branch/__init__.py` |
 | `apps/feedback/feedback/branch/entity.py` |
@@ -124,6 +126,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/interpretation/retrieval/retriever.py` |
 | `apps/projection/analytics/projector.py` |
 | `apps/projection/analytics/store.py` |
+| `apps/projection/graph/claim_projection.py` |
 | `apps/projection/graph/neo4j.py` |
 | `apps/projection/graph/snapshot.py` |
 | `apps/projection/lakehouse/river/lake.py` |
@@ -204,7 +207,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**121** modules are imported by neither production nor tests.
+**122** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -252,12 +255,13 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/028_observation_processing_results.py` |
 | `apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py` |
 | `apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py` |
-| `apps/control-plane/db/relation_claim_store.py` |
+| `apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |
 | `apps/control-plane/services/__init__.py` |
 | `apps/control-plane/services/acquisition_evidence.py` |
+| `apps/control-plane/services/relation_projection_rebuild.py` |
 | `apps/control-plane/services/specops_catalog.py` |
 | `apps/control-plane/workflows/__init__.py` |
 | `apps/interpretation/__init__.py` |

@@ -7,24 +7,24 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python / TypeScript / Rust modules | 999 / 255 / 15 |
-| Resolved import edges | 2781 |
+| Python / TypeScript / Rust modules | 1007 / 255 / 15 |
+| Resolved import edges | 2807 |
 | HTTP routes / routers | 182 / 33 |
-| Test files / functions | 336 / 5256 |
-| Evidence facts (static) | 4330 |
+| Test files / functions | 340 / 5272 |
+| Evidence facts (static) | 4365 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 539 |
+| IMPLEMENTED | 542 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
 | PACKAGE_INIT | 91 |
-| MIGRATION | 18 |
-| TEST | 333 |
+| MIGRATION | 19 |
+| TEST | 337 |
 
 See [maturity.md](maturity.md).
 
@@ -33,9 +33,9 @@ See [maturity.md](maturity.md).
 | Status | Modules |
 |---|---|
 | PRODUCTION | 402 |
-| TEST_ONLY | 143 |
-| ORPHAN | 121 |
-| TEST | 333 |
+| TEST_ONLY | 146 |
+| ORPHAN | 122 |
+| TEST | 337 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 
@@ -46,8 +46,8 @@ See [reachability.md](reachability.md) for the entrypoints and the test-only/orp
 | READY | 34 |
 | PARTIAL | 0 |
 | STUB | 0 |
-| TEST_ONLY | 6 |
-| ORPHAN | 4 |
+| TEST_ONLY | 7 |
+| ORPHAN | 3 |
 | MISSING | 0 |
 
 See [golden-path.md](golden-path.md) for the capability map and the build plan.

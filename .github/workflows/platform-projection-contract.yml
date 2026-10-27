@@ -1,0 +1,56 @@
+name: platform-projection-contract
+
+on:
+  pull_request:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  platform-projection-contract:
+    name: projection and lake contract tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Sync workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Run storage, claim, graph, and replay tests
+        run: >-
+          .venv/bin/python -m pytest
+          apps/projection/tests/test_lakehouse.py
+          apps/projection/tests/unit/test_claim_projection.py
+          apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py
+          apps/projection/tests/unit/test_neo4j_relation_write.py
+          apps/projection/tests/unit/test_relation_store.py
+          apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py
+          apps/control-plane/tests/unit/test_relation_projection_migration.py
+          apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py
+          apps/control-plane/tests/unit/test_entity_stream_persistence.py
+          apps/shared/tests/unit/test_kafka_bootstrap.py
+          -q
+      - name: Lint changed Python contracts
+        run: >-
+          .venv/bin/python -m ruff check
+          apps/shared/storage/s3.py
+          apps/shared/storage/memory.py
+          apps/projection/lakehouse/river/lake.py
+          apps/projection/graph/abstraction.py
+          apps/projection/graph/neo4j.py
+          apps/projection/graph/claim_projection.py
+          apps/control-plane/services/relation_projection_rebuild.py
+          apps/control-plane/tests/unit/test_relation_projection_rebuild_contract.py
+          apps/projection/tests/unit/test_claim_projection.py
+          apps/control-plane/db/schema.py
+          apps/control-plane/db/relation_claim_store.py
+          apps/control-plane/services/relation_projection_relay.py
+          apps/control-plane/services/relation_projection_rebuild.py
+          apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py
+          apps/control-plane/tests/unit/test_relation_projection_migration.py

@@ -16,12 +16,15 @@ from datetime import UTC, datetime
 from typing import Any
 
 from domain import enforce_projection_provenance
-from sqlalchemy import select
+from domain.relation_identity import digest128
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.schema import RelationClaim as RelationClaimRow
+from db.schema import RelationClaimProjectionOutbox as RelationClaimProjectionOutboxRow
 from db.schema import RelationClaimRevision as RelationClaimRevisionRow
 
 CLAIM_JSONB_COLUMNS = frozenset(
@@ -462,29 +465,43 @@ class SqlRelationClaimStore:
     async def record_validation(
         self, relation_id: str, *, tenant_id: str, result: Any
     ) -> None:
-        """Persist a ``ValidationResult`` so a non-``VALID`` verdict is replayable.
+        """Persist each verdict and schedule a durable projection reconciliation.
 
-        The record is written to the JSONB column :func:`_validation_column`
-        resolves -- ``relation_claim.validation_record`` when the schema has it,
-        otherwise ``relation_claim_revision.payload`` -- and carries the verdict,
-        all seven layer outcomes, the structured reasons, the five grade
-        components, the evaluated versions and a ``recorded_at`` timestamp
-        (FR-050, FR-025). A claim is never deleted or downgraded to hide a
-        verdict: the rejection is preserved in place.
-
-        The column is looked up rather than assumed because migration 016 defines
-        no such column, and fabricating a home in ``claim_context_lineage.hops``
-        would mix a verdict into a ``LineageTrace``. Until the column exists both
-        this method and :meth:`non_valid` raise ``NotImplementedError`` naming it.
+        Every outcome is queued, not only VALID: a rejected or withdrawn verdict
+        must be able to remove an earlier graph projection. The verdict JSONB and
+        outbox row commit in the same SQL transaction.
         """
         model, column = _validation_column()
-        result_set = await self.session.execute(self._verdict_query(model, relation_id, tenant_id))
+        result_set = await self.session.execute(
+            self._verdict_query(model, relation_id, tenant_id)
+        )
         row = result_set.scalar_one_or_none()
         if row is None:
             raise ValueError(
                 f"relation {relation_id} has no stored claim for tenant {tenant_id}"
             )
-        setattr(row, column, _validation_payload(result))
+
+        payload = _validation_payload(result)
+        setattr(row, column, payload)
+        outbox_id = "claimproj-" + digest128(f"{tenant_id}\x00{relation_id}")
+        statement = pg_insert(RelationClaimProjectionOutboxRow).values(
+            outbox_id=outbox_id,
+            tenant_id=tenant_id,
+            relation_id=relation_id,
+            status="PENDING",
+            attempts=0,
+            last_error="",
+        )
+        statement = statement.on_conflict_do_update(
+            constraint="uq_relation_claim_projection_outbox_claim",
+            set_={
+                "status": "PENDING",
+                "available_at": func.now(),
+                "lease_expires_at": None,
+                "last_error": "",
+            },
+        )
+        await self.session.execute(statement)
         await self.session.commit()
 
     async def non_valid(self, *, tenant_id: str) -> list[dict[str, Any]]:

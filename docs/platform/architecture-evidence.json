@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4330,
-    "static_facts": 4036,
+    "facts_total": 4365,
+    "static_facts": 4071,
     "inferred": 294,
     "intended": 0
   },
@@ -9263,6 +9263,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "68c06fc1f640fc14",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/db/relation_claim_store.py",
+      "object": "apps/shared/domain/relation_identity.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/db/relation_claim_store.py",
+        "via": "domain.relation_identity"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7cfdc895a85c2c9d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/db/relation_claim_store.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/db/relation_claim_store.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "7cfdc895a85c2c9d",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/db/relation_claim_store.py",
@@ -12587,6 +12613,149 @@
       "evidence": {
         "file": "apps/control-plane/services/query_planner.py",
         "via": "scoring.fusion"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ae8efe67f518a89d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/projection/graph/claim_projection.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "graph.claim_projection"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4df3f62887338fd2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/projection/graph/neo4j.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "graph.neo4j"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "49f8b2206b9f0c0c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/control-plane/db/relation_claim_store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "db.relation_claim_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a110d44228828c9b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d4b6c701eb0b6c60",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_rebuild.py",
+      "object": "apps/control-plane/db/session.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_rebuild.py",
+        "via": "db.session"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b4ec5dbceebe6cac",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_relay.py",
+      "object": "apps/projection/graph/claim_projection.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_relay.py",
+        "via": "graph.claim_projection"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9d01a76afef4ac32",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_relay.py",
+      "object": "apps/projection/graph/neo4j.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_relay.py",
+        "via": "graph.neo4j"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8844875511937906",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_relay.py",
+      "object": "apps/control-plane/db/relation_claim_store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_relay.py",
+        "via": "db.relation_claim_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6e42cec9ee45bceb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_relay.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_relay.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6e42cec9ee45bceb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_relay.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_relay.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9dadf91493b8b1b8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/relation_projection_relay.py",
+      "object": "apps/control-plane/db/session.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/relation_projection_relay.py",
+        "via": "db.session"
       },
       "confidence": 1.0
     },
@@ -16539,6 +16708,58 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
         "via": "semantic.contracts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "328321cddcebf62b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/db/relation_claim_store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "via": "db.relation_claim_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0bd187b639bb80d9",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0bd187b639bb80d9",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0375fc66b427a988",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/services/relation_projection_relay.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "via": "services.relation_projection_relay"
       },
       "confidence": 1.0
     },
@@ -22913,6 +23134,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "8ff704aaf01db4df",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/graph/claim_projection.py",
+      "object": "apps/shared/domain/relation_identity.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/graph/claim_projection.py",
+        "via": "domain.relation_identity"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1481435de8c797bf",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/graph/claim_projection.py",
+      "object": "apps/projection/graph/abstraction.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/graph/claim_projection.py",
+        "via": "graph.abstraction"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9ebefbbc239be68e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/graph/claim_projection.py",
+      "object": "apps/projection/graph/relation_store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/graph/claim_projection.py",
+        "via": "graph.relation_store"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "d5a41ea1f230bcb3",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/projection/graph/neo4j.py",
@@ -22948,6 +23208,19 @@
       "evidence": {
         "file": "apps/projection/graph/neo4j.py",
         "via": "abstraction"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8a4d5c5626501945",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/graph/neo4j.py",
+      "object": "apps/shared/config/settings.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/graph/neo4j.py",
+        "via": "config.settings"
       },
       "confidence": 1.0
     },
@@ -24144,6 +24417,71 @@
       "evidence": {
         "file": "apps/projection/tests/test_tantivy_backend.py",
         "via": "search.tantivy_backend"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7a19d3095054fb2f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/shared/domain/relation_claim.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py",
+        "via": "domain.relation_claim"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "56da427a4438e982",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/shared/domain/relation_identity.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py",
+        "via": "domain.relation_identity"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b40535aa5a4b3c03",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/projection/graph/abstraction.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py",
+        "via": "graph.abstraction"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ae610183ac5baf01",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/projection/graph/claim_projection.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py",
+        "via": "graph.claim_projection"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "32ed28cd1e38200f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/projection/graph/relation_store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py",
+        "via": "graph.relation_store"
       },
       "confidence": 1.0
     },
@@ -39042,6 +39380,18 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "b30a021134ced645",
+      "kind": "TABLE_CLASS_DEFINED",
+      "subject": "RelationClaimProjectionOutbox",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "regex_class_base",
+      "evidence": {
+        "file": "apps/control-plane/db/schema.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "941b7adaab4d3f87",
       "kind": "TABLE_CLASS_DEFINED",
       "subject": "RelationClaimRevision",
@@ -43614,6 +43964,42 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "9644b4287edc340b",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/db/relation_claim_store.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7b2f5235198d70f7",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "85afce393a6a831a",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+      "object": "apps/control-plane/services/relation_projection_relay.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "6a6401da78f04e7b",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/control-plane/tests/unit/test_reobservation.py",
@@ -46070,6 +46456,66 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/projection/tests/test_tantivy_backend.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "68b60312eb5126f1",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/projection/graph/abstraction.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9960058394f2c082",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/projection/graph/claim_projection.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "587006947fd555fa",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/projection/graph/relation_store.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f1831ec7cad23e73",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/shared/domain/relation_claim.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "741ced0f90744fe2",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/projection/tests/unit/test_claim_projection.py",
+      "object": "apps/shared/domain/relation_identity.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/projection/tests/unit/test_claim_projection.py"
       },
       "confidence": 1.0
     },
