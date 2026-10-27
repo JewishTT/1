@@ -38,5 +38,7 @@ export {
   type TooltipProps,
 } from "./Overlay";
 export { Tabs, type TabsItem, type TabsProps } from "./Tabs";
+export { Modal, type ModalProps } from "./Modal";
+export { Toast, type ToastProps, type ToastTone } from "./Toast";
 export { Panel, type PanelProps, type PanelVariant } from "./Panel";
 export { statusTone, type WorkStatus } from "./status";
