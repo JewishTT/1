@@ -1,44 +1,10 @@
-/* Holographic deck — the shared material layer for the CI/SpecOps department.
+/* Legacy holographic material — retained only for migration compatibility.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * A DELIBERATE, OWNER-APPROVED RULE-BEND. Read this before "fixing" it.
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `styles/tokens/color.css` states its own constraints: "FORBIDDEN by §3.3 and
- * absent by construction: … neon glow, gradient text, glassmorphism, HUD reticles",
- * and §93 says hierarchy is not carried by colour — "no glow, no colour explosion,
- * no shadow-as-hierarchy, no decorative borders".
- *
- * This layer breaks two of those on purpose. The owner was shown the three
- * candidate directions and chose this one (holographic deck) over the compliant
- * mission-console. The bend is scoped as tightly as it can be:
- *
- *   BREAKS §3.3 "no neon glow / no glassmorphism" — surfaces are translucent with a
- *     luminous edge, and glow is used as DEPTH SIGNAL, never as decoration: an edge
- *     brightens for the surface that owns the operator's attention and stays quiet
- *     everywhere else. A glowing border on every row would be noise; a glowing border
- *     on the active instrument is information.
- *
- *   BREAKS §93 "hierarchy is not carried by colour / shadow" — depth is now carried
- *     by an explicit three-step surface stack (base → surface-raised → holo) plus a
- *     layered shadow, so the elevation is legible rather than implied.
- *
- * WHAT IS NOT BROKEN, because these are semantics rather than taste:
- *
- *   §57 / §92  the closed status vocabulary. Green is live, amber is
- *              metadata/pending, red is failure. The palette may not be
- *              re-tuned to make a panel prettier, and `toWorkStatus()` still maps
- *              every unknown donor spelling to `Unknown`.
- *   §59        one icon set. Nothing here adds a glyph.
- *   §67        colour never carries meaning alone. Every luminous edge is paired with
- *              a text label or a `data-*` attribute that says the same thing; the
- *              glow is emphasis on an existing signal, never the signal itself.
- *   §12        contrast. Translucency is layered over opaque tokens rather than
- *              replacing them, so a light theme still resolves against its own ground.
- *
- * The motion here is three keyframes and nothing else: rise, sweep, pulse. All of
- * them are disabled under `prefers-reduced-motion: no-preference` failing — i.e. they
- * run only when the operator has not asked for less.
+ * The normative workbench contract forbids glass, decorative gradients, HUD
+ * brackets and glow. The first-party normalization layer at the end of
+ * styles/layers.css overrides this material on mounted UI 2.0 surfaces while
+ * the old class names are being removed. This file is NOT an approved visual
+ * exception: preserve state-bearing borders and data meaning, not the effects.
  */
 
 /* ── Motion ─────────────────────────────────────────────────────────── */
