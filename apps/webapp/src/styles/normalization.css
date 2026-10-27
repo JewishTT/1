@@ -201,11 +201,12 @@
 
 .ui-root .ui-cicanvas-head .ui-tab[aria-selected="true"]::after,
 .ui-root .ui-ci-panel::after,
-.ui-root .ui-holo-sweep::after,
-/* Keep GhostLine's gate/setup/absent border semantics intact. */
+.ui-root .ui-holo-sweep::after {
   content: none;
   animation: none;
 }
+
+/* Keep GhostLine's gate/setup/absent border semantics intact. */
 
 .ui-root .ui-ci-panel-head {
   border-bottom-color: var(--ui-border);
