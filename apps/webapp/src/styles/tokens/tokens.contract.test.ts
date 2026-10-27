@@ -333,7 +333,7 @@ describe("UI normalization — responsive shell and accessible interaction", () 
   });
 
   it("does not hide work-state counts on narrow screens", () => {
-    const narrow = normalization.split("@media (max-width: 1023px)")[1]?.split("@media")[0] ?? "";
+    const narrow = normalization.split("@media (max-width: 1023px)").slice(-1)[0]?.split("@media")[0] ?? "";
     expect(narrow).toContain(".ui-root .ui-topbar-counts");
     expect(narrow).toContain("flex-wrap: wrap");
     expect(narrow).not.toMatch(/\.ui-topbar-counts\s*\{[^}]*display:\s*none/s);
