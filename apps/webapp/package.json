@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "node --check shot.mjs && node --check scripts/shoot-routes.mjs && node --check scripts/shoot-specops.mjs && vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",
     "ui:shoot:specops": "node scripts/shoot-specops.mjs",
