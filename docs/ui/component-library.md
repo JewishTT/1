@@ -8,7 +8,7 @@ Import shared UI primitives from `apps/webapp/src/ui/index.ts`. The barrel is th
 |---|---|---|
 | Actions | `Button`, `IconButton` | Named icon-only controls; consistent size and variant vocabulary |
 | Classification | `Badge`, `StatusDot` | Closed semantic tone/status vocabulary; words accompany status color |
-| Forms | `Input`, `Textarea`, `Select`, `Checkbox` | Visible labels, associated hints, stable ids, native keyboard/mobile behavior, optional monospace values |
+| Forms | `Input`, `Textarea`, `Select`, `Checkbox`, `RadioGroup` | Visible labels, associated hints, stable ids, native keyboard/mobile behavior, optional monospace values |
 | Navigation | `Tabs` | Accessible tablist with roving focus and arrow/Home/End navigation |
 | Overlays | `Tooltip`, `Popover`, `Drawer` | Keyboard dismissal, labelled surfaces, one overlay convention |
 | Surfaces | `Panel` | Shared low-radius surface, accessible heading, description and action slots |
