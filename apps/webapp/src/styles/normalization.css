@@ -529,3 +529,272 @@
   outline: 2px solid var(--ui-focus-ring);
   outline-offset: 2px;
 }
+
+
+/* ── Legacy-surface compatibility bridge ──────────────────────────────
+ * Legacy routes are still rendered inside the single UI 2.0 shell. Resolve
+ * their old token names at the shell boundary so those views inherit the same
+ * palette, but do not rewrite graph/entity-kind tokens whose values carry
+ * domain meaning. Flatten only known decorative material and preserve active,
+ * event and failure selectors as semantic state.
+ */
+.ui-root {
+  --c-bg: var(--ui-bg);
+  --c-surface: var(--ui-surface-1);
+  --c-surface-2: var(--ui-surface-2);
+  --c-surface-3: var(--ui-surface-3);
+  --c-glass: var(--ui-surface-1);
+  --c-border: var(--ui-border);
+  --c-border-hi: var(--ui-accent-line);
+  --c-text: var(--ui-text);
+  --c-text-2: var(--ui-text-secondary);
+  --c-muted: var(--ui-text-muted);
+  --c-fg-muted: var(--ui-text-muted);
+  --c-text-dim: var(--ui-text-muted);
+  --c-accent: var(--ui-accent);
+  --c-accent-2: var(--ui-accent-bright);
+  --c-accent-soft: var(--ui-accent-wash);
+  --c-danger: var(--ui-danger);
+  --c-danger-hover: var(--ui-danger);
+  --c-warning: var(--ui-gold);
+  --c-success: var(--ui-accent);
+  --acc: var(--ui-accent);
+  --acc-2: var(--ui-accent-bright);
+  --acc-soft: var(--ui-accent-wash);
+  --acc-glow: none;
+}
+
+.ui-root [data-module="economic"],
+.ui-root [data-module="specops"] {
+  --acc: var(--ui-accent);
+  --acc-2: var(--ui-accent-bright);
+  --acc-soft: var(--ui-accent-wash);
+  --acc-glow: none;
+}
+
+/* The legacy substrate placed a scanline overlay at z-index 60 on BODY.
+ * Disable only while the new shell is mounted; otherwise it can sit on top of
+ * every menu, drawer and toast regardless of the component's own z-index.
+ */
+body:has(.ui-root)::before,
+body:has(.ui-root)::after {
+  content: none;
+  display: none;
+}
+
+.ui-root h2 {
+  text-shadow: none;
+}
+
+.ui-root .panel,
+.ui-root .result,
+.ui-root .conn-card,
+.ui-root .plan-item,
+.ui-root .graph-panel,
+.ui-root .timeline-panel,
+.ui-root .command-panel li,
+.ui-root .net-card,
+.ui-root .op-tile,
+.ui-root .metric-tile,
+.ui-root .feed-item,
+.ui-root .intel-seedbank,
+.ui-root .intel-legend,
+.ui-root .intel-feed,
+.ui-root .intel-inspector,
+.ui-root .intel-canvas,
+.ui-root .graph-canvas,
+.ui-root .network-board .net-pair pre,
+.ui-root .tda-layer {
+  background: var(--ui-surface-1);
+  border-color: var(--ui-border);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ui-root .panel,
+.ui-root .result,
+.ui-root .conn-card,
+.ui-root .plan-item,
+.ui-root .graph-panel,
+.ui-root .timeline-panel,
+.ui-root .net-card,
+.ui-root .feed-item,
+.ui-root .intel-seedbank,
+.ui-root .intel-legend,
+.ui-root .intel-inspector,
+.ui-root .tda-layer {
+  border-radius: var(--ui-radius-3);
+}
+
+.ui-root .panel::before,
+.ui-root .node-card::before {
+  content: none;
+}
+
+.ui-root .btn {
+  border-radius: var(--ui-radius-2);
+  border-color: var(--ui-border);
+  background: var(--ui-surface-2);
+  color: var(--ui-text-secondary);
+  box-shadow: none;
+  text-shadow: none;
+  transition:
+    background-color var(--ui-motion-fast) var(--ui-ease-standard),
+    border-color var(--ui-motion-fast) var(--ui-ease-standard),
+    color var(--ui-motion-fast) var(--ui-ease-standard);
+}
+
+.ui-root .btn:hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-surface-3);
+  color: var(--ui-text);
+  box-shadow: none;
+}
+
+.ui-root .btn-primary,
+.ui-root .btn-primary:hover:not(:disabled) {
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+  color: var(--ui-on-accent);
+  box-shadow: none;
+}
+
+.ui-root .btn-danger,
+.ui-root .btn-danger:hover:not(:disabled) {
+  background: var(--ui-danger);
+  border-color: var(--ui-danger);
+  color: var(--ui-text);
+  box-shadow: none;
+}
+
+.ui-root .btn-ghost,
+.ui-root .btn-ghost:hover:not(:disabled) {
+  background: transparent;
+}
+
+.ui-root .status-chip {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-surface-2);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .status-chip::before,
+.ui-root .status-chip.ACTIVE::before,
+.ui-root .status-chip.RUNNING::before,
+.ui-root .status-chip.REGISTERED::before,
+.ui-root .status-chip.PLANNED::before,
+.ui-root .status-chip.OPEN::before,
+.ui-root .status-chip.DISABLED::before,
+.ui-root .status-chip.FAILED::before,
+.ui-root .status-chip.REJECTED::before {
+  box-shadow: none;
+}
+
+.ui-root .status-chip-live,
+.ui-root .conn-card:hover,
+.ui-root .toolbar-btn:hover,
+.ui-root .toolbar-btn[data-active="true"],
+.ui-root .seed-node[data-selected="true"] {
+  box-shadow: none;
+}
+
+.ui-root .graph-canvas,
+.ui-root .intel-canvas {
+  background: var(--ui-bg);
+}
+
+.ui-root .intel-legend,
+.ui-root .intel-inspector,
+.ui-root .tda-layer {
+  color: var(--ui-text-secondary);
+}
+
+.ui-root .node-card {
+  border-color: var(--ui-accent-line);
+  border-radius: var(--ui-radius-3);
+  background: var(--ui-surface-1);
+  box-shadow: none;
+}
+
+.ui-root .node-card[data-selected="true"],
+.ui-root .seed-node[data-selected="true"],
+.ui-root .toolbar-btn[data-active="true"] {
+  border-color: var(--ui-accent-line);
+  background: var(--ui-accent-wash);
+  box-shadow: none;
+}
+
+.ui-root .node-card-title,
+.ui-root .score,
+.ui-root .op-value,
+.ui-root .glow-text {
+  text-shadow: none;
+}
+
+.ui-root .intel-note {
+  border-color: var(--ui-gold-line);
+  background: var(--ui-gold-wash);
+  color: var(--ui-gold);
+  box-shadow: none;
+}
+
+.ui-root .link-hint {
+  border-color: var(--ui-analytical);
+  color: var(--ui-analytical);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .tda-layer {
+  border-color: var(--ui-analytical);
+}
+
+.ui-root .tda-bar-track {
+  background: var(--ui-surface-2);
+}
+
+.ui-root .tda-bar-fill {
+  background: var(--ui-analytical);
+  box-shadow: none;
+}
+
+.ui-root .loop-dot {
+  background: var(--ui-analytical);
+  box-shadow: none;
+  animation: none;
+}
+
+.ui-root .feed-item[data-kind="entity.updated"] {
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-root .feed-item[data-kind="science.invariant"] {
+  border-color: var(--ui-analytical);
+  box-shadow: none;
+}
+
+.ui-root .feed-item[data-kind="pipeline.advance"] {
+  border-color: var(--ui-gold-line);
+  box-shadow: none;
+}
+
+.ui-root .nav-link.active,
+.ui-root .module-tab[data-active="true"] {
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .brand-mark,
+.ui-root .nav-link.active .nav-icon,
+.ui-root .module-tab .mt-dot,
+.ui-root .nav-link.active::before {
+  box-shadow: none;
+  filter: none;
+  text-shadow: none;
+}
