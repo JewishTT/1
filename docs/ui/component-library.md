@@ -11,6 +11,7 @@ Import shared UI primitives from `apps/webapp/src/ui/index.ts`. The barrel is th
 | Forms | `Input`, `Select` | Visible labels, stable ids, native keyboard/mobile behavior, optional monospace values |
 | Navigation | `Tabs` | Accessible tablist with roving focus and arrow/Home/End navigation |
 | Overlays | `Tooltip`, `Popover`, `Drawer` | Keyboard dismissal, labelled surfaces, one overlay convention |
+| Surfaces | `Panel` | Shared low-radius surface, accessible heading, description and action slots |
 | Tables | `DataTable` | Caption, stable row keys, selection state, keyboard row selection, bounded horizontal overflow |
 | Feedback | `EmptyState`, `Skeleton`, `LoadingView`, `ErrorView` | Honest empty/loading/failure states; retry only when meaningful |
 | Context actions | `ContextMenu` | Stable item ids, disabled states, Escape and outside-click dismissal |
