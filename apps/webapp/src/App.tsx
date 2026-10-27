@@ -17,6 +17,7 @@ import { NetworkAnalysisContainer } from "./containers/NetworkAnalysisContainer"
 import { DossierContainer } from "./containers/DossierContainer";
 import { CasePage } from "./features/research-case/CasePage";
 import { CaseSetup } from "./features/research-case/CaseSetup";
+import { DesignSystemPage } from "./ui/DesignSystemPage";
 
 /**
  * The shell is mounted here, at the root, rather than per-route.
@@ -121,6 +122,8 @@ export function App() {
         <Route path="research-cases/new" element={<CaseSetup />} />
         <Route path="research-cases/:caseId/setup" element={<CaseSetup />} />
         <Route path="research-cases/:caseId" element={<CasePage />} />
+        {/* Internal design-system reference: not part of analyst navigation. */}
+        <Route path="ui-kit" element={<DesignSystemPage />} />
         {/* Anything unrecognised lands on the board rather than on a blank page: a
             mistyped URL is a mistake, not a reason to render nothing and leave the
             analyst without a way forward. */}
