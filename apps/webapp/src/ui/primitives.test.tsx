@@ -327,8 +327,8 @@ describe("DataTable — shell semantics", () => {
     { id: "OBS-2", uri: "https://b", status: "Failed" },
   ];
   const columns = [
-    { key: "id", header: "Observation", mono: true, render: (row: (typeof rows)[number]) => row.id },
-    { key: "uri", header: "URI", render: (row: (typeof rows)[number]) => row.uri },
+    { key: "id", header: "Observation", mono: true, sortValue: (row: (typeof rows)[number]) => row.id, render: (row: (typeof rows)[number]) => row.id },
+    { key: "uri", header: "URI", sortValue: (row: (typeof rows)[number]) => row.uri, render: (row: (typeof rows)[number]) => row.uri },
   ];
 
   it("renders a captioned table", () => {
@@ -366,6 +366,22 @@ describe("DataTable — shell semantics", () => {
     fireEvent.click(screen.getByTestId("row-OBS-1"));
     fireEvent.keyDown(screen.getByTestId("row-OBS-2"), { key: "Enter" });
     expect(picked).toEqual(["OBS-1", "OBS-2"]);
+  });
+
+  it("sorts only sortable columns and reports direction to assistive technology", () => {
+    render(<DataTable caption="Observations" columns={columns} rows={rows} rowId={(row) => row.id} />);
+
+    const idHeader = screen.getByRole("columnheader", { name: /Observation/ });
+    const sortButton = within(idHeader).getByRole("button", { name: "Sort by Observation" });
+    expect(idHeader).not.toHaveAttribute("aria-sort");
+
+    fireEvent.click(sortButton);
+    expect(idHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getAllByTestId(/^row-/).map((row) => row.getAttribute("data-row-id"))).toEqual(["OBS-1", "OBS-2"]);
+
+    fireEvent.click(sortButton);
+    expect(idHeader).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getAllByTestId(/^row-/).map((row) => row.getAttribute("data-row-id"))).toEqual(["OBS-2", "OBS-1"]);
   });
 
   it("uses one tab stop and supports arrow, Home and End row navigation", () => {
