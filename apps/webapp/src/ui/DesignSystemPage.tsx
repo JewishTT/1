@@ -11,6 +11,7 @@ import {
   IconButton,
   Input,
   LoadingView,
+  Modal,
   Panel,
   RadioGroup,
   Select,
@@ -18,8 +19,10 @@ import {
   StatusDot,
   Tabs,
   Textarea,
+  Toast,
   Tooltip,
   type DataTableColumn,
+  type ToastTone,
   type WorkStatus,
 } from "./index";
 
@@ -66,6 +69,8 @@ export function DesignSystemPage() {
   const [density, setDensity] = useState<"compact" | "standard" | "comfortable">("standard");
   const [selectedId, setSelectedId] = useState<string | null>("DEMO-OBS-0042");
   const [clickCount, setClickCount] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [toastTone, setToastTone] = useState<ToastTone | null>(null);
 
   const rows = useMemo(
     () =>
@@ -202,6 +207,7 @@ export function DesignSystemPage() {
       ) : null}
 
       {tab === "feedback" ? (
+        <>
         <div className="ui-kit-grid">
           <section className="ui-kit-card" aria-labelledby="ui-kit-empty">
             <div className="ui-kit-card-head"><div><p className="ui-meta">06 / ABSENCE</p><h2 id="ui-kit-empty">Empty state</h2></div></div>
@@ -217,6 +223,47 @@ export function DesignSystemPage() {
             <ErrorView error="Source gateway returned a bounded, retryable error." onRetry={() => setClickCount((count) => count + 1)} />
           </section>
         </div>
+        <Panel
+          eyebrow="09 / OVERLAYS"
+          title="Modal & toast"
+          description="Preview layer behavior locally; no task or server record is created."
+          actions={<Badge tone="neutral">Accessible overlays</Badge>}
+          testId="ui-kit-overlays"
+        >
+          <div className="ui-kit-button-row">
+            <Button variant="primary" onClick={() => setModalOpen(true)}>Open modal preview</Button>
+            <Button variant="ghost" onClick={() => setToastTone("success")}>Preview success toast</Button>
+            <Button variant="ghost" onClick={() => setToastTone("danger")}>Preview error toast</Button>
+          </div>
+          {toastTone ? (
+            <Toast
+              tone={toastTone}
+              title={toastTone === "success" ? "Example success notification" : "Example error notification"}
+              message="Design-system preview only. No platform action was performed."
+              onDismiss={() => setToastTone(null)}
+              testId="ui-kit-toast"
+            />
+          ) : (
+            <p className="ui-kit-note">Toast items announce their priority and can be dismissed; the caller owns queue and lifetime.</p>
+          )}
+        </Panel>
+        <Modal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          title="Acquisition preview"
+          description="This demonstrates dialog layout and focus behavior only. No acquisition task will be submitted."
+          testId="ui-kit-modal"
+          actions={
+            <>
+              <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
+              <Button variant="primary" onClick={() => setModalOpen(false)}>Close preview</Button>
+            </>
+          }
+        >
+          <p className="ui-body">A modal reserves focus while open, supports Escape, and returns focus to the control that opened it.</p>
+          <p className="ui-kit-note">All text here is demo content. Nothing is sent to the platform.</p>
+        </Modal>
+        </>
       ) : null}
 
       <footer className="ui-kit-footer">
