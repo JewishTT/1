@@ -70,7 +70,7 @@ if (TARGETS.length === 0) {
         body: document.body.scrollWidth,
         rootLength: document.getElementById("root")?.innerHTML.length ?? -1,
         shellMounted: Boolean(document.querySelector('[data-testid="app-shell"]')),
-        text: (document.body.innerText || "").replace(/\\s+/g, " ").slice(0, 180),
+        text: (document.body.innerText || "").replace(/\s+/g, " ").slice(0, 180),
       }));
 
       await page.screenshot({
@@ -79,7 +79,7 @@ if (TARGETS.length === 0) {
       });
 
       const report = { target, viewport: label, width, ...metrics, errors: errors.slice(0, 3) };
-      process.stdout.write(`${JSON.stringify(report)}\\n`);
+      process.stdout.write(`${JSON.stringify(report)}\n`);
 
       if (!metrics.shellMounted || metrics.rootLength < 1) {
         problems.push(`empty shell at ${target} / ${label}`);
@@ -96,9 +96,9 @@ if (TARGETS.length === 0) {
 
   await browser.close();
   if (problems.length) {
-    process.stderr.write(`\\n${problems.length} issue(s):\\n${problems.join("\\n")}\\n`);
+    process.stderr.write(`\n${problems.length} issue(s):\n${problems.join("\n")}\n`);
     process.exitCode = 1;
   } else {
-    process.stdout.write(`\\nNo route, browser-console or document-overflow issues. Screenshots: ${OUT}\\n`);
+    process.stdout.write(`\nNo route, browser-console or document-overflow issues. Screenshots: ${OUT}\n`);
   }
 }
