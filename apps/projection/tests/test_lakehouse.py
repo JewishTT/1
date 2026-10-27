@@ -5,6 +5,8 @@ partition manifest rebuild (\`rows\` reconstructs from durable objects only),
 tenant isolation, and hermetic operation over the memory store (no docker).
 """
 
+import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -53,7 +55,7 @@ class TestObservationLake:
         r = _row(sha="b" * 64)
         assert await lake.append_row(r) is True
         assert await lake.append_row(r) is False  # I-11: same content, no second copy
-        assert store.count() == 2  # 1 row csv + 1 manifest, never a doppelganger
+        assert store.count() == 1  # immutable row only; no mutable shared manifest
         assert await lake.row_count("ten-1", "202609") == 1
 
     async def test_different_content_same_id_appends(self):
@@ -99,10 +101,41 @@ class TestObservationLake:
         assert snap["manifest"]["rows"]
         assert len(snap["rows"]) == 1
 
-    async def test_manifest_is_json_addressable(self):
+    async def test_partition_manifest_is_synthesized_from_immutable_rows(self):
         store = MemoryObjectStore()
         lake = ObservationLake(store)
         await lake.append_row(_row())
-        key = f"{lake.MANIFESTS_PREFIX}/ten-1/202609.json"
-        body = await store.get_object(key)
-        assert body and body.startswith(b"{")
+        snap = await lake.partition_at("ten-1", "202609")
+        assert snap["manifest"]["tenant_id"] == "ten-1"
+        assert len(snap["manifest"]["rows"]) == 1
+        assert not any(key.startswith(f"{lake.MANIFESTS_PREFIX}/") for key in store.keys())
+
+    async def test_concurrent_appends_do_not_overwrite_each_other(self):
+        store = MemoryObjectStore()
+        lake = ObservationLake(store)
+        rows = [
+            _row(oid=f"obs-{i}", sha=f"{i:064x}", uri=f"https://example.test/{i}")
+            for i in range(40)
+        ]
+        await asyncio.gather(*(lake.append_row(row) for row in rows))
+        rebuilt = await lake.rows("ten-1", "202609")
+        assert len(rebuilt) == len(rows)
+        assert {row.observation_id for row in rebuilt} == {row.observation_id for row in rows}
+
+    async def test_legacy_manifest_is_read_and_promoted_before_append(self):
+        store = MemoryObjectStore()
+        lake = ObservationLake(store)
+        legacy = _row(oid="legacy-1", sha="e" * 64)
+        manifest_key = f"{lake.MANIFESTS_PREFIX}/ten-1/202609.json"
+        await store.put_object(
+            manifest_key,
+            json.dumps({
+                "tenant_id": "ten-1",
+                "year_month": "202609",
+                "rows": [legacy.as_record()],
+            }).encode("utf-8"),
+            tenant_id="ten-1",
+        )
+        await lake.append_row(_row(oid="new-1", sha="f" * 64))
+        rebuilt = await lake.rows("ten-1", "202609")
+        assert {row.observation_id for row in rebuilt} == {"legacy-1", "new-1"}

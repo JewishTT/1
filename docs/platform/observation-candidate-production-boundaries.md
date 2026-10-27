@@ -29,14 +29,17 @@ importantly, the systems it does **not** claim to have connected.
 
 ## Lakehouse status: deliberately not represented as wired
 
-`ObservationLake` currently writes CSV row snapshots and a shared monthly JSON
-manifest. It is not an Iceberg/Parquet table and its manifest update is a
-read-modify-write without compare-and-swap or a database transaction. Running it
-from a multi-partition consumer would allow concurrent writers to overwrite one
-another's manifest changes. The production observation path must not call it until
-the catalog/manifest has an atomic concurrency contract, a replay key and a rebuild
-verification test. Raw capture bytes remain in the object store and are not duplicated
-into a projection as if that were the lakehouse.
+`ObservationLake` now writes one immutable, content-addressed CSV object per
+observation and reconstructs each partition by listing the tenant/month prefix.
+This removes the shared manifest read-modify-write race. Legacy monthly manifests
+remain readable and are promoted to immutable row objects before new appends.
+Reconstruction verifies object hashes, row cardinality and tenant/month scope.
+
+This is **not an Iceberg/Parquet table**: schema evolution, compaction, catalog
+integration and end-to-end observation consumer wiring remain separate gates. The
+immutable row writer is now concurrency-safe for distinct row identities, but that
+does not mean the complete production lakehouse path is connected.
+
 
 ## Neo4j status: projection only, still not a production writer
 
