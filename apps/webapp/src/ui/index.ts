@@ -54,4 +54,5 @@ export {
 export { Panel, type PanelProps, type PanelVariant } from "./Panel";
 export { Tabs, type TabsItem, type TabsProps } from "./Tabs";
 export { Toast, type ToastProps, type ToastTone } from "./Toast";
+export { ToastViewport, type ToastViewportProps } from "./ToastViewport";
 export { statusTone, type WorkStatus } from "./status";
