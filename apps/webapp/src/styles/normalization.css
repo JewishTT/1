@@ -1119,3 +1119,89 @@ body:has(.ui-root) {
     border-inline-start: 0;
   }
 }
+
+
+/* ── Canvas-local responsive contracts ─────────────────────────────────
+ * The canvas can be narrower than the browser because rail/inspector panes
+ * consume part of the window. Viewport-only breakpoints miss this: at 1680px
+ * the view tabs fit, but the stage/selection metadata can be clipped by the
+ * *remaining canvas width*. Container queries use the space the canvas really
+ * owns and give the contract metadata a second line when needed.
+ */
+.ui-root .ui-canvas {
+  container-name: ui-canvas;
+  container-type: inline-size;
+}
+
+@container ui-canvas (max-width: 1220px) {
+  .ui-root .ui-canvas-head {
+    height: auto;
+    min-height: var(--ui-activitybar-h);
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding-block: var(--ui-space-2);
+    row-gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-canvas-head > .ui-tabs[data-orientation="bar"] {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-canvas-head-meta {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-shrink: 1;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .ui-root .ui-canvas-stage-slot {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ui-root .ui-canvas-stage-note {
+    max-width: 48ch;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .ui-root .ui-canvas-next {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Narrow phones use the shell toggles as actual drawers, not as extra columns.
+ * AppShell closes them when entering the phone breakpoint; if one is opened
+ * manually its panel overlays the canvas and is capped to the available width.
+ */
+@media (max-width: 767px) {
+  .ui-root .ui-shell-body {
+    position: relative;
+    min-width: 0;
+  }
+
+  .ui-root .ui-workbench {
+    position: relative;
+    min-width: 0;
+  }
+
+  .ui-root .ui-workbench-rail {
+    width: min(var(--ui-rail-max-w), calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+  }
+
+  .ui-root .ui-workbench-inspector {
+    position: absolute;
+    z-index: var(--ui-z-drawer);
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: min(320px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    flex: 0 0 auto;
+    box-shadow: var(--ui-elevation-3);
+  }
+}
