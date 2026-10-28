@@ -100,6 +100,7 @@ async function capture(name, extra = {}) {
         },
         modal: box(".ui-modal"),
         toast: box("[data-testid='ui-kit-toast']"),
+        activityBar: box(".ui-activity"),
       };
     })(),
   }));
@@ -156,6 +157,11 @@ async function capture(name, extra = {}) {
   }
   if (extra.surface === "modal" && !metrics.geometry?.modal) problems.push(`${name}: modal screenshot has no dialog geometry`);
   if (extra.surface === "toast" && !metrics.geometry?.toast) problems.push(`${name}: toast screenshot has no toast geometry`);
+  const toast = metrics.geometry?.toast;
+  const activityBar = metrics.geometry?.activityBar;
+  if (toast && activityBar && toast.bottom > activityBar.top - 2) {
+    problems.push(`${name}: toast overlaps the persistent activity/status bar (toast bottom=${toast.bottom}, bar top=${activityBar.top})`);
+  }
   return entry;
 }
 
