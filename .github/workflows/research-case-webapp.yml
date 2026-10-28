@@ -28,3 +28,30 @@ jobs:
       - name: Run complete web application test suite
         working-directory: apps/webapp
         run: npm test
+
+      - name: Start Vite for screenshot regression
+        working-directory: apps/webapp
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/cognitive-vite.log 2>&1 &
+          echo $! > /tmp/cognitive-vite.pid
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5173/ui-kit >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/cognitive-vite.log
+          exit 1
+      - name: Capture responsive and interactive UI screenshots
+        working-directory: apps/webapp
+        env:
+          UI_SHOTS_DIR: artifacts/ui-screenshots
+        run: npm run ui:shoot:design-system -- http://127.0.0.1:5173 artifacts/ui-screenshots
+      - name: Upload UI screenshot regression artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-ui-screenshots
+          path: apps/webapp/artifacts/ui-screenshots/
+          if-no-files-found: warn
+          retention-days: 14
