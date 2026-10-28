@@ -42,11 +42,12 @@ That philosophy implies several non-negotiable technical properties:
 The generated known-gap ledger calls out:
 - `apps/control-plane/api/routes/quarantine.py`: the DLQ endpoint reads an in-process store seeded with a fake record.
 - `apps/control-plane/api/routes/metrics.py`: metrics are hard-coded, not measured.
-- `apps/control-plane/api/main.py`: health is constant rather than dependency-aware.
 
-These endpoints can make the workbench report states that never existed. For an evidence-centric product, fake operational telemetry is worse than an explicit "unavailable" status.
+**Health/readiness correction:** the generated ledger previously listed `GET /health` as a constant health endpoint. That is a **false positive when read as readiness**: the root `/health` route is a liveness probe, while `GET /api/v1/platform/health` resolves the assembled platform and returns `503` when the platform is not ready. The false-positive gap has been removed. Keep liveness and readiness semantically distinct and add a deployment probe contract that targets the latter for traffic admission.
 
-**Action:** wire the API to durable DLQ/quarantine storage and real metric sources; implement liveness/readiness separately and probe required dependencies; distinguish unknown, zero and unavailable in the UI. Keep a dev fixture only behind an explicit development adapter and make its state unmistakable.
+The DLQ and metrics findings remain real: these endpoints can make the workbench report states that never existed. For an evidence-centric product, fake operational telemetry is worse than an explicit "unavailable" status.
+
+**Action:** wire the API to durable DLQ/quarantine storage and real metric sources; retain separate liveness/readiness probes and make deployment readiness depend on required components; distinguish unknown, zero and unavailable in the UI. Keep any demo fixture behind an explicit development adapter and make its scope unmistakable.
 
 ### P1 — Schema migration and installed-package parity
 
@@ -82,7 +83,7 @@ The existing model's Python module scanner uses the Python AST, but TypeScript/R
 
 ### P2 — UI structure and operator workflow
 
-The web application already has a React workbench, graph/timeline panels, keyboard command palette, density/theme controls and Playwright screenshot infrastructure. However, the current top navigation expands module tabs and many section links across the shell's most width-constrained horizontal strip. This competes with the investigation name, selection and work-state controls and repeats information already shown by the page itself.
+The web application already has a React workbench, graph/timeline panels, keyboard command palette, density/theme controls and Playwright screenshot infrastructure. The Counterintelligence subject board's endpoint was present but the UI unconditionally claimed it was not served. It now consumes the endpoint's actual `served` / `missing` / `scope` envelope and labels the registry as a shared seeded fixture, not investigation data; a unit contract guards against reintroducing the false "NOT SERVED" assertion. The cognitive operators themselves remain unconnected and are not claimed as implemented. However, the current top navigation expands module tabs and many section links across the shell's most width-constrained horizontal strip. This competes with the investigation name, selection and work-state controls and repeats information already shown by the page itself.
 
 **Action:** make navigation a compact active-workspace trigger with a searchable/grouped module deck, preserve route semantics and deep links, and make the workspace canvas the visual centre. Use restrained industrial/cyberpunk visual language—graphite, measured phosphor-green activity, amber temporal/provenance markers, semantic red for failure, precise typography and hairline separators. The current design-system contract explicitly forbids gratuitous neon glows, magenta gradients, HUD decoration and fake telemetry; "cyberpunk" should mean a credible intelligence workstation, not a casino dashboard.
 

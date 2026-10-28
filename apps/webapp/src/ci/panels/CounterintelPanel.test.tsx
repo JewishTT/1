@@ -55,7 +55,7 @@ describe("CounterintelPanel", () => {
 
     expect(await screen.findByTestId("ci-subject")).toBeInTheDocument();
     expect(screen.getByText("Demo subject (seeded)")).toBeInTheDocument();
-    expect(screen.getByText(/shared demo fixture · not tenant/investigation data/i)).toBeInTheDocument();
+    expect(screen.getByText("shared demo fixture · not tenant/investigation data")).toBeInTheDocument();
     expect(screen.queryByText(/GET \/specops\/counterintel\/subjects/)).not.toBeInTheDocument();
     expect(screen.getByTestId("ci-counterintel-missing")).toHaveTextContent("CognitiveAttack");
     expect(screen.getByTestId("ci-invariant-support-coordination-signature")).toHaveTextContent("unsupported");

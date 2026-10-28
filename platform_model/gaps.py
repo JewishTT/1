@@ -65,13 +65,6 @@ GAPS: list[dict] = [
         "claim": "GET /api/v1/dlq reads an in-process store seeded with one fake record.",
         "evidence": [_ev("apps/control-plane/api/routes/quarantine.py", r"malformed candidate")],
     },
-    {
-        "id": "health-is-constant",
-        "layer": "x",
-        "severity": "medium",
-        "claim": "GET /health returns a constant and reflects no dependency availability.",
-        "evidence": [_ev("apps/control-plane/api/main.py", r'"status": "ok", "service": "control-plane"')],
-    },
     # -- cross-cutting: schema ownership -------------------------------------
     {
         "id": "create-tables-in-production-path",
