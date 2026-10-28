@@ -86,7 +86,7 @@ The web application already has a React workbench, graph/timeline panels, keyboa
 
 **Action:** make navigation a compact active-workspace trigger with a searchable/grouped module deck, preserve route semantics and deep links, and make the workspace canvas the visual centre. Use restrained industrial/cyberpunk visual language—graphite, measured phosphor-green activity, amber temporal/provenance markers, semantic red for failure, precise typography and hairline separators. The current design-system contract explicitly forbids gratuitous neon glows, magenta gradients, HUD decoration and fake telemetry; "cyberpunk" should mean a credible intelligence workstation, not a casino dashboard.
 
-The UI screenshot workflow already captures the design-system and SpecOps/GhostLine surfaces at six viewport widths and uploads artifacts. This review adds a specific navigation-deck screenshot gate; it does not claim that screenshots were executed during static repository inspection.
+The CI browser workflow captures the design-system and SpecOps/GhostLine surfaces at six viewport widths, plus the navigation deck at desktop/tablet/phone sizes. Screenshot artifacts are visual evidence and must be inspected; geometry assertions catch overflow and overlap but do not replace human UX review.
 
 ## Verification strategy (ordered)
 
@@ -100,3 +100,7 @@ The UI screenshot workflow already captures the design-system and SpecOps/GhostL
 ## Boundary of this review
 
 The findings above are either explicitly listed in the committed generated gap ledger or described as follow-up validation targets. The counts describe that committed model snapshot. No runtime dependency, live collection source, production database or browser session was started as part of the static review; claims requiring those checks remain unverified.
+
+## Specification / documentation boundary
+
+Normative specification files must not Markdown-link into `docs/` reader views. Feature-scoped accepted decisions live in the owning feature's `decisions.md`; a reader-facing ADR page may be generated from that source. The semantic graph resolves stable decision identifiers such as `ADR-0028` into traceability edges without injecting a documentation path into the spec. This prevents generated prose from becoming a dependency of product intent and avoids manually synchronizing two normative copies.

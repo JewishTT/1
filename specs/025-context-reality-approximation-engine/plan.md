@@ -118,8 +118,8 @@ specs/025-context-reality-approximation-engine/
 └── tasks.md                  # Phase 2 output — DONE (154 tasks + 12 ADR records)
 ```
 
-Architecture decision record lives with the other ADRs:
-`decisions.md (D-1/D-2)`.
+This feature's accepted architecture decisions are recorded locally:
+`decisions.md` (D-1/D-2).
 
 ### Source Code (repository root)
 

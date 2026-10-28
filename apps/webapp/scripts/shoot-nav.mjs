@@ -53,6 +53,13 @@ for (const [width, height, label] of VIEWPORTS) {
     else if (geometry.deck.left < 0 || geometry.deck.right > width + 1 ||
              geometry.deck.top < 0 || geometry.deck.bottom > height + 1) {
       problems.push(`${label}: navigation deck escapes viewport: ${JSON.stringify(geometry.deck)}`);
+    } else if (label !== "phone") {
+      const centerX = Math.abs((geometry.deck.left + geometry.deck.right) / 2 - width / 2);
+      const centerY = Math.abs((geometry.deck.top + geometry.deck.bottom) / 2 - height / 2);
+      if (centerX > 2 || centerY > 2) problems.push(`${label}: desktop/tablet deck is not centered`);
+      if (geometry.deck.width < 900) problems.push(`${label}: desktop/tablet deck is too narrow`);
+    } else if (geometry.deck.left > 12 || geometry.deck.width < width - 20) {
+      problems.push(`phone: navigation deck should use the available sheet width`);
     }
     if (geometry.documentWidth > width + 1 || geometry.bodyWidth > width + 1) {
       problems.push(`${label}: page horizontally overflows by document=${geometry.documentWidth}, body=${geometry.bodyWidth}`);

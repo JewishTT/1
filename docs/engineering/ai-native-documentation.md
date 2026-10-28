@@ -21,7 +21,7 @@ A source file being present, a symbol being declared, or a test importing it doe
 | Source | Authority | Derived links |
 |---|---|---|
 | `specs/*/spec.md`, `plan.md`, `tasks.md` | Product intent, constraints, acceptance criteria, work state | Spec-to-code and acceptance-to-test coverage |
-| `docs/adr/` | Recorded architectural decisions and rationale | Decision-to-component / contract links |
+| Cross-cutting `docs/adr/` records and feature-local `specs/<feature>/decisions.md` records | Accepted decisions and rationale; feature-local decision records govern their owning specification | Stable ADR IDs create graph edges; feature ADR reader pages are generated projections, not spec dependencies |
 | `apps/shared/contracts/`, event schemas and `EVENT_CATALOG` | Wire/domain contracts and event vocabulary | Contract, producer/consumer and version links |
 | Application entrypoints, routers, workers and dependency wiring | Actual code topology | Route, module, call and import graph |
 | Unit, contract, integration and E2E tests | Executed assertions and test boundaries | Test-to-behaviour edges, with test type kept explicit |
@@ -81,6 +81,7 @@ For focused investigations, ask the graph for one component at a time; do not in
 - Internal documentation links resolve or are listed as broken links.
 - Semantic relationships carry source evidence; inferred relationships are labelled as inferred.
 - Specs, tests, and code have explicit coverage relationships where a claim is made. No blanket "100% behavioural coverage" claim is made from file inventory.
+- Normative spec files do not Markdown-link into `docs/` projections. They cite stable decision IDs and link to local feature decision records; the semantic graph resolves stable identifiers into traceability edges.
 - `docs/platform/` continues to pass the existing `platform_model.build --check` / contract suite.
 - Agent instructions remain short and route to relevant detailed material; they must not duplicate the entire architecture.
 

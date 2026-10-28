@@ -31,6 +31,7 @@ EVENT_NAME = re.compile(r"^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+$")
 PATH_REF = re.compile(r"\b(?:apps|bench|tools|platform_model|specs|docs)/[A-Za-z0-9_./-]+")
 MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 SPEC_REF = re.compile(r"\b(?:spec|feature)[ /]0*(\d{1,3})\b", re.I)
+ADR_REF = re.compile(r"\bADR-(\d{4})\b")
 
 
 def relative(path: Path, root: Path) -> str:
@@ -567,7 +568,7 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
     # to documentation projections through Markdown links.
     adr_by_id = {}
     for rel in doc_rel:
-        match = re.match(r"docs/adr/(\\d{4})-[^/]+\\.md$", rel)
+        match = re.match(r"docs/adr/(\d{4})-[^/]+\.md$", rel)
         if match:
             adr_by_id.setdefault(match.group(1), []).append(rel)
     for rel, content in doc_texts.items():
@@ -580,7 +581,7 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                     "from": "doc:" + rel, "to": "doc:" + targets[0],
                     "kind": "references-decision-id",
                     "evidence": {
-                        "path": rel, "line": content[:match.start()].count("\\n") + 1,
+                        "path": rel, "line": content[:match.start()].count("\n") + 1,
                         "identifier": "ADR-" + match.group(1),
                     },
                 })
