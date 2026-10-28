@@ -34,9 +34,11 @@ The fifteen normative palette values in `ui-upgrade.md §3.2` are unchanged. Use
 
 ## Screenshot regression is part of every UI change
 
-CI runs `npm run ui:shoot:design-system` against the Vite development server after the webapp tests and uploads `cognitive-ui-screenshots` whether the sweep passes or fails. It captures the six normative viewport widths, each catalogue section, local density preview, both themes, modal behavior and success/error toast surfaces. The accompanying `manifest.json` records viewport width, document/body scroll width, shell/theme state and detected browser errors.
+After the webapp tests, CI runs both `npm run ui:shoot:design-system` and `npm run ui:shoot:specops` against the live Vite development server. The `cognitive-ui-screenshots` artifact is uploaded even when a screenshot sweep fails, provided the production build passed.
 
-A passing sweep guards mount, console errors, and document-level horizontal overflow; it does not claim pixel-perfect visual correctness by itself. Open the PNG artifact and inspect the full-page images for clipping, overlap, illegible metadata, focus visibility and unintended style regressions. When a visual discrepancy appears, fix the owning component/token rule and rerun the sweep before considering the change complete.
+The design-system sweep captures the six normative viewport sizes, the top and bottom of the scrollable catalogue, all catalogue sections, local density preview, both themes, modal behavior and success/error toast surfaces. Its `manifest.json` records viewport width, document/body scroll width, shell/theme state, navigation client/scroll widths and browser errors. The SpecOps sweep photographs the actual nested department tabs, including GhostLine, checks light theme and takes the required responsive viewport captures. This extends visual regression beyond the catalogue into a high-complexity legacy surface.
+
+The sweeps assert that the shell mounts, the browser reports no uncaught/page-console errors, document/body do not grow wider than the viewport, and the top navigation does not clip its contents. These geometric assertions do not claim pixel-perfect visual correctness by themselves. Open the PNG artifact and inspect the images for clipping, overlap, illegible metadata, focus visibility and unintended style regressions. When a visual discrepancy appears, fix the owning component/token rule and rerun both sweeps before considering the change complete.
 
 ## Rules for new components
 
