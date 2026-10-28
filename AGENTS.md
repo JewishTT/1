@@ -135,3 +135,20 @@ The old free-text `KNOWN_GAPS` is gone; do not reintroduce hand-written gap pros
 11.2 The generated model is the source of truth for the platform's shape. When a question is about what exists, what imports what, which capability is only reachable from tests, or who writes a table, read docs/platform/ before reading the source tree, and regenerate when the answer may have moved.
 
 11.3 Python processes in this workspace can write only inside the repository directory. Set TEMP and TMP to a directory inside the repository before running any tool that creates temporary files, or it fails with PermissionError (13) or FileNotFoundError on the temp directory.
+
+
+11.4 AI-native semantic documentation
+
+The generated structural model in `docs/platform/` remains authoritative for inventory, reachability and maturity. For source-level symbol navigation and AI context packets, use `docs/engineering/ai-native-documentation.md` and `tools/semantic_docgraph.py`. The graph is an additional source-derived index; static links do not prove runtime behaviour.
+
+Run from the repository root:
+
+```bash
+python -m unittest apps/shared/tests/contract/test_semantic_docgraph.py
+python tools/semantic_docgraph.py --context apps/control-plane/context_engine/engine.py
+python tools/semantic_docgraph.py --check --output artifacts/semantic-docgraph.json
+```
+
+The strict graph check needs the Node dependencies in `apps/webapp/` and a Rust toolchain. It must account for every source file in its declared first-party scan roots and report parse failures explicitly. Do not hand-edit the generated `docs/platform/` files to add graph output; the two models serve different purposes. Treat structural edges as navigation evidence, not a substitute for tests or service-level verification.
+
+For UI changes, read `docs/engineering/architecture-review-2026-10.md`, update route/navigation tests, and run the Playwright sweeps. The navigation-deck screenshot gate is `npm run ui:shoot:nav -- http://127.0.0.1:5173 artifacts/nav-screenshots` from `apps/webapp/`; CI uploads its PNG artifacts alongside the existing design-system and SpecOps/GhostLine screenshots. Inspect the rendered PNGs at desktop, tablet and phone widths rather than treating a passing assertion as visual approval.
