@@ -79,7 +79,7 @@ describe("routes are reachable and render something", () => {
     fireEvent.click(screen.getByTestId("nav-deck-trigger"));
 
     await waitFor(() => {
-      expect(screen.getByRole("link", { name: "Dossier" })).toHaveAttribute("href", "/dossier");
+      expect(screen.getByRole("link", { name: /Dossier/i })).toHaveAttribute("href", "/dossier");
     });
   });
 
