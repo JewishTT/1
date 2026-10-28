@@ -39,7 +39,7 @@ page.on("console", (message) => {
 });
 
 async function capture(name, extra = {}) {
-  await page.evaluate(() => document.fonts?.ready);
+  await page.evaluate(() => document.fonts.ready.then(() => true));
   await page.waitForTimeout(180);
   const metrics = await page.evaluate(() => ({
     viewport: window.innerWidth,
