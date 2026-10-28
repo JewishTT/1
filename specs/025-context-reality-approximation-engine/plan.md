@@ -3,7 +3,7 @@
 **Branch**: `025-context-reality-approximation-engine` | **Date**: 2026-10-04 | **Spec**: [spec.md](spec.md)
 
 **Input**: Specification 025 **v2** — `/specs/025-context-reality-approximation-engine/spec.md` + verbatim `input.md`
-**Research**: [research.md](research.md) · **Baseline**: [input.md](input.md) · **Decisions**: [ADR-0028](../../docs/adr/0028-context-definition-identity-and-placement.md)
+**Research**: [research.md](research.md) · **Baseline**: [input.md](input.md) · **Decisions**: [decisions.md](decisions.md), D-1/D-2
 
 ---
 
@@ -119,7 +119,7 @@ specs/025-context-reality-approximation-engine/
 ```
 
 Architecture decision record lives with the other ADRs:
-`docs/adr/0028-context-definition-identity-and-placement.md`.
+`decisions.md (D-1/D-2)`.
 
 ### Source Code (repository root)
 
@@ -164,7 +164,7 @@ apps/webapp/src/context/             # OPERATOR PRESENTATION
 bench/context/                       # corpora per §52–§53
 └── corpus/  deterministic/  abduction/  dialectics/  dynamics/  global_search/
 
-docs/adr/0028..0039 + WAVE-000-index  # Wave 0 records 1-12 of 12 (ALL ACCEPTED)
+the Wave 0 decision identifiers ADR-0028–ADR-0039  # Wave 0 records 1-12 of 12 (ALL ACCEPTED)
 ```
 
 **Structure Decision.** Five existing application boundaries, each with a distinct
@@ -232,7 +232,7 @@ new construction, and the reuse column of every task report must state what was 
 | **R3** Four-valued `BOTH` leaking to boolean in one serialisation path | Truth-table gate promoted from test to **release gate**; property test asserts no path maps `(true,true) → true` across storage, API, projection, UI | Wave 1 exit (Appendix U) |
 | **R4** Causal staging collapses into one confidence number | Three stages persisted separately from the first commit; a single convenience causal score is forbidden by §27.2 and may not be added later | Wave 8 exit |
 | **R5** Complexity ranking collapses to "take the top score" (anti-pattern V.5) | `rejected_candidates` and `truncation_reason` mandatory; near-duplicate cases mandatory in the abduction corpus; diversity requirement in top-*k* | Wave 5 exit; T025-059 |
-| **R6** ~~Wave 0 unsatisfied~~ | **RESOLVED 2026-10-04** — 12/12 ADR accepted (`docs/adr/WAVE-000-index.md`); `T025-154` discharged; §47.4 targets ratified into deployment config | closed |
+| **R6** ~~Wave 0 unsatisfied~~ | **RESOLVED 2026-10-04** — 12/12 ADR accepted (the feature decision ledger); `T025-154` discharged; §47.4 targets ratified into deployment config | closed |
 | **R9 (v2)** Pairwise compatibility mistaken for global coherence | Triple-coherence check with `max_triples`; `GLUED` forbidden while `triples_unchecked > 0`; UI/docs must say "pair- and triple-coherent under budget" | `T025-141`, Wave 3 |
 | **R10 (v2)** Multiplicative utility reintroduced | Ranking modes declared in `ReasoningProfile`; hard gates are filters; no cross-tier numeric comparison; property test fails the build | `T025-139`, Wave 7 |
 | **R11 (v2)** Float nondeterminism breaks replay | Determinism classes, numeric modes, derived seeds, canonical reduction order, quantized identity | `T025-136`, Wave 1 |

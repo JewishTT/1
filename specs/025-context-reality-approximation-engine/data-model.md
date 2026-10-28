@@ -2,7 +2,7 @@
 
 **Feature**: `025-context-reality-approximation-engine`
 **Baseline**: [input.md](input.md) §5–§16A, §39–§40, Appendix G, Y, Z
-**Decisions**: [ADR-0028](../../docs/adr/0028-context-definition-identity-and-placement.md)
+**Decision record**: [decisions.md](decisions.md), D-1/D-2
 
 Phase 1 output. PostgreSQL is the sole authority (ADR-0027). No new store. **SQLite is not
 used for persistence tests** (§47.1, V.16).
@@ -13,8 +13,8 @@ used for persistence tests** (§47.1, V.16).
 
 | Prefix | Object | Note |
 |---|---|---|
-| `CXD-` | `ContextDefinition` | **new namespace** (ADR-0028; v2 §5.1 still says `CXI-`) |
-| `CXI-` | `InvestigationContext` / `ContextDefinition` per §5.1 text | preserved as written; see ADR-0028 |
+| `CXD-` | `ContextDefinition` | **new namespace** (decision D-1; v2 §5.1 still says `CXI-`) |
+| `CXI-` | `InvestigationContext` / `ContextDefinition` per §5.1 text | unchanged for `InvestigationContext`; see decision D-1 |
 | `BRN-` | `ContextBranch` | **new in v2** |
 | `REV-` | revision state hash | separate from revision number |
 | `CXC-` `OVL-` `RST-` `CMP-` `GLU-` | cell, overlap (pair/triple), restriction, compatibility, gluing | |

@@ -1703,6 +1703,7 @@ NARRATIVE_DOCS = {
     "docs/architecture/multi-region.md": "render_multi_region",
     "docs/architecture/dynamic-entity-invariant.md": "render_dynamic_entity_invariant",
     "docs/architecture/donors/00-INDEX.md": "render_donors_index",
+    "docs/adr/0028-context-definition-identity-and-placement.md": "render_adr_0028",
 }
 
 

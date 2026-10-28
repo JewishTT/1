@@ -71,6 +71,15 @@ class PythonAstContractTests(unittest.TestCase):
             )
             self.assertEqual(directory, "docs/adr/nested")
 
+    def test_spec_to_docs_links_are_a_policy_violation_but_decision_ids_are_not(self) -> None:
+        # The graph resolves source references separately from Markdown links. A normative
+        # spec may name ADR-0028, but must not hyperlink into its rendered docs projection.
+        graph = semantic_docgraph.build_graph(ROOT)
+        self.assertEqual(graph["coverage"]["spec_doc_markdown_links"], 0)
+        self.assertEqual(graph["spec_doc_link_violations"], [])
+        decision_edges = [edge for edge in graph["edges"] if edge["kind"] == "references-decision-id"]
+        self.assertTrue(any(edge.get("evidence", {}).get("identifier") == "ADR-0028" for edge in decision_edges))
+
     def test_source_import_resolution_uses_repository_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

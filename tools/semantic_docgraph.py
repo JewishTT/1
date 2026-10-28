@@ -502,6 +502,7 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                       "line_count": content.count("\n") + 1})
     doc_texts: dict[str, str] = {}
     broken_doc_links: list[dict[str, Any]] = []
+    spec_doc_link_violations: list[dict[str, Any]] = []
     linked_assets: set[str] = set()
     linked_directories: set[str] = set()
     for path in document_paths:
@@ -521,6 +522,8 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
             target = resolve_doc_target(root, rel, raw_target, known_paths)
             line_no = content[:match.start()].count("\n") + 1
             if target:
+                if rel.startswith("specs/") and target.startswith("docs/"):
+                    spec_doc_link_violations.append({"source": rel, "target": target, "line": line_no})
                 if target in doc_rel:
                     node_target = "doc:" + target
                 elif target in code_rel:
@@ -558,6 +561,28 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                 edges.append({
                     "from": "doc:" + rel, "to": "module:" + candidate, "kind": "references-source",
                     "evidence": {"path": rel, "line": content[:match.start()].count("\n") + 1},
+                })
+
+    # Derive decision edges from stable ADR identifiers, without wiring normative specs
+    # to documentation projections through Markdown links.
+    adr_by_id = {}
+    for rel in doc_rel:
+        match = re.match(r"docs/adr/(\\d{4})-[^/]+\\.md$", rel)
+        if match:
+            adr_by_id.setdefault(match.group(1), []).append(rel)
+    for rel, content in doc_texts.items():
+        if not rel.startswith("specs/"):
+            continue
+        for match in ADR_REF.finditer(content):
+            targets = adr_by_id.get(match.group(1), [])
+            if len(targets) == 1:
+                edges.append({
+                    "from": "doc:" + rel, "to": "doc:" + targets[0],
+                    "kind": "references-decision-id",
+                    "evidence": {
+                        "path": rel, "line": content[:match.start()].count("\\n") + 1,
+                        "identifier": "ADR-" + match.group(1),
+                    },
                 })
 
     # Derive explicit semantic nodes for the event catalogue instead of treating
@@ -660,6 +685,7 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
         "http_routes": sum(1 for n in nodes if n["kind"] == "http-route"),
         "local_call_edges": sum(1 for e in edges if e["kind"] == "calls-local-symbol"),
         "broken_doc_links": len(broken_doc_links),
+        "spec_doc_markdown_links": len(spec_doc_link_violations),
         "edges": len(edges), "parser_errors": len(parser_errors),
         "unmapped_code_files": missing, "languages": language_counts,
         "parser_tool_errors": [x for x in parser_errors if x["path"] == "<parser>"],
@@ -668,7 +694,9 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
         "schema_version": 1,
         "purpose": "Source-derived semantic documentation graph; static evidence is not runtime proof.",
         "coverage": coverage, "nodes": nodes, "edges": edges,
-        "broken_doc_links": broken_doc_links, "parser_errors": parser_errors,
+        "broken_doc_links": broken_doc_links,
+        "spec_doc_link_violations": spec_doc_link_violations,
+        "parser_errors": parser_errors,
         "module_records": module_records,
     }
 
@@ -745,6 +773,8 @@ def main(argv: list[str] | None = None) -> int:
             failures.append("one or more files failed syntax parsing or a parser tool failed")
         if coverage["broken_doc_links"]:
             failures.append("one or more local Markdown links are unresolved")
+        if graph["spec_doc_link_violations"]:
+            failures.append("normative specs must not Markdown-link to docs; use local decision records and stable IDs")
         if coverage["parser_tool_errors"]:
             failures.append("one or more language AST parsers could not run")
     if failures:
@@ -754,6 +784,8 @@ def main(argv: list[str] | None = None) -> int:
             print("  " + item["path"] + ": " + item["error"], file=sys.stderr)
         for item in graph["broken_doc_links"][:100]:
             print("  " + item["source"] + ":" + str(item["line"]) + ": " + item["target"], file=sys.stderr)
+        for item in graph["spec_doc_link_violations"][:100]:
+            print("  policy: " + item["source"] + ":" + str(item["line"]) + " -> " + item["target"], file=sys.stderr)
         return 1
     if args.check:
         print("Semantic documentation graph is complete for the configured first-party source roots.")

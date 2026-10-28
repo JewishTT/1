@@ -1290,12 +1290,13 @@
 }
 .ui-nav-deck {
   position: absolute;
-  top: calc(var(--ui-topbar-h) + var(--ui-space-4));
-  left: max(var(--ui-space-6), env(safe-area-inset-left, 0px));
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
-  width: min(760px, calc(100vw - var(--ui-space-8)));
-  max-height: calc(100dvh - var(--ui-topbar-h) - var(--ui-space-8));
+  width: min(960px, calc(100vw - 48px));
+  max-height: calc(100dvh - 48px);
   overflow: auto;
   color: var(--ui-text);
   background: var(--ui-surface-1);
@@ -1510,10 +1511,11 @@
 @media (max-width: 767px) {
   .ui-root .ui-topbar-navigation { min-height: 38px; padding-inline: var(--ui-space-3); }
   .ui-nav-deck {
-    top: calc(var(--ui-topbar-h) + var(--ui-space-2));
-    left: var(--ui-space-2);
-    width: calc(100vw - var(--ui-space-4));
-    max-height: calc(100dvh - var(--ui-topbar-h) - var(--ui-space-4));
+    top: max(8px, env(safe-area-inset-top, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    transform: none;
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
   }
   .ui-nav-deck-header { gap: var(--ui-space-3); padding: var(--ui-space-4); }
   .ui-nav-deck-header p { max-width: 36ch; }

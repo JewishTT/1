@@ -66,13 +66,36 @@ v2 additionally declares the prefixes that v1 used but never defined — `PRD`, 
 `QRY`, `SR`, `WLS`, `EVID`, `GAP`, `ENT`, `REL` — and adds `BRN`, `EDG`, `CQA`, `ANL`, `RPF`,
 `RET`, `REV`.
 
-The only divergence that remains is `CXI-` for `ContextDefinition`, which ADR-0028 splits into
-`CXD-`. That divergence is intentional and recorded.
+The only divergence that remains is `CXI-` for `ContextDefinition`, which decision D-1 splits into
+`CXD-`. That divergence is intentional and recorded in this feature decision ledger.
 
-## Where the reasoning lives
+## Context, rationale and verification
 
-Full rationale, rejected alternatives, consequences and verification checklists:
-[`docs/adr/0028-context-definition-identity-and-placement.md`](../../docs/adr/0028-context-definition-identity-and-placement.md).
+This feature decision ledger is the normative source for D-1 and D-2. Reader-facing ADR indexes are derived views; they must not be independent authorities, and specification files must not hyperlink back into generated documentation.
+
+Specification 025 assigns `CXI-` to `ContextDefinition`, while Specification 024 already owns an accepted, live `InvestigationContext` with that same prefix. The objects have different lifecycles: `ContextDefinition` is immutable analytical configuration; `InvestigationContext` is operational, revisioned state. A shared prefix makes references, storage keys and lineage edges ambiguous. The repository also has a verified async Context Engine at `apps/control-plane/context_engine/`, while the baseline's `apps/control-plane/cp_domain/context_engine/` path does not exist. Moving working code or adding a re-export alias would introduce import ambiguity without adding behaviour.
+
+### Rejected alternatives
+
+- **Extend `InvestigationContext` in place:** rejected because it changes the accepted 024 contract and conflates immutable definition with revisioned operational state.
+- **Make `ContextDefinition` the sole authority now:** deferred because this would require migrating live API and persistence paths while D-1 already preserves both lifecycles cleanly.
+- **Move the engine under `cp_domain/`:** rejected because it relocates verified code solely to satisfy a path convention.
+- **Add a compatibility/re-export shim:** rejected because it creates two legal import paths for one implementation.
+
+### Accepted consequences
+
+- `InvestigationContext` gains exactly one nullable additive field, `definition_ref -> CXD-…`; its approved identity derivation, revision rules and lifecycle stay unchanged.
+- The implementation path remains `apps/control-plane/context_engine/` with no alias package.
+- The baseline's `ContextDefinition` prefix and placement clauses are superseded only to the extent specified by D-1/D-2. The deviation must remain visible rather than silently rewriting the owner-supplied baseline.
+
+### Verification checklist
+
+- [ ] Existing content-addressed `InvestigationContext` IDs remain unchanged.
+- [ ] A repository-wide search finds one `CXI-` minting site and only `ContextDefinition` mints `CXD-`.
+- [ ] `InvestigationContext.definition_ref` round-trips through API and persistence and stays nullable for older records.
+- [ ] No `cp_domain/` package or compatibility re-export is introduced.
+- [ ] Context-definition and investigation-context routes remain unambiguous and are covered by contract tests.
+- [ ] The generated ADR view matches this decision ledger; it is not edited independently.
 
 ## Wave 0 status
 
@@ -80,7 +103,7 @@ Baseline §55 requires seven architecture records before Phase A. This decision 
 **record 1 of 7** (context/definition identity boundary, covering the placement question
 as well).
 
-ALL 12 ACCEPTED (2026-10-04). Index: docs/adr/WAVE-000-index.md. Outstanding:
+Wave 0 contains twelve accepted decision records as of 2026-10-04. The eleven sibling decision topics below must still be checked against their implementation/verification criteria before claiming end-to-end closure:
 
 1. Epistemic algebra — four-way truth state
 2. Revision / replay contract
