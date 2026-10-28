@@ -1120,3 +1120,71 @@
     gap: var(--ui-space-3);
   }
 }
+
+
+/* Navigation hierarchy: module selection on row one, destinations on row two. */
+.ui-root .ui-topbar-navigation {
+  align-items: stretch;
+}
+
+.ui-root .ui-topnav {
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: stretch;
+  align-items: stretch;
+  gap: 0;
+  overflow: visible;
+}
+
+.ui-root .ui-topnav-primary {
+  min-height: 40px;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-root .ui-nav-modules {
+  align-self: stretch;
+}
+
+.ui-root .ui-topnav-sections {
+  min-height: 38px;
+  align-items: stretch;
+  gap: var(--ui-space-5);
+  flex-wrap: nowrap;
+}
+
+.ui-root .ui-topnav-group {
+  align-self: stretch;
+}
+
+.ui-root .ui-topnav-group-items {
+  align-self: stretch;
+}
+
+.ui-root .ui-nav-link {
+  min-height: 38px;
+}
+
+@media (max-width: 1279px) {
+  .ui-root .ui-topnav {
+    grid-template-rows: auto auto;
+  }
+
+  .ui-root .ui-topnav-sections {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 1023px) {
+  .ui-root .ui-topnav {
+    display: grid;
+    grid-template-rows: auto auto;
+  }
+
+  .ui-root .ui-topnav-primary {
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topnav-sections {
+    flex-wrap: wrap;
+  }
+}
