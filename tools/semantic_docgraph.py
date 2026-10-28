@@ -743,6 +743,8 @@ def main(argv: list[str] | None = None) -> int:
             failures.append("tracked source files exist outside the declared semantic scan roots")
         if graph["parser_errors"]:
             failures.append("one or more files failed syntax parsing or a parser tool failed")
+        if coverage["broken_doc_links"]:
+            failures.append("one or more local Markdown links are unresolved")
         if coverage["parser_tool_errors"]:
             failures.append("one or more language AST parsers could not run")
     if failures:
@@ -750,6 +752,8 @@ def main(argv: list[str] | None = None) -> int:
             print("ERROR: " + failure, file=sys.stderr)
         for item in graph["parser_errors"][:100]:
             print("  " + item["path"] + ": " + item["error"], file=sys.stderr)
+        for item in graph["broken_doc_links"][:100]:
+            print("  " + item["source"] + ":" + str(item["line"]) + ": " + item["target"], file=sys.stderr)
         return 1
     if args.check:
         print("Semantic documentation graph is complete for the configured first-party source roots.")
