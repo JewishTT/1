@@ -127,7 +127,7 @@ def scan_python_text(path: str, text: str) -> dict[str, Any]:
             entry: dict[str, Any] = {
                 "id": symbol_id, "name": name, "qualified_name": qualified,
                 "kind": kind, "line": getattr(node, "lineno", 1),
-                "docstring": (doc or "").strip().splitlines()[0][:240],
+                "docstring": ((doc or "").strip().splitlines() or [""])[0][:240],
                 "public": not name.startswith("_"),
             }
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
