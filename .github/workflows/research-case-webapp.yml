@@ -20,6 +20,7 @@ jobs:
         working-directory: apps/webapp
         run: npm ci
       - name: Typecheck and build the web application
+        id: build
         working-directory: apps/webapp
         run: npm run build
       - name: Run Feature 034 API client contract tests
@@ -30,6 +31,7 @@ jobs:
         run: npm test
 
       - name: Start Vite for screenshot regression
+        if: ${{ always() && steps.build.outcome == 'success' }}
         working-directory: apps/webapp
         run: |
           npm run dev -- --host 127.0.0.1 > /tmp/cognitive-vite.log 2>&1 &
@@ -43,6 +45,7 @@ jobs:
           cat /tmp/cognitive-vite.log
           exit 1
       - name: Capture responsive and interactive UI screenshots
+        if: ${{ always() && steps.build.outcome == 'success' }}
         working-directory: apps/webapp
         env:
           UI_SHOTS_DIR: artifacts/ui-screenshots
