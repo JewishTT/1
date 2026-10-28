@@ -730,6 +730,71 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                               "evidence": {"path": rel, "line": call.get("line")},
                               "callee": call.get("callee")})
 
+    # Resolve cross-language references only when syntax-backed symbols support the
+    # edge. Unresolved names remain reported; no guessed target is promoted to fact.
+    unresolved_semantic_references: list[dict[str, Any]] = []
+    for rel in sorted(code_rel):
+        record = module_records.get(rel, {})
+        for reference in record.get("references", []):
+            target = str(reference.get("target", "")).strip()
+            target_kind = str(reference.get("target_kind", ""))
+            reference_kind = str(reference.get("kind", "references"))
+            line = reference.get("line")
+            if not target:
+                continue
+            target_ids: list[str] = []
+            if target_kind == "source-path":
+                resolved = resolve_doc_target(root, rel, target, code_rel)
+                if resolved in code_rel:
+                    target_ids.append("module:" + str(resolved))
+                elif resolved and (root / resolved).is_file():
+                    target_id = "asset:" + str(resolved)
+                    target_ids.append(target_id)
+                    if not any(node.get("id") == target_id for node in nodes):
+                        asset_path = root / resolved
+                        try:
+                            digest = hashlib.sha256(asset_path.read_bytes()).hexdigest()
+                        except OSError:
+                            digest = ""
+                        nodes.append({
+                            "id": target_id, "kind": "linked-asset", "path": resolved,
+                            "title": asset_path.name, "sha256": digest,
+                        })
+                elif target.startswith(("apps/", "bench/", "benchmarks/", "tools/", "platform_model/", "specs/")):
+                    unresolved_semantic_references.append({
+                        "source": rel, "target": target, "target_kind": target_kind,
+                        "kind": reference_kind, "line": line,
+                    })
+            else:
+                allowed_kinds = {
+                    "sql-table": {"sql-table"},
+                    "proto-type": {"proto-message", "proto-enum"},
+                    "css-custom-property": {"css-custom-property"},
+                    "css-class-selector": {"css-class-selector"},
+                    "css-id-selector": {"css-id-selector"},
+                }.get(target_kind, set())
+                normalized = target.lstrip(".").casefold()
+                matches = [
+                    symbol for symbol in symbol_lookup_by_qname.get(normalized, [])
+                    if symbol.get("kind") in allowed_kinds
+                ]
+                if not matches:
+                    matches = [
+                        symbol for symbol in symbol_lookup_by_name.get(normalized, [])
+                        if symbol.get("kind") in allowed_kinds
+                    ]
+                target_ids.extend(str(symbol["id"]) for symbol in matches if symbol.get("id"))
+                if not matches and allowed_kinds:
+                    unresolved_semantic_references.append({
+                        "source": rel, "target": target, "target_kind": target_kind,
+                        "kind": reference_kind, "line": line,
+                    })
+            for target_id in sorted(set(target_ids)):
+                edges.append({
+                    "from": "module:" + rel, "to": target_id, "kind": reference_kind,
+                    "evidence": {"path": rel, "line": line, "target": target},
+                })
+
     document_paths = walk(root, DOC_ROOTS, {".md", ".mdx"})
     fixed_docs = [root / name for name in ("AGENTS.md", "README.md") if (root / name).is_file()]
     document_paths = sorted(set(document_paths + fixed_docs))
@@ -938,6 +1003,12 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
         "documents": len(doc_rel), "events": len(event_names),
         "http_routes": sum(1 for n in nodes if n["kind"] == "http-route"),
         "local_call_edges": sum(1 for e in edges if e["kind"] == "calls-local-symbol"),
+        "semantic_reference_edges": sum(1 for e in edges if e["kind"] in {
+            "references-sql-table", "uses-proto-type", "imports-proto-file",
+            "imports-css-source", "uses-css-custom-property", "matches-css-class",
+            "matches-css-id", "references-html-asset",
+        }),
+        "unresolved_semantic_references": len(unresolved_semantic_references),
         "broken_doc_links": len(broken_doc_links),
         "spec_doc_markdown_links": len(spec_doc_link_violations),
         "edges": len(edges), "parser_errors": len(parser_errors),
@@ -950,6 +1021,7 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
         "coverage": coverage, "nodes": nodes, "edges": edges,
         "broken_doc_links": broken_doc_links,
         "spec_doc_link_violations": spec_doc_link_violations,
+        "unresolved_semantic_references": unresolved_semantic_references,
         "parser_errors": parser_errors,
         "module_records": module_records,
     }
