@@ -308,22 +308,16 @@ export function AppShell({ children, activity }: AppShellProps) {
       data-testid="app-shell"
     >
       <header className="ui-topbar" role="banner" data-testid="app-shell-topbar">
-        <div className="ui-topbar-brand">
-          {/* A drawn icon, not the literal "?" the legacy shell used here. A text
-              glyph as a logo is iconography §3.3 forbids, and it cannot carry a
-              stroke weight or a focus ring because its shape is the font's. */}
-          <span className="ui-brand-mark" aria-hidden="true">
-            <Icon name="view-ops" size={16} />
-          </span>
-          <span className="ui-brand">COGNITIVE</span>
-          <span className="ui-meta">workbench</span>
-        </div>
+        <div className="ui-topbar-main">
+          <div className="ui-topbar-brand">
+            <span className="ui-brand-mark" aria-hidden="true">
+              <Icon name="view-ops" size={16} />
+            </span>
+            <span className="ui-brand">COGNITIVE</span>
+            <span className="ui-meta">FIELD SYSTEMS</span>
+          </div>
 
-        <TopNav />
-
-        <WorkStateBar />
-
-        <div className="ui-topbar-controls" role="group" aria-label="Shell controls">
+          <div className="ui-topbar-controls" role="group" aria-label="Shell controls">
           <PaletteButton />
           <AppearanceMenu />
           <Tooltip content={paneToggleLabel("rail")}>
@@ -365,6 +359,20 @@ export function AppShell({ children, activity }: AppShellProps) {
               data-testid="topbar-clear-selection"
             />
           </Tooltip>
+          </div>
+        </div>
+
+        <div className="ui-topbar-navigation">
+          <div className="ui-topbar-nav-label">
+            <span className="ui-nav-status-mark" aria-hidden="true" />
+            <span>OPERATIONS</span>
+          </div>
+          <TopNav />
+          <div className="ui-topbar-nav-end" aria-hidden="true">SYS / 01</div>
+        </div>
+
+        <div className="ui-topbar-state">
+          <WorkStateBar />
         </div>
       </header>
 
