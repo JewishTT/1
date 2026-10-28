@@ -41,6 +41,38 @@ class PythonAstContractTests(unittest.TestCase):
         self.assertIsNone(result["parse_error"])
         self.assertIn(("valid", "function"), {(item["qualified_name"], item["kind"]) for item in result["symbols"]})
 
+    def test_sqlglot_builds_statement_table_column_and_reference_nodes(self) -> None:
+        result = semantic_docgraph.scan_sql_text(
+            "schema.sql",
+            "CREATE TABLE observations (observation_id TEXT PRIMARY KEY, captured_at TIMESTAMPTZ);\\n"
+            "SELECT observation_id FROM observations;",
+        )
+        self.assertEqual(result["parser"], "sqlglot-ast")
+        self.assertIsNone(result["parse_error"])
+        kinds = {item["kind"] for item in result["symbols"]}
+        self.assertIn("sql-statement", kinds)
+        self.assertIn("sql-table", kinds)
+        self.assertIn("sql-column", kinds)
+        self.assertTrue(any(
+            item["target"] == "observations" and item["kind"] == "references-sql-table"
+            for item in result["references"]
+        ))
+
+    def test_protobuf_compiler_emits_message_and_field_symbols(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            proto = root / "event.proto"
+            proto.write_text(
+                'syntax = "proto3";\\npackage demo.v1;\\nmessage Entity { string id = 1; }\\n',
+                encoding="utf-8",
+            )
+            result = semantic_docgraph.scan_proto_files(root, [proto])["event.proto"]
+            self.assertEqual(result["parser"], "protobuf-descriptor-ast")
+            self.assertIsNone(result["parse_error"])
+            qualified = {item["qualified_name"] for item in result["symbols"]}
+            self.assertIn("demo.v1.Entity", qualified)
+            self.assertIn("demo.v1.Entity.id", qualified)
+
     def test_syntax_errors_are_reported_not_silently_discarded(self) -> None:
         result = semantic_docgraph.scan_python_text("broken.py", "def broken(:\n  pass\n")
         self.assertEqual(result["parser"], "python-ast")
@@ -77,6 +109,14 @@ class PythonAstContractTests(unittest.TestCase):
         graph = semantic_docgraph.build_graph(ROOT)
         self.assertEqual(graph["coverage"]["spec_doc_markdown_links"], 0)
         self.assertEqual(graph["spec_doc_link_violations"], [])
+        self.assertEqual(graph["coverage"]["ast_parsed_files"], graph["coverage"]["code_files"])
+        self.assertEqual(graph["coverage"]["ast_coverage_percent"], 100.0)
+        self.assertEqual(graph["coverage"]["ast_unparsed_files"], [])
+        parsers = {record.get("parser") for record in graph["module_records"].values()}
+        self.assertTrue({"python-ast", "typescript-compiler-ast", "rust-syn-ast"} <= parsers)
+        self.assertIn("postcss-ast", parsers)
+        self.assertIn("parse5-ast", parsers)
+        self.assertIn("protobuf-descriptor-ast", parsers)
         decision_edges = [edge for edge in graph["edges"] if edge["kind"] == "references-decision-id"]
         self.assertTrue(any(edge.get("evidence", {}).get("identifier") == "ADR-0028" for edge in decision_edges))
 

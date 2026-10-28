@@ -15,6 +15,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +23,6 @@ ROOT = Path(__file__).resolve().parents[1]
 CODE_ROOTS = ("apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs")
 DOC_ROOTS = ("docs", "specs", ".opencode", ".specify")
 SOURCE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rs", ".proto", ".sql", ".css", ".scss", ".html"}
-AST_PARSERS = {"python-ast", "typescript-compiler-ast", "rust-syn-ast", "postcss-ast", "parse5-ast", "sqlglot-ast", "protobuf-descriptor-ast"}
 AST_PARSERS = {"python-ast", "typescript-compiler-ast", "rust-syn-ast", "postcss-ast", "parse5-ast", "sqlglot-ast", "protobuf-descriptor-ast"}
 CONFIG_SUFFIXES = {".yaml", ".yml", ".json", ".toml", ".ini", ".conf"}
 EXCLUDED_DIRS = {
@@ -684,9 +684,13 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                 target = source_module_target(root, rel, module_name, level)
             elif module_name.startswith("."):
                 base = (root / rel).parent / module_name
-                for candidate in (base, base.with_suffix(".ts"), base.with_suffix(".tsx"),
-                                  base.with_suffix(".js"), base.with_suffix(".jsx"),
-                                  base / "index.ts", base / "index.tsx", base / "index.js"):
+                for candidate in (
+                    base, base.with_suffix(".ts"), base.with_suffix(".tsx"),
+                    base.with_suffix(".js"), base.with_suffix(".jsx"),
+                    base.with_suffix(".mjs"), base.with_suffix(".cjs"),
+                    base / "index.ts", base / "index.tsx", base / "index.js",
+                    base / "index.jsx", base / "index.mjs", base / "index.cjs",
+                ):
                     try:
                         if candidate.is_file():
                             target = relative(candidate, root)
@@ -892,14 +896,21 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
     mapped = {n["path"] for n in nodes if n.get("kind") == "source-module"}
     missing = sorted(code_rel - mapped)
     language_counts: dict[str, dict[str, int]] = {}
+    ast_parsed_paths: set[str] = set()
     for rel, record in module_records.items():
         language = Path(rel).suffix.lower().lstrip(".")
-        lang = language_counts.setdefault(language, {"files": 0, "ast_parsed": 0, "errors": 0})
+        lang = language_counts.setdefault(language, {
+            "files": 0, "ast_parsed": 0, "errors": 0, "diagnostics": 0,
+        })
         lang["files"] += 1
-        if record.get("parser") in {"python-ast", "typescript-compiler-ast", "rust-syn-ast"} and not record.get("parse_error"):
+        parsed = record.get("parser") in AST_PARSERS and not record.get("parse_error")
+        if parsed:
             lang["ast_parsed"] += 1
+            ast_parsed_paths.add(rel)
         if record.get("parse_error"):
             lang["errors"] += 1
+        lang["diagnostics"] += len(record.get("diagnostics", []))
+    ast_unparsed_paths = sorted(code_rel - ast_parsed_paths)
     tracked_candidates = tracked_source_candidates(root)
     unmapped_tracked = (
         sorted(set(tracked_candidates) - code_rel) if tracked_candidates is not None else []
@@ -920,6 +931,9 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
         "configuration_files": len(config_rel),
         "code_files": len(code_rel), "mapped_code_files": len(mapped),
         "file_mapping_percent": round(100 * len(mapped) / max(1, len(code_rel)), 2),
+        "ast_parsed_files": len(ast_parsed_paths),
+        "ast_coverage_percent": round(100 * len(ast_parsed_paths) / max(1, len(code_rel)), 2),
+        "ast_unparsed_files": ast_unparsed_paths,
         "symbols": sum(1 for n in nodes if n["id"].startswith("symbol:")),
         "documents": len(doc_rel), "events": len(event_names),
         "http_routes": sum(1 for n in nodes if n["kind"] == "http-route"),
@@ -1005,6 +1019,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         if coverage["mapped_code_files"] != coverage["code_files"]:
             failures.append("not every first-party code file has a source-module node")
+        if coverage["ast_parsed_files"] != coverage["code_files"]:
+            failures.append("parser-backed AST coverage is below 100% for the declared source scope")
         if not coverage["tracked_source_inventory_available"]:
             failures.append("could not enumerate tracked source files with git ls-files")
         if coverage["unmapped_tracked_source_candidates"]:

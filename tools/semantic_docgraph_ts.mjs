@@ -127,10 +127,10 @@ function htmlModule(relative, absolute, text) {
         docstring: "", signature: "<" + tag + ">"
       });
       for (const className of classes) {
-        references.push({ target: className, target_kind: "css-selector", kind: "matches-css-class", line });
+        references.push({ target: className, target_kind: "css-class-selector", kind: "matches-css-class", line });
       }
       if (attrs.id) {
-        references.push({ target: attrs.id, target_kind: "css-selector", kind: "matches-css-id", line });
+        references.push({ target: attrs.id, target_kind: "css-id-selector", kind: "matches-css-id", line });
       }
       const localTarget = tag === "script" ? attrs.src
         : tag === "link" ? attrs.href

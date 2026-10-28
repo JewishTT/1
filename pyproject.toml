@@ -19,7 +19,10 @@ version = "0.1.0"
 description = "Global OSINT intelligence platform (workspace root)"
 requires-python = ">=3.11"
 dependencies = [
+    "grpcio-tools>=1.64",
     "lark==1.3.1",
+    "protobuf>=5.26",
+    "sqlglot==30.23.0",
 ]
 
 [tool.pytest.ini_options]
