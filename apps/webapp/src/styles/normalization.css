@@ -951,3 +951,111 @@ body:has(.ui-root) {
 .ui-root .intel-inspector {
   border-color: var(--ui-border);
 }
+
+
+/* Wide-but-not-ultrawide navigation. At the 1440 review baseline, the
+ * combination of brand, nav and shell controls can exceed one row by hundreds
+ * of pixels. Put navigation on a second content-sized row there rather than
+ * cutting the last destinations off behind an invisible scrollbar. At 1920px,
+ * tighten only whitespace so the full nav and controls still fit in one row.
+ */
+@media (min-width: 1024px) and (max-width: 1919px) {
+  .ui-root.ui-shell {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .ui-root .ui-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--ui-topbar-h, 40px);
+    padding-block: var(--ui-space-2);
+    row-gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topbar-brand {
+    order: 1;
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  .ui-root .ui-topbar-controls {
+    order: 2;
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ui-root .ui-topnav {
+    order: 3;
+    flex: 1 0 100%;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--ui-space-2);
+    padding-block: var(--ui-space-2) 0;
+    border-top: 1px solid var(--ui-border);
+    overflow: visible;
+  }
+
+  .ui-root .ui-nav-modules {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .ui-root .ui-topnav-sections {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topnav-group {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topnav-group-items {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topnav-trail {
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+
+  .ui-root .ui-topbar-work {
+    order: 4;
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1920px) and (max-width: 2047px) {
+  .ui-root .ui-topbar {
+    gap: var(--ui-space-2);
+    padding-inline: var(--ui-space-3);
+  }
+
+  .ui-root .ui-topnav {
+    gap: var(--ui-space-1);
+  }
+
+  .ui-root .ui-nav-module,
+  .ui-root .ui-nav-link {
+    padding-inline: var(--ui-space-1);
+  }
+
+  .ui-root .ui-topnav-sections,
+  .ui-root .ui-topnav-group {
+    gap: var(--ui-space-1);
+  }
+
+  .ui-root .ui-topnav-group-items {
+    gap: 0;
+  }
+}
