@@ -1,6 +1,6 @@
 # Tests
 
-341 test files, 5278 test functions. 267 platform modules are not targeted by any test.
+341 test files, 5280 test functions. 267 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -268,7 +268,7 @@
 | `apps/shared/tests/contract/test_ontology.py` | 4 | `apps/shared/events/ontology_pack.py` |
 | `apps/shared/tests/contract/test_operator_result.py` | 51 | `apps/shared/contracts/canonical.py`, `apps/shared/contracts/error_codes.py`, `apps/shared/contracts/evidence_span.py`, `apps/shared/contracts/operator_result.py` |
 | `apps/shared/tests/contract/test_platform_gaps.py` | 3 | `platform_model/__init__.py` |
-| `apps/shared/tests/contract/test_platform_model.py` | 17 | `platform_model/__init__.py`, `platform_model/events.py` |
+| `apps/shared/tests/contract/test_platform_model.py` | 19 | `platform_model/__init__.py`, `platform_model/events.py` |
 | `apps/shared/tests/contract/test_projection_manifest.py` | 24 | `apps/shared/contracts/projection_manifest.py` |
 | `apps/shared/tests/contract/test_review.py` | 4 | `apps/shared/domain/__init__.py` |
 | `apps/shared/tests/contract/test_semantic_docgraph.py` | 5 | — |
