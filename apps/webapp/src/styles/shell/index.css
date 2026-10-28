@@ -720,3 +720,403 @@
     flex: 0 0 auto;
   }
 }
+
+
+/* ── Field-operations navigation, v2 ───────────────────────────────────
+ * Three explicit bands replace the overloaded single-line cockpit:
+ * identity/actions, primary navigation, then live work-state. Geometry and
+ * status stay semantic; no fake connection lamps, scanlines or glow.
+ */
+.ui-root.ui-shell {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.ui-root .ui-topbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  padding: 0;
+  background: var(--ui-bg);
+  border-bottom: 1px solid var(--ui-border-strong);
+}
+
+.ui-root .ui-topbar-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-5);
+  min-width: 0;
+  min-height: 52px;
+  padding: var(--ui-space-2) var(--ui-pane-pad);
+  background: var(--ui-surface-1);
+}
+
+.ui-root .ui-topbar-brand {
+  align-items: center;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+
+.ui-root .ui-brand-mark {
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-1);
+  background: var(--ui-bg-sunken);
+}
+
+.ui-root .ui-brand {
+  font-size: var(--ui-text-sm);
+  letter-spacing: 0.14em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ui-root .ui-topbar-brand .ui-meta {
+  padding-inline-start: var(--ui-space-3);
+  border-inline-start: 1px solid var(--ui-border-strong);
+  color: var(--ui-text-muted);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-medium);
+  letter-spacing: var(--ui-tracking-label);
+  white-space: nowrap;
+}
+
+.ui-root .ui-topbar-controls {
+  gap: var(--ui-space-2);
+}
+
+.ui-root .ui-topbar-navigation {
+  display: flex;
+  align-items: stretch;
+  gap: var(--ui-space-4);
+  min-width: 0;
+  min-height: 48px;
+  padding-inline: var(--ui-pane-pad);
+  background: var(--ui-surface-0);
+  border-top: 1px solid var(--ui-border);
+}
+
+.ui-root .ui-topbar-nav-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex: 0 0 auto;
+  padding-inline-end: var(--ui-space-4);
+  color: var(--ui-text-muted);
+  border-inline-end: 1px solid var(--ui-border);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+}
+
+.ui-root .ui-nav-status-mark {
+  width: 6px;
+  height: 6px;
+  background: var(--ui-accent);
+  border-radius: 1px;
+}
+
+.ui-root .ui-topnav {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 auto;
+  gap: var(--ui-space-5);
+  min-width: 0;
+  overflow: visible;
+  scrollbar-width: auto;
+}
+
+.ui-root .ui-topnav-primary {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+
+.ui-root .ui-nav-modules {
+  align-self: stretch;
+  align-items: center;
+  gap: var(--ui-space-1);
+  padding-inline-end: var(--ui-space-3);
+  border-inline-end: 1px solid var(--ui-border);
+}
+
+.ui-root .ui-nav-module {
+  position: relative;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 0;
+  border-radius: 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-text-xs);
+  letter-spacing: 0.08em;
+}
+
+.ui-root .ui-nav-module[data-active="true"] {
+  color: var(--ui-text);
+  background: transparent;
+}
+
+.ui-root .ui-nav-module[data-active="true"]::after {
+  position: absolute;
+  inset-inline: var(--ui-space-2);
+  bottom: -1px;
+  height: 2px;
+  background: var(--ui-accent);
+  content: "";
+}
+
+.ui-root .ui-nav-module:hover {
+  color: var(--ui-text);
+  background: var(--ui-surface-2);
+}
+
+.ui-root .ui-topnav-trail {
+  gap: var(--ui-space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: 0.04em;
+}
+
+.ui-root .ui-topnav-trail-module {
+  color: var(--ui-text-muted);
+}
+
+.ui-root .ui-topnav-sep {
+  color: var(--ui-border-strong);
+}
+
+.ui-root .ui-topnav-title {
+  max-width: 22ch;
+  overflow: hidden;
+  color: var(--ui-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-root .ui-topnav-sections {
+  align-items: stretch;
+  gap: var(--ui-space-5);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-root .ui-topnav-group {
+  align-items: center;
+  gap: var(--ui-space-2);
+  min-width: 0;
+}
+
+.ui-root .ui-topnav-group-label {
+  color: var(--ui-text-muted);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.ui-root .ui-topnav-group-items {
+  gap: var(--ui-space-1);
+  min-width: 0;
+}
+
+.ui-root .ui-nav-link {
+  position: relative;
+  align-self: stretch;
+  gap: var(--ui-space-2);
+  padding: 0 var(--ui-space-2);
+  border: 0;
+  border-radius: 0;
+  color: var(--ui-text-secondary);
+  font-size: var(--ui-text-xs);
+}
+
+.ui-root .ui-nav-link[data-active="true"] {
+  color: var(--ui-text);
+  background: transparent;
+  border-color: transparent;
+}
+
+.ui-root .ui-nav-link[data-active="true"]::after {
+  position: absolute;
+  inset-inline: var(--ui-space-2);
+  bottom: 0;
+  height: 2px;
+  background: var(--ui-accent);
+  content: "";
+}
+
+.ui-root .ui-nav-link:hover {
+  color: var(--ui-text);
+  background: var(--ui-surface-2);
+}
+
+.ui-root .ui-nav-link[data-active="true"] .ui-nav-icon {
+  color: var(--ui-accent);
+}
+
+.ui-root .ui-topbar-nav-end {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-inline-start: var(--ui-space-3);
+  border-inline-start: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: 0.06em;
+}
+
+.ui-root .ui-topbar-state {
+  min-width: 0;
+  padding: var(--ui-space-2) var(--ui-pane-pad);
+  background: var(--ui-bg-sunken);
+  border-top: 1px solid var(--ui-border);
+}
+
+.ui-root .ui-topbar-state .ui-topbar-work {
+  gap: var(--ui-space-5);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ui-root .ui-topbar-state .ui-topbar-investigation {
+  gap: var(--ui-space-2);
+}
+
+.ui-root .ui-topbar-state .ui-topbar-counts,
+.ui-root .ui-topbar-state .ui-topbar-meta {
+  gap: var(--ui-space-4);
+  flex-wrap: wrap;
+}
+
+.ui-root .ui-topbar-state .ui-count {
+  gap: 2px;
+}
+
+.ui-root .ui-topbar-state .ui-count-value {
+  font-size: var(--ui-text-sm);
+}
+
+.ui-root .ui-topbar-state .ui-count-label {
+  font-size: 9px;
+}
+
+.ui-root .ui-topbar-state .ui-topbar-idle {
+  margin-inline-start: auto;
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+}
+
+@media (max-width: 1279px) {
+  .ui-root .ui-topbar-navigation {
+    gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topnav {
+    flex-wrap: wrap;
+    align-content: center;
+    gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topnav-sections {
+    flex-wrap: wrap;
+    gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topnav-group-label {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .ui-root .ui-topbar-main {
+    flex-wrap: wrap;
+    gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topbar-navigation {
+    flex-wrap: wrap;
+    padding-block: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topbar-nav-label,
+  .ui-root .ui-topbar-nav-end {
+    display: none;
+  }
+
+  .ui-root .ui-topnav {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .ui-root .ui-topnav-primary,
+  .ui-root .ui-topnav-sections {
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topnav-trail {
+    display: none;
+  }
+
+  .ui-root .ui-topbar-state .ui-topbar-work {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 767px) {
+  .ui-root .ui-topbar-main {
+    padding: var(--ui-space-2) var(--ui-space-3);
+  }
+
+  .ui-root .ui-topbar-brand {
+    flex: 1 1 auto;
+  }
+
+  .ui-root .ui-topbar-brand .ui-meta {
+    display: none;
+  }
+
+  .ui-root .ui-topbar-controls {
+    gap: var(--ui-space-1);
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topbar-navigation {
+    padding-inline: var(--ui-space-3);
+  }
+
+  .ui-root .ui-nav-modules {
+    flex-wrap: wrap;
+    padding-inline-end: 0;
+    border-inline-end: 0;
+  }
+
+  .ui-root .ui-topnav-sections {
+    width: 100%;
+  }
+
+  .ui-root .ui-topnav-group {
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topbar-state {
+    padding-inline: var(--ui-space-3);
+  }
+
+  .ui-root .ui-topbar-state .ui-topbar-counts,
+  .ui-root .ui-topbar-state .ui-topbar-meta {
+    gap: var(--ui-space-3);
+  }
+}
