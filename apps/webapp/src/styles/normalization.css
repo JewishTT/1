@@ -1,0 +1,1259 @@
+/* COGNITIVE UI — cross-surface normalization layer.
+ *
+ * This is an adapter layer, not a second theme. All values resolve through the
+ * canonical token contract in styles/tokens; no component-local palette is
+ * introduced here. Shared first-party and explicitly enumerated legacy
+ * compatibility selectors are scoped to the mounted workbench. Donor adapters
+ * keep their own namespaces and token bridges; standalone donor stylesheets are
+ * not globally imported.
+ */
+
+.ui-root {
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-density-font);
+  line-height: var(--ui-leading-normal);
+  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ui-root *,
+.ui-root *::before,
+.ui-root *::after {
+  box-sizing: border-box;
+}
+
+.ui-root :where(button, input, select, textarea) {
+  font: inherit;
+}
+
+.ui-root :where(button, [role="button"], a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ui-focus-ring, var(--accent-green-bright));
+  outline-offset: 2px;
+}
+
+.ui-root :where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+.ui-root :where(code, pre, kbd, samp, time[data-precision], [data-mono="true"], .ui-mono, .ui-id) {
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+.ui-root :where(table, [role="table"]) {
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-root :where(th, td, [role="columnheader"], [role="cell"]) {
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-root :where(input, textarea, select) {
+  min-width: 0;
+  color: var(--ui-text);
+}
+
+.ui-root ::selection {
+  color: var(--ui-text);
+  background: var(--ui-accent-wash);
+}
+
+.ui-root :where(a) {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.ui-root :where(a:hover) {
+  color: var(--ui-text);
+}
+
+.ui-root :where([data-state="selected"], [aria-selected="true"], [aria-pressed="true"]) {
+  scroll-margin-block: var(--ui-space-6, 16px);
+}
+
+.ui-root :where(.ui-panel, .ui-pane, .ui-card, .ui-section) {
+  min-width: 0;
+}
+
+.ui-root :where(.ui-truncate) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport) {
+  scrollbar-color: var(--ui-border-strong) var(--ui-surface-1);
+  scrollbar-width: thin;
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-track {
+  background: var(--ui-surface-1);
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-thumb {
+  background: var(--ui-border-strong);
+  border: 2px solid var(--ui-surface-1);
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-root :where(.ui-scroll, .ui-table-scroll, .ui-graph-viewport, .ui-timeline-viewport)::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-text-muted);
+}
+
+/* Dense data is readable by default; content must not force the shell wider. */
+.ui-root :where(.ui-shell-body, .ui-workspace, .ui-canvas, .ui-inspector, .ui-rail) {
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (max-width: 1279px) {
+  .ui-root .ui-shell-body {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 1023px) {
+  /* A wrapped header must own a content-sized grid row or the next pane starts
+     underneath it. The original fixed 40px row was the source of narrow-width
+     overlaps that document.scrollWidth could not detect. */
+  .ui-root.ui-shell {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .ui-root .ui-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--ui-topbar-h, 40px);
+    padding-block: var(--ui-space-2);
+    row-gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topbar-brand {
+    order: 1;
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  .ui-root .ui-topbar-controls {
+    order: 2;
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* The nav is a series of wrapped, fully visible groups on narrow displays.
+     Do not leave a clipped horizontal ticker whose scrollbar is invisible. */
+  .ui-root .ui-topnav {
+    order: 3;
+    display: flex;
+    flex: 1 0 100%;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    gap: var(--ui-space-2);
+    padding-block: var(--ui-space-2) 0;
+    border-top: 1px solid var(--ui-border);
+    overflow: visible;
+  }
+
+  .ui-root .ui-nav-modules {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    padding: 0 0 var(--ui-space-2);
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .ui-root .ui-topnav-sections {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topnav-group {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topnav-group-items {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topnav-trail {
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+
+  .ui-root .ui-topbar-work {
+    order: 4;
+    flex: 1 0 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ui-root .ui-topbar-counts,
+  .ui-root .ui-topbar-meta,
+  .ui-root .ui-topbar-investigation {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-root *,
+  .ui-root *::before,
+  .ui-root *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Corporate surface normalization ─────────────────────────────────────
+ * The CI/SpecOps canvas predates the normative visual contract and introduced
+ * gradients, translucent blur, luminous edges and travelling highlights.
+ * Keep its interaction/layout classes intact while normalizing its material:
+ * flat semantic surfaces, restrained borders, no decorative motion.
+ */
+.ui-root .ui-cicanvas,
+.ui-root .ui-cicanvas.ui-holo-field {
+  background: var(--ui-bg);
+  border: 0;
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head,
+.ui-root .ui-ci-panel,
+.ui-root .ui-gl-deck,
+.ui-root .ui-holo,
+.ui-root .ui-gl-provenance {
+  color: var(--ui-text);
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  text-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head .ui-tabs {
+  background: var(--ui-bg-sunken);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head .ui-tab {
+  border-radius: var(--ui-radius-1);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head .ui-tab[aria-selected="true"] {
+  color: var(--ui-text);
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-root .ui-cicanvas-head .ui-tab[aria-selected="true"]::after,
+.ui-root .ui-ci-panel::after,
+.ui-root .ui-holo-sweep::after {
+  content: none;
+  animation: none;
+}
+
+/* Keep GhostLine's gate/setup/absent border semantics intact. */
+
+.ui-root .ui-ci-panel-head {
+  border-bottom-color: var(--ui-border);
+}
+
+.ui-root .ui-ci-panel-head .ui-pane-title {
+  color: var(--ui-text-secondary);
+  text-shadow: none;
+}
+
+.ui-root .ui-ci-panel :where(button, [role="button"]):focus-visible,
+.ui-root .ui-cicanvas :where(button, [role="tab"]):focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.ui-root .ui-holo-rise,
+.ui-root .ui-holo-live,
+.ui-root .ui-holo-ambient,
+.ui-root .ui-ci-panel {
+  animation: none;
+}
+
+.ui-root .ui-holo-field::before,
+.ui-root .ui-holo-field::after,
+.ui-root .ui-cicanvas::before,
+.ui-root .ui-cicanvas::after {
+  content: none;
+}
+
+@media (max-width: 767px) {
+  .ui-root .ui-cicanvas {
+    min-width: 0;
+    padding: 0;
+  }
+
+  .ui-root .ui-cicanvas-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ui-root .ui-cicanvas-head .ui-tabs {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .ui-root .ui-cicanvas-head .ui-tab {
+    flex: 0 0 auto;
+  }
+
+  .ui-root .ui-ci-panel {
+    min-width: 0;
+    padding: var(--ui-space-3);
+  }
+}
+
+
+/* ── Narrow workbench: preserve information without forcing page overflow ──
+ * The shell is a three-pane workstation on desktop. Below tablet width its
+ * topbar becomes a compact two-line header; work-state readouts wrap rather
+ * than painting over navigation or disappearing behind an overflow clip.
+ */
+@media (max-width: 1023px) {
+  .ui-root.ui-shell {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-height: 100dvh;
+    height: 100dvh;
+  }
+
+  .ui-root .ui-topbar {
+    height: auto;
+    min-height: var(--ui-topbar-h, 40px);
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: var(--ui-space-2, 8px);
+    padding-block: var(--ui-space-2, 8px);
+    overflow: visible;
+  }
+
+  .ui-root .ui-topnav {
+    order: 2;
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ui-root .ui-topbar-controls {
+    order: 1;
+    margin-inline-start: auto;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topbar-work {
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .ui-root .ui-topbar-investigation,
+  .ui-root .ui-topbar-counts,
+  .ui-root .ui-topbar-meta {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topbar-work > * {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  .ui-root .ui-shell-body {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .ui-root .ui-topbar {
+    column-gap: var(--ui-space-3, 12px);
+    padding-inline: var(--ui-space-3, 12px);
+  }
+
+  .ui-root .ui-topbar-brand {
+    min-width: 0;
+  }
+
+  .ui-root .ui-topbar-name {
+    max-width: min(42vw, 24ch);
+  }
+
+  .ui-root .ui-topbar-counts,
+  .ui-root .ui-topbar-meta {
+    gap: var(--ui-space-3, 12px);
+  }
+
+  .ui-root .ui-count-value {
+    font-size: var(--ui-text-sm, 12px);
+  }
+
+  .ui-root .ui-count-label {
+    white-space: normal;
+  }
+
+  .ui-root .ui-canvas-head {
+    height: auto;
+    min-height: var(--ui-activitybar-h);
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding-block: var(--ui-space-3, 12px);
+  }
+
+  .ui-root .ui-canvas-head-meta,
+  .ui-root .ui-canvas-actions {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-canvas-body {
+    padding: var(--ui-space-3, 12px);
+  }
+
+  .ui-palette-root {
+    padding: 8vh var(--ui-space-3, 12px) 0;
+  }
+
+  .ui-palette-root .ui-palette {
+    width: 100%;
+    max-height: 84dvh;
+  }
+
+  .ui-palette-root .ui-palette-list {
+    max-height: 58dvh;
+    overflow-y: auto;
+  }
+}
+
+
+/* GhostLine's information architecture survives the material change. Remove
+ * decorative luminance from its nested readouts, trace rails and active cards;
+ * retain the semantic hue on status/gate edges and the visible active-state wash.
+ */
+.ui-root .ui-gl-readout-value,
+.ui-root .ui-gl-hint[data-kind="danger"] {
+  text-shadow: none;
+}
+
+.ui-root .ui-gl-subhead .ui-pane-title {
+  color: var(--ui-text-secondary);
+  text-shadow: none;
+}
+
+.ui-root .ui-gl-readout[data-tone="live"] .ui-gl-readout-value::after,
+.ui-root .ui-gl-stage::before,
+.ui-root .ui-gl-trace > li::before {
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-ladder::before,
+.ui-root .ui-gl-trace::before {
+  background: var(--ui-border-strong);
+}
+
+.ui-root .ui-gl-refusal,
+.ui-root .ui-gl-stage,
+.ui-root .ui-gl-trace > li,
+.ui-root .ui-gl-turns > li {
+  background: var(--ui-surface-1);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ui-root .ui-gl-refusal {
+  border-color: var(--ui-border);
+  border-left-color: var(--holo-hue, var(--ui-border));
+}
+
+.ui-root .ui-gl-stage,
+.ui-root .ui-gl-trace > li,
+.ui-root .ui-gl-turns > li {
+  border-color: var(--ui-border);
+  border-left: 2px solid var(--holo-hue, var(--ui-border));
+}
+
+.ui-root .ui-gl-card[data-active="true"] {
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-rungs > li[data-current="true"] {
+  color: var(--ui-text);
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-textarea {
+  color: var(--ui-text);
+  background: var(--ui-bg-sunken);
+  border-color: var(--ui-border);
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-textarea:focus {
+  border-color: var(--ui-focus-ring);
+  box-shadow: none;
+}
+
+.ui-root .ui-ci-list-row[data-outcome="compromised"],
+.ui-root .ui-ci-list-row[data-outcome="abandoned"] {
+  box-shadow: none;
+}
+
+
+/* The old material stylesheet adds HUD corner brackets and luminous readout
+ * text via pseudo-elements. Remove the chrome, not the state-bearing edge.
+ */
+.ui-root .ui-holo-bracket::before,
+.ui-root .ui-holo-bracket::after,
+.ui-root .ui-holo-heading::after {
+  content: none;
+}
+
+.ui-root .ui-holo-readout-value {
+  text-shadow: none;
+}
+
+
+/* Payloads and media must remain inside the pane that owns them. A long URI,
+ * JSON line or embedded image must never become a page-level horizontal scroll.
+ */
+.ui-root pre {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.ui-root :where(code, samp, kbd) {
+  overflow-wrap: anywhere;
+}
+
+.ui-root :where(img, video, canvas) {
+  max-width: 100%;
+}
+
+
+/* CI metric strips and bars carry data, not atmosphere. Use flat token-backed
+ * fills; keep executed/failed left borders as the semantic status channel.
+ */
+.ui-root .ui-ci-metrics {
+  background: var(--ui-surface-1);
+  border-color: var(--ui-border);
+  box-shadow: none;
+}
+
+.ui-root .ui-ci-metric .op-value {
+  text-shadow: none;
+}
+
+.ui-root .ui-ci-abilities > li[data-state="executed"],
+.ui-root .ui-ci-abilities > li[data-state="failed"] {
+  box-shadow: none;
+}
+
+.ui-root .ui-ci-bar {
+  background: var(--ui-accent);
+  box-shadow: none;
+}
+
+.ui-root .ui-ci-bar-alt {
+  background: var(--ui-analytical);
+  box-shadow: none;
+}
+
+.ui-root .ui-gl-textarea:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+
+/* ── Legacy-surface compatibility bridge ──────────────────────────────
+ * Legacy routes are still rendered inside the single UI 2.0 shell. Resolve
+ * their old token names at the shell boundary so those views inherit the same
+ * palette, but do not rewrite graph/entity-kind tokens whose values carry
+ * domain meaning. Flatten only known decorative material and preserve active,
+ * event and failure selectors as semantic state.
+ */
+.ui-root {
+  --c-bg: var(--ui-bg);
+  --c-surface: var(--ui-surface-1);
+  --c-surface-2: var(--ui-surface-2);
+  --c-surface-3: var(--ui-surface-3);
+  --c-glass: var(--ui-surface-1);
+  --c-border: var(--ui-border);
+  --c-border-hi: var(--ui-accent-line);
+  --c-text: var(--ui-text);
+  --c-text-2: var(--ui-text-secondary);
+  --c-muted: var(--ui-text-muted);
+  --c-fg-muted: var(--ui-text-muted);
+  --c-text-dim: var(--ui-text-muted);
+  --c-accent: var(--ui-accent);
+  --c-accent-2: var(--ui-accent-bright);
+  --c-accent-soft: var(--ui-accent-wash);
+  --c-danger: var(--ui-danger);
+  --c-danger-hover: var(--ui-danger);
+  --c-warning: var(--ui-gold);
+  --c-success: var(--ui-accent);
+  --acc: var(--ui-accent);
+  --acc-2: var(--ui-accent-bright);
+  --acc-soft: var(--ui-accent-wash);
+  --acc-glow: none;
+}
+
+.ui-root [data-module="economic"],
+.ui-root [data-module="specops"] {
+  --acc: var(--ui-accent);
+  --acc-2: var(--ui-accent-bright);
+  --acc-soft: var(--ui-accent-wash);
+  --acc-glow: none;
+}
+
+/* The legacy substrate placed a scanline overlay at z-index 60 on BODY.
+ * Disable only while the new shell is mounted; otherwise it can sit on top of
+ * every menu, drawer and toast regardless of the component's own z-index.
+ */
+body:has(.ui-root)::before,
+body:has(.ui-root)::after {
+  content: none;
+  display: none;
+}
+
+.ui-root h2 {
+  text-shadow: none;
+}
+
+.ui-root .panel,
+.ui-root .result,
+.ui-root .conn-card,
+.ui-root .plan-item,
+.ui-root .graph-panel,
+.ui-root .timeline-panel,
+.ui-root .command-panel li,
+.ui-root .net-card,
+.ui-root .op-tile,
+.ui-root .metric-tile,
+.ui-root .feed-item,
+.ui-root .intel-seedbank,
+.ui-root .intel-legend,
+.ui-root .intel-feed,
+.ui-root .intel-inspector,
+.ui-root .intel-canvas,
+.ui-root .graph-canvas,
+.ui-root .network-board .net-pair pre,
+.ui-root .tda-layer {
+  background: var(--ui-surface-1);
+  border-color: var(--ui-border);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ui-root .panel,
+.ui-root .result,
+.ui-root .conn-card,
+.ui-root .plan-item,
+.ui-root .graph-panel,
+.ui-root .timeline-panel,
+.ui-root .net-card,
+.ui-root .feed-item,
+.ui-root .intel-seedbank,
+.ui-root .intel-legend,
+.ui-root .intel-inspector,
+.ui-root .tda-layer {
+  border-radius: var(--ui-radius-3);
+}
+
+.ui-root .panel::before,
+.ui-root .node-card::before {
+  content: none;
+}
+
+.ui-root .btn {
+  border-radius: var(--ui-radius-2);
+  border-color: var(--ui-border);
+  background: var(--ui-surface-2);
+  color: var(--ui-text-secondary);
+  box-shadow: none;
+  text-shadow: none;
+  transition:
+    background-color var(--ui-motion-fast) var(--ui-ease-standard),
+    border-color var(--ui-motion-fast) var(--ui-ease-standard),
+    color var(--ui-motion-fast) var(--ui-ease-standard);
+}
+
+.ui-root .btn:hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-surface-3);
+  color: var(--ui-text);
+  box-shadow: none;
+}
+
+.ui-root .btn-primary,
+.ui-root .btn-primary:hover:not(:disabled) {
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+  color: var(--ui-on-accent);
+  box-shadow: none;
+}
+
+.ui-root .btn-danger,
+.ui-root .btn-danger:hover:not(:disabled) {
+  background: var(--ui-danger);
+  border-color: var(--ui-danger);
+  color: var(--ui-text);
+  box-shadow: none;
+}
+
+.ui-root .btn-ghost,
+.ui-root .btn-ghost:hover:not(:disabled) {
+  background: transparent;
+}
+
+.ui-root .status-chip {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-surface-2);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .status-chip::before,
+.ui-root .status-chip.ACTIVE::before,
+.ui-root .status-chip.RUNNING::before,
+.ui-root .status-chip.REGISTERED::before,
+.ui-root .status-chip.PLANNED::before,
+.ui-root .status-chip.OPEN::before,
+.ui-root .status-chip.DISABLED::before,
+.ui-root .status-chip.FAILED::before,
+.ui-root .status-chip.REJECTED::before {
+  box-shadow: none;
+}
+
+.ui-root .status-chip-live,
+.ui-root .conn-card:hover,
+.ui-root .toolbar-btn:hover,
+.ui-root .toolbar-btn[data-active="true"],
+.ui-root .seed-node[data-selected="true"] {
+  box-shadow: none;
+}
+
+.ui-root .graph-canvas,
+.ui-root .intel-canvas {
+  background: var(--ui-bg);
+}
+
+.ui-root .intel-legend,
+.ui-root .intel-inspector,
+.ui-root .tda-layer {
+  color: var(--ui-text-secondary);
+}
+
+.ui-root .node-card {
+  border-color: var(--ui-accent-line);
+  border-radius: var(--ui-radius-3);
+  background: var(--ui-surface-1);
+  box-shadow: none;
+}
+
+.ui-root .node-card[data-selected="true"],
+.ui-root .seed-node[data-selected="true"],
+.ui-root .toolbar-btn[data-active="true"] {
+  border-color: var(--ui-accent-line);
+  background: var(--ui-accent-wash);
+  box-shadow: none;
+}
+
+.ui-root .node-card-title,
+.ui-root .score,
+.ui-root .op-value,
+.ui-root .glow-text {
+  text-shadow: none;
+}
+
+.ui-root .intel-note {
+  border-color: var(--ui-gold-line);
+  background: var(--ui-gold-wash);
+  color: var(--ui-gold);
+  box-shadow: none;
+}
+
+.ui-root .link-hint {
+  border-color: var(--ui-analytical);
+  color: var(--ui-analytical);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .tda-layer {
+  border-color: var(--ui-analytical);
+}
+
+.ui-root .tda-bar-track {
+  background: var(--ui-surface-2);
+}
+
+.ui-root .tda-bar-fill {
+  background: var(--ui-analytical);
+  box-shadow: none;
+}
+
+.ui-root .loop-dot {
+  background: var(--ui-analytical);
+  box-shadow: none;
+  animation: none;
+}
+
+.ui-root .feed-item[data-kind="entity.updated"] {
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-root .feed-item[data-kind="science.invariant"] {
+  border-color: var(--ui-analytical);
+  box-shadow: none;
+}
+
+.ui-root .feed-item[data-kind="pipeline.advance"] {
+  border-color: var(--ui-gold-line);
+  box-shadow: none;
+}
+
+.ui-root .nav-link.active,
+.ui-root .module-tab[data-active="true"] {
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .brand-mark,
+.ui-root .nav-link.active .nav-icon,
+.ui-root .module-tab .mt-dot,
+.ui-root .nav-link.active::before {
+  box-shadow: none;
+  filter: none;
+  text-shadow: none;
+}
+
+
+/* Legacy shell surfaces: preserve their layout but unify the material with
+ * the same workbench layers. These selectors are intentionally scoped because
+ * legacy classes can also appear in migrated domain components.
+ */
+body:has(.ui-root) {
+  background-color: var(--bg-0);
+  background-image: none;
+  background-attachment: initial;
+}
+
+.ui-root .sidebar,
+.ui-root .header,
+.ui-root .module-tabs {
+  background: var(--ui-surface-1);
+  border-color: var(--ui-border);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ui-root .header {
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-root .module-tabs {
+  border-radius: var(--ui-radius-2);
+}
+
+.ui-root .module-tab {
+  border-radius: var(--ui-radius-1);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-root .module-tab[data-active="true"] {
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+  color: var(--ui-accent);
+}
+
+.ui-root .intel-canvas-head {
+  background: var(--ui-surface-1);
+  border-bottom-color: var(--ui-border);
+}
+
+.ui-root .header-link {
+  color: var(--ui-accent);
+  border-color: var(--ui-accent-line);
+  background: var(--ui-accent-wash);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-root .header-link:hover,
+.ui-root .op-tile::before {
+  box-shadow: none;
+}
+
+.ui-root .op-tile {
+  background: var(--ui-surface-1);
+  border-color: var(--ui-border);
+  box-shadow: none;
+}
+
+.ui-root .sb-status .dot {
+  box-shadow: none;
+}
+
+.ui-root .feed-item {
+  animation: none;
+}
+
+.ui-root .intel-feed {
+  background: var(--ui-surface-1);
+  border-top-color: var(--ui-border);
+}
+
+.ui-root .intel-inspector {
+  border-color: var(--ui-border);
+}
+
+
+/* Wide-but-not-ultrawide navigation. At the 1440 review baseline, the
+ * combination of brand, nav and shell controls can exceed one row by hundreds
+ * of pixels. Put navigation on a second content-sized row there rather than
+ * cutting the last destinations off behind an invisible scrollbar. At 1920px,
+ * tighten only whitespace so the full nav and controls still fit in one row.
+ */
+@media (min-width: 1024px) and (max-width: 1919px) {
+  .ui-root.ui-shell {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .ui-root .ui-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--ui-topbar-h, 40px);
+    padding-block: var(--ui-space-2);
+    row-gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topbar-brand {
+    order: 1;
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  .ui-root .ui-topbar-controls {
+    order: 2;
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ui-root .ui-topnav {
+    order: 3;
+    flex: 1 0 100%;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--ui-space-2);
+    padding-block: var(--ui-space-2) 0;
+    border-top: 1px solid var(--ui-border);
+    overflow: visible;
+  }
+
+  .ui-root .ui-nav-modules {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .ui-root .ui-topnav-sections {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-topnav-group {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topnav-group-items {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-topnav-trail {
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+
+  .ui-root .ui-topbar-work {
+    order: 4;
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1920px) and (max-width: 2047px) {
+  .ui-root .ui-topbar {
+    gap: var(--ui-space-2);
+    padding-inline: var(--ui-space-3);
+  }
+
+  .ui-root .ui-topnav {
+    gap: var(--ui-space-1);
+  }
+
+  .ui-root .ui-nav-module,
+  .ui-root .ui-nav-link {
+    padding-inline: var(--ui-space-1);
+  }
+
+  .ui-root .ui-topnav-sections,
+  .ui-root .ui-topnav-group {
+    gap: var(--ui-space-1);
+  }
+
+  .ui-root .ui-topnav-group-items {
+    gap: 0;
+  }
+}
+
+
+/* ── Workbench visual register ────────────────────────────────────────
+ * Neo-militarist character is carried by restrained signal hierarchy: one
+ * instrument-green rail, amber metadata, squared-off controls and graphite
+ * surfaces. No hue substitutions or decorative effects are introduced.
+ */
+.ui-root .ui-topbar {
+  border-top: 2px solid var(--ui-accent);
+  box-shadow: none;
+}
+
+.ui-root .ui-topbar-brand .ui-brand {
+  letter-spacing: 0.16em;
+  font-weight: var(--ui-weight-semibold);
+}
+
+.ui-root .ui-topbar-brand .ui-meta,
+.ui-root .ui-topnav-group-label {
+  color: var(--ui-gold);
+  font-family: var(--ui-font-mono);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+}
+
+.ui-root .ui-nav-module,
+.ui-root .ui-nav-link,
+.ui-root .ui-topbar-controls .ui-btn {
+  border-radius: var(--ui-radius-1);
+}
+
+.ui-root .ui-nav-module[data-active="true"],
+.ui-root .ui-nav-link[data-active="true"] {
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.ui-root .ui-topnav-group {
+  padding-inline-start: var(--ui-space-2);
+  border-inline-start: 1px solid var(--ui-border);
+}
+
+.ui-root .ui-topnav-group-label {
+  font-size: var(--ui-text-2xs);
+  white-space: nowrap;
+}
+
+@media (max-width: 1023px) {
+  .ui-root .ui-topnav-group {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+}
+
+/* Operational panels: restrained instrument markings, never decorative neon. */
+.ui-root :where(.ui-panel-head, .ui-pane-head, .ui-section-head) {
+  min-width: 0;
+}
+
+.ui-root :where(.ui-panel-eyebrow, .ui-pane-eyebrow, .ui-section-eyebrow) {
+  color: var(--ui-gold);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+}
+
+.ui-root :where(.ui-panel, .ui-pane, .ui-card)[data-active="true"] {
+  border-color: var(--ui-border-strong);
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.ui-root :where(.ui-btn, .ui-button, .ui-nav-module, .ui-nav-link) {
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.ui-root :where(.ui-btn, .ui-button, .ui-nav-module, .ui-nav-link):focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-root :where(.ui-btn, .ui-button, .ui-nav-module, .ui-nav-link) {
+    transition: none;
+  }
+}
+
+
+
+/* ── Canvas-local responsive contracts ─────────────────────────────────
+ * The canvas can be narrower than the browser because rail/inspector panes
+ * consume part of the window. Viewport-only breakpoints miss this: at 1680px
+ * the view tabs fit, but the stage/selection metadata can be clipped by the
+ * *remaining canvas width*. Container queries use the space the canvas really
+ * owns and give the contract metadata a second line when needed.
+ */
+.ui-root .ui-canvas {
+  container-name: ui-canvas;
+  container-type: inline-size;
+}
+
+@container ui-canvas (max-width: 1220px) {
+  .ui-root .ui-canvas-head {
+    height: auto;
+    min-height: var(--ui-activitybar-h);
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding-block: var(--ui-space-2);
+    row-gap: var(--ui-space-2);
+  }
+
+  .ui-root .ui-canvas-head > .ui-tabs[data-orientation="bar"] {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .ui-root .ui-canvas-head-meta {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-shrink: 1;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .ui-root .ui-canvas-stage-slot {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ui-root .ui-canvas-stage-note {
+    max-width: 48ch;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .ui-root .ui-canvas-next {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Narrow phones use the shell toggles as actual drawers, not as extra columns.
+ * AppShell closes them when entering the phone breakpoint; if one is opened
+ * manually its panel overlays the canvas and is capped to the available width.
+ */
+@media (max-width: 767px) {
+  .ui-palette-root {
+    padding: 8vh var(--ui-space-3, 12px) 0;
+  }
+
+  .ui-palette-root .ui-palette {
+    width: 100%;
+    max-height: 84dvh;
+  }
+
+  .ui-palette-root .ui-palette-list {
+    max-height: 58dvh;
+    overflow-y: auto;
+  }
+
+  .ui-root .ui-shell-body {
+    position: relative;
+    min-width: 0;
+  }
+
+  .ui-root .ui-workbench {
+    position: relative;
+    min-width: 0;
+  }
+
+  .ui-root .ui-workbench-rail {
+    width: min(var(--ui-rail-max-w), calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+  }
+
+  .ui-root .ui-workbench-inspector {
+    position: absolute;
+    z-index: var(--ui-z-drawer);
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: min(320px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    flex: 0 0 auto;
+    box-shadow: var(--ui-elevation-3);
+  }
+}

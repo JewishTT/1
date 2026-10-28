@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Badge, StatusDot } from "./Badge";
@@ -183,7 +183,7 @@ describe("Tabs — WAI-ARIA keyboard model", () => {
 
   it("labels the tablist and marks the active tab", () => {
     render(<Tabs items={items} value="graph" onValueChange={() => {}} label="Workspace views" />);
-    expect(screen.getByRole("tablist", { name: "Workspace views" })).toBeInTheDocument();
+    expect(screen.getByRole("tablist", { name: "Workspace views" })).toHaveAttribute("data-orientation", "rail");
     expect(screen.getByRole("tab", { name: "Graph" })).toHaveAttribute("aria-selected", "true");
   });
 
@@ -202,6 +202,7 @@ describe("Tabs — WAI-ARIA keyboard model", () => {
 
   it("moves focus with the arrow keys in bar orientation", () => {
     render(<Tabs items={items} value="overview" onValueChange={() => {}} label="Views" orientation="bar" />);
+    expect(screen.getByRole("tablist", { name: "Views" })).toHaveAttribute("data-orientation", "bar");
     const first = screen.getByRole("tab", { name: "Overview" });
     first.focus();
     fireEvent.keyDown(first, { key: "ArrowRight" });
@@ -327,13 +328,14 @@ describe("DataTable — shell semantics", () => {
     { id: "OBS-2", uri: "https://b", status: "Failed" },
   ];
   const columns = [
-    { key: "id", header: "Observation", mono: true, render: (row: (typeof rows)[number]) => row.id },
-    { key: "uri", header: "URI", render: (row: (typeof rows)[number]) => row.uri },
+    { key: "id", header: "Observation", mono: true, sortValue: (row: (typeof rows)[number]) => row.id, render: (row: (typeof rows)[number]) => row.id },
+    { key: "uri", header: "URI", sortValue: (row: (typeof rows)[number]) => row.uri, render: (row: (typeof rows)[number]) => row.uri },
   ];
 
   it("renders a captioned table", () => {
     render(<DataTable caption="Observations" columns={columns} rows={rows} rowId={(row) => row.id} />);
     expect(screen.getByRole("table", { name: "Observations" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Observations table" })).toHaveAttribute("tabindex", "0");
     expect(screen.getAllByRole("row")).toHaveLength(3); // header + 2
   });
 
@@ -365,6 +367,52 @@ describe("DataTable — shell semantics", () => {
     fireEvent.click(screen.getByTestId("row-OBS-1"));
     fireEvent.keyDown(screen.getByTestId("row-OBS-2"), { key: "Enter" });
     expect(picked).toEqual(["OBS-1", "OBS-2"]);
+  });
+
+  it("sorts only sortable columns and reports direction to assistive technology", () => {
+    render(<DataTable caption="Observations" columns={columns} rows={rows} rowId={(row) => row.id} />);
+
+    const idHeader = screen.getByRole("columnheader", { name: /Observation/ });
+    const sortButton = within(idHeader).getByRole("button", { name: "Sort by Observation" });
+    expect(idHeader).not.toHaveAttribute("aria-sort");
+
+    fireEvent.click(sortButton);
+    expect(idHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getAllByTestId(/^row-/).map((row) => row.getAttribute("data-row-id"))).toEqual(["OBS-1", "OBS-2"]);
+
+    fireEvent.click(sortButton);
+    expect(idHeader).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getAllByTestId(/^row-/).map((row) => row.getAttribute("data-row-id"))).toEqual(["OBS-2", "OBS-1"]);
+  });
+
+  it("uses one tab stop and supports arrow, Home and End row navigation", () => {
+    const picked: string[] = [];
+    const props = {
+      caption: "Observations",
+      columns,
+      rows,
+      rowId: (row: (typeof rows)[number]) => row.id,
+      onRowSelect: (id: string) => picked.push(id),
+    };
+    const { rerender } = render(<DataTable {...props} selectedId="OBS-1" />);
+
+    const first = screen.getByTestId("row-OBS-1");
+    const second = screen.getByTestId("row-OBS-2");
+    expect(first).toHaveAttribute("tabindex", "0");
+    expect(second).toHaveAttribute("tabindex", "-1");
+
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+    expect(picked).toEqual(["OBS-2"]);
+    expect(second).toHaveFocus();
+    rerender(<DataTable {...props} selectedId="OBS-2" />);
+    expect(second).toHaveAttribute("tabindex", "0");
+    expect(first).toHaveAttribute("tabindex", "-1");
+
+    fireEvent.keyDown(second, { key: "Home" });
+    expect(picked).toEqual(["OBS-2", "OBS-1"]);
+    rerender(<DataTable {...props} selectedId="OBS-1" />);
+    fireEvent.keyDown(first, { key: "End" });
+    expect(picked).toEqual(["OBS-2", "OBS-1", "OBS-2"]);
   });
 
   it("renders the empty state instead of an empty table", () => {

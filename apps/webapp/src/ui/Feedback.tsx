@@ -97,14 +97,14 @@ export interface LoadingViewProps {
  * `Skeleton`. A file-local `LoadingView` is the reason the skeleton never reached a single
  * container: there was a loading view, it was right there, and it was already written.
  *
- * The markup is kept exactly as it was, `data-testid` included, so consolidating is invisible
- * to the tests that assert on it -- which is the point of consolidating rather than
- * restyling.
+ * Uses the same feedback surface tokens as ErrorView and exposes one polite status
+ * announcement. Callers get consistent spacing and a clear distinction between
+ * waiting and the absence/failure states.
  */
 export function LoadingView({ message }: LoadingViewProps) {
   return (
-    <section data-testid="loading-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p>{message}</p>
+    <section className="ui-feedback-view" role="status" aria-live="polite" data-testid="loading-view">
+      <p className="ui-feedback-copy">{message}</p>
     </section>
   );
 }
@@ -130,10 +130,10 @@ export interface ErrorViewProps {
  */
 export function ErrorView({ error, onRetry }: ErrorViewProps) {
   return (
-    <section data-testid="error-view" style={{ padding: "var(--xl, 1.25rem)" }}>
-      <p style={{ color: "var(--c-danger)" }}>Error: {error}</p>
+    <section className="ui-feedback-view" role="alert" data-testid="error-view">
+      <p className="ui-feedback-error">Error: {error}</p>
       {onRetry ? (
-        <div className="panel-actions">
+        <div className="ui-feedback-actions">
           <Button size="sm" variant="ghost" onClick={() => void onRetry()}>
             Retry
           </Button>

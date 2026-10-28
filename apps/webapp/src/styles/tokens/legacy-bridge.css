@@ -1,19 +1,20 @@
-/* COGNITIVE // NEXUS — design system.
- * Web3 glass + chrome-crimson cyberpunk + Palantir-grade dense analytics shell.
- * Module accents: OSINT (cyan/amber), ECONOMICS (emerald), SPECOPS (crimson).
- * Keeps every legacy surface class so existing pages adopt the theme as-is.
+/* COGNITIVE UI — legacy token bridge.
+ *
+ * Compatibility names for legacy Tailwind utilities. Values resolve to the
+ * canonical UI 2.0 palette; this file must never define a parallel palette.
+ * Legacy class names remain valid while their visual language is normalized.
  */
 
 @theme {
-  --color-cyber: #22d3ee;
-  --color-cyber-hi: #67e8f9;
-  --color-ember: #f0a832;
-  --color-matri: #34d399;
-  --color-crimson: #f43f5e;
-  --color-violet: #a78bfa;
-  --color-magenta: #e879f9;
-  --color-abyss: #05070d;
-  --color-abyss-2: #0a101c;
-  --color-frame: #1e2a3d;
-  --color-ghost: #dde6f0;
+  --color-cyber: var(--ui-analytical);
+  --color-cyber-hi: var(--ui-text);
+  --color-ember: var(--ui-gold);
+  --color-matri: var(--ui-accent);
+  --color-crimson: var(--ui-danger);
+  --color-violet: var(--ui-text-secondary);
+  --color-magenta: var(--ui-text-secondary);
+  --color-abyss: var(--ui-bg);
+  --color-abyss-2: var(--ui-surface-1);
+  --color-frame: var(--ui-border);
+  --color-ghost: var(--ui-text);
 }

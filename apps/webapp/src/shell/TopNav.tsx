@@ -98,14 +98,21 @@ function RoutedTopNav() {
   const sections = useMemo(() => NAV_SECTIONS[module], [module]);
 
   return (
-    <div className="ui-topnav" data-testid="topnav">
-      <ModuleTabs
-        module={module}
-        onSelect={(key) => {
-          const target = NAV_MODULES.find((m) => m.key === key);
-          if (target) navigate(target.landing);
-        }}
-      />
+    <div className="ui-topnav" data-testid="topnav" data-module={module}>
+      <div className="ui-topnav-primary">
+        <ModuleTabs
+          module={module}
+          onSelect={(key) => {
+            const target = NAV_MODULES.find((m) => m.key === key);
+            if (target) navigate(target.landing);
+          }}
+        />
+        <div className="ui-topnav-trail" aria-label="Current location">
+          <span className="ui-topnav-trail-module">{module.toUpperCase()}</span>
+          <span className="ui-topnav-sep" aria-hidden="true">/</span>
+          <span className="ui-topnav-title">{resolveTitle(location.pathname)}</span>
+        </div>
+      </div>
 
       <nav className="ui-topnav-sections" aria-label="Section navigation" data-testid="topnav-sections">
         {sections.map((section) => (
@@ -119,14 +126,6 @@ function RoutedTopNav() {
           </div>
         ))}
       </nav>
-
-      <div className="ui-topnav-trail">
-        <span className="ui-meta">{module.toUpperCase()}</span>
-        <span className="ui-topnav-sep" aria-hidden="true">
-          /
-        </span>
-        <span className="ui-topnav-title">{resolveTitle(location.pathname)}</span>
-      </div>
     </div>
   );
 }

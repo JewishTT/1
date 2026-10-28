@@ -1,14 +1,15 @@
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+
+import { Icon } from "./Icon";
 
 /**
  * DataTable shell (§60).
  *
  * Deliberately a shell, not a data grid: it owns the *semantics* an analyst
- * needs from a table in this workbench — column headers with sort state,
- * row selection wired to the global selection model, a mono column for
- * identifiers, and keyboard row navigation — and takes cell content as
- * children. Sorting, virtualisation and column resizing belong to the views
- * that know their data (stages 3–8); adding them here would mean guessing.
+ * needs from a table in this workbench — a real caption, semantic and sortable
+ * column headers, row selection, monospace identifiers and keyboard row
+ * navigation. Virtualisation and column resizing remain with views that know
+ * their data (stages 3–8); this shell does not pretend to implement them.
  *
  * Callers: the activity layer's event table, and the object/evidence tables in
  * stages 4 and 5.
@@ -21,7 +22,7 @@ export interface DataTableColumn<T> {
   /** Right-align numeric columns; mono for anything copyable. */
   align?: "start" | "end";
   mono?: boolean;
-  /** Value used for sorting. Omit for a column that never sorts. */
+  /** Extract a comparable string/number to enable the shared sort behavior. */
   sortValue?: (row: T) => string | number;
   width?: string;
   render: (row: T) => ReactNode;
@@ -52,11 +53,38 @@ export function DataTable<T>({
   emptyState,
   testId,
 }: DataTableProps<T>) {
+  const [sort, setSort] = useState<{ key: string; direction: "ascending" | "descending" } | null>(null);
+
+  const sortedRows = useMemo(() => {
+    if (!sort) return rows;
+    const column = columns.find((candidate) => candidate.key === sort.key);
+    if (!column?.sortValue) return rows;
+
+    const direction = sort.direction === "ascending" ? 1 : -1;
+    return [...rows].sort((left, right) => {
+      const a = column.sortValue!(left);
+      const b = column.sortValue!(right);
+      const comparison =
+        typeof a === "number" && typeof b === "number"
+          ? a - b
+          : String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+      return comparison * direction;
+    });
+  }, [columns, rows, sort]);
+
   if (rows.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
 
+  const activeId =
+    selectedId !== null && rows.some((row) => rowId(row) === selectedId)
+      ? selectedId
+      : sortedRows.length > 0
+        ? rowId(sortedRows[0]!)
+        : null;
+
   return (
+    <div className="ui-table-scroll" role="region" aria-label={`${caption} table`} tabIndex={0} data-testid={testId != null ? `${testId}-scroll` : undefined}>
     <table className="ui-table" data-testid={testId}>
       <caption className="ui-sr-only">{caption}</caption>
       <thead>
@@ -67,14 +95,34 @@ export function DataTable<T>({
               scope="col"
               style={column.width ? { width: column.width } : undefined}
               data-align={column.align ?? "start"}
+              aria-sort={sort?.key === column.key ? sort.direction : undefined}
             >
-              {column.header}
+              {column.sortValue ? (
+                <button
+                  type="button"
+                  className="ui-table-sort"
+                  data-direction={sort?.key === column.key ? sort.direction : "none"}
+                  aria-label={`Sort by ${column.header}`}
+                  onClick={() =>
+                    setSort((current) => ({
+                      key: column.key,
+                      direction:
+                        current?.key === column.key && current.direction === "ascending"
+                          ? "descending"
+                          : "ascending",
+                    }))
+                  }
+                >
+                  <span>{column.header}</span>
+                  <Icon name="chevron-down" size={12} />
+                </button>
+              ) : column.header}
             </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => {
+        {sortedRows.map((row) => {
           const id = rowId(row);
           const selected = selectedId === id;
           const secondary = secondaryIds.includes(id);
@@ -84,20 +132,34 @@ export function DataTable<T>({
               data-selected={selected}
               data-secondary={secondary}
               aria-selected={onRowSelect ? selected : undefined}
-              tabIndex={onRowSelect ? 0 : undefined}
+              tabIndex={onRowSelect ? (activeId === id ? 0 : -1) : undefined}
               onClick={onRowSelect ? () => onRowSelect(id) : undefined}
               onKeyDown={
                 onRowSelect
                   ? (event) => {
-                      // Rows are focusable when selectable, so Enter/Space must
-                      // activate them or keyboard users cannot reach the object.
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
                         onRowSelect(id);
+                        return;
+                      }
+
+                      const current = event.currentTarget;
+                      const rowGroup = current.parentElement;
+                      let target: HTMLTableRowElement | null = null;
+                      if (event.key === "ArrowDown") target = current.nextElementSibling as HTMLTableRowElement | null;
+                      else if (event.key === "ArrowUp") target = current.previousElementSibling as HTMLTableRowElement | null;
+                      else if (event.key === "Home") target = rowGroup?.firstElementChild as HTMLTableRowElement | null;
+                      else if (event.key === "End") target = rowGroup?.lastElementChild as HTMLTableRowElement | null;
+
+                      if (target?.dataset.rowId) {
+                        event.preventDefault();
+                        onRowSelect(target.dataset.rowId);
+                        target.focus();
                       }
                     }
                   : undefined
               }
+              data-row-id={id}
               data-testid={`row-${id}`}
             >
               {columns.map((column) => (
@@ -110,5 +172,6 @@ export function DataTable<T>({
         })}
       </tbody>
     </table>
+    </div>
   );
 }

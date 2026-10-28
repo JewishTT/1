@@ -1,23 +1,10 @@
-/* CI/SpecOps department canvas — holographic deck (Feature 027, re-skinned in 031).
+/* CI / SpecOps canvas layout.
  *
- * The material itself (translucent panes, luminous edges, the ambient field, the
- * three keyframes) lives in `styles/holo.css`, which explains the two rule-bends this
- * department now carries and exactly which design rules survive them. This file only
- * decides where the material lands.
- *
- * The structural idea, and it is the whole reason the department stopped reading as a
- * list of boxes: there are THREE planes of depth, and every panel sits on one of them
- * rather than on the same one.
- *
- *   plane 0  the field      the canvas backdrop: grid + two blooms, blurred
- *   plane 1  the canvas     the department header and the mode selector
- *   plane 2  the instrument the active panel — the only surface with a live edge
- *   plane 3  the row        everything inside it, flat, so the instrument reads as a
- *                           container and not as a pile of competing cards
- *
- * The rule that makes it work: exactly ONE thing per panel is allowed a luminous edge.
- * When every row glows, the glow stops meaning anything and the operator is back to
- * reading a list — only slower.
+ * This sheet still contains legacy material declarations from the former
+ * holographic treatment. styles/normalization.css is the final authority for
+ * the mounted UI 2.0 surface and removes decorative gradients, blur and glow.
+ * Keep this file focused on layout and interaction classes; gate and outcome
+ * semantics must remain explicit and must never be flattened into decoration.
  */
 
 .ui-cicanvas {
@@ -556,4 +543,105 @@
 
 .ui-ci-panel[data-testid="ci-detection-panel"] {
   border-color: color-mix(in srgb, var(--ui-gold) 18%, transparent);
+}
+
+/* Corporate UI migration: retain the CI canvas structure and interaction
+ * contracts while removing the legacy holographic material. These rules live
+ * with this surface intentionally, so CSS import order cannot restore glow,
+ * blur, gradients or animated chrome after the shared normalization layer.
+ */
+.ui-cicanvas,
+.ui-cicanvas.ui-holo-field {
+  background: var(--ui-bg);
+  border: 0;
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-cicanvas-head,
+.ui-ci-panel {
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.ui-cicanvas-head .ui-tabs {
+  background: var(--ui-bg-sunken);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2);
+  box-shadow: none;
+}
+
+.ui-cicanvas-head .ui-tab {
+  border-radius: var(--ui-radius-1);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.ui-cicanvas-head .ui-tab[aria-selected="true"] {
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: none;
+}
+
+.ui-cicanvas-head .ui-tab[aria-selected="true"]::after,
+.ui-ci-panel::after {
+  content: none;
+  animation: none;
+}
+
+.ui-ci-panel-head {
+  border-bottom-color: var(--ui-border);
+}
+
+.ui-ci-panel-head .ui-pane-title {
+  color: var(--ui-text-secondary);
+  text-shadow: none;
+}
+
+.ui-ci-panel,
+.ui-ci-panel *,
+.ui-cicanvas-head,
+.ui-cicanvas-head * {
+  text-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-cicanvas *,
+  .ui-cicanvas *::before,
+  .ui-cicanvas *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .ui-cicanvas {
+    min-width: 0;
+    padding: 0;
+  }
+
+  .ui-cicanvas-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ui-cicanvas-head .ui-tabs {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .ui-cicanvas-head .ui-tab {
+    flex: 0 0 auto;
+  }
+
+  .ui-ci-panel {
+    min-width: 0;
+    padding: var(--ui-space-3);
+  }
 }

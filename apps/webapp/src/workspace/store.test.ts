@@ -236,6 +236,15 @@ describe("WorkspaceState — layout actions", () => {
     expect(fresh().density).toBe("standard");
   });
 
+  it("sets responsive pane visibility idempotently without overwriting other layout state", () => {
+    reset();
+    fresh().setPaneVisibility({ rail: false, inspector: false });
+
+    expect(fresh().paneVisibility).toEqual({ rail: false, inspector: false, activity: true });
+    fresh().setPaneVisibility({ rail: false });
+    expect(fresh().paneVisibility).toEqual({ rail: false, inspector: false, activity: true });
+  });
+
   it("clamps a negative pane width rather than storing it", () => {
     reset();
     fresh().setPaneWidth("inspector", -40);

@@ -7,15 +7,15 @@
  * Changes: Adaptation — rules are prefixed with `.sf-scope` so the donor
  *          Bootstrap-style selectors only apply inside our "scan/connector"
  *          surfaces (SearchPage result lists) instead of the whole app.
- *          Applied where `sf-scope` surrogate set in markup.
+ *          Canonical UI tokens now supply the palette; all rules remain scoped.
  */
 .sf-scope {
-  --sf-cyan: #059cd7;
-  --sf-cyan-hover: #037eaf;
-  --sf-panel: #3a3a3a;
-  --sf-panel-depth: #555;
-  --sf-bg: #1b1b1b;
-  --sf-border: #828181;
+  --sf-cyan: var(--ui-analytical);
+  --sf-cyan-hover: var(--ui-analytical);
+  --sf-panel: var(--ui-surface-1);
+  --sf-panel-depth: var(--ui-surface-2);
+  --sf-bg: var(--ui-bg-sunken);
+  --sf-border: var(--ui-border);
 }
 
 /* Scan event log rows — alternating panel / zebra like SF results */
@@ -29,7 +29,7 @@
   border-bottom: 1px solid var(--sf-border);
 }
 .sf-scope tr {
-  background-color: var(--sf-panel) !important;
+  background-color: var(--sf-panel);
 }
 .sf-scope tr:nth-child(even) {
   background-color: var(--sf-panel-depth);
@@ -41,7 +41,7 @@
   box-sizing: border-box;
   background: var(--sf-bg);
   border: 1px solid var(--sf-border);
-  color: #fff;
+  color: var(--ui-text);
 }
 .sf-scope table pre {
   white-space: pre-wrap;
@@ -65,7 +65,7 @@
 .sf-scope .alert-info {
   border: 1px solid var(--sf-border);
   background: var(--sf-panel);
-  color: #fff;
+  color: var(--ui-text);
   padding: 8px 12px;
   border-radius: 4px;
 }
@@ -73,30 +73,34 @@
 /* Modal / popover panels */
 .sf-scope .modal-content {
   background-color: var(--sf-panel);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-  color: #fff;
+  box-shadow: var(--ui-elevation-3);
+  color: var(--ui-text);
   border-radius: 6px;
 }
 .sf-scope .popover-title {
   background-color: var(--sf-panel-depth);
-  color: #fff;
+  color: var(--ui-text);
 }
 .sf-scope .dropdown-menu {
   background-color: var(--sf-panel-depth);
 }
 .sf-scope .dropdown-menu > li > a {
-  color: #fff;
+  color: var(--ui-text);
 }
 .sf-scope .dropdown-menu > li > a:hover {
-  background-color: var(--sf-cyan);
+  background-color: var(--ui-analytical-wash);
+  color: var(--ui-text);
 }
 
 /* SVG / axis deps for scan graphs (dendrograms etc) */
-.sf-scope svg text,
+.sf-scope svg text {
+  fill: var(--ui-text);
+  stroke: none;
+}
 .sf-scope .axis path,
 .sf-scope .axis line {
-  fill: #fff;
-  stroke: #fff;
+  fill: none;
+  stroke: var(--ui-border-strong);
 }
 
 /* Link colour in scan output */

@@ -49,6 +49,18 @@ describe("topnav", () => {
     expect(screen.getByTestId("topnav-sections")).toBeInTheDocument();
   });
 
+  it("separates module scope, active location and destination links into two rows", () => {
+    renderAt("/investigations");
+    const topnav = screen.getByTestId("topnav");
+    expect(topnav.querySelector(".ui-topnav-primary")).toContainElement(screen.getByTestId("topnav-modules"));
+    expect(topnav.querySelector(".ui-topnav-primary")).toContainElement(topnav.querySelector(".ui-topnav-trail"));
+    expect(topnav.querySelector(".ui-topnav-sections")).not.toBeNull();
+    expect(topnav.querySelector(".ui-topnav-primary")?.compareDocumentPosition(
+      topnav.querySelector(".ui-topnav-sections")!,
+    )).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByTestId("topnav-sections")).toHaveAttribute("aria-label", "Section navigation");
+  });
+
   it("shows the OSINT destinations by default", () => {
     renderAt("/investigations");
     const nav = screen.getByTestId("topnav-sections");
@@ -89,7 +101,7 @@ describe("topnav", () => {
 
   it("marks the active module tab", () => {
     renderAt("/economic");
-    const tab = document.querySelector('[data-module="economic"]');
+    const tab = document.querySelector('.ui-nav-module[data-module="economic"]');
     expect(tab).toHaveAttribute("data-active", "true");
   });
 
@@ -102,7 +114,7 @@ describe("topnav", () => {
 
   it("navigates when a module tab is pressed", () => {
     renderAt("/investigations");
-    fireEvent.click(screen.getByRole("tab", { name: "SPEC" }));
+    fireEvent.click(screen.getByRole("tab", { name: "SPECOPS" }));
     expect(screen.getByTestId("topnav-sections")).toHaveTextContent("Pipeline Operations");
   });
 

@@ -1,4 +1,4 @@
-import { forwardRef, useId, type InputHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from "react";
+import { forwardRef, useId, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes, type ReactNode } from "react";
 
 import { Icon } from "./Icon";
 
@@ -53,6 +53,146 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     </span>
   );
 });
+
+export interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className"> {
+  /** Visible label. Rendered above the control; placeholders are not labels. */
+  label?: string;
+  /** Render copyable context, queries or raw text in the monospace face. */
+  mono?: boolean;
+  hint?: string;
+}
+
+/** Multiline text input with the same labelling, token and focus contract as Input. */
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { label, hint, mono, id, ...rest },
+  ref,
+) {
+  const generatedId = useId();
+  const controlId = id ?? generatedId;
+  const hintId = hint ? `${controlId}-hint` : undefined;
+  const control = (
+    <textarea
+      ref={ref}
+      id={controlId}
+      className="ui-textarea"
+      data-mono={mono ? "true" : undefined}
+      aria-describedby={hintId}
+      {...rest}
+    />
+  );
+
+  if (!label && !hint) return control;
+
+  return (
+    <span className="ui-field">
+      {label ? <label className="ui-field-label" htmlFor={controlId}>{label}</label> : null}
+      {control}
+      {hint ? <span className="ui-field-hint" id={hintId}>{hint}</span> : null}
+    </span>
+  );
+});
+
+export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "type"> {
+  label: string;
+  hint?: string;
+}
+
+/** Checkbox with a visible label and optional associated hint. */
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
+  { label, hint, id, ...rest },
+  ref,
+) {
+  const generatedId = useId();
+  const controlId = id ?? generatedId;
+  const hintId = hint ? `${controlId}-hint` : undefined;
+
+  return (
+    <span className="ui-check-field">
+      <label className="ui-check" htmlFor={controlId}>
+        <input ref={ref} id={controlId} type="checkbox" aria-describedby={hintId} {...rest} />
+        <span className="ui-check-label">{label}</span>
+      </label>
+      {hint ? <span className="ui-field-hint" id={hintId}>{hint}</span> : null}
+    </span>
+  );
+});
+
+
+export interface RadioOption<T extends string = string> {
+  value: T;
+  label: string;
+  description?: string;
+  disabled?: boolean;
+}
+
+export interface RadioGroupProps<T extends string = string> {
+  /** Visible group name, rendered as a legend (not a placeholder). */
+  label: string;
+  /** Controlled selected value. */
+  value: T;
+  options: ReadonlyArray<RadioOption<T>>;
+  onValueChange: (value: T) => void;
+  hint?: string;
+  name?: string;
+  orientation?: "horizontal" | "vertical";
+  disabled?: boolean;
+  required?: boolean;
+  id?: string;
+}
+
+/**
+ * RadioGroup. Native radio inputs keep browser keyboard behavior, while the
+ * shared field contract owns labels, descriptions, disabled state and layout.
+ */
+export function RadioGroup<T extends string = string>({
+  label,
+  value,
+  options,
+  onValueChange,
+  hint,
+  name,
+  orientation = "vertical",
+  disabled = false,
+  required = false,
+  id,
+}: RadioGroupProps<T>) {
+  const generatedId = useId();
+  const groupId = id ?? generatedId;
+  const hintId = hint ? `${groupId}-hint` : undefined;
+  const groupName = name ?? groupId;
+
+  return (
+    <fieldset
+      className="ui-radio-group"
+      data-orientation={orientation}
+      disabled={disabled}
+      aria-describedby={hintId}
+      data-testid={id ? `${id}-group` : undefined}
+    >
+      <legend className="ui-field-label">{label}</legend>
+      <div className="ui-radio-options">
+        {options.map((option) => (
+          <label className="ui-radio" key={option.value}>
+            <input
+              type="radio"
+              name={groupName}
+              value={option.value}
+              checked={value === option.value}
+              disabled={disabled || option.disabled}
+              required={required}
+              onChange={() => onValueChange(option.value)}
+            />
+            <span className="ui-radio-copy">
+              <span className="ui-radio-label">{option.label}</span>
+              {option.description ? <span className="ui-radio-description">{option.description}</span> : null}
+            </span>
+          </label>
+        ))}
+      </div>
+      {hint ? <span className="ui-field-hint" id={hintId}>{hint}</span> : null}
+    </fieldset>
+  );
+}
 
 export interface SelectOption<T extends string = string> {
   value: T;

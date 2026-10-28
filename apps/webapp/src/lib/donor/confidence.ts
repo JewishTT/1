@@ -12,8 +12,8 @@
  *   string-switch is kept but a `confidenceFromScore` bucket mapping is added.
  * - Badge colours are expressed as ROLES, not hex (T135). The donor carried "plain
  *   hex (no Tailwind tokens)"; those hex literals are now resolved by the caller
- *   from `styles/legacy/legacy-tokens.css`, so a confidence badge follows the
- *   theme instead of pinning a colour that matches nothing else on screen.
+ *   from the canonical UI token stylesheet, so a confidence badge follows the
+ *   active theme and shares semantic colors with the rest of the workbench.
  */
 
 export type Confidence = "verified" | "unverified" | "asserted";
@@ -39,11 +39,11 @@ export const CONFIDENCE_ROLE: Record<Confidence, ConfidenceRole> = {
   asserted: "muted",
 };
 
-/** The `--c-*` token each role resolves to. */
+/** The `--ui-*` token each role resolves to. */
 export const CONFIDENCE_TOKEN: Record<ConfidenceRole, string> = {
-  success: "--c-success",
-  warning: "--c-warning",
-  muted: "--c-muted",
+  success: "--ui-accent",
+  warning: "--ui-gold",
+  muted: "--ui-text-secondary",
 };
 
 export function confidenceFromScore(score: number): Confidence {
@@ -56,7 +56,7 @@ export function confidenceLabel(score: number): string {
   return CONFIDENCE_LABEL[confidenceFromScore(score)];
 }
 
-/** The token reference for a tier's colour, e.g. `var(--c-success)`. */
+/** The token reference for a tier's colour, e.g. `var(--ui-accent)`. */
 export function confidenceColorVar(confidence: Confidence): string {
   return `var(${CONFIDENCE_TOKEN[CONFIDENCE_ROLE[confidence]]})`;
 }

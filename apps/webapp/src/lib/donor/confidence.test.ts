@@ -36,6 +36,9 @@ describe("presentation helpers", () => {
     expect(CONFIDENCE_ROLE.verified).toBe("success");
     expect(CONFIDENCE_ROLE.unverified).toBe("warning");
     expect(CONFIDENCE_ROLE.asserted).toBe("muted");
+    expect(CONFIDENCE_TOKEN.success).toBe("--ui-accent");
+    expect(CONFIDENCE_TOKEN.warning).toBe("--ui-gold");
+    expect(CONFIDENCE_TOKEN.muted).toBe("--ui-text-secondary");
 
     expect(confidenceColorVar("verified")).toBe(`var(${CONFIDENCE_TOKEN.success})`);
     expect(confidenceColorVar("unverified")).toBe(`var(${CONFIDENCE_TOKEN.warning})`);
@@ -44,7 +47,7 @@ describe("presentation helpers", () => {
 
   it("emits no hex literal, only var() references", () => {
     for (const tier of ["verified", "unverified", "asserted"] as const) {
-      expect(confidenceColorVar(tier)).toMatch(/^var\(--c-[a-z0-9-]+\)$/);
+      expect(confidenceColorVar(tier)).toMatch(/^var\(--ui-[a-z0-9-]+\)$/);
       expect(confidenceColorVar(tier)).not.toContain("#");
     }
   });

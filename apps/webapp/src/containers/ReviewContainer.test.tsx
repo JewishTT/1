@@ -81,7 +81,10 @@ describe("ReviewContainer", () => {
     const items = await screen.findByTestId("review-queue-items");
     const keys = within(items).getAllByTestId("review-state-badge");
     expect(keys[0]).toHaveTextContent("unreviewed");
+    expect(keys[0]).toHaveStyle({ color: "var(--ui-analytical)" });
+    expect(keys[1]).toHaveStyle({ color: "var(--ui-gold)" });
     expect(keys[2]).toHaveTextContent("accepted");
+    expect(keys[2]).toHaveStyle({ color: "var(--ui-accent)" });
   });
 
   it("renders derived badges: confidence, evidence, node tone", async () => {

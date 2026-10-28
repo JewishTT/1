@@ -317,3 +317,321 @@ describe("T135 — every token this codebase reads is declared in a stylesheet",
     }
   });
 });
+
+/* ── UI normalization — narrow shell and interaction contract ────────── */
+
+describe("UI normalization — responsive shell and accessible interaction", () => {
+  const normalization = readShipped("styles", "normalization.css");
+
+  it("keeps the shell grid row content-sized when the topbar wraps", () => {
+    const narrow = normalization.split("@media (max-width: 1023px)")[1]?.split("@media")[0] ?? "";
+    expect(narrow).toContain(".ui-root.ui-shell");
+    expect(narrow).toContain("grid-template-rows: auto minmax(0, 1fr) auto");
+    expect(narrow).toContain(".ui-root .ui-topnav");
+    expect(narrow).toContain(".ui-root .ui-topbar-work");
+    expect(narrow).toContain("overflow: visible");
+  });
+
+  it("does not hide work-state counts on narrow screens", () => {
+    const narrow = normalization.split("@media (max-width: 1023px)")[1]?.split("@media")[0] ?? "";
+    expect(narrow).toContain(".ui-root .ui-topbar-counts");
+    expect(narrow).toContain("flex-wrap: wrap");
+    expect(narrow).not.toMatch(/\.ui-topbar-counts\s*\{[^}]*display:\s*none/s);
+  });
+
+  it("constrains the command palette to a phone viewport", () => {
+    const phone = normalization.split("@media (max-width: 767px)").slice(-1)[0] ?? "";
+    expect(phone).toContain(".ui-palette-root {");
+    expect(phone).toContain(".ui-palette-root .ui-palette-list");
+    expect(phone).not.toContain(".ui-root .ui-palette-root");
+    expect(phone).toContain("width: 100%");
+    expect(phone).toContain("max-height: 84dvh");
+    expect(phone).toContain("overflow-y: auto");
+  });
+
+  it("retains reduced-motion support and a visible keyboard focus ring", () => {
+    expect(normalization).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(normalization).toContain(":focus-visible");
+    expect(normalization).toContain("outline: 2px solid var(--ui-focus-ring");
+  });
+
+  it("does not override semantic GhostLine gate borders with a blanket selector", () => {
+    expect(normalization).toContain("Keep GhostLine's gate/setup/absent border semantics intact.");
+    expect(normalization).not.toMatch(/\.ui-holo-edge\s*\{/);
+    expect(normalization).not.toMatch(/\.ui-holo-bracket\s*\{/);
+  });
+});
+
+
+describe("UI normalization — GhostLine keeps semantics without decorative glow", () => {
+  const normalization = readShipped("styles", "normalization.css");
+
+  it("flattens nested traces and refusal surfaces onto canonical tokens", () => {
+    expect(normalization).toContain(".ui-root .ui-gl-refusal");
+    expect(normalization).toContain(".ui-root .ui-gl-stage");
+    expect(normalization).toContain(".ui-root .ui-gl-trace > li");
+    expect(normalization).toContain(".ui-root .ui-gl-turns > li");
+    expect(normalization).toContain("background: var(--ui-surface-1)");
+    expect(normalization).toContain("box-shadow: none");
+  });
+
+  it("retains active and gate state through semantic borders and washes", () => {
+    expect(normalization).toContain(".ui-gl-card[data-active=\"true\"]");
+    expect(normalization).toContain("background: var(--ui-accent-wash)");
+    expect(normalization).toContain("border-left-color: var(--holo-hue, var(--ui-border))");
+    expect(normalization).toContain(".ui-gl-rungs > li[data-current=\"true\"]");
+  });
+
+  it("removes text glow from machine readouts while keeping the live marker", () => {
+    expect(normalization).toContain(".ui-gl-readout-value");
+    expect(normalization).toContain(".ui-gl-readout[data-tone=\"live\"] .ui-gl-readout-value::after");
+    expect(normalization).toContain("text-shadow: none");
+  });
+
+  it("keeps section headings neutral; accent is reserved for semantic state", () => {
+    expect(normalization).toContain(".ui-root .ui-gl-subhead .ui-pane-title");
+    expect(normalization).toContain("color: var(--ui-text-secondary)");
+  });
+
+  it("removes HUD corner brackets and shared holographic readout text glow", () => {
+    expect(normalization).toContain(".ui-root .ui-holo-bracket::before");
+    expect(normalization).toContain(".ui-root .ui-holo-bracket::after");
+    expect(normalization).toContain(".ui-root .ui-holo-readout-value");
+    expect(normalization).toContain(".ui-root .ui-holo-heading::after");
+    expect(normalization).toContain("content: none");
+  });
+});
+
+
+describe("UI normalization — token ownership and cascade order", () => {
+  it("uses semantic tokens instead of embedding a second palette", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    expect(normalization).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(normalization).not.toMatch(/rgba?\(/i);
+    expect(normalization).toContain("background: var(--ui-accent-wash)");
+  });
+
+  it("loads normalization after application, legacy and scoped donor styles", () => {
+    const layers = readShipped("styles", "layers.css").trim();
+    expect(layers.endsWith('@import "./normalization.css";')).toBe(true);
+    expect(layers.indexOf('@import "./normalization.css";')).toBeGreaterThan(
+      layers.indexOf('@import "./scoped/netforensicai.css";'),
+    );
+    expect(layers).toContain('@import "./bridge/vitni.css";');
+    expect(layers).not.toContain('donors/pano/pano-tokens.css');
+    expect(layers).not.toContain('donors/vitni/v2.css');
+    expect(layers).not.toContain('donors/vitni/search.css');
+    expect(layers).not.toContain('donors/vitni/evidence-reports.css');
+    expect(layers).not.toContain('donors/rengine/timeline.css');
+    expect(layers).not.toContain('donors/rengine/scrollspyNav.css');
+  });
+
+  it("bridges every legacy palette name to a canonical token", () => {
+    const bridge = readShipped("styles", "tokens", "legacy-bridge.css");
+    expect(bridge).toContain("--color-cyber: var(--ui-analytical)");
+    expect(bridge).toContain("--color-cyber-hi: var(--ui-text)");
+    expect(bridge).toContain("--color-ember: var(--ui-gold)");
+    expect(bridge).toContain("--color-matri: var(--ui-accent)");
+    expect(bridge).toContain("--color-crimson: var(--ui-danger)");
+    expect(bridge).toContain("--color-violet: var(--ui-text-secondary)");
+    expect(bridge).toContain("--color-magenta: var(--ui-text-secondary)");
+    expect(bridge).toContain("--color-abyss: var(--ui-bg)");
+    expect(bridge).toContain("--color-abyss-2: var(--ui-surface-1)");
+    expect(bridge).toContain("--color-frame: var(--ui-border)");
+    expect(bridge).toContain("--color-ghost: var(--ui-text)");
+    expect(bridge).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+  });
+});
+
+
+describe("UI normalization — pane-contained payloads and media", () => {
+  const normalization = readShipped("styles", "normalization.css");
+
+  it("contains preformatted payloads and long inline identifiers", () => {
+    expect(normalization).toContain(".ui-root pre");
+    expect(normalization).toContain("overflow: auto");
+    expect(normalization).toContain("overflow-wrap: anywhere");
+    expect(normalization).toContain("overscroll-behavior: contain");
+  });
+
+  it("prevents oversized media from widening the workbench", () => {
+    expect(normalization).toContain(".ui-root :where(img, video, canvas)");
+    expect(normalization).toContain("max-width: 100%");
+  });
+});
+
+
+describe("UI normalization — CI metrics and nested keyboard focus", () => {
+  const normalization = readShipped("styles", "normalization.css");
+
+  it("uses flat token-backed CI metric bars and preserves semantic outcome borders", () => {
+    expect(normalization).toContain(".ui-root .ui-ci-metrics");
+    expect(normalization).toContain(".ui-root .ui-ci-bar");
+    expect(normalization).toContain(".ui-root .ui-ci-bar-alt");
+    expect(normalization).toContain("background: var(--ui-analytical)");
+    expect(normalization).toContain('.ui-ci-abilities > li[data-state="failed"]');
+  });
+
+  it("keeps a visible keyboard ring on the GhostLine textarea", () => {
+    expect(normalization).toContain(".ui-root .ui-gl-textarea:focus-visible");
+    expect(normalization).toContain("outline: 2px solid var(--ui-focus-ring)");
+  });
+});
+
+
+describe("UI normalization — theme-owned overlay scrims", () => {
+  it("declares drawer and modal scrims for dark and light themes", () => {
+    const colors = readShipped("styles", "tokens", "color.css");
+    expect(colors).toContain("--ui-scrim-drawer: rgba(0, 0, 0, 0.32)");
+    expect(colors).toContain("--ui-scrim-modal: rgba(0, 0, 0, 0.42)");
+    expect(colors).toContain("--ui-scrim-drawer: rgba(18, 23, 20, 0.18)");
+    expect(colors).toContain("--ui-scrim-modal: rgba(18, 23, 20, 0.24)");
+  });
+
+  it("keeps component styles bound to the semantic scrim tokens", () => {
+    const components = readShipped("styles", "components", "index.css");
+    expect(components).toContain("background: var(--ui-scrim-drawer)");
+    expect(components).toContain("background: var(--ui-scrim-modal)");
+    expect(components).not.toMatch(/rgba?\(/i);
+  });
+});
+
+
+describe("UI normalization — scoped donor palettes", () => {
+  it("maps SpiderFoot and NetForensicAI colors to canonical tokens", () => {
+    const spiderfoot = readShipped("styles", "scoped", "spiderfoot.css");
+    const netforensicai = readShipped("styles", "scoped", "netforensicai.css");
+    for (const stylesheet of [spiderfoot, netforensicai]) {
+      expect(stylesheet).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+      expect(stylesheet).not.toMatch(/rgba?\(/i);
+    }
+    expect(spiderfoot).toContain("--sf-panel: var(--ui-surface-1)");
+    expect(spiderfoot).toContain("--sf-cyan: var(--ui-analytical)");
+    expect(netforensicai).toContain("--panel: var(--ui-surface-1)");
+    expect(netforensicai).toContain("--accent: var(--ui-analytical)");
+    expect(netforensicai).toContain("background: var(--ui-danger-wash)");
+    expect(netforensicai).toContain("border: 1px solid var(--ui-danger-line)");
+  });
+
+  it("preserves donor namespace boundaries and allows SpiderFoot zebra rows", () => {
+    const spiderfoot = readShipped("styles", "scoped", "spiderfoot.css");
+    const netforensicai = readShipped("styles", "scoped", "netforensicai.css");
+    expect(spiderfoot).toContain(".sf-scope table");
+    expect(netforensicai).toContain(".nfa-scope .panel");
+    expect(spiderfoot).not.toContain("background-color: var(--sf-panel) !important");
+  });
+});
+
+
+describe("UI normalization — Vitni review/lineage bridge", () => {
+  it("scopes adapter selectors and removes the donor purple/glow palette", () => {
+    const bridge = readShipped("styles", "bridge", "vitni.css");
+    expect(bridge).toContain(".ui-root .review-item");
+    expect(bridge).toContain(".ui-root .lineage-fact");
+    expect(bridge).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(bridge).not.toMatch(/rgba?\(/i);
+    expect(bridge).not.toMatch(/(?:linear|radial|conic)-gradient\(/i);
+    expect(bridge).not.toMatch(/box-shadow:\s*0\s+0/i);
+  });
+});
+
+
+describe("UI normalization — legacy shell compatibility", () => {
+  it("maps legacy chrome aliases to canonical tokens inside the workbench root", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    expect(normalization).toContain("--c-bg: var(--ui-bg)");
+    expect(normalization).toContain("--c-surface: var(--ui-surface-1)");
+    expect(normalization).toContain("--c-danger: var(--ui-danger)");
+    expect(normalization).toContain("--c-warning: var(--ui-gold)");
+    expect(normalization).toContain("--acc-glow: none");
+  });
+
+  it("removes legacy body overlays above the modern shell without globally restyling other pages", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    expect(normalization).toContain("body:has(.ui-root)::before");
+    expect(normalization).toContain("body:has(.ui-root)::after");
+    expect(normalization).toContain("display: none");
+    expect(normalization).toContain("background-image: none");
+    expect(normalization).toContain(".ui-root .sidebar");
+    expect(normalization).toContain(".ui-root .header");
+    expect(normalization).toContain(".ui-root .module-tabs");
+    expect(normalization).toContain(".ui-root .op-tile::before");
+    expect(normalization).toContain(".ui-root .panel::before");
+    const legacyCommands = readShipped("styles", "legacy", "legacy-commands.css");
+    expect(legacyCommands).not.toMatch(/!important\s*;/);
+  });
+
+  it("keeps legacy selection and event semantics while removing decorative glow", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    expect(normalization).toContain('.ui-root .node-card[data-selected="true"]');
+    expect(normalization).toContain('.ui-root .feed-item[data-kind="science.invariant"]');
+    expect(normalization).toContain("border-color: var(--ui-analytical)");
+    expect(normalization).toContain("border-color: var(--ui-danger)");
+    expect(normalization).toContain("animation: none");
+  });
+});
+
+
+describe("UI normalization — RadioGroup contracts", () => {
+  it("provides labelled radio controls through the public component-library barrel", () => {
+    const input = readShipped("ui", "Input.tsx");
+    const barrel = readShipped("ui", "index.ts");
+    const styles = readShipped("styles", "components", "index.css");
+    expect(input).toContain("export interface RadioGroupProps");
+    expect(input).toContain("type=\"radio\"");
+    expect(input).toContain("<legend className=\"ui-field-label\">{label}</legend>");
+    expect(barrel).toContain("RadioGroup");
+    expect(styles).toContain(".ui-radio-group");
+    expect(styles).toContain(".ui-radio input:focus-visible");
+  });
+});
+
+
+describe("UI normalization — restrained neo-militarist visual grammar", () => {
+  it("uses token-backed industrial hierarchy without reintroducing neon decoration", () => {
+    const styles = readShipped("styles", "components", "index.css");
+    const tuningStart = styles.indexOf("Neo-militarist calibration");
+    expect(tuningStart).toBeGreaterThanOrEqual(0);
+    const tuning = styles.slice(tuningStart);
+
+    expect(tuning).toContain(".ui-kit-header");
+    expect(tuning).toContain("border-inline-start: 2px solid var(--ui-accent)");
+    expect(tuning).toContain("font-family: var(--ui-font-mono)");
+    expect(tuning).toContain("color: var(--ui-gold)");
+    expect(tuning).toContain("border-radius: var(--ui-radius-1)");
+    expect(tuning).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(tuning).not.toMatch(/(?:linear|radial|conic)-gradient\s*\(/i);
+    expect(tuning).not.toMatch(/text-shadow\s*:/i);
+    expect(tuning).not.toMatch(/backdrop-filter\s*:\s*(?!none)/i);
+    expect(tuning).not.toMatch(/box-shadow\s*:\s*0\s+0/i);
+  });
+});
+
+
+describe("UI normalization — shared neo-militarist shell register", () => {
+  it("uses one signal rail and amber instrumentation without decorative chrome", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    const start = normalization.indexOf("Workbench visual register");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const shellRegister = normalization.slice(start);
+    expect(shellRegister).toContain(".ui-root .ui-topbar");
+    expect(shellRegister).toContain("border-top: 2px solid var(--ui-accent)");
+    expect(shellRegister).toContain("color: var(--ui-gold)");
+    expect(shellRegister).toContain("var(--ui-font-mono)");
+    expect(shellRegister).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(shellRegister).not.toMatch(/(?:linear|radial|conic)-gradient\s*\(/i);
+    expect(shellRegister).not.toMatch(/text-shadow\s*:/i);
+    expect(shellRegister).not.toMatch(/backdrop-filter\s*:\s*(?!none)/i);
+    expect(shellRegister).not.toMatch(/box-shadow\s*:\s*0\s+0/i);
+  });
+});
+
+
+describe("UI scale tokens — light-theme elevation scope", () => {
+  it("declares light elevation at stylesheet root, not as a nested selector", () => {
+    const scale = readShipped("styles", "tokens", "scale.css");
+    expect(scale).toMatch(/\n}\s*\n\s*\[data-theme="light"\]\s*\{/);
+    expect(scale).toMatch(/\n}\s*\n\s*:root\s*\{\s*\/\* ── Layout metrics/);
+    expect(scale).toContain("--ui-elevation-2: 0 6px 18px rgba(18, 23, 20, 0.1);");
+  });
+});

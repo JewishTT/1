@@ -24,6 +24,8 @@ import type { Command } from "./workspace/commands";
 export function CommandPalette() {
   const open = useWorkspace((state) => state.commandPaletteOpen);
   const setOpen = useWorkspace((state) => state.setCommandPaletteOpen);
+  const theme = useWorkspace((state) => state.theme);
+  const density = useWorkspace((state) => state.density);
   const run = useCallback(
     (command: Command) => {
       command.run();
@@ -54,7 +56,7 @@ export function CommandPalette() {
   if (!open) return null;
 
   return (
-    <div className="ui-palette-root" data-testid="command-palette">
+    <div className="ui-palette-root ui-root" data-theme={theme} data-density={density} data-testid="command-palette">
       <div className="ui-palette-scrim" onClick={() => setOpen(false)} aria-hidden="true" />
       <div className="ui-palette ui-root" role="dialog" aria-label="Command palette">
         <div className="ui-palette-head">

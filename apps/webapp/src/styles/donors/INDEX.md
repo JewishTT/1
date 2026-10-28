@@ -2,34 +2,35 @@
 
 This directory contains verbatim (or minimally adapted) stylesheets pulled from the
 10 donor repositories per track 005 (US5/T031). Each file keeps its **original license**
-in a header above the copied content. Legal basis: the platform is non-commercial and
-closed-access; PANO is CC BY-NC-4.0, vitni/kafSIEM/NetForensicAI are Apache-2.0,
-SpiderFoot/reNgine are MIT.
+in a header above the copied content. License status must be reviewed before product distribution: PANO is CC BY-NC-4.0, vitni/kafSIEM/NetForensicAI are Apache-2.0, SpiderFoot/reNgine are MIT. The PANO token file is reference-only and is not imported into the runtime bundle.
 
 ## Import policy
 
 `layers.css` (in `src/styles/`)
-imports only the **scoped** vendor stylesheets — selectors prefixed with a vendor
-namespace (`.v2-*`, `.hori-timeline`, `.sidenav`, etc.) that cannot collide with the
-app's own `index.css` classes. Files that set **global** selectors (`body`, `:root`,
+imports only active first-party styles and scoped adapters. Donor files with no
+mounted class usage remain reference-only even if their selectors are namespaced. Files that set **global** selectors (`body`, `:root`,
 `*`, `tr`, `a`, form controls) are vendored here for attribution/reference and for
 selective token adoption, but are **not** globally imported, so they never clobber the
 app's own dark theme.
 
 | Donor | File(s) | License | Imported? |
 |-------|---------|---------|-----------|
-| PANO | `pano/pano-tokens.css` | CC BY-NC-4.0 | tokens only via layers |
-| vitni | `vitni/v2.css`, `vitni/search.css`, `vitni/evidence-reports.css` | Apache-2.0 | yes (scoped `.v2-*`) |
+| PANO | `pano/pano-tokens.css` | CC BY-NC-4.0 | no (reference only; license review required before production use) |
+| vitni | `vitni/v2.css`, `vitni/search.css`, `vitni/evidence-reports.css` | Apache-2.0 | no (no mounted `.v2-*` class usage) |
+| vitni adapter | `bridge/vitni.css` | Apache-2.0 | yes (scoped to `.ui-root`, canonical tokens) |
 | vitni | `vitni/index.css` (global `:root`/`body`) | Apache-2.0 | no (tokens reference) |
-| SpiderFoot | `spiderfoot/dark.css`, `spiderfoot/spiderfoot.css` | MIT | no (global `body`/`tr`/`a`) |
-| NetForensicAI | `netforensicai/style.css` | Apache-2.0 | no (global `body`/`*`) |
+| SpiderFoot upstream | `spiderfoot/dark.css`, `spiderfoot/spiderfoot.css` | MIT | no (global `body`/`tr`/`a`) |
+| SpiderFoot adapter | `scoped/spiderfoot.css` | MIT | yes (scoped to `.sf-scope`, canonical tokens) |
+| NetForensicAI upstream | `netforensicai/style.css` | Apache-2.0 | no (global `body`/`*`) |
+| NetForensicAI adapter | `scoped/netforensicai.css` | Apache-2.0 | yes (scoped to `.nfa-scope`, canonical tokens) |
 | kafSIEM | `kafSIEM/theme.css`, `kafSIEM/index.css`, `kafSIEM/mobile.css` | Apache-2.0 | no (needs Tailwind v4 `@theme`) |
-| reNgine | `rengine/custom.css`, `rengine/timeline.css`, `rengine/scrollspyNav.css` | MIT | timeline/scrollspyNav yes; custom.css no (global) |
+| reNgine | `rengine/custom.css`, `rengine/timeline.css`, `rengine/scrollspyNav.css` | MIT | no (no mounted `.hori-timeline` / `.sidenav` usage; reference-only) |
 
 > **PANO note:** PANO ships no `.css` files; its geometry/color palette lives in
 > `ui/styles/{node_style,edge_style,timeline_style,map_styles}.py`. Those values were
 > converted to CSS custom properties in `pano/pano-tokens.css` (the only non-verbatim
-> file here, and flagged as such in its header).
+> file here, and flagged as such in its header). This file is not imported at runtime
+> because the CC BY-NC-4.0 terms require a license decision before commercial use.
 >
 > **kafSIEM note:** `theme.css` uses Tailwind v4 `@theme` and `color-mix()`. The webapp
 > uses plain CSS (no Tailwind), so these files are vendored for provenance; the neon
