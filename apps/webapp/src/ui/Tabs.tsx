@@ -71,7 +71,7 @@ export function Tabs<T extends string>({
   const ariaOrientation = orientation === "rail" ? "vertical" : "horizontal";
 
   return (
-    <div className="ui-tabs" role="tablist" aria-label={label} aria-orientation={ariaOrientation}>
+    <div className="ui-tabs" role="tablist" aria-label={label} aria-orientation={ariaOrientation} data-orientation={orientation}>
       {items.map((item, index) => {
         const selected = item.value === value;
         return (
