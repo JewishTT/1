@@ -410,7 +410,7 @@ try {
   await page.locator('.ui-gl-subhead [role="tab"]:has-text("Runtime")').first().click();
   await page.keyboard.press("Control+k");
   await page.getByTestId("command-palette-input").waitFor({ timeout: 10000 });
-  await page.keyboard.fill("Toggle theme");
+  await page.getByTestId("command-palette-input").fill("Toggle theme");
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector(".ui-shell")?.getAttribute("data-theme") === "light", null, { timeout: 10000 })
     .catch(() => problems.push("theme toggle did not switch the shell to light mode"));
@@ -419,7 +419,7 @@ try {
   // Restore dark theme for the responsive sweep.
   await page.keyboard.press("Control+k");
   await page.getByTestId("command-palette-input").waitFor({ timeout: 10000 });
-  await page.keyboard.fill("Toggle theme");
+  await page.getByTestId("command-palette-input").fill("Toggle theme");
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector(".ui-shell")?.getAttribute("data-theme") === "dark", null, { timeout: 10000 })
     .catch(() => problems.push("theme toggle did not restore dark mode"));
