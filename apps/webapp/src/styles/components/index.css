@@ -1331,6 +1331,41 @@
 }
 
 
+/* ── Toast viewport ────────────────────────────────────────────────────
+ * A real overlay stack, held above the persistent status bar and away from the
+ * shell's wrapped top navigation. Individual toast items stay independently
+ * dismissible; pointer events pass through the empty viewport area.
+ */
+.ui-root .ui-toast-viewport {
+  position: fixed;
+  z-index: var(--ui-z-toast);
+  inset-inline-end: calc(var(--ui-space-6) + env(safe-area-inset-right, 0px));
+  inset-block-end: calc(var(--ui-statusbar-h, 24px) + var(--ui-space-4) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ui-space-3);
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - var(--ui-statusbar-h, 24px) - var(--ui-space-8));
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.ui-root .ui-toast-viewport > .ui-toast {
+  flex: 0 0 auto;
+  width: 100%;
+  pointer-events: auto;
+}
+
+@media (max-width: 767px) {
+  .ui-root .ui-toast-viewport {
+    inset-inline-end: calc(var(--ui-space-3) + env(safe-area-inset-right, 0px));
+    inset-block-end: calc(var(--ui-statusbar-h, 24px) + var(--ui-space-3) + env(safe-area-inset-bottom, 0px));
+    width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-height: calc(100dvh - var(--ui-statusbar-h, 24px) - var(--ui-space-6));
+  }
+}
+
 /* ── Toast notification item ─────────────────────────────────────────── */
 .ui-root .ui-toast {
   display: flex;
