@@ -1,6 +1,6 @@
 # Science API — REST Surface
 
-**Date**: 2026-09-09 | **Feature**: [spec.md](spec.md)
+**Date**: 2026-09-09 | **Feature**: [spec.md](../spec.md)
 
 REST endpoints exposed by the `science` router mounted in `apps/control-plane/api` → served by
 FastAPI. All responses are JSON; error semantics per FastAPI + the contract-style used by
