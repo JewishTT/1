@@ -606,3 +606,22 @@ describe("UI normalization — restrained neo-militarist visual grammar", () => 
     expect(tuning).not.toMatch(/box-shadow\s*:\s*0\s+0/i);
   });
 });
+
+
+describe("UI normalization — shared neo-militarist shell register", () => {
+  it("uses one signal rail and amber instrumentation without decorative chrome", () => {
+    const normalization = readShipped("styles", "normalization.css");
+    const start = normalization.indexOf("Workbench visual register");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const shellRegister = normalization.slice(start);
+    expect(shellRegister).toContain(".ui-root .ui-topbar");
+    expect(shellRegister).toContain("border-top: 2px solid var(--ui-accent)");
+    expect(shellRegister).toContain("color: var(--ui-gold)");
+    expect(shellRegister).toContain("var(--ui-font-mono)");
+    expect(shellRegister).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(shellRegister).not.toMatch(/(?:linear|radial|conic)-gradient\s*\(/i);
+    expect(shellRegister).not.toMatch(/text-shadow\s*:/i);
+    expect(shellRegister).not.toMatch(/backdrop-filter\s*:\s*(?!none)/i);
+    expect(shellRegister).not.toMatch(/box-shadow\s*:\s*0\s+0/i);
+  });
+});
