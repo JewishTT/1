@@ -36,17 +36,17 @@ export interface NavModule {
 export const NAV_MODULES: NavModule[] = [
   { key: "osint", short: "OSINT", label: "Intelligence", landing: "/intel" },
   { key: "economic", short: "ECON", label: "Economics", landing: "/economic" },
-  { key: "specops", short: "SPEC", label: "SpecOps", landing: "/specops" },
+  { key: "specops", short: "SPECOPS", label: "SpecOps", landing: "/specops" },
 ];
 
 export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
   osint: [
     {
-      label: "Intelligence",
+      label: "COLLECT",
       items: [{ to: "/search", label: "Search", icon: "search" }],
     },
     {
-      label: "Investigate",
+      label: "INVESTIGATE",
       items: [
         // One destination. The graph of every investigation and the graph of one are the
         // same surface at two scopes, so they were never two tabs -- they were one tab
@@ -65,7 +65,7 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
       ],
     },
     {
-      label: "Science",
+      label: "ANALYZE",
       items: [
         { to: "/science", label: "Science Console", icon: "diagram" },
         { to: "/network", label: "Network Analysis", icon: "view-analysis" },
@@ -79,13 +79,13 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
   ],
   economic: [
     {
-      label: "Econometriks",
+      label: "ECONOMIC INTELLIGENCE",
       items: [{ to: "/economic", label: "Intelligence Economy", icon: "view-analysis" }],
     },
   ],
   specops: [
     {
-      label: "Counterintelligence & Spec-Ops",
+      label: "COUNTERINTEL",
       items: [
         // The CI/SpecOps department (Feature 027): a view within the investigation
         // workspace, reached as one canvas with internal panels. Filed under the
@@ -97,7 +97,7 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
       ],
     },
     {
-      label: "Operations",
+      label: "OPERATIONS",
       items: [
         { to: "/specops", label: "Pipeline Operations", icon: "activity" },
         { to: "/specops/quarantine", label: "Quarantine / DLQ", icon: "alert" },
