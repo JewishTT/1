@@ -1143,7 +1143,7 @@ body:has(.ui-root) {
     row-gap: var(--ui-space-2);
   }
 
-  .ui-root .ui-canvas-head > .ui-tabs {
+  .ui-root .ui-canvas-head > .ui-tabs[data-orientation="bar"] {
     flex: 1 1 100%;
     min-width: 0;
     flex-wrap: wrap;
