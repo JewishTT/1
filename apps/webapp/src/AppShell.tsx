@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import { Icon, type IconName } from "./ui/Icon";
 import { Badge, StatusDot } from "./ui/Badge";
@@ -245,7 +245,48 @@ export function AppShell({ children, activity }: AppShellProps) {
 
   const paneVisibility = useWorkspace((state) => state.paneVisibility);
   const togglePane = useWorkspace((state) => state.togglePane);
+  const setPaneVisibility = useWorkspace((state) => state.setPaneVisibility);
   const clearSelection = useWorkspace((state) => state.clearSelection);
+
+  // Responsive pane state is reconciled, not toggled, so React StrictMode's
+  // setup/cleanup replay cannot reopen a mobile drawer. Wide layouts retain the
+  // operator's last explicit pane preferences; narrowing the viewport closes
+  // panes that would otherwise consume the canvas.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const tablet = window.matchMedia("(max-width: 1279px)");
+    const phone = window.matchMedia("(max-width: 767px)");
+    const reconcile = () => {
+      const current = useWorkspace.getState().paneVisibility;
+      const patch: Partial<typeof current> = {};
+      if (tablet.matches && current.rail) patch.rail = false;
+      if (phone.matches && current.inspector) patch.inspector = false;
+      if (Object.keys(patch).length > 0) setPaneVisibility(patch);
+    };
+
+    reconcile();
+    tablet.addEventListener("change", reconcile);
+    phone.addEventListener("change", reconcile);
+    return () => {
+      tablet.removeEventListener("change", reconcile);
+      phone.removeEventListener("change", reconcile);
+    };
+  }, [setPaneVisibility]);
+
+  const handlePaneToggle = (pane: "rail" | "inspector" | "activity") => {
+    const phone =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 767px)").matches;
+
+    if (phone && (pane === "rail" || pane === "inspector")) {
+      const opposite = pane === "rail" ? "inspector" : "rail";
+      const current = useWorkspace.getState().paneVisibility;
+      if (!current[pane] && current[opposite]) setPaneVisibility({ [opposite]: false });
+    }
+    togglePane(pane);
+  };
 
   const paneToggleIcon = (pane: "rail" | "inspector" | "activity"): IconName =>
     pane === "rail" ? "panel-left" : pane === "inspector" ? "panel-right" : "panel-bottom";
@@ -291,7 +332,7 @@ export function AppShell({ children, activity }: AppShellProps) {
               label={paneToggleLabel("rail")}
               size="sm"
               aria-pressed={paneVisibility.rail}
-              onClick={() => togglePane("rail")}
+              onClick={() => handlePaneToggle("rail")}
               data-testid="toggle-rail"
             />
           </Tooltip>
@@ -301,7 +342,7 @@ export function AppShell({ children, activity }: AppShellProps) {
               label={paneToggleLabel("inspector")}
               size="sm"
               aria-pressed={paneVisibility.inspector}
-              onClick={() => togglePane("inspector")}
+              onClick={() => handlePaneToggle("inspector")}
               data-testid="toggle-inspector"
             />
           </Tooltip>
@@ -311,7 +352,7 @@ export function AppShell({ children, activity }: AppShellProps) {
               label={paneToggleLabel("activity")}
               size="sm"
               aria-pressed={paneVisibility.activity}
-              onClick={() => togglePane("activity")}
+              onClick={() => handlePaneToggle("activity")}
               data-testid="toggle-activity"
             />
           </Tooltip>
