@@ -129,6 +129,7 @@ export interface WorkspaceStateActions {
 
   /* ── Layout ────────────────────────────────────────────────────────── */
   setPaneWidth: (pane: keyof PaneWidths, width: number) => void;
+  setPaneVisibility: (patch: Partial<PaneVisibility>) => void;
   togglePane: (pane: keyof PaneVisibility) => void;
   setDensity: (density: Density) => void;
   toggleDensity: () => void;
@@ -258,6 +259,8 @@ export const useWorkspace = create<WorkspaceStore>()(subscribeWithSelector((set)
 
   setPaneWidth: (pane, width) =>
     set((state) => ({ paneWidths: { ...state.paneWidths, [pane]: Math.max(0, Math.round(width)) } })),
+  setPaneVisibility: (patch) =>
+    set((state) => ({ paneVisibility: { ...state.paneVisibility, ...patch } })),
   togglePane: (pane) =>
     set((state) => ({
       paneVisibility: { ...state.paneVisibility, [pane]: !state.paneVisibility[pane] },
