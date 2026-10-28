@@ -25,11 +25,11 @@ jobs:
       - name: Sync the locked workspace
         run: uv sync --locked --all-packages --all-groups
 
-      - name: Regenerate platform docs in the locked environment
-        run: uv run python -m platform_model.build
+      - name: Regenerate platform docs with the repository's authoritative import order
+        run: uv run python -c 'import conftest; from platform_model.build import main; raise SystemExit(main([]))'
 
-      - name: Verify the generated model is deterministic
-        run: uv run python -m platform_model.build --check
+      - name: Verify the generated model is deterministic in the same import environment
+        run: uv run python -c 'import conftest; from platform_model.build import main; raise SystemExit(main(["--check"]))'
 
       - name: Commit generated files to this feature branch
         env:
