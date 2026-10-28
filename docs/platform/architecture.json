@@ -1476,6 +1476,7 @@
       "big.bin",
       "big.wav",
       "blog.example.org",
+      "bom.py",
       "bootstrap.servers",
       "broken.py",
       "c.d",
@@ -1602,8 +1603,7 @@
       "entities.entity_id",
       "entity.claimed",
       "entity.created",
-      "entity.extract",
-      "entity.freeze"
+      "entity.extract"
     ]
   },
   "context_map": {

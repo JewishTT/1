@@ -14,15 +14,15 @@ committed model no longer matches the tree.
 | Rust crates | 9 |
 | Rust source files | 16 |
 | Import edges (local) | 2807 |
-| Unresolved imports (no local target) | 282 |
+| Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
-| Unresolved: unknown (undeclared) | 281 |
+| Unresolved: unknown (undeclared) | 0 |
 | Test files | 341 |
 | Test functions | 5276 |
-| Untested platform modules | 277 |
+| Untested platform modules | 268 |
 | HTTP routes | 182 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
 | Capabilities | 30 |

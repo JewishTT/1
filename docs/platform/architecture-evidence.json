@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4352,
-    "static_facts": 4058,
+    "facts_total": 4365,
+    "static_facts": 4071,
     "inferred": 294,
     "intended": 0
   },
@@ -36498,80 +36498,28 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "75723d88e2d11f39",
+      "fact_id": "8ddbb40b321faa1d",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /operations/{operation_id}",
-      "object": "apps/control-plane/api/routes/specops_forensics.py",
+      "subject": "POST /{tool_id}/enqueue",
+      "object": "apps/control-plane/api/routes/tools.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/specops_forensics.py",
-        "line": 28
+        "file": "apps/control-plane/api/routes/tools.py",
+        "line": 40
       },
       "confidence": 1.0
     },
     {
-      "fact_id": "7880e9c6aad9db2e",
+      "fact_id": "f02b19cab3f0438f",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /{claim_id}",
-      "object": "apps/control-plane/api/routes/science_review.py",
+      "subject": "GET /subjects/{subject_id}",
+      "object": "apps/control-plane/api/routes/specops_counterintel.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/science_review.py",
-        "line": 61
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "7ea6227e38d4d577",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{claim_id}/comment",
-      "object": "apps/control-plane/api/routes/science_review.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_review.py",
-        "line": 89
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "b6a6ac6127550de4",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{claim_id}/status",
-      "object": "apps/control-plane/api/routes/science_review.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_review.py",
-        "line": 106
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "0bc04446be7a3ee2",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{claim_id}/ladder",
-      "object": "apps/control-plane/api/routes/science_review.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_review.py",
-        "line": 141
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "2dc08ddd83edc341",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /pools",
-      "object": "apps/control-plane/api/routes/metrics.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/metrics.py",
-        "line": 54
+        "file": "apps/control-plane/api/routes/specops_counterintel.py",
+        "line": 27
       },
       "confidence": 1.0
     },
@@ -36940,6 +36888,71 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "63a61d60160e08f9",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{hypothesis_id}/evidence",
+      "object": "apps/control-plane/api/routes/science_hypotheses.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_hypotheses.py",
+        "line": 77
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "609007a8d82c12d8",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{hypothesis_id}/discard",
+      "object": "apps/control-plane/api/routes/science_hypotheses.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_hypotheses.py",
+        "line": 100
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7783916fea14668c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /plan",
+      "object": "apps/control-plane/api/routes/science_hypotheses.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_hypotheses.py",
+        "line": 127
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "02f408019a87c62c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /coverage",
+      "object": "apps/control-plane/api/routes/science_hypotheses.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_hypotheses.py",
+        "line": 157
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "96619807a991b87d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /projections",
+      "object": "apps/control-plane/api/routes/specops_social.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_social.py",
+        "line": 34
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "4f17430c81a04b36",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /enrich",
@@ -36962,84 +36975,6 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/dossier.py",
         "line": 162
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "1895e4fa83cfb9bf",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /measures",
-      "object": "apps/control-plane/api/routes/network.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/network.py",
-        "line": 131
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "57742bd6f57da9a5",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /communities",
-      "object": "apps/control-plane/api/routes/network.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/network.py",
-        "line": 145
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "3c0446cf1cbcff73",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /hypergraph",
-      "object": "apps/control-plane/api/routes/network.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/network.py",
-        "line": 165
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "ddb4624f7dba7670",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /temporal",
-      "object": "apps/control-plane/api/routes/network.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/network.py",
-        "line": 182
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "9fa290fd32dc5bb2",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /diagram-features",
-      "object": "apps/control-plane/api/routes/network.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/network.py",
-        "line": 223
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "734cc49d64ec8bcd",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /phodms",
-      "object": "apps/control-plane/api/routes/network.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/network.py",
-        "line": 308
       },
       "confidence": 1.0
     },
@@ -37278,162 +37213,6 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "63a61d60160e08f9",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{hypothesis_id}/evidence",
-      "object": "apps/control-plane/api/routes/science_hypotheses.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_hypotheses.py",
-        "line": 77
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "609007a8d82c12d8",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{hypothesis_id}/discard",
-      "object": "apps/control-plane/api/routes/science_hypotheses.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_hypotheses.py",
-        "line": 100
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "7783916fea14668c",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /plan",
-      "object": "apps/control-plane/api/routes/science_hypotheses.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_hypotheses.py",
-        "line": 127
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "02f408019a87c62c",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /coverage",
-      "object": "apps/control-plane/api/routes/science_hypotheses.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_hypotheses.py",
-        "line": 157
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "5a152d447c57a5fd",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /taxonomy",
-      "object": "apps/control-plane/api/routes/specops_engagement.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_engagement.py",
-        "line": 95
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "d5c06f64d89a6cab",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /board",
-      "object": "apps/control-plane/api/routes/specops_engagement.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_engagement.py",
-        "line": 112
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "c470dffe855af34e",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /campaigns/{campaign_id}",
-      "object": "apps/control-plane/api/routes/specops_engagement.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_engagement.py",
-        "line": 123
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "ef7836308222061c",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /timeline",
-      "object": "apps/control-plane/api/routes/specops_engagement.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_engagement.py",
-        "line": 138
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "5edc293e351305f0",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /subjects",
-      "object": "apps/control-plane/api/routes/specops_engagement.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_engagement.py",
-        "line": 160
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "8a3afb0d92dc92d5",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /events",
-      "object": "apps/control-plane/api/routes/specops_engagement.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_engagement.py",
-        "line": 171
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "00b27349ce0d829a",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /anonymize",
-      "object": "apps/control-plane/api/routes/specops_engagement.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_engagement.py",
-        "line": 210
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "8ddbb40b321faa1d",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{tool_id}/enqueue",
-      "object": "apps/control-plane/api/routes/tools.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/tools.py",
-        "line": 40
-      },
-      "confidence": 1.0
-    },
-    {
       "fact_id": "89830935ce818dd0",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /robustness",
@@ -37512,28 +37291,418 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "d6bef856ca5a8317",
+      "fact_id": "eb07e3a506c4e1bc",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /{finding_id}",
-      "object": "apps/control-plane/api/routes/findings.py",
+      "subject": "GET /{record_id}",
+      "object": "apps/control-plane/api/routes/quarantine.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/findings.py",
-        "line": 87
+        "file": "apps/control-plane/api/routes/quarantine.py",
+        "line": 42
       },
       "confidence": 1.0
     },
     {
-      "fact_id": "b53bf6843d9a87f2",
+      "fact_id": "8ca226765785edb8",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /{finding_id}/lineage",
-      "object": "apps/control-plane/api/routes/findings.py",
+      "subject": "POST /{record_id}/replay",
+      "object": "apps/control-plane/api/routes/quarantine.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/findings.py",
-        "line": 99
+        "file": "apps/control-plane/api/routes/quarantine.py",
+        "line": 50
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "af79fd575e6220e4",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{record_id}/re-evaluate",
+      "object": "apps/control-plane/api/routes/quarantine.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/quarantine.py",
+        "line": 58
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4f36971e78da4f89",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /campaigns",
+      "object": "apps/control-plane/api/routes/specops_phishing.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_phishing.py",
+        "line": 60
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c08739e14da5688f",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /campaigns/{campaign_id}/launch",
+      "object": "apps/control-plane/api/routes/specops_phishing.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_phishing.py",
+        "line": 75
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "56088b19c0c0352c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /campaigns/{campaign_id}",
+      "object": "apps/control-plane/api/routes/specops_phishing.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_phishing.py",
+        "line": 94
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d621df2fb45c167f",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /register",
+      "object": "apps/control-plane/api/routes/connectors.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/connectors.py",
+        "line": 69
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c1bd7ff22d1979ba",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{name}/activate",
+      "object": "apps/control-plane/api/routes/connectors.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/connectors.py",
+        "line": 81
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "858bf030e58ee715",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /recon-plans",
+      "object": "apps/control-plane/api/routes/connectors.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/connectors.py",
+        "line": 100
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "cbf2147c20de1936",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{name}/recon-plans",
+      "object": "apps/control-plane/api/routes/connectors.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/connectors.py",
+        "line": 105
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fed78c189ac2d0c1",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /analyze",
+      "object": "apps/control-plane/api/routes/science_structure.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_structure.py",
+        "line": 38
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "929a0cc2b65535be",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /results/{result_id}",
+      "object": "apps/control-plane/api/routes/science_structure.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_structure.py",
+        "line": 69
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9234d18378a8633d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /{investigation_id}/resolutions",
+      "object": "apps/control-plane/api/routes/resolutions.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/resolutions.py",
+        "line": 55
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b5921874c492f489",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{investigation_id}/resolutions/decide",
+      "object": "apps/control-plane/api/routes/resolutions.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/resolutions.py",
+        "line": 73
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "30e4068ca5a52268",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /classify",
+      "object": "apps/control-plane/api/routes/science_causal.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_causal.py",
+        "line": 55
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "33510f575de0212d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /models",
+      "object": "apps/control-plane/api/routes/science_causal.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_causal.py",
+        "line": 77
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "025540bd66ea7de9",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /models/{model_id}",
+      "object": "apps/control-plane/api/routes/science_causal.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_causal.py",
+        "line": 96
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b6ce1d7ea9ee4060",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /models",
+      "object": "apps/control-plane/api/routes/science_causal.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_causal.py",
+        "line": 110
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a6aac11037d2fb18",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /{investigation_id}",
+      "object": "apps/control-plane/api/routes/investigations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/investigations.py",
+        "line": 249
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b64855beeb5dde38",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "PATCH /{investigation_id}",
+      "object": "apps/control-plane/api/routes/investigations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/investigations.py",
+        "line": 259
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c05d38bf9e0c768a",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{investigation_id}/pause",
+      "object": "apps/control-plane/api/routes/investigations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/investigations.py",
+        "line": 294
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d0e68b3087bcb76c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{investigation_id}/resume",
+      "object": "apps/control-plane/api/routes/investigations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/investigations.py",
+        "line": 306
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "99061e3a6969bbf7",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{investigation_id}/complete",
+      "object": "apps/control-plane/api/routes/investigations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/investigations.py",
+        "line": 318
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "33e5b948f35a610b",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{investigation_id}/archive",
+      "object": "apps/control-plane/api/routes/investigations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/investigations.py",
+        "line": 330
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2dc08ddd83edc341",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /pools",
+      "object": "apps/control-plane/api/routes/metrics.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/metrics.py",
+        "line": 54
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1895e4fa83cfb9bf",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /measures",
+      "object": "apps/control-plane/api/routes/network.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/network.py",
+        "line": 131
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "57742bd6f57da9a5",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /communities",
+      "object": "apps/control-plane/api/routes/network.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/network.py",
+        "line": 145
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3c0446cf1cbcff73",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /hypergraph",
+      "object": "apps/control-plane/api/routes/network.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/network.py",
+        "line": 165
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ddb4624f7dba7670",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /temporal",
+      "object": "apps/control-plane/api/routes/network.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/network.py",
+        "line": 182
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9fa290fd32dc5bb2",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /diagram-features",
+      "object": "apps/control-plane/api/routes/network.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/network.py",
+        "line": 223
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "734cc49d64ec8bcd",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /phodms",
+      "object": "apps/control-plane/api/routes/network.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/network.py",
+        "line": 308
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "75723d88e2d11f39",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /operations/{operation_id}",
+      "object": "apps/control-plane/api/routes/specops_forensics.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_forensics.py",
+        "line": 28
       },
       "confidence": 1.0
     },
@@ -37586,32 +37755,6 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_emulation.py",
         "line": 126
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "fed78c189ac2d0c1",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /analyze",
-      "object": "apps/control-plane/api/routes/science_structure.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_structure.py",
-        "line": 38
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "929a0cc2b65535be",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /results/{result_id}",
-      "object": "apps/control-plane/api/routes/science_structure.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_structure.py",
-        "line": 69
       },
       "confidence": 1.0
     },
@@ -37863,197 +38006,80 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "c6ac77747aa2c47e",
+      "fact_id": "ed221340c74b69d8",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /series",
-      "object": "apps/control-plane/api/routes/science_temporal.py",
+      "subject": "POST /claims",
+      "object": "apps/control-plane/api/routes/science_claims.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/science_temporal.py",
-        "line": 60
+        "file": "apps/control-plane/api/routes/science_claims.py",
+        "line": 100
       },
       "confidence": 1.0
     },
     {
-      "fact_id": "9eccca3c08b9402d",
+      "fact_id": "6ce3941ddad25320",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /change-points",
-      "object": "apps/control-plane/api/routes/science_temporal.py",
+      "subject": "GET /claims/{claim_id}",
+      "object": "apps/control-plane/api/routes/science_claims.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/science_temporal.py",
-        "line": 71
+        "file": "apps/control-plane/api/routes/science_claims.py",
+        "line": 121
       },
       "confidence": 1.0
     },
     {
-      "fact_id": "12572d6b12932697",
+      "fact_id": "e1cf6f4a7e8e5f57",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /series/{series_id}",
-      "object": "apps/control-plane/api/routes/science_temporal.py",
+      "subject": "GET /claims",
+      "object": "apps/control-plane/api/routes/science_claims.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/science_temporal.py",
-        "line": 93
+        "file": "apps/control-plane/api/routes/science_claims.py",
+        "line": 129
       },
       "confidence": 1.0
     },
     {
-      "fact_id": "f69e0e06a18d6bec",
+      "fact_id": "aedde27d3b7f06a4",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /rebuild",
-      "object": "apps/control-plane/api/routes/search_rebuild.py",
+      "subject": "POST /claims/{claim_id}/status",
+      "object": "apps/control-plane/api/routes/science_claims.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/search_rebuild.py",
-        "line": 208
+        "file": "apps/control-plane/api/routes/science_claims.py",
+        "line": 134
       },
       "confidence": 1.0
     },
     {
-      "fact_id": "ccea2d7c97d02571",
+      "fact_id": "38b60241fc49c00b",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /investigations/{investigation_id}/assertions/entity",
-      "object": "apps/control-plane/api/routes/manual_assertions.py",
+      "subject": "POST /calibration",
+      "object": "apps/control-plane/api/routes/science_claims.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/manual_assertions.py",
-        "line": 137
+        "file": "apps/control-plane/api/routes/science_claims.py",
+        "line": 155
       },
       "confidence": 1.0
     },
     {
-      "fact_id": "ff80684cfb1edb58",
+      "fact_id": "153aa6173e856115",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /investigations/{investigation_id}/assertions/relation",
-      "object": "apps/control-plane/api/routes/manual_assertions.py",
+      "subject": "GET /calibration/{model_id}",
+      "object": "apps/control-plane/api/routes/science_claims.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/manual_assertions.py",
-        "line": 223
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "6ea2a9ca72cfb608",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /investigations/{investigation_id}/assertions",
-      "object": "apps/control-plane/api/routes/manual_assertions.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/manual_assertions.py",
-        "line": 362
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "91eb8a00b5c9a02d",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /investigations/{investigation_id}/context/ensure",
-      "object": "apps/control-plane/api/routes/manual_assertions.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/manual_assertions.py",
-        "line": 406
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "eb07e3a506c4e1bc",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /{record_id}",
-      "object": "apps/control-plane/api/routes/quarantine.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/quarantine.py",
-        "line": 42
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "8ca226765785edb8",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{record_id}/replay",
-      "object": "apps/control-plane/api/routes/quarantine.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/quarantine.py",
-        "line": 50
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "af79fd575e6220e4",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{record_id}/re-evaluate",
-      "object": "apps/control-plane/api/routes/quarantine.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/quarantine.py",
-        "line": 58
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "30e4068ca5a52268",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /classify",
-      "object": "apps/control-plane/api/routes/science_causal.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_causal.py",
-        "line": 55
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "33510f575de0212d",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /models",
-      "object": "apps/control-plane/api/routes/science_causal.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_causal.py",
-        "line": 77
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "025540bd66ea7de9",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /models/{model_id}",
-      "object": "apps/control-plane/api/routes/science_causal.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_causal.py",
-        "line": 96
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "b6ce1d7ea9ee4060",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /models",
-      "object": "apps/control-plane/api/routes/science_causal.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_causal.py",
-        "line": 110
+        "file": "apps/control-plane/api/routes/science_claims.py",
+        "line": 175
       },
       "confidence": 1.0
     },
@@ -38370,132 +38396,15 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "96619807a991b87d",
+      "fact_id": "f69e0e06a18d6bec",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /projections",
-      "object": "apps/control-plane/api/routes/specops_social.py",
+      "subject": "POST /rebuild",
+      "object": "apps/control-plane/api/routes/search_rebuild.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/specops_social.py",
-        "line": 34
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "1487ecc2d1940a74",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /temporal-materializations/health",
-      "object": "apps/control-plane/api/routes/temporal_materializations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/temporal_materializations.py",
-        "line": 13
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "8885deb31edfbb2b",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /temporal-materializations/{run_id}/audit",
-      "object": "apps/control-plane/api/routes/temporal_materializations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/temporal_materializations.py",
-        "line": 18
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "98e77c83d9ac45fc",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /temporal-materializations/{run_id}",
-      "object": "apps/control-plane/api/routes/temporal_materializations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/temporal_materializations.py",
-        "line": 23
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "9234d18378a8633d",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /{investigation_id}/resolutions",
-      "object": "apps/control-plane/api/routes/resolutions.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/resolutions.py",
-        "line": 55
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "b5921874c492f489",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{investigation_id}/resolutions/decide",
-      "object": "apps/control-plane/api/routes/resolutions.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/resolutions.py",
-        "line": 73
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "d621df2fb45c167f",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /register",
-      "object": "apps/control-plane/api/routes/connectors.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/connectors.py",
-        "line": 69
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "c1bd7ff22d1979ba",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{name}/activate",
-      "object": "apps/control-plane/api/routes/connectors.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/connectors.py",
-        "line": 81
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "858bf030e58ee715",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /recon-plans",
-      "object": "apps/control-plane/api/routes/connectors.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/connectors.py",
-        "line": 100
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "cbf2147c20de1936",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{name}/recon-plans",
-      "object": "apps/control-plane/api/routes/connectors.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/connectors.py",
-        "line": 105
+        "file": "apps/control-plane/api/routes/search_rebuild.py",
+        "line": 208
       },
       "confidence": 1.0
     },
@@ -38539,6 +38448,305 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "5a152d447c57a5fd",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /taxonomy",
+      "object": "apps/control-plane/api/routes/specops_engagement.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_engagement.py",
+        "line": 95
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d5c06f64d89a6cab",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /board",
+      "object": "apps/control-plane/api/routes/specops_engagement.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_engagement.py",
+        "line": 112
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c470dffe855af34e",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /campaigns/{campaign_id}",
+      "object": "apps/control-plane/api/routes/specops_engagement.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_engagement.py",
+        "line": 123
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ef7836308222061c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /timeline",
+      "object": "apps/control-plane/api/routes/specops_engagement.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_engagement.py",
+        "line": 138
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5edc293e351305f0",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /subjects",
+      "object": "apps/control-plane/api/routes/specops_engagement.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_engagement.py",
+        "line": 160
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8a3afb0d92dc92d5",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /events",
+      "object": "apps/control-plane/api/routes/specops_engagement.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_engagement.py",
+        "line": 171
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "00b27349ce0d829a",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /anonymize",
+      "object": "apps/control-plane/api/routes/specops_engagement.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_engagement.py",
+        "line": 210
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c6ac77747aa2c47e",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /series",
+      "object": "apps/control-plane/api/routes/science_temporal.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_temporal.py",
+        "line": 60
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9eccca3c08b9402d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /change-points",
+      "object": "apps/control-plane/api/routes/science_temporal.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_temporal.py",
+        "line": 71
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "12572d6b12932697",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /series/{series_id}",
+      "object": "apps/control-plane/api/routes/science_temporal.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_temporal.py",
+        "line": 93
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d6bef856ca5a8317",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /{finding_id}",
+      "object": "apps/control-plane/api/routes/findings.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/findings.py",
+        "line": 87
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b53bf6843d9a87f2",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /{finding_id}/lineage",
+      "object": "apps/control-plane/api/routes/findings.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/findings.py",
+        "line": 99
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7880e9c6aad9db2e",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /{claim_id}",
+      "object": "apps/control-plane/api/routes/science_review.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_review.py",
+        "line": 61
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7ea6227e38d4d577",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{claim_id}/comment",
+      "object": "apps/control-plane/api/routes/science_review.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_review.py",
+        "line": 89
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b6a6ac6127550de4",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{claim_id}/status",
+      "object": "apps/control-plane/api/routes/science_review.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_review.py",
+        "line": 106
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0bc04446be7a3ee2",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /{claim_id}/ladder",
+      "object": "apps/control-plane/api/routes/science_review.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/science_review.py",
+        "line": 141
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1487ecc2d1940a74",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /temporal-materializations/health",
+      "object": "apps/control-plane/api/routes/temporal_materializations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/temporal_materializations.py",
+        "line": 13
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8885deb31edfbb2b",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /temporal-materializations/{run_id}/audit",
+      "object": "apps/control-plane/api/routes/temporal_materializations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/temporal_materializations.py",
+        "line": 18
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "98e77c83d9ac45fc",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /temporal-materializations/{run_id}",
+      "object": "apps/control-plane/api/routes/temporal_materializations.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/temporal_materializations.py",
+        "line": 23
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ccea2d7c97d02571",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /investigations/{investigation_id}/assertions/entity",
+      "object": "apps/control-plane/api/routes/manual_assertions.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/manual_assertions.py",
+        "line": 137
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ff80684cfb1edb58",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /investigations/{investigation_id}/assertions/relation",
+      "object": "apps/control-plane/api/routes/manual_assertions.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/manual_assertions.py",
+        "line": 223
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6ea2a9ca72cfb608",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /investigations/{investigation_id}/assertions",
+      "object": "apps/control-plane/api/routes/manual_assertions.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/manual_assertions.py",
+        "line": 362
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "91eb8a00b5c9a02d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /investigations/{investigation_id}/context/ensure",
+      "object": "apps/control-plane/api/routes/manual_assertions.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/manual_assertions.py",
+        "line": 406
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "99ba991a252fe31a",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /run",
@@ -38552,132 +38760,15 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "4f36971e78da4f89",
+      "fact_id": "ccf7167a45548d6d",
       "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /campaigns",
-      "object": "apps/control-plane/api/routes/specops_phishing.py",
+      "subject": "GET /{roe_id}",
+      "object": "apps/control-plane/api/routes/specops_roe.py",
       "status": "STATIC_FACT",
       "method": "regex_decorator",
       "evidence": {
-        "file": "apps/control-plane/api/routes/specops_phishing.py",
-        "line": 60
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "c08739e14da5688f",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /campaigns/{campaign_id}/launch",
-      "object": "apps/control-plane/api/routes/specops_phishing.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_phishing.py",
-        "line": 75
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "56088b19c0c0352c",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /campaigns/{campaign_id}",
-      "object": "apps/control-plane/api/routes/specops_phishing.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_phishing.py",
-        "line": 94
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "ed221340c74b69d8",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /claims",
-      "object": "apps/control-plane/api/routes/science_claims.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_claims.py",
-        "line": 100
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "6ce3941ddad25320",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /claims/{claim_id}",
-      "object": "apps/control-plane/api/routes/science_claims.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_claims.py",
-        "line": 121
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "e1cf6f4a7e8e5f57",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /claims",
-      "object": "apps/control-plane/api/routes/science_claims.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_claims.py",
-        "line": 129
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "aedde27d3b7f06a4",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /claims/{claim_id}/status",
-      "object": "apps/control-plane/api/routes/science_claims.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_claims.py",
-        "line": 134
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "38b60241fc49c00b",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /calibration",
-      "object": "apps/control-plane/api/routes/science_claims.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_claims.py",
-        "line": 155
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "153aa6173e856115",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /calibration/{model_id}",
-      "object": "apps/control-plane/api/routes/science_claims.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/science_claims.py",
-        "line": 175
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "f02b19cab3f0438f",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /subjects/{subject_id}",
-      "object": "apps/control-plane/api/routes/specops_counterintel.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_counterintel.py",
-        "line": 27
+        "file": "apps/control-plane/api/routes/specops_roe.py",
+        "line": 73
       },
       "confidence": 1.0
     },
@@ -38769,97 +38860,6 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/investigation_context.py",
         "line": 297
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "ccf7167a45548d6d",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /{roe_id}",
-      "object": "apps/control-plane/api/routes/specops_roe.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_roe.py",
-        "line": 73
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "a6aac11037d2fb18",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "GET /{investigation_id}",
-      "object": "apps/control-plane/api/routes/investigations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/investigations.py",
-        "line": 249
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "b64855beeb5dde38",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "PATCH /{investigation_id}",
-      "object": "apps/control-plane/api/routes/investigations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/investigations.py",
-        "line": 259
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "c05d38bf9e0c768a",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{investigation_id}/pause",
-      "object": "apps/control-plane/api/routes/investigations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/investigations.py",
-        "line": 294
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "d0e68b3087bcb76c",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{investigation_id}/resume",
-      "object": "apps/control-plane/api/routes/investigations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/investigations.py",
-        "line": 306
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "99061e3a6969bbf7",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{investigation_id}/complete",
-      "object": "apps/control-plane/api/routes/investigations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/investigations.py",
-        "line": 318
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "33e5b948f35a610b",
-      "kind": "ROUTE_DEFINED_IN",
-      "subject": "POST /{investigation_id}/archive",
-      "object": "apps/control-plane/api/routes/investigations.py",
-      "status": "STATIC_FACT",
-      "method": "regex_decorator",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/investigations.py",
-        "line": 330
       },
       "confidence": 1.0
     },
@@ -41588,6 +41588,18 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "b8bbe7f88d791261",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
+      "object": "apps/bulk-ingestion/historical/replay.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "cbe7da319698f0f6",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
@@ -41624,6 +41636,30 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "5a3adf49a3dd8ca3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
+      "object": "apps/bulk-ingestion/backfill.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4bd2fe1e017642f6",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
+      "object": "apps/bulk-ingestion/historical/replay.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "a83bf8e088db6937",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
@@ -41632,6 +41668,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "61c651040087b96b",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/bulk-ingestion/tests/unit/test_historical_replay.py",
+      "object": "apps/bulk-ingestion/historical/replay.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/bulk-ingestion/tests/unit/test_historical_replay.py"
       },
       "confidence": 1.0
     },
@@ -44312,6 +44360,66 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "b7db0022af45acb6",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_branches.py",
+      "object": "apps/feedback/feedback/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_branches.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d56c178df39b9ad0",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_branches.py",
+      "object": "apps/feedback/feedback/branch/entity.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_branches.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "23e41440b2a850bd",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_branches.py",
+      "object": "apps/feedback/feedback/branch/finding.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_branches.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0b81f69f3f3d0c90",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_branches.py",
+      "object": "apps/feedback/feedback/branch/source.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_branches.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7bfae274e4a5410c",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_branches.py",
+      "object": "apps/feedback/feedback/frontier.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_branches.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "c81dce12b123b85b",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/feedback/tests/test_branches.py",
@@ -44320,6 +44428,30 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/feedback/tests/test_branches.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ad7a022518dffc31",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_feedback.py",
+      "object": "apps/feedback/feedback_engine.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_feedback.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bc68248ed90bf69d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_feedback.py",
+      "object": "apps/feedback/stopping.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_feedback.py"
       },
       "confidence": 1.0
     },
@@ -44352,6 +44484,30 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/feedback/tests/test_frontier_loop.py",
       "object": "apps/control-plane/services/frontier.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_frontier_loop.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "61bd03dcfcbf8094",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_frontier_loop.py",
+      "object": "apps/feedback/feedback/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/feedback/tests/test_frontier_loop.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f7bee3fb7f23fedc",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/feedback/tests/test_frontier_loop.py",
+      "object": "apps/feedback/feedback/frontier.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
@@ -50948,270 +51104,6 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "69764c2ae44fb880",
-      "kind": "SPEC_EXISTS",
-      "subject": "015-worldline-reconstruction",
-      "object": "specs/015-worldline-reconstruction/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/015-worldline-reconstruction/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "59028c8196b6558b",
-      "kind": "SPEC_EXISTS",
-      "subject": "016-relation-evidence-graph-fabric",
-      "object": "specs/016-relation-evidence-graph-fabric/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/016-relation-evidence-graph-fabric/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "d971459b09f39305",
-      "kind": "SPEC_EXISTS",
-      "subject": "004-donor-coverage-complete",
-      "object": "specs/004-donor-coverage-complete/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/004-donor-coverage-complete/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "1ffe6c6c0c01942e",
-      "kind": "SPEC_EXISTS",
-      "subject": "026-universal-context-engine",
-      "object": "specs/026-universal-context-engine/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/026-universal-context-engine/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "6b3b3e788dff895d",
-      "kind": "SPEC_EXISTS",
-      "subject": "031-ghostline-vishing-fabric",
-      "object": "specs/031-ghostline-vishing-fabric/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/031-ghostline-vishing-fabric/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "294f8e393294329e",
-      "kind": "SPEC_EXISTS",
-      "subject": "034-person-research-case",
-      "object": "specs/034-person-research-case/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/034-person-research-case/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "48531e86ba95ccf5",
-      "kind": "SPEC_EXISTS",
-      "subject": "019-universal-relation-extraction",
-      "object": "specs/019-universal-relation-extraction/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/019-universal-relation-extraction/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "16a5a7af7c42e860",
-      "kind": "SPEC_EXISTS",
-      "subject": "028-closed-research-loop",
-      "object": "specs/028-closed-research-loop/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/028-closed-research-loop/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "9a022ffdd444a6a7",
-      "kind": "SPEC_EXISTS",
-      "subject": "029-research-closed-loop-upgrade",
-      "object": "specs/029-research-closed-loop-upgrade/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/029-research-closed-loop-upgrade/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "8bafa369bb6ceb11",
-      "kind": "SPEC_EXISTS",
-      "subject": "033-universal-context-runtime",
-      "object": "specs/033-universal-context-runtime/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/033-universal-context-runtime/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "f1254b6adb159f76",
-      "kind": "SPEC_EXISTS",
-      "subject": "022-estorides-donor-mining",
-      "object": "specs/022-estorides-donor-mining/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/022-estorides-donor-mining/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "c4d503ba317085be",
-      "kind": "SPEC_EXISTS",
-      "subject": "023-acquisition-integration-searxng",
-      "object": "specs/023-acquisition-integration-searxng/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/023-acquisition-integration-searxng/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "51d2a70a3a4ab1aa",
-      "kind": "SPEC_EXISTS",
-      "subject": "011-atomic-entity-commoncrawl-tda",
-      "object": "specs/011-atomic-entity-commoncrawl-tda/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/011-atomic-entity-commoncrawl-tda/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "e6cec62a1a91e428",
-      "kind": "SPEC_EXISTS",
-      "subject": "010-zero-layer-contact-harvesting",
-      "object": "specs/010-zero-layer-contact-harvesting/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/010-zero-layer-contact-harvesting/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "dc1972c612191161",
-      "kind": "SPEC_EXISTS",
-      "subject": "017-semantic-fabric",
-      "object": "specs/017-semantic-fabric/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/017-semantic-fabric/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "70ad500c63bfdbc8",
-      "kind": "SPEC_EXISTS",
-      "subject": "032-global-upgrade-execution",
-      "object": "specs/032-global-upgrade-execution/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/032-global-upgrade-execution/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "ed7ed873256848c0",
-      "kind": "SPEC_EXISTS",
-      "subject": "030-global-platform-upgrade",
-      "object": "specs/030-global-platform-upgrade/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/030-global-platform-upgrade/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "59c34e9ea6a41a62",
-      "kind": "SPEC_EXISTS",
-      "subject": "018-world-substrate",
-      "object": "specs/018-world-substrate/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/018-world-substrate/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "c24b72e47e1829ac",
-      "kind": "SPEC_EXISTS",
-      "subject": "025-context-reality-approximation-engine",
-      "object": "specs/025-context-reality-approximation-engine/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/025-context-reality-approximation-engine/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "b488923150194697",
-      "kind": "SPEC_EXISTS",
-      "subject": "014-temporal-materialization",
-      "object": "specs/014-temporal-materialization/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/014-temporal-materialization/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "1f7ec8b01a615120",
-      "kind": "SPEC_EXISTS",
-      "subject": "002-donor-pattern-integration",
-      "object": "specs/002-donor-pattern-integration/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/002-donor-pattern-integration/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "9db6492f556d145f",
-      "kind": "SPEC_EXISTS",
-      "subject": "024-context-driven-continuous-intelligence",
-      "object": "specs/024-context-driven-continuous-intelligence/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/024-context-driven-continuous-intelligence/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
       "fact_id": "71df0348fccea288",
       "kind": "SPEC_EXISTS",
       "subject": "012-dynamic-entity-invariant",
@@ -51220,78 +51112,6 @@
       "method": "filesystem",
       "evidence": {
         "file": "specs/012-dynamic-entity-invariant/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "8867398fa71adc7c",
-      "kind": "SPEC_EXISTS",
-      "subject": "003-donor-code-integration",
-      "object": "specs/003-donor-code-integration/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/003-donor-code-integration/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "500820c5384d2085",
-      "kind": "SPEC_EXISTS",
-      "subject": "006-scientific-intelligence-fabric",
-      "object": "specs/006-scientific-intelligence-fabric/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/006-scientific-intelligence-fabric/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "f186564b2bb4ed2f",
-      "kind": "SPEC_EXISTS",
-      "subject": "007-deterministic-entity-extraction-stack",
-      "object": "specs/007-deterministic-entity-extraction-stack/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/007-deterministic-entity-extraction-stack/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "763cf9992e72a05f",
-      "kind": "SPEC_EXISTS",
-      "subject": "001-global-osint-platform",
-      "object": "specs/001-global-osint-platform/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/001-global-osint-platform/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "d55d3052226e1cce",
-      "kind": "SPEC_EXISTS",
-      "subject": "021-entity-relation-extraction-finalization",
-      "object": "specs/021-entity-relation-extraction-finalization/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/021-entity-relation-extraction-finalization/spec.md"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "2db86164d91688d5",
-      "kind": "SPEC_EXISTS",
-      "subject": "005-donor-core-subsystems",
-      "object": "specs/005-donor-core-subsystems/spec.md",
-      "status": "STATIC_FACT",
-      "method": "filesystem",
-      "evidence": {
-        "file": "specs/005-donor-core-subsystems/spec.md"
       },
       "confidence": 1.0
     },
@@ -51308,6 +51128,138 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "f1254b6adb159f76",
+      "kind": "SPEC_EXISTS",
+      "subject": "022-estorides-donor-mining",
+      "object": "specs/022-estorides-donor-mining/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/022-estorides-donor-mining/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "16a5a7af7c42e860",
+      "kind": "SPEC_EXISTS",
+      "subject": "028-closed-research-loop",
+      "object": "specs/028-closed-research-loop/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/028-closed-research-loop/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "69764c2ae44fb880",
+      "kind": "SPEC_EXISTS",
+      "subject": "015-worldline-reconstruction",
+      "object": "specs/015-worldline-reconstruction/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/015-worldline-reconstruction/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9a022ffdd444a6a7",
+      "kind": "SPEC_EXISTS",
+      "subject": "029-research-closed-loop-upgrade",
+      "object": "specs/029-research-closed-loop-upgrade/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/029-research-closed-loop-upgrade/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "59028c8196b6558b",
+      "kind": "SPEC_EXISTS",
+      "subject": "016-relation-evidence-graph-fabric",
+      "object": "specs/016-relation-evidence-graph-fabric/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/016-relation-evidence-graph-fabric/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "294f8e393294329e",
+      "kind": "SPEC_EXISTS",
+      "subject": "034-person-research-case",
+      "object": "specs/034-person-research-case/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/034-person-research-case/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8bafa369bb6ceb11",
+      "kind": "SPEC_EXISTS",
+      "subject": "033-universal-context-runtime",
+      "object": "specs/033-universal-context-runtime/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/033-universal-context-runtime/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ed7ed873256848c0",
+      "kind": "SPEC_EXISTS",
+      "subject": "030-global-platform-upgrade",
+      "object": "specs/030-global-platform-upgrade/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/030-global-platform-upgrade/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d971459b09f39305",
+      "kind": "SPEC_EXISTS",
+      "subject": "004-donor-coverage-complete",
+      "object": "specs/004-donor-coverage-complete/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/004-donor-coverage-complete/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "48531e86ba95ccf5",
+      "kind": "SPEC_EXISTS",
+      "subject": "019-universal-relation-extraction",
+      "object": "specs/019-universal-relation-extraction/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/019-universal-relation-extraction/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9db6492f556d145f",
+      "kind": "SPEC_EXISTS",
+      "subject": "024-context-driven-continuous-intelligence",
+      "object": "specs/024-context-driven-continuous-intelligence/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/024-context-driven-continuous-intelligence/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "a272f68d56329f85",
       "kind": "SPEC_EXISTS",
       "subject": "027-ci-specops-fabric",
@@ -51320,6 +51272,162 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "dc1972c612191161",
+      "kind": "SPEC_EXISTS",
+      "subject": "017-semantic-fabric",
+      "object": "specs/017-semantic-fabric/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/017-semantic-fabric/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "59c34e9ea6a41a62",
+      "kind": "SPEC_EXISTS",
+      "subject": "018-world-substrate",
+      "object": "specs/018-world-substrate/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/018-world-substrate/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1ffe6c6c0c01942e",
+      "kind": "SPEC_EXISTS",
+      "subject": "026-universal-context-engine",
+      "object": "specs/026-universal-context-engine/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/026-universal-context-engine/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d55d3052226e1cce",
+      "kind": "SPEC_EXISTS",
+      "subject": "021-entity-relation-extraction-finalization",
+      "object": "specs/021-entity-relation-extraction-finalization/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/021-entity-relation-extraction-finalization/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8867398fa71adc7c",
+      "kind": "SPEC_EXISTS",
+      "subject": "003-donor-code-integration",
+      "object": "specs/003-donor-code-integration/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/003-donor-code-integration/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b488923150194697",
+      "kind": "SPEC_EXISTS",
+      "subject": "014-temporal-materialization",
+      "object": "specs/014-temporal-materialization/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/014-temporal-materialization/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2db86164d91688d5",
+      "kind": "SPEC_EXISTS",
+      "subject": "005-donor-core-subsystems",
+      "object": "specs/005-donor-core-subsystems/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/005-donor-core-subsystems/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1f7ec8b01a615120",
+      "kind": "SPEC_EXISTS",
+      "subject": "002-donor-pattern-integration",
+      "object": "specs/002-donor-pattern-integration/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/002-donor-pattern-integration/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f186564b2bb4ed2f",
+      "kind": "SPEC_EXISTS",
+      "subject": "007-deterministic-entity-extraction-stack",
+      "object": "specs/007-deterministic-entity-extraction-stack/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/007-deterministic-entity-extraction-stack/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "70ad500c63bfdbc8",
+      "kind": "SPEC_EXISTS",
+      "subject": "032-global-upgrade-execution",
+      "object": "specs/032-global-upgrade-execution/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/032-global-upgrade-execution/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e6cec62a1a91e428",
+      "kind": "SPEC_EXISTS",
+      "subject": "010-zero-layer-contact-harvesting",
+      "object": "specs/010-zero-layer-contact-harvesting/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/010-zero-layer-contact-harvesting/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c24b72e47e1829ac",
+      "kind": "SPEC_EXISTS",
+      "subject": "025-context-reality-approximation-engine",
+      "object": "specs/025-context-reality-approximation-engine/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/025-context-reality-approximation-engine/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6b3b3e788dff895d",
+      "kind": "SPEC_EXISTS",
+      "subject": "031-ghostline-vishing-fabric",
+      "object": "specs/031-ghostline-vishing-fabric/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/031-ghostline-vishing-fabric/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "703e4b09b812c539",
       "kind": "SPEC_EXISTS",
       "subject": "009-donor-full-catalogue",
@@ -51328,6 +51436,54 @@
       "method": "filesystem",
       "evidence": {
         "file": "specs/009-donor-full-catalogue/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c4d503ba317085be",
+      "kind": "SPEC_EXISTS",
+      "subject": "023-acquisition-integration-searxng",
+      "object": "specs/023-acquisition-integration-searxng/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/023-acquisition-integration-searxng/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "763cf9992e72a05f",
+      "kind": "SPEC_EXISTS",
+      "subject": "001-global-osint-platform",
+      "object": "specs/001-global-osint-platform/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/001-global-osint-platform/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "500820c5384d2085",
+      "kind": "SPEC_EXISTS",
+      "subject": "006-scientific-intelligence-fabric",
+      "object": "specs/006-scientific-intelligence-fabric/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/006-scientific-intelligence-fabric/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "51d2a70a3a4ab1aa",
+      "kind": "SPEC_EXISTS",
+      "subject": "011-atomic-entity-commoncrawl-tda",
+      "object": "specs/011-atomic-entity-commoncrawl-tda/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/011-atomic-entity-commoncrawl-tda/spec.md"
       },
       "confidence": 1.0
     },
