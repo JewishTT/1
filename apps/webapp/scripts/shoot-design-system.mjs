@@ -73,7 +73,7 @@ async function capture(name, extra = {}) {
   if (metrics.document > metrics.viewport + 1 || metrics.body > metrics.viewport + 1) {
     problems.push(`${name}: horizontal overflow (viewport=${metrics.viewport}, document=${metrics.document}, body=${metrics.body})`);
   }
-  if (metrics.viewport <= 1023 && metrics.nav && metrics.nav.scrollWidth > metrics.nav.clientWidth + 1) {
+  if (metrics.nav && metrics.nav.scrollWidth > metrics.nav.clientWidth + 1) {
     problems.push(`${name}: top navigation is clipped at ${metrics.viewport}px (client=${metrics.nav.clientWidth}, scroll=${metrics.nav.scrollWidth})`);
   }
   return entry;
