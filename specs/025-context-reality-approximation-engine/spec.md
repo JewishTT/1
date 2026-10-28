@@ -731,7 +731,7 @@ Two decisions materially change the shape of the work. Neither has a defensible 
 so both are surfaced rather than assumed.
 
 > **RESOLVED 2026-10-04 — owner decision: Q1 = B, Q2 = B.**
-> Recorded in [`ADR-0028`](../../../docs/adr/0028-context-definition-identity-and-placement.md).
+> Recorded in [`ADR-0028`](../../docs/adr/0028-context-definition-identity-and-placement.md).
 > Binding corrections carried into this spec:
 >
 > 1. **Split identifier namespaces.** `CXI-` = `InvestigationContext` (unchanged, 024

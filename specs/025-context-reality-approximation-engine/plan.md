@@ -3,7 +3,7 @@
 **Branch**: `025-context-reality-approximation-engine` | **Date**: 2026-10-04 | **Spec**: [spec.md](spec.md)
 
 **Input**: Specification 025 **v2** — `/specs/025-context-reality-approximation-engine/spec.md` + verbatim `input.md`
-**Research**: [research.md](research.md) · **Baseline**: [input.md](input.md) · **Decisions**: [ADR-0028](../../../docs/adr/0028-context-definition-identity-and-placement.md)
+**Research**: [research.md](research.md) · **Baseline**: [input.md](input.md) · **Decisions**: [ADR-0028](../../docs/adr/0028-context-definition-identity-and-placement.md)
 
 ---
 
