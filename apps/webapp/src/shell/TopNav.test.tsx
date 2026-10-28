@@ -49,6 +49,18 @@ describe("topnav", () => {
     expect(screen.getByTestId("topnav-sections")).toBeInTheDocument();
   });
 
+  it("separates module scope, active location and destination links into two rows", () => {
+    renderAt("/investigations");
+    const topnav = screen.getByTestId("topnav");
+    expect(topnav.querySelector(".ui-topnav-primary")).toContainElement(screen.getByTestId("topnav-modules"));
+    expect(topnav.querySelector(".ui-topnav-primary")).toContainElement(topnav.querySelector(".ui-topnav-trail"));
+    expect(topnav.querySelector(".ui-topnav-sections")).not.toBeNull();
+    expect(topnav.querySelector(".ui-topnav-primary")?.compareDocumentPosition(
+      topnav.querySelector(".ui-topnav-sections")!,
+    )).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByTestId("topnav-sections")).toHaveAttribute("aria-label", "Section navigation");
+  });
+
   it("shows the OSINT destinations by default", () => {
     renderAt("/investigations");
     const nav = screen.getByTestId("topnav-sections");
