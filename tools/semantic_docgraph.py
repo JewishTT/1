@@ -286,9 +286,8 @@ def resolve_doc_target(root: Path, source: str, target: str, known: set[str]) ->
             expanded.extend(candidate / name for name in ("index.md", "README.md", "00-INDEX.md"))
     for candidate in expanded:
         try:
-            resolved = candidate.resolve()
-            if resolved.is_file():
-                return relative(resolved, root)
+            if candidate.exists():
+                return relative(candidate.resolve(), root)
         except (OSError, ValueError):
             continue
     return None
@@ -504,6 +503,7 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
     doc_texts: dict[str, str] = {}
     broken_doc_links: list[dict[str, Any]] = []
     linked_assets: set[str] = set()
+    linked_directories: set[str] = set()
     for path in document_paths:
         rel = relative(path, root)
         try:
@@ -527,6 +527,12 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                     node_target = "module:" + target
                 elif target in config_rel:
                     node_target = "config:" + target
+                elif (root / target).is_dir():
+                    node_target = "directory:" + target
+                    if target not in linked_directories:
+                        linked_directories.add(target)
+                        nodes.append({"id": node_target, "kind": "directory-reference", "path": target,
+                                      "title": Path(target).name})
                 else:
                     node_target = "asset:" + target
                     if target not in linked_assets:

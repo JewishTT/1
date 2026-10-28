@@ -64,6 +64,12 @@ class PythonAstContractTests(unittest.TestCase):
             )
             self.assertEqual(relative, "docs/adr/0001-decision.md")
             self.assertEqual(absolute, "apps/engine.py")
+            (root / "docs" / "adr" / "nested").mkdir(parents=True)
+            directory = semantic_docgraph.resolve_doc_target(
+                root, "docs/architecture/overview.md", "../adr/nested/",
+                {"docs/adr/nested"},
+            )
+            self.assertEqual(directory, "docs/adr/nested")
 
     def test_source_import_resolution_uses_repository_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
