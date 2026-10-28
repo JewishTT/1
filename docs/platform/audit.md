@@ -8,10 +8,10 @@ A verified snapshot of the platform's true state. Every number is derived from t
 |---|---|
 | Components | 16 |
 | Python / TypeScript / Rust modules | 1009 / 265 / 16 |
-| Resolved import edges | 2807 |
+| Resolved import edges | 2808 |
 | HTTP routes / routers | 182 / 33 |
-| Test files / functions | 341 / 5277 |
-| Evidence facts (static) | 4365 |
+| Test files / functions | 341 / 5278 |
+| Evidence facts (static) | 4367 |
 
 ## Implementation maturity
 
@@ -58,7 +58,7 @@ See [golden-path.md](golden-path.md) for the capability map and the build plan.
 
 ## Event coverage
 
-99 catalogued event types across 29 lanes; 25 have a likely producer line; **29** are referenced by no file outside the catalog.
+100 catalogued event types across 30 lanes; 26 have a likely producer line; **29** are referenced by no file outside the catalog.
 
 Unreferenced event types (catalogued, but no producer or consumer string):
 
