@@ -50,7 +50,7 @@ async function capture(name, extra = {}) {
     catalogue: Boolean(document.querySelector('[data-testid="ui-kit-page"]')),
     theme: document.querySelector(".ui-shell")?.getAttribute("data-theme") ?? null,
     density: document.querySelector(".ui-shell")?.getAttribute("data-density") ?? null,
-    text: (document.body.innerText || "").replace(/\\s+/g, " ").slice(0, 140),
+    text: (document.body.innerText || "").replace(/\s+/g, " ").slice(0, 140),
     nav: (() => {
       const nav = document.querySelector(".ui-topnav");
       return nav ? {
@@ -64,7 +64,7 @@ async function capture(name, extra = {}) {
   await page.screenshot({ path: join(OUT, filename), fullPage: false, animations: "disabled" });
   const entry = { filename, ...metrics, ...extra };
   manifest.push(entry);
-  process.stdout.write(`${JSON.stringify(entry)}\\n`);
+  process.stdout.write(`${JSON.stringify(entry)}\n`);
 
   if (!metrics.shell || !metrics.catalogue) problems.push(`${name}: shell or catalogue did not mount`);
   if (extra.expectedTheme && metrics.theme !== extra.expectedTheme) {
@@ -185,15 +185,15 @@ try {
   await page.getByTestId("ui-kit-toast").waitFor();
   await capture("toast-danger-dark-baseline", { surface: "toast", tone: "danger" });
 } catch (error) {
-  problems.push(`sweep aborted during ${stage}: ${String(error).slice(0, 300)}\\n${error?.stack ?? ""}`);
+  problems.push(`sweep aborted during ${stage}: ${String(error).slice(0, 300)}\n${error?.stack ?? ""}`);
 } finally {
   await browser.close();
   writeFileSync(join(OUT, "manifest.json"), JSON.stringify({ baseUrl: BASE, shots: manifest, problems }, null, 2));
 }
 
 if (problems.length) {
-  process.stderr.write(`\\n${problems.length} visual sweep issue(s):\\n${problems.map((p) => `- ${p}`).join("\\n")}\\n`);
+  process.stderr.write(`\n${problems.length} visual sweep issue(s):\n${problems.map((p) => `- ${p}`).join("\n")}\n`);
   process.exitCode = 1;
 } else {
-  process.stdout.write(`\\nVisual sweep passed: ${manifest.length} PNGs in ${OUT}. Open the artifact and review the images.\\n`);
+  process.stdout.write(`\nVisual sweep passed: ${manifest.length} PNGs in ${OUT}. Open the artifact and review the images.\n`);
 }
