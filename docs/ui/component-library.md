@@ -26,6 +26,18 @@ Run the app and visit `/ui-kit`. This internal route is deliberately absent from
 
 Use the page when reviewing both themes, all density modes, and the 2560×1440, 1920×1080, 1440×900, 1023px, 767px and 390px breakpoints. It is a visual fixture, not a substitute for inspecting actual investigation screens.
 
+## Visual register: neo-militarist cyberpunk
+
+The direction is deliberately restrained: graphite and steel surfaces, instrument-green for active/confirmed state, amber for metadata and classification, and semantic red only for failure. The cyberpunk character comes from precision, technical typography, compact data presentation, and disciplined signal hierarchy — not neon saturation, gradients, HUD corners, scanlines or glow. Geometry is more industrial (small radii, clean dividers, narrow signal rails), but hierarchy still comes from spacing, type weight and selection.
+
+The fifteen normative palette values in `ui-upgrade.md §3.2` are unchanged. Use only their semantic `--ui-*` aliases. Do not introduce a second palette or a style-only accent.
+
+## Screenshot regression is part of every UI change
+
+CI runs `npm run ui:shoot:design-system` against the Vite development server after the webapp tests and uploads `cognitive-ui-screenshots` whether the sweep passes or fails. It captures the six normative viewport widths, each catalogue section, local density preview, both themes, modal behavior and success/error toast surfaces. The accompanying `manifest.json` records viewport width, document/body scroll width, shell/theme state and detected browser errors.
+
+A passing sweep guards mount, console errors, and document-level horizontal overflow; it does not claim pixel-perfect visual correctness by itself. Open the PNG artifact and inspect the full-page images for clipping, overlap, illegible metadata, focus visibility and unintended style regressions. When a visual discrepancy appears, fix the owning component/token rule and rerun the sweep before considering the change complete.
+
 ## Rules for new components
 
 1. Use semantic `--ui-*` tokens. Never introduce a component-local palette or raw color literals.
