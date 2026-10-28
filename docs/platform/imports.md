@@ -10,12 +10,12 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 878 |
+| `__future__` | stdlib | 879 |
 | `dataclasses` | stdlib | 390 |
 | `typing` | stdlib | 367 |
-| `pathlib` | stdlib | 316 |
+| `pathlib` | stdlib | 317 |
 | `pytest` | third-party | 267 |
-| `sys` | stdlib | 255 |
+| `sys` | stdlib | 256 |
 | `collections` | stdlib | 240 |
 | `json` | stdlib | 193 |
 | `datetime` | stdlib | 190 |
@@ -31,7 +31,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `math` | stdlib | 41 |
 | `pydantic` | third-party | 34 |
 | `types` | stdlib | 33 |
-| `importlib` | stdlib | 31 |
+| `importlib` | stdlib | 32 |
 | `time` | stdlib | 29 |
 | `ast` | stdlib | 27 |
 | `io` | stdlib | 25 |
@@ -41,7 +41,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `inspect` | stdlib | 21 |
 | `argparse` | stdlib | 20 |
 | `httpx` | third-party | 20 |
-| `tempfile` | stdlib | 17 |
+| `tempfile` | stdlib | 18 |
 | `threading` | stdlib | 17 |
 | `subprocess` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |

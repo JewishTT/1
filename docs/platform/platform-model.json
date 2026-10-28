@@ -1116,7 +1116,7 @@
     "edge_count": 2807,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 878,
+      "stdlib:__future__": 879,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
@@ -1143,7 +1143,7 @@
       "stdlib:hmac": 3,
       "stdlib:html": 9,
       "stdlib:http": 5,
-      "stdlib:importlib": 31,
+      "stdlib:importlib": 32,
       "stdlib:inspect": 21,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
@@ -1152,7 +1152,7 @@
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 69,
-      "stdlib:pathlib": 316,
+      "stdlib:pathlib": 317,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 96,
@@ -1165,9 +1165,9 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 16,
-      "stdlib:sys": 255,
+      "stdlib:sys": 256,
       "stdlib:sysconfig": 1,
-      "stdlib:tempfile": 17,
+      "stdlib:tempfile": 18,
       "stdlib:threading": 17,
       "stdlib:time": 29,
       "stdlib:tokenize": 1,
@@ -1175,6 +1175,7 @@
       "stdlib:types": 33,
       "stdlib:typing": 367,
       "stdlib:unicodedata": 6,
+      "stdlib:unittest": 1,
       "stdlib:urllib": 43,
       "stdlib:uuid": 48,
       "stdlib:warnings": 1,
@@ -21679,10 +21680,11 @@
       },
       {
         "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
-        "tests": 4,
+        "tests": 5,
         "test_names": [
           "test_records_public_symbols_arguments_and_decorated_routes",
           "test_utf8_bom_is_ignored_by_python_parser_but_not_hidden_from_source_hashes",
+          "test_syntax_errors_are_reported_not_silently_discarded",
           "test_doc_link_resolver_resolves_relative_and_root_paths",
           "test_source_import_resolution_uses_repository_files"
         ],
@@ -23559,7 +23561,7 @@
         "targets": []
       }
     ],
-    "total": 5276
+    "total": 5277
   },
   "contracts": {
     "python": [
@@ -39273,8 +39275,8 @@
       {
         "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
         "status": "TEST",
-        "loc": 0,
-        "callables": 0,
+        "loc": 84,
+        "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -102181,7 +102183,7 @@
     "rust_crates": 9,
     "import_edges": 2807,
     "test_files": 341,
-    "test_functions": 5276,
+    "test_functions": 5277,
     "untested_modules": 268,
     "http_routes": 182
   },
