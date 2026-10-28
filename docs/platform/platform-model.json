@@ -806,7 +806,7 @@
     {
       "name": "shared",
       "description": "Contracts, events, domain invariants, storage, security — the substrate every app imports.",
-      "python_modules": 196,
+      "python_modules": 197,
       "typescript_modules": 0,
       "modules": [
         "apps.shared.config",
@@ -938,6 +938,7 @@
         "apps.shared.tests.contract.test_platform_model",
         "apps.shared.tests.contract.test_projection_manifest",
         "apps.shared.tests.contract.test_review",
+        "apps.shared.tests.contract.test_semantic_docgraph",
         "apps.shared.tests.contract.test_single_publication_path",
         "apps.shared.tests.contract.test_stage_outcome",
         "apps.shared.tests.contract.test_statement",
@@ -1048,7 +1049,7 @@
     {
       "name": "tools",
       "description": "Generators, capability/owner/donor tools, probes.",
-      "python_modules": 10,
+      "python_modules": 11,
       "typescript_modules": 0,
       "modules": [
         "tools.append_zero_frontend_a",
@@ -1057,6 +1058,7 @@
         "tools.append_zero_sources_a",
         "tools.append_zero_sources_b",
         "tools.fix_zero_layer_doc",
+        "tools.semantic_docgraph",
         "tools.specs.build_capability_matrix",
         "tools.specs.build_donor_registry",
         "tools.specs.build_owner_map",
@@ -1067,7 +1069,7 @@
       "name": "webapp",
       "description": "React analyst surfaces: investigation, search, entity, finding, ops, lineage.",
       "python_modules": 0,
-      "typescript_modules": 255,
+      "typescript_modules": 265,
       "modules": []
     },
     {
@@ -1110,14 +1112,50 @@
     }
   ],
   "import_graph": {
-    "module_count": 1007,
+    "module_count": 1009,
     "edge_count": 2807,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 877,
+      "declared-not-installed:aioboto3": 3,
+      "declared-not-installed:alembic": 24,
+      "declared-not-installed:anyascii": 1,
+      "declared-not-installed:asyncpg": 1,
+      "declared-not-installed:bm25s": 1,
+      "declared-not-installed:charset_normalizer": 1,
+      "declared-not-installed:confluent_kafka": 16,
+      "declared-not-installed:docx": 2,
+      "declared-not-installed:duckdb": 5,
+      "declared-not-installed:extruct": 1,
+      "declared-not-installed:fastapi": 66,
+      "declared-not-installed:gudhi": 8,
+      "declared-not-installed:h3": 2,
+      "declared-not-installed:httpx": 20,
+      "declared-not-installed:litellm": 2,
+      "declared-not-installed:nameparser": 3,
+      "declared-not-installed:neo4j": 1,
+      "declared-not-installed:numpy": 23,
+      "declared-not-installed:openpyxl": 1,
+      "declared-not-installed:phonenumbers": 1,
+      "declared-not-installed:prometheus_client": 4,
+      "declared-not-installed:pyarrow": 3,
+      "declared-not-installed:pydantic": 34,
+      "declared-not-installed:pydantic_settings": 1,
+      "declared-not-installed:pymorphy3": 1,
+      "declared-not-installed:pypdf": 2,
+      "declared-not-installed:redis": 2,
+      "declared-not-installed:river": 1,
+      "declared-not-installed:scrapy": 1,
+      "declared-not-installed:selectolax": 1,
+      "declared-not-installed:splink": 2,
+      "declared-not-installed:sqlalchemy": 158,
+      "declared-not-installed:temporalio": 13,
+      "declared-not-installed:trafilatura": 1,
+      "declared-not-installed:warcio": 15,
+      "declared-not-installed:yaml": 10,
+      "stdlib:__future__": 879,
       "stdlib:abc": 3,
-      "stdlib:argparse": 19,
-      "stdlib:ast": 26,
+      "stdlib:argparse": 20,
+      "stdlib:ast": 27,
       "stdlib:asyncio": 70,
       "stdlib:base64": 9,
       "stdlib:binascii": 2,
@@ -1136,24 +1174,24 @@
       "stdlib:enum": 118,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 126,
+      "stdlib:hashlib": 127,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 9,
       "stdlib:http": 5,
-      "stdlib:importlib": 31,
+      "stdlib:importlib": 32,
       "stdlib:inspect": 21,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 192,
+      "stdlib:json": 193,
       "stdlib:logging": 23,
       "stdlib:math": 41,
-      "stdlib:os": 68,
-      "stdlib:pathlib": 315,
+      "stdlib:os": 69,
+      "stdlib:pathlib": 317,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 95,
+      "stdlib:re": 96,
       "stdlib:secrets": 2,
       "stdlib:shlex": 1,
       "stdlib:shutil": 14,
@@ -1162,81 +1200,1457 @@
       "stdlib:stat": 2,
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
-      "stdlib:subprocess": 15,
-      "stdlib:sys": 254,
+      "stdlib:subprocess": 16,
+      "stdlib:sys": 256,
       "stdlib:sysconfig": 1,
-      "stdlib:tempfile": 17,
+      "stdlib:tempfile": 18,
       "stdlib:threading": 17,
       "stdlib:time": 29,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 33,
-      "stdlib:typing": 366,
+      "stdlib:typing": 367,
       "stdlib:unicodedata": 6,
+      "stdlib:unittest": 1,
       "stdlib:urllib": 43,
       "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
       "stdlib:xml": 3,
       "stdlib:zipfile": 1,
-      "stdlib:zlib": 2,
-      "third-party:PIL": 2,
-      "third-party:aioboto3": 3,
-      "third-party:alembic": 24,
-      "third-party:anyascii": 1,
-      "third-party:anyio": 3,
-      "third-party:asyncpg": 1,
-      "third-party:bm25s": 1,
-      "third-party:botocore": 1,
-      "third-party:charset_normalizer": 1,
-      "third-party:confluent_kafka": 16,
-      "third-party:docx": 2,
-      "third-party:duckdb": 5,
-      "third-party:extruct": 1,
-      "third-party:fastapi": 66,
-      "third-party:google": 5,
-      "third-party:gudhi": 8,
-      "third-party:h3": 2,
-      "third-party:httpx": 20,
-      "third-party:litellm": 2,
-      "third-party:nameparser": 3,
-      "third-party:neo4j": 1,
-      "third-party:numpy": 23,
-      "third-party:openpyxl": 1,
-      "third-party:opentelemetry": 5,
-      "third-party:packaging": 4,
-      "third-party:phonenumbers": 1,
-      "third-party:prometheus_client": 4,
-      "third-party:pyarrow": 3,
-      "third-party:pydantic": 34,
-      "third-party:pydantic_settings": 1,
-      "third-party:pymorphy3": 1,
-      "third-party:pypdf": 2,
-      "third-party:pytest": 267,
-      "third-party:rdflib": 2,
-      "third-party:redis": 2,
-      "third-party:river": 1,
-      "third-party:scrapy": 1,
-      "third-party:selectolax": 1,
-      "third-party:splink": 2,
-      "third-party:sqlalchemy": 158,
-      "third-party:starlette": 2,
-      "third-party:temporalio": 13,
-      "third-party:trafilatura": 1,
-      "third-party:warcio": 15,
-      "third-party:yaml": 10
+      "stdlib:zlib": 2
     },
     "optional": {
+      "PIL": 1,
+      "opentelemetry": 5,
+      "packaging": 2,
       "pyshacl": 1,
       "pyzbar": 1,
+      "rdflib": 2,
       "tantivy": 1
     },
-    "unknown": {},
+    "unknown": {
+      "PIL": 1,
+      "anyio": 3,
+      "botocore": 1,
+      "google.protobuf": 4,
+      "google.protobuf.internal": 1,
+      "packaging.requirements": 1,
+      "packaging.version": 1,
+      "pytest": 267,
+      "starlette.requests": 1,
+      "starlette.responses": 1
+    },
     "unresolved": [
+      {
+        "from": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/contract/test_scheduler.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/integration/test_adapters_gate.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/integration/test_backpressure.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/integration/test_engine_adapters_gate.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/integration/test_live_loop.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/integration/test_loop_closed.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/integration/test_worker.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/test_connector_registry.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_acquisition_artifact_sink.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_acquisition_worker.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_adapter_onboarding.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_bbot_process_boundary.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_bbot_runtime.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_case_execution_guard.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_engine_adapters.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_primproc_runtime.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_source_executor_contracts.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_warc_adapter.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/admission/tests/contract/test_no_auto_merge.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/admission/tests/contract/test_resolution_history.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/admission/tests/test_candidate.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/admission/tests/test_claims.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/admission/tests/test_effective_independence.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/admission/tests/test_statement_consumer.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/admission/tests/unit/test_cluster_transitivity.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/admission/tests/unit/test_splink_adapter.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/bulk-ingestion/tests/unit/test_backfill.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/bulk-ingestion/tests/unit/test_historical_replay.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/api/sse.py",
+        "import": "starlette.responses",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/contract/test_context_graph_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_cc_temporality_api.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_closed_research_loop.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_donor_api.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_end_to_end_pipeline.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_entity_investigation_membership.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_epistemic_roundtrip.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_finding_evidence_chain.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_frontier_provenance.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_investigation_temporal.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_lineage_api.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_loop_closure.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_observation_immutability.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_orm_migration_parity.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_platform_assembly.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_quarantine.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_query_planner.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_resolution_api.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_science_api.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_seed_security.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_temporal_materialization_api.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_tenancy.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/integration/test_tools_api.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/test_auth_security.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/test_auth_security.py",
+        "import": "starlette.requests",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_invariants.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_projection.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_reports.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_action_memory.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_approval_gate.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_cc_temporality.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_cognitive_loop.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_context_engine.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_context_termination_and_catalogue.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_digest_gated_revision.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_dispatcher_backpressure.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_donor_patterns.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_entity_stream_persistence.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_fabric_anchor_guard.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_fabric_endpoints.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_invariant_reducer.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_migration_017_forward_only.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_migration_020_universal_relation.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_migration_024_investigation_entity_membership.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_monitor.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_network_analytics.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_ontology_registry.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_postgres_context_store.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_producer_binding_golden_path.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_query_degradation.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_query_fusion.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_rank_fusion_wiring.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_candidate_storage_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_relation_projection_outbox_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_science_tda.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_search_core_selection.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_search_fusion_api.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_series_lifecycle.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_sse_stream.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_temporal_port.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_us1_core.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_workflows.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/feedback/tests/test_branches.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/feedback/tests/test_frontier_loop.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/parsers/documents.py",
+        "import": "PIL",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/conftest.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/contract/test_parser_families.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/contract/test_span_semantics.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/integration/test_all_sources_parse.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_deterministic_extraction.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_evidence_manifest.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_mention_binding_seam.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_observation_consumer.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_parser_adapter.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_payload_binding.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_payload_detection.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_payload_hypotheses.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_payload_parser_layer.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_payload_routing.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_payload_structure_producer.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_primary_proc.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_primary_proc_regex_mutant.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_producer_migration.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_relation_cue_coverage.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_relations.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_retriever_fusion.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_signal_kind_channels.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_signal_nary_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_syntactic_producer.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_tenzir_live.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_tenzir_normalization.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/interpretation/tests/test_warc_reader.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/contract/test_search_projection_manifest.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/contract/test_tda_bridge_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/test_bm25s_backend.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/test_tantivy_backend.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_claim_projection.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_diagram.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_features.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_graph_store_direction.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_h3_spatial.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_neo4j_relation_write.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_pipeline_directed.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_relation_store.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_takens.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_tda_insight.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_tda_pipeline_performance.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_temporal_graph.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_topological_invariant.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/projection/tests/unit/test_validated.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/context/tests/test_epistemic_algebra.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_argumentation_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_causal_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_circularity_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_claim_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_completeness_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_coverage_independence_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_dialectics_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_discipline_adapters_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_dossier_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_enrichment_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_epistemic_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_event_emission_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_gluing_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_growth_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_hierarchy_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_hypothesis_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_locality_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_ontology_and_schema_stay_in_step.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_operator_registry_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_operator_result_bridge.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_query_compiler_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_robustness_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_science_seam_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_scope_lattice_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_structure_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_temporal_filter.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/contract/test_worldline_view_contract.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/integration/test_context_engine_chain.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/integration/test_live_asg_pipeline.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/integration/test_live_scope_lattice.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/test_anchoring.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_econ.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_kinetics.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_landscape.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_phase.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_river_drift.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_schelling.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_scope.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_series_embedding.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_structure.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/science/tests/unit/test_tda.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/events/dlq_durable.py",
+        "import": "anyio",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/events/dlq_durable.py",
+        "import": "anyio",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/events/dlq_durable.py",
+        "import": "anyio",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/events/event_envelope_pb2.py",
+        "import": "google.protobuf",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/events/event_envelope_pb2.py",
+        "import": "google.protobuf",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/events/event_envelope_pb2.py",
+        "import": "google.protobuf",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/events/event_envelope_pb2.py",
+        "import": "google.protobuf",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/events/event_envelope_pb2.py",
+        "import": "google.protobuf.internal",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/constitution/test_constitution4_no_fabrication.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/constitution/test_constitution_has_teeth.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/constitution/test_i1_i3_immutability_and_preservation.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/constitution/test_identity_subsystem_constitution.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/constitution/test_iv_vi_tenancy_and_determinism.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_correlation.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_domain_invariants.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_donor_registry.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_donor_registry.py",
+        "import": "packaging.requirements",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_donor_registry.py",
+        "import": "packaging.version",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_entity_fabric.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_error_codes.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_event_envelope.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_evidence_span.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_evidence_span_roundtrip.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_metrics.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_ontology.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_operator_result.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_platform_gaps.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_platform_model.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_projection_manifest.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_review.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_single_publication_path.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_stage_outcome.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_statement.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/contract/test_storage.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/integration/test_idempotency.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/integration/test_infra_connectivity.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/integration/test_infra_connectivity.py",
+        "import": "botocore",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/integration/test_redpanda_emission.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/domain/test_domain_model.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/domain/test_graph_invariant.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/domain/test_temporal_materialization.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/domain/test_temporal_worldline.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/domain/test_temporal_worldline_store.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/donor/conftest.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/donor/test_evidence.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/donor/test_target.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_access_mode.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_acquisition_path.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_candidate_logical_identity.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_cc_session.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_cd6_unresolved_predicate.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_co_mention.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_commoncrawl.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_derivation_identity.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_dlq_durable.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_event_timestamps.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_evidence_context.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_evidence_lineage.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_evidence_store_guard.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_fusion.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_idempotent_consumer.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_investigation_context.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_layer_boundaries.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_measured_values.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_mention_occurrence_index.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_observation_gate_identity.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_observation_identity.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_open_world_predicates.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_participant_end_kind.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_predicate_signature.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_range_pull.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_relation_claim.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_relation_identity.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_relation_schema.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
       {
         "from": "apps/shared/tests/unit/test_relation_schema.py",
         "import": "domain.context_validation",
         "kind": "guarded-gap"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_research_lineage.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_resolution_mention_span.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_schema_hierarchy.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_secure_fetch.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_security.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_temporal_metrics.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/specops/tests/conftest.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/specops/tests/test_engagement.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/specops/tests/test_ghostline.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/specops/tests/test_roe_gate.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/specops/tests/test_specops_ghostline_routers.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/zero/tests/conftest.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/zero/tests/test_cc_capture.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/zero/tests/test_harvest_wave.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/zero/tests/test_harvesters.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/zero/tests/test_resolution.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "apps/zero/tests/test_type_detector.py",
+        "import": "pytest",
+        "kind": "unknown"
+      },
+      {
+        "from": "bench/tests/test_scale_scale.py",
+        "import": "pytest",
+        "kind": "unknown"
       }
     ],
     "edges": [
@@ -15288,7 +16702,6 @@
       "api": "apps/control-plane/api/__init__.py",
       "application": "apps/control-plane/application",
       "artifact_sink": "apps/acquisition/artifact_sink.py",
-      "backfill": "apps/bulk-ingestion/backfill.py",
       "badges": "apps/control-plane/badges/__init__.py",
       "beliefs": "apps/science/beliefs/__init__.py",
       "bench": "bench/bench/__init__.py",
@@ -15318,12 +16731,10 @@
       "evidence_writer": "apps/acquisition/evidence_writer.py",
       "experiments": "apps/science/experiments/__init__.py",
       "extractors": "apps/interpretation/extractors/__init__.py",
-      "feedback": "apps/feedback/feedback/__init__.py",
-      "feedback_engine": "apps/feedback/feedback_engine.py",
+      "feedback": "apps/feedback",
       "fixtures": "apps/science/fixtures/__init__.py",
       "frontier": "apps/acquisition/frontier",
       "graph": "apps/projection/graph/__init__.py",
-      "historical": "apps/bulk-ingestion/historical/__init__.py",
       "hypotheses": "apps/science/hypotheses/__init__.py",
       "ids": "apps/shared/ids/__init__.py",
       "independence": "apps/admission/independence/__init__.py",
@@ -15364,7 +16775,6 @@
       "sources": "apps/acquisition/sources/__init__.py",
       "spatial": "apps/projection/spatial",
       "specops": "apps/specops/__init__.py",
-      "stopping": "apps/feedback/stopping.py",
       "storage": "apps/shared/storage/__init__.py",
       "store": "apps/science/store.py",
       "stream": "apps/acquisition/stream.py",
@@ -16421,7 +17831,6 @@
         "targets": [
           "apps/acquisition/adapters/scrapy/stream.py",
           "apps/acquisition/adapters/warc/collect.py",
-          "apps/bulk-ingestion/historical/replay.py",
           "apps/shared/events/content_router.py",
           "apps/shared/events/observation_gate.py",
           "apps/shared/storage/s3.py"
@@ -16438,8 +17847,6 @@
           "test_backfill_merges_cc_and_wayback_with_stats"
         ],
         "targets": [
-          "apps/bulk-ingestion/backfill.py",
-          "apps/bulk-ingestion/historical/replay.py",
           "apps/shared/network/commoncrawl.py"
         ]
       },
@@ -16454,7 +17861,6 @@
           "test_stats_merge_totals"
         ],
         "targets": [
-          "apps/bulk-ingestion/historical/replay.py",
           "apps/shared/network/commoncrawl.py"
         ]
       },
@@ -18159,11 +19565,6 @@
           "test_branches_emit_candidates_consumable_by_sink"
         ],
         "targets": [
-          "apps/feedback/feedback/__init__.py",
-          "apps/feedback/feedback/branch/entity.py",
-          "apps/feedback/feedback/branch/finding.py",
-          "apps/feedback/feedback/branch/source.py",
-          "apps/feedback/feedback/frontier.py",
           "apps/shared/scoring/scorer.py"
         ]
       },
@@ -18180,10 +19581,7 @@
           "test_frontier_explosion_guard_sleeps",
           "test_unknown_source_runs"
         ],
-        "targets": [
-          "apps/feedback/feedback_engine.py",
-          "apps/feedback/stopping.py"
-        ]
+        "targets": []
       },
       {
         "path": "apps/feedback/tests/test_frontier_loop.py",
@@ -18196,8 +19594,6 @@
           "apps/control-plane/db/schema.py",
           "apps/control-plane/db/session.py",
           "apps/control-plane/services/frontier.py",
-          "apps/feedback/feedback/__init__.py",
-          "apps/feedback/feedback/frontier.py",
           "apps/shared/scoring/scorer.py"
         ]
       },
@@ -21676,6 +23072,17 @@
         ]
       },
       {
+        "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
+        "tests": 4,
+        "test_names": [
+          "test_records_public_symbols_arguments_and_decorated_routes",
+          "test_syntax_errors_are_reported_not_silently_discarded",
+          "test_doc_link_resolver_resolves_relative_and_root_paths",
+          "test_source_import_resolution_uses_repository_files"
+        ],
+        "targets": []
+      },
+      {
         "path": "apps/shared/tests/contract/test_single_publication_path.py",
         "tests": 9,
         "test_names": [
@@ -23546,7 +24953,7 @@
         "targets": []
       }
     ],
-    "total": 5272
+    "total": 5276
   },
   "contracts": {
     "python": [
@@ -28679,7 +30086,9 @@
     "apps/admission/engine/__init__.py",
     "apps/admission/independence/__init__.py",
     "apps/admission/resolution/__init__.py",
+    "apps/bulk-ingestion/backfill.py",
     "apps/bulk-ingestion/historical/__init__.py",
+    "apps/bulk-ingestion/historical/replay.py",
     "apps/control-plane/__init__.py",
     "apps/control-plane/api/path_shim.py",
     "apps/control-plane/api/routes/connectors.py",
@@ -28769,7 +30178,14 @@
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
+    "apps/feedback/feedback/__init__.py",
     "apps/feedback/feedback/branch/__init__.py",
+    "apps/feedback/feedback/branch/entity.py",
+    "apps/feedback/feedback/branch/finding.py",
+    "apps/feedback/feedback/branch/source.py",
+    "apps/feedback/feedback/frontier.py",
+    "apps/feedback/feedback_engine.py",
+    "apps/feedback/stopping.py",
     "apps/interpretation/__init__.py",
     "apps/interpretation/_consume_searxng.py",
     "apps/interpretation/_prove_primproc.py",
@@ -28835,18 +30251,9 @@
     "apps/shared/contracts/__init__.py",
     "apps/shared/datasets/__init__.py",
     "apps/shared/datasets/build.py",
-    "apps/shared/domain/entity_identity.py",
-    "apps/shared/donor/__init__.py",
-    "apps/shared/events/bus.py",
-    "apps/shared/events/coalesce.py",
-    "apps/shared/events/fabric_events.py",
-    "apps/shared/events/registry.py",
-    "apps/shared/ids/gen.py",
-    "apps/shared/network/__init__.py",
-    "apps/shared/observability/__init__.py",
-    "apps/shared/scoring/metrics.py"
+    "apps/shared/domain/entity_identity.py"
   ],
-  "untested_count": 267,
+  "untested_count": 277,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -29441,12 +30848,13 @@
             "tools/append_zero_sources_a.py",
             "tools/append_zero_sources_b.py",
             "tools/fix_zero_layer_doc.py",
+            "tools/semantic_docgraph.py",
             "tools/specs/build_capability_matrix.py",
             "tools/specs/build_donor_registry.py",
             "tools/specs/build_owner_map.py",
             "tools/strip_zero_inventory.py"
           ],
-          "module_count": 69
+          "module_count": 70
         },
         {
           "id": "orchestration-temporal",
@@ -29593,6 +31001,7 @@
             "apps/shared/tests/contract/test_platform_model.py",
             "apps/shared/tests/contract/test_projection_manifest.py",
             "apps/shared/tests/contract/test_review.py",
+            "apps/shared/tests/contract/test_semantic_docgraph.py",
             "apps/shared/tests/contract/test_single_publication_path.py",
             "apps/shared/tests/contract/test_stage_outcome.py",
             "apps/shared/tests/contract/test_statement.py",
@@ -29661,7 +31070,7 @@
             "apps/shared/workflow/__init__.py",
             "apps/shared/workflow/client.py"
           ],
-          "module_count": 196
+          "module_count": 197
         },
         {
           "id": "projection-query",
@@ -30211,14 +31620,24 @@
             "apps/webapp/src/ui/Button.tsx",
             "apps/webapp/src/ui/ContextMenu.tsx",
             "apps/webapp/src/ui/DataTable.tsx",
+            "apps/webapp/src/ui/DesignSystemPage.test.tsx",
+            "apps/webapp/src/ui/DesignSystemPage.tsx",
             "apps/webapp/src/ui/Feedback.tsx",
             "apps/webapp/src/ui/Icon.tsx",
             "apps/webapp/src/ui/Input.tsx",
+            "apps/webapp/src/ui/Modal.test.tsx",
+            "apps/webapp/src/ui/Modal.tsx",
             "apps/webapp/src/ui/Overlay.tsx",
+            "apps/webapp/src/ui/Panel.tsx",
             "apps/webapp/src/ui/Tabs.tsx",
+            "apps/webapp/src/ui/Toast.test.tsx",
+            "apps/webapp/src/ui/Toast.tsx",
+            "apps/webapp/src/ui/ToastViewport.tsx",
+            "apps/webapp/src/ui/index.ts",
             "apps/webapp/src/ui/primitives.test.tsx",
             "apps/webapp/src/ui/status.ts",
             "apps/webapp/src/ui/tokens.ts",
+            "apps/webapp/src/vite-env.d.ts",
             "apps/webapp/src/workspace/InvestigationWorkspace.tsx",
             "apps/webapp/src/workspace/ResizablePane.tsx",
             "apps/webapp/src/workspace/commands.test.ts",
@@ -30237,7 +31656,7 @@
             "apps/webapp/src/workspace/useWorkState.ts",
             "apps/webapp/vite.config.ts"
           ],
-          "module_count": 255
+          "module_count": 265
         }
       ],
       "event_names_sample": [
@@ -30361,6 +31780,7 @@
         "contact.html",
         "contracts.md",
         "contracts.py",
+        "contracts.thing",
         "coord.lat",
         "coord.lon",
         "corp.co",
@@ -30434,13 +31854,12 @@
         "enable.auto.commit",
         "enable.auto.offset.store",
         "enable.idempotence",
+        "engine.py",
         "entities.entity_id",
         "entity.claimed",
         "entity.created",
         "entity.extract",
-        "entity.freeze",
-        "entity.observed",
-        "entity.resolved"
+        "entity.freeze"
       ]
     },
     "context_map": {
@@ -39246,6 +40665,15 @@
         "markers": []
       },
       {
+        "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
+        "status": "TEST",
+        "loc": 79,
+        "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/shared/tests/contract/test_single_publication_path.py",
         "status": "TEST",
         "loc": 262,
@@ -40743,6 +42171,15 @@
         "markers": []
       },
       {
+        "path": "tools/semantic_docgraph.py",
+        "status": "IMPLEMENTED",
+        "loc": 686,
+        "callables": 26,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "tools/specs/build_capability_matrix.py",
         "status": "IMPLEMENTED",
         "loc": 424,
@@ -40780,12 +42217,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 542,
+      "IMPLEMENTED": 543,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 337,
+      "TEST": 338,
       "MIGRATION": 19,
-      "total": 1007
+      "total": 1009
     }
   },
   "reachability": {
@@ -44151,6 +45588,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/shared/tests/contract/test_single_publication_path.py",
         "status": "TEST"
       },
@@ -44803,6 +46244,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "tools/semantic_docgraph.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "tools/specs/build_capability_matrix.py",
         "status": "PRODUCTION"
       },
@@ -44853,16 +46298,17 @@
       "bench/run.py",
       "bench/science/bench_structural.py",
       "platform_model/build.py",
+      "tools/semantic_docgraph.py",
       "tools/specs/build_capability_matrix.py",
       "tools/specs/build_donor_registry.py",
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 402,
+      "PRODUCTION": 403,
       "TEST_ONLY": 146,
       "ORPHAN": 122,
-      "TEST": 337,
-      "total": 1007
+      "TEST": 338,
+      "total": 1009
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -88287,18 +89733,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "b8bbe7f88d791261",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
-        "object": "apps/bulk-ingestion/historical/replay.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "cbe7da319698f0f6",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
@@ -88335,30 +89769,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "5a3adf49a3dd8ca3",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
-        "object": "apps/bulk-ingestion/backfill.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "4bd2fe1e017642f6",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
-        "object": "apps/bulk-ingestion/historical/replay.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "a83bf8e088db6937",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
@@ -88367,18 +89777,6 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "61c651040087b96b",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/bulk-ingestion/tests/unit/test_historical_replay.py",
-        "object": "apps/bulk-ingestion/historical/replay.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/bulk-ingestion/tests/unit/test_historical_replay.py"
         },
         "confidence": 1.0
       },
@@ -91059,66 +92457,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "b7db0022af45acb6",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_branches.py",
-        "object": "apps/feedback/feedback/__init__.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_branches.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "d56c178df39b9ad0",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_branches.py",
-        "object": "apps/feedback/feedback/branch/entity.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_branches.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "23e41440b2a850bd",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_branches.py",
-        "object": "apps/feedback/feedback/branch/finding.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_branches.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "0b81f69f3f3d0c90",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_branches.py",
-        "object": "apps/feedback/feedback/branch/source.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_branches.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "7bfae274e4a5410c",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_branches.py",
-        "object": "apps/feedback/feedback/frontier.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_branches.py"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "c81dce12b123b85b",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/feedback/tests/test_branches.py",
@@ -91127,30 +92465,6 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/feedback/tests/test_branches.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "ad7a022518dffc31",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_feedback.py",
-        "object": "apps/feedback/feedback_engine.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_feedback.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "bc68248ed90bf69d",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_feedback.py",
-        "object": "apps/feedback/stopping.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_feedback.py"
         },
         "confidence": 1.0
       },
@@ -91183,30 +92497,6 @@
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/feedback/tests/test_frontier_loop.py",
         "object": "apps/control-plane/services/frontier.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_frontier_loop.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "61bd03dcfcbf8094",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_frontier_loop.py",
-        "object": "apps/feedback/feedback/__init__.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/feedback/tests/test_frontier_loop.py"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "f7bee3fb7f23fedc",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/feedback/tests/test_frontier_loop.py",
-        "object": "apps/feedback/feedback/frontier.py",
         "status": "STATIC_FACT",
         "method": "import_and_name_scan",
         "evidence": {
@@ -102115,44 +103405,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4365,
-      "static_facts": 4071,
+      "facts_total": 4352,
+      "static_facts": 4058,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 16,
-    "python_modules": 1007,
-    "typescript_modules": 255,
-    "rust_modules": 15,
+    "python_modules": 1009,
+    "typescript_modules": 265,
+    "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 2807,
-    "test_files": 340,
-    "test_functions": 5272,
-    "untested_modules": 267,
+    "test_files": 341,
+    "test_functions": 5276,
+    "untested_modules": 277,
     "http_routes": 182
   },
   "evidence_stats": {
-    "facts_total": 4365,
-    "static_facts": 4071,
+    "facts_total": 4352,
+    "static_facts": 4058,
     "inferred": 294,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 542,
+    "IMPLEMENTED": 543,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 337,
+    "TEST": 338,
     "MIGRATION": 19,
-    "total": 1007
+    "total": 1009
   },
   "reachability_summary": {
-    "PRODUCTION": 402,
+    "PRODUCTION": 403,
     "TEST_ONLY": 146,
     "ORPHAN": 122,
-    "TEST": 337,
-    "total": 1007
+    "TEST": 338,
+    "total": 1009
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -102188,6 +103478,7 @@
     "bench/run.py",
     "bench/science/bench_structural.py",
     "platform_model/build.py",
+    "tools/semantic_docgraph.py",
     "tools/specs/build_capability_matrix.py",
     "tools/specs/build_donor_registry.py",
     "tools/specs/build_owner_map.py"
@@ -102511,7 +103802,7 @@
   },
   "gaps_open": 10,
   "rust": {
-    "count": 15,
+    "count": 16,
     "crates": [
       {
         "path": "apps/acquisition/Cargo.toml",

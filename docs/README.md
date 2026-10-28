@@ -21,11 +21,11 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python / TypeScript / Rust modules | 1007 / 255 / 15 |
+| Python / TypeScript / Rust modules | 1009 / 265 / 16 |
 | HTTP routes | 182 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 340 / 5272 |
+| Test files / functions | 341 / 5276 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -67,10 +67,10 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| `shared` | 196 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| `shared` | 197 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
-| `tools` | 10 | 0 | 0 | Generators, capability/owner/donor tools, probes. |
-| `webapp` | 0 | 255 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| `tools` | 11 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
+| `webapp` | 0 | 265 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Event model

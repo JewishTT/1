@@ -592,12 +592,13 @@
           "tools/append_zero_sources_a.py",
           "tools/append_zero_sources_b.py",
           "tools/fix_zero_layer_doc.py",
+          "tools/semantic_docgraph.py",
           "tools/specs/build_capability_matrix.py",
           "tools/specs/build_donor_registry.py",
           "tools/specs/build_owner_map.py",
           "tools/strip_zero_inventory.py"
         ],
-        "module_count": 69
+        "module_count": 70
       },
       {
         "id": "orchestration-temporal",
@@ -744,6 +745,7 @@
           "apps/shared/tests/contract/test_platform_model.py",
           "apps/shared/tests/contract/test_projection_manifest.py",
           "apps/shared/tests/contract/test_review.py",
+          "apps/shared/tests/contract/test_semantic_docgraph.py",
           "apps/shared/tests/contract/test_single_publication_path.py",
           "apps/shared/tests/contract/test_stage_outcome.py",
           "apps/shared/tests/contract/test_statement.py",
@@ -812,7 +814,7 @@
           "apps/shared/workflow/__init__.py",
           "apps/shared/workflow/client.py"
         ],
-        "module_count": 196
+        "module_count": 197
       },
       {
         "id": "projection-query",
@@ -1362,14 +1364,24 @@
           "apps/webapp/src/ui/Button.tsx",
           "apps/webapp/src/ui/ContextMenu.tsx",
           "apps/webapp/src/ui/DataTable.tsx",
+          "apps/webapp/src/ui/DesignSystemPage.test.tsx",
+          "apps/webapp/src/ui/DesignSystemPage.tsx",
           "apps/webapp/src/ui/Feedback.tsx",
           "apps/webapp/src/ui/Icon.tsx",
           "apps/webapp/src/ui/Input.tsx",
+          "apps/webapp/src/ui/Modal.test.tsx",
+          "apps/webapp/src/ui/Modal.tsx",
           "apps/webapp/src/ui/Overlay.tsx",
+          "apps/webapp/src/ui/Panel.tsx",
           "apps/webapp/src/ui/Tabs.tsx",
+          "apps/webapp/src/ui/Toast.test.tsx",
+          "apps/webapp/src/ui/Toast.tsx",
+          "apps/webapp/src/ui/ToastViewport.tsx",
+          "apps/webapp/src/ui/index.ts",
           "apps/webapp/src/ui/primitives.test.tsx",
           "apps/webapp/src/ui/status.ts",
           "apps/webapp/src/ui/tokens.ts",
+          "apps/webapp/src/vite-env.d.ts",
           "apps/webapp/src/workspace/InvestigationWorkspace.tsx",
           "apps/webapp/src/workspace/ResizablePane.tsx",
           "apps/webapp/src/workspace/commands.test.ts",
@@ -1388,7 +1400,7 @@
           "apps/webapp/src/workspace/useWorkState.ts",
           "apps/webapp/vite.config.ts"
         ],
-        "module_count": 255
+        "module_count": 265
       }
     ],
     "event_names_sample": [
@@ -1512,6 +1524,7 @@
       "contact.html",
       "contracts.md",
       "contracts.py",
+      "contracts.thing",
       "coord.lat",
       "coord.lon",
       "corp.co",
@@ -1585,13 +1598,12 @@
       "enable.auto.commit",
       "enable.auto.offset.store",
       "enable.idempotence",
+      "engine.py",
       "entities.entity_id",
       "entity.claimed",
       "entity.created",
       "entity.extract",
-      "entity.freeze",
-      "entity.observed",
-      "entity.resolved"
+      "entity.freeze"
     ]
   },
   "context_map": {

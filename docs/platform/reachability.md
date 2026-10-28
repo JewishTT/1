@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 402 |
+| PRODUCTION | 403 |
 | TEST_ONLY | 146 |
 | ORPHAN | 122 |
-| TEST | 337 |
+| TEST | 338 |
 
 ## Entrypoints (production roots)
 
@@ -48,6 +48,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/run.py` |
 | `bench/science/bench_structural.py` |
 | `platform_model/build.py` |
+| `tools/semantic_docgraph.py` |
 | `tools/specs/build_capability_matrix.py` |
 | `tools/specs/build_donor_registry.py` |
 | `tools/specs/build_owner_map.py` |

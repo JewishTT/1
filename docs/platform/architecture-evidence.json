@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4365,
-    "static_facts": 4071,
+    "facts_total": 4352,
+    "static_facts": 4058,
     "inferred": 294,
     "intended": 0
   },
@@ -41588,18 +41588,6 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "b8bbe7f88d791261",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
-      "object": "apps/bulk-ingestion/historical/replay.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py"
-      },
-      "confidence": 1.0
-    },
-    {
       "fact_id": "cbe7da319698f0f6",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/bulk-ingestion/tests/contract/test_archive_live_convergence.py",
@@ -41636,30 +41624,6 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "5a3adf49a3dd8ca3",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
-      "object": "apps/bulk-ingestion/backfill.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "4bd2fe1e017642f6",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
-      "object": "apps/bulk-ingestion/historical/replay.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
-      },
-      "confidence": 1.0
-    },
-    {
       "fact_id": "a83bf8e088db6937",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/bulk-ingestion/tests/unit/test_backfill.py",
@@ -41668,18 +41632,6 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/bulk-ingestion/tests/unit/test_backfill.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "61c651040087b96b",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/bulk-ingestion/tests/unit/test_historical_replay.py",
-      "object": "apps/bulk-ingestion/historical/replay.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/bulk-ingestion/tests/unit/test_historical_replay.py"
       },
       "confidence": 1.0
     },
@@ -44360,66 +44312,6 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "b7db0022af45acb6",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_branches.py",
-      "object": "apps/feedback/feedback/__init__.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_branches.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "d56c178df39b9ad0",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_branches.py",
-      "object": "apps/feedback/feedback/branch/entity.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_branches.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "23e41440b2a850bd",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_branches.py",
-      "object": "apps/feedback/feedback/branch/finding.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_branches.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "0b81f69f3f3d0c90",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_branches.py",
-      "object": "apps/feedback/feedback/branch/source.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_branches.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "7bfae274e4a5410c",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_branches.py",
-      "object": "apps/feedback/feedback/frontier.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_branches.py"
-      },
-      "confidence": 1.0
-    },
-    {
       "fact_id": "c81dce12b123b85b",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/feedback/tests/test_branches.py",
@@ -44428,30 +44320,6 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/feedback/tests/test_branches.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "ad7a022518dffc31",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_feedback.py",
-      "object": "apps/feedback/feedback_engine.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_feedback.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "bc68248ed90bf69d",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_feedback.py",
-      "object": "apps/feedback/stopping.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_feedback.py"
       },
       "confidence": 1.0
     },
@@ -44484,30 +44352,6 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/feedback/tests/test_frontier_loop.py",
       "object": "apps/control-plane/services/frontier.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_frontier_loop.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "61bd03dcfcbf8094",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_frontier_loop.py",
-      "object": "apps/feedback/feedback/__init__.py",
-      "status": "STATIC_FACT",
-      "method": "import_and_name_scan",
-      "evidence": {
-        "file": "apps/feedback/tests/test_frontier_loop.py"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "f7bee3fb7f23fedc",
-      "kind": "TEST_TARGETS_MODULE",
-      "subject": "apps/feedback/tests/test_frontier_loop.py",
-      "object": "apps/feedback/feedback/frontier.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
