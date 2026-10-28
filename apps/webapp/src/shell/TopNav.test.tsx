@@ -114,7 +114,7 @@ describe("topnav", () => {
 
   it("navigates when a module tab is pressed", () => {
     renderAt("/investigations");
-    fireEvent.click(screen.getByRole("tab", { name: "SPEC" }));
+    fireEvent.click(screen.getByRole("tab", { name: "SPECOPS" }));
     expect(screen.getByTestId("topnav-sections")).toHaveTextContent("Pipeline Operations");
   });
 
