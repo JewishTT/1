@@ -37,7 +37,7 @@ class PythonAstContractTests(unittest.TestCase):
         self.assertIn({"callee": "parse", "line": 9}, result["calls"])
 
     def test_utf8_bom_is_ignored_by_python_parser_but_not_hidden_from_source_hashes(self) -> None:
-        result = semantic_docgraph.scan_python_text("bom.py", "\\ufeffdef valid():\\n    return True\\n")
+        result = semantic_docgraph.scan_python_text("bom.py", "\ufeffdef valid():\n    return True\n")
         self.assertIsNone(result["parse_error"])
         self.assertIn(("valid", "function"), {(item["qualified_name"], item["kind"]) for item in result["symbols"]})
 
