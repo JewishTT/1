@@ -694,3 +694,29 @@
     transition: none;
   }
 }
+
+
+@media (max-width: 760px) {
+  /* Keep each navigation tier horizontal; the destination rail scrolls instead
+     of wrapping into a third and fourth row on phones. */
+  .ui-topnav-sections {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .ui-topnav-group,
+  .ui-topnav-group-items {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .ui-topnav-group {
+    flex: 0 0 auto;
+  }
+
+  .ui-topnav .ui-nav-link {
+    flex: 0 0 auto;
+  }
+}
