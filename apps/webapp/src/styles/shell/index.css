@@ -449,3 +449,248 @@
 .ui-topbar-work > * {
   flex: 0 0 auto;
 }
+
+
+/* ── Field navigation v2: command strip + destination rail ──────────────
+   The old single-row nav mixed module switching, 3–9 destinations, group labels
+   and a breadcrumb in one flex line. It forced horizontal scrolling and made the
+   active destination hard to scan. Two deliberate rows separate scope from action.
+*/
+.ui-topnav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  align-items: stretch;
+  gap: 0;
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding-inline: var(--ui-space-2);
+}
+
+.ui-topnav-primary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  min-width: 0;
+  min-height: 34px;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-topnav .ui-nav-modules {
+  align-self: stretch;
+  align-items: center;
+  gap: 3px;
+  padding: 0 var(--ui-space-3) 0 0;
+  border-inline-end: 0;
+}
+
+.ui-topnav .ui-nav-module {
+  position: relative;
+  min-height: 28px;
+  padding: 0 var(--ui-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-1);
+  color: var(--ui-text-muted);
+  font-size: var(--ui-text-xs);
+  letter-spacing: 0.06em;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.ui-topnav .ui-nav-module[data-active="true"] {
+  color: var(--ui-text);
+  background: var(--ui-surface-3);
+  border-color: var(--ui-border-strong);
+  box-shadow: inset 0 -2px 0 var(--ui-accent);
+}
+
+.ui-topnav-trail {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline-start: auto;
+  padding-inline-start: var(--ui-space-4);
+  border-inline-start: 1px solid var(--ui-border);
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.ui-topnav-trail-module {
+  color: var(--ui-accent);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: 0.12em;
+}
+
+.ui-topnav-title {
+  overflow: hidden;
+  max-width: 34ch;
+  text-overflow: ellipsis;
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-medium);
+}
+
+.ui-topnav-sections {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-5);
+  min-width: 0;
+  min-height: 36px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--ui-space-1) 0 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-strong) transparent;
+}
+
+.ui-topnav-group {
+  align-self: stretch;
+  flex: 0 0 auto;
+  gap: var(--ui-space-2);
+  padding-inline-end: var(--ui-space-4);
+  border-inline-end: 1px solid var(--ui-border);
+}
+
+.ui-topnav-group:last-child {
+  border-inline-end: 0;
+  padding-inline-end: 0;
+}
+
+.ui-topnav-group-label {
+  align-self: center;
+  color: var(--ui-text-muted);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  opacity: 0.82;
+}
+
+.ui-topnav-group-items {
+  gap: 3px;
+}
+
+.ui-topnav .ui-nav-link {
+  position: relative;
+  min-height: 28px;
+  padding: 0 var(--ui-space-3);
+  gap: var(--ui-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-1);
+  color: var(--ui-text-secondary);
+  font-size: var(--ui-text-xs);
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.ui-topnav .ui-nav-link:hover {
+  color: var(--ui-text);
+  background: var(--ui-surface-2);
+  border-color: var(--ui-border);
+}
+
+.ui-topnav .ui-nav-link[data-active="true"] {
+  color: var(--ui-text);
+  background: var(--ui-accent-wash);
+  border-color: var(--ui-accent-line);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 8%, transparent);
+}
+
+.ui-topnav .ui-nav-link[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline: var(--ui-space-3);
+  bottom: -3px;
+  height: 2px;
+  background: var(--ui-accent);
+}
+
+.ui-topnav .ui-nav-link[data-active="true"] .ui-nav-icon {
+  color: var(--ui-accent);
+}
+
+.ui-topnav .ui-nav-icon {
+  align-items: center;
+}
+
+.ui-topnav .ui-nav-link:focus-visible,
+.ui-topnav .ui-nav-module:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 1100px) {
+  .ui-topnav {
+    padding-inline: var(--ui-space-1);
+  }
+
+  .ui-topnav-sections {
+    gap: var(--ui-space-3);
+  }
+
+  .ui-topnav-group {
+    gap: var(--ui-space-1);
+    padding-inline-end: var(--ui-space-2);
+  }
+
+  .ui-topnav-group-label {
+    display: none;
+  }
+
+  .ui-topnav .ui-nav-link {
+    padding-inline: var(--ui-space-2);
+  }
+}
+
+@media (max-width: 760px) {
+  .ui-topbar {
+    min-height: 92px;
+    align-items: stretch;
+    padding-block: var(--ui-space-2);
+  }
+
+  .ui-topnav-primary {
+    min-height: 32px;
+    gap: var(--ui-space-2);
+  }
+
+  .ui-topnav .ui-nav-modules {
+    padding-inline-end: var(--ui-space-1);
+  }
+
+  .ui-topnav .ui-nav-module {
+    padding-inline: var(--ui-space-2);
+    font-size: 10px;
+  }
+
+  .ui-topnav-trail {
+    padding-inline-start: var(--ui-space-2);
+  }
+
+  .ui-topnav-trail-module,
+  .ui-topnav-sep {
+    display: none;
+  }
+
+  .ui-topnav-title {
+    max-width: 20ch;
+    font-size: var(--ui-text-xs);
+  }
+
+  .ui-topnav-sections {
+    min-height: 34px;
+    gap: var(--ui-space-2);
+  }
+
+  .ui-topnav .ui-nav-link {
+    min-height: 28px;
+    padding-inline: var(--ui-space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-topnav .ui-nav-module,
+  .ui-topnav .ui-nav-link {
+    transition: none;
+  }
+}
