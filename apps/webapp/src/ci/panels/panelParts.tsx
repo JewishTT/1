@@ -32,7 +32,9 @@ export function CiPanelShell({
         <span className="ui-id" data-testid={`${testId}-scope`}>
           {scope === "tenant-wide"
             ? "tenant-wide · not scoped to one investigation"
-            : "investigation-scoped"}
+            : scope === "fixture-only"
+              ? "shared demo fixture · not tenant/investigation data"
+              : "investigation-scoped"}
         </span>
         {status}
       </header>

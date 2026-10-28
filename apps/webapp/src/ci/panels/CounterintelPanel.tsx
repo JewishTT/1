@@ -4,7 +4,7 @@ import { Input } from "../../ui/Input";
 import { api } from "../../lib/api";
 import type { CiSubjectWire } from "../../lib/api";
 import { subjectInvariant } from "../model";
-import type { SubjectRow } from "../types";
+import type { CiScope, SubjectRow } from "../types";
 import { CiEmpty, CiPanelShell, NamedAbsence, StatusChip } from "./panelParts";
 
 /**
@@ -21,6 +21,8 @@ export function CounterintelPanel() {
   const [subjectId, setSubjectId] = useState("");
   const [subject, setSubject] = useState<SubjectRow | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [scope, setScope] = useState<CiScope>("fixture-only");
+  const [missing, setMissing] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -30,8 +32,11 @@ export function CounterintelPanel() {
     try {
       const res = await api.getSubject(subjectId.trim());
       setSubject(toSubjectRow(res.subject));
+      setScope(res.scope);
+      setMissing(res.missing);
     } catch (err) {
       setSubject(null);
+      setMissing([]);
       setNote(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
@@ -41,7 +46,8 @@ export function CounterintelPanel() {
   return (
     <CiPanelShell
       title="Counterintelligence subject board"
-      scope="investigation-scoped"
+      scope={scope}
+      status={<StatusChip label="fixture-only" tone="gold" testId="ci-counterintel-scope-status" />}
       testId="ci-counterintel-panel"
     >
       <div className="ui-ci-col">
@@ -49,7 +55,7 @@ export function CounterintelPanel() {
         <Input
           value={subjectId}
           onChange={(e) => setSubjectId(e.target.value)}
-          placeholder="subject id"
+          placeholder="subject id · demo: subj-demo-1"
           aria-label="Subject id"
           data-testid="ci-subject-input"
         />
@@ -93,7 +99,10 @@ export function CounterintelPanel() {
           </ul>
         </div>
       ) : (
-        <CiEmpty>Enter a subject id to read its tracked invariants.</CiEmpty>
+        <CiEmpty>
+          Enter a subject id. The current API exposes a shared seeded fixture only; it is not an
+          investigation-backed subject store.
+        </CiEmpty>
       )}
 
       {note ? (
@@ -101,12 +110,7 @@ export function CounterintelPanel() {
           {note}
         </p>
       ) : null}
-      <NamedAbsence
-        testId="ci-counterintel-missing"
-        missing={[
-          "GET /specops/counterintel/subjects/{id} (cognitive operators not yet wired — CognitiveAttack / DIMA / io-coordinated-replies)",
-        ]}
-      />
+      <NamedAbsence testId="ci-counterintel-missing" missing={missing} />
     </CiPanelShell>
   );
 }

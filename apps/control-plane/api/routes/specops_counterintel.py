@@ -32,8 +32,10 @@ async def get_subject(subject_id: str, ctx: Annotated[TenantContext, Depends(res
     if subject is None:
         raise HTTPException(status_code=404, detail="subject not found")
     return {
-        "served": ["/specops/counterintel"],
-        "missing": [],
-        "scope": "investigation-scoped",
+        "served": ["/api/v1/specops/counterintel/subjects/{subject_id}"],
+        "missing": [
+            "CognitiveAttack / DIMA-OntoToolkit / io-coordinated-replies / IO-detecting operators are not connected; the current subject registry is a seeded demo fixture."
+        ],
+        "scope": "fixture-only",
         "subject": subject_wire(subject),
     }
