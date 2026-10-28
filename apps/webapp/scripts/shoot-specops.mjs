@@ -362,17 +362,17 @@ async function screenshot(name, extra = {}) {
   return report;
 }
 
-async function clickAndWait(scope, label, attribute, expected) {
-  const selector = scope + ' [role="tab"]:has-text("' + label + '")';
+async function clickAndWait(tabScope, rootSelector, label, attribute, expected) {
+  const selector = tabScope + ' [role="tab"]:has-text("' + label + '")';
   const tab = page.locator(selector).first();
   if (await tab.count() === 0) {
-    problems.push("missing tab: " + label + " in " + scope);
+    problems.push("missing tab: " + label + " in " + tabScope);
     return false;
   }
   await tab.click();
   await page.waitForFunction(
-    ({ rootSelector, attr, value }) => document.querySelector(rootSelector)?.getAttribute(attr) === value,
-    { rootSelector: scope, attr: attribute, value: expected },
+    ({ root, attr, value }) => document.querySelector(root)?.getAttribute(attr) === value,
+    { root: rootSelector, attr: attribute, value: expected },
     { timeout: 20000 },
   ).catch(() => problems.push("tab did not become active: " + label + " (expected " + expected + ")"));
   await page.waitForTimeout(300);
@@ -393,7 +393,7 @@ try {
 
   for (const [label, panel, name] of DEPARTMENT_PANELS) {
     if (panel === "operations") continue;
-    await clickAndWait(".ui-cicanvas-head", label, "data-panel", panel);
+    await clickAndWait(".ui-cicanvas-head", '[data-testid="ci-canvas"]', label, "data-panel", panel);
     await screenshot(name, { surface: label, fixtureMode: true });
   }
 
@@ -401,13 +401,13 @@ try {
   await page.locator('[data-testid="gl-canvas"]').waitFor({ timeout: 20000 });
   await screenshot("gl-runtime", { surface: "GhostLine / Runtime", fixtureMode: true });
   for (const [label, panel, name] of GHOSTLINE_PANELS) {
-    await clickAndWait(".ui-gl-subhead", label, "data-panel", panel);
+    await clickAndWait(".ui-gl-subhead", '[data-testid="gl-canvas"]', label, "data-panel", panel);
     await screenshot(name, { surface: "GhostLine / " + label, fixtureMode: true });
   }
 
   // Toggle through the application's command palette so the screenshot validates
   // the actual store-to-DOM path, not a manually edited attribute.
-  await page.getByRole("tab", { name: /Runtime/i }).first().click();
+  await page.locator('.ui-gl-subhead [role="tab"]:has-text("Runtime")').first().click();
   await page.keyboard.press("Control+k");
   await page.getByTestId("command-palette-input").waitFor({ timeout: 10000 });
   await page.keyboard.fill("Toggle theme");
