@@ -243,6 +243,30 @@ try {
   await chooseTheme("light");
   await closeAppearanceMenu();
   await capture("feedback-light-baseline", { surface: "feedback", expectedTheme: "light" });
+
+  // The semantic surfaces need to remain legible in both themes, not merely
+  // the background page. These captures also exercise live theme token updates.
+  stage = "capturing light-theme modal and toast states";
+  const lightModalTrigger = page.getByRole("button", { name: "Open modal preview" });
+  await lightModalTrigger.scrollIntoViewIfNeeded();
+  await lightModalTrigger.click();
+  await page.getByRole("dialog", { name: "Acquisition preview" }).waitFor();
+  await capture("modal-light-baseline", { surface: "modal", expectedTheme: "light" });
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog", { name: "Acquisition preview" }).waitFor({ state: "detached" });
+
+  await page.getByRole("button", { name: "Preview success toast" }).scrollIntoViewIfNeeded();
+  await page.getByRole("button", { name: "Preview success toast" }).click();
+  await page.getByTestId("ui-kit-toast").scrollIntoViewIfNeeded();
+  await capture("toast-success-light-baseline", { surface: "toast", tone: "success", expectedTheme: "light" });
+  await page.getByRole("button", { name: "Dismiss notification" }).click();
+
+  await page.getByRole("button", { name: "Preview error toast" }).scrollIntoViewIfNeeded();
+  await page.getByRole("button", { name: "Preview error toast" }).click();
+  await page.getByTestId("ui-kit-toast").scrollIntoViewIfNeeded();
+  await capture("toast-danger-light-baseline", { surface: "toast", tone: "danger", expectedTheme: "light" });
+  await page.getByRole("button", { name: "Dismiss notification" }).click();
+
   await chooseTheme("dark");
   await closeAppearanceMenu();
 
