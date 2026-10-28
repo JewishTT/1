@@ -177,6 +177,28 @@ try {
     await page.setViewportSize({ width, height });
     await page.locator(".ui-kit-page").evaluate((element) => { element.scrollTop = 0; });
     await capture(`primitives-dark-${label}`, { surface: "primitives", viewportPosition: "top", expectedTheme: "dark" });
+    // A dedicated chrome crop makes nav alignment, active state and overflow
+    // inspectable without the catalogue competing for screenshot space.
+    const topbar = page.locator('[data-testid="app-shell-topbar"]');
+    await topbar.screenshot({ path: join(OUT, `navigation-${label}.png`), animations: "disabled" });
+    const navMetrics = await page.locator(".ui-topnav").evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const primary = element.querySelector(".ui-topnav-primary")?.getBoundingClientRect();
+      const destinations = element.querySelector(".ui-topnav-sections")?.getBoundingClientRect();
+      return {
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        primaryBottom: primary ? Math.round(primary.bottom) : null,
+        destinationsTop: destinations ? Math.round(destinations.top) : null,
+        destinationsBottom: destinations ? Math.round(destinations.bottom) : null,
+      };
+    });
+    manifest.push({ filename: `navigation-${label}.png`, surface: "navigation", viewport: width, geometry: navMetrics });
+    if (navMetrics.width <= 0 || navMetrics.height <= 0 || navMetrics.primaryBottom === null || navMetrics.destinationsTop === null) {
+      problems.push(`navigation-${label}: missing primary or destination row geometry`);
+    } else if (navMetrics.primaryBottom > navMetrics.destinationsTop + 1) {
+      problems.push(`navigation-${label}: primary row overlaps destination row`);
+    }
     await page.locator(".ui-kit-page").evaluate((element) => { element.scrollTop = element.scrollHeight; });
     await capture(`primitives-dark-${label}-bottom`, { surface: "primitives", viewportPosition: "bottom", expectedTheme: "dark" });
     await page.locator(".ui-kit-page").evaluate((element) => { element.scrollTop = 0; });
