@@ -147,6 +147,20 @@ def test_catalog_parser_keeps_dotted_topic_values() -> None:
     assert catalog["zero_layer.feedback_seeds"] == "zero_layer.feedback_seeds"
 
 
+def test_contract_document_inventory_is_sorted(model: dict) -> None:
+    paths = [item["path"] for item in model["contracts"]["docs"]]
+    assert paths == sorted(paths)
+
+
+def test_architecture_evidence_facts_have_stable_semantic_order(model: dict) -> None:
+    facts = model["evidence"]["facts"]
+    keys = [
+        (item.get("kind", ""), item.get("subject", ""), item.get("object", ""), item.get("fact_id", ""))
+        for item in facts
+    ]
+    assert keys == sorted(keys)
+
+
 def test_every_expected_page_is_generated(model: dict) -> None:
     produced = set(pm.artifacts(model))
     missing = sorted(set(EXPECTED_PAGES) - produced)
