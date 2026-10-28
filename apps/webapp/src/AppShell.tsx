@@ -368,7 +368,6 @@ export function AppShell({ children, activity }: AppShellProps) {
             <span>OPERATIONS</span>
           </div>
           <TopNav />
-          <div className="ui-topbar-nav-end" aria-hidden="true">SYS / 01</div>
         </div>
 
         <div className="ui-topbar-state">
