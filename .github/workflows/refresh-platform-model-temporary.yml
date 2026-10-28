@@ -1,0 +1,42 @@
+name: Temporary platform-model refresh
+
+on:
+  push:
+    branches:
+      - codex/dynamic-docs-asg-architecture-ui
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-platform-model-refresh
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: astral-sh/setup-uv@v5
+      - name: Sync the locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Regenerate platform model using repository import order
+        run: uv run python -c 'import conftest; from platform_model.build import main; raise SystemExit(main([]))'
+      - name: Verify deterministic model output
+        run: uv run python -c 'import conftest; from platform_model.build import main; raise SystemExit(main(["--check"]))'
+      - name: Commit generated docs only when changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/README.md docs/CONTRIBUTING.md docs/architecture/overview.md docs/platform
+          if git diff --cached --quiet; then
+            echo "Generated platform model already matches source."
+            exit 0
+          fi
+          git commit -m "docs(platform): regenerate model after semantic and UI changes"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
