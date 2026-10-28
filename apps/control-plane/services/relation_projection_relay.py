@@ -15,7 +15,6 @@ from db.schema import RelationClaim as RelationClaimRow
 from db.schema import RelationClaimProjectionOutbox
 from db.session import create_tables, make_session_factory
 
-
 LEASE = timedelta(minutes=10)
 
 

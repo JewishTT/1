@@ -21689,12 +21689,13 @@
       },
       {
         "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
-        "tests": 5,
+        "tests": 6,
         "test_names": [
           "test_records_public_symbols_arguments_and_decorated_routes",
           "test_utf8_bom_is_ignored_by_python_parser_but_not_hidden_from_source_hashes",
           "test_syntax_errors_are_reported_not_silently_discarded",
           "test_doc_link_resolver_resolves_relative_and_root_paths",
+          "test_spec_to_docs_links_are_a_policy_violation_but_decision_ids_are_not",
           "test_source_import_resolution_uses_repository_files"
         ],
         "targets": []
@@ -23570,7 +23571,7 @@
         "targets": []
       }
     ],
-    "total": 5280
+    "total": 5281
   },
   "contracts": {
     "python": [
@@ -34175,7 +34176,7 @@
       {
         "path": "apps/control-plane/services/relation_projection_relay.py",
         "status": "IMPLEMENTED",
-        "loc": 252,
+        "loc": 251,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
@@ -36323,7 +36324,7 @@
       {
         "path": "apps/projection/graph/claim_projection.py",
         "status": "IMPLEMENTED",
-        "loc": 97,
+        "loc": 98,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -39284,8 +39285,8 @@
       {
         "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
         "status": "TEST",
-        "loc": 90,
-        "callables": 5,
+        "loc": 99,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40617,7 +40618,7 @@
       {
         "path": "platform_model/build.py",
         "status": "IMPLEMENTED",
-        "loc": 1771,
+        "loc": 1772,
         "callables": 51,
         "stubs": 0,
         "not_implemented": 0,
@@ -40691,8 +40692,8 @@
       {
         "path": "platform_model/narrative.py",
         "status": "IMPLEMENTED",
-        "loc": 911,
-        "callables": 18,
+        "loc": 937,
+        "callables": 19,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40790,7 +40791,7 @@
       {
         "path": "tools/semantic_docgraph.py",
         "status": "IMPLEMENTED",
-        "loc": 765,
+        "loc": 798,
         "callables": 28,
         "stubs": 0,
         "not_implemented": 0,
@@ -102222,7 +102223,7 @@
     "rust_crates": 9,
     "import_edges": 2808,
     "test_files": 341,
-    "test_functions": 5280,
+    "test_functions": 5281,
     "untested_modules": 267,
     "http_routes": 182
   },
