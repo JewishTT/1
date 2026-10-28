@@ -32,12 +32,15 @@
   --ui-elevation-1: 0 1px 0 rgba(0, 0, 0, 0.18);
   --ui-elevation-2: 0 6px 18px rgba(0, 0, 0, 0.28);
   --ui-elevation-3: 0 16px 40px rgba(0, 0, 0, 0.38);
-  [data-theme="light"] {
-    --ui-elevation-1: 0 1px 0 rgba(18, 23, 20, 0.06);
-    --ui-elevation-2: 0 6px 18px rgba(18, 23, 20, 0.1);
-    --ui-elevation-3: 0 16px 40px rgba(18, 23, 20, 0.14);
-  }
+}
 
+[data-theme="light"] {
+  --ui-elevation-1: 0 1px 0 rgba(18, 23, 20, 0.06);
+  --ui-elevation-2: 0 6px 18px rgba(18, 23, 20, 0.1);
+  --ui-elevation-3: 0 16px 40px rgba(18, 23, 20, 0.14);
+}
+
+:root {
   /* ── Layout metrics ───────────────────────────────────────────────── */
   --ui-topbar-h: 40px;
   --ui-statusbar-h: 24px;
