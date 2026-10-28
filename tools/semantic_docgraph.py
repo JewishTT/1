@@ -331,6 +331,11 @@ def run_parser(command: list[str], root: Path, parser_name: str) -> dict[str, An
 def build_graph(root: Path = ROOT) -> dict[str, Any]:
     root = root.resolve()
     code_paths = walk(root, CODE_ROOTS, SOURCE_SUFFIXES)
+    code_paths.extend(
+        path for path in root.iterdir()
+        if path.is_file() and path.suffix.lower() in SOURCE_SUFFIXES
+    )
+    code_paths = sorted(set(code_paths))
     code_rel = {relative(p, root) for p in code_paths}
     ts_paths = [p for p in code_paths if p.suffix.lower() in {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}]
     rust_paths = [p for p in code_paths if p.suffix.lower() == ".rs"]
@@ -373,13 +378,26 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
             root, "Rust syn AST",
         )
     rust_by_path = {m["path"]: m for m in rust_result.get("modules", [])}
-    config_paths = walk(root, ("apps", "bench", "tools", "deploy", "platform_model", "contracts", ".github"), CONFIG_SUFFIXES)
+    config_paths = walk(
+        root,
+        ("apps", "bench", "benchmarks", "tools", "deploy", "platform_model",
+         "contracts", "implementation", "specs", ".github", ".opencode", ".specify"),
+        CONFIG_SUFFIXES,
+    )
+    root_config_names = {".env.example", ".gitignore", ".gitattributes", "uv.lock"}
+    config_paths.extend(
+        path for path in root.iterdir()
+        if path.is_file() and (
+            path.suffix.lower() in CONFIG_SUFFIXES or path.name in root_config_names
+        )
+    )
+    config_paths = sorted(set(config_paths))
     config_rel = {relative(p, root) for p in config_paths}
 
     for rel in sorted(code_rel):
         record = module_records.get(rel)
         suffix = Path(rel).suffix.lower()
-        if suffix in {".ts", ".tsx", ".js", ".jsx"}:
+        if suffix in {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}:
             record = ts_by_path.get(rel)
             if record is None:
                 record = {
@@ -611,7 +629,24 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
             lang["ast_parsed"] += 1
         if record.get("parse_error"):
             lang["errors"] += 1
+    tracked_candidates = tracked_source_candidates(root)
+    unmapped_tracked = (
+        sorted(set(tracked_candidates) - code_rel) if tracked_candidates is not None else []
+    )
+    tracked_mapped = (
+        len(set(tracked_candidates) & code_rel) if tracked_candidates is not None else 0
+    )
     coverage = {
+        "source_roots": list(CODE_ROOTS),
+        "tracked_source_inventory_available": tracked_candidates is not None,
+        "tracked_source_candidate_files": len(tracked_candidates) if tracked_candidates is not None else None,
+        "tracked_source_coverage_percent": (
+            round(100 * tracked_mapped / max(1, len(tracked_candidates)), 2)
+            if tracked_candidates is not None else None
+        ),
+        "unmapped_tracked_source_candidates": unmapped_tracked,
+        "root_level_source_files": sum(1 for rel in code_rel if "/" not in rel),
+        "configuration_files": len(config_rel),
         "code_files": len(code_rel), "mapped_code_files": len(mapped),
         "file_mapping_percent": round(100 * len(mapped) / max(1, len(code_rel)), 2),
         "symbols": sum(1 for n in nodes if n["id"].startswith("symbol:")),
@@ -696,6 +731,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         if coverage["mapped_code_files"] != coverage["code_files"]:
             failures.append("not every first-party code file has a source-module node")
+        if not coverage["tracked_source_inventory_available"]:
+            failures.append("could not enumerate tracked source files with git ls-files")
+        if coverage["unmapped_tracked_source_candidates"]:
+            failures.append("tracked source files exist outside the declared semantic scan roots")
         if graph["parser_errors"]:
             failures.append("one or more files failed syntax parsing or a parser tool failed")
         if coverage["parser_tool_errors"]:
