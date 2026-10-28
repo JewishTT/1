@@ -101,7 +101,7 @@ describe("topnav", () => {
 
   it("marks the active module tab", () => {
     renderAt("/economic");
-    const tab = document.querySelector('[data-module="economic"]');
+    const tab = document.querySelector('.ui-nav-module[data-module="economic"]');
     expect(tab).toHaveAttribute("data-active", "true");
   });
 
