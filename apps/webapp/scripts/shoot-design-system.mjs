@@ -50,6 +50,9 @@ async function capture(name, extra = {}) {
     catalogue: Boolean(document.querySelector('[data-testid="ui-kit-page"]')),
     theme: document.querySelector(".ui-shell")?.getAttribute("data-theme") ?? null,
     density: document.querySelector(".ui-shell")?.getAttribute("data-density") ?? null,
+    elevation: document.querySelector(".ui-shell")
+      ? getComputedStyle(document.querySelector(".ui-shell")).getPropertyValue("--ui-elevation-2").trim()
+      : null,
     text: (document.body.innerText || "").replace(/\s+/g, " ").slice(0, 140),
     nav: (() => {
       const nav = document.querySelector(".ui-topnav");
@@ -108,6 +111,9 @@ async function capture(name, extra = {}) {
   if (!metrics.shell || !metrics.catalogue) problems.push(`${name}: shell or catalogue did not mount`);
   if (extra.expectedTheme && metrics.theme !== extra.expectedTheme) {
     problems.push(`${name}: expected theme ${extra.expectedTheme}, got ${metrics.theme}`);
+  }
+  if (extra.expectedTheme === "light" && !/rgba?\(18,\s*23,\s*20,\s*0\.1\)/.test(metrics.elevation ?? "")) {
+    problems.push(`${name}: light theme did not resolve its low-contrast elevation token (${metrics.elevation})`);
   }
   if (metrics.document > metrics.viewport + 1 || metrics.body > metrics.viewport + 1) {
     problems.push(`${name}: horizontal overflow (viewport=${metrics.viewport}, document=${metrics.document}, body=${metrics.body})`);
