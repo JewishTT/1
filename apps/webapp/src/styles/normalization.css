@@ -207,6 +207,14 @@
     min-width: 0;
     max-width: 100%;
   }
+
+  .ui-root .ui-topbar-counts,
+  .ui-root .ui-topbar-meta,
+  .ui-root .ui-topbar-investigation {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
