@@ -183,7 +183,7 @@ describe("Tabs — WAI-ARIA keyboard model", () => {
 
   it("labels the tablist and marks the active tab", () => {
     render(<Tabs items={items} value="graph" onValueChange={() => {}} label="Workspace views" />);
-    expect(screen.getByRole("tablist", { name: "Workspace views" })).toBeInTheDocument();
+    expect(screen.getByRole("tablist", { name: "Workspace views" })).toHaveAttribute("data-orientation", "rail");
     expect(screen.getByRole("tab", { name: "Graph" })).toHaveAttribute("aria-selected", "true");
   });
 
@@ -202,6 +202,7 @@ describe("Tabs — WAI-ARIA keyboard model", () => {
 
   it("moves focus with the arrow keys in bar orientation", () => {
     render(<Tabs items={items} value="overview" onValueChange={() => {}} label="Views" orientation="bar" />);
+    expect(screen.getByRole("tablist", { name: "Views" })).toHaveAttribute("data-orientation", "bar");
     const first = screen.getByRole("tab", { name: "Overview" });
     first.focus();
     fireEvent.keyDown(first, { key: "ArrowRight" });
