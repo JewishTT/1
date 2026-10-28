@@ -53,11 +53,17 @@ jobs:
         env:
           UI_SHOTS_DIR: artifacts/ui-screenshots
         run: npm run ui:shoot:design-system -- http://127.0.0.1:5173 artifacts/ui-screenshots
-      - name: Upload UI screenshot regression artifact
+      - name: Capture SpecOps and GhostLine screenshot regression
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        working-directory: apps/webapp
+        run: npm run ui:shoot:specops -- http://127.0.0.1:5173 artifacts/specops-screenshots
+      - name: Upload UI screenshot regression artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cognitive-ui-screenshots
-          path: apps/webapp/artifacts/ui-screenshots/
+          path: |
+            apps/webapp/artifacts/ui-screenshots/
+            apps/webapp/artifacts/specops-screenshots/
           if-no-files-found: warn
           retention-days: 14
