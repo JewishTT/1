@@ -375,6 +375,9 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
         record.setdefault("routes", [])
         record.setdefault("calls", [])
         for symbol in record["symbols"]:
+            if not symbol.get("id"):
+                qualified_name = symbol.get("qualified_name") or symbol.get("name") or "<anonymous>"
+                symbol["id"] = "symbol:" + rel + "#" + qualified_name
             nodes.append({
                 "id": symbol["id"], "kind": symbol.get("kind", "symbol"),
                 "path": rel, "name": symbol.get("qualified_name", symbol.get("name", "")),
