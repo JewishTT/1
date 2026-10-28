@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppShell } from "./AppShell";
 import { Workbench } from "./Workbench";
@@ -58,9 +58,41 @@ beforeEach(() => {
 afterEach(() => {
   document.documentElement.removeAttribute("data-density");
   document.documentElement.removeAttribute("data-theme");
+  vi.unstubAllGlobals();
 });
 
 describe("T136 — the shell writes data-density and data-theme to the document", () => {
+  it("closes side panes at tablet/mobile widths and keeps phone drawers mutually exclusive", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 1279px)" || query === "(max-width: 767px)",
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
+      })),
+    );
+
+    renderShell();
+    expect(useWorkspace.getState().paneVisibility).toMatchObject({
+      rail: false,
+      inspector: false,
+      activity: true,
+    });
+    expect(screen.getByTestId("toggle-rail")).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByTestId("toggle-inspector")).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(screen.getByTestId("toggle-rail"));
+    expect(useWorkspace.getState().paneVisibility).toMatchObject({ rail: true, inspector: false });
+
+    fireEvent.click(screen.getByTestId("toggle-inspector"));
+    expect(useWorkspace.getState().paneVisibility).toMatchObject({ rail: false, inspector: true });
+  });
+
   it("writes both attributes on mount", () => {
     renderShell();
     expect(document.documentElement.getAttribute("data-density")).toBe(DEFAULT_DENSITY);
