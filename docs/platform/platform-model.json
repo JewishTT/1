@@ -39275,7 +39275,7 @@
       {
         "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
         "status": "TEST",
-        "loc": 84,
+        "loc": 90,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -40781,7 +40781,7 @@
       {
         "path": "tools/semantic_docgraph.py",
         "status": "IMPLEMENTED",
-        "loc": 755,
+        "loc": 765,
         "callables": 28,
         "stubs": 0,
         "not_implemented": 0,
