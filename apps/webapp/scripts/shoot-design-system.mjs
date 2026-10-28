@@ -84,6 +84,7 @@ async function capture(name, extra = {}) {
         return Math.round(element.getBoundingClientRect().top - pageRect.top + page.scrollTop);
       };
       return {
+        viewportHeight: window.innerHeight,
         shellTopbar: box('[data-testid="app-shell-topbar"]'),
         catalogueHeader: box(".ui-kit-header"),
         principles: box(".ui-kit-principles"),
@@ -139,8 +140,18 @@ async function capture(name, extra = {}) {
   for (const key of ["modal", "toast"]) {
     const rect = metrics.geometry?.[key];
     if (!rect) continue;
-    if (rect.width <= 0 || rect.height <= 0 || rect.left < -1 || rect.right > metrics.viewport + 1) {
-      problems.push(`${name}: ${key} is outside the viewport (left=${rect.left}, right=${rect.right}, width=${metrics.viewport})`);
+    const viewportHeight = metrics.geometry?.viewportHeight;
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0 ||
+      rect.left < -1 ||
+      rect.right > metrics.viewport + 1 ||
+      rect.top < -1 ||
+      (viewportHeight != null && rect.bottom > viewportHeight + 1)
+    ) {
+      problems.push(
+        `${name}: ${key} is outside the viewport (left=${rect.left}, right=${rect.right}, top=${rect.top}, bottom=${rect.bottom}, viewport=${metrics.viewport}x${viewportHeight})`,
+      );
     }
   }
   if (extra.surface === "modal" && !metrics.geometry?.modal) problems.push(`${name}: modal screenshot has no dialog geometry`);
@@ -253,6 +264,30 @@ try {
   await page.getByRole("button", { name: "Preview error toast" }).click();
   await page.getByTestId("ui-kit-toast").waitFor();
   await capture("toast-danger-dark-baseline", { surface: "toast", tone: "danger" });
+
+  // Overlay geometry is also tested on a phone-sized viewport, not inferred
+  // from the responsive primitive screenshots behind a closed overlay.
+  stage = "capturing mobile modal and toast bounds";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await modalTrigger.scrollIntoViewIfNeeded();
+  await modalTrigger.click();
+  await page.getByRole("dialog", { name: "Acquisition preview" }).waitFor();
+  await capture("modal-dark-phone", { surface: "modal", viewportLabel: "phone" });
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog", { name: "Acquisition preview" }).waitFor({ state: "detached" });
+
+  const successToastTrigger = page.getByRole("button", { name: "Preview success toast" });
+  await successToastTrigger.scrollIntoViewIfNeeded();
+  await successToastTrigger.click();
+  await page.getByTestId("ui-kit-toast").scrollIntoViewIfNeeded();
+  await capture("toast-success-dark-phone", { surface: "toast", tone: "success", viewportLabel: "phone" });
+  await page.getByRole("button", { name: "Dismiss notification" }).click();
+
+  const dangerToastTrigger = page.getByRole("button", { name: "Preview error toast" });
+  await dangerToastTrigger.scrollIntoViewIfNeeded();
+  await dangerToastTrigger.click();
+  await page.getByTestId("ui-kit-toast").scrollIntoViewIfNeeded();
+  await capture("toast-danger-dark-phone", { surface: "toast", tone: "danger", viewportLabel: "phone" });
 } catch (error) {
   problems.push(`sweep aborted during ${stage}: ${String(error).slice(0, 300)}\n${error?.stack ?? ""}`);
 } finally {
