@@ -52,6 +52,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from platform_model import build as pm  # noqa: E402
+from platform_model.events import _catalog_types  # noqa: E402
 
 #: Pages the generator is expected to produce. A missing page is a broken build, not a
 #: smaller build.
@@ -138,6 +139,12 @@ def test_committed_model_matches_the_tree(model: dict) -> None:
         "the committed platform model is stale; regenerate it with "
         "`python -m platform_model.build`:\n  " + "\n  ".join(drift)
     )
+
+
+def test_catalog_parser_keeps_dotted_topic_values() -> None:
+    """Dotted topic values are valid catalogue entries, not a parser omission."""
+    catalog = _catalog_types(ROOT)
+    assert catalog["zero_layer.feedback_seeds"] == "zero_layer.feedback_seeds"
 
 
 def test_every_expected_page_is_generated(model: dict) -> None:
