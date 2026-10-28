@@ -2,7 +2,7 @@
 
 **Feature**: `025-context-reality-approximation-engine`
 **Baseline**: [input.md](input.md) §5–§16A, §39–§40, Appendix G, Y, Z
-**Decisions**: [ADR-0028](../../../docs/adr/0028-context-definition-identity-and-placement.md)
+**Decisions**: [ADR-0028](../../docs/adr/0028-context-definition-identity-and-placement.md)
 
 Phase 1 output. PostgreSQL is the sole authority (ADR-0027). No new store. **SQLite is not
 used for persistence tests** (§47.1, V.16).

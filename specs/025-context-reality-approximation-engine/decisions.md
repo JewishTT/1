@@ -72,7 +72,7 @@ The only divergence that remains is `CXI-` for `ContextDefinition`, which ADR-00
 ## Where the reasoning lives
 
 Full rationale, rejected alternatives, consequences and verification checklists:
-[`docs/adr/0028-context-definition-identity-and-placement.md`](../../../docs/adr/0028-context-definition-identity-and-placement.md).
+[`docs/adr/0028-context-definition-identity-and-placement.md`](../../docs/adr/0028-context-definition-identity-and-placement.md).
 
 ## Wave 0 status
 

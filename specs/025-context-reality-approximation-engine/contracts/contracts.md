@@ -1,7 +1,7 @@
 # Contracts — 025 **v2**
 
 **Feature**: `025-context-reality-approximation-engine`
-Normative source: [input.md](input.md) §30, §41–§42, Appendix G, H, O, P, Q. Items marked
+Normative source: [input.md](../input.md) §30, §41–§42, Appendix G, H, O, P, Q. Items marked
 **ADDED** are binding details v2 did not spell out.
 
 ---
