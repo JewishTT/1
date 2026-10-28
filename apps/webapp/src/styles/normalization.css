@@ -1059,3 +1059,55 @@ body:has(.ui-root) {
     gap: 0;
   }
 }
+
+
+/* ── Workbench visual register ────────────────────────────────────────
+ * Neo-militarist character is carried by restrained signal hierarchy: one
+ * instrument-green rail, amber metadata, squared-off controls and graphite
+ * surfaces. No hue substitutions or decorative effects are introduced.
+ */
+.ui-root .ui-topbar {
+  border-top: 2px solid var(--ui-accent);
+  box-shadow: none;
+}
+
+.ui-root .ui-topbar-brand .ui-brand {
+  letter-spacing: 0.16em;
+  font-weight: var(--ui-weight-semibold);
+}
+
+.ui-root .ui-topbar-brand .ui-meta,
+.ui-root .ui-topnav-group-label {
+  color: var(--ui-gold);
+  font-family: var(--ui-font-mono);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+}
+
+.ui-root .ui-nav-module,
+.ui-root .ui-nav-link,
+.ui-root .ui-topbar-controls .ui-btn {
+  border-radius: var(--ui-radius-1);
+}
+
+.ui-root .ui-nav-module[data-active="true"],
+.ui-root .ui-nav-link[data-active="true"] {
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.ui-root .ui-topnav-group {
+  padding-inline-start: var(--ui-space-2);
+  border-inline-start: 1px solid var(--ui-border);
+}
+
+.ui-root .ui-topnav-group-label {
+  font-size: var(--ui-text-2xs);
+  white-space: nowrap;
+}
+
+@media (max-width: 1023px) {
+  .ui-root .ui-topnav-group {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+}
