@@ -20,6 +20,7 @@ import {
   Tabs,
   Textarea,
   Toast,
+  ToastViewport,
   Tooltip,
   type DataTableColumn,
   type ToastTone,
@@ -235,7 +236,10 @@ export function DesignSystemPage() {
             <Button variant="ghost" onClick={() => setToastTone("success")}>Preview success toast</Button>
             <Button variant="ghost" onClick={() => setToastTone("danger")}>Preview error toast</Button>
           </div>
-          {toastTone ? (
+          <p className="ui-kit-note">Notifications stack above the status bar; callers own queue order and lifetime.</p>
+        </Panel>
+        {toastTone ? (
+          <ToastViewport testId="ui-kit-toast-viewport">
             <Toast
               tone={toastTone}
               title={toastTone === "success" ? "Example success notification" : "Example error notification"}
@@ -243,10 +247,8 @@ export function DesignSystemPage() {
               onDismiss={() => setToastTone(null)}
               testId="ui-kit-toast"
             />
-          ) : (
-            <p className="ui-kit-note">Toast items announce their priority and can be dismissed; the caller owns queue and lifetime.</p>
-          )}
-        </Panel>
+          </ToastViewport>
+        ) : null}
         <Modal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
