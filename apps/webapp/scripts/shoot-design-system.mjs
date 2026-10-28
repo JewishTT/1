@@ -183,21 +183,25 @@ try {
     await topbar.screenshot({ path: join(OUT, `navigation-${label}.png`), animations: "disabled" });
     const navMetrics = await page.locator(".ui-topnav").evaluate((element) => {
       const rect = element.getBoundingClientRect();
-      const primary = element.querySelector(".ui-topnav-primary")?.getBoundingClientRect();
-      const destinations = element.querySelector(".ui-topnav-sections")?.getBoundingClientRect();
+      const trigger = element.querySelector(".ui-nav-deck-trigger")?.getBoundingClientRect();
       return {
         width: Math.round(rect.width),
         height: Math.round(rect.height),
-        primaryBottom: primary ? Math.round(primary.bottom) : null,
-        destinationsTop: destinations ? Math.round(destinations.top) : null,
-        destinationsBottom: destinations ? Math.round(destinations.bottom) : null,
+        trigger: trigger ? {
+          left: Math.round(trigger.left),
+          right: Math.round(trigger.right),
+          top: Math.round(trigger.top),
+          bottom: Math.round(trigger.bottom),
+          width: Math.round(trigger.width),
+          height: Math.round(trigger.height),
+        } : null,
       };
     });
     manifest.push({ filename: `navigation-${label}.png`, surface: "navigation", viewport: width, geometry: navMetrics });
-    if (navMetrics.width <= 0 || navMetrics.height <= 0 || navMetrics.primaryBottom === null || navMetrics.destinationsTop === null) {
-      problems.push(`navigation-${label}: missing primary or destination row geometry`);
-    } else if (navMetrics.primaryBottom > navMetrics.destinationsTop + 1) {
-      problems.push(`navigation-${label}: primary row overlaps destination row`);
+    if (navMetrics.width <= 0 || navMetrics.height <= 0 || !navMetrics.trigger || navMetrics.trigger.width <= 0) {
+      problems.push(`navigation-${label}: missing compact navigation trigger geometry`);
+    } else if (navMetrics.trigger.left < -1 || navMetrics.trigger.right > width + 1) {
+      problems.push(`navigation-${label}: compact navigation trigger escapes viewport`);
     }
     await page.locator(".ui-kit-page").evaluate((element) => { element.scrollTop = element.scrollHeight; });
     await capture(`primitives-dark-${label}-bottom`, { surface: "primitives", viewportPosition: "bottom", expectedTheme: "dark" });
@@ -245,7 +249,7 @@ try {
   // its trigger. That avoids toggling an open menu closed and then clicking a hidden item.
   stage = "capturing light theme and restoring dark theme";
   const topbar = page.getByTestId("app-shell-topbar");
-  const appearanceTrigger = topbar.locator('button[aria-haspopup="dialog"]');
+  const appearanceTrigger = topbar.locator('button.ui-btn[aria-haspopup="dialog"]');
   const appearancePanel = page.getByTestId("appearance-menu");
 
   async function chooseTheme(themeName) {
