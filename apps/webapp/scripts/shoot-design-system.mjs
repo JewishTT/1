@@ -132,19 +132,39 @@ try {
   await page.getByRole("tab", { name: /Feedback/ }).click();
   await capture("feedback-density-comfortable", { surface: "feedback", localDensity: "comfortable" });
 
-  // The actual shell menu drives the global theme. Do not fake the attribute:
-  // doing that can create a screenshot that looks right while the app state is wrong.
+  // The actual shell menu drives global theme; never fake its DOM attribute.
+  // The popover may remain open after a choice, so check state before re-clicking
+  // its trigger. That avoids toggling an open menu closed and then clicking a hidden item.
+  stage = "capturing light theme and restoring dark theme";
   const topbar = page.getByTestId("app-shell-topbar");
-  await topbar.getByRole("button").nth(1).click();
-  await page.getByTestId("theme-light").click();
-  await page.keyboard.press("Escape");
-  await page.waitForFunction(() => document.querySelector(".ui-shell")?.getAttribute("data-theme") === "light");
-  await capture("feedback-light-baseline", { surface: "feedback", expectedTheme: "light" });
+  const appearanceTrigger = topbar.locator('button[aria-haspopup="dialog"]');
+  const appearancePanel = page.getByTestId("appearance-menu");
 
-  await topbar.getByRole("button", { name: /comfortable/i }).click();
-  await page.getByTestId("theme-dark").click();
-  await page.keyboard.press("Escape");
-  await page.waitForFunction(() => document.querySelector(".ui-shell")?.getAttribute("data-theme") === "dark");
+  async function chooseTheme(themeName) {
+    const option = page.getByTestId("theme-" + themeName);
+    if (!(await option.isVisible())) {
+      await appearanceTrigger.click();
+      await option.waitFor({ state: "visible", timeout: 5000 });
+    }
+    await option.click();
+    await page.waitForFunction(
+      (expected) => document.querySelector(".ui-shell")?.getAttribute("data-theme") === expected,
+      themeName,
+    );
+  }
+
+  async function closeAppearanceMenu() {
+    if (await appearancePanel.getAttribute("data-open") !== "true") return;
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(100);
+    if (await appearancePanel.getAttribute("data-open") === "true") await appearanceTrigger.click();
+  }
+
+  await chooseTheme("light");
+  await closeAppearanceMenu();
+  await capture("feedback-light-baseline", { surface: "feedback", expectedTheme: "light" });
+  await chooseTheme("dark");
+  await closeAppearanceMenu();
 
   // Screenshot stateful overlays as well as the underlying page. Close via
   // their real keyboard semantics to exercise focus restoration.
