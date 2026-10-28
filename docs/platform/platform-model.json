@@ -806,7 +806,7 @@
     {
       "name": "shared",
       "description": "Contracts, events, domain invariants, storage, security — the substrate every app imports.",
-      "python_modules": 197,
+      "python_modules": 198,
       "typescript_modules": 0,
       "modules": [
         "apps.shared.config",
@@ -940,6 +940,7 @@
         "apps.shared.tests.contract.test_review",
         "apps.shared.tests.contract.test_semantic_docgraph",
         "apps.shared.tests.contract.test_single_publication_path",
+        "apps.shared.tests.contract.test_specops_lab_boundary",
         "apps.shared.tests.contract.test_stage_outcome",
         "apps.shared.tests.contract.test_statement",
         "apps.shared.tests.contract.test_storage",
@@ -1069,7 +1070,7 @@
       "name": "webapp",
       "description": "React analyst surfaces: investigation, search, entity, finding, ops, lineage.",
       "python_modules": 0,
-      "typescript_modules": 265,
+      "typescript_modules": 266,
       "modules": []
     },
     {
@@ -1112,11 +1113,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1009,
+    "module_count": 1010,
     "edge_count": 2808,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 879,
+      "stdlib:__future__": 880,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
@@ -1152,7 +1153,7 @@
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 69,
-      "stdlib:pathlib": 317,
+      "stdlib:pathlib": 318,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 96,
@@ -1215,7 +1216,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 267,
+      "third-party:pytest": 268,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -21717,6 +21718,14 @@
         "targets": []
       },
       {
+        "path": "apps/shared/tests/contract/test_specops_lab_boundary.py",
+        "tests": 1,
+        "test_names": [
+          "test_specops_lab_host_ports_are_loopback_bound_and_network_is_internal"
+        ],
+        "targets": []
+      },
+      {
         "path": "apps/shared/tests/contract/test_stage_outcome.py",
         "tests": 52,
         "test_names": [
@@ -23571,7 +23580,7 @@
         "targets": []
       }
     ],
-    "total": 5281
+    "total": 5282
   },
   "contracts": {
     "python": [
@@ -29621,6 +29630,7 @@
             "apps/shared/tests/contract/test_review.py",
             "apps/shared/tests/contract/test_semantic_docgraph.py",
             "apps/shared/tests/contract/test_single_publication_path.py",
+            "apps/shared/tests/contract/test_specops_lab_boundary.py",
             "apps/shared/tests/contract/test_stage_outcome.py",
             "apps/shared/tests/contract/test_statement.py",
             "apps/shared/tests/contract/test_storage.py",
@@ -29688,7 +29698,7 @@
             "apps/shared/workflow/__init__.py",
             "apps/shared/workflow/client.py"
           ],
-          "module_count": 197
+          "module_count": 198
         },
         {
           "id": "projection-query",
@@ -30024,6 +30034,7 @@
             "apps/webapp/src/Workspace.url.test.tsx",
             "apps/webapp/src/ci/CICanvas.tsx",
             "apps/webapp/src/ci/model.ts",
+            "apps/webapp/src/ci/panels/CounterintelPanel.test.tsx",
             "apps/webapp/src/ci/panels/CounterintelPanel.tsx",
             "apps/webapp/src/ci/panels/EmulationPanel.tsx",
             "apps/webapp/src/ci/panels/ForensicsPanel.tsx",
@@ -30274,7 +30285,7 @@
             "apps/webapp/src/workspace/useWorkState.ts",
             "apps/webapp/vite.config.ts"
           ],
-          "module_count": 265
+          "module_count": 266
         }
       ],
       "event_names_sample": [
@@ -33219,7 +33230,7 @@
       {
         "path": "apps/control-plane/api/routes/specops_counterintel.py",
         "status": "IMPLEMENTED",
-        "loc": 40,
+        "loc": 42,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -39301,6 +39312,15 @@
         "markers": []
       },
       {
+        "path": "apps/shared/tests/contract/test_specops_lab_boundary.py",
+        "status": "TEST",
+        "loc": 26,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/shared/tests/contract/test_stage_outcome.py",
         "status": "TEST",
         "loc": 475,
@@ -40657,7 +40677,7 @@
       {
         "path": "platform_model/gaps.py",
         "status": "IMPLEMENTED",
-        "loc": 212,
+        "loc": 205,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -40838,9 +40858,9 @@
       "IMPLEMENTED": 543,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 338,
+      "TEST": 339,
       "MIGRATION": 19,
-      "total": 1009
+      "total": 1010
     }
   },
   "reachability": {
@@ -44214,6 +44234,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/shared/tests/contract/test_specops_lab_boundary.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/shared/tests/contract/test_stage_outcome.py",
         "status": "TEST"
       },
@@ -44925,8 +44949,8 @@
       "PRODUCTION": 403,
       "TEST_ONLY": 146,
       "ORPHAN": 122,
-      "TEST": 338,
-      "total": 1009
+      "TEST": 339,
+      "total": 1010
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -45296,29 +45320,6 @@
         ]
       },
       {
-        "id": "health-is-constant",
-        "layer": "x",
-        "severity": "medium",
-        "claim": "GET /health returns a constant and reflects no dependency availability.",
-        "evidence": [
-          {
-            "path": "apps/control-plane/api/main.py",
-            "regex": "\"status\": \"ok\", \"service\": \"control-plane\"",
-            "expect": "present",
-            "min_count": 1
-          }
-        ],
-        "status": "OPEN",
-        "checks": [
-          {
-            "path": "apps/control-plane/api/main.py",
-            "ok": true,
-            "reason": "ok",
-            "count": 1
-          }
-        ]
-      },
-      {
         "id": "create-tables-in-production-path",
         "layer": "x",
         "severity": "high",
@@ -45627,7 +45628,7 @@
         ]
       }
     ],
-    "open": 10,
+    "open": 9,
     "stale_or_resolved": 0
   },
   "golden_path": {
@@ -102217,13 +102218,13 @@
   },
   "counts": {
     "components": 16,
-    "python_modules": 1009,
-    "typescript_modules": 265,
+    "python_modules": 1010,
+    "typescript_modules": 266,
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 2808,
-    "test_files": 341,
-    "test_functions": 5281,
+    "test_files": 342,
+    "test_functions": 5282,
     "untested_modules": 267,
     "http_routes": 182
   },
@@ -102237,16 +102238,16 @@
     "IMPLEMENTED": 543,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 338,
+    "TEST": 339,
     "MIGRATION": 19,
-    "total": 1009
+    "total": 1010
   },
   "reachability_summary": {
     "PRODUCTION": 403,
     "TEST_ONLY": 146,
     "ORPHAN": 122,
-    "TEST": 338,
-    "total": 1009
+    "TEST": 339,
+    "total": 1010
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -102604,7 +102605,7 @@
       "zero_layer.enrichment"
     ]
   },
-  "gaps_open": 10,
+  "gaps_open": 9,
   "rust": {
     "count": 16,
     "crates": [

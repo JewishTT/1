@@ -1,6 +1,6 @@
 # Tests
 
-341 test files, 5281 test functions. 267 platform modules are not targeted by any test.
+342 test files, 5282 test functions. 267 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -273,6 +273,7 @@
 | `apps/shared/tests/contract/test_review.py` | 4 | `apps/shared/domain/__init__.py` |
 | `apps/shared/tests/contract/test_semantic_docgraph.py` | 6 | — |
 | `apps/shared/tests/contract/test_single_publication_path.py` | 9 | — |
+| `apps/shared/tests/contract/test_specops_lab_boundary.py` | 1 | — |
 | `apps/shared/tests/contract/test_stage_outcome.py` | 52 | `apps/shared/contracts/error_codes.py`, `apps/shared/contracts/stage_outcome.py` |
 | `apps/shared/tests/contract/test_statement.py` | 3 | `apps/shared/domain/__init__.py` |
 | `apps/shared/tests/contract/test_storage.py` | 7 | `apps/shared/storage/memory.py`, `apps/shared/storage/s3.py` |

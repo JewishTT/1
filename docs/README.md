@@ -21,11 +21,11 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python / TypeScript / Rust modules | 1009 / 265 / 16 |
+| Python / TypeScript / Rust modules | 1010 / 266 / 16 |
 | HTTP routes | 182 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 341 / 5281 |
+| Test files / functions | 342 / 5282 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -67,10 +67,10 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| `shared` | 197 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| `shared` | 198 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 11 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
-| `webapp` | 0 | 265 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| `webapp` | 0 | 266 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Event model
@@ -106,7 +106,7 @@ cd apps/webapp && pnpm test                       # UI suite
 
 Machine-checked: each row is verified against the tree by a contract test.
 
-Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; `pytest apps/shared/tests/contract/test_platform_gaps.py` fails if any open gap's evidence stops holding. **10** open gaps.
+Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; `pytest apps/shared/tests/contract/test_platform_gaps.py` fails if any open gap's evidence stops holding. **9** open gaps.
 
 ### Layer 0 — collection
 
@@ -131,4 +131,3 @@ Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; 
 | `metrics-hardcoded` | high | GET /api/v1/metrics returns hard-coded numbers, never measured. | `apps/control-plane/api/routes/metrics.py` |
 | `roe-approved-by-from-body` | high | The RoE approver is taken from the request body, not a verified principal. | `apps/control-plane/api/routes/specops_roe.py` |
 | `wheel-packages-omit-context-engine` | high | The control-plane wheel omits context_engine/semantic_path, so an installed build differs from checkout. | `apps/control-plane/pyproject.toml` |
-| `health-is-constant` | medium | GET /health returns a constant and reflects no dependency availability. | `apps/control-plane/api/main.py` |

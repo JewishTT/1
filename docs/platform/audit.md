@@ -7,10 +7,10 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python / TypeScript / Rust modules | 1009 / 265 / 16 |
+| Python / TypeScript / Rust modules | 1010 / 266 / 16 |
 | Resolved import edges | 2808 |
 | HTTP routes / routers | 182 / 33 |
-| Test files / functions | 341 / 5281 |
+| Test files / functions | 342 / 5282 |
 | Evidence facts (static) | 4367 |
 
 ## Implementation maturity
@@ -24,7 +24,7 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | DECLARATION_ONLY | 18 |
 | PACKAGE_INIT | 91 |
 | MIGRATION | 19 |
-| TEST | 338 |
+| TEST | 339 |
 
 See [maturity.md](maturity.md).
 
@@ -35,7 +35,7 @@ See [maturity.md](maturity.md).
 | PRODUCTION | 403 |
 | TEST_ONLY | 146 |
 | ORPHAN | 122 |
-| TEST | 338 |
+| TEST | 339 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 
@@ -54,7 +54,7 @@ See [golden-path.md](golden-path.md) for the capability map and the build plan.
 
 ## Gaps (machine-checked)
 
-**10** open, machine-checked gaps. See [gaps.md](gaps.md).
+**9** open, machine-checked gaps. See [gaps.md](gaps.md).
 
 ## Event coverage
 

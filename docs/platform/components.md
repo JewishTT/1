@@ -426,7 +426,7 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **197** · TypeScript modules: **0**
+Python modules: **198** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -546,7 +546,7 @@ tools.strip_zero_inventory
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **265**
+Python modules: **0** · TypeScript modules: **266**
 
 
 ## `zero`

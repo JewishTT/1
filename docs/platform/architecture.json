@@ -747,6 +747,7 @@
           "apps/shared/tests/contract/test_review.py",
           "apps/shared/tests/contract/test_semantic_docgraph.py",
           "apps/shared/tests/contract/test_single_publication_path.py",
+          "apps/shared/tests/contract/test_specops_lab_boundary.py",
           "apps/shared/tests/contract/test_stage_outcome.py",
           "apps/shared/tests/contract/test_statement.py",
           "apps/shared/tests/contract/test_storage.py",
@@ -814,7 +815,7 @@
           "apps/shared/workflow/__init__.py",
           "apps/shared/workflow/client.py"
         ],
-        "module_count": 197
+        "module_count": 198
       },
       {
         "id": "projection-query",
@@ -1150,6 +1151,7 @@
           "apps/webapp/src/Workspace.url.test.tsx",
           "apps/webapp/src/ci/CICanvas.tsx",
           "apps/webapp/src/ci/model.ts",
+          "apps/webapp/src/ci/panels/CounterintelPanel.test.tsx",
           "apps/webapp/src/ci/panels/CounterintelPanel.tsx",
           "apps/webapp/src/ci/panels/EmulationPanel.tsx",
           "apps/webapp/src/ci/panels/ForensicsPanel.tsx",
@@ -1400,7 +1402,7 @@
           "apps/webapp/src/workspace/useWorkState.ts",
           "apps/webapp/vite.config.ts"
         ],
-        "module_count": 265
+        "module_count": 266
       }
     ],
     "event_names_sample": [

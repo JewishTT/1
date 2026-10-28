@@ -2,7 +2,7 @@
 
 Every defect below is a claim tied to re-checkable evidence (a file and a regex). `platform_model/gaps.py` re-reads the tree and a contract test fails if any open gap's evidence no longer holds. This is the replacement for the old free-text `KNOWN_GAPS`.
 
-**10** open gaps; **0** stale/resolved (must be zero — the test fails otherwise).
+**9** open gaps; **0** stale/resolved (must be zero — the test fails otherwise).
 
 ## Layer 0 — collection
 
@@ -27,7 +27,6 @@ Every defect below is a claim tied to re-checkable evidence (a file and a regex)
 | `metrics-hardcoded` | high | OPEN | GET /api/v1/metrics returns hard-coded numbers, never measured. | `apps/control-plane/api/routes/metrics.py` |
 | `roe-approved-by-from-body` | high | OPEN | The RoE approver is taken from the request body, not a verified principal. | `apps/control-plane/api/routes/specops_roe.py` |
 | `wheel-packages-omit-context-engine` | high | OPEN | The control-plane wheel omits context_engine/semantic_path, so an installed build differs from checkout. | `apps/control-plane/pyproject.toml` |
-| `health-is-constant` | medium | OPEN | GET /health returns a constant and reflects no dependency availability. | `apps/control-plane/api/main.py` |
 
 ## Resolved claims (regression guards)
 
