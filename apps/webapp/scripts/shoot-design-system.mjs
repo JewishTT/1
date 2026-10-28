@@ -58,6 +58,9 @@ async function capture(name, extra = {}) {
   process.stdout.write(`${JSON.stringify(entry)}\\n`);
 
   if (!metrics.shell || !metrics.catalogue) problems.push(`${name}: shell or catalogue did not mount`);
+  if (extra.expectedTheme && metrics.theme !== extra.expectedTheme) {
+    problems.push(`${name}: expected theme ${extra.expectedTheme}, got ${metrics.theme}`);
+  }
   if (metrics.document > metrics.viewport + 1 || metrics.body > metrics.viewport + 1) {
     problems.push(`${name}: horizontal overflow (viewport=${metrics.viewport}, document=${metrics.document}, body=${metrics.body})`);
   }
@@ -85,23 +88,32 @@ try {
   await page.getByText("No entities selected").waitFor();
   await capture("feedback-dark-baseline", { surface: "feedback" });
 
-  // Density is changed through the public form control and must stay scoped to
-  // the catalogue: the global shell's chosen density must not silently change.
+  // Density preview lives in the fields tab. Use it through the actual radio
+  // group, then revisit feedback so screenshots test propagated UI, not just state.
+  await page.getByRole("tab", { name: /Primitives/ }).click();
+  const shellDensityBefore = await page.locator(".ui-shell").getAttribute("data-density");
   await page.getByLabel(/Compact/).click();
   if (await page.getByTestId("ui-kit-page").getAttribute("data-density") !== "compact") {
     problems.push("density preview: compact selection did not apply");
   }
+  if (await page.locator(".ui-shell").getAttribute("data-density") !== shellDensityBefore) {
+    problems.push("density preview leaked into global shell state");
+  }
+  await page.getByRole("tab", { name: /Feedback/ }).click();
   await capture("feedback-density-compact", { surface: "feedback", localDensity: "compact" });
+
+  await page.getByRole("tab", { name: /Primitives/ }).click();
   await page.getByLabel(/Comfortable/).click();
   if (await page.getByTestId("ui-kit-page").getAttribute("data-density") !== "comfortable") {
     problems.push("density preview: comfortable selection did not apply");
   }
+  await page.getByRole("tab", { name: /Feedback/ }).click();
   await capture("feedback-density-comfortable", { surface: "feedback", localDensity: "comfortable" });
 
   // The actual shell menu drives the global theme. Do not fake the attribute:
   // doing that can create a screenshot that looks right while the app state is wrong.
   const topbar = page.getByTestId("app-shell-topbar");
-  await topbar.getByRole("button", { name: /comfortable/i }).click();
+  await topbar.getByRole("button").nth(1).click();
   await page.getByTestId("theme-light").click();
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector(".ui-shell")?.getAttribute("data-theme") === "light");
