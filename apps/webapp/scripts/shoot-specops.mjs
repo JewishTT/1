@@ -363,7 +363,7 @@ async function screenshot(name, extra = {}) {
       return {
         canvas: bounds(".ui-canvas"),
         head: bounds(".ui-canvas-head"),
-        tabs: bounds(".ui-canvas-head > .ui-tabs[data-orientation='bar']"),
+        tabs: bounds(".ui-canvas-head > .ui-tabs"),
         meta: bounds(".ui-canvas-head-meta"),
         stageNote: bounds(".ui-canvas-stage-note"),
         railVisible: document.querySelector(".ui-shell")?.getAttribute("data-pane-rail") ?? null,
@@ -393,6 +393,12 @@ async function screenshot(name, extra = {}) {
   }
   if (geometry?.head && geometry.tabs && geometry.tabs.right > geometry.head.right + 1) {
     problems.push(name + ": workspace tabs are clipped beyond the canvas header edge");
+  }
+  if (geometry?.head && geometry.head.scrollWidth > geometry.head.clientWidth + 2) {
+    problems.push(name + ": canvas header has horizontal overflow (scrollWidth=" + geometry.head.scrollWidth + ", clientWidth=" + geometry.head.clientWidth + ")");
+  }
+  if (geometry?.tabs && geometry.tabs.scrollWidth > geometry.tabs.clientWidth + 2) {
+    problems.push(name + ": workspace tab labels overflow the tablist (scrollWidth=" + geometry.tabs.scrollWidth + ", clientWidth=" + geometry.tabs.clientWidth + ")");
   }
   if (metrics.viewport <= 767 && geometry?.canvas && geometry.canvas.width < metrics.viewport * 0.8) {
     problems.push(name + ": mobile canvas lost usable width while side panes are in drawer mode (" + geometry.canvas.width + "px of " + metrics.viewport + "px)");
