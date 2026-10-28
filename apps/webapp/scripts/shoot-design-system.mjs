@@ -59,6 +59,45 @@ async function capture(name, extra = {}) {
         overflowX: getComputedStyle(nav).overflowX,
       } : null;
     })(),
+    geometry: (() => {
+      const box = (selector) => {
+        const element = document.querySelector(selector);
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        return {
+          left: Math.round(rect.left),
+          top: Math.round(rect.top),
+          right: Math.round(rect.right),
+          bottom: Math.round(rect.bottom),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        };
+      };
+      const page = document.querySelector(".ui-kit-page");
+      const pageRect = page?.getBoundingClientRect();
+      const contentTop = (selector) => {
+        const element = document.querySelector(selector);
+        if (!element || !page || !pageRect) return null;
+        return Math.round(element.getBoundingClientRect().top - pageRect.top + page.scrollTop);
+      };
+      return {
+        shellTopbar: box('[data-testid="app-shell-topbar"]'),
+        catalogueHeader: box(".ui-kit-header"),
+        principles: box(".ui-kit-principles"),
+        tabs: box(".ui-kit-page [role=tablist]"),
+        firstContent: box(".ui-kit-page .ui-kit-grid, .ui-kit-page .ui-kit-stack"),
+        contentOrder: {
+          headerBottom: contentTop(".ui-kit-header") === null ? null : contentTop(".ui-kit-header") + (document.querySelector(".ui-kit-header")?.getBoundingClientRect().height ?? 0),
+          principlesTop: contentTop(".ui-kit-principles"),
+          principlesBottom: contentTop(".ui-kit-principles") === null ? null : contentTop(".ui-kit-principles") + (document.querySelector(".ui-kit-principles")?.getBoundingClientRect().height ?? 0),
+          tabsTop: contentTop(".ui-kit-page [role=tablist]"),
+          tabsBottom: contentTop(".ui-kit-page [role=tablist]") === null ? null : contentTop(".ui-kit-page [role=tablist]") + (document.querySelector(".ui-kit-page [role=tablist]")?.getBoundingClientRect().height ?? 0),
+          firstContentTop: contentTop(".ui-kit-page .ui-kit-grid, .ui-kit-page .ui-kit-stack"),
+        },
+        modal: box(".ui-modal"),
+        toast: box("[data-testid='ui-kit-toast']"),
+      };
+    })(),
   }));
   const filename = `${name}.png`;
   await page.screenshot({ path: join(OUT, filename), fullPage: false, animations: "disabled" });
@@ -76,6 +115,33 @@ async function capture(name, extra = {}) {
   if (metrics.nav && metrics.nav.scrollWidth > metrics.nav.clientWidth + 1) {
     problems.push(`${name}: top navigation is clipped at ${metrics.viewport}px (client=${metrics.nav.clientWidth}, scroll=${metrics.nav.scrollWidth})`);
   }
+  const order = metrics.geometry?.contentOrder;
+  if (order && [
+    ["header/principles", order.headerBottom, order.principlesTop],
+    ["principles/tabs", order.principlesBottom, order.tabsTop],
+    ["tabs/content", order.tabsBottom, order.firstContentTop],
+  ].some(([label, bottom, top]) => {
+    if (bottom === null || top === null) {
+      problems.push(`${name}: missing geometry anchor for ${label}`);
+      return true;
+    }
+    if (bottom > top + 1) {
+      problems.push(`${name}: vertical overlap between ${label} (bottom=${bottom}, next top=${top})`);
+      return true;
+    }
+    return false;
+  })) {
+    // Individual overlap diagnostics are already recorded above.
+  }
+  for (const key of ["modal", "toast"]) {
+    const rect = metrics.geometry?.[key];
+    if (!rect) continue;
+    if (rect.width <= 0 || rect.height <= 0 || rect.left < -1 || rect.right > metrics.viewport + 1) {
+      problems.push(`${name}: ${key} is outside the viewport (left=${rect.left}, right=${rect.right}, width=${metrics.viewport})`);
+    }
+  }
+  if (extra.surface === "modal" && !metrics.geometry?.modal) problems.push(`${name}: modal screenshot has no dialog geometry`);
+  if (extra.surface === "toast" && !metrics.geometry?.toast) problems.push(`${name}: toast screenshot has no toast geometry`);
   return entry;
 }
 
