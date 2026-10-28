@@ -101,7 +101,9 @@ def function_arguments(node: ast.FunctionDef | ast.AsyncFunctionDef) -> list[str
 def scan_python_text(path: str, text: str) -> dict[str, Any]:
     """Return a true Python-AST module record; exposed for fast contract tests."""
     try:
-        tree = ast.parse(text, filename=path)
+        # A UTF-8 BOM is legal in repository text files. Strip it only from the
+        # parser input; the graph's content hash remains over the original text.
+        tree = ast.parse(text.removeprefix("\ufeff"), filename=path)
     except SyntaxError as exc:
         return {
             "path": path, "parser": "python-ast", "parse_error": str(exc),
