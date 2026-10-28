@@ -1120,6 +1120,44 @@ body:has(.ui-root) {
   }
 }
 
+/* Operational panels: restrained instrument markings, never decorative neon. */
+.ui-root :where(.ui-panel-head, .ui-pane-head, .ui-section-head) {
+  min-width: 0;
+}
+
+.ui-root :where(.ui-panel-eyebrow, .ui-pane-eyebrow, .ui-section-eyebrow) {
+  color: var(--ui-gold);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+}
+
+.ui-root :where(.ui-panel, .ui-pane, .ui-card)[data-active="true"] {
+  border-color: var(--ui-border-strong);
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.ui-root :where(.ui-btn, .ui-button, .ui-nav-module, .ui-nav-link) {
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.ui-root :where(.ui-btn, .ui-button, .ui-nav-module, .ui-nav-link):focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-root :where(.ui-btn, .ui-button, .ui-nav-module, .ui-nav-link) {
+    transition: none;
+  }
+}
+
+
 
 /* ── Canvas-local responsive contracts ─────────────────────────────────
  * The canvas can be narrower than the browser because rail/inspector panes
