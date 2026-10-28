@@ -343,6 +343,33 @@ async function screenshot(name, extra = {}) {
       return rect ? { top: rect.top, bottom: rect.bottom, height: rect.height } : null;
     })(),
     bodyStart: document.querySelector(".ui-shell-body")?.getBoundingClientRect().top ?? null,
+    canvasGeometry: (() => {
+      const bounds = (selector) => {
+        const node = document.querySelector(selector);
+        if (!node) return null;
+        const rect = node.getBoundingClientRect();
+        const style = getComputedStyle(node);
+        return {
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          clientWidth: node.clientWidth,
+          scrollWidth: node.scrollWidth,
+          overflowX: style.overflowX,
+          display: style.display,
+        };
+      };
+      return {
+        canvas: bounds(".ui-canvas"),
+        head: bounds(".ui-canvas-head"),
+        tabs: bounds(".ui-canvas-head > .ui-tabs[data-orientation='bar']"),
+        meta: bounds(".ui-canvas-head-meta"),
+        stageNote: bounds(".ui-canvas-stage-note"),
+        railVisible: document.querySelector(".ui-shell")?.getAttribute("data-pane-rail") ?? null,
+        inspectorVisible: document.querySelector(".ui-shell")?.getAttribute("data-pane-inspector") ?? null,
+      };
+    })(),
     theme: document.querySelector(".ui-shell")?.getAttribute("data-theme") ?? null,
     density: document.querySelector(".ui-shell")?.getAttribute("data-density") ?? null,
     text: (document.body.innerText || "").replace(/\s+/g, " ").slice(0, 180),
@@ -359,6 +386,25 @@ async function screenshot(name, extra = {}) {
   }
   if (metrics.topbar && metrics.bodyStart !== null && metrics.topbar.bottom > metrics.bodyStart + 1) {
     problems.push(name + ": shell body begins underneath top bar (header bottom=" + metrics.topbar.bottom + ", body starts=" + metrics.bodyStart + ")");
+  }
+  const geometry = metrics.canvasGeometry;
+  if (geometry?.head && geometry.meta && geometry.meta.right > geometry.head.right + 1) {
+    problems.push(name + ": stage/selection metadata is clipped beyond the canvas header edge");
+  }
+  if (geometry?.head && geometry.tabs && geometry.tabs.right > geometry.head.right + 1) {
+    problems.push(name + ": workspace tabs are clipped beyond the canvas header edge");
+  }
+  if (metrics.viewport <= 767 && geometry?.canvas && geometry.canvas.width < metrics.viewport * 0.8) {
+    problems.push(name + ": mobile canvas lost usable width while side panes are in drawer mode (" + geometry.canvas.width + "px of " + metrics.viewport + "px)");
+  }
+  if (metrics.viewport <= 1279 && geometry?.railVisible === "true") {
+    problems.push(name + ": context rail remained expanded in drawer breakpoint");
+  }
+  if (metrics.viewport <= 767 && geometry?.inspectorVisible === "true") {
+    problems.push(name + ": inspector remained expanded in phone drawer breakpoint");
+  }
+  if (geometry?.meta && geometry.meta.scrollWidth > geometry.meta.clientWidth + 2) {
+    problems.push(name + ": canvas metadata container has horizontal internal overflow");
   }
   return report;
 }
