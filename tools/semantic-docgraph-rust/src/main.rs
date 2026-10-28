@@ -6,7 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use syn::{spanned::Spanned, visit::Visit, Attribute, ExprCall, ExprMethodCall, Item, Visibility};
 
-const ROOTS: &[&str] = &["apps", "bench", "tools", "platform_model"];
+const ROOTS: &[&str] = &["apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs"];
 const EXCLUDED: &[&str] = &[
     ".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache",
     ".ruff_cache", "target", "dist", "build", "tmp", "logs", "donors",
@@ -139,7 +139,16 @@ fn main() {
     let root = root.canonicalize().unwrap_or(root);
     let mut files = Vec::new();
     for base in ROOTS { walk(&root, &root.join(base), &mut files); }
+    if let Ok(entries) = fs::read_dir(&root) {
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "rs") {
+                files.push(path);
+            }
+        }
+    }
     files.sort();
+    files.dedup();
     let mut modules = Vec::new();
     for path in files {
         let relative = match path.strip_prefix(&root) {

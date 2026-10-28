@@ -14,7 +14,7 @@ try {
   process.stderr.write("TypeScript compiler AST is unavailable. Run npm ci in apps/webapp first.\n");
   process.exit(2);
 }
-const roots = ["apps", "bench", "tools", "platform_model"];
+const roots = ["apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs"];
 const excluded = new Set([
   ".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache",
   ".ruff_cache", "target", "dist", "build", "tmp", "logs", "donors",
@@ -34,8 +34,14 @@ function walk(directory) {
   }
 }
 for (const base of roots) walk(path.join(root, base));
+for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+  if (entry.isFile() && extensions.has(path.extname(entry.name).toLowerCase())) {
+    files.push(path.join(root, entry.name));
+  }
+}
+const uniqueFiles = [...new Set(files)].sort();
 const modules = [];
-for (const absolute of files.sort()) {
+for (const absolute of uniqueFiles) {
   const relative = path.relative(root, absolute).split(path.sep).join("/");
   const text = fs.readFileSync(absolute, "utf8");
   const extension = path.extname(absolute).toLowerCase();
