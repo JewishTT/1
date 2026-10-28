@@ -363,7 +363,7 @@ async function screenshot(name, extra = {}) {
       return {
         canvas: bounds(".ui-canvas"),
         head: bounds(".ui-canvas-head"),
-        tabs: bounds(".ui-canvas-head > .ui-tabs"),
+        tabs: bounds(".ui-canvas-head > .ui-tabs[data-orientation='bar']"),
         meta: bounds(".ui-canvas-head-meta"),
         stageNote: bounds(".ui-canvas-stage-note"),
         railVisible: document.querySelector(".ui-shell")?.getAttribute("data-pane-rail") ?? null,
