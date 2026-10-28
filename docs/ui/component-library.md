@@ -58,4 +58,4 @@ The sweeps assert that the shell mounts, the browser reports no uncaught/page-co
 - Route screenshot sweep: `npm run ui:shoot:routes -- http://127.0.0.1:5173/investigations http://127.0.0.1:5173/ui-kit`
 - SpecOps/GhostLine sweep: `npm run ui:shoot:specops`
 
-Playwright sweeps need a running app and usable fixture/backend services. The screenshots still require human inspection; a green syntax check does not mean a screenshot sweep was executed.
+Playwright sweeps need the webapp development server. The design-system route uses clearly labelled local demo content; the SpecOps runner uses read-only browser fixtures so no control-plane backend is required and no platform writes can occur. Route sweeps of live business screens still need valid application fixtures/backend services. Screenshots require human inspection; a green script exit alone does not mean visual quality was reviewed.
