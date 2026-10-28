@@ -558,7 +558,7 @@ describe("UI normalization — legacy shell compatibility", () => {
     expect(normalization).toContain(".ui-root .op-tile::before");
     expect(normalization).toContain(".ui-root .panel::before");
     const legacyCommands = readShipped("styles", "legacy", "legacy-commands.css");
-    expect(legacyCommands).not.toMatch(/!important\\s*;/);
+    expect(legacyCommands).not.toMatch(/!important\s*;/);
   });
 
   it("keeps legacy selection and event semantics while removing decorative glow", () => {
@@ -583,5 +583,26 @@ describe("UI normalization — RadioGroup contracts", () => {
     expect(barrel).toContain("RadioGroup");
     expect(styles).toContain(".ui-radio-group");
     expect(styles).toContain(".ui-radio input:focus-visible");
+  });
+});
+
+
+describe("UI normalization — restrained neo-militarist visual grammar", () => {
+  it("uses token-backed industrial hierarchy without reintroducing neon decoration", () => {
+    const styles = readShipped("styles", "components", "index.css");
+    const tuningStart = styles.indexOf("Neo-militarist calibration");
+    expect(tuningStart).toBeGreaterThanOrEqual(0);
+    const tuning = styles.slice(tuningStart);
+
+    expect(tuning).toContain(".ui-kit-header");
+    expect(tuning).toContain("border-inline-start: 2px solid var(--ui-accent)");
+    expect(tuning).toContain("font-family: var(--ui-font-mono)");
+    expect(tuning).toContain("color: var(--ui-gold)");
+    expect(tuning).toContain("border-radius: var(--ui-radius-1)");
+    expect(tuning).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(tuning).not.toMatch(/(?:linear|radial|conic)-gradient\s*\(/i);
+    expect(tuning).not.toMatch(/text-shadow\s*:/i);
+    expect(tuning).not.toMatch(/backdrop-filter\s*:\s*(?!none)/i);
+    expect(tuning).not.toMatch(/box-shadow\s*:\s*0\s+0/i);
   });
 });
