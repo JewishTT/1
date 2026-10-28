@@ -1514,3 +1514,126 @@
     padding: var(--ui-space-4) var(--ui-space-5);
   }
 }
+
+
+/* ── Neo-militarist calibration ────────────────────────────────────────
+ * Industrial precision, not neon nostalgia: harder geometry, signal-green
+ * only for active controls, amber restricted to metadata, and typographic
+ * hierarchy instead of bevels, gradients, glow or decorative HUD chrome.
+ * The normative fifteen palette values remain unchanged.
+ */
+.ui-root .ui-kit-header {
+  position: relative;
+  padding-inline-start: var(--ui-space-5);
+  border-inline-start: 2px solid var(--ui-accent);
+}
+
+.ui-root .ui-kit-header .ui-meta,
+.ui-root .ui-kit-principles,
+.ui-root .ui-kit-count,
+.ui-root .ui-kit-footer,
+.ui-root .ui-kit-note {
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-root .ui-kit-header .ui-meta {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: var(--ui-tracking-label);
+  color: var(--ui-accent);
+}
+
+.ui-root .ui-kit-header .ui-title {
+  max-width: 20ch;
+  font-weight: var(--ui-weight-semibold);
+  letter-spacing: -0.025em;
+}
+
+.ui-root .ui-kit-principles {
+  text-transform: uppercase;
+  letter-spacing: var(--ui-tracking-label);
+  border-color: var(--ui-border-strong);
+}
+
+.ui-root .ui-kit-principles span {
+  padding-inline-start: var(--ui-space-3);
+  border-inline-start: 1px solid var(--ui-border-strong);
+}
+
+.ui-root .ui-kit-grid {
+  gap: var(--ui-space-4);
+}
+
+.ui-root .ui-kit-card {
+  gap: var(--ui-space-4);
+  border-radius: var(--ui-radius-1);
+}
+
+.ui-root .ui-kit-card-head {
+  align-items: center;
+  padding-bottom: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-root .ui-kit-card-head h2 {
+  font-size: var(--ui-text-sm);
+  letter-spacing: 0;
+}
+
+.ui-root .ui-kit-count {
+  color: var(--ui-gold);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  text-align: end;
+}
+
+.ui-root .ui-kit-button-row {
+  gap: var(--ui-space-2);
+}
+
+.ui-root .ui-kit-page .ui-btn {
+  border-radius: var(--ui-radius-1);
+  letter-spacing: 0.035em;
+}
+
+.ui-root .ui-kit-page .ui-btn[data-variant="primary"] {
+  font-weight: var(--ui-weight-semibold);
+}
+
+.ui-root .ui-kit-footer {
+  font-family: var(--ui-font-mono);
+  letter-spacing: 0.015em;
+}
+
+.ui-root .ui-kit-page .ui-badge {
+  border-radius: var(--ui-radius-1);
+  letter-spacing: 0.035em;
+}
+
+.ui-root .ui-kit-page .ui-input-wrap,
+.ui-root .ui-kit-page .ui-select,
+.ui-root .ui-kit-page .ui-textarea {
+  border-radius: var(--ui-radius-1);
+}
+
+.ui-root .ui-kit-page .ui-input-wrap:focus-within,
+.ui-root .ui-kit-page .ui-select:focus-visible,
+.ui-root .ui-kit-page .ui-textarea:focus-visible {
+  border-color: var(--ui-accent);
+}
+
+@media (max-width: 767px) {
+  .ui-root .ui-kit-header {
+    padding-inline-start: var(--ui-space-4);
+  }
+
+  .ui-root .ui-kit-card-head {
+    align-items: flex-start;
+  }
+
+  .ui-root .ui-kit-count {
+    max-width: 42%;
+    white-space: normal;
+  }
+}
