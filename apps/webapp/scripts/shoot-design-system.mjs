@@ -122,22 +122,19 @@ async function capture(name, extra = {}) {
     problems.push(`${name}: top navigation is clipped at ${metrics.viewport}px (client=${metrics.nav.clientWidth}, scroll=${metrics.nav.scrollWidth})`);
   }
   const order = metrics.geometry?.contentOrder;
-  if (order && [
-    ["header/principles", order.headerBottom, order.principlesTop],
-    ["principles/tabs", order.principlesBottom, order.tabsTop],
-    ["tabs/content", order.tabsBottom, order.firstContentTop],
-  ].some(([label, bottom, top]) => {
-    if (bottom === null || top === null) {
-      problems.push(`${name}: missing geometry anchor for ${label}`);
-      return true;
+  if (order) {
+    const boundaries = [
+      ["header/principles", order.headerBottom, order.principlesTop],
+      ["principles/tabs", order.principlesBottom, order.tabsTop],
+      ["tabs/content", order.tabsBottom, order.firstContentTop],
+    ];
+    for (const [label, bottom, top] of boundaries) {
+      if (bottom === null || top === null) {
+        problems.push(`${name}: missing geometry anchor for ${label}`);
+      } else if (bottom > top + 1) {
+        problems.push(`${name}: vertical overlap between ${label} (bottom=${bottom}, next top=${top})`);
+      }
     }
-    if (bottom > top + 1) {
-      problems.push(`${name}: vertical overlap between ${label} (bottom=${bottom}, next top=${top})`);
-      return true;
-    }
-    return false;
-  })) {
-    // Individual overlap diagnostics are already recorded above.
   }
   for (const key of ["modal", "toast"]) {
     const rect = metrics.geometry?.[key];
