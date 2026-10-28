@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CODE_ROOTS = ("apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs")
 DOC_ROOTS = ("docs", "specs", ".opencode", ".specify")
 SOURCE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rs", ".proto", ".sql", ".css", ".scss", ".html"}
+AST_PARSERS = {"python-ast", "typescript-compiler-ast", "rust-syn-ast", "postcss-ast", "parse5-ast", "sqlglot-ast", "protobuf-descriptor-ast"}
+AST_PARSERS = {"python-ast", "typescript-compiler-ast", "rust-syn-ast", "postcss-ast", "parse5-ast", "sqlglot-ast", "protobuf-descriptor-ast"}
 CONFIG_SUFFIXES = {".yaml", ".yml", ".json", ".toml", ".ini", ".conf"}
 EXCLUDED_DIRS = {
     ".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache",
@@ -244,6 +247,216 @@ def scan_python_text(path: str, text: str) -> dict[str, Any]:
     }
 
 
+
+def scan_sql_text(path: str, text: str) -> dict[str, Any]:
+    """Parse SQL with SQLGlot and expose statement, table and column AST nodes."""
+    common: dict[str, Any] = {
+        "path": path, "parser": "sqlglot-ast", "parse_error": None,
+        "docstring": "", "line_count": text.count("\n") + 1,
+        "symbols": [], "imports": [], "routes": [], "calls": [], "references": [],
+    }
+    try:
+        import sqlglot
+        from sqlglot import exp
+    except ImportError as exc:
+        common["parse_error"] = "sqlglot is required for the SQL AST: " + str(exc)
+        return common
+    try:
+        statements = [statement for statement in sqlglot.parse(text) if statement is not None]
+    except Exception as exc:
+        common["parse_error"] = str(exc)[:1600]
+        return common
+    symbols: list[dict[str, Any]] = []
+    references: list[dict[str, Any]] = []
+
+    def line_of(node: Any, fallback: int = 1) -> int:
+        value = getattr(node, "meta", {}).get("line")
+        return int(value) if isinstance(value, int) and value > 0 else fallback
+
+    def table_name(table: Any) -> str:
+        parts = [getattr(part, "name", "") for part in getattr(table, "parts", ())]
+        return ".".join(str(part) for part in parts if part) or str(getattr(table, "name", ""))
+
+    for index, statement in enumerate(statements, start=1):
+        statement_line = line_of(statement)
+        statement_kind = str(getattr(statement, "key", "statement") or "statement").lower()
+        create_table = isinstance(statement, exp.Create) and str(statement.args.get("kind", "")).upper() == "TABLE"
+        target_table = statement.find(exp.Table) if create_table else None
+        target_name = table_name(target_table) if target_table is not None else ""
+        symbols.append({
+            "name": "statement_" + str(index).zfill(4),
+            "qualified_name": "statement:" + str(index).zfill(4) + ":" + statement_kind,
+            "kind": "sql-statement", "line": statement_line, "public": True,
+            "signature": statement.sql()[:240],
+        })
+        for table in statement.find_all(exp.Table):
+            full_table_name = table_name(table)
+            if not full_table_name:
+                continue
+            if create_table and table is target_table:
+                symbols.append({
+                    "name": str(getattr(table, "name", full_table_name)),
+                    "qualified_name": full_table_name, "kind": "sql-table",
+                    "line": line_of(table, statement_line), "public": True,
+                    "signature": table.sql()[:240],
+                })
+            else:
+                references.append({
+                    "target": full_table_name, "target_kind": "sql-table",
+                    "kind": "references-sql-table", "line": line_of(table, statement_line),
+                })
+        if create_table and target_name:
+            for column in statement.find_all(exp.ColumnDef):
+                column_name = str(getattr(column, "name", "") or "")
+                if column_name:
+                    symbols.append({
+                        "name": column_name, "qualified_name": target_name + "." + column_name,
+                        "kind": "sql-column", "line": line_of(column, statement_line),
+                        "public": True, "signature": column.sql()[:240],
+                    })
+    common["symbols"] = symbols
+    common["references"] = references
+    return common
+
+
+def scan_proto_files(root: Path, files: list[Path]) -> dict[str, dict[str, Any]]:
+    """Compile .proto sources with grpc_tools.protoc and derive symbols from descriptors."""
+    results: dict[str, dict[str, Any]] = {}
+    if not files:
+        return results
+    try:
+        from google.protobuf.descriptor_pb2 import FileDescriptorSet
+    except ImportError as exc:
+        for path in files:
+            rel = relative(path, root)
+            results[rel] = {
+                "path": rel, "parser": "protobuf-descriptor-ast",
+                "parse_error": "protobuf descriptors are required for the .proto AST: " + str(exc),
+                "symbols": [], "imports": [], "routes": [], "calls": [], "references": [],
+            }
+        return results
+
+    for path in sorted(files):
+        rel = relative(path, root)
+        record: dict[str, Any] = {
+            "path": rel, "parser": "protobuf-descriptor-ast", "parse_error": None,
+            "docstring": "", "line_count": 0,
+            "symbols": [], "imports": [], "routes": [], "calls": [], "references": [],
+        }
+        with tempfile.TemporaryDirectory(prefix="semantic-proto-") as temp_dir:
+            descriptor_path = Path(temp_dir) / "descriptor-set.pb"
+            command = [
+                sys.executable, "-m", "grpc_tools.protoc", "-I", str(root),
+                "--include_source_info", "--include_imports",
+                "--descriptor_set_out=" + str(descriptor_path), rel,
+            ]
+            try:
+                proc = subprocess.run(
+                    command, cwd=root, capture_output=True, text=True, timeout=120, check=False
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                record["parse_error"] = "grpc_tools.protoc: " + str(exc)
+                results[rel] = record
+                continue
+            if proc.returncode:
+                record["parse_error"] = ("grpc_tools.protoc: " + (proc.stderr or proc.stdout or "parse failed"))[-1600:]
+                results[rel] = record
+                continue
+            try:
+                descriptor_set = FileDescriptorSet()
+                descriptor_set.ParseFromString(descriptor_path.read_bytes())
+            except Exception as exc:
+                record["parse_error"] = "invalid descriptor set: " + str(exc)
+                results[rel] = record
+                continue
+
+        file_proto = next(
+            (item for item in descriptor_set.file if item.name == rel or item.name.endswith("/" + rel)),
+            None,
+        )
+        if file_proto is None:
+            record["parse_error"] = "protoc returned no descriptor for " + rel
+            results[rel] = record
+            continue
+        locations = {tuple(item.path): item for item in file_proto.source_code_info.location}
+
+        def line_for(path_parts: list[int], fallback: int = 1) -> int:
+            location = locations.get(tuple(path_parts))
+            if location is None or not location.span:
+                return fallback
+            return int(location.span[0]) + 1
+
+        def full_name(parent: str, name: str) -> str:
+            return ".".join(part for part in (parent, name) if part)
+
+        def add_symbol(kind: str, name: str, qualified_name: str, source_path: list[int], signature: str = "") -> None:
+            record["symbols"].append({
+                "name": name, "qualified_name": qualified_name, "kind": kind,
+                "line": line_for(source_path), "public": True, "signature": signature,
+            })
+
+        def scan_enum(enum_proto: Any, source_path: list[int], parent_name: str) -> None:
+            qualified = full_name(parent_name, enum_proto.name)
+            add_symbol("proto-enum", enum_proto.name, qualified, source_path, "enum " + enum_proto.name)
+            for value_index, value in enumerate(enum_proto.value):
+                add_symbol(
+                    "proto-enum-value", value.name, full_name(qualified, value.name),
+                    source_path + [2, value_index],
+                    value.name + " = " + str(value.number),
+                )
+
+        def scan_message(message_proto: Any, source_path: list[int], parent_name: str) -> None:
+            qualified = full_name(parent_name, message_proto.name)
+            add_symbol("proto-message", message_proto.name, qualified, source_path, "message " + message_proto.name)
+            for field_index, field in enumerate(message_proto.field):
+                field_path = source_path + [2, field_index]
+                add_symbol(
+                    "proto-field", field.name, full_name(qualified, field.name), field_path,
+                    (field.type_name + " " if field.type_name else "") + field.name + " = " + str(field.number),
+                )
+                if field.type_name:
+                    record["references"].append({
+                        "target": field.type_name.lstrip("."), "target_kind": "proto-type",
+                        "kind": "uses-proto-type", "line": line_for(field_path),
+                    })
+            for nested_index, nested in enumerate(message_proto.nested_type):
+                scan_message(nested, source_path + [3, nested_index], qualified)
+            for enum_index, enum_proto in enumerate(message_proto.enum_type):
+                scan_enum(enum_proto, source_path + [4, enum_index], qualified)
+
+        package_name = file_proto.package or ""
+        record["docstring"] = "Protobuf package " + package_name if package_name else "Protobuf source"
+        for dep_index, dependency in enumerate(file_proto.dependency):
+            record["references"].append({
+                "target": dependency, "target_kind": "source-path",
+                "kind": "imports-proto-file", "line": line_for([3, dep_index]),
+            })
+        for message_index, message in enumerate(file_proto.message_type):
+            scan_message(message, [4, message_index], package_name)
+        for enum_index, enum_proto in enumerate(file_proto.enum_type):
+            scan_enum(enum_proto, [5, enum_index], package_name)
+        for service_index, service in enumerate(file_proto.service):
+            service_path = [6, service_index]
+            service_name = full_name(package_name, service.name)
+            add_symbol("proto-service", service.name, service_name, service_path, "service " + service.name)
+            for method_index, method in enumerate(service.method):
+                method_path = service_path + [2, method_index]
+                method_name = full_name(service_name, method.name)
+                add_symbol("proto-rpc", method.name, method_name, method_path, method.name)
+                for target in (method.input_type, method.output_type):
+                    if target:
+                        record["references"].append({
+                            "target": target.lstrip("."), "target_kind": "proto-type",
+                            "kind": "uses-proto-type", "line": line_for(method_path),
+                        })
+        try:
+            record["line_count"] = path.read_text(encoding="utf-8").count("\n") + 1
+        except OSError:
+            record["line_count"] = 0
+        results[rel] = record
+    return results
+
+
 def source_module_target(root: Path, source: str, module: str, level: int = 0) -> str | None:
     """Resolve common first-party Python imports against the actual checked-out tree."""
     candidates: list[Path] = []
@@ -337,8 +550,10 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
     )
     code_paths = sorted(set(code_paths))
     code_rel = {relative(p, root) for p in code_paths}
-    ts_paths = [p for p in code_paths if p.suffix.lower() in {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}]
+    ast_script_paths = [p for p in code_paths if p.suffix.lower() in {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".css", ".scss", ".html"}]
     rust_paths = [p for p in code_paths if p.suffix.lower() == ".rs"]
+    proto_paths = [p for p in code_paths if p.suffix.lower() == ".proto"]
+    sql_paths = [p for p in code_paths if p.suffix.lower() == ".sql"]
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     module_records: dict[str, dict[str, Any]] = {}
@@ -364,10 +579,10 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
         })
 
     ts_result: dict[str, Any] = {"modules": []}
-    if ts_paths:
+    if ast_script_paths:
         ts_result = run_parser(
             ["node", "tools/semantic_docgraph_ts.mjs", "--root", str(root)],
-            root, "TypeScript compiler AST",
+            root, "TypeScript/PostCSS/parse5 AST",
         )
     ts_by_path = {m["path"]: m for m in ts_result.get("modules", [])}
     rust_result: dict[str, Any] = {"modules": []}
@@ -378,6 +593,11 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
             root, "Rust syn AST",
         )
     rust_by_path = {m["path"]: m for m in rust_result.get("modules", [])}
+    proto_by_path = scan_proto_files(root, proto_paths)
+    sql_by_path = {
+        relative(path, root): scan_sql_text(relative(path, root), texts[relative(path, root)])
+        for path in sql_paths
+    }
     config_paths = walk(
         root,
         ("apps", "bench", "benchmarks", "tools", "deploy", "platform_model",
@@ -394,17 +614,33 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
     config_paths = sorted(set(config_paths))
     config_rel = {relative(p, root) for p in config_paths}
 
+    symbol_lookup_by_name: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    symbol_lookup_by_qname: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for rel in sorted(code_rel):
         record = module_records.get(rel)
         suffix = Path(rel).suffix.lower()
-        if suffix in {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}:
+        if suffix in {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".css", ".scss", ".html"}:
             record = ts_by_path.get(rel)
             if record is None:
                 record = {
-                    "path": rel, "parser": "typescript-ast", "parse_error": "file missing from parser output",
-                    "symbols": [], "imports": [], "routes": [],
+                    "path": rel, "parser": "typescript-compiler-ast", "parse_error": "file missing from parser output",
+                    "symbols": [], "imports": [], "routes": [], "calls": [], "references": [],
                 }
             module_records[rel] = record
+        elif suffix == ".proto":
+            record = proto_by_path.get(rel)
+            if record is None:
+                record = {
+                    "path": rel, "parser": "protobuf-descriptor-ast",
+                    "parse_error": "file missing from protobuf descriptor output",
+                    "symbols": [], "imports": [], "routes": [], "calls": [], "references": [],
+                }
+            module_records[rel] = record
+        elif suffix == ".sql":
+            module_records[rel] = sql_by_path.get(rel, {
+                "path": rel, "parser": "sqlglot-ast", "parse_error": "file missing from SQL AST output",
+                "symbols": [], "imports": [], "routes": [], "calls": [], "references": [],
+            })
         elif suffix == ".rs":
             record = rust_by_path.get(rel)
             if record is None:
@@ -413,28 +649,31 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                     "symbols": [], "imports": [], "routes": [],
                 }
             module_records[rel] = record
-        elif suffix in {".proto", ".sql", ".css", ".scss", ".html"}:
-            module_records[rel] = {
-                "path": rel, "parser": "domain-source-inventory", "parse_error": None,
-                "symbols": [], "imports": [], "routes": [],
-            }
         record = module_records[rel]
         module_id = "module:" + rel
         record.setdefault("imports", [])
         record.setdefault("symbols", [])
         record.setdefault("routes", [])
         record.setdefault("calls", [])
+        record.setdefault("references", [])
         for symbol in record["symbols"]:
             if not symbol.get("id"):
                 qualified_name = symbol.get("qualified_name") or symbol.get("name") or "<anonymous>"
                 symbol["id"] = "symbol:" + rel + "#" + qualified_name
-            nodes.append({
+            node = {
                 "id": symbol["id"], "kind": symbol.get("kind", "symbol"),
                 "path": rel, "name": symbol.get("qualified_name", symbol.get("name", "")),
                 "line": symbol.get("line"),
                 "docstring": symbol.get("docstring", ""),
                 "public": symbol.get("public"),
-            })
+            }
+            if symbol.get("signature"):
+                node["signature"] = symbol["signature"]
+            nodes.append(node)
+            if symbol.get("name"):
+                symbol_lookup_by_name[str(symbol["name"]).casefold()].append(symbol)
+            if symbol.get("qualified_name"):
+                symbol_lookup_by_qname[str(symbol["qualified_name"]).lstrip(".").casefold()].append(symbol)
             edges.append({"from": module_id, "to": symbol["id"], "kind": "defines",
                           "evidence": {"path": rel, "line": symbol.get("line")}})
         for imp in record["imports"]:
