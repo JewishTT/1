@@ -5,6 +5,8 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from graph.claim_projection import reconcile_claim_projection
+from graph.neo4j import Neo4jGraphStore
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -12,8 +14,6 @@ from db.relation_claim_store import SqlRelationClaimStore
 from db.schema import RelationClaim as RelationClaimRow
 from db.schema import RelationClaimProjectionOutbox
 from db.session import create_tables, make_session_factory
-from graph.claim_projection import reconcile_claim_projection
-from graph.neo4j import Neo4jGraphStore
 
 
 LEASE = timedelta(minutes=10)
