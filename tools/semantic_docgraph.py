@@ -18,9 +18,9 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-CODE_ROOTS = ("apps", "bench", "tools", "platform_model")
+CODE_ROOTS = ("apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs")
 DOC_ROOTS = ("docs", "specs", ".opencode", ".specify")
-SOURCE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".proto", ".sql"}
+SOURCE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rs", ".proto", ".sql", ".css", ".scss", ".html"}
 CONFIG_SUFFIXES = {".yaml", ".yml", ".json", ".toml", ".ini", ".conf"}
 EXCLUDED_DIRS = {
     ".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache",
@@ -50,6 +50,36 @@ def walk(root: Path, bases: tuple[str, ...], suffixes: set[str]) -> list[Path]:
                 if path.suffix.lower() in suffixes:
                     found.append(path)
     return sorted(set(found))
+
+
+def is_intentionally_excluded_tracked_path(path: str) -> bool:
+    parts = Path(path).parts
+    if any(part in EXCLUDED_DIRS for part in parts):
+        return True
+    root_name = parts[0] if parts else ""
+    return (
+        root_name.startswith(("pip-unpack-", "pip-metadata-", "pytest-of-tim"))
+        or bool(re.fullmatch(r"tmp[a-z0-9]{6,}", root_name))
+    )
+
+
+def tracked_source_candidates(root: Path) -> list[str] | None:
+    """Find tracked source-like files so a new source root cannot be silently skipped."""
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "-z"], cwd=root, capture_output=True, timeout=30, check=False
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode:
+        return None
+    candidates = []
+    for item in result.stdout.decode("utf-8", errors="replace").split("\0"):
+        if not item or Path(item).suffix.lower() not in SOURCE_SUFFIXES:
+            continue
+        if not is_intentionally_excluded_tracked_path(item):
+            candidates.append(item)
+    return sorted(set(candidates))
 
 
 def text_digest(text: str) -> str:
@@ -302,7 +332,7 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
     root = root.resolve()
     code_paths = walk(root, CODE_ROOTS, SOURCE_SUFFIXES)
     code_rel = {relative(p, root) for p in code_paths}
-    ts_paths = [p for p in code_paths if p.suffix.lower() in {".ts", ".tsx", ".js", ".jsx"}]
+    ts_paths = [p for p in code_paths if p.suffix.lower() in {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}]
     rust_paths = [p for p in code_paths if p.suffix.lower() == ".rs"]
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
@@ -365,7 +395,7 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                     "symbols": [], "imports": [], "routes": [],
                 }
             module_records[rel] = record
-        elif suffix in {".proto", ".sql"}:
+        elif suffix in {".proto", ".sql", ".css", ".scss", ".html"}:
             module_records[rel] = {
                 "path": rel, "parser": "domain-source-inventory", "parse_error": None,
                 "symbols": [], "imports": [], "routes": [],

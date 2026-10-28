@@ -20,7 +20,7 @@ const excluded = new Set([
   ".ruff_cache", "target", "dist", "build", "tmp", "logs", "donors",
   "pip-unpack", "pip-metadata"
 ]);
-const extensions = new Set([".ts", ".tsx", ".js", ".jsx"]);
+const extensions = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
 const files = [];
 function walk(directory) {
   if (!fs.existsSync(directory)) return;
@@ -41,7 +41,7 @@ for (const absolute of files.sort()) {
   const extension = path.extname(absolute).toLowerCase();
   const scriptKind = extension === ".tsx" ? ts.ScriptKind.TSX
     : extension === ".jsx" ? ts.ScriptKind.JSX
-    : extension === ".js" ? ts.ScriptKind.JS : ts.ScriptKind.TS;
+    : [".js", ".mjs", ".cjs"].includes(extension) ? ts.ScriptKind.JS : ts.ScriptKind.TS;
   const source = ts.createSourceFile(absolute, text, ts.ScriptTarget.Latest, true, scriptKind);
   const parseErrors = (source.parseDiagnostics || []).map((diagnostic) => {
     const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");

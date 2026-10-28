@@ -36,7 +36,7 @@ class PythonAstContractTests(unittest.TestCase):
         }])
         self.assertIn({"callee": "parse", "line": 9}, result["calls"])
 
-    def test_syntax_errors_are_reported_not_silently_discarded(self) -> None:
+    def test_utf8_bom_is_ignored_by_python_parser_but_not_hidden_from_source_hashes(self) -> None:\n        result = semantic_docgraph.scan_python_text("bom.py", "\\ufeffdef valid():\\n    return True\\n")\n        self.assertIsNone(result["parse_error"])\n        self.assertIn(("valid", "function"), {(item["qualified_name"], item["kind"]) for item in result["symbols"]})\n\n    def test_syntax_errors_are_reported_not_silently_discarded(self) -> None:
         result = semantic_docgraph.scan_python_text("broken.py", "def broken(:\n  pass\n")
         self.assertEqual(result["parser"], "python-ast")
         self.assertIsNotNone(result["parse_error"])
