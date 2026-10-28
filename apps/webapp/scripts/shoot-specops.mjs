@@ -26,10 +26,11 @@ const DEPARTMENT_PANELS = [
   ["Detection", "detection", "ci-detection"],
   ["Counterintel", "counterintel", "ci-counterintel"],
   ["Social reaction", "social", "ci-social"],
-  ["GhostLine", "ghostline", "gl-runtime"],
+  ["GhostLine", "ghostline", "ci-ghostline"],
 ];
 
 const GHOSTLINE_PANELS = [
+  ["Runtime", "runtime", "gl-runtime"],
   ["Playbooks", "playbooks", "gl-playbooks"],
   ["Simulator", "simulate", "gl-simulate"],
   ["Voices", "voices", "gl-voices"],
@@ -389,7 +390,7 @@ try {
   await page.getByTestId("ops-attention").waitFor({ timeout: 20000 });
   await page.getByTestId("ops-pools").waitFor({ timeout: 20000 });
   await page.getByTestId("topbar-investigation-name").waitFor({ timeout: 20000 });
-  await screenshot("00-department", { surface: "CI / SpecOps", fixtureMode: true });
+  await screenshot("ci-operations", { surface: "CI / SpecOps / Operations", fixtureMode: true });
 
   for (const [label, panel, name] of DEPARTMENT_PANELS) {
     if (panel === "operations") continue;
@@ -399,7 +400,6 @@ try {
 
   // The department's GhostLine tab mounts a second row of tabs of its own.
   await page.locator('[data-testid="gl-canvas"]').waitFor({ timeout: 20000 });
-  await screenshot("gl-runtime", { surface: "GhostLine / Runtime", fixtureMode: true });
   for (const [label, panel, name] of GHOSTLINE_PANELS) {
     await clickAndWait(".ui-gl-subhead", '[data-testid="gl-canvas"]', label, "data-panel", panel);
     await screenshot(name, { surface: "GhostLine / " + label, fixtureMode: true });
@@ -408,6 +408,7 @@ try {
   // Toggle through the application's command palette so the screenshot validates
   // the actual store-to-DOM path, not a manually edited attribute.
   await page.locator('.ui-gl-subhead [role="tab"]:has-text("Runtime")').first().click();
+  await page.waitForFunction(() => document.querySelector('[data-testid="gl-canvas"]')?.getAttribute("data-panel") === "runtime", null, { timeout: 10000 });
   await page.keyboard.press("Control+k");
   await page.getByTestId("command-palette-input").waitFor({ timeout: 10000 });
   await page.getByTestId("command-palette-input").fill("Toggle theme");
