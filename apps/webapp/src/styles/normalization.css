@@ -1179,6 +1179,20 @@ body:has(.ui-root) {
  * manually its panel overlays the canvas and is capped to the available width.
  */
 @media (max-width: 767px) {
+  .ui-palette-root {
+    padding: 8vh var(--ui-space-3, 12px) 0;
+  }
+
+  .ui-palette-root .ui-palette {
+    width: 100%;
+    max-height: 84dvh;
+  }
+
+  .ui-palette-root .ui-palette-list {
+    max-height: 58dvh;
+    overflow-y: auto;
+  }
+
   .ui-root .ui-shell-body {
     position: relative;
     min-width: 0;
