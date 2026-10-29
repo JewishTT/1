@@ -33,7 +33,6 @@ EXCLUDED_DIRS = {
 EVENT_NAME = re.compile(r"^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+$")
 PATH_REF = re.compile(r"\b(?:apps|bench|tools|platform_model|specs|docs)/[A-Za-z0-9_./-]+")
 MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
-SPEC_REF = re.compile(r"\b(?:spec|feature)[ /]0*(\d{1,3})\b", re.I)
 ADR_REF = re.compile(r"\bADR-(\d{4})\b")
 
 
@@ -923,25 +922,9 @@ def build_graph(root: Path = ROOT) -> dict[str, Any]:
                 edges.append({"from": "module:" + rel, "to": event_id, "kind": "mentions-event",
                               "evidence": {"path": rel}})
 
-    # Numbered feature/spec references are evidence links, not proof that an
-    # acceptance criterion is implemented. Keep this distinction explicit.
-    spec_dirs: dict[str, str] = {}
-    for rel in doc_rel:
-        if not rel.startswith("specs/"):
-            continue
-        parts = rel.split("/")
-        if len(parts) >= 2:
-            spec_dirs[parts[1]] = "doc:" + rel if parts[-1] == "spec.md" else spec_dirs.get(parts[1], "")
-    for rel, content in {**texts, **doc_texts}.items():
-        source_id = ("doc:" if rel in doc_rel else "module:") + rel
-        for match in SPEC_REF.finditer(content):
-            number = match.group(1).zfill(3)
-            target_dir = next((name for name in spec_dirs if name.startswith(number + "-")), None)
-            if target_dir and spec_dirs.get(target_dir):
-                edges.append({
-                    "from": source_id, "to": spec_dirs[target_dir], "kind": "mentions-spec",
-                    "evidence": {"path": rel, "line": content[:match.start()].count("\n") + 1},
-                })
+    # Do not infer normative traceability from numeric mentions such as "spec 025".
+    # Accepted decisions are linked through stable ADR identifiers above; requirement
+    # coverage needs explicit acceptance-to-test evidence, not substring matches.
 
     nodes.sort(key=lambda n: n["id"])
     unique_edges: dict[tuple[str, str, str, str], dict[str, Any]] = {}

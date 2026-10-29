@@ -77,9 +77,9 @@ These counts are static, and an orphan may be a plugin-loaded component or inten
 
 ### P2 — Documentation coverage is structural, not semantic
 
-The existing model's Python module scanner uses the Python AST, but TypeScript/React exports and Rust items are mostly discovered with regular expressions. Route inventory is regex-based; test mapping relies largely on import statements; the spec traceability layer often recognises numbers cited in module docstrings. These are useful discovery heuristics, not proof that a requirement is implemented or tested.
+The legacy inventory remains broad but its route/test/capability associations are heuristic. The semantic graph now parses Python, TypeScript/JavaScript, Rust, SQL, protobuf, CSS/SCSS and HTML with language parsers; this still does not prove runtime wiring. Bare numeric references to specifications are not accepted as traceability evidence. Normative specs do not hyperlink into rendered `docs/` views.
 
-**Action:** retain the fast generated model, add compiler/parser-backed source records, stable symbol IDs, source-evidenced import/call/doc/spec/event edges, broken-link checks and per-acceptance test links. Expose compact context packets for AI agents and keep static evidence separate from test/runtime evidence.
+**Action:** retain the fast generated model and parser-backed source records; keep import/call/event/ADR edges source-evidenced; verify local Markdown links; and add explicit requirement-to-test evidence records before claiming per-acceptance coverage. Expose compact context packets for AI agents and keep static evidence separate from test/runtime evidence.
 
 ### P2 — UI structure and operator workflow
 

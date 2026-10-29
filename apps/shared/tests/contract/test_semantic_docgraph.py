@@ -36,7 +36,7 @@ class PythonAstContractTests(unittest.TestCase):
         }])
         self.assertIn({"callee": "parse", "line": 9}, result["calls"])
 
-    def test_utf8_bom_is_ignored_by_python_parser_but_not_hidden_from_source_hashes(self) -> None:
+    def test_utf8_bom_is_accepted_by_python_ast_parser(self) -> None:
         result = semantic_docgraph.scan_python_text("bom.py", "\ufeffdef valid():\n    return True\n")
         self.assertIsNone(result["parse_error"])
         self.assertIn(("valid", "function"), {(item["qualified_name"], item["kind"]) for item in result["symbols"]})
@@ -44,7 +44,7 @@ class PythonAstContractTests(unittest.TestCase):
     def test_sqlglot_builds_statement_table_column_and_reference_nodes(self) -> None:
         result = semantic_docgraph.scan_sql_text(
             "schema.sql",
-            "CREATE TABLE observations (observation_id TEXT PRIMARY KEY, captured_at TIMESTAMPTZ);\\n"
+            "CREATE TABLE observations (observation_id TEXT PRIMARY KEY, captured_at TIMESTAMPTZ);\n"
             "SELECT observation_id FROM observations;",
         )
         self.assertEqual(result["parser"], "sqlglot-ast")
@@ -63,7 +63,7 @@ class PythonAstContractTests(unittest.TestCase):
             root = Path(directory)
             proto = root / "event.proto"
             proto.write_text(
-                'syntax = "proto3";\\npackage demo.v1;\\nmessage Entity { string id = 1; }\\n',
+                'syntax = "proto3";\npackage demo.v1;\nmessage Entity { string id = 1; }\n',
                 encoding="utf-8",
             )
             result = semantic_docgraph.scan_proto_files(root, [proto])["event.proto"]

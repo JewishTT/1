@@ -36,19 +36,19 @@ Run from the repository root:
 
 ```bash
 # Build a local graph and a compact module-level context packet.
-python tools/semantic_docgraph.py --output artifacts/semantic-docgraph.json
-python tools/semantic_docgraph.py --context apps/control-plane/context_engine/engine.py
+uv run python tools/semantic_docgraph.py --output artifacts/semantic-docgraph.json
+uv run python tools/semantic_docgraph.py --context apps/control-plane/context_engine/engine.py
 
 # Strict inventory/syntax check (requires Node dependencies and the Rust toolchain).
-python tools/semantic_docgraph.py --check --output artifacts/semantic-docgraph.json
+uv run python tools/semantic_docgraph.py --check --output artifacts/semantic-docgraph.json
 
 # Python AST unit tests without booting the service stack.
-python -m unittest apps/shared/tests/contract/test_semantic_docgraph.py
+uv run python -m unittest apps/shared/tests/contract/test_semantic_docgraph.py
 ```
 
-The graph records Python/TypeScript/JavaScript/Rust AST symbols, imports and locally resolvable calls, candidate HTTP route declarations, catalogued event types, docs/spec links, configuration files and root-level source files. CSS/SCSS/HTML and protocol/SQL files receive source inventory nodes, while parser-backed languages expose AST symbols. JavaScript module files (`.mjs`/`.cjs`) are included in the TypeScript compiler parser sweep. Node IDs are stable paths/symbol names; file content hashes make staleness inspectable. Relationships carry source paths and line numbers whenever the parser exposes them.
+The graph records Python/TypeScript/JavaScript/Rust/SQL/protobuf/CSS/HTML AST symbols, imports and locally resolvable calls, candidate HTTP route declarations, catalogued event types, local documentation links, stable ADR-ID references, configuration files and root-level source files. It does not infer acceptance coverage from a bare spec number; that relationship must be explicit and evidence-backed. JavaScript module files (`.mjs`/`.cjs`) are included in the TypeScript compiler parser sweep. Node IDs are stable paths/symbol names; file content hashes make staleness inspectable. Relationships carry source paths and line numbers whenever the parser exposes them.
 
-The TypeScript compiler API is used for TS/TSX/JS/JSX syntax trees. Rust syntax is parsed with `syn`. Python uses the standard-library `ast` module. Parser failures are explicit findings rather than silently degraded regex output. Raw imports are recorded for all three languages; first-party module-edge resolution currently covers Python imports and relative TypeScript/JavaScript imports. Cargo crate/module alias resolution remains a visible follow-up rather than a guessed edge. The strict check inventories tracked source-like files under `apps/`, `bench/`, `benchmarks/`, `tools/`, `platform_model/`, `implementation/` and executable/schema examples under `specs/`, plus tracked source files at the repository root. It also inventories first-party configuration in application, deployment, contract, specification, agent and GitHub workflow directories. Vendored donors, generated build trees, caches, installed dependencies and known temporary root directories are explicitly excluded. `--check` compares the source inventory with `git ls-files` and fails if a tracked source candidate appears outside the declared scan roots. The coverage percentage applies to that declared scope, not to every file in the repository.
+The TypeScript compiler API parses TS/TSX/JS/JSX; PostCSS parses CSS/SCSS; parse5 parses HTML; SQLGlot parses SQL; and `grpc_tools.protoc` produces protobuf descriptors. Rust syntax is parsed with `syn`. Python uses the standard-library `ast` module. Parser failures are explicit findings rather than silently degraded regex output. Raw imports are recorded for all three languages; first-party module-edge resolution currently covers Python imports and relative TypeScript/JavaScript imports. Cargo crate/module alias resolution remains a visible follow-up rather than a guessed edge. The strict check inventories tracked source-like files under `apps/`, `bench/`, `benchmarks/`, `tools/`, `platform_model/`, `implementation/` and executable/schema examples under `specs/`, plus tracked source files at the repository root. It also inventories first-party configuration in application, deployment, contract, specification, agent and GitHub workflow directories. Vendored donors, generated build trees, caches, installed dependencies and known temporary root directories are explicitly excluded. `--check` compares the source inventory with `git ls-files` and fails if a tracked source candidate appears outside the declared scan roots. The coverage percentage applies to that declared scope, not to every file in the repository.
 
 ## Evidence labels
 
@@ -65,7 +65,7 @@ A test import is not a behavioural assertion. An event name in a catalog is not 
 ## Agent workflow
 
 1. Start at this file and `AGENTS.md`. Read only the domain spec, relevant ADRs and generated model pages required for the current task.
-2. Use `python tools/semantic_docgraph.py --context <path>` to gather a compact symbol/relationship packet for the likely implementation.
+2. Use `uv run python tools/semantic_docgraph.py --context <path>` to gather a compact symbol/relationship packet for the likely implementation.
 3. Follow relevant links in `docs/platform/golden-path.md`, `gaps.md`, `reachability.md`, `maturity.md`, and the owning domain's spec.
 4. Turn each requirement into an acceptance criterion and point it at an executable test. Do not infer completion from symbol counts.
 5. Change implementation, tests and any source-of-truth specification/ADR together. Regenerate the legacy model when its scan roots changed.
@@ -80,6 +80,8 @@ For focused investigations, ask the graph for one component at a time; do not in
 - No source syntax/parser failures are silently dropped.
 - Internal documentation links resolve or are listed as broken links.
 - Semantic relationships carry source evidence; inferred relationships are labelled as inferred.
+- Normative specs must not Markdown-link into `docs/` projections. Cross-cutting decisions are referenced by stable ADR IDs and resolved in the generated graph.
+- Bare numeric mentions such as “spec 025” do not create traceability edges. Source inventory/AST coverage is not acceptance-criteria coverage; requirement-to-test relationships require explicit evidence records.
 - Specs, tests, and code have explicit coverage relationships where a claim is made. No blanket "100% behavioural coverage" claim is made from file inventory.
 - Normative spec files do not Markdown-link into `docs/` projections. They cite stable decision IDs and link to local feature decision records; the semantic graph resolves stable identifiers into traceability edges.
 - `docs/platform/` continues to pass the existing `platform_model.build --check` / contract suite.

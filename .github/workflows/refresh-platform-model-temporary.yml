@@ -1,0 +1,61 @@
+name: Temporary source-derived artifact refresh
+
+on:
+  push:
+    branches:
+      - codex/dynamic-docs-asg-architecture-ui
+    paths-ignore:
+      - "docs/platform/**"
+      - "README.md"
+      - "docs/README.md"
+      - "docs/CONTRIBUTING.md"
+      - "docs/architecture/overview.md"
+      - "donors/registry.yaml"
+      - ".github/workflows/refresh-platform-model-temporary.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-source-derived-artifact-refresh
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync locked workspace
+        run: uv sync --locked --all-packages --all-groups
+
+      - name: Regenerate the donor dependency registry
+        run: uv run python tools/specs/build_donor_registry.py
+
+      - name: Regenerate the platform model using the canonical import environment
+        run: uv run python -c 'import conftest; from platform_model.build import main; raise SystemExit(main([]))'
+
+      - name: Verify generated artifacts
+        run: |
+          uv run python tools/specs/build_donor_registry.py --check
+          uv run python -c 'import conftest; from platform_model.build import main; raise SystemExit(main(["--check"]))'
+          uv run python -m pytest apps/shared/tests/contract/test_platform_model.py apps/shared/tests/contract/test_platform_gaps.py apps/shared/tests/contract/test_donor_registry.py -q
+
+      - name: Commit generated artifacts to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/platform/ README.md docs/README.md docs/CONTRIBUTING.md docs/architecture/overview.md donors/registry.yaml
+          if git diff --cached --quiet; then
+            echo "Generated artifacts already match source."
+            exit 0
+          fi
+          git commit -m "docs: refresh generated platform model and dependency registry"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

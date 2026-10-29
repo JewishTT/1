@@ -24,6 +24,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -36,11 +40,14 @@ jobs:
         working-directory: apps/webapp
         run: npm ci
 
+      - name: Install locked workspace dependencies for SQL and protobuf parsers
+        run: uv sync --locked --all-packages --all-groups
+
       - name: Test Python AST contracts
-        run: python -m unittest apps/shared/tests/contract/test_semantic_docgraph.py
+        run: uv run python -m unittest apps/shared/tests/contract/test_semantic_docgraph.py
 
       - name: Build and validate the source-derived semantic graph
-        run: python tools/semantic_docgraph.py --check --output artifacts/semantic-docgraph.json
+        run: uv run python tools/semantic_docgraph.py --check --output artifacts/semantic-docgraph.json
 
       - name: Upload semantic graph and coverage report
         if: always()
