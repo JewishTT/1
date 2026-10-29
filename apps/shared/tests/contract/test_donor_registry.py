@@ -327,7 +327,7 @@ class TestTheRegistryParses:
             assert carried["version"] == "0123456789ab"
             assert carried["license"] is None
             assert carried["status"] == "unverified"
-            assert "not materialized" in carried["verification_note"]
+            assert "did not materialize" in carried["verification_note"]
             assert "without re-inspecting source or licence" in carried["verification_note"]
 
             # A materialized checkout must be re-generated from its current filesystem state,
