@@ -27,7 +27,7 @@ services:
     container_name: specops-caldera
     networks: [specops-lab]
     ports:
-      - "8888:8888"   # loopback-only in practice; bind 127.0.0.1 in hardened deploy
+      - "127.0.0.1:8888:8888" # host-published lab API must remain loopback-only
     environment:
       - CALDERA_APP__CONTACT_GITHUB=false
     # No egress to the platform's acquisition fabric; lab-only.
@@ -39,7 +39,7 @@ services:
     container_name: specops-phishslayer
     networks: [specops-lab]
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080" # host-published lab API must remain loopback-only
     environment:
       - CAPTURE_PASSWORDS=false   # hard invariant (FR-006); never stored
 

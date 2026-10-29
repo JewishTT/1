@@ -1,6 +1,6 @@
 # Tests
 
-340 test files, 5272 test functions. 267 platform modules are not targeted by any test.
+342 test files, 5285 test functions. 267 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -258,7 +258,7 @@
 | `apps/shared/tests/contract/__init__.py` | 0 | — |
 | `apps/shared/tests/contract/test_correlation.py` | 4 | `apps/shared/domain/__init__.py` |
 | `apps/shared/tests/contract/test_domain_invariants.py` | 12 | `apps/shared/domain/__init__.py` |
-| `apps/shared/tests/contract/test_donor_registry.py` | 27 | — |
+| `apps/shared/tests/contract/test_donor_registry.py` | 28 | — |
 | `apps/shared/tests/contract/test_entity_fabric.py` | 46 | `apps/shared/domain/dynamics.py`, `apps/shared/domain/fabric.py`, `apps/shared/domain/hypergraph.py` |
 | `apps/shared/tests/contract/test_error_codes.py` | 54 | `apps/shared/contracts/canonical.py`, `apps/shared/contracts/error_codes.py` |
 | `apps/shared/tests/contract/test_event_envelope.py` | 11 | `apps/shared/events/event_envelope_pb2.py`, `apps/shared/events/kafka.py` |
@@ -268,10 +268,12 @@
 | `apps/shared/tests/contract/test_ontology.py` | 4 | `apps/shared/events/ontology_pack.py` |
 | `apps/shared/tests/contract/test_operator_result.py` | 51 | `apps/shared/contracts/canonical.py`, `apps/shared/contracts/error_codes.py`, `apps/shared/contracts/evidence_span.py`, `apps/shared/contracts/operator_result.py` |
 | `apps/shared/tests/contract/test_platform_gaps.py` | 3 | `platform_model/__init__.py` |
-| `apps/shared/tests/contract/test_platform_model.py` | 16 | `platform_model/__init__.py` |
+| `apps/shared/tests/contract/test_platform_model.py` | 19 | `platform_model/__init__.py`, `platform_model/events.py` |
 | `apps/shared/tests/contract/test_projection_manifest.py` | 24 | `apps/shared/contracts/projection_manifest.py` |
 | `apps/shared/tests/contract/test_review.py` | 4 | `apps/shared/domain/__init__.py` |
+| `apps/shared/tests/contract/test_semantic_docgraph.py` | 8 | — |
 | `apps/shared/tests/contract/test_single_publication_path.py` | 9 | — |
+| `apps/shared/tests/contract/test_specops_lab_boundary.py` | 1 | — |
 | `apps/shared/tests/contract/test_stage_outcome.py` | 52 | `apps/shared/contracts/error_codes.py`, `apps/shared/contracts/stage_outcome.py` |
 | `apps/shared/tests/contract/test_statement.py` | 3 | `apps/shared/domain/__init__.py` |
 | `apps/shared/tests/contract/test_storage.py` | 7 | `apps/shared/storage/memory.py`, `apps/shared/storage/s3.py` |

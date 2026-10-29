@@ -1,0 +1,138 @@
+"""Contract tests for the standalone semantic documentation graph."""
+
+from __future__ import annotations
+
+import importlib.util
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[4]
+MODULE_PATH = ROOT / "tools" / "semantic_docgraph.py"
+spec = importlib.util.spec_from_file_location("semantic_docgraph", MODULE_PATH)
+if spec is None or spec.loader is None:
+    raise RuntimeError(f"Cannot load semantic documentation graph: {MODULE_PATH}")
+semantic_docgraph = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = semantic_docgraph
+spec.loader.exec_module(semantic_docgraph)
+
+
+class PythonAstContractTests(unittest.TestCase):
+    def test_records_public_symbols_arguments_and_decorated_routes(self) -> None:
+        source = '''"""Module contract."""\n\nfrom typing import Any\n\nclass Engine:\n    """An engine."""\n\n    def run(self, value: str, retry: int = 2) -> Any:\n        return parse(value)\n\ndef parse(value: str) -> str:\n    return value.strip()\n\n@router.post("/v1/items")\ndef create_item(payload: dict) -> dict:\n    return payload\n'''
+        result = semantic_docgraph.scan_python_text("apps/example.py", source)
+        self.assertEqual(result["parser"], "python-ast")
+        self.assertIsNone(result["parse_error"])
+        symbols = {(item["qualified_name"], item["kind"]) for item in result["symbols"]}
+        self.assertIn(("Engine", "class"), symbols)
+        self.assertIn(("Engine.run", "function"), symbols)
+        self.assertIn(("parse", "function"), symbols)
+        engine_method = next(item for item in result["symbols"] if item["qualified_name"] == "Engine.run")
+        self.assertIn("value: str", engine_method["arguments"])
+        self.assertEqual(result["routes"], [{
+            "method": "POST", "path": "/v1/items", "line": 14,
+            "decorator": "router.post"
+        }])
+        self.assertIn({"callee": "parse", "line": 9}, result["calls"])
+
+    def test_utf8_bom_is_accepted_by_python_ast_parser(self) -> None:
+        result = semantic_docgraph.scan_python_text("bom.py", "\ufeffdef valid():\n    return True\n")
+        self.assertIsNone(result["parse_error"])
+        self.assertIn(("valid", "function"), {(item["qualified_name"], item["kind"]) for item in result["symbols"]})
+
+    def test_sqlglot_builds_statement_table_column_and_reference_nodes(self) -> None:
+        result = semantic_docgraph.scan_sql_text(
+            "schema.sql",
+            "CREATE TABLE observations (observation_id TEXT PRIMARY KEY, captured_at TIMESTAMPTZ);\n"
+            "SELECT observation_id FROM observations;",
+        )
+        self.assertEqual(result["parser"], "sqlglot-ast")
+        self.assertIsNone(result["parse_error"])
+        kinds = {item["kind"] for item in result["symbols"]}
+        self.assertIn("sql-statement", kinds)
+        self.assertIn("sql-table", kinds)
+        self.assertIn("sql-column", kinds)
+        self.assertTrue(any(
+            item["target"] == "observations" and item["kind"] == "references-sql-table"
+            for item in result["references"]
+        ))
+
+    def test_protobuf_compiler_emits_message_and_field_symbols(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            proto = root / "event.proto"
+            proto.write_text(
+                'syntax = "proto3";\npackage demo.v1;\nmessage Entity { string id = 1; }\n',
+                encoding="utf-8",
+            )
+            result = semantic_docgraph.scan_proto_files(root, [proto])["event.proto"]
+            self.assertEqual(result["parser"], "protobuf-descriptor-ast")
+            self.assertIsNone(result["parse_error"])
+            qualified = {item["qualified_name"] for item in result["symbols"]}
+            self.assertIn("demo.v1.Entity", qualified)
+            self.assertIn("demo.v1.Entity.id", qualified)
+
+    def test_syntax_errors_are_reported_not_silently_discarded(self) -> None:
+        result = semantic_docgraph.scan_python_text("broken.py", "def broken(:\n  pass\n")
+        self.assertEqual(result["parser"], "python-ast")
+        self.assertIsNotNone(result["parse_error"])
+        self.assertEqual(result["symbols"], [])
+
+    def test_doc_link_resolver_resolves_relative_and_root_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "docs" / "architecture").mkdir(parents=True)
+            (root / "docs" / "adr").mkdir(parents=True)
+            (root / "docs" / "adr" / "0001-decision.md").write_text("# ADR\n", encoding="utf-8")
+            (root / "apps").mkdir()
+            (root / "apps" / "engine.py").write_text("pass\n", encoding="utf-8")
+            relative = semantic_docgraph.resolve_doc_target(
+                root, "docs/architecture/overview.md", "../adr/0001-decision.md#status",
+                {"docs/adr/0001-decision.md"},
+            )
+            absolute = semantic_docgraph.resolve_doc_target(
+                root, "docs/architecture/overview.md", "apps/engine.py", {"apps/engine.py"},
+            )
+            self.assertEqual(relative, "docs/adr/0001-decision.md")
+            self.assertEqual(absolute, "apps/engine.py")
+            (root / "docs" / "adr" / "nested").mkdir(parents=True)
+            directory = semantic_docgraph.resolve_doc_target(
+                root, "docs/architecture/overview.md", "../adr/nested/",
+                {"docs/adr/nested"},
+            )
+            self.assertEqual(directory, "docs/adr/nested")
+
+    def test_spec_to_docs_links_are_a_policy_violation_but_decision_ids_are_not(self) -> None:
+        # The graph resolves source references separately from Markdown links. A normative
+        # spec may name ADR-0028, but must not hyperlink into its rendered docs projection.
+        graph = semantic_docgraph.build_graph(ROOT)
+        self.assertEqual(graph["coverage"]["spec_doc_markdown_links"], 0)
+        self.assertEqual(graph["spec_doc_link_violations"], [])
+        self.assertEqual(graph["coverage"]["ast_parsed_files"], graph["coverage"]["code_files"])
+        self.assertEqual(graph["coverage"]["ast_coverage_percent"], 100.0)
+        self.assertEqual(graph["coverage"]["ast_unparsed_files"], [])
+        parsers = {record.get("parser") for record in graph["module_records"].values()}
+        self.assertTrue({"python-ast", "typescript-compiler-ast", "rust-syn-ast"} <= parsers)
+        self.assertIn("postcss-ast", parsers)
+        self.assertIn("parse5-ast", parsers)
+        self.assertIn("protobuf-descriptor-ast", parsers)
+        decision_edges = [edge for edge in graph["edges"] if edge["kind"] == "references-decision-id"]
+        self.assertTrue(any(edge.get("evidence", {}).get("identifier") == "ADR-0028" for edge in decision_edges))
+
+    def test_source_import_resolution_uses_repository_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "apps" / "shared" / "contracts").mkdir(parents=True)
+            (root / "apps" / "shared" / "contracts" / "thing.py").write_text("class Thing: pass\n", encoding="utf-8")
+            (root / "apps" / "acquisition").mkdir(parents=True)
+            source_path = root / "apps" / "acquisition" / "worker.py"
+            source_path.write_text("from contracts.thing import Thing\n", encoding="utf-8")
+            resolved = semantic_docgraph.source_module_target(
+                root, "apps/acquisition/worker.py", "contracts.thing", 0,
+            )
+            self.assertEqual(resolved, "apps/shared/contracts/thing.py")
+
+
+if __name__ == "__main__":
+    unittest.main()

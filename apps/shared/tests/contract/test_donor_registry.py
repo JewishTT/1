@@ -22,8 +22,10 @@ that distinction is the whole risk.
 from __future__ import annotations
 
 import importlib.metadata
+import importlib.util
 import re
 import sys
+import tempfile
 import tomllib
 from collections.abc import Iterable
 from pathlib import Path
@@ -71,6 +73,14 @@ def repo_root() -> Path:
 
 ROOT = repo_root()
 REGISTRY_PATH = ROOT / "donors" / "registry.yaml"
+
+_GENERATOR_PATH = ROOT / "tools" / "specs" / "build_donor_registry.py"
+_GENERATOR_SPEC = importlib.util.spec_from_file_location("build_donor_registry_contract", _GENERATOR_PATH)
+if _GENERATOR_SPEC is None or _GENERATOR_SPEC.loader is None:
+    raise RuntimeError(f"cannot load donor registry generator: {_GENERATOR_PATH}")
+_GENERATOR = importlib.util.module_from_spec(_GENERATOR_SPEC)
+sys.modules[_GENERATOR_SPEC.name] = _GENERATOR
+_GENERATOR_SPEC.loader.exec_module(_GENERATOR)
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +303,53 @@ def _describe(missing: dict[str, list[str]]) -> str:
 
 
 class TestTheRegistryParses:
+    def test_generator_preserves_unmaterialized_donor_inventory_without_claiming_reinspection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "donors").mkdir()
+            absent = {
+                "id": "OldDonor",
+                "path": "donors/OldDonor",
+                "upstream": "https://example.invalid/OldDonor",
+                "version": "0123456789ab",
+                "license": None,
+                "license_source": None,
+                "status": "unverified",
+                "verification_note": "previous evidence: no licence established",
+                "role": "vendored donor checkout",
+                "vendored": True,
+            }
+            entries = {}
+            _GENERATOR.preserve_unmaterialized_donor_entries(
+                entries, {"donors": [absent]}, root
+            )
+            carried = entries["olddonor"]
+            assert carried["version"] == "0123456789ab"
+            assert carried["license"] is None
+            assert carried["status"] == "unverified"
+            assert "did not materialize" in carried["verification_note"]
+            assert "without re-inspecting source or licence" in carried["verification_note"]
+
+            # A materialized checkout must be re-generated from its current filesystem state,
+            # not copied from historical evidence.
+            materialized = root / "donors" / "CurrentDonor"
+            materialized.mkdir()
+            (materialized / "README.md").write_text("current source", encoding="utf-8")
+            fresh = {
+                "id": "CurrentDonor",
+                "path": "donors/CurrentDonor",
+                "upstream": "https://example.invalid/CurrentDonor",
+                "version": None, "license": None, "license_source": None,
+                "status": "unverified", "verification_note": "freshly scanned",
+                "role": "vendored donor checkout", "vendored": True,
+            }
+            entries = {"currentdonor": fresh}
+            _GENERATOR.preserve_unmaterialized_donor_entries(
+                entries, {"donors": [fresh]}, root
+            )
+            assert entries["currentdonor"]["verification_note"] == "freshly scanned"
+
+
     def test_registry_is_machine_readable_and_versioned(self):
         registry = load_registry()
         assert isinstance(registry.get("schema_version"), int), (

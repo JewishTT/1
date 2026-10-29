@@ -29,13 +29,13 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| `shared` | 196 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| `shared` | 198 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
-| `tools` | 10 | 0 | 0 | Generators, capability/owner/donor tools, probes. |
-| `webapp` | 0 | 255 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| `tools` | 11 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
+| `webapp` | 0 | 266 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
-1007 Python modules, 255 TypeScript modules, 15 Rust source files in 9 crates.
+1010 Python modules, 266 TypeScript modules, 16 Rust source files in 9 crates.
 
 ## Key properties (Constitution invariants)
 

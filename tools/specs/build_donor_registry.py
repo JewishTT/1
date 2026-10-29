@@ -387,6 +387,47 @@ def _dependency_entry(name: str, sources: list[str], requirements: list[str]) ->
     }
 
 
+
+def preserve_unmaterialized_donor_entries(
+    entries: dict[str, dict[str, object]],
+    previous_registry: dict[str, object],
+    root: Path = ROOT,
+) -> None:
+    """Retain prior donor records when their submodule source is not present locally.
+
+    CI checkouts often omit donor source trees. Rebuilding the registry from only the mounted
+    directories must not silently delete the repository's previously pinned donor inventory or
+    its accumulated license-evidence notes. Materialized checkouts are always regenerated above;
+    only absent/empty paths can be carried forward, with an explicit limitation note.
+    """
+    donors = root / "donors"
+    for old in previous_registry.get("donors", []):
+        if not isinstance(old, dict) or not old.get("vendored"):
+            continue
+        path_value = str(old.get("path") or "")
+        if not path_value.startswith("donors/"):
+            continue
+        key = canonical(str(old.get("id") or Path(path_value).name))
+        if not key or key in entries:
+            continue
+        checkout = root / path_value
+        try:
+            materialized = checkout.is_dir() and any(checkout.iterdir())
+        except OSError:
+            materialized = False
+        if materialized:
+            continue
+
+        retained = dict(old)
+        prior_note = str(retained.get("verification_note") or "").strip()
+        limitation = (
+            "Current generation did not materialize this donor checkout, so the previous pinned "
+            "inventory and evidence note were retained without re-inspecting source or licence."
+        )
+        if limitation not in prior_note:
+            retained["verification_note"] = (prior_note + " " + limitation).strip()
+        entries[key] = retained
+
 def build() -> dict[str, object]:
     entries: dict[str, dict[str, object]] = {}
 
@@ -438,6 +479,17 @@ def build() -> dict[str, object]:
             "role": removed["role"],
             "vendored": False,
         }
+
+    # Preserve donor inventory entries from the previous generated registry when a
+    # checkout is missing/empty in this environment (e.g. an uninitialized CI submodule).
+    # A fully materialized checkout always wins and is re-inspected above.
+    if OUTPUT.is_file():
+        try:
+            previous = yaml.safe_load(OUTPUT.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            previous = {}
+        if isinstance(previous, dict):
+            preserve_unmaterialized_donor_entries(entries, previous, ROOT)
 
     donors = [entries[key] for key in sorted(entries)]
 

@@ -41,36 +41,41 @@ function renderAt(path: string, withShell = false) {
   );
 }
 
+function navigationDestinations() {
+  const trigger = screen.getByTestId("nav-deck-trigger");
+  if (trigger.getAttribute("aria-expanded") !== "true") fireEvent.click(trigger);
+  return screen.getByTestId("nav-deck-destinations");
+}
+
 describe("topnav", () => {
-  it("renders the module tabs and the section navigation", () => {
+  it("keeps the shell navigation compact until the operator opens the deck", () => {
     renderAt("/intel");
     expect(screen.getByTestId("topnav")).toBeInTheDocument();
-    expect(screen.getByTestId("topnav-modules")).toBeInTheDocument();
-    expect(screen.getByTestId("topnav-sections")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-deck-trigger")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
   });
 
-  it("separates module scope, active location and destination links into two rows", () => {
+  it("groups domains and destinations in the navigation deck", () => {
     renderAt("/investigations");
-    const topnav = screen.getByTestId("topnav");
-    expect(topnav.querySelector(".ui-topnav-primary")).toContainElement(screen.getByTestId("topnav-modules"));
-    expect(topnav.querySelector(".ui-topnav-primary")).toContainElement(topnav.querySelector(".ui-topnav-trail"));
-    expect(topnav.querySelector(".ui-topnav-sections")).not.toBeNull();
-    expect(topnav.querySelector(".ui-topnav-primary")?.compareDocumentPosition(
-      topnav.querySelector(".ui-topnav-sections")!,
-    )).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(screen.getByTestId("topnav-sections")).toHaveAttribute("aria-label", "Section navigation");
+    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
+    expect(screen.getByRole("dialog", { name: "Navigation deck" })).toBeInTheDocument();
+    expect(screen.getByTestId("nav-module-osint")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-module-economic")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-module-specops")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-deck-destinations")).toHaveTextContent("Investigations");
+    expect(screen.getByTestId("nav-deck-destinations")).toHaveTextContent("Science Console");
   });
 
   it("shows the OSINT destinations by default", () => {
     renderAt("/investigations");
-    const nav = screen.getByTestId("topnav-sections");
+    const nav = navigationDestinations();
     expect(nav).not.toHaveTextContent("Connectors");
     expect(nav).toHaveTextContent("Science Console");
   });
 
   it("keeps the tenant-wide graph out of the SpecOps section", () => {
     renderAt("/specops");
-    expect(screen.getByTestId("topnav-sections")).not.toHaveTextContent("Tenant Graph");
+    expect(navigationDestinations()).not.toHaveTextContent("Tenant Graph");
   });
 
   it("opens investigations on the graph, with scope as a filter not a destination", () => {
@@ -79,7 +84,7 @@ describe("topnav", () => {
     // switch on the page does that job, and a second tab made the analyst remember which
     // of the two they had meant.
     renderAt("/investigations");
-    const nav = screen.getByTestId("topnav-sections");
+    const nav = navigationDestinations();
     expect(nav).toHaveTextContent("Investigations");
     expect(nav).not.toHaveTextContent("Tenant Graph");
     expect(nav).not.toHaveTextContent("Investigation Graph");
@@ -90,23 +95,24 @@ describe("topnav", () => {
     // already owns. Asserting its absence matters: a test that only checked the new labels
     // would still pass if someone re-added the tab later.
     renderAt("/investigations");
-    expect(screen.getByTestId("topnav-sections")).not.toHaveTextContent("Intel Board");
+    expect(navigationDestinations()).not.toHaveTextContent("Intel Board");
   });
 
   it("switches section sets with the module", () => {
     renderAt("/specops");
-    expect(screen.getByTestId("topnav-sections")).toHaveTextContent("Pipeline Operations");
-    expect(screen.getByTestId("topnav-sections")).not.toHaveTextContent("Investigations");
+    expect(navigationDestinations()).toHaveTextContent("Pipeline Operations");
+    expect(navigationDestinations()).not.toHaveTextContent("Investigations");
   });
 
   it("marks the active module tab", () => {
     renderAt("/economic");
-    const tab = document.querySelector('.ui-nav-module[data-module="economic"]');
-    expect(tab).toHaveAttribute("data-active", "true");
+    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
+    expect(screen.getByTestId("nav-module-economic")).toHaveAttribute("data-active", "true");
   });
 
   it("marks the active destination and exposes aria-current", () => {
     renderAt("/specops/connectors");
+    navigationDestinations();
     const link = screen.getByRole("link", { name: /Connectors/i });
     expect(link).toHaveAttribute("data-active", "true");
     expect(link).toHaveAttribute("aria-current", "page");
@@ -114,8 +120,26 @@ describe("topnav", () => {
 
   it("navigates when a module tab is pressed", () => {
     renderAt("/investigations");
-    fireEvent.click(screen.getByRole("tab", { name: "SPECOPS" }));
-    expect(screen.getByTestId("topnav-sections")).toHaveTextContent("Pipeline Operations");
+    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
+    fireEvent.click(screen.getByTestId("nav-module-specops"));
+    expect(navigationDestinations()).toHaveTextContent("Pipeline Operations");
+  });
+
+  it("closes the deck with Escape and restores focus to the trigger", () => {
+    renderAt("/investigations");
+    const trigger = screen.getByTestId("nav-deck-trigger");
+    fireEvent.click(trigger);
+    expect(screen.getByTestId("nav-deck")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("navigates to the selected destination and closes the deck", () => {
+    renderAt("/investigations");
+    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
+    fireEvent.click(screen.getByRole("link", { name: /Science Console/i }));
+    expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
   });
 
   it("renders the breadcrumb trail", () => {

@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-09-08
-**Feature**: [specs/005-donor-core-subsystems/spec.md](spec.md)
+**Feature**: [specs/005-donor-core-subsystems/spec.md](../spec.md)
 
 ## Content Quality
 

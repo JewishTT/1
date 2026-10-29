@@ -18,7 +18,7 @@ _PRODUCER = re.compile(r"publish|emit|produce|send", re.I)
 
 def _catalog_types(root: Path) -> dict[str, str]:
     txt = (root / "apps" / "shared" / "events" / "topics.py").read_text(encoding="utf-8", errors="replace")
-    return {m.group(1): m.group(2) for m in re.finditer(r'"([a-z][a-z0-9_.]+)"\s*:\s*"([a-z0-9_-]+)"', txt)}
+    return {m.group(1): m.group(2) for m in re.finditer(r'"([a-z][a-z0-9_.]+)"\s*:\s*"([a-z0-9_.-]+)"', txt)}
 
 
 def build_event_coverage(root: Path, model: dict) -> dict:

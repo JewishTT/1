@@ -426,7 +426,7 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **196** · TypeScript modules: **0**
+Python modules: **198** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -522,7 +522,7 @@ apps.specops.tests.test_specops_routers
 
 Generators, capability/owner/donor tools, probes.
 
-Python modules: **10** · TypeScript modules: **0**
+Python modules: **11** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -533,6 +533,7 @@ tools.append_zero_inventory
 tools.append_zero_sources_a
 tools.append_zero_sources_b
 tools.fix_zero_layer_doc
+tools.semantic_docgraph
 tools.specs.build_capability_matrix
 tools.specs.build_donor_registry
 tools.specs.build_owner_map
@@ -545,7 +546,7 @@ tools.strip_zero_inventory
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **255**
+Python modules: **0** · TypeScript modules: **266**
 
 
 ## `zero`

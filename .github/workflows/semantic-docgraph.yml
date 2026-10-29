@@ -1,0 +1,59 @@
+name: semantic-docgraph
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: semantic-docgraph-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  semantic-docgraph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/webapp/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install locked JavaScript dependencies for the TypeScript parser
+        working-directory: apps/webapp
+        run: npm ci
+
+      - name: Install locked workspace dependencies for SQL and protobuf parsers
+        run: uv sync --locked --all-packages --all-groups
+
+      - name: Test Python AST contracts
+        run: uv run python -m unittest apps/shared/tests/contract/test_semantic_docgraph.py
+
+      - name: Build and validate the source-derived semantic graph
+        run: uv run python tools/semantic_docgraph.py --check --output artifacts/semantic-docgraph.json
+
+      - name: Upload semantic graph and coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-documentation-graph
+          path: artifacts/semantic-docgraph.json
+          if-no-files-found: warn
+          retention-days: 14

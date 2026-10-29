@@ -1,27 +1,13 @@
 /**
- * The normalised navigation for the UI 2.0 shell.
+ * Compact workspace navigation for the UI 2.0 shell.
  *
- * Why this exists: `AppShell` was built with a topbar, three resizable panes, theme
- * and density control - and no navigation at all. The only navigation in the product
- * was `components/Layout.tsx`, the legacy shell, which the router mounted *around*
- * the UI 2.0 workspace. The result was the new shell rendering underneath the old
- * navbar, so the navbar looked untouched no matter how complete the shell became.
- *
- * Three defects of the legacy navbar are fixed here rather than carried over:
- *
- * 1. The brand mark was a literal `?` - a text glyph standing in for a logo, which
- *    §3.3 forbids as iconography and which cannot take a tooltip, a stroke weight
- *    or a focus ring. It is now a drawn `Icon`.
- * 2. The footer printed a hardcoded "NEXUS LINK: ACTIVE" and a hardcoded
- *    "CONTROL-PLANE v0.1". A connection indicator that is not wired to a connection
- *    reports a state that does not exist. This component reports nothing it cannot
- *    observe.
- * 3. Several labels carried a mojibake replacement character (`\uFFFD`) where a
- *    separator belonged, left over from a cp1251 round-trip.
+ * The full route catalogue lives in nav.ts. This component presents it as a
+ * lightweight active-workspace trigger and an accessible navigation deck so
+ * the graph canvas and work-state controls keep their width.
  */
-
-import { NavLink, useInRouterContext, useLocation, useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { createPortal } from "react-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { NavLink, useInRouterContext, useLocation } from "react-router-dom";
 
 import { Icon } from "../ui/Icon";
 import {
@@ -30,61 +16,39 @@ import {
   isNavItemActive,
   resolveModule,
   resolveTitle,
-  type NavItem,
   type ModuleKey,
+  type NavItem,
 } from "./nav";
 
-function ModuleTabs({ module, onSelect }: { module: ModuleKey; onSelect: (m: ModuleKey) => void }) {
-  return (
-    <div className="ui-nav-modules" role="tablist" aria-label="Global modules" data-testid="topnav-modules">
-      {NAV_MODULES.map((m) => (
-        <button
-          key={m.key}
-          type="button"
-          role="tab"
-          aria-selected={module === m.key}
-          className="ui-nav-module"
-          data-module={m.key}
-          data-active={module === m.key}
-          onClick={() => onSelect(m.key)}
-        >
-          {m.short}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function NavEntry({ item, pathname, search }: { item: NavItem; pathname: string; search: string }) {
+function NavEntry({
+  item,
+  pathname,
+  search,
+  onNavigate,
+}: {
+  item: NavItem;
+  pathname: string;
+  search: string;
+  onNavigate: () => void;
+}) {
   const active = isNavItemActive(pathname, item, search);
   return (
     <NavLink
       to={item.to}
-      className="ui-nav-link"
+      className="ui-nav-deck-link"
       data-active={active}
       aria-current={active ? "page" : undefined}
+      onClick={onNavigate}
     >
-      <span className="ui-nav-icon" aria-hidden="true">
-        <Icon name={item.icon} size={14} />
+      <span className="ui-nav-deck-link-icon" aria-hidden="true">
+        <Icon name={item.icon} size={15} />
       </span>
-      <span className="ui-nav-label">{item.label}</span>
+      <span className="ui-nav-deck-link-label">{item.label}</span>
+      {active ? <span className="ui-nav-deck-current">CURRENT</span> : null}
     </NavLink>
   );
 }
 
-/**
- * Rendered inside the shell topbar. Collapsed to a horizontal strip rather than a
- * sidebar because the UI 2.0 shell owns the full viewport for rail / canvas /
- * inspector, and a second full-height column would take width the canvas needs.
- */
-/**
- * A shell with no router renders no navigation.
- *
- * `AppShell` is mounted both inside the router and bare - in tests, in stories, and in
- * `WorkbenchCanvas`. Navigation is meaningless without a router, and calling
- * `useLocation` outside one throws, so the shell would be unmountable in exactly those
- * contexts. Rendering nothing is the honest result: there is nowhere to navigate *to*.
- */
 export function TopNav() {
   const inRouter = useInRouterContext();
   if (!inRouter) return null;
@@ -93,39 +57,170 @@ export function TopNav() {
 
 function RoutedTopNav() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const module = resolveModule(location.pathname);
-  const sections = useMemo(() => NAV_SECTIONS[module], [module]);
+  const currentModule = resolveModule(location.pathname);
+  const currentTitle = resolveTitle(location.pathname);
+  const currentModuleInfo = NAV_MODULES.find((item) => item.key === currentModule) ?? NAV_MODULES[0];
+  const [open, setOpen] = useState(false);
+  const [selectedModule, setSelectedModule] = useState<ModuleKey>(currentModule);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const sections = NAV_SECTIONS[selectedModule];
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const firstDestination = document.querySelector<HTMLElement>(".ui-nav-deck-link");
+    firstDestination?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        document.querySelectorAll<HTMLElement>(".ui-nav-deck button:not(:disabled), .ui-nav-deck a[href]"),
+      ).filter((element) => element.offsetParent !== null || element === document.activeElement);
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      triggerRef.current?.focus();
+    };
+  }, [open, close]);
+
+  const portalHost = typeof document !== "undefined"
+    ? document.querySelector<HTMLElement>(".ui-root[data-theme]") ?? document.body
+    : null;
+  const deck =
+    open && portalHost
+      ? createPortal(
+          <div className="ui-nav-deck-layer" data-testid="nav-deck-layer">
+            <button
+              type="button"
+              className="ui-nav-deck-scrim"
+              aria-label="Close navigation"
+              tabIndex={-1}
+              onClick={close}
+            />
+            <section
+              className="ui-nav-deck"
+              id="ui-navigation-deck"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="ui-nav-deck-title"
+              data-testid="nav-deck"
+            >
+              <header className="ui-nav-deck-header">
+                <div>
+                  <span className="ui-nav-deck-eyebrow">COGNITIVE / FIELD SYSTEMS</span>
+                  <h2 id="ui-nav-deck-title">Navigation deck</h2>
+                  <p>Choose an operational domain, then enter a workspace.</p>
+                </div>
+                <button type="button" className="ui-nav-deck-close" onClick={close}>
+                  Close <span aria-hidden="true">×</span>
+                </button>
+              </header>
+
+              <div className="ui-nav-deck-grid">
+                <div className="ui-nav-deck-modules" role="group" aria-label="Operational domains">
+                  <span className="ui-nav-deck-section-label">01 / DOMAIN</span>
+                  {NAV_MODULES.map((module) => (
+                    <button
+                      key={module.key}
+                      type="button"
+                      className="ui-nav-deck-module"
+                      data-active={selectedModule === module.key}
+                      aria-pressed={selectedModule === module.key}
+                      data-testid={`nav-module-${module.key}`}
+                      onClick={() => setSelectedModule(module.key)}
+                    >
+                      <span className="ui-nav-deck-module-code">{module.short}</span>
+                      <span className="ui-nav-deck-module-name">{module.label}</span>
+                      <span className="ui-nav-deck-module-arrow" aria-hidden="true">↗</span>
+                    </button>
+                  ))}
+                  <div className="ui-nav-deck-scope">
+                    <span className="ui-nav-deck-section-label">ACTIVE CONTEXT</span>
+                    <strong>{currentModuleInfo.short} / {currentTitle}</strong>
+                    <span>Routes are grouped by domain; the current route is marked in the list.</span>
+                  </div>
+                </div>
+
+                <div className="ui-nav-deck-destinations" data-testid="nav-deck-destinations">
+                  <div className="ui-nav-deck-destinations-heading">
+                    <span className="ui-nav-deck-section-label">02 / DESTINATIONS</span>
+                    <span className="ui-nav-deck-destinations-domain">{NAV_MODULES.find((item) => item.key === selectedModule)?.label}</span>
+                  </div>
+                  {sections.map((section, index) => (
+                    <div className="ui-nav-deck-section" key={section.label}>
+                      <div className="ui-nav-deck-section-heading">
+                        <span className="ui-nav-deck-section-index">{String(index + 1).padStart(2, "0")}</span>
+                        <span>{section.label}</span>
+                      </div>
+                      <div className="ui-nav-deck-section-items">
+                        {section.items.map((item) => (
+                          <NavEntry
+                            key={item.to}
+                            item={item}
+                            pathname={location.pathname}
+                            search={location.search}
+                            onNavigate={close}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <footer className="ui-nav-deck-footer">
+                <span>FIELD SYSTEMS / ROUTE INDEX</span>
+                <span><kbd>ESC</kbd> CLOSE</span>
+              </footer>
+            </section>
+          </div>,
+          portalHost,
+        )
+      : null;
 
   return (
-    <div className="ui-topnav" data-testid="topnav" data-module={module}>
-      <div className="ui-topnav-primary">
-        <ModuleTabs
-          module={module}
-          onSelect={(key) => {
-            const target = NAV_MODULES.find((m) => m.key === key);
-            if (target) navigate(target.landing);
-          }}
-        />
-        <div className="ui-topnav-trail" aria-label="Current location">
-          <span className="ui-topnav-trail-module">{module.toUpperCase()}</span>
-          <span className="ui-topnav-sep" aria-hidden="true">/</span>
-          <span className="ui-topnav-title">{resolveTitle(location.pathname)}</span>
-        </div>
-      </div>
-
-      <nav className="ui-topnav-sections" aria-label="Section navigation" data-testid="topnav-sections">
-        {sections.map((section) => (
-          <div key={section.label} className="ui-topnav-group">
-            <span className="ui-topnav-group-label">{section.label}</span>
-            <div className="ui-topnav-group-items">
-              {section.items.map((item) => (
-                <NavEntry key={item.to} item={item} pathname={location.pathname} search={location.search} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
+    <div className="ui-topnav" data-testid="topnav" data-module={currentModule} data-open={open}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="ui-nav-deck-trigger"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls="ui-navigation-deck"
+        aria-label={`Open navigation. Current domain: ${currentModuleInfo.label}. Current workspace: ${currentTitle}.`}
+        data-testid="nav-deck-trigger"
+        onClick={() => {
+          if (!open) setSelectedModule(currentModule);
+          setOpen((value) => !value);
+        }}
+      >
+        <span className="ui-nav-deck-trigger-mark" aria-hidden="true"><Icon name="view-ops" size={15} /></span>
+        <span className="ui-nav-deck-trigger-copy">
+          <span className="ui-nav-deck-trigger-code">{currentModuleInfo.short}</span>
+          <span className="ui-nav-deck-trigger-separator" aria-hidden="true">/</span>
+          <span className="ui-nav-deck-trigger-title">{currentTitle}</span>
+        </span>
+        <span className="ui-nav-deck-trigger-action">{open ? "CLOSE" : "NAV"} <span aria-hidden="true">{open ? "−" : "+"}</span></span>
+      </button>
+      {deck}
     </div>
   );
 }

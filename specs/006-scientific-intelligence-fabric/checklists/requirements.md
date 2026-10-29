@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-09-09
-**Feature**: [specs/006-scientific-intelligence-fabric/spec.md](spec.md)
+**Feature**: [specs/006-scientific-intelligence-fabric/spec.md](../spec.md)
 
 ## Content Quality
 

@@ -1,0 +1,12 @@
+[package]
+name = "cognitive-semantic-docgraph-rust"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+proc-macro2 = { version = "1", features = ["span-locations"] }
+quote = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+syn = { version = "2", features = ["full", "extra-traits", "visit"] }

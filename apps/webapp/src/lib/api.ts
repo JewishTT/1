@@ -1034,7 +1034,7 @@ export { scienceApi } from "./science/api";
 export type CiEnvelope<T> = {
   served: string[];
   missing: string[];
-  scope: "tenant-wide" | "investigation-scoped";
+  scope: "tenant-wide" | "investigation-scoped" | "fixture-only";
 } & T;
 
 export interface CiRoeView {

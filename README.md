@@ -13,13 +13,13 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 1007 |
-| TypeScript modules | 255 |
-| Rust source files / crates | 15 / 9 |
-| Resolved local import edges | 2807 |
+| Python modules | 1010 |
+| TypeScript modules | 266 |
+| Rust source files / crates | 16 / 9 |
+| Resolved local import edges | 2808 |
 | HTTP routes / routers | 182 / 33 |
 | Event types / lanes | 99 / 29 |
-| Test files / test functions | 340 / 5272 |
+| Test files / test functions | 342 / 5285 |
 | Untested platform modules | 267 |
 
 ## Components
@@ -37,10 +37,10 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| `shared` | 196 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| `shared` | 198 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
-| `tools` | 10 | 0 | 0 | Generators, capability/owner/donor tools, probes. |
-| `webapp` | 0 | 255 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| `tools` | 11 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
+| `webapp` | 0 | 266 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Quick start

@@ -25,7 +25,7 @@ Contract references:
 
 - Requirement sources: [spec.md](./spec.md) - AS-001..AS-024, SC-001..SC-014, FR-001..FR-040
 - Architecture, budget semantics and phase order: [plan.md](./plan.md)
-- Test tiers, coverage matrix and oracle rules: [contracts/test-strategy.md](./contracts/test-strategy.md)
+- Implementation tasks and validation checkpoints: [tasks.md](./tasks.md)
 
 ## Prerequisites
 

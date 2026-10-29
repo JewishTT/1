@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -76,9 +76,10 @@ describe("routes are reachable and render something", () => {
     // exists but is absent from `NAV_SECTIONS` is invisible, and an entry with no route is a
     // dead link -- both look identical from the URL bar.
     mountAt("/dossier");
+    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
 
     await waitFor(() => {
-      expect(screen.getByRole("link", { name: /dossier/i })).toHaveAttribute("href", "/dossier");
+      expect(screen.getByRole("link", { name: /Dossier/i })).toHaveAttribute("href", "/dossier");
     });
   });
 

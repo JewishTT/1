@@ -59,7 +59,7 @@ def scan_contract_docs(root: Path) -> list[dict]:
     ]
     seen: set[Path] = set()
     for pat in patterns:
-        for p in root.glob(pat):
+        for p in sorted(root.glob(pat)):
             if p in seen:
                 continue
             seen.add(p)

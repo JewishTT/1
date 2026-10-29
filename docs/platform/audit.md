@@ -7,24 +7,24 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python / TypeScript / Rust modules | 1007 / 255 / 15 |
-| Resolved import edges | 2807 |
+| Python / TypeScript / Rust modules | 1010 / 266 / 16 |
+| Resolved import edges | 2808 |
 | HTTP routes / routers | 182 / 33 |
-| Test files / functions | 340 / 5272 |
-| Evidence facts (static) | 4365 |
+| Test files / functions | 342 / 5285 |
+| Evidence facts (static) | 4367 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 542 |
+| IMPLEMENTED | 543 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
 | PACKAGE_INIT | 91 |
 | MIGRATION | 19 |
-| TEST | 337 |
+| TEST | 339 |
 
 See [maturity.md](maturity.md).
 
@@ -32,10 +32,10 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 402 |
+| PRODUCTION | 403 |
 | TEST_ONLY | 146 |
 | ORPHAN | 122 |
-| TEST | 337 |
+| TEST | 339 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 
@@ -54,11 +54,11 @@ See [golden-path.md](golden-path.md) for the capability map and the build plan.
 
 ## Gaps (machine-checked)
 
-**10** open, machine-checked gaps. See [gaps.md](gaps.md).
+**9** open, machine-checked gaps. See [gaps.md](gaps.md).
 
 ## Event coverage
 
-99 catalogued event types across 29 lanes; 25 have a likely producer line; **29** are referenced by no file outside the catalog.
+100 catalogued event types across 30 lanes; 26 have a likely producer line; **29** are referenced by no file outside the catalog.
 
 Unreferenced event types (catalogued, but no producer or consumer string):
 

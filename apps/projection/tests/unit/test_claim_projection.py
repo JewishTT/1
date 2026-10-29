@@ -8,9 +8,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pytest
-
 from domain.relation_claim import RelationClaim, RelationRoleBinding
 from domain.relation_identity import RelationArityMode
+
 from graph.abstraction import InMemoryGraphStore
 from graph.claim_projection import project_admitted_claim, reconcile_claim_projection
 from graph.relation_store import RelationClaimService

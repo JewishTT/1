@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-04
 
-**Status**: Approved — Design Baseline **v2** accepted; Q1=B, Q2=B (ADR-0028); 154 tasks, 88 FR, gates A–Q
+**Status**: Approved — Design Baseline **v2** accepted; Q1=B, Q2=B (decision record D-1/D-2); 154 tasks, 88 FR, gates A–Q
 
 **Input**: `input.md` (owner-supplied Specification 025 **v2**, verbatim),
 `research.md` (deep research: donor inventory, literature, risk register R1–R8)
@@ -707,7 +707,7 @@ definition of done §60.
   declare a memory class and no operator may assume GPU availability.
 - **Research precedes new implementation** (`AGENTS.md` §1): the donor candidates identified
   in `research.md` §3 must be assessed before the corresponding tasks are estimated.
-- **Wave 0 is a real gate.** The seven ADRs it requires do not yet exist in `docs/adr/`, and
+- **Wave 0 is a real gate.** The seven prerequisite architecture decisions it requires have not all passed acceptance and verification, and
   Phase A does not begin before they close.
 
 ---
@@ -731,7 +731,7 @@ Two decisions materially change the shape of the work. Neither has a defensible 
 so both are surfaced rather than assumed.
 
 > **RESOLVED 2026-10-04 — owner decision: Q1 = B, Q2 = B.**
-> Recorded in [`ADR-0028`](../../../docs/adr/0028-context-definition-identity-and-placement.md).
+> Recorded as D-1 and D-2 in the local [feature decision record](decisions.md).
 > Binding corrections carried into this spec:
 >
 > 1. **Split identifier namespaces.** `CXI-` = `InvestigationContext` (unchanged, 024
@@ -792,7 +792,7 @@ and `cp_domain/` does not exist anywhere in the repository.
 
 ## Readiness
 
-Q1 and Q2 are **resolved and recorded** (ADR-0028). `/speckit.plan` is unblocked. The plan must carry forward the
+Q1 and Q2 are **resolved and recorded** as D-1/D-2 in `decisions.md`. `/speckit.plan` is unblocked. The plan must carry forward the
 risk register from `research.md`: R2 (adoption matrix for existing 024 objects), R3
 (four-valued truth must not leak), R4 (causal staging has no donor precedent), R6 (Wave 0
 gate is not yet satisfied), R1 (configuration-scope verification as a standing review item),

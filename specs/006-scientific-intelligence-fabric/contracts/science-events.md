@@ -1,6 +1,6 @@
 # Science Events — Kafka Envelope Contract
 
-**Date**: 2026-09-09 | **Feature**: [spec.md](spec.md)
+**Date**: 2026-09-09 | **Feature**: [spec.md](../spec.md)
 
 Topics registered in `apps/shared/events/topics.py` `EVENT_CATALOG` (research §9). All events
 use `events.kafka.build_envelope`; payloads are refs/fields-only JSON (no blobs, Constitution

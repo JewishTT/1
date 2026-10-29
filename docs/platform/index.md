@@ -9,19 +9,19 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 1007 |
-| TypeScript modules | 255 |
+| Python modules | 1010 |
+| TypeScript modules | 266 |
 | Rust crates | 9 |
-| Rust source files | 15 |
-| Import edges (local) | 2807 |
+| Rust source files | 16 |
+| Import edges (local) | 2808 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 340 |
-| Test functions | 5272 |
+| Test files | 342 |
+| Test functions | 5285 |
 | Untested platform modules | 267 |
 | HTTP routes | 182 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
@@ -59,8 +59,8 @@ committed model no longer matches the tree.
 | projection | 67 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| shared | 196 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| shared | 198 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops | 30 | 0 | Isolated spec-ops lab profile (never in the routine path). |
-| tools | 10 | 0 | Generators, capability/owner/donor tools, probes. |
-| webapp | 0 | 255 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| tools | 11 | 0 | Generators, capability/owner/donor tools, probes. |
+| webapp | 0 | 266 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | zero | 30 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

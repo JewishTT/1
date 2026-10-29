@@ -1,6 +1,6 @@
 # Interface Contracts: Donor Core Subsystems
 
-**Date**: 2026-09-08 | **Feature**: [spec.md](spec.md)
+**Date**: 2026-09-08 | **Feature**: [spec.md](../spec.md)
 
 Authoritative in-repo contract docs referenced where they already exist
 (`apps/shared/contracts/statement.md`, `parser.md`, `resolution-admission.md`,

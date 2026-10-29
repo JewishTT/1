@@ -1,6 +1,6 @@
 # Import graph
 
-1007 Python modules, 2807 resolved local edges.
+1010 Python modules, 2808 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,41 +10,41 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 877 |
+| `__future__` | stdlib | 880 |
 | `dataclasses` | stdlib | 390 |
-| `typing` | stdlib | 366 |
-| `pathlib` | stdlib | 315 |
-| `pytest` | third-party | 267 |
-| `sys` | stdlib | 254 |
-| `collections` | stdlib | 240 |
-| `json` | stdlib | 192 |
+| `typing` | stdlib | 367 |
+| `pathlib` | stdlib | 318 |
+| `pytest` | third-party | 268 |
+| `sys` | stdlib | 256 |
+| `collections` | stdlib | 241 |
+| `json` | stdlib | 193 |
 | `datetime` | stdlib | 190 |
 | `sqlalchemy` | third-party | 158 |
-| `hashlib` | stdlib | 126 |
+| `hashlib` | stdlib | 127 |
 | `enum` | stdlib | 118 |
-| `re` | stdlib | 95 |
+| `re` | stdlib | 96 |
 | `asyncio` | stdlib | 70 |
-| `os` | stdlib | 68 |
+| `os` | stdlib | 69 |
 | `fastapi` | third-party | 66 |
 | `uuid` | stdlib | 48 |
 | `urllib` | stdlib | 43 |
 | `math` | stdlib | 41 |
 | `pydantic` | third-party | 34 |
+| `importlib` | stdlib | 33 |
 | `types` | stdlib | 33 |
-| `importlib` | stdlib | 31 |
 | `time` | stdlib | 29 |
-| `ast` | stdlib | 26 |
+| `ast` | stdlib | 27 |
 | `io` | stdlib | 25 |
 | `alembic` | third-party | 24 |
 | `logging` | stdlib | 23 |
 | `numpy` | third-party | 23 |
 | `inspect` | stdlib | 21 |
+| `argparse` | stdlib | 20 |
+| `tempfile` | stdlib | 20 |
 | `httpx` | third-party | 20 |
-| `argparse` | stdlib | 19 |
-| `tempfile` | stdlib | 17 |
 | `threading` | stdlib | 17 |
+| `subprocess` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |
-| `subprocess` | stdlib | 15 |
 | `warcio` | third-party | 15 |
 | `shutil` | stdlib | 14 |
 | `temporalio` | third-party | 13 |

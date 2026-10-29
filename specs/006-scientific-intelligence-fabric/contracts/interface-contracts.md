@@ -1,6 +1,6 @@
 # Interface Contracts: Scientific Intelligence Fabric
 
-**Date**: 2026-09-09 | **Feature**: [spec.md](spec.md)
+**Date**: 2026-09-09 | **Feature**: [spec.md](../spec.md)
 
 Authoritative in-repo contract docs referenced where they already exist
 (`apps/shared/contracts/statement.md`, `graph.md`, `correlation-review.md`,

@@ -1,6 +1,6 @@
 # Scope Boundary Policy — Scientific Intelligence Fabric
 
-**Date**: 2026-09-09 | **Feature**: [spec.md](spec.md) | **Constitution refs**: II, VII; No-MVP rule
+**Date**: 2026-09-09 | **Feature**: [spec.md](../spec.md) | **Constitution refs**: II, VII; No-MVP rule
 
 ## Purpose
 

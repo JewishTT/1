@@ -46,7 +46,7 @@ def collect_facts(root: Path, model: dict) -> list[dict[str, Any]]:
     routes_base = root / "apps" / "control-plane" / "api" / "routes"
     if routes_base.exists():
         rx = re.compile(r'@(?:router|app)\.(get|post|put|delete|patch|head|options)\s*\(\s*["\']([^"\']+)["\']', re.M)
-        for p in routes_base.rglob("*.py"):
+        for p in sorted(routes_base.rglob("*.py")):
             txt = p.read_text(encoding="utf-8", errors="replace")
             rel = p.relative_to(root).as_posix()
             for m in rx.finditer(txt):
@@ -61,7 +61,7 @@ def collect_facts(root: Path, model: dict) -> list[dict[str, Any]]:
                     "confidence": 1.0,
                 })
     # TABLE_CLASS_DEFINED
-    for p in root.rglob("schema.py"):
+    for p in sorted(root.rglob("schema.py")):
         rel = p.relative_to(root).as_posix()
         if "apps" not in rel:
             continue
@@ -100,7 +100,7 @@ def collect_facts(root: Path, model: dict) -> list[dict[str, Any]]:
     # SPEC_EXISTS
     specs_dir = root / "specs"
     if specs_dir.exists():
-        for p in specs_dir.glob("*/spec.md"):
+        for p in sorted(specs_dir.glob("*/spec.md")):
             rel = p.relative_to(root).as_posix()
             facts.append({
                 "fact_id": _evidence_id("SPEC_EXISTS", p.parent.name, rel),
@@ -157,6 +157,14 @@ def collect_facts(root: Path, model: dict) -> list[dict[str, Any]]:
 
 def build_evidence(root: Path, model: dict) -> dict[str, Any]:
     facts = collect_facts(root, model)
+    # Evidence is a generated machine artifact: sort by a stable semantic key rather
+    # than preserving filesystem traversal order from glob/rglob.
+    facts.sort(key=lambda fact: (
+        fact.get("kind", ""),
+        fact.get("subject", ""),
+        fact.get("object", ""),
+        fact.get("fact_id", ""),
+    ))
     static_facts = sum(1 for f in facts if f.get("status") == "STATIC_FACT")
     inferred = sum(1 for f in facts if f.get("status") == "INFERRED")
     intended = sum(1 for f in facts if f.get("status") == "INTENDED")

@@ -39,7 +39,7 @@ export type CiPanel =
   | "ghostline";
 
 /** Scope every panel declares on screen so a tenant-wide figure is never misread. */
-export type CiScope = "tenant-wide" | "investigation-scoped";
+export type CiScope = "tenant-wide" | "investigation-scoped" | "fixture-only";
 
 /** Common server-state envelope each panel hook returns. */
 export interface CiServerState {
