@@ -16,7 +16,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `pathlib` | stdlib | 318 |
 | `pytest` | third-party | 268 |
 | `sys` | stdlib | 256 |
-| `collections` | stdlib | 240 |
+| `collections` | stdlib | 241 |
 | `json` | stdlib | 193 |
 | `datetime` | stdlib | 190 |
 | `sqlalchemy` | third-party | 158 |
@@ -30,8 +30,8 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `urllib` | stdlib | 43 |
 | `math` | stdlib | 41 |
 | `pydantic` | third-party | 34 |
+| `importlib` | stdlib | 33 |
 | `types` | stdlib | 33 |
-| `importlib` | stdlib | 32 |
 | `time` | stdlib | 29 |
 | `ast` | stdlib | 27 |
 | `io` | stdlib | 25 |
@@ -40,8 +40,8 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `numpy` | third-party | 23 |
 | `inspect` | stdlib | 21 |
 | `argparse` | stdlib | 20 |
+| `tempfile` | stdlib | 20 |
 | `httpx` | third-party | 20 |
-| `tempfile` | stdlib | 18 |
 | `threading` | stdlib | 17 |
 | `subprocess` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |

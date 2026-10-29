@@ -2,7 +2,7 @@ schema_version: 1
 registry:
   authority: apps/shared/tests/contract/test_donor_registry.py (FR-113)
   generator: tools/specs/build_donor_registry.py
-  generated_at: '2026-10-22T06:31:43+00:00'
+  generated_at: '2026-10-29T14:55:24+00:00'
   vendored_checkout_count: 108
   scope_notes: 'Covers every declared dependency in [project].dependencies and [project].optional-dependencies across
     the workspace manifests, plus every checkout under donors/. [dependency-groups] is out of scope: it is never
@@ -17,6 +17,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: ABM_polarisation
@@ -27,6 +29,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: adversary_emulation_library
@@ -38,7 +42,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/adversary_emulation_library/LICENSE read (sha256:1eb85fc97224598d); SPDX
     signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file
-    governs the code, any model weights or the bundled assets, so the entry stays unverified.'
+    governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation
+    did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without
+    re-inspecting source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: adversarygraph
@@ -49,7 +55,9 @@ donors:
   license_source: null
   status: unverified
   verification_note: licence file donors/adversarygraph/LICENSE read (sha256:eb8539d426f7ccd2) but its text matches
-    no known SPDX signature. Unrecognised licence text is a blocker, not a blank.
+    no known SPDX signature. Unrecognised licence text is a blocker, not a blank. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: aegis
@@ -76,7 +84,8 @@ donors:
   status: unverified
   verification_note: 'licence file donors/ael/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0.
     A signature match is not a licence review: no human has confirmed that this file governs the code, any model
-    weights or the bundled assets, so the entry stays unverified.'
+    weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor
+    checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: aioboto3
@@ -130,7 +139,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Aperture-OSINT-Workbench/LICENSE read (sha256:2b040d484d957d02); SPDX
     signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs
-    the code, any model weights or the bundled assets, so the entry stays unverified.'
+    the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not
+    materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: APT-SF
@@ -141,6 +152,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: argus
@@ -152,7 +165,8 @@ donors:
   status: unverified
   verification_note: 'licence file donors/argus/LICENSE read (sha256:f6ab6aa4238f2184); SPDX signature matched MIT.
     A signature match is not a licence review: no human has confirmed that this file governs the code, any model
-    weights or the bundled assets, so the entry stays unverified.'
+    weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor
+    checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: argus-cotcollective
@@ -164,7 +178,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/argus-cotcollective/LICENSE read (sha256:519f57944df41785); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: asyncpg
@@ -189,6 +205,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: BeliefLandscapeFramework
@@ -200,7 +218,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/BeliefLandscapeFramework/LICENSE read (sha256:ef2fa636c0583759); SPDX
     signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs
-    the code, any model weights or the bundled assets, so the entry stays unverified.'
+    the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not
+    materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: BluePhish
@@ -211,6 +231,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: bm25s
@@ -236,7 +258,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/caldera/LICENSE read (sha256:2514772e5475f208); SPDX signature matched
     Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: certstream
@@ -305,7 +329,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/cognitive_phase_transitions/LICENSE read (sha256:952031ca9579fe56); SPDX
     signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs
-    the code, any model weights or the bundled assets, so the entry stays unverified.'
+    the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not
+    materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: Cognitive-Weaponization-Matrix
@@ -317,7 +343,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Cognitive-Weaponization-Matrix/LICENCE read (sha256:1eb85fc97224598d);
     SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this
-    file governs the code, any model weights or the bundled assets, so the entry stays unverified.'
+    file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation
+    did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without
+    re-inspecting source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: CognitiveAttack
@@ -329,7 +357,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/CognitiveAttack/LICENSE.txt read (sha256:11a459732c546f24); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: CogniX-Surface
@@ -340,6 +370,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: coldreach
@@ -351,7 +383,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/coldreach/LICENSE read (sha256:0f4d39518d0d79e9); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: confluent-kafka
@@ -391,7 +425,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/CyberStrikeAI/LICENSE read (sha256:c5e886b33279f161); SPDX signature matched
     Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: DIGI-NETRA
@@ -402,6 +438,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: DIMA-OntoToolkit
@@ -413,7 +451,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/DIMA-OntoToolkit/LICENSE read (sha256:1eb85fc97224598d); SPDX signature
     matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs
-    the code, any model weights or the bundled assets, so the entry stays unverified.'
+    the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not
+    materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: docling-core
@@ -438,6 +478,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: duckdb
@@ -464,7 +506,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Email-Permutator/LICENSE.txt read (sha256:c53a65c2fd561c87); SPDX signature
     matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the
-    code, any model weights or the bundled assets, so the entry stays unverified.'
+    code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: email2phonenumber
@@ -476,7 +520,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/email2phonenumber/LICENSE read (sha256:4e38843ec8aea208); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: EmailExtractWithProxyApp
@@ -487,6 +533,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: EmailFinder
@@ -498,7 +546,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/EmailFinder/LICENSE read (sha256:e355e6d3f6dd8071); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: EmailHarvester
@@ -510,7 +560,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/EmailHarvester/LICENSE read (sha256:589ed823e9a84c56); SPDX signature
     matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the
-    code, any model weights or the bundled assets, so the entry stays unverified.'
+    code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: Entropic-Dynamics-of-the-Universal-Equivalent
@@ -521,6 +573,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: erlik-graph
@@ -532,7 +586,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/erlik-graph/LICENSE read (sha256:cfc25d3b3f20816d); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: estorides
@@ -544,7 +600,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/estorides/LICENSE read (sha256:0d96a4ff68ad6d4b); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: EvoCorps
@@ -556,7 +614,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/EvoCorps/LICENSE read (sha256:3da782e45e3a1112); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: extruct
@@ -596,7 +656,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/fiercephish/LICENSE read (sha256:0db2bf1e663e0259); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: Flippy
@@ -608,7 +670,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Flippy/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: fugashi
@@ -634,7 +698,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/gh-mailto/LICENSE read (sha256:c71d239df91726fc); SPDX signature matched
     Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: ghostline
@@ -644,7 +710,7 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'licence file donors/ghostline/LICENSE read (sha256:ecf8057c75b2b5f9); SPDX signature matched
+  verification_note: 'licence file donors/ghostline/LICENSE read (sha256:4dd7043a0e01d922); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
     model weights or the bundled assets, so the entry stays unverified.'
   role: vendored donor checkout; capability not yet assigned
@@ -670,7 +736,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/GitFive/LICENSE.md read (sha256:1f256ecad1928805); SPDX signature matched
     MPL-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: github-email-extractor
@@ -682,7 +750,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/github-email-extractor/LICENSE read (sha256:d5c7b388fd4a8641); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: gitrecon
@@ -694,7 +764,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/gitrecon/LICENSE read (sha256:dbbcc31bf836ccb8); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: gitsnitch
@@ -706,7 +778,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/gitsnitch/LICENSE.txt read (sha256:3a580fcc6215d8ea); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: Gmail_Checker
@@ -717,6 +791,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: grpcio
@@ -740,8 +816,9 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml as grpcio-tools>=1.64; version read from installed
-    metadata (1.83.1). Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml, pyproject.toml as grpcio-tools>=1.64; version read
+    from installed metadata (1.83.1). Licence not reviewed: no distribution-level licence text was read for this
+    record.'
   role: third-party declared dependency
   vendored: false
   declared_requirement:
@@ -784,7 +861,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/hive-mind-gnca/LICENSE read (sha256:438eb2c2a8190083); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: holehe
@@ -796,7 +875,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/holehe/LICENSE.md read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: Hostile-Command-Suite
@@ -807,7 +888,9 @@ donors:
   license_source: null
   status: unverified
   verification_note: licence file donors/Hostile-Command-Suite/LICENSE read (sha256:f982ed8da3af7213) but its text
-    matches no known SPDX signature. Unrecognised licence text is a blocker, not a blank.
+    matches no known SPDX signature. Unrecognised licence text is a blocker, not a blank. Current generation did
+    not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without
+    re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: httpx
@@ -834,7 +917,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/hypergraphx/LICENSE.md read (sha256:a946f5bb87445ba0); SPDX signature
     matched BSD-3-Clause. A signature match is not a licence review: no human has confirmed that this file governs
-    the code, any model weights or the bundled assets, so the entry stays unverified.'
+    the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not
+    materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: ignorant
@@ -846,7 +931,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/ignorant/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: intellyweave
@@ -858,7 +945,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/intellyweave/LICENSE read (sha256:44c0e551f150a4f7); SPDX signature matched
     BSD-3-Clause. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: io-coordinated-replies
@@ -869,6 +958,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: IO-detecting-and-anticipating
@@ -880,7 +971,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/IO-detecting-and-anticipating/LICENSE read (sha256:636ae9d2b7ed8ce0);
     SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file
-    governs the code, any model weights or the bundled assets, so the entry stays unverified.'
+    governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation
+    did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without
+    re-inspecting source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: jieba
@@ -921,7 +1014,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Labyrinth/LICENSE read (sha256:e0eedba615d5cd1b); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: lark
@@ -948,7 +1043,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/lau-network-science/LICENSE read (sha256:133749266c5f3a56); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: lazyaddon
@@ -960,7 +1057,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/lazyaddon/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: LeakHunter
@@ -971,6 +1070,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: litellm
@@ -995,6 +1096,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: maigret
@@ -1006,7 +1109,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/maigret/LICENSE read (sha256:9748c279c95c58e6); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: Mail-Hunter
@@ -1018,7 +1123,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Mail-Hunter/LICENSE read (sha256:2e0099356d341cbc); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: MicroWorld
@@ -1030,7 +1137,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/MicroWorld/LICENSE read (sha256:6f1e622c82a38007); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: mosint
@@ -1042,7 +1151,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/mosint/LICENSE read (sha256:b6544e78bbb80309); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: MottaHunter
@@ -1054,7 +1165,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/MottaHunter/LICENSE read (sha256:5c625e6bfcb5240e); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: mysterious-cyclopus
@@ -1065,6 +1178,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: nameparser
@@ -1089,6 +1204,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: neo4j
@@ -1108,19 +1225,19 @@ donors:
 - id: numpy
   path: null
   upstream: https://pypi.org/project/numpy/
-  version: 2.4.6
+  version: 2.5.4
   license: null
   license_source: null
   status: unverified
   verification_note: 'declared in apps/admission/pyproject.toml, apps/feedback/pyproject.toml, apps/interpretation/pyproject.toml,
     apps/projection/pyproject.toml, apps/science/pyproject.toml as numpy>=1.26, numpy>=1.26,<3; version read from
-    installed metadata (2.4.6). Licence not reviewed: no distribution-level licence text was read for this record.'
+    installed metadata (2.5.4). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
   declared_requirement:
   - numpy>=1.26
   - numpy>=1.26,<3
-  installed_version: 2.4.6
+  installed_version: 2.5.4
 - id: OnionSearch
   path: donors/OnionSearch
   upstream: https://github.com/megadose/OnionSearch.git
@@ -1130,7 +1247,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/OnionSearch/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: openpyxl
@@ -1185,7 +1304,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Operation-Molasses/LICENSE read (sha256:ea7ae63d232bb589); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: orjson
@@ -1210,6 +1331,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: osint-search-tool
@@ -1220,6 +1343,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: osint-terminal
@@ -1231,7 +1356,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/osint-terminal/LICENSE read (sha256:813b937252d0ae33); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: osint-web-mcp
@@ -1243,7 +1370,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/osint-web-mcp/LICENSE read (sha256:c1400d9232c69074); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: OsintEye
@@ -1255,7 +1384,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/OsintEye/LICENSE read (sha256:fe37e7b7282f97fa); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: persistence-agent
@@ -1267,7 +1398,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/persistence-agent/LICENSE read (sha256:3bc50d4e0d2bb3bd); SPDX signature
     matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs
-    the code, any model weights or the bundled assets, so the entry stays unverified.'
+    the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not
+    materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: phantomsignal
@@ -1279,7 +1412,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/phantomsignal/LICENSE read (sha256:54739a2dce4619c5); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: PhantomStrike-AI
@@ -1290,6 +1425,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: phishingclub
@@ -1299,7 +1436,7 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'licence file donors/phishingclub/LICENSE read (sha256:ca3cb0a3162772ca); SPDX signature matched
+  verification_note: 'licence file donors/phishingclub/LICENSE read (sha256:fb5e472602401866); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
     any model weights or the bundled assets, so the entry stays unverified.'
   role: vendored donor checkout; capability not yet assigned
@@ -1313,7 +1450,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/PhishSlayer/LICENSE read (sha256:508497ebbfe1ab49); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: PHoDMSs
@@ -1325,7 +1464,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/PHoDMSs/LICENSE read (sha256:ec37dbe37091fb82); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: phone-osint-framework
@@ -1337,7 +1478,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/phone-osint-framework/LICENSE read (sha256:a839d4499ed49185); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: phoneinfoga
@@ -1349,7 +1492,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/phoneinfoga/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: phonenumbers
@@ -1375,7 +1520,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Phunter/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: PIDSF
@@ -1386,6 +1533,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: pillow
@@ -1410,6 +1559,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: postexploitation-toolbox-android
@@ -1421,7 +1572,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/postexploitation-toolbox-android/LICENSE read (sha256:3972dc9744f6499f);
     SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this
-    file governs the code, any model weights or the bundled assets, so the entry stays unverified.'
+    file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation
+    did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without
+    re-inspecting source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: Profil3r
@@ -1433,7 +1586,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Profil3r/LICENSE read (sha256:f64263e26fd07553); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: prometheus-client
@@ -1457,8 +1612,8 @@ donors:
   license: null
   license_source: null
   status: unverified
-  verification_note: 'declared in apps/shared/pyproject.toml as protobuf>=5.26; version read from installed metadata
-    (7.36.1). Licence not reviewed: no distribution-level licence text was read for this record.'
+  verification_note: 'declared in apps/shared/pyproject.toml, pyproject.toml as protobuf>=5.26; version read from
+    installed metadata (7.36.1). Licence not reviewed: no distribution-level licence text was read for this record.'
   role: third-party declared dependency
   vendored: false
   declared_requirement:
@@ -1588,7 +1743,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Raphtory/LICENSE read (sha256:230184f60bae2fea); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: rapidfuzz
@@ -1685,7 +1842,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/SearchPhone/LICENSE read (sha256:d4f772beb102b142); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: secureflow-intel
@@ -1697,7 +1856,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/secureflow-intel/LICENSE read (sha256:41eb86ec55a9a981); SPDX signature
     matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: seekr
@@ -1709,7 +1870,8 @@ donors:
   status: unverified
   verification_note: 'licence file donors/seekr/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0.
     A signature match is not a licence review: no human has confirmed that this file governs the code, any model
-    weights or the bundled assets, so the entry stays unverified.'
+    weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor
+    checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: seithar-research
@@ -1720,7 +1882,9 @@ donors:
   license_source: null
   status: unverified
   verification_note: licence file donors/seithar-research/LICENSE read (sha256:7470fb0913a26fdf) but its text matches
-    no known SPDX signature. Unrecognised licence text is a blocker, not a blank.
+    no known SPDX signature. Unrecognised licence text is a blocker, not a blank. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: selectolax
@@ -1746,7 +1910,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/sherlock/LICENSE read (sha256:53873dd0c41a3867); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: silisocs
@@ -1758,7 +1924,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/silisocs/LICENSE read (sha256:ab6d9f3f7a933838); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: simplemma
@@ -1783,6 +1951,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: social-oscillation-model
@@ -1794,7 +1964,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/social-oscillation-model/LICENSE read (sha256:cdfae388fd75cfa8); SPDX
     signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs
-    the code, any model weights or the bundled assets, so the entry stays unverified.'
+    the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not
+    materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: SPEAR
@@ -1805,6 +1977,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: spiderfoot
@@ -1816,7 +1990,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/spiderfoot/LICENSE read (sha256:41eb86ec55a9a981); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: splink
@@ -1847,6 +2023,20 @@ donors:
   declared_requirement:
   - sqlalchemy[asyncio]>=2.0
   installed_version: 2.0.52
+- id: sqlglot
+  path: null
+  upstream: https://pypi.org/project/sqlglot/
+  version: 30.23.0
+  license: null
+  license_source: null
+  status: unverified
+  verification_note: 'declared in pyproject.toml as sqlglot==30.23.0; version read from installed metadata (30.23.0).
+    Licence not reviewed: no distribution-level licence text was read for this record.'
+  role: third-party declared dependency
+  vendored: false
+  declared_requirement:
+  - sqlglot==30.23.0
+  installed_version: 30.23.0
 - id: sticks
   path: donors/sticks
   upstream: https://github.com/c2dc/sticks
@@ -1855,6 +2045,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: Sublist3r
@@ -1866,7 +2058,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/Sublist3r/LICENSE read (sha256:c03cea027b4b40e4); SPDX signature matched
     LGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: SYNINT
@@ -1877,6 +2071,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: temporalio
@@ -1902,7 +2098,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/The-3rd-Eye/LICENSE read (sha256:966ed1fd3809a849); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: TheBigBrother
@@ -1914,7 +2112,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/TheBigBrother/LICENSE read (sha256:42cd9d34e504ab50); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: thecrowler
@@ -1926,7 +2126,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/thecrowler/LICENSE read (sha256:c71d239df91726fc); SPDX signature matched
     Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: theHarvester
@@ -1938,7 +2140,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/theHarvester/LICENSE read (sha256:c61d71705fb06038); SPDX signature matched
     LGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: topology
@@ -1949,6 +2153,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: TraceMatrix
@@ -1984,7 +2190,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/trident/LICENSE.md read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: TripleFantasy
@@ -1996,7 +2204,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/TripleFantasy/LICENSE read (sha256:6f1e622c82a38007); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: TwinMarket
@@ -2007,6 +2217,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: unidic-lite
@@ -2032,7 +2244,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/user-scanner/LICENSE read (sha256:5c7d50c901baf33a); SPDX signature matched
     MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any
-    model weights or the bundled assets, so the entry stays unverified.'
+    model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this
+    donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source
+    or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: uvicorn
@@ -2058,7 +2272,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/votranhabysscoremicro/LICENSE read (sha256:1eb85fc97224598d); SPDX signature
     matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs
-    the code, any model weights or the bundled assets, so the entry stays unverified.'
+    the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not
+    materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: warcio
@@ -2083,6 +2299,8 @@ donors:
   license_source: null
   status: unverified
   verification_note: no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.
+    Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note
+    were retained without re-inspecting source or licence.
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: X-osint
@@ -2094,7 +2312,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/X-osint/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched
     AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 - id: YuLan-OneSim
@@ -2106,7 +2326,9 @@ donors:
   status: unverified
   verification_note: 'licence file donors/YuLan-OneSim/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched
     Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code,
-    any model weights or the bundled assets, so the entry stays unverified.'
+    any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize
+    this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting
+    source or licence.'
   role: vendored donor checkout; capability not yet assigned
   vendored: true
 unregistered: []

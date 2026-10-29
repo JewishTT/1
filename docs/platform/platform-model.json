@@ -1127,7 +1127,7 @@
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 240,
+      "stdlib:collections": 241,
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
@@ -1144,7 +1144,7 @@
       "stdlib:hmac": 3,
       "stdlib:html": 9,
       "stdlib:http": 5,
-      "stdlib:importlib": 32,
+      "stdlib:importlib": 33,
       "stdlib:inspect": 21,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
@@ -1168,7 +1168,7 @@
       "stdlib:subprocess": 16,
       "stdlib:sys": 256,
       "stdlib:sysconfig": 1,
-      "stdlib:tempfile": 18,
+      "stdlib:tempfile": 20,
       "stdlib:threading": 17,
       "stdlib:time": 29,
       "stdlib:tokenize": 1,
@@ -1198,7 +1198,7 @@
       "third-party:duckdb": 5,
       "third-party:extruct": 1,
       "third-party:fastapi": 66,
-      "third-party:google": 5,
+      "third-party:google": 6,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
       "third-party:httpx": 20,
@@ -1224,6 +1224,7 @@
       "third-party:selectolax": 1,
       "third-party:splink": 2,
       "third-party:sqlalchemy": 158,
+      "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
       "third-party:trafilatura": 1,
@@ -21340,8 +21341,9 @@
       },
       {
         "path": "apps/shared/tests/contract/test_donor_registry.py",
-        "tests": 27,
+        "tests": 28,
         "test_names": [
+          "test_generator_preserves_unmaterialized_donor_inventory_without_claiming_reinspection",
           "test_registry_is_machine_readable_and_versioned",
           "test_registry_exposes_the_documented_top_level_sections",
           "test_registry_ids_are_unique",
@@ -21690,10 +21692,12 @@
       },
       {
         "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
-        "tests": 6,
+        "tests": 8,
         "test_names": [
           "test_records_public_symbols_arguments_and_decorated_routes",
-          "test_utf8_bom_is_ignored_by_python_parser_but_not_hidden_from_source_hashes",
+          "test_utf8_bom_is_accepted_by_python_ast_parser",
+          "test_sqlglot_builds_statement_table_column_and_reference_nodes",
+          "test_protobuf_compiler_emits_message_and_field_symbols",
           "test_syntax_errors_are_reported_not_silently_discarded",
           "test_doc_link_resolver_resolves_relative_and_root_paths",
           "test_spec_to_docs_links_are_a_policy_violation_but_decision_ids_are_not",
@@ -23580,7 +23584,7 @@
         "targets": []
       }
     ],
-    "total": 5282
+    "total": 5285
   },
   "contracts": {
     "python": [
@@ -26408,7 +26412,7 @@
     "registry": {
       "authority": "apps/shared/tests/contract/test_donor_registry.py (FR-113)",
       "generator": "tools/specs/build_donor_registry.py",
-      "generated_at": "2026-10-22T06:31:43+00:00",
+      "generated_at": "2026-10-29T14:55:24+00:00",
       "vendored_checkout_count": 108,
       "scope_notes": "Covers every declared dependency in [project].dependencies and [project].optional-dependencies across the workspace manifests, plus every checkout under donors/. [dependency-groups] is out of scope: it is never shipped. `status: verified` requires a licence and the file it was read from; everything generated here is `unverified`, because an SPDX signature match is not a licence review."
     },
@@ -26421,7 +26425,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26433,7 +26437,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26445,7 +26449,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/adversary_emulation_library/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/adversary_emulation_library/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26457,7 +26461,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/adversarygraph/LICENSE read (sha256:eb8539d426f7ccd2) but its text matches no known SPDX signature. Unrecognised licence text is a blocker, not a blank.",
+        "verification_note": "licence file donors/adversarygraph/LICENSE read (sha256:eb8539d426f7ccd2) but its text matches no known SPDX signature. Unrecognised licence text is a blocker, not a blank. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26481,7 +26485,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/ael/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/ael/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26541,7 +26545,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Aperture-OSINT-Workbench/LICENSE read (sha256:2b040d484d957d02); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Aperture-OSINT-Workbench/LICENSE read (sha256:2b040d484d957d02); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26553,7 +26557,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26565,7 +26569,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/argus/LICENSE read (sha256:f6ab6aa4238f2184); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/argus/LICENSE read (sha256:f6ab6aa4238f2184); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26577,7 +26581,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/argus-cotcollective/LICENSE read (sha256:519f57944df41785); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/argus-cotcollective/LICENSE read (sha256:519f57944df41785); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26605,7 +26609,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26617,7 +26621,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/BeliefLandscapeFramework/LICENSE read (sha256:ef2fa636c0583759); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/BeliefLandscapeFramework/LICENSE read (sha256:ef2fa636c0583759); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26629,7 +26633,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26657,7 +26661,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/caldera/LICENSE read (sha256:2514772e5475f208); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/caldera/LICENSE read (sha256:2514772e5475f208); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26733,7 +26737,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/cognitive_phase_transitions/LICENSE read (sha256:952031ca9579fe56); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/cognitive_phase_transitions/LICENSE read (sha256:952031ca9579fe56); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26745,7 +26749,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Cognitive-Weaponization-Matrix/LICENCE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Cognitive-Weaponization-Matrix/LICENCE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26757,7 +26761,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/CognitiveAttack/LICENSE.txt read (sha256:11a459732c546f24); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/CognitiveAttack/LICENSE.txt read (sha256:11a459732c546f24); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26769,7 +26773,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26781,7 +26785,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/coldreach/LICENSE read (sha256:0f4d39518d0d79e9); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/coldreach/LICENSE read (sha256:0f4d39518d0d79e9); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26825,7 +26829,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/CyberStrikeAI/LICENSE read (sha256:c5e886b33279f161); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/CyberStrikeAI/LICENSE read (sha256:c5e886b33279f161); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26837,7 +26841,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26849,7 +26853,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/DIMA-OntoToolkit/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/DIMA-OntoToolkit/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26877,7 +26881,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26905,7 +26909,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Email-Permutator/LICENSE.txt read (sha256:c53a65c2fd561c87); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Email-Permutator/LICENSE.txt read (sha256:c53a65c2fd561c87); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26917,7 +26921,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/email2phonenumber/LICENSE read (sha256:4e38843ec8aea208); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/email2phonenumber/LICENSE read (sha256:4e38843ec8aea208); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26929,7 +26933,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26941,7 +26945,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/EmailFinder/LICENSE read (sha256:e355e6d3f6dd8071); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/EmailFinder/LICENSE read (sha256:e355e6d3f6dd8071); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26953,7 +26957,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/EmailHarvester/LICENSE read (sha256:589ed823e9a84c56); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/EmailHarvester/LICENSE read (sha256:589ed823e9a84c56); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26965,7 +26969,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26977,7 +26981,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/erlik-graph/LICENSE read (sha256:cfc25d3b3f20816d); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/erlik-graph/LICENSE read (sha256:cfc25d3b3f20816d); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -26989,7 +26993,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/estorides/LICENSE read (sha256:0d96a4ff68ad6d4b); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/estorides/LICENSE read (sha256:0d96a4ff68ad6d4b); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27001,7 +27005,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/EvoCorps/LICENSE read (sha256:3da782e45e3a1112); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/EvoCorps/LICENSE read (sha256:3da782e45e3a1112); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27045,7 +27049,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/fiercephish/LICENSE read (sha256:0db2bf1e663e0259); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/fiercephish/LICENSE read (sha256:0db2bf1e663e0259); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27057,7 +27061,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Flippy/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Flippy/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27085,7 +27089,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/gh-mailto/LICENSE read (sha256:c71d239df91726fc); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/gh-mailto/LICENSE read (sha256:c71d239df91726fc); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27097,7 +27101,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/ghostline/LICENSE read (sha256:ecf8057c75b2b5f9); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/ghostline/LICENSE read (sha256:4dd7043a0e01d922); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27121,7 +27125,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/GitFive/LICENSE.md read (sha256:1f256ecad1928805); SPDX signature matched MPL-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/GitFive/LICENSE.md read (sha256:1f256ecad1928805); SPDX signature matched MPL-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27133,7 +27137,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/github-email-extractor/LICENSE read (sha256:d5c7b388fd4a8641); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/github-email-extractor/LICENSE read (sha256:d5c7b388fd4a8641); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27145,7 +27149,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/gitrecon/LICENSE read (sha256:dbbcc31bf836ccb8); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/gitrecon/LICENSE read (sha256:dbbcc31bf836ccb8); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27157,7 +27161,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/gitsnitch/LICENSE.txt read (sha256:3a580fcc6215d8ea); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/gitsnitch/LICENSE.txt read (sha256:3a580fcc6215d8ea); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27169,7 +27173,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27197,7 +27201,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "declared in apps/shared/pyproject.toml as grpcio-tools>=1.64; version read from installed metadata (1.83.1). Licence not reviewed: no distribution-level licence text was read for this record.",
+        "verification_note": "declared in apps/shared/pyproject.toml, pyproject.toml as grpcio-tools>=1.64; version read from installed metadata (1.83.1). Licence not reviewed: no distribution-level licence text was read for this record.",
         "role": "third-party declared dependency",
         "vendored": false,
         "declared_requirement": [
@@ -27245,7 +27249,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/hive-mind-gnca/LICENSE read (sha256:438eb2c2a8190083); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/hive-mind-gnca/LICENSE read (sha256:438eb2c2a8190083); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27257,7 +27261,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/holehe/LICENSE.md read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/holehe/LICENSE.md read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27269,7 +27273,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Hostile-Command-Suite/LICENSE read (sha256:f982ed8da3af7213) but its text matches no known SPDX signature. Unrecognised licence text is a blocker, not a blank.",
+        "verification_note": "licence file donors/Hostile-Command-Suite/LICENSE read (sha256:f982ed8da3af7213) but its text matches no known SPDX signature. Unrecognised licence text is a blocker, not a blank. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27297,7 +27301,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/hypergraphx/LICENSE.md read (sha256:a946f5bb87445ba0); SPDX signature matched BSD-3-Clause. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/hypergraphx/LICENSE.md read (sha256:a946f5bb87445ba0); SPDX signature matched BSD-3-Clause. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27309,7 +27313,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/ignorant/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/ignorant/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27321,7 +27325,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/intellyweave/LICENSE read (sha256:44c0e551f150a4f7); SPDX signature matched BSD-3-Clause. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/intellyweave/LICENSE read (sha256:44c0e551f150a4f7); SPDX signature matched BSD-3-Clause. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27333,7 +27337,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27345,7 +27349,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/IO-detecting-and-anticipating/LICENSE read (sha256:636ae9d2b7ed8ce0); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/IO-detecting-and-anticipating/LICENSE read (sha256:636ae9d2b7ed8ce0); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27385,7 +27389,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Labyrinth/LICENSE read (sha256:e0eedba615d5cd1b); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Labyrinth/LICENSE read (sha256:e0eedba615d5cd1b); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27413,7 +27417,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/lau-network-science/LICENSE read (sha256:133749266c5f3a56); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/lau-network-science/LICENSE read (sha256:133749266c5f3a56); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27425,7 +27429,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/lazyaddon/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/lazyaddon/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27437,7 +27441,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27465,7 +27469,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27477,7 +27481,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/maigret/LICENSE read (sha256:9748c279c95c58e6); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/maigret/LICENSE read (sha256:9748c279c95c58e6); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27489,7 +27493,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Mail-Hunter/LICENSE read (sha256:2e0099356d341cbc); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Mail-Hunter/LICENSE read (sha256:2e0099356d341cbc); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27501,7 +27505,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/MicroWorld/LICENSE read (sha256:6f1e622c82a38007); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/MicroWorld/LICENSE read (sha256:6f1e622c82a38007); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27513,7 +27517,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/mosint/LICENSE read (sha256:b6544e78bbb80309); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/mosint/LICENSE read (sha256:b6544e78bbb80309); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27525,7 +27529,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/MottaHunter/LICENSE read (sha256:5c625e6bfcb5240e); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/MottaHunter/LICENSE read (sha256:5c625e6bfcb5240e); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27537,7 +27541,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27565,7 +27569,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27589,18 +27593,18 @@
         "id": "numpy",
         "path": null,
         "upstream": "https://pypi.org/project/numpy/",
-        "version": "2.4.6",
+        "version": "2.5.4",
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "declared in apps/admission/pyproject.toml, apps/feedback/pyproject.toml, apps/interpretation/pyproject.toml, apps/projection/pyproject.toml, apps/science/pyproject.toml as numpy>=1.26, numpy>=1.26,<3; version read from installed metadata (2.4.6). Licence not reviewed: no distribution-level licence text was read for this record.",
+        "verification_note": "declared in apps/admission/pyproject.toml, apps/feedback/pyproject.toml, apps/interpretation/pyproject.toml, apps/projection/pyproject.toml, apps/science/pyproject.toml as numpy>=1.26, numpy>=1.26,<3; version read from installed metadata (2.5.4). Licence not reviewed: no distribution-level licence text was read for this record.",
         "role": "third-party declared dependency",
         "vendored": false,
         "declared_requirement": [
           "numpy>=1.26",
           "numpy>=1.26,<3"
         ],
-        "installed_version": "2.4.6"
+        "installed_version": "2.5.4"
       },
       {
         "id": "OnionSearch",
@@ -27610,7 +27614,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/OnionSearch/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/OnionSearch/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27670,7 +27674,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Operation-Molasses/LICENSE read (sha256:ea7ae63d232bb589); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Operation-Molasses/LICENSE read (sha256:ea7ae63d232bb589); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27698,7 +27702,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27710,7 +27714,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27722,7 +27726,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/osint-terminal/LICENSE read (sha256:813b937252d0ae33); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/osint-terminal/LICENSE read (sha256:813b937252d0ae33); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27734,7 +27738,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/osint-web-mcp/LICENSE read (sha256:c1400d9232c69074); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/osint-web-mcp/LICENSE read (sha256:c1400d9232c69074); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27746,7 +27750,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/OsintEye/LICENSE read (sha256:fe37e7b7282f97fa); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/OsintEye/LICENSE read (sha256:fe37e7b7282f97fa); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27758,7 +27762,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/persistence-agent/LICENSE read (sha256:3bc50d4e0d2bb3bd); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/persistence-agent/LICENSE read (sha256:3bc50d4e0d2bb3bd); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27770,7 +27774,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/phantomsignal/LICENSE read (sha256:54739a2dce4619c5); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/phantomsignal/LICENSE read (sha256:54739a2dce4619c5); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27782,7 +27786,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27794,7 +27798,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/phishingclub/LICENSE read (sha256:ca3cb0a3162772ca); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/phishingclub/LICENSE read (sha256:fb5e472602401866); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27806,7 +27810,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/PhishSlayer/LICENSE read (sha256:508497ebbfe1ab49); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/PhishSlayer/LICENSE read (sha256:508497ebbfe1ab49); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27818,7 +27822,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/PHoDMSs/LICENSE read (sha256:ec37dbe37091fb82); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/PHoDMSs/LICENSE read (sha256:ec37dbe37091fb82); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27830,7 +27834,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/phone-osint-framework/LICENSE read (sha256:a839d4499ed49185); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/phone-osint-framework/LICENSE read (sha256:a839d4499ed49185); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27842,7 +27846,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/phoneinfoga/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/phoneinfoga/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27870,7 +27874,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Phunter/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Phunter/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27882,7 +27886,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27910,7 +27914,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27922,7 +27926,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/postexploitation-toolbox-android/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/postexploitation-toolbox-android/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27934,7 +27938,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Profil3r/LICENSE read (sha256:f64263e26fd07553); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Profil3r/LICENSE read (sha256:f64263e26fd07553); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -27962,7 +27966,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "declared in apps/shared/pyproject.toml as protobuf>=5.26; version read from installed metadata (7.36.1). Licence not reviewed: no distribution-level licence text was read for this record.",
+        "verification_note": "declared in apps/shared/pyproject.toml, pyproject.toml as protobuf>=5.26; version read from installed metadata (7.36.1). Licence not reviewed: no distribution-level licence text was read for this record.",
         "role": "third-party declared dependency",
         "vendored": false,
         "declared_requirement": [
@@ -28107,7 +28111,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Raphtory/LICENSE read (sha256:230184f60bae2fea); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Raphtory/LICENSE read (sha256:230184f60bae2fea); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28215,7 +28219,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/SearchPhone/LICENSE read (sha256:d4f772beb102b142); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/SearchPhone/LICENSE read (sha256:d4f772beb102b142); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28227,7 +28231,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/secureflow-intel/LICENSE read (sha256:41eb86ec55a9a981); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/secureflow-intel/LICENSE read (sha256:41eb86ec55a9a981); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28239,7 +28243,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/seekr/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/seekr/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28251,7 +28255,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/seithar-research/LICENSE read (sha256:7470fb0913a26fdf) but its text matches no known SPDX signature. Unrecognised licence text is a blocker, not a blank.",
+        "verification_note": "licence file donors/seithar-research/LICENSE read (sha256:7470fb0913a26fdf) but its text matches no known SPDX signature. Unrecognised licence text is a blocker, not a blank. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28279,7 +28283,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/sherlock/LICENSE read (sha256:53873dd0c41a3867); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/sherlock/LICENSE read (sha256:53873dd0c41a3867); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28291,7 +28295,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/silisocs/LICENSE read (sha256:ab6d9f3f7a933838); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/silisocs/LICENSE read (sha256:ab6d9f3f7a933838); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28319,7 +28323,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28331,7 +28335,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/social-oscillation-model/LICENSE read (sha256:cdfae388fd75cfa8); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/social-oscillation-model/LICENSE read (sha256:cdfae388fd75cfa8); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28343,7 +28347,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28355,7 +28359,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/spiderfoot/LICENSE read (sha256:41eb86ec55a9a981); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/spiderfoot/LICENSE read (sha256:41eb86ec55a9a981); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28392,6 +28396,22 @@
         "installed_version": "2.0.52"
       },
       {
+        "id": "sqlglot",
+        "path": null,
+        "upstream": "https://pypi.org/project/sqlglot/",
+        "version": "30.23.0",
+        "license": null,
+        "license_source": null,
+        "status": "unverified",
+        "verification_note": "declared in pyproject.toml as sqlglot==30.23.0; version read from installed metadata (30.23.0). Licence not reviewed: no distribution-level licence text was read for this record.",
+        "role": "third-party declared dependency",
+        "vendored": false,
+        "declared_requirement": [
+          "sqlglot==30.23.0"
+        ],
+        "installed_version": "30.23.0"
+      },
+      {
         "id": "sticks",
         "path": "donors/sticks",
         "upstream": "https://github.com/c2dc/sticks",
@@ -28399,7 +28419,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28411,7 +28431,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/Sublist3r/LICENSE read (sha256:c03cea027b4b40e4); SPDX signature matched LGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/Sublist3r/LICENSE read (sha256:c03cea027b4b40e4); SPDX signature matched LGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28423,7 +28443,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28451,7 +28471,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/The-3rd-Eye/LICENSE read (sha256:966ed1fd3809a849); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/The-3rd-Eye/LICENSE read (sha256:966ed1fd3809a849); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28463,7 +28483,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/TheBigBrother/LICENSE read (sha256:42cd9d34e504ab50); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/TheBigBrother/LICENSE read (sha256:42cd9d34e504ab50); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28475,7 +28495,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/thecrowler/LICENSE read (sha256:c71d239df91726fc); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/thecrowler/LICENSE read (sha256:c71d239df91726fc); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28487,7 +28507,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/theHarvester/LICENSE read (sha256:c61d71705fb06038); SPDX signature matched LGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/theHarvester/LICENSE read (sha256:c61d71705fb06038); SPDX signature matched LGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28499,7 +28519,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28539,7 +28559,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/trident/LICENSE.md read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/trident/LICENSE.md read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28551,7 +28571,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/TripleFantasy/LICENSE read (sha256:6f1e622c82a38007); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/TripleFantasy/LICENSE read (sha256:6f1e622c82a38007); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28563,7 +28583,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28591,7 +28611,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/user-scanner/LICENSE read (sha256:5c7d50c901baf33a); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/user-scanner/LICENSE read (sha256:5c7d50c901baf33a); SPDX signature matched MIT. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28619,7 +28639,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/votranhabysscoremicro/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/votranhabysscoremicro/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28647,7 +28667,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion.",
+        "verification_note": "no LICENSE/COPYING file at the top of the checkout; no licence established. This blocks promotion. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28659,7 +28679,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/X-osint/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/X-osint/LICENSE read (sha256:3972dc9744f6499f); SPDX signature matched AGPL-3.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       },
@@ -28671,7 +28691,7 @@
         "license": null,
         "license_source": null,
         "status": "unverified",
-        "verification_note": "licence file donors/YuLan-OneSim/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified.",
+        "verification_note": "licence file donors/YuLan-OneSim/LICENSE read (sha256:1eb85fc97224598d); SPDX signature matched Apache-2.0. A signature match is not a licence review: no human has confirmed that this file governs the code, any model weights or the bundled assets, so the entry stays unverified. Current generation did not materialize this donor checkout, so the previous pinned inventory and evidence note were retained without re-inspecting source or licence.",
         "role": "vendored donor checkout; capability not yet assigned",
         "vendored": true
       }
@@ -39177,8 +39197,8 @@
       {
         "path": "apps/shared/tests/contract/test_donor_registry.py",
         "status": "TEST",
-        "loc": 729,
-        "callables": 42,
+        "loc": 786,
+        "callables": 43,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -39296,8 +39316,8 @@
       {
         "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
         "status": "TEST",
-        "loc": 99,
-        "callables": 6,
+        "loc": 139,
+        "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40811,8 +40831,8 @@
       {
         "path": "tools/semantic_docgraph.py",
         "status": "IMPLEMENTED",
-        "loc": 798,
-        "callables": 28,
+        "loc": 1108,
+        "callables": 37,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40829,8 +40849,8 @@
       {
         "path": "tools/specs/build_donor_registry.py",
         "status": "IMPLEMENTED",
-        "loc": 510,
-        "callables": 19,
+        "loc": 562,
+        "callables": 20,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -102224,7 +102244,7 @@
     "rust_crates": 9,
     "import_edges": 2808,
     "test_files": 342,
-    "test_functions": 5282,
+    "test_functions": 5285,
     "untested_modules": 267,
     "http_routes": 182
   },
