@@ -74,7 +74,7 @@ try {
         modules: [...document.querySelectorAll(".ui-primary-nav-module")].map((el) => ({
           label: el.innerText.replace(/\s+/g, " ").trim(),
           href: el.getAttribute("href"),
-          active: el.getAttribute("aria-current") === "page",
+          active: el.getAttribute("data-active") === "true",
         })),
         destinationCount: document.querySelectorAll(".ui-primary-nav-link").length,
       };
