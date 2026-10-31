@@ -47,139 +47,8 @@ INVESTIGATION = "int-airbyte-smoke"
 GROUP = f"airbyte-proof-{os.getpid()}"
 
 
-def _enum_or_preferred(schema: dict, preferred: tuple[str, ...]) -> str | None:
-    """Choose a declared provider option; never invent an enum outside the SPEC."""
-    choices = schema.get("enum") or []
-    if not choices:
-        constant = schema.get("const")
-        return str(constant) if constant is not None else (
-            str(schema["default"]) if schema.get("default") is not None else None
-        )
-    normalized = {str(value).lower(): str(value) for value in choices}
-    for value in preferred:
-        if value.lower() in normalized:
-            return normalized[value.lower()]
-    return str(choices[0])
 
-
-def _object_choice(schema: dict, preferred: dict[str, tuple[str, ...]]) -> dict | None:
-    properties = schema.get("properties") or {}
-    chosen: dict = {}
-    for name, child in properties.items():
-        if child.get("type") == "object":
-            nested = _object_choice(child, preferred)
-            if nested is not None:
-                chosen[name] = nested
-            continue
-        value = _enum_or_preferred(child, preferred.get(name, ()))
-        if value is not None:
-            chosen[name] = value
-    if chosen:
-        return chosen
-    if schema.get("default") is not None and isinstance(schema["default"], dict):
-        return dict(schema["default"])
-    return None
-
-
-def _default_postgres_config(connector_spec: dict) -> dict:
-    """Build the local smoke config using only fields/options declared by connector SPEC."""
-    connection = connector_spec.get("connectionSpecification") or {}
-    properties = connection.get("properties") or {}
-    if not properties:
-        raise ValueError("source-postgres SPEC has no connectionSpecification.properties")
-
-    config = {
-        "host": os.environ.get("COGNITIVE_AIRBYTE_PG_HOST", "host.docker.internal"),
-        "port": int(os.environ.get("COGNITIVE_AIRBYTE_PG_PORT", "5432")),
-        "database": os.environ.get("COGNITIVE_AIRBYTE_PG_DATABASE", "cognitive"),
-        "username": os.environ.get("COGNITIVE_AIRBYTE_PG_USERNAME", "cognitive"),
-        "password": os.environ.get("COGNITIVE_AIRBYTE_PG_PASSWORD", "cognitive"),
-    }
-    if "schemas" in properties:
-        config["schemas"] = [x.strip() for x in os.environ.get("COGNITIVE_AIRBYTE_PG_SCHEMAS", "public").split(",") if x.strip()]
-
-    preferences = {
-        "mode": ("disable", "require", "prefer"),
-        "tunnel_method": ("NO_TUNNEL",),
-        "method": ("Standard", "standard", "Xmin", "xmin"),
-    }
-    for name in ("ssl_mode", "tunnel_method", "replication_method"):
-        schema = properties.get(name)
-        if schema and schema.get("type") == "object":
-            selected = _object_choice(schema, preferences)
-            if selected is not None:
-                config[name] = selected
-
-    required = set(connection.get("required") or [])
-    missing = sorted(name for name in required if name not in config)
-    if missing:
-        raise ValueError(
-            "source-postgres SPEC requires configuration fields not safely defaulted: "
-            + ", ".join(missing)
-            + "; provide COGNITIVE_AIRBYTE_CONFIG_FILE or COGNITIVE_AIRBYTE_CONFIG_JSON"
-        )
-    return config
-
-
-def _write_config(mount: Path, connector_spec: dict) -> Path:
-    mount.mkdir(parents=True, exist_ok=True)
-    target = mount / "config.json"
-    explicit_file = os.environ.get("COGNITIVE_AIRBYTE_CONFIG_FILE", "").strip()
-    explicit_json = os.environ.get("COGNITIVE_AIRBYTE_CONFIG_JSON", "").strip()
-    if explicit_file:
-        copyfile(Path(explicit_file).expanduser(), target)
-    elif explicit_json:
-        parsed = json.loads(explicit_json)
-        target.write_text(json.dumps(parsed, indent=2), encoding="utf-8")
-    else:
-        target.write_text(
-            json.dumps(_default_postgres_config(connector_spec), indent=2),
-            encoding="utf-8",
-        )
-    try:
-        target.chmod(0o600)
-    except OSError:
-        pass
-    return target
-
-
-def _write_configured_catalog(mount: Path, discovered_catalog: dict) -> tuple[Path, list[str]]:
-    """Select the named smoke table from the live DISCOVER result, not a hand-written stub."""
-    wanted = os.environ.get("COGNITIVE_AIRBYTE_STREAM", "airbyte_smoke")
-    found: list[dict] = []
-    for entry in discovered_catalog.get("streams", []):
-        stream = entry.get("stream") if isinstance(entry, dict) else None
-        stream = stream if isinstance(stream, dict) else entry
-        if isinstance(stream, dict) and stream.get("name") == wanted:
-            found.append(stream)
-    if not found:
-        names = [
-            (entry.get("stream") or entry).get("name")
-            for entry in discovered_catalog.get("streams", [])
-            if isinstance(entry, dict)
-        ]
-        raise ValueError(f"DISCOVER did not return {wanted!r}; available streams: {names[:30]}")
-
-    stream = found[0]
-    supported = stream.get("supported_sync_modes") or ["full_refresh"]
-    sync_mode = "full_refresh" if "full_refresh" in supported else (supported[0] if supported else None)
-    if not sync_mode:
-        raise ValueError(f"stream {wanted!r} declares no supported sync mode")
-    primary_key = stream.get("source_defined_primary_key") or []
-    configured = {
-        "streams": [{
-            "stream": stream,
-            "sync_mode": sync_mode,
-            "destination_sync_mode": "append",
-            "cursor_field": [],
-            "primary_key": primary_key,
-            "selected": True,
-        }]
-    }
-    target = mount / "catalog.json"
-    target.write_text(json.dumps(configured, indent=2), encoding="utf-8")
-    return target, [wanted]
-
+from airbyte_acceptance import write_configured_catalog, write_source_config
 
 
 async def main() -> int:
@@ -198,7 +67,7 @@ async def main() -> int:
     print("\n1. SPEC (§25)")
     try:
         spec_run = await runtime.spec()
-        _write_config(MOUNT, spec_run.spec)
+        write_source_config(MOUNT, spec_run.spec)
         print("   SPEC message   : yes")
         print(f"   connector      : {spec_run.connector_ref}")
         print("   config         : generated from connector SPEC / environment")
@@ -223,7 +92,7 @@ async def main() -> int:
             if isinstance(s, dict)
         ]
         print(f"   streams found  : {len(streams)}")
-        cat_path, selected = _write_configured_catalog(MOUNT, disc_run.catalog)
+        cat_path, selected = write_configured_catalog(MOUNT, disc_run.catalog, stream_name=os.environ.get('COGNITIVE_AIRBYTE_STREAM', 'airbyte_smoke'))
         configured = json.loads(cat_path.read_text(encoding="utf-8"))
         print(f"   selected stream: {selected[0]}")
         print(f"   configured     : {len(configured.get('streams', []))} stream(s)")
