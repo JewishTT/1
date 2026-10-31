@@ -198,8 +198,11 @@ class ObservationConsumer:
 
     async def _process(self, envelope: pb.EventEnvelope) -> ProcessingResult:
         record_meta = self._record_metadata(envelope)
-        outer_metadata = record_meta.get("record_metadata")
-        runtime_metadata = outer_metadata.get("runtime_metadata") if isinstance(outer_metadata, Mapping) else None
+        # EventEnvelope.payload is the record_metadata object itself. The
+        # PostgreSQL Observation provenance wraps that same object one level
+        # deeper as provenance.record_metadata; do not apply that DB wrapper
+        # when reading the original event.
+        runtime_metadata = record_meta.get("runtime_metadata")
         result_role = str(runtime_metadata.get("result_role") or "EVIDENCE") if isinstance(runtime_metadata, Mapping) else "EVIDENCE"
         if result_role not in {"EVIDENCE", "DISCOVERY_ONLY"}:
             raise ConsumerContractError(FAILURE_UNKNOWN_SOURCE, f"unknown result role: {result_role}")

@@ -86,12 +86,10 @@ def envelope(
                 "parser_hint": parser_hint,
                 "content_type": "application/json",
                 "runtime_producer": "searxng",
-                "record_metadata": {
-                    "runtime_metadata": {
-                        "result_role": result_role,
-                        "query": "public professional discovery",
-                        "result": SEARX_RESULT,
-                    }
+                "runtime_metadata": {
+                    "result_role": result_role,
+                    "query": "public professional discovery",
+                    "result": SEARX_RESULT,
                 },
             },
             sort_keys=True,
