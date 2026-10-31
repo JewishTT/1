@@ -228,7 +228,7 @@ async def main() -> int:
         "status": "processed",
         "derived_ref": f"{first[1]['topic']}[{first[1]['partition']}]@{first[1]['offset']}",
     }
-    out = Path("artifacts/acquisition-integration")
+    out = Path(os.environ.get("COGNITIVE_PROOF_OUTPUT", "artifacts/acquisition-integration"))
     out.mkdir(parents=True, exist_ok=True)
     (out / "searxng.json").write_text(
         json.dumps(
