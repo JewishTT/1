@@ -35886,7 +35886,7 @@
       {
         "path": "apps/interpretation/observation_consumer/__init__.py",
         "status": "IMPLEMENTED",
-        "loc": 627,
+        "loc": 630,
         "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
@@ -36286,7 +36286,7 @@
       {
         "path": "apps/interpretation/tests/test_observation_consumer.py",
         "status": "TEST",
-        "loc": 524,
+        "loc": 522,
         "callables": 38,
         "stubs": 0,
         "not_implemented": 0,
