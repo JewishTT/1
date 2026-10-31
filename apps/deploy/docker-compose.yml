@@ -8,21 +8,15 @@ name: cognitive-dev
 services:
   minio:
     profiles: ["core"]
-    image: dappros/minio:RELEASE.2025-09-07T16-13-09Z
+    # Chainguard's public, source-built MinIO image is continuously rebuilt with
+    # signed provenance/SBOM. Override MINIO_IMAGE to pin a reviewed digest.
+    image: ${MINIO_IMAGE:-cgr.dev/chainguard/minio:latest}
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: demo
       MINIO_ROOT_PASSWORD: demopass
     ports: ["9000:9000", "9001:9001"]
     volumes: [minio-data:/data]
-    healthcheck:
-      # The pinned, unmodified ECR mirror includes the upstream static curl binary.
-      # Probe the server readiness endpoint directly; no mutable mc alias state.
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/ready"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
   minio-init:
     profiles: ["core"]
     build:
@@ -34,7 +28,7 @@ services:
       MINIO_BUCKETS: knowledge,knowledge-raw
     depends_on:
       minio:
-        condition: service_healthy
+        condition: service_started
     restart: "no"
 
   # Feature 024 / D1=a: Redpanda is the canonical transport. Confluent Kafka remains
