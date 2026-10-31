@@ -41,6 +41,8 @@ async def main() -> int:
         print(json.dumps({"missing_definitions": missing}, indent=2))
         return 2
 
+    if not __import__("os").environ.get("TRONGRID_API_KEY", "").strip():
+        print("TRON LIVE PROOF BLOCKED: TRONGRID_API_KEY is not configured")
     connector = SourceConnector()
     results: list[dict] = []
     try:
