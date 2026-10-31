@@ -1171,7 +1171,7 @@ body:has(.ui-root) {
   container-type: inline-size;
 }
 
-@container ui-canvas (max-width: 1220px) {
+@container ui-canvas (max-width: 1360px) {
   .ui-root .ui-canvas-head {
     height: auto;
     min-height: var(--ui-activitybar-h);
