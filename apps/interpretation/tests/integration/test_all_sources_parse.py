@@ -1,6 +1,6 @@
 """Every source in the catalogue parses, and every failure has a name (spec 025 §33).
 
-The catalogue shipped 145 definitions declaring 92 ``parser:`` names, of which two were
+The catalogue ships 146 definitions declaring 92 ``parser:`` names, of which two were
 implemented. The rest were configuration that would have run and produced nothing, which is
 worse than not running: the platform reported an observation and its content was discarded
 before anyone read it.
@@ -128,7 +128,7 @@ def _classify(definition, status: int, body: bytes, content_type: str) -> Source
 class TestDeclarationsAreHonest:
     def test_every_definition_loads(self) -> None:
         assert not REJECTED, f"catalogue rejected definitions: {REJECTED}"
-        assert len(DEFINITIONS) == 145
+        assert len(DEFINITIONS) == 146
 
     def test_every_remote_definition_declares_a_parse_block(self) -> None:
         missing = sorted(
