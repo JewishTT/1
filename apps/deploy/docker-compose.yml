@@ -8,7 +8,7 @@ name: cognitive-dev
 services:
   minio:
     profiles: ["core"]
-    image: quay.io/minio/minio:RELEASE.2024-08-17T01-24-54Z
+    image: public.ecr.aws/y9w4h2u9/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: demo
@@ -23,17 +23,17 @@ services:
 
   minio-init:
     profiles: ["core"]
-    image: quay.io/minio/mc:latest
+    build:
+      context: ./minio-init
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: demo
+      MINIO_ROOT_PASSWORD: demopass
+      MINIO_BUCKETS: knowledge,knowledge-raw
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 demo demopass &&
-      mc mb -p local/knowledge &&
-      mc mb -p local/knowledge-raw &&
-      exit 0
-      "
+    restart: "no"
 
   # Feature 024 / D1=a: Redpanda is the canonical transport. Confluent Kafka remains
   # available under the "legacy-kafka" profile for comparison and for the
