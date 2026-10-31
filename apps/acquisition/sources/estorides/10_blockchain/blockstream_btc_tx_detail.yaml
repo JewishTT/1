@@ -30,7 +30,7 @@ parse:
       kind: identifier
       many: true
     input_addresses:
-      path: vin[*].prevout[*].scriptpubkey_address
+      path: vin[*].prevout.scriptpubkey_address
       kind: crypto
       many: true
     output_addresses:
