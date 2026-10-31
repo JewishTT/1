@@ -22,18 +22,18 @@ parse:
   family: json_object
   fields:
     address:
-      path: data.0.address
+      path: data[0].address
       kind: crypto
       required: true
     balance_sun:
-      path: data.0.balance
+      path: data[0].balance
       kind: identifier
     create_time:
-      path: data.0.create_time
+      path: data[0].create_time
       kind: identifier
     latest_operation_time:
-      path: data.0.latest_operation_time
+      path: data[0].latest_operation_time
       kind: identifier
     account_resource:
-      path: data.0.account_resource
+      path: data[0].account_resource
       kind: identifier
