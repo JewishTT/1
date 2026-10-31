@@ -1,0 +1,53 @@
+name: blockstream_btc_address_transactions
+enabled: true
+category: 10. Blockchain
+description: Blockstream Esplora — recent confirmed and mempool transactions for a Bitcoin address (first page)
+os: any
+requires_key: false
+contact: public_api
+parser: blockstream
+applies_to:
+- btc_address
+entity_hints:
+- btc_tx
+- btc_address
+- btc_value
+tool:
+  method: GET
+  url: https://blockstream.info/api/address/{query}/txs
+  headers:
+    User-Agent: cognitive-substrate/034 (read-only on-chain evidence)
+  params: {}
+parse:
+  family: json_rows
+  fields:
+    txid:
+      path: txid
+      kind: btc_tx
+      required: true
+    fee:
+      path: fee
+      kind: satoshi
+    size:
+      path: size
+      kind: integer
+    weight:
+      path: weight
+      kind: integer
+    confirmed:
+      path: status.confirmed
+      kind: boolean
+    block_height:
+      path: status.block_height
+      kind: integer
+    block_time:
+      path: status.block_time
+      kind: timestamp
+    input_addresses:
+      path: vin.prevout.scriptpubkey_address
+      kind: btc_address
+      many: true
+    output_addresses:
+      path: vout.scriptpubkey_address
+      kind: btc_address
+      many: true
