@@ -253,7 +253,7 @@ class EnrichmentService:
         """Enrich one subject and return everything the pass produced.
 
         ``depth`` is how many generations of newly discovered entities to enrich as well. It
-        defaults to 0 because an unbounded sweep over 145 sources finds new subjects forever;
+        defaults to 0 because an unbounded sweep over 151 sources finds new subjects forever;
         the recursion exists and is capped so a caller who wants it must say so.
         """
         subject = EntityProfile(
@@ -377,7 +377,7 @@ class EnrichmentService:
         would silently discard the attribute the second source could have supplied.
         
 
-        A source that cannot be reached is recorded, not raised. Of 145 definitions a sweep
+        A source that cannot be reached is recorded, not raised. Of 151 definitions a sweep
         meets refused hosts, 429s, retired endpoints and DNS failures, and one of those must
         not cost the other fifty the run -- the dossier's claim is "we asked and this is what
         came back", and a source that never answered belongs in that sentence too.
@@ -569,7 +569,7 @@ class EnrichmentService:
 
         Built from ``self._by_id`` rather than the module-level loader: a service that takes a
         catalogue and then schedules from a different one cannot be tested, and the tests would
-        be silently exercising the 145 live sources.
+        be silently exercising the 151 live sources.
         """
         wanted = {shape.lower() for shape in _query_shapes(query, kind)}
         selected: dict[str, CapabilityOffer] = {}
