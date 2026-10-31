@@ -40,10 +40,10 @@ def test_blockstream_transaction_detail_preserves_explicit_utxo_parent_refs() ->
     )
     assert outcome.status == "ok"
     assert outcome.record_count == 1
-    assert outcome.values_for("txid") == (txid,)
-    assert outcome.values_for("input_txids") == (parent,)
-    assert outcome.values_for("input_addresses") == ("1BoatSLRHtKNngkdXEeobR76b53LETtpyT",)
-    assert outcome.values_for("output_addresses") == ("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",)
+    assert outcome.records[0].all_of("txid") == (txid,)
+    assert outcome.records[0].all_of("input_txids") == (parent,)
+    assert outcome.records[0].all_of("input_addresses") == ("1BoatSLRHtKNngkdXEeobR76b53LETtpyT",)
+    assert outcome.records[0].all_of("output_addresses") == ("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",)
 
 
 def test_blockscout_address_metadata_extracts_address_and_native_balance() -> None:
@@ -60,8 +60,8 @@ def test_blockscout_address_metadata_extracts_address_and_native_balance() -> No
         },
     )
     assert outcome.status == "ok"
-    assert outcome.values_for("address") == (address,)
-    assert outcome.values_for("balance_wei") == ("123456789",)
+    assert outcome.records[0].all_of("address") == (address,)
+    assert outcome.records[0].all_of("balance_wei") == ("123456789",)
 
 
 def test_blockscout_transactions_extracts_first_page_records() -> None:
@@ -87,9 +87,9 @@ def test_blockscout_transactions_extracts_first_page_records() -> None:
     )
     assert outcome.status == "ok"
     assert outcome.record_count == 1
-    assert outcome.values_for("tx_hash") == (tx_hash,)
-    assert outcome.values_for("from_address") == (from_address,)
-    assert outcome.values_for("to_address") == (to_address,)
+    assert outcome.records[0].all_of("tx_hash") == (tx_hash,)
+    assert outcome.records[0].all_of("from_address") == (from_address,)
+    assert outcome.records[0].all_of("to_address") == (to_address,)
 
 
 def test_trongrid_account_uses_explicit_data_array_index() -> None:
@@ -105,7 +105,7 @@ def test_trongrid_account_uses_explicit_data_array_index() -> None:
         }]},
     )
     assert outcome.status == "ok"
-    assert outcome.values_for("address") == (address,)
+    assert outcome.records[0].all_of("address") == (address,)
     assert outcome.values_for("balance_sun") == ("100000000",)
 
 
@@ -133,6 +133,6 @@ def test_trongrid_transaction_feed_reads_nested_contract_fields_without_guessing
     )
     assert outcome.status == "ok"
     assert outcome.record_count == 1
-    assert outcome.values_for("tx_id") == (txid,)
-    assert outcome.values_for("owner_address") == (owner,)
-    assert outcome.values_for("to_address") == (to,)
+    assert outcome.records[0].all_of("tx_id") == (txid,)
+    assert outcome.records[0].all_of("owner_address") == (owner,)
+    assert outcome.records[0].all_of("to_address") == (to,)
