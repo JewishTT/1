@@ -197,7 +197,7 @@ class EnrichmentService:
     Parameters
     ----------
     definitions:
-        Catalogue entries. Loaded once and passed in, so 145 YAML files are not re-read per
+        Catalogue entries. Loaded once and passed in, so 151 YAML files are not re-read per
         entity and so a test can offer a catalogue of two.
     collect:
         Async iterator yielding ``(capability, event)`` for a source definition. Defaults to
