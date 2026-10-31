@@ -80,3 +80,17 @@ GitHub Actions evidence:
 - The Airbyte/SearXNG manifests record the tested workflow merge revision
   `7a9845f568a8899b0d911b3c46fe56f5a3ca0b09`; this is the exact source snapshot in
   those live run manifests, not a claim that later UI-only commits were part of that run.
+
+
+## Operator credential prerequisite
+
+The TRON V1 account and transaction-history definitions declare `TRONGRID_API_KEY`
+as a required provider credential. To enable both live checks, add a repository Actions
+secret with that exact name under **Settings → Secrets and variables → Actions**. Do not
+put the value in YAML, a checked-in `.env`, a PR comment or a source file. After adding
+the secret, rerun `blockchain-source-live-proof`; it must show six source passes before
+TRON coverage is called live-verified.
+
+The workflow intentionally fails closed while the key is absent. A missing provider
+credential is an operator configuration blocker, not an empty TRON account and not a
+successful proof.
