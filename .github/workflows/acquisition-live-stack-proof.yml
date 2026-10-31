@@ -44,35 +44,8 @@ jobs:
             sleep 5
           done
           test "$ready" -eq 1
-      - name: Initialise the MinIO raw bucket without the retired quay.io/minio/mc image
-        env:
-          COGNITIVE_MINIO_ENDPOINT: http://localhost:9000
-          COGNITIVE_MINIO_ACCESS_KEY: demo
-          COGNITIVE_MINIO_SECRET_KEY: demopass
-        run: |
-          .venv/bin/python - <<'PY'
-          import os
-          import boto3
-          from botocore.exceptions import ClientError
-
-          client = boto3.client(
-              "s3",
-              endpoint_url=os.environ["COGNITIVE_MINIO_ENDPOINT"],
-              aws_access_key_id=os.environ["COGNITIVE_MINIO_ACCESS_KEY"],
-              aws_secret_access_key=os.environ["COGNITIVE_MINIO_SECRET_KEY"],
-              region_name="us-east-1",
-          )
-          bucket = "knowledge-raw"
-          try:
-              client.head_bucket(Bucket=bucket)
-              print(f"MinIO bucket exists: {bucket}")
-          except ClientError as exc:
-              code = str(exc.response.get("Error", {}).get("Code", ""))
-              if code not in {"404", "NoSuchBucket", "NotFound"}:
-                  raise
-              client.create_bucket(Bucket=bucket)
-              print(f"MinIO bucket created: {bucket}")
-          PY
+      - name: Initialize MinIO buckets through the compose S3 initializer
+        run: docker compose -f apps/deploy/docker-compose.yml --profile core run --rm minio-init
       - name: Seed a controlled Postgres connector fixture
         run: |
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
