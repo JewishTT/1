@@ -157,30 +157,31 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/{case_id}` | 188 |
-| PATCH | `/{case_id}/scope` | 201 |
-| POST | `/{case_id}/context/amendments` | 234 |
-| POST | `/{case_id}/invariants` | 258 |
-| POST | `/{case_id}/approve` | 283 |
-| POST | `/{case_id}/plan` | 306 |
-| GET | `/{case_id}/actions` | 325 |
-| POST | `/{case_id}/actions/approve` | 338 |
-| POST | `/{case_id}/run` | 362 |
-| POST | `/{case_id}/pause` | 388 |
-| POST | `/{case_id}/artifacts` | 404 |
-| GET | `/{case_id}/artifacts` | 453 |
-| GET | `/{case_id}/artifacts/{artifact_id}/download` | 470 |
-| GET | `/{case_id}/obligations` | 501 |
-| GET | `/{case_id}/coverage` | 568 |
-| GET | `/{case_id}/claims` | 583 |
-| GET | `/{case_id}/timeline` | 600 |
-| GET | `/{case_id}/graph` | 621 |
-| POST | `/{case_id}/identity-reviews` | 641 |
-| POST | `/{case_id}/claim-disputes` | 665 |
-| POST | `/{case_id}/report` | 689 |
-| GET | `/{case_id}/reports/{report_id}` | 712 |
-| POST | `/{case_id}/close` | 732 |
-| POST | `/{case_id}/retention-action` | 789 |
+| GET | `/{case_id}` | 190 |
+| PATCH | `/{case_id}/scope` | 203 |
+| POST | `/{case_id}/context/amendments` | 236 |
+| POST | `/{case_id}/invariants` | 260 |
+| POST | `/{case_id}/approve` | 285 |
+| POST | `/{case_id}/plan` | 308 |
+| GET | `/{case_id}/actions` | 327 |
+| POST | `/{case_id}/actions/approve` | 340 |
+| POST | `/{case_id}/run` | 364 |
+| POST | `/{case_id}/pause` | 390 |
+| POST | `/{case_id}/artifacts` | 406 |
+| GET | `/{case_id}/artifacts` | 455 |
+| GET | `/{case_id}/artifacts/{artifact_id}/download` | 472 |
+| GET | `/{case_id}/obligations` | 503 |
+| GET | `/{case_id}/coverage` | 570 |
+| GET | `/{case_id}/discovery-leads` | 585 |
+| GET | `/{case_id}/claims` | 600 |
+| GET | `/{case_id}/timeline` | 617 |
+| GET | `/{case_id}/graph` | 638 |
+| POST | `/{case_id}/identity-reviews` | 658 |
+| POST | `/{case_id}/claim-disputes` | 682 |
+| POST | `/{case_id}/report` | 706 |
+| GET | `/{case_id}/reports/{report_id}` | 729 |
+| POST | `/{case_id}/close` | 749 |
+| POST | `/{case_id}/retention-action` | 806 |
 
 ## `resolutions` — `apps/control-plane/api/routes/resolutions.py`
 

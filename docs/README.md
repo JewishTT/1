@@ -22,10 +22,10 @@ Raw observations are immutable and content-addressed; every analytical result re
 |---|---|
 | Components | 17 |
 | Python / TypeScript / Rust modules | 1017 / 266 / 16 |
-| HTTP routes | 182 |
+| HTTP routes | 183 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 344 / 5321 |
+| Test files / functions | 344 / 5327 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
