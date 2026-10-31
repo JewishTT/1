@@ -5,7 +5,7 @@
  * workbench is the primary surface; navigation is an always-available rail, not
  * a modal deck hidden behind a single NAV button.
  */
-import { NavLink, useInRouterContext, useLocation } from "react-router-dom";
+import { Link, NavLink, useInRouterContext, useLocation } from "react-router-dom";
 
 import { Icon } from "../ui/Icon";
 import {
@@ -75,13 +75,12 @@ function RoutedTopNav() {
         {NAV_MODULES.map((module) => {
           const active = currentModule === module.key;
           return (
-            <NavLink
+            <Link
               key={module.key}
               to={module.landing}
-              end={module.key === "osint"}
               className="ui-primary-nav-module"
               data-active={active}
-              aria-current={active ? "page" : undefined}
+              aria-current={active ? "location" : undefined}
               title={module.label}
               data-testid={`nav-module-${module.key}`}
             >
@@ -93,7 +92,7 @@ function RoutedTopNav() {
                 <span className="ui-primary-nav-module-name">{module.label}</span>
               </span>
               {active ? <span className="ui-primary-nav-module-marker" aria-hidden="true" /> : null}
-            </NavLink>
+            </Link>
           );
         })}
       </nav>
