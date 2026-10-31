@@ -1,51 +1,68 @@
 # 10_blockchain — public on-chain evidence
 
 This family is read-only. It collects public chain records as source-bound evidence; it
-does not manage signing keys, construct or sign transactions, broadcast payments, or move
-assets between addresses or chains.
+does not manage wallet secrets, sign or broadcast transactions, route assets, or execute
+cross-chain swaps.
 
-## Current coverage
+## Current catalogue coverage
 
-| Chain | Provider | Source definitions |
-|---|---|---|
-| Bitcoin mainnet | Blockchain.com | Address summary and transaction lookup |
-| Bitcoin mainnet | Blockstream Esplora | Address transaction feed and transaction detail |
-| Bitcoin mainnet | mempool.space | Block-tip metadata |
-| Ethereum mainnet | Ethplorer | Existing address/token metadata |
-| Ethereum mainnet | Blockscout API v2 | Address metadata and recent transaction page |
-| TRON mainnet | TronGrid v1 | Account metadata and recent transaction page |
+| Chain | Provider | Source definitions | Credential |
+|---|---|---|---|
+| Bitcoin mainnet | Blockchain.com | Existing address summary and transaction lookup | Provider policy |
+| Bitcoin mainnet | Blockstream Esplora | Address transaction feed and transaction detail | Public endpoint |
+| Bitcoin mainnet | mempool.space | Existing block-tip metadata | Public endpoint |
+| Ethereum mainnet | Ethplorer | Existing address/token metadata | `ETHPLORER_API_KEY` |
+| Ethereum mainnet | Blockscout API v2 | Address metadata and recent transaction page | Public endpoint |
+| TRON mainnet | TronGrid v1 | Account metadata and recent transaction page | `TRONGRID_API_KEY` |
 
-Every endpoint is declared in YAML and passes through the common source catalogue and
-HTTP executor. Raw response bytes, content digest, status, source identity and observation
-provenance are retained by the canonical acquisition path. API credentials are resolved
-from named environment variables and redacted from persisted request/redirect URLs.
+The six source definitions added or promoted in this vertical slice are validated through the
+same YAML catalogue and HTTP executor as every other source. Provider responses are captured
+raw-first; content digests, source identity, HTTP status and capture provenance travel through
+the acquisition path. Credential values are injected only into outbound requests and redacted
+from persisted URL provenance and transport exception details.
 
-## Pagination
+TRON definitions deliberately fail closed when `TRONGRID_API_KEY` is absent. Supply it as
+a repository/environment secret to enable the authenticated TRON live proof. A missing key
+is not interpreted as an empty account or a successful no-result response.
 
-- Blockstream's address endpoint returns a recent-transaction window. A transaction detail
-  lookup is a separate pivot and may be used to inspect explicit input references.
-- Blockscout v2 returns opaque `next_page_params`; this source currently captures its first
-  page only. It does not invent a cursor or treat a page token as an integer offset.
-- TronGrid v1 accepts a bounded page size. Current definitions intentionally capture the
-  first 50 records; deeper traversal should be introduced only with a provider-specific
-  cursor contract and a source-level ceiling.
+## Pagination and coverage boundaries
+
+- Blockstream's address endpoint returns its recent transaction window. Transaction detail is
+  a separate pivot and carries the explicit UTXO input references used by lineage.
+- Blockscout v2 returns opaque `next_page_params`; the current definition captures the first
+  page only. The executor does not convert an opaque provider cursor to a page number.
+- TronGrid account transactions are deliberately bounded to the first 50 confirmed records.
+  A deeper walk requires a provider-specific cursor contract and a source-level ceiling.
+- The live blockchain workflow queries and parses one page per source. It reports missing
+  credentials and provider failures per source rather than manufacturing records.
 
 ## Transaction DAG semantics
 
 The interpretation layer's `transaction_lineage.py` builds a deterministic dependency DAG
-only from explicit parent transaction references. Bitcoin input transaction IDs can support
-parent → spend edges. ETH/TRON transaction ordering, matching amounts, common addresses,
-timestamps, bridge labels or proximity do not establish a dependency edge. Cross-chain
-relations remain unresolved unless a source explicitly identifies the bridge event and its
-evidence. Missing parents, duplicate hashes with conflicting raw digests, cross-network
-references and cycles remain visible quality conditions.
+only from explicit parent transaction references. Bitcoin input transaction IDs support
+parent → spending-transaction edges. ETH/TRON account ordering, matching amounts, shared
+addresses, timestamps, bridge labels or proximity do not establish a dependency edge.
+Cross-chain relationships remain unresolved unless a source explicitly identifies a
+bridge/event and its evidence.
+
+Nodes preserve all supporting observation IDs and raw-record digests. Missing parents,
+conflicting observations for a transaction ID, cross-chain/cross-network references and
+cycle members remain explicit quality conditions. The cycle detector reports strongly
+connected cycle members, not unrelated descendants that happen to be blocked behind a cycle.
+A partial graph is returned with its defects; evidence is not silently repaired or discarded.
 
 ## Verification
 
-- Unit tests validate all source definitions, key substitution/redaction, pagination and DAG
-  invariants.
-- `apps/acquisition/_prove_blockchain_sources.py` is a strict live proof. It runs the six
-  definitions through `SourceConnector`, parses their captured bytes through the declared
-  parser family, and fails on HTTP errors, empty results or unresolved required fields.
-- GitHub Actions runs that proof in `.github/workflows/blockchain-source-live-proof.yml`.
-  A live run is required before these endpoints should be called production-verified.
+- Offline contracts validate all source declarations, required credentials, parser paths,
+  bounded pagination, URL redaction and transaction-lineage invariants.
+- `apps/acquisition/_prove_blockchain_sources.py` fetches through `SourceConnector` and
+  parses the captured bytes through each source's declared parser. The GitHub Actions run
+  requires usable records from all six sources; TRON requires the operator secret above.
+- `apps/acquisition/_prove_commoncrawl.py` has a separate live proof that checks a live CDX
+  index row and a real HTTP 206 WARC byte-range response, then parses the matching WARC
+  payload. It passed on 2026-10-31.
+- `apps/acquisition/_prove_airbyte.py` obtains SPEC and DISCOVER from the pinned real
+  connector, writes a restrictive temporary config and catalog, then performs the existing
+  raw capture → Observation → Redpanda → consumer read-back proof.
+- Live Airbyte/SearXNG stack acceptance is run separately from hermetic unit tests, so a
+  provider/registry outage is not confused with an offline contract result.
