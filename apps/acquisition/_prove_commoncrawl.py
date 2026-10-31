@@ -98,7 +98,7 @@ async def main() -> int:
                     raise RuntimeError(f"WARC range length mismatch: expected {length}, got {len(response.content)}")
                 rows = parse_warc(__import__("io").BytesIO(response.content))
                 matching = [row for row in rows if row.url.rstrip("/") == str(hit.get("url", "")).rstrip("/")]
-                matching = [row for row in matching if row.payload and len(row.payload) <= MAX_PAYLOAD_BYTES + 1]
+                matching = [row for row in matching if row.payload and len(row.payload) <= MAX_PAYLOAD_BYTES]
                 if not matching:
                     raise RuntimeError("range contained no non-empty response record for the indexed URL")
                 chosen = hit
