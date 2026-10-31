@@ -23,6 +23,7 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
 | `control-plane` | 241 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
 | `interpretation` | 115 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
@@ -35,7 +36,7 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `webapp` | 0 | 266 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
-1016 Python modules, 266 TypeScript modules, 16 Rust source files in 9 crates.
+1017 Python modules, 266 TypeScript modules, 16 Rust source files in 9 crates.
 
 ## Key properties (Constitution invariants)
 

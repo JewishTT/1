@@ -8,8 +8,8 @@ committed model no longer matches the tree.
 
 | Metric | Value |
 |---|---|
-| Components | 16 |
-| Python modules | 1016 |
+| Components | 17 |
+| Python modules | 1017 |
 | TypeScript modules | 266 |
 | Rust crates | 9 |
 | Rust source files | 16 |
@@ -22,7 +22,7 @@ committed model no longer matches the tree.
 | Unresolved: unknown (undeclared) | 0 |
 | Test files | 344 |
 | Test functions | 5316 |
-| Untested platform modules | 269 |
+| Untested platform modules | 270 |
 | HTTP routes | 182 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
 | Capabilities | 30 |
@@ -53,6 +53,7 @@ committed model no longer matches the tree.
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
 | control-plane | 241 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
 | interpretation | 115 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |

@@ -199,6 +199,20 @@ apps.control-plane.api.routes.temporal_materializations
 
 </details>
 
+## `deploy`
+
+Docker Compose dev topology, Grafana, k8s configs.
+
+Python modules: **1** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.deploy.minio-init.init-buckets
+```
+
+</details>
+
 ## `feedback`
 
 Recrawl/priority feedback, stopping policy.

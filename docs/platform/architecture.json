@@ -533,6 +533,7 @@
           "specops"
         ],
         "modules": [
+          "apps/deploy/minio-init/init-buckets.py",
           "apps/specops/__init__.py",
           "apps/specops/counterintel.py",
           "apps/specops/emulation.py",
@@ -604,7 +605,7 @@
           "tools/specs/build_owner_map.py",
           "tools/strip_zero_inventory.py"
         ],
-        "module_count": 70
+        "module_count": 71
       },
       {
         "id": "orchestration-temporal",

@@ -416,6 +416,15 @@
       ]
     },
     {
+      "name": "deploy",
+      "description": "Docker Compose dev topology, Grafana, k8s configs.",
+      "python_modules": 1,
+      "typescript_modules": 0,
+      "modules": [
+        "apps.deploy.minio-init.init-buckets"
+      ]
+    },
+    {
       "name": "feedback",
       "description": "Recrawl/priority feedback, stopping policy.",
       "python_modules": 11,
@@ -1119,11 +1128,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1016,
+    "module_count": 1017,
     "edge_count": 2819,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 886,
+      "stdlib:__future__": 887,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
@@ -1158,7 +1167,7 @@
       "stdlib:json": 197,
       "stdlib:logging": 23,
       "stdlib:math": 41,
-      "stdlib:os": 72,
+      "stdlib:os": 73,
       "stdlib:pathlib": 322,
       "stdlib:queue": 1,
       "stdlib:random": 6,
@@ -1172,11 +1181,11 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 16,
-      "stdlib:sys": 259,
+      "stdlib:sys": 260,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 17,
-      "stdlib:time": 29,
+      "stdlib:time": 30,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 33,
@@ -1197,7 +1206,8 @@
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
       "third-party:bm25s": 1,
-      "third-party:botocore": 1,
+      "third-party:boto3": 1,
+      "third-party:botocore": 2,
       "third-party:charset_normalizer": 1,
       "third-party:confluent_kafka": 16,
       "third-party:docx": 2,
@@ -28936,6 +28946,7 @@
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
+    "apps/deploy/minio-init/init-buckets.py",
     "apps/feedback/feedback/branch/__init__.py",
     "apps/interpretation/__init__.py",
     "apps/interpretation/_consume_searxng.py",
@@ -29008,10 +29019,9 @@
     "apps/shared/events/coalesce.py",
     "apps/shared/events/fabric_events.py",
     "apps/shared/events/registry.py",
-    "apps/shared/ids/gen.py",
-    "apps/shared/network/__init__.py"
+    "apps/shared/ids/gen.py"
   ],
-  "untested_count": 269,
+  "untested_count": 270,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -29547,6 +29557,7 @@
             "specops"
           ],
           "modules": [
+            "apps/deploy/minio-init/init-buckets.py",
             "apps/specops/__init__.py",
             "apps/specops/counterintel.py",
             "apps/specops/emulation.py",
@@ -29618,7 +29629,7 @@
             "tools/specs/build_owner_map.py",
             "tools/strip_zero_inventory.py"
           ],
-          "module_count": 70
+          "module_count": 71
         },
         {
           "id": "orchestration-temporal",
@@ -31843,7 +31854,7 @@
       {
         "path": "apps/acquisition/_prove_commoncrawl.py",
         "status": "IMPLEMENTED",
-        "loc": 150,
+        "loc": 201,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -35307,6 +35318,15 @@
         "status": "IMPLEMENTED",
         "loc": 89,
         "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/deploy/minio-init/init-buckets.py",
+        "status": "IMPLEMENTED",
+        "loc": 73,
+        "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41048,12 +41068,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 547,
+      "IMPLEMENTED": 548,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
       "TEST": 341,
       "MIGRATION": 19,
-      "total": 1016
+      "total": 1017
     }
   },
   "reachability": {
@@ -42596,6 +42616,10 @@
       },
       {
         "path": "apps/control-plane/workflows/worker.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/deploy/minio-init/init-buckets.py",
         "status": "PRODUCTION"
       },
       {
@@ -45142,6 +45166,7 @@
       "apps/control-plane/services/pow_run.py",
       "apps/control-plane/services/worker_pools.py",
       "apps/control-plane/workflows/worker.py",
+      "apps/deploy/minio-init/init-buckets.py",
       "apps/interpretation/_consume_searxng.py",
       "apps/interpretation/_prove_primproc.py",
       "apps/interpretation/dictionaries/build_mini.py",
@@ -45165,11 +45190,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 407,
+      "PRODUCTION": 408,
       "TEST_ONLY": 146,
       "ORPHAN": 122,
       "TEST": 341,
-      "total": 1016
+      "total": 1017
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -102627,15 +102652,15 @@
     }
   },
   "counts": {
-    "components": 16,
-    "python_modules": 1016,
+    "components": 17,
+    "python_modules": 1017,
     "typescript_modules": 266,
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 2819,
     "test_files": 344,
     "test_functions": 5316,
-    "untested_modules": 269,
+    "untested_modules": 270,
     "http_routes": 182
   },
   "evidence_stats": {
@@ -102645,19 +102670,19 @@
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 547,
+    "IMPLEMENTED": 548,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
     "TEST": 341,
     "MIGRATION": 19,
-    "total": 1016
+    "total": 1017
   },
   "reachability_summary": {
-    "PRODUCTION": 407,
+    "PRODUCTION": 408,
     "TEST_ONLY": 146,
     "ORPHAN": 122,
     "TEST": 341,
-    "total": 1016
+    "total": 1017
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -102678,6 +102703,7 @@
     "apps/control-plane/services/pow_run.py",
     "apps/control-plane/services/worker_pools.py",
     "apps/control-plane/workflows/worker.py",
+    "apps/deploy/minio-init/init-buckets.py",
     "apps/interpretation/_consume_searxng.py",
     "apps/interpretation/_prove_primproc.py",
     "apps/interpretation/dictionaries/build_mini.py",

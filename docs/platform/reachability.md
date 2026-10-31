@@ -6,7 +6,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 407 |
+| PRODUCTION | 408 |
 | TEST_ONLY | 146 |
 | ORPHAN | 122 |
 | TEST | 341 |
@@ -33,6 +33,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/services/pow_run.py` |
 | `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/workflows/worker.py` |
+| `apps/deploy/minio-init/init-buckets.py` |
 | `apps/interpretation/_consume_searxng.py` |
 | `apps/interpretation/_prove_primproc.py` |
 | `apps/interpretation/dictionaries/build_mini.py` |

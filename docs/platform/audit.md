@@ -6,8 +6,8 @@ A verified snapshot of the platform's true state. Every number is derived from t
 
 | Metric | Value |
 |---|---|
-| Components | 16 |
-| Python / TypeScript / Rust modules | 1016 / 266 / 16 |
+| Components | 17 |
+| Python / TypeScript / Rust modules | 1017 / 266 / 16 |
 | Resolved import edges | 2819 |
 | HTTP routes / routers | 182 / 33 |
 | Test files / functions | 344 / 5316 |
@@ -17,7 +17,7 @@ A verified snapshot of the platform's true state. Every number is derived from t
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 547 |
+| IMPLEMENTED | 548 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
@@ -32,7 +32,7 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 407 |
+| PRODUCTION | 408 |
 | TEST_ONLY | 146 |
 | ORPHAN | 122 |
 | TEST | 341 |
