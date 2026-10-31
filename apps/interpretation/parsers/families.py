@@ -9,7 +9,7 @@ So a source names a **family** plus the paths it cares about, and this module do
 
 **A family is a shape, not a vendor.** ``json_rows`` covers 84 sources across feeds, search
 APIs, blockchain explorers and threat intel, because they all return a list of records under
-some path. Keying on the shape is what keeps 145 integrations from becoming 145 code paths
+some path. Keying on the shape is what keeps 151 integrations from becoming 151 code paths
 that drift apart.
 
 **An undeclared field is unresolved, never guessed.** ``resolve_path`` distinguishes a
