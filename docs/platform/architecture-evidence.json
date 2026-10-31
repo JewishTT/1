@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4367,
-    "static_facts": 4073,
+    "facts_total": 4382,
+    "static_facts": 4088,
     "inferred": 294,
     "intended": 0
   },
@@ -491,7 +491,7 @@
       "status": "INFERRED",
       "method": "architecture_compiler:direct",
       "evidence": {
-        "via_import": "parsers.primproc",
+        "via_import": "parsers.families",
         "event": null
       },
       "confidence": 0.6
@@ -926,6 +926,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "906b1fd09c2431e3",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_airbyte.py",
+      "object": "apps/acquisition/airbyte_acceptance.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_airbyte.py",
+        "via": "airbyte_acceptance"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "1d78c0a0f635b128",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/_prove_airbyte.py",
@@ -1065,6 +1078,71 @@
       "evidence": {
         "file": "apps/acquisition/_prove_backbone.py",
         "via": "events.topics"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5b4184af4209f7e7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_blockchain_sources.py",
+      "object": "apps/acquisition/sources/catalogue.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_blockchain_sources.py",
+        "via": "sources.catalogue"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5dd93b1ae068e201",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_blockchain_sources.py",
+      "object": "apps/acquisition/sources/connector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_blockchain_sources.py",
+        "via": "sources.connector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "44109ea5c9087feb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_blockchain_sources.py",
+      "object": "apps/interpretation/parsers/families.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_blockchain_sources.py",
+        "via": "parsers.families"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b79b76fc6e81db4a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_commoncrawl.py",
+      "object": "apps/acquisition/adapters/warc/collect.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_commoncrawl.py",
+        "via": "adapters.warc.collect"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5750c93eb9e0a2e3",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_commoncrawl.py",
+      "object": "apps/shared/network/commoncrawl.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_commoncrawl.py",
+        "via": "network.commoncrawl"
       },
       "confidence": 1.0
     },
@@ -3565,6 +3643,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "4ce44af1685a44bb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
+      "object": "apps/acquisition/airbyte_acceptance.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
+        "via": "airbyte_acceptance"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "6bc462b9e54c4b4b",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
@@ -4042,6 +4133,19 @@
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_replay_journal.py",
         "via": "observation_gate.replay"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "42152e186cc1d6a1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+      "object": "apps/acquisition/sources/catalogue.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+        "via": "sources.catalogue"
       },
       "confidence": 1.0
     },
@@ -22636,6 +22740,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "79e7cf903c430e5e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/interpretation/tests/test_onchain_source_parsers.py",
+      "object": "apps/acquisition/sources/catalogue.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "via": "sources.catalogue"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4c371175c8cd69ac",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/interpretation/tests/test_onchain_source_parsers.py",
+      "object": "apps/interpretation/parsers/families.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "via": "parsers.families"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "3ac7273116b8b5bd",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/interpretation/tests/test_parser_adapter.py",
@@ -23867,6 +23997,19 @@
       "evidence": {
         "file": "apps/interpretation/tests/test_tenzir_normalization.py",
         "via": "normalization.tenzir"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "291b75e445f9da48",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/interpretation/tests/test_transaction_lineage.py",
+      "object": "apps/interpretation/transaction_lineage.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/interpretation/tests/test_transaction_lineage.py",
+        "via": "transaction_lineage"
       },
       "confidence": 1.0
     },
@@ -44832,6 +44975,18 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "384473d12a385600",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
+      "object": "apps/acquisition/airbyte_acceptance.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_airbyte_runtime.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "65239dea2b2e4185",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
@@ -49428,6 +49583,30 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "fe38c74da3467017",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/interpretation/tests/test_onchain_source_parsers.py",
+      "object": "apps/acquisition/sources/catalogue.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/interpretation/tests/test_onchain_source_parsers.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "16607deb63a24c51",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/interpretation/tests/test_onchain_source_parsers.py",
+      "object": "apps/interpretation/parsers/families.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/interpretation/tests/test_onchain_source_parsers.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "8bd2cc9209130764",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/interpretation/tests/test_parser_adapter.py",
@@ -50360,6 +50539,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/interpretation/tests/test_tenzir_normalization.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "76e6740ff8626e25",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/interpretation/tests/test_transaction_lineage.py",
+      "object": "apps/interpretation/transaction_lineage.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/interpretation/tests/test_transaction_lineage.py"
       },
       "confidence": 1.0
     },

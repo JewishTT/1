@@ -1,6 +1,6 @@
 # Tests
 
-342 test files, 5285 test functions. 267 platform modules are not targeted by any test.
+344 test files, 5316 test functions. 269 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -20,7 +20,7 @@
 | `apps/acquisition/tests/unit/test_acquisition_artifact_sink.py` | 39 | `apps/acquisition/artifact_sink.py`, `apps/shared/domain/acquisition_artifact.py`, `apps/shared/domain/capture.py`, `apps/shared/domain/observation_identity.py` |
 | `apps/acquisition/tests/unit/test_acquisition_worker.py` | 33 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/connector.py`, `apps/acquisition/sources/executor.py`, `apps/acquisition/worker_acquisition.py` |
 | `apps/acquisition/tests/unit/test_adapter_onboarding.py` | 3 | `apps/acquisition/adapters/commoncrawl/__init__.py`, `apps/acquisition/adapters/commoncrawl/index.py`, `apps/acquisition/adapters/registry.py`, `apps/acquisition/adapters/scrapy/__init__.py` |
-| `apps/acquisition/tests/unit/test_airbyte_runtime.py` | 28 | `apps/acquisition/runtime/__init__.py`, `apps/acquisition/runtime/airbyte.py`, `apps/shared/domain/acquisition_artifact.py` |
+| `apps/acquisition/tests/unit/test_airbyte_runtime.py` | 33 | `apps/acquisition/airbyte_acceptance.py`, `apps/acquisition/runtime/__init__.py`, `apps/acquisition/runtime/airbyte.py`, `apps/shared/domain/acquisition_artifact.py` |
 | `apps/acquisition/tests/unit/test_archival_worker.py` | 8 | `apps/acquisition/worker_http/archival.py` |
 | `apps/acquisition/tests/unit/test_bbot_process_boundary.py` | 15 | `apps/acquisition/runtime/bbot.py` |
 | `apps/acquisition/tests/unit/test_bbot_runtime.py` | 25 | `apps/acquisition/runtime/__init__.py`, `apps/acquisition/runtime/bbot.py`, `apps/acquisition/runtime/record_stream.py` |
@@ -36,8 +36,8 @@
 | `apps/acquisition/tests/unit/test_region_backpressure.py` | 7 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/tests/unit/test_render_pipeline.py` | 6 | `apps/acquisition/worker_browser/renderer.py` |
 | `apps/acquisition/tests/unit/test_replay_journal.py` | 5 | `apps/acquisition/observation_gate/replay.py` |
-| `apps/acquisition/tests/unit/test_source_catalogue_full.py` | 15 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
-| `apps/acquisition/tests/unit/test_source_executor_contracts.py` | 4 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
+| `apps/acquisition/tests/unit/test_source_catalogue_full.py` | 19 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
+| `apps/acquisition/tests/unit/test_source_executor_contracts.py` | 10 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_source_query_set.py` | 12 | `apps/acquisition/cc_plan.py`, `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py` |
 | `apps/acquisition/tests/unit/test_warc_adapter.py` | 3 | `apps/acquisition/adapters/warc/collect.py` |
 | `apps/admission/tests/contract/test_no_auto_merge.py` | 25 | `apps/admission/engine/admission.py`, `apps/admission/engine/calibration.py`, `apps/admission/resolution/blocking.py`, `apps/admission/resolution/candidate.py` |
@@ -153,6 +153,7 @@
 | `apps/interpretation/tests/test_evidence_manifest.py` | 14 | `apps/interpretation/evidence/manifest.py` |
 | `apps/interpretation/tests/test_mention_binding_seam.py` | 16 | `apps/interpretation/extractors/signals/__init__.py`, `apps/interpretation/extractors/signals/lexical.py`, `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/mentions.py` |
 | `apps/interpretation/tests/test_observation_consumer.py` | 26 | `apps/interpretation/normalization/tenzir.py`, `apps/interpretation/observation_consumer/__init__.py`, `apps/shared/events/__init__.py` |
+| `apps/interpretation/tests/test_onchain_source_parsers.py` | 5 | `apps/acquisition/sources/catalogue.py`, `apps/interpretation/parsers/families.py` |
 | `apps/interpretation/tests/test_parser_adapter.py` | 17 | `apps/interpretation/parsers/registry.py` |
 | `apps/interpretation/tests/test_payload_binding.py` | 14 | `apps/interpretation/parsers/payload/__init__.py`, `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/relation_participant.py` |
 | `apps/interpretation/tests/test_payload_detection.py` | 15 | `apps/interpretation/parsers/payload/__init__.py` |
@@ -173,6 +174,7 @@
 | `apps/interpretation/tests/test_syntactic_producer.py` | 58 | `apps/interpretation/extractors/signals/mentions.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_tenzir_live.py` | 1 | `apps/interpretation/normalization/tenzir.py` |
 | `apps/interpretation/tests/test_tenzir_normalization.py` | 15 | `apps/interpretation/normalization/tenzir.py` |
+| `apps/interpretation/tests/test_transaction_lineage.py` | 11 | `apps/interpretation/transaction_lineage.py` |
 | `apps/interpretation/tests/test_warc_reader.py` | 44 | `apps/interpretation/parsers/warc.py` |
 | `apps/projection/tests/contract/test_search_projection_manifest.py` | 9 | `apps/projection/search/index.py`, `apps/projection/search/projector.py`, `apps/shared/contracts/projection_manifest.py` |
 | `apps/projection/tests/contract/test_tda_bridge_contract.py` | 30 | `apps/projection/graph/adjacency.py`, `apps/projection/tda/__init__.py`, `apps/projection/tda/bridge.py`, `apps/projection/tda/pipeline.py` |
@@ -359,6 +361,8 @@
 | `apps/acquisition/_probe_catalogue.py` |
 | `apps/acquisition/_prove_airbyte.py` |
 | `apps/acquisition/_prove_backbone.py` |
+| `apps/acquisition/_prove_blockchain_sources.py` |
+| `apps/acquisition/_prove_commoncrawl.py` |
 | `apps/acquisition/_prove_readback.py` |
 | `apps/acquisition/_prove_searxng.py` |
 | `apps/acquisition/_prove_tools.py` |
@@ -413,5 +417,3 @@
 | `apps/control-plane/api/routes/science_structure.py` |
 | `apps/control-plane/api/routes/science_tda.py` |
 | `apps/control-plane/api/routes/science_temporal.py` |
-| `apps/control-plane/api/routes/search.py` |
-| `apps/control-plane/api/routes/search_rebuild.py` |

@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **105** · TypeScript modules: **0**
+Python modules: **108** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -15,6 +15,8 @@ apps.acquisition._measure_coverage
 apps.acquisition._probe_catalogue
 apps.acquisition._prove_airbyte
 apps.acquisition._prove_backbone
+apps.acquisition._prove_blockchain_sources
+apps.acquisition._prove_commoncrawl
 apps.acquisition._prove_readback
 apps.acquisition._prove_searxng
 apps.acquisition._prove_tools
@@ -45,12 +47,10 @@ apps.acquisition.adapters.stormcrawler
 apps.acquisition.adapters.stormcrawler.collect
 apps.acquisition.adapters.warc
 apps.acquisition.adapters.warc.collect
+apps.acquisition.airbyte_acceptance
 apps.acquisition.artifact_sink
 apps.acquisition.case_execution_guard
 apps.acquisition.cc_extract
-apps.acquisition.cc_plan
-apps.acquisition.dispatcher
-apps.acquisition.dispatcher.kafka_producer
 ```
 
 </details>
@@ -227,7 +227,7 @@ apps.feedback.tests.test_frontier_loop
 
 Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.
 
-Python modules: **112** · TypeScript modules: **0**
+Python modules: **115** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
