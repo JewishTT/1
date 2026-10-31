@@ -28,7 +28,7 @@ from sources.executor import HttpSourceExecutor, _basic_auth  # noqa: E402
 
 ESTORIDES = APP / "sources" / "estorides"
 
-EXPECTED_TOTAL = 146  # 147 files, minus the duplicate hunter_email
+EXPECTED_TOTAL = 151  # 152 files, minus the duplicate hunter_email
 EXPECTED_CATEGORIES = 20
 
 
@@ -105,7 +105,7 @@ def test_keyed_and_open_split_is_visible() -> None:
     defs = all_definitions()
     keyed = [d for d in defs if d.requires_key]
     assert len(keyed) == 24
-    assert len(defs) - len(keyed) == 122  # runnable with no credential at all
+    assert len(defs) - len(keyed) == 127  # runnable with no credential at all
 
 
 # -- basic auth ---------------------------------------------------------------
@@ -240,3 +240,23 @@ pagination:
 
     with pytest.raises(CatalogueError, match="not supported"):
         load_source(source_file)
+
+
+
+def test_btc_eth_tron_read_only_sources_are_present_and_enabled() -> None:
+    definitions = {item.name: item for item in all_definitions()}
+    expected = {
+        "blockstream_btc_address_transactions",
+        "blockstream_btc_tx_detail",
+        "blockscout_eth_address",
+        "blockscout_eth_transactions",
+        "trongrid_account",
+        "trongrid_account_transactions",
+    }
+    assert expected <= set(definitions)
+    for name in expected:
+        definition = definitions[name]
+        assert definition.enabled
+        assert definition.kind == "http"
+        assert definition.definition.get("parse")
+        assert definition.tool.get("method", "GET").upper() == "GET"
