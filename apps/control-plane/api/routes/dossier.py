@@ -11,7 +11,7 @@ Three shapes of question, three endpoints, because they have genuinely different
 
 * ``POST /enrich`` runs the outside world. It calls real sources, so it is slow, it is not
   idempotent, and it appends to the stream. ``max_sources`` is capped for that reason: a
-  sweep over 145 definitions can run for minutes, and an unbounded request is a way to hold
+  sweep over 146 definitions can run for minutes, and an unbounded request is a way to hold
   a worker open.
 * ``GET /{entity_ref}`` is a pure read. It re-folds the invariant from the rows every time,
   which is cheap and is the point of an append-only stream: there is no second copy of the
@@ -35,7 +35,7 @@ from api.auth import TenantContext, resolve_tenant
 
 router = APIRouter(prefix="/dossier", tags=["dossier"])
 
-#: Hard ceiling on sources per sweep. The catalogue holds 145 definitions; asking for all of
+#: Hard ceiling on sources per sweep. The catalogue holds 146 definitions; asking for all of
 #: them from a web request is a request that can outlive its connection. The cap is a
 #: throughput guard, not a coverage claim -- the plan reports what was *not* attempted.
 MAX_SOURCES = 60
