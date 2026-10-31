@@ -632,7 +632,7 @@ describe("UI scale tokens — light-theme elevation scope", () => {
     const scale = readShipped("styles", "tokens", "scale.css");
     expect(scale).toMatch(/\n}\s*\n\s*\[data-theme="light"\]\s*\{/);
     expect(scale).toMatch(/\n}\s*\n\s*:root\s*\{\s*\/\* ── Layout metrics/);
-    expect(scale).toContain("--ui-elevation-2: 0 6px 18px rgba(17, 25, 27, 0.1);");
+    expect(scale).toContain("--ui-elevation-2: 0 6px 18px rgba(18, 23, 20, 0.1);");
   });
 });
 
