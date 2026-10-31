@@ -37,7 +37,7 @@ async def main() -> int:
         print(json.dumps({"status": "refused", "reason": "target must be an HTTP(S) URL"}))
         return 2
 
-    client = CommonCrawlClient(timeout=45.0)
+    client = CommonCrawlClient(timeout=90.0)
     print("=" * 72)
     print(f"COMMON CRAWL LIVE PROOF · {datetime.now(UTC).isoformat()}")
     print(f"target: {target}")
@@ -52,30 +52,80 @@ async def main() -> int:
     if not main_indexes:
         print(json.dumps({"status": "no_main_index_returned", "index_count": len(crawls)}))
         return 4
-    crawl = max(main_indexes, key=lambda item: crawl_badge(item) or ("", 0, 0))
-    print(f"indexes returned: {len(crawls)} · selected: {crawl}")
+    ordered_indexes = sorted(
+        set(main_indexes),
+        key=lambda item: crawl_badge(item) or ("", 0, 0),
+        reverse=True,
+    )
+    attempts: list[dict[str, str | int]] = []
+    crawl = ""
+    hits: list[dict] = []
+    eligible: list[dict] = []
+    transient_statuses = {408, 429, 500, 502, 503, 504}
 
-    try:
-        hits = await client.discover(
-            target,
-            crawl=crawl,
-            limit="20",
-            filter="status:200",
-        )
-    except Exception as exc:
-        print(json.dumps({"status": "cdx_query_failed", "crawl": crawl, "error": f"{type(exc).__name__}: {str(exc)[:300]}"}))
+    # The latest Common Crawl partition can be under heavy indexing load. Do
+    # not let one transient 504 make the whole acquisition look unavailable:
+    # retry twice, then fall back through a strictly bounded list of older
+    # published index partitions.
+    for candidate in ordered_indexes[:4]:
+        partition_hits: list[dict] = []
+        for attempt in range(1, 3):
+            try:
+                partition_hits = await client.discover(
+                    target,
+                    crawl=candidate,
+                    limit="20",
+                    filter="status:200",
+                )
+                attempts.append({"crawl": candidate, "attempt": attempt, "status": "ok"})
+                break
+            except httpx.HTTPStatusError as exc:
+                code = exc.response.status_code
+                attempts.append({"crawl": candidate, "attempt": attempt, "status": code})
+                if code not in transient_statuses or attempt == 2:
+                    break
+                await asyncio.sleep(attempt * 2)
+            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+                attempts.append({
+                    "crawl": candidate,
+                    "attempt": attempt,
+                    "status": f"{type(exc).__name__}: {str(exc)[:120]}",
+                })
+                if attempt == 2:
+                    break
+                await asyncio.sleep(attempt * 2)
+            except Exception as exc:
+                attempts.append({
+                    "crawl": candidate,
+                    "attempt": attempt,
+                    "status": f"{type(exc).__name__}: {str(exc)[:120]}",
+                })
+                break
+
+        if not partition_hits:
+            continue
+        partition_eligible = [
+            hit for hit in partition_hits
+            if hit.get("status") == "200"
+            and str(hit.get("mime") or "").lower().startswith(("text/html", "application/xhtml"))
+            and 0 < int(hit.get("length") or 0) <= MAX_RANGE_BYTES
+            and hit.get("uri")
+        ]
+        if partition_eligible:
+            crawl = candidate
+            hits = partition_hits
+            eligible = partition_eligible
+            break
+
+    print(f"indexes returned: {len(crawls)} · attempted partitions: {len(attempts)} · selected: {crawl or 'none'}")
+    if not crawl:
+        print(json.dumps({
+            "status": "cdx_query_failed",
+            "target": target,
+            "attempts": attempts,
+        }, indent=2))
         return 5
-    eligible = [
-        hit for hit in hits
-        if hit.get("status") == "200"
-        and str(hit.get("mime") or "").lower().startswith(("text/html", "application/xhtml"))
-        and 0 < int(hit.get("length") or 0) <= MAX_RANGE_BYTES
-        and hit.get("uri")
-    ]
     print(f"CDX rows: {len(hits)} · eligible HTML ranges: {len(eligible)}")
-    if not eligible:
-        print(json.dumps({"status": "no_eligible_cdx_record", "crawl": crawl, "target": target}))
-        return 6
 
     last_error = ""
     chosen = None
@@ -119,6 +169,7 @@ async def main() -> int:
         "checked_at": datetime.now(UTC).isoformat(),
         "target_url": target,
         "crawl": crawl,
+        "index_attempts": attempts,
         "index": {
             "url": chosen.get("url"),
             "timestamp": chosen.get("timestamp"),
