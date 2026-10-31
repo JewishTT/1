@@ -13,14 +13,14 @@ because they are properties of the loader and every reader would otherwise have 
 them:
 
 ``params`` must reach the cache key
-    The upstream HTTP cache key is ``sha256(METHOD \\\\0 URL \\\\0 BODY)``. 72 of the 146
+    The upstream HTTP cache key is ``sha256(METHOD \\\\0 URL \\\\0 BODY)``. 72 of the source
     definitions put their query in ``tool.params`` rather than in the URL, which made the
     key constant across every query. :func:`_flatten_params` folds the params into the URL
     at load time, so the cache key cannot collide, and the executor needs no knowledge of
     where the query lived.
 
 ``pagination`` is absent from the schema
-    Zero of the 146 definitions declare it, so multi-page sources silently returned page one.
+    The legacy corpus had no explicit provider pagination declarations; the schema now accepts bounded page/offset declarations.
     :func:`_derive_pagination` infers a page strategy from ``per_page``/``limit``/``page``
     where the definition already carries one, and records that the inference happened.
 
@@ -155,7 +155,7 @@ class SourceDefinition:
     #: registry's explicit-runtime branch was unreachable because no task could ever set
     #: the key it reads.
     #:
-    #: Optional rather than required because 145 of the existing sources genuinely run
+    #: Optional rather than required because 151 of the existing sources genuinely run
     #: through the HTTP or system executor. Making it mandatory would mean inventing a
     #: ``runtime_ref`` for sources that have none, which is the kind of fiction that later
     #: reads as a routing decision.
@@ -170,7 +170,7 @@ class SourceDefinition:
     definition: Mapping[str, Any] = field(default_factory=dict, repr=False, compare=False)
     #: FR-014: this source's declared ability to find a thing it was asked to look for,
     #: as a fraction in [0, 1]. **``None`` means the source has never declared one**, and
-    #: that is the only safe default -- every one of the 145 sources that never says so
+    #: that is the only safe default -- every one of the 151 sources that never say so
     #: is genuinely unquantified, and a default of 1.0 would certify all of them as
     #: exhaustive searches.
     #:
