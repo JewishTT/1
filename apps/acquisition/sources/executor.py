@@ -379,7 +379,11 @@ class HttpSourceExecutor:
             raise AcquisitionError(
                 "not_an_http_source", f"{source.name} is a {source.kind} source"
             )
-        if source.requires_key and not source.key_env:
+        if (
+            source.requires_key
+            and not source.key_env
+            and not source.tool.get("basic_auth_env")
+        ):
             raise AcquisitionError(
                 "keyed_source_without_key_env", f"{source.name} needs a key it cannot name"
             )
@@ -406,8 +410,20 @@ class HttpSourceExecutor:
                 else:
                     response = await session.request(method, url, headers=headers, auth=auth)
             except Exception as exc:  # transport failure is a value, not a crash
+                # HTTP client exceptions can include the request URL; redact credentials
+                # before this detail reaches a failure journal or an event payload.
+                error_detail = str(exc)
+                from urllib.parse import quote
+
+                for credential in (api_key, *(auth or ())):
+                    if credential:
+                        error_detail = error_detail.replace(credential, "[REDACTED]")
+                        encoded = quote(credential, safe="")
+                        if encoded:
+                            error_detail = error_detail.replace(encoded, "[REDACTED]")
                 raise AcquisitionError(
-                    "transport_failed", f"{source.name} page {page}: {type(exc).__name__}: {exc}"
+                    "transport_failed",
+                    f"{source.name} page {page}: {type(exc).__name__}: {error_detail}",
                 ) from exc
             body = response.content or b""
             truncated = len(body) > self.max_bytes
