@@ -148,7 +148,7 @@ async function capture(name, extra = {}) {
     if (metrics.nav.mainLeft !== null && mainTop !== null) {
       const main = metrics.geometry?.shellMain;
       const mainRight = main?.right ?? metrics.viewport;
-      const mainBottom = main?.bottom ?? metrics.geometry?.viewportHeight ?? window.innerHeight;
+      const mainBottom = main?.bottom ?? metrics.geometry?.viewportHeight ?? 0;
       const overlapsX = metrics.nav.left < mainRight - 1 && metrics.nav.right > metrics.nav.mainLeft + 1;
       const overlapsY = navTop < mainBottom - 1 && navBottom > mainTop + 1;
       if (overlapsX && overlapsY) {
