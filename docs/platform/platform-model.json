@@ -32386,7 +32386,7 @@
       {
         "path": "apps/acquisition/sources/catalogue.py",
         "status": "IMPLEMENTED",
-        "loc": 536,
+        "loc": 537,
         "callables": 18,
         "stubs": 0,
         "not_implemented": 0,
