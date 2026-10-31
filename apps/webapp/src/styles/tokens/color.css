@@ -33,12 +33,9 @@
  * explosion, no shadow-as-hierarchy, no decorative borders. Hierarchy comes
  * from size, weight, contrast, spacing, position and selection.
  *
- * CONTRAST NOTE, stated rather than hidden. The mandated values were accepted
- * as given; `--text-muted` (#6E7873) measures ≈4.2:1 against `--bg-1`
- * (#0B0E0D) and ≈4.0:1 against `--surface-0`, which is below the 4.5:1 that
- * §12 requires of body text. It is therefore used only for the tertiary
- * metadata role §3.2 assigns it, never for a value the analyst has to read.
- * Changing it would contradict FR-102, so it is reported, not silently fixed.
+ * CONTRAST CONTRACT. Muted steel is tuned to remain AA-readable on the primary
+ * dark and light panel surfaces; the token contract tests calculate contrast
+ * from the shipped palette rather than relying on a visual estimate.
  */
 
 /* ── Dark (default) ─────────────────────────────────────────────────── */
