@@ -301,16 +301,16 @@ def test_offers_turn_a_read_into_a_coverage_statement() -> None:
 
 
 def test_quick_dossier_only_accepts_domain_and_ip_assets() -> None:
-    _require_infrastructure_asset("example.com", "domain")
-    _require_infrastructure_asset("8.8.8.8", "ipv4")
-    _require_infrastructure_asset("2001:4860:4860::8888", "ipv6")
+    assert _require_infrastructure_asset("example.com", "") == "domain"
+    assert _require_infrastructure_asset("8.8.8.8", "") == "ipv4"
+    assert _require_infrastructure_asset("2001:4860:4860::8888", "") == "ipv6"
 
 
 def test_quick_dossier_rejects_a_public_figure_name() -> None:
     import pytest
 
     with pytest.raises(HTTPException) as caught:
-        _require_infrastructure_asset("Vladimir Putin", "domain")
+        _require_infrastructure_asset("Vladimir Putin", "")
 
     assert caught.value.status_code == 409
     assert caught.value.detail["code"] == "GOVERNED_RESEARCH_CASE_REQUIRED"
@@ -322,5 +322,14 @@ def test_quick_dossier_rejects_person_kind_even_for_domain_input() -> None:
 
     with pytest.raises(HTTPException) as caught:
         _require_infrastructure_asset("example.com", "person")
+
+    assert caught.value.status_code == 409
+
+
+def test_quick_dossier_rejects_a_mismatched_asset_kind() -> None:
+    import pytest
+
+    with pytest.raises(HTTPException) as caught:
+        _require_infrastructure_asset("example.com", "ipv4")
 
     assert caught.value.status_code == 409

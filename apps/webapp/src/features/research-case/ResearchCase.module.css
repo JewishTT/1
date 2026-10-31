@@ -11,7 +11,7 @@
 .shell {
   display: flex;
   min-height: 0;
-  height: calc(100vh - var(--ui-shell-chrome, 0px));
+  height: 100%;
   flex-direction: column;
   overflow: hidden;
   background: var(--bg-0);

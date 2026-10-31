@@ -42,21 +42,15 @@ MAX_SOURCES = 60
 
 
 class EnrichRequest(BaseModel):
-    """One subject to sweep.
-
-    ``kind`` is the caller's assertion about what the subject is and is used for labelling
-    only. Which sources run is decided by the shape of ``subject`` itself -- see
-    ``enrichment_service._query_shapes`` -- because no source in the catalogue accepts a
-    "person" or a "domain"; they accept domains, names, addresses and free text.
-    """
+    """One infrastructure asset to sweep; person and organisation research uses Feature 034."""
 
     subject: str = Field(min_length=1, max_length=512)
-    kind: str = Field(default="domain", max_length=64)
+    kind: str = Field(default="", max_length=64)
     max_sources: int | None = Field(default=None, ge=1, le=MAX_SOURCES)
     depth: int = Field(default=0, ge=0, le=2)
 
 
-def _require_infrastructure_asset(subject: str, kind: str) -> None:
+def _require_infrastructure_asset(subject: str, kind: str) -> str:
     """Restrict the quick dossier sweep to domains and IP addresses.
 
     Public-person research goes through Feature 034, which binds the request to
@@ -73,8 +67,8 @@ def _require_infrastructure_asset(subject: str, kind: str) -> None:
                 "next_step": "/research-cases/new",
             },
         )
-    shapes = set(_query_shapes(subject, kind))
-    if not shapes or not shapes.issubset({"domain", "ipv4", "ipv6"}):
+    shapes = set(_query_shapes(subject, kind or "unknown")) - {"any"}
+    if len(shapes) != 1 or not shapes.issubset({"domain", "ipv4", "ipv6"}):
         raise HTTPException(
             status_code=409,
             detail={
@@ -84,6 +78,7 @@ def _require_infrastructure_asset(subject: str, kind: str) -> None:
             },
         )
 
+    return next(iter(shapes))
 
 def _source_names() -> dict[str, str]:
     """Source id -> human name, from the live catalogue.
@@ -121,7 +116,7 @@ async def enrich(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict[str, Any]:
     """Run a sweep, persist it, and return the dossier it produced."""
-    _require_infrastructure_asset(body.subject, body.kind)
+    asset_kind = _require_infrastructure_asset(body.subject, body.kind)
     from context_engine.dossier_store import PostgresEnrichmentSink
     from context_engine.enrichment_service import EnrichmentService
 
@@ -132,7 +127,7 @@ async def enrich(
     )
     report = await service.enrich(
         body.subject,
-        kind=body.kind,
+        kind=asset_kind,
         depth=body.depth,
         max_sources=body.max_sources,
     )

@@ -66,6 +66,10 @@ jobs:
         if: ${{ always() && steps.build.outcome == 'success' }}
         working-directory: apps/webapp
         run: npm run ui:shoot:specops -- http://127.0.0.1:5173 artifacts/specops-screenshots
+      - name: Capture governed Research Case setup screenshots
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        working-directory: apps/webapp
+        run: npm run ui:shoot:research-case -- http://127.0.0.1:5173 artifacts/research-case-screenshots
       - name: Upload UI screenshot regression artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -75,5 +79,6 @@ jobs:
             apps/webapp/artifacts/ui-screenshots/
             apps/webapp/artifacts/specops-screenshots/
             apps/webapp/artifacts/nav-screenshots/
+            apps/webapp/artifacts/research-case-screenshots/
           if-no-files-found: warn
           retention-days: 14
