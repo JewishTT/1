@@ -1232,7 +1232,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 271,
+      "third-party:pytest": 272,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -17492,7 +17492,7 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_dossier_store.py",
-        "tests": 12,
+        "tests": 13,
         "test_names": [
           "test_a_sweep_is_written_as_one_transaction",
           "test_sequence_continues_the_stream_instead_of_restarting",
@@ -17505,7 +17505,8 @@
           "test_offers_turn_a_read_into_a_coverage_statement",
           "test_quick_dossier_only_accepts_domain_and_ip_assets",
           "test_quick_dossier_rejects_a_public_figure_name",
-          "test_quick_dossier_rejects_person_kind_even_for_domain_input"
+          "test_quick_dossier_rejects_person_kind_even_for_domain_input",
+          "test_quick_dossier_rejects_a_mismatched_asset_kind"
         ],
         "targets": [
           "apps/control-plane/api/routes/dossier.py",
@@ -23719,7 +23720,7 @@
         "targets": []
       }
     ],
-    "total": 5319
+    "total": 5320
   },
   "contracts": {
     "python": [
@@ -34932,8 +34933,8 @@
       {
         "path": "apps/control-plane/tests/unit/test_dossier_store.py",
         "status": "TEST",
-        "loc": 327,
-        "callables": 28,
+        "loc": 336,
+        "callables": 29,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -102711,7 +102712,7 @@
     "rust_crates": 9,
     "import_edges": 2821,
     "test_files": 344,
-    "test_functions": 5319,
+    "test_functions": 5320,
     "untested_modules": 269,
     "http_routes": 182
   },

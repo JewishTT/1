@@ -1,6 +1,6 @@
 # Tests
 
-344 test files, 5319 test functions. 269 platform modules are not targeted by any test.
+344 test files, 5320 test functions. 269 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -95,7 +95,7 @@
 | `apps/control-plane/tests/unit/test_digest_gated_revision.py` | 16 | `apps/control-plane/context_engine/invariant_reducer.py`, `apps/shared/domain/dynamics.py` |
 | `apps/control-plane/tests/unit/test_dispatcher_backpressure.py` | 11 | `apps/control-plane/services/dispatcher.py` |
 | `apps/control-plane/tests/unit/test_donor_patterns.py` | 9 | `apps/control-plane/services/dispatcher.py`, `apps/control-plane/services/frontier.py`, `apps/control-plane/services/policy_service.py`, `apps/control-plane/services/review.py` |
-| `apps/control-plane/tests/unit/test_dossier_store.py` | 12 | `apps/control-plane/api/routes/dossier.py`, `apps/control-plane/context_engine/dossier_store.py`, `apps/science/context/enrichment.py` |
+| `apps/control-plane/tests/unit/test_dossier_store.py` | 13 | `apps/control-plane/api/routes/dossier.py`, `apps/control-plane/context_engine/dossier_store.py`, `apps/science/context/enrichment.py` |
 | `apps/control-plane/tests/unit/test_enrichment_service.py` | 11 | `apps/acquisition/sources/catalogue.py`, `apps/control-plane/context_engine/enrichment_service.py`, `apps/interpretation/parsers/families.py` |
 | `apps/control-plane/tests/unit/test_entity_stream_persistence.py` | 6 | `apps/control-plane/db/entity_stream.py`, `apps/control-plane/db/schema.py`, `apps/shared/domain/dynamics.py` |
 | `apps/control-plane/tests/unit/test_fabric_anchor_guard.py` | 7 | `apps/control-plane/context_engine/__init__.py`, `apps/control-plane/context_engine/fabric_bridge.py`, `apps/science/context/fabric.py` |
