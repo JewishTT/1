@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import styles from "../features/research-case/ResearchCase.module.css";
 
 import { Button } from "../ui/Button";
@@ -93,7 +92,7 @@ export function DossierPage({
         </div>
         <div data-testid="dossier-subject-field">
           <Input
-            label="Domain or IP address"
+            label="Subject"
             mono
             placeholder="example.org or 203.0.113.10"
             value={subject}
@@ -103,7 +102,7 @@ export function DossierPage({
         <p className="panel-note">
           This quick path is limited to domain/IP identifiers. Public-person research must use an approved Research Case so purpose, authority, eligible sources and budget are checked before acquisition. Other entity types need a typed Investigation scope.
         </p>
-        <p className="panel-note">Researching a person or public figure? <Link to="/research-cases/new">Create a governed Research Case</Link>. Other entities: <Link to="/investigations">open an Investigation</Link>.</p>
+        <p className="panel-note">Researching a person or public figure? <a href="/research-cases/new">Create a governed Research Case</a>. Other entities: <a href="/investigations">open an Investigation</a>.</p>
         <div className="panel-actions">
           <Button type="submit" variant="primary" disabled={sweeping || subject.trim() === ""}>
             {sweeping ? "Sweeping…" : "Sweep asset sources"}
