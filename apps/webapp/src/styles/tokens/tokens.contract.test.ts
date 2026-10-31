@@ -54,20 +54,20 @@ function readShipped(...segments: string[]): string {
  */
 const NORMATIVE_PALETTE: ReadonlyArray<readonly [string, string]> = [
   ["--bg-0", "#080b0c"],
-  ["--bg-1", "#0b0e0d"],
-  ["--surface-0", "#121715"],
-  ["--surface-1", "#161b18"],
-  ["--surface-2", "#1c221e"],
-  ["--border-0", "#252c28"],
-  ["--border-1", "#323b35"],
-  ["--text-primary", "#e5eae7"],
-  ["--text-secondary", "#a5aea9"],
-  ["--text-muted", "#6e7873"],
-  ["--accent-green", "#8fcb64"],
-  ["--accent-green-bright", "#a7e477"],
-  ["--accent-amber", "#b99a66"],
-  ["--accent-red", "#bf5b57"],
-  ["--accent-blue", "#718d9b"],
+  ["--bg-1", "#0d1214"],
+  ["--surface-0", "#141b1e"],
+  ["--surface-1", "#1a2327"],
+  ["--surface-2", "#222e32"],
+  ["--border-0", "#2a383d"],
+  ["--border-1", "#40545a"],
+  ["--text-primary", "#e6eef0"],
+  ["--text-secondary", "#adbdc2"],
+  ["--text-muted", "#7b8f95"],
+  ["--accent-green", "#a6d85e"],
+  ["--accent-green-bright", "#c2ef70"],
+  ["--accent-amber", "#d1a45b"],
+  ["--accent-red", "#c65f59"],
+  ["--accent-blue", "#70aabb"],
 ];
 
 /** The `:root, [data-theme="dark"]` block, which is the dark theme's declaration. */
@@ -104,7 +104,7 @@ describe("T134 — all fifteen §3.2 tokens, at the spec's values (FR-102)", () 
     // hue family, so the mistake was invisible rather than a shade.
     const accent = new RegExp("--ui-accent:\\s*([^;]+);", "i").exec(darkBlock(css))?.[1]?.trim().toLowerCase();
     expect(accent).toBe("var(--accent-green)");
-    expect(NORMATIVE_PALETTE).toContainEqual(["--accent-green", "#8fcb64"]);
+    expect(NORMATIVE_PALETTE).toContainEqual(["--accent-green", "#a6d85e"]);
   });
 
   it("derives every --ui-* alias from a normative token, so no alias owns a value", () => {
@@ -484,8 +484,8 @@ describe("UI normalization — theme-owned overlay scrims", () => {
     const colors = readShipped("styles", "tokens", "color.css");
     expect(colors).toContain("--ui-scrim-drawer: rgba(0, 0, 0, 0.32)");
     expect(colors).toContain("--ui-scrim-modal: rgba(0, 0, 0, 0.42)");
-    expect(colors).toContain("--ui-scrim-drawer: rgba(18, 23, 20, 0.18)");
-    expect(colors).toContain("--ui-scrim-modal: rgba(18, 23, 20, 0.24)");
+    expect(colors).toContain("--ui-scrim-drawer: rgba(17, 25, 27, 0.18)");
+    expect(colors).toContain("--ui-scrim-modal: rgba(17, 25, 27, 0.24)");
   });
 
   it("keeps component styles bound to the semantic scrim tokens", () => {
@@ -633,5 +633,34 @@ describe("UI scale tokens — light-theme elevation scope", () => {
     expect(scale).toMatch(/\n}\s*\n\s*\[data-theme="light"\]\s*\{/);
     expect(scale).toMatch(/\n}\s*\n\s*:root\s*\{\s*\/\* ── Layout metrics/);
     expect(scale).toContain("--ui-elevation-2: 0 6px 18px rgba(18, 23, 20, 0.1);");
+  });
+});
+
+
+function channel(hex: string): number {
+  const value = Number.parseInt(hex, 16) / 255;
+  return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+}
+
+function relativeLuminance(hex: string): number {
+  const value = hex.replace("#", "");
+  return 0.2126 * channel(value.slice(0, 2))
+    + 0.7152 * channel(value.slice(2, 4))
+    + 0.0722 * channel(value.slice(4, 6));
+}
+
+function contrastRatio(foreground: string, background: string): number {
+  const values = [relativeLuminance(foreground), relativeLuminance(background)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
+describe("UI token contrast — muted steel remains readable on core surfaces", () => {
+  it.each([
+    ["dark panel", "#7b8f95", "#0d1214"],
+    ["dark raised surface", "#7b8f95", "#141b1e"],
+    ["light panel", "#56676c", "#f3f7f6"],
+    ["light raised surface", "#56676c", "#ffffff"],
+  ])("%s meets WCAG AA for normal text", (_surface, foreground, background) => {
+    expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(4.5);
   });
 });
