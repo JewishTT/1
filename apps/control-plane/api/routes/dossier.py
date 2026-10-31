@@ -9,8 +9,8 @@ of them.
 
 Three shapes of question, three endpoints, because they have genuinely different costs:
 
-* ``POST /enrich`` runs the outside world. It calls real sources, so it is slow, it is not
-  idempotent, and it appends to the stream. ``max_sources`` is capped for that reason: a
+* ``POST /enrich`` runs a bounded infrastructure-asset sweep (domain/IP only). It calls real
+  sources, so it is slow, it is not idempotent, and it appends to the stream. ``max_sources`` is capped for that reason: a
   sweep over 146 definitions can run for minutes, and an unbounded request is a way to hold
   a worker open.
 * ``GET /{entity_ref}`` is a pure read. It re-folds the invariant from the rows every time,
@@ -42,7 +42,7 @@ MAX_SOURCES = 60
 
 
 class EnrichRequest(BaseModel):
-    """One infrastructure asset to sweep; person and organisation research uses Feature 034."""
+    """A bounded infrastructure-asset sweep; public-person research uses Feature 034."""
 
     subject: str = Field(min_length=1, max_length=512)
     kind: str = Field(default="", max_length=64)
@@ -64,7 +64,7 @@ def _require_infrastructure_asset(subject: str, kind: str) -> str:
             status_code=409,
             detail={
                 "code": "GOVERNED_RESEARCH_CASE_REQUIRED",
-                "message": "Use a governed Research Case for people, public figures and organisations.",
+                "message": "Use a governed Research Case for public people; this route does not accept other entity or free-text research.",
                 "next_step": "/research-cases/new",
             },
         )
@@ -78,7 +78,7 @@ def _require_infrastructure_asset(subject: str, kind: str) -> str:
             status_code=409,
             detail={
                 "code": "GOVERNED_RESEARCH_CASE_REQUIRED",
-                "message": "The dossier sweep accepts infrastructure identifiers only; use a Research Case for people, public figures, organisations and free text.",
+                "message": "The dossier sweep accepts domain/IP identifiers only. Public-person research requires a governed Research Case; other entity types need a typed Investigation scope.",
                 "next_step": "/research-cases/new",
             },
         )

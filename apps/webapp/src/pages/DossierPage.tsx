@@ -101,9 +101,9 @@ export function DossierPage({
           />
         </div>
         <p className="panel-note">
-          This quick path is limited to infrastructure identifiers. Public-person and organisation research must use an approved Research Case so purpose, authority, eligible sources and budget are checked before acquisition.
+          This quick path is limited to domain/IP identifiers. Public-person research must use an approved Research Case so purpose, authority, eligible sources and budget are checked before acquisition. Other entity types need a typed Investigation scope.
         </p>
-        <p className="panel-note">Researching a person or public figure? <Link to="/research-cases/new">Create a governed Research Case</Link>.</p>
+        <p className="panel-note">Researching a person or public figure? <Link to="/research-cases/new">Create a governed Research Case</Link>. Other entities: <Link to="/investigations">open an Investigation</Link>.</p>
         <div className="panel-actions">
           <Button type="submit" variant="primary" disabled={sweeping || subject.trim() === ""}>
             {sweeping ? "Sweeping…" : "Sweep asset sources"}

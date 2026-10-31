@@ -156,6 +156,12 @@ export function CaseSetup() {
         )}
       </header>
 
+      <section className={styles.capabilityPanel} data-testid="research-case-capability-status" aria-labelledby="research-case-capability-title">
+        <div id="research-case-capability-title" className={styles.capabilityHeading}>CURRENT SOURCE POSTURE</div>
+        <p>The presently attested evidence path is Crossref scholarly metadata. SearXNG supplies discovery leads only; its snippets are not evidence.</p>
+        <p>OpenAlex, Common Crawl and generic official-page capture remain disabled until the source owner attests terms, licences, parser support and egress hosts. Public-office and official-action questions therefore surface a capability gap until an eligible primary source is enabled.</p>
+      </section>
+
       <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border border-slate-200 bg-white p-5">
         <section className="space-y-3">
           <h2 className="font-semibold">Research question and authority</h2>

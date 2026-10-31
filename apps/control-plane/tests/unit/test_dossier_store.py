@@ -333,3 +333,13 @@ def test_quick_dossier_rejects_a_mismatched_asset_kind() -> None:
         _require_infrastructure_asset("example.com", "ipv4")
 
     assert caught.value.status_code == 409
+
+
+def test_quick_dossier_rejects_a_single_token_person_name() -> None:
+    import pytest
+
+    with pytest.raises(HTTPException) as caught:
+        _require_infrastructure_asset("Putin", "")
+
+    assert caught.value.status_code == 409
+    assert caught.value.detail["code"] == "GOVERNED_RESEARCH_CASE_REQUIRED"

@@ -262,3 +262,25 @@
     animation-duration: .01ms !important;
   }
 }
+
+
+.capabilityPanel {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-0);
+  border-inline-start: 3px solid var(--accent-amber);
+  background: var(--surface-0);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.capabilityHeading {
+  color: var(--accent-amber);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+.capabilityPanel p { margin: 0; }
