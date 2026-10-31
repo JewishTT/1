@@ -104,8 +104,8 @@ def test_keyed_and_open_split_is_visible() -> None:
     the count of runnable-without-credentials sources cannot quietly collapse."""
     defs = all_definitions()
     keyed = [d for d in defs if d.requires_key]
-    assert len(keyed) == 24
-    assert len(defs) - len(keyed) == 127  # runnable with no credential at all
+    assert len(keyed) == 26
+    assert len(defs) - len(keyed) == 125  # runnable with no credential at all
 
 
 # -- basic auth ---------------------------------------------------------------
@@ -260,3 +260,5 @@ def test_btc_eth_tron_read_only_sources_are_present_and_enabled() -> None:
         assert definition.kind == "http"
         assert definition.definition.get("parse")
         assert definition.tool.get("method", "GET").upper() == "GET"
+    assert definitions["trongrid_account"].key_env == "TRONGRID_API_KEY"
+    assert definitions["trongrid_account_transactions"].key_env == "TRONGRID_API_KEY"
