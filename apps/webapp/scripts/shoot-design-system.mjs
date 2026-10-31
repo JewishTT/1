@@ -98,6 +98,7 @@ async function capture(name, extra = {}) {
       return {
         viewportHeight: window.innerHeight,
         shellTopbar: box('[data-testid="app-shell-topbar"]'),
+        shellMain: box(".ui-shell-main"),
         catalogueHeader: box(".ui-kit-header"),
         principles: box(".ui-kit-principles"),
         tabs: box(".ui-kit-page [role=tablist]"),
@@ -138,8 +139,21 @@ async function capture(name, extra = {}) {
     if (metrics.nav.left < -1 || metrics.nav.right > metrics.viewport + 1) {
       problems.push(`${name}: navigation rail escapes viewport (left=${metrics.nav.left}, right=${metrics.nav.right})`);
     }
-    if (metrics.nav.mainLeft !== null && metrics.nav.mainLeft < metrics.nav.right - 1) {
-      problems.push(`${name}: workspace overlaps the navigation rail (nav right=${metrics.nav.right}, main left=${metrics.nav.mainLeft})`);
+    const navBottom = metrics.nav.bottom;
+    const navTop = metrics.nav.top;
+    const mainTop = metrics.nav.mainTop;
+    // The phone layout deliberately stacks the horizontal domain strip above
+    // the canvas. Only report a collision when the rectangles overlap on both
+    // axes; horizontal projection alone is not a valid overlap test.
+    if (metrics.nav.mainLeft !== null && mainTop !== null) {
+      const main = metrics.geometry?.shellMain;
+      const mainRight = main?.right ?? metrics.viewport;
+      const mainBottom = main?.bottom ?? metrics.geometry?.viewportHeight ?? window.innerHeight;
+      const overlapsX = metrics.nav.left < mainRight - 1 && metrics.nav.right > metrics.nav.mainLeft + 1;
+      const overlapsY = navTop < mainBottom - 1 && navBottom > mainTop + 1;
+      if (overlapsX && overlapsY) {
+        problems.push(`${name}: workspace overlaps the navigation rail`);
+      }
     }
     if (metrics.viewport > 1279 && (metrics.nav.width < 200 || metrics.nav.width > 260)) {
       problems.push(`${name}: desktop navigation rail width is outside 200–260px (${metrics.nav.width})`);
