@@ -58,7 +58,8 @@ def _require_infrastructure_asset(subject: str, kind: str) -> str:
     """
     from context_engine.enrichment_service import _query_shapes
 
-    if kind.strip().lower() not in {"domain", "ipv4", "ipv6"}:
+    requested_kind = kind.strip().lower()
+    if requested_kind and requested_kind not in {"domain", "ipv4", "ipv6"}:
         raise HTTPException(
             status_code=409,
             detail={
@@ -67,8 +68,12 @@ def _require_infrastructure_asset(subject: str, kind: str) -> str:
                 "next_step": "/research-cases/new",
             },
         )
-    shapes = set(_query_shapes(subject, kind or "unknown")) - {"any"}
-    if len(shapes) != 1 or not shapes.issubset({"domain", "ipv4", "ipv6"}):
+    shapes = set(_query_shapes(subject, requested_kind or "unknown")) - {"any"}
+    if (
+        len(shapes) != 1
+        or not shapes.issubset({"domain", "ipv4", "ipv6"})
+        or (requested_kind and requested_kind not in shapes)
+    ):
         raise HTTPException(
             status_code=409,
             detail={
