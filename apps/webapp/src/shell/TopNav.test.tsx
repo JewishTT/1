@@ -48,6 +48,10 @@ describe("persistent field navigation", () => {
       expect(screen.getByTestId(`nav-module-${module.key}`)).toBeInTheDocument();
       expect(screen.getByTestId(`nav-module-${module.key}`)).toHaveAttribute("href", module.landing);
     }
+    const activeDomain = screen.getByTestId("nav-module-osint");
+    expect(activeDomain).toHaveAttribute("data-active", "true");
+    expect(activeDomain).toHaveAttribute("aria-current", "location");
+    expect(screen.getByTestId("nav-module-specops")).not.toHaveAttribute("aria-current");
   });
 
   it("keeps destination groups visible for the active domain", () => {
@@ -70,7 +74,7 @@ describe("persistent field navigation", () => {
 
   it("marks the active domain and exact destination", () => {
     renderAt("/specops/connectors");
-    expect(screen.getByTestId("nav-module-specops")).toHaveAttribute("aria-current", "page");
+    expect(screen.getByTestId("nav-module-specops")).toHaveAttribute("aria-current", "location");
     const active = screen.getByRole("link", { name: /Connectors/i });
     expect(active).toHaveAttribute("data-active", "true");
     expect(active).toHaveAttribute("aria-current", "page");
