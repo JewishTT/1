@@ -32,9 +32,10 @@ them:
 ``kind`` is absent from 127 definitions
     We derive it from the ``tool`` body: a ``url`` means HTTP, a ``binary`` means a local tool.
 
-``requires_key`` without ``key_env``
-    Keyed definitions must name the environment variable. An unnamed one is a definition that
-    cannot run, and it is refused at load time with a named reason.
+``requires_key`` without a credential declaration
+    Keyed definitions must name either one ``key_env`` variable or a two-variable
+    ``basic_auth_env`` pair. A definition with neither is rejected; a Basic Auth
+    definition with a partial pair fails closed before outbound I/O.
 
 ``parser`` resolving to a no-op
     Ten names are ``lambda x: x`` in the upstream parser table — they return their input.
