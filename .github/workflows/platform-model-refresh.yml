@@ -1,10 +1,8 @@
 name: platform-model-refresh-artifact
 on:
-  push:
-    branches: ["**"]
   pull_request:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: platform-model-refresh-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
@@ -14,6 +12,9 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
@@ -21,6 +22,27 @@ jobs:
         run: uv sync --locked --all-packages --all-groups
       - name: Regenerate the platform model from this exact source tree
         run: .venv/bin/python -m platform_model.build
+      - name: Commit generated platform docs back to the same-repository PR branch
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/platform README.md docs/README.md docs/CONTRIBUTING.md \
+            docs/architecture/overview.md \
+            docs/architecture/stream-processing.md \
+            docs/architecture/fabric-collection.md \
+            docs/architecture/multi-region.md \
+            docs/architecture/dynamic-entity-invariant.md \
+            docs/architecture/donors/00-INDEX.md \
+            docs/adr/0028-context-definition-identity-and-placement.md
+          if git diff --cached --quiet; then
+            echo "Generated platform model already matches the source tree."
+          else
+            git commit -m "docs(platform): regenerate source-derived model"
+            git push origin "HEAD:${BRANCH}"
+          fi
       - name: Collect generator output and source revision
         run: |
           mkdir -p artifacts/platform-model-refresh
