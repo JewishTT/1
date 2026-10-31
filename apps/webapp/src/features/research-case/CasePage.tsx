@@ -19,6 +19,7 @@ import {
   Obligation,
   CoverageLedger,
   CaseActions,
+  DiscoveryLeadsResponse,
   CompletionReport,
   CloseCaseRequest,
 } from "./api";
@@ -59,6 +60,12 @@ export function CasePage() {
   const { data: coverage, error: coverageError } = useQuery<CoverageLedger>({
     queryKey: ["research-case-coverage", caseId],
     queryFn: () => api.getCoverage(caseId!),
+    enabled: !!caseId,
+  });
+
+  const { data: discoveryData, isLoading: discoveryLoading, error: discoveryError } = useQuery<DiscoveryLeadsResponse>({
+    queryKey: ["research-case-discovery-leads", caseId],
+    queryFn: () => api.listDiscoveryLeads(caseId!),
     enabled: !!caseId,
   });
 
@@ -103,6 +110,8 @@ export function CasePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["research-case", caseId] });
       queryClient.invalidateQueries({ queryKey: ["research-case-actions", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["research-case-discovery-leads", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["research-case-coverage", caseId] });
     },
   });
 
@@ -247,6 +256,57 @@ export function CasePage() {
             <div className="space-y-4">
               <SubjectOverview caseId={caseData.case_id} />
               <CaseContextAndArtifacts caseId={caseData.case_id} caseData={caseData} />
+              <section className="rounded border border-slate-300 bg-white p-4" data-testid="research-case-discovery-leads">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-semibold">Public-web discovery leads</h2>
+                    <p className="mt-1 text-xs text-slate-600">
+                      SearXNG results are unverified URLs for analyst triage. They are not evidence, cannot satisfy obligations and never enter the factual claim graph.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ["research-case-discovery-leads", caseId] })}
+                    className="rounded border border-slate-300 px-2 py-1 text-xs"
+                  >
+                    Refresh leads
+                  </button>
+                </div>
+                {discoveryLoading ? (
+                  <p className="mt-3 text-sm text-slate-500">Loading discovery leads…</p>
+                ) : discoveryError ? (
+                  <p className="mt-3 text-sm text-red-700">
+                    Discovery projection unavailable: {discoveryError instanceof Error ? discoveryError.message : "request failed"}
+                  </p>
+                ) : !discoveryData?.leads.length ? (
+                  <p className="mt-3 text-sm text-slate-500">
+                    No discovery leads have been captured for this scope. Plan the case, approve the discovery actions and queue them with a reserved budget.
+                  </p>
+                ) : (
+                  <>
+                    <p className="mt-3 text-xs text-amber-800">
+                      {discoveryData.count} unverified lead(s) · scope revision {discoveryData.scope_revision}
+                    </p>
+                    <div className="mt-2 divide-y divide-slate-200">
+                      {discoveryData.leads.map((lead) => (
+                        <article key={lead.lead_id} className="py-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Unverified lead</span>
+                            <span className="text-[10px] font-mono text-slate-500">{lead.engine || lead.source_id}</span>
+                            {lead.published_at && <span className="text-[10px] text-slate-500">Published {lead.published_at}</span>}
+                          </div>
+                          <a href={lead.url} target="_blank" rel="noreferrer" className="mt-1 block break-words text-sm font-medium text-emerald-700 underline">
+                            {lead.title || lead.url}
+                          </a>
+                          <p className="mt-1 break-all text-[10px] text-slate-500">{lead.url}</p>
+                          <p className="mt-1 text-[10px] text-slate-500">Observation {lead.observation_id} · captured {lead.captured_at || "time unavailable"}</p>
+                          <p className="mt-1 text-xs text-slate-600">{lead.next_step}</p>
+                        </article>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">{discoveryData.notice}</p>
+                  </>
+                )}
+              </section>
             </div>
           )}
           {selectedTab === "claims" && <ClaimsTable caseId={caseData.case_id} />}
@@ -425,7 +485,9 @@ export function CasePage() {
                         <span className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-semibold">{action.status.toUpperCase()}</span>
                           <span className="text-xs text-slate-500">{action.source_id} → {action.catalogue_source_id}</span>
-                          <span className="text-xs text-slate-500">{action.claim_family ?? "claim family not declared"}</span>
+                          <span className={`text-[10px] font-semibold ${action.result_role === "DISCOVERY_ONLY" ? "text-amber-700" : "text-slate-500"}`}>
+                            {action.result_role === "DISCOVERY_ONLY" ? "DISCOVERY ONLY · LEADS, NOT EVIDENCE" : action.claim_family ?? "claim family not declared"}
+                          </span>
                         </span>
                         <span className="mt-1 block break-all text-xs font-mono text-slate-500">{action.action_id}</span>
                         <span className="mt-1 block text-sm">{action.proposed_method}</span>
