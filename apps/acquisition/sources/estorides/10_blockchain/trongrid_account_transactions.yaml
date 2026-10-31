@@ -27,13 +27,13 @@ parse:
       kind: identifier
       required: true
     owner_address:
-      path: raw_data.contract.0.parameter.value.owner_address
+      path: raw_data.contract[0].parameter.value.owner_address
       kind: crypto
     to_address:
-      path: raw_data.contract.0.parameter.value.to_address
+      path: raw_data.contract[0].parameter.value.to_address
       kind: crypto
     amount_sun:
-      path: raw_data.contract.0.parameter.value.amount
+      path: raw_data.contract[0].parameter.value.amount
       kind: identifier
     block_timestamp:
       path: block_timestamp
@@ -42,5 +42,5 @@ parse:
       path: blockNumber
       kind: identifier
     result:
-      path: ret.0.contractRet
+      path: ret[0].contractRet
       kind: identifier
