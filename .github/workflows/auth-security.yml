@@ -33,5 +33,7 @@ jobs:
           apps/acquisition/tests/unit/test_source_executor_contracts.py
           apps/acquisition/tests/unit/test_case_execution_guard.py
           apps/acquisition/tests/unit/test_evidence_writer.py
+          apps/interpretation/tests/test_transaction_lineage.py
+          apps/interpretation/tests/test_onchain_source_parsers.py
           apps/interpretation/tests/test_observation_consumer.py
           -q
