@@ -18,10 +18,10 @@ import {
   type NavItem,
 } from "./nav";
 
-const MODULE_ICONS: Record<ModuleKey, "view-ops" | "view-analysis" | "shield"> = {
+const MODULE_ICONS: Record<ModuleKey, "view-ops" | "view-analysis" | "view-evidence"> = {
   osint: "view-ops",
   economic: "view-analysis",
-  specops: "shield",
+  specops: "view-evidence",
 };
 
 function DestinationLink({
