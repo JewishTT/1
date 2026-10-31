@@ -104,6 +104,7 @@ spec:
       retention_class: case_evidence_standard
       enabled: true
     - source_id: searxng_public_search
+      catalogue_source_id: searxng_public_search
       runtime_ref: searxng
       operation: search
       upstream_base: http://searxng:8080/search

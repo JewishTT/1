@@ -217,6 +217,7 @@ class PostgresCaseExecutionGuard:
                 or str(action.get("policy_digest") or "") != required["policy_digest"]
                 or str(action.get("source_id") or "") != required["case_policy_source_id"]
                 or str(action.get("catalogue_source_id") or "") != str(getattr(task, "source_id", "") or "")
+                or str(action.get("result_role") or "EVIDENCE") != str(getattr(task, "result_role", "EVIDENCE") or "EVIDENCE")
             ):
                 raise AcquisitionError(
                     "case_action_stale",

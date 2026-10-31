@@ -39,6 +39,7 @@ def estimate_case_reservation(
     source_refs: list[str] = []
     hosts: set[str] = set()
     requests = raw_bytes = records = wall_seconds = 0
+    requests_by_source: dict[str, int] = {}
     max_raw_per_request = 2_000_000
     for action in actions:
         profile = policy._sources.get(action.source_id)
@@ -80,6 +81,10 @@ def estimate_case_reservation(
         policy_max_pages = max(1, int(profile.get("max_pages") or pages))
         pages = min(pages, policy_max_pages)
         requests += pages
+        requests_by_source[action.source_id] = requests_by_source.get(action.source_id, 0) + pages
+        declared_requests = max(1, int(profile.get("max_requests") or pages))
+        if requests_by_source[action.source_id] > declared_requests:
+            raise CaseRuntimeBlocked(f"planned requests exceed {action.source_id} max_requests={declared_requests}")
         raw_bytes += min(max_raw_per_request, max(1, int(profile.get("max_raw_bytes") or max_raw_per_request))) * pages
         records += min(max(1, int(profile.get("max_records") or page_size)), page_size * pages)
         wall_seconds += max(1, int(profile.get("max_wall_seconds") or 300)) * pages
@@ -515,10 +520,14 @@ class CaseDispatchExecutor:
             reason = self._policy._source_block_reason(action.source_id, launch_profile)
             if reason:
                 raise CaseRuntimeBlocked(reason)
-            if not self._policy._source_supports_claim_family(
-                source_profile, self._claim_family_for_action(action)
-            ):
-                raise CaseRuntimeBlocked(f"source {action.source_id} no longer supports its claim family")
+            result_role = str(getattr(action, "result_role", "EVIDENCE") or "EVIDENCE")
+            declared_role = str(source_profile.get("result_role") or "EVIDENCE")
+            family = self._claim_family_for_action(action)
+            if result_role == "DISCOVERY_ONLY":
+                if declared_role != "DISCOVERY_ONLY" or family:
+                    raise CaseRuntimeBlocked("discovery action does not match a discovery-only source profile")
+            elif result_role != "EVIDENCE" or declared_role == "DISCOVERY_ONLY" or not self._policy._source_supports_claim_family(source_profile, family):
+                raise CaseRuntimeBlocked(f"source {action.source_id} does not support its evidence claim family")
             definition = by_catalogue_id.get(action.catalogue_source_id)
             expected_name = str(source_profile.get("catalogue_source_id", "")).strip()
             if definition is None or not expected_name or definition.name != expected_name or not definition.enabled:
@@ -563,6 +572,7 @@ class CaseDispatchExecutor:
                 tenant_id=tenant_id,
                 investigation_id=investigation_id,
                 runtime_ref=definition.runtime_ref,
+                result_role=result_role,
             )
             work.append((task, action, source_uri, host))
             pages = max(1, int(definition.pagination.max_pages)) if definition.pagination.enabled else 1
@@ -621,6 +631,7 @@ class CaseDispatchExecutor:
                         "case_policy_source_id": action.source_id,
                         "approved_action_ref": action.action_id,
                         "action_id": action.action_id,
+                        "result_role": result_role,
                         "required_capabilities": ["http"],
                     },
                     uri=source_uri,

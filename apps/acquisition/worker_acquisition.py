@@ -260,6 +260,7 @@ class RequestParser:
                 "case_policy_source_id": str(data["case_policy_source_id"]),
                 "approved_action_ref": str(data["approved_action_ref"]),
                 "action_id": str(data["action_id"]),
+                "result_role": str(data.get("result_role") or "EVIDENCE"),
             }
         return AcquisitionTask(
             task_id=task_id,

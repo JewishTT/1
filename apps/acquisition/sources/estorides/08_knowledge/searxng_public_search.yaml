@@ -1,0 +1,51 @@
+name: searxng_public_search
+enabled: true
+source_family: federated_search
+time_basis: fetch
+category: 08. Knowledge
+description: Internal federated web search for scoped public-professional discovery; results are unverified leads only
+os: any
+requires_key: false
+parser: structured_fields
+runtime_ref: searxng
+entity_hints:
+  - person
+  - public_role
+  - organization
+  - publication
+  - official_statement
+applies_to:
+  - keyword
+pagination:
+  strategy: page
+  param: pageno
+  page_size: 20
+  max_pages: 5
+tool:
+  method: GET
+  url: http://searxng:8080/search
+  headers:
+    Accept: application/json
+  params:
+    format: json
+parse:
+  family: json_rows
+  list_path: results
+  fields:
+    title:
+      path: title
+      kind: article
+      required: true
+    url:
+      path: url
+      kind: url
+      required: true
+    content:
+      path: content
+      kind: description
+    engine:
+      path: engine
+      kind: description
+    publishedDate:
+      path: publishedDate
+      kind: timestamp

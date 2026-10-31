@@ -350,6 +350,19 @@ class PersonCasePolicy:
                 out.append(source_id)
         return tuple(sorted(out))
 
+    def eligible_discovery_sources(
+        self, *, source_ids: list[str], launch_profile: str
+    ) -> tuple[str, ...]:
+        """Return enabled discovery-only sources, separate from evidence eligibility."""
+        out: list[str] = []
+        for source_id in source_ids:
+            source = self._sources.get(source_id, {})
+            if source.get("result_role") != "DISCOVERY_ONLY":
+                continue
+            if self._source_block_reason(source_id, launch_profile) is None:
+                out.append(source_id)
+        return tuple(sorted(out))
+
     def source_eligible(
         self,
         *,

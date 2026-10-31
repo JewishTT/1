@@ -357,6 +357,12 @@ export function CasePage() {
               <p className="mt-1 text-sm text-slate-600">
                 Required capabilities: {planMutation.data.required_capabilities.join(", ") || "none declared"}.
                 {planMutation.data.ready_to_dispatch ? " Runtime is ready for reviewed actions." : " Dispatch remains blocked."}
+                {planMutation.data.evidence_coverage_ready
+                  ? " Evidence source coverage is available for the declared obligation set."
+                  : " Evidence obligations remain capability-blocked; discovery-only actions can return leads but cannot close those gaps."}
+                {planMutation.data.discovery_action_refs.length > 0
+                  ? ` ${planMutation.data.discovery_action_refs.length} separate discovery-only action(s) are proposed.`
+                  : ""}
               </p>
               {planMutation.data.capability_gaps.map((gap) => (
                 <div key={gap.obligation_id} className="mt-2 text-sm text-amber-800">
@@ -376,8 +382,7 @@ export function CasePage() {
               <div>
                 <h2 className="font-semibold">Source-bound actions</h2>
                 <p className="mt-1 text-xs text-slate-600">
-                  Every action is tied to one policy-approved source, claim family, scope digest and policy digest.
-                  Approval is a separate admin decision. Queueing reserves budget before publishing to Kafka.
+                  Evidence actions are claim-family bound. Discovery-only actions return unverified public URLs and titles, never evidence. Each action remains separately reviewable; queueing reserves budget before Kafka dispatch.
                 </p>
               </div>
               <button

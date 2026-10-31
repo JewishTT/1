@@ -127,6 +127,8 @@ class PlanCaseResponse(BaseModel):
     required_capabilities: list[str] = Field(default_factory=list)
     capabilities_preview: list[str]
     capability_gaps: list[dict] = Field(default_factory=list)
+    discovery_action_refs: list[str] = Field(default_factory=list)
+    evidence_coverage_ready: bool = False
     actions: list[dict] = Field(default_factory=list)
     policy_digest: str = ""
     rejected_catalogue_definitions: dict = Field(default_factory=dict)
@@ -580,6 +582,21 @@ async def get_coverage(
         reader(case_id=case_id, tenant_id=ctx.tenant_id)
     )
     return coverage
+
+
+@router.get("/{case_id}/discovery-leads")
+async def get_discovery_leads(
+    case_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """Return unverified discovery leads, never admitted claims."""
+    ctx.require_role(Role.VIEWER, Role.ANALYST, Role.ADMIN)
+    svc = _get_service()
+    await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    reader = _require_projection(svc, "discovery_leads")
+    return await _read_projection(
+        reader(case_id=case_id, tenant_id=ctx.tenant_id)
+    )
 
 
 @router.get("/{case_id}/claims")

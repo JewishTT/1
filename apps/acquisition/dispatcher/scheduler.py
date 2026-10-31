@@ -239,6 +239,7 @@ class Dispatcher:
                     "case_policy_source_id": task.get("case_policy_source_id") or "",
                     "approved_action_ref": task.get("approved_action_ref") or "",
                     "action_id": task.get("action_id") or "",
+                    "result_role": task.get("result_role") or "EVIDENCE",
                     "run_id": task.get("run_id") or "",
                     "budget_reservation_id": decision.reservation_id or "",
                     "idempotency_key": task.get("idempotency_key") or "",

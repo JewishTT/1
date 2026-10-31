@@ -332,11 +332,126 @@ class PostgresResearchCaseProjectionProvider:
             )
         return obligations, actions_by_obligation
 
+    async def discovery_leads(self, *, case_id: str, tenant_id: str) -> dict[str, Any]:
+        """Return case-bound public-web leads without upgrading them to factual evidence."""
+        context, metadata = await self._case(case_id, tenant_id)
+        _obligations, actions_by_obligation = await self._current_actions(
+            case_id=case_id, metadata=metadata
+        )
+        discovery_actions = {
+            action.action_id: action
+            for actions in actions_by_obligation.values()
+            for action in actions
+            if getattr(action, "result_role", "EVIDENCE") == "DISCOVERY_ONLY"
+        }
+        if not discovery_actions:
+            return {
+                "case_id": case_id,
+                "scope_revision": int(metadata.get("scope_revision", 0)),
+                "result_role": "DISCOVERY_ONLY",
+                "leads": [],
+                "count": 0,
+                "notice": "No discovery-only action has been planned for this case scope.",
+            }
+
+        intents, _reservations = await self._intents_and_reservations(
+            tenant_id=tenant_id, case_id=case_id
+        )
+        task_to_action: dict[str, str] = {}
+        for intent in intents:
+            outcome = _json_object(intent.get("outcome"))
+            for record in _json_list(outcome.get("records")):
+                if not isinstance(record, Mapping):
+                    continue
+                action_id = str(record.get("action_id") or "")
+                task_id = str(record.get("task_id") or "")
+                if action_id in discovery_actions and task_id:
+                    task_to_action[task_id] = action_id
+
+        observations: list[Observation] = []
+        if task_to_action:
+            async with self._session_factory() as session:
+                try:
+                    result = await session.execute(
+                        select(Observation)
+                        .where(
+                            Observation.tenant_id == tenant_id,
+                            Observation.investigation_id == context.investigation_id,
+                            Observation.task_id.in_(set(task_to_action)),
+                        )
+                        .order_by(Observation.created_at.asc(), Observation.observation_id.asc())
+                        .limit(5000)
+                    )
+                    observations = list(result.scalars().all())
+                except SQLAlchemyError as exc:
+                    raise ProjectionUnavailable(
+                        f"discovery lead projection read failed ({type(exc).__name__})"
+                    ) from exc
+
+        from urllib.parse import urlsplit
+
+        leads: list[dict[str, Any]] = []
+        seen_urls: set[str] = set()
+        for observation in observations:
+            action = discovery_actions.get(task_to_action.get(str(observation.task_id or ""), ""))
+            if action is None:
+                continue
+            provenance = _json_object(observation.provenance)
+            record_metadata = _json_object(provenance.get("record_metadata"))
+            runtime_metadata = _json_object(record_metadata.get("runtime_metadata"))
+            if runtime_metadata.get("result_role") != "DISCOVERY_ONLY":
+                continue
+            result = runtime_metadata.get("result")
+            if not isinstance(result, Mapping):
+                continue
+            url = str(result.get("url") or "").strip()
+            parsed_url = urlsplit(url)
+            if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+                continue
+            normalized_url = url.split("#", 1)[0]
+            if normalized_url in seen_urls:
+                continue
+            seen_urls.add(normalized_url)
+            leads.append({
+                "lead_id": str(observation.observation_id),
+                "action_ref": action.action_id,
+                "source_id": action.source_id,
+                "title": str(result.get("title") or url)[:500],
+                "url": normalized_url[:2048],
+                "engine": str(result.get("engine") or "")[:120],
+                "published_at": str(result.get("publishedDate") or "")[:80] or None,
+                "query": str(runtime_metadata.get("query") or action.query)[:500],
+                "observation_id": str(observation.observation_id),
+                "raw_ref": str(observation.raw_ref or ""),
+                "captured_at": _iso(observation.created_at),
+                "result_role": "DISCOVERY_ONLY",
+                "state": "UNVERIFIED_DISCOVERY_LEAD",
+                "claim_admission_allowed": False,
+                "next_step": "Verify the linked public source through an enabled evidence-source policy before making a claim.",
+            })
+        leads.sort(key=lambda item: (str(item.get("title") or "").casefold(), str(item.get("url") or "")))
+        return {
+            "case_id": case_id,
+            "scope_revision": int(metadata.get("scope_revision", 0)),
+            "result_role": "DISCOVERY_ONLY",
+            "leads": leads,
+            "count": len(leads),
+            "notice": "Search results are unverified discovery leads. They do not satisfy obligations, support absence claims, or enter the factual claim graph.",
+        }
+
     async def coverage_ledger(self, *, case_id: str, tenant_id: str) -> dict[str, Any]:
         context, metadata = await self._case(case_id, tenant_id)
         obligations, actions_by_obligation = await self._current_actions(
             case_id=case_id, metadata=metadata
         )
+        # Discovery actions have a separate ledger and must not affect factual source coverage.
+        actions_by_obligation = {
+            obligation_id: [
+                action for action in actions
+                if getattr(action, "result_role", "EVIDENCE") != "DISCOVERY_ONLY"
+            ]
+            for obligation_id, actions in actions_by_obligation.items()
+        }
         intents, reservations = await self._intents_and_reservations(
             tenant_id=tenant_id, case_id=case_id
         )

@@ -43,7 +43,7 @@ export function CaseSetup() {
   const [validUntil, setValidUntil] = useState("");
   const [precision, setPrecision] = useState<"instant" | "day" | "month" | "year" | "unknown">("unknown");
   const [claimFamiliesText, setClaimFamiliesText] = useState("public_authorship_or_publication");
-  const [sourceIdsText, setSourceIdsText] = useState("crossref_works");
+  const [sourceIdsText, setSourceIdsText] = useState("crossref_works, searxng_public_search");
   const [deniedFamiliesText, setDeniedFamiliesText] = useState("");
   const [budgetRef, setBudgetRef] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
@@ -158,7 +158,7 @@ export function CaseSetup() {
 
       <section className={styles.capabilityPanel} data-testid="research-case-capability-status" aria-labelledby="research-case-capability-title">
         <div id="research-case-capability-title" className={styles.capabilityHeading}>CURRENT SOURCE POSTURE</div>
-        <p>The presently attested evidence path is Crossref scholarly metadata. SearXNG is classified as discovery-only by policy, but the current Feature 034 planner does not yet schedule a separate search-discovery pass; search snippets are never evidence.</p>
+        <p>Crossref is the currently attested scholarly-metadata evidence path. SearXNG now runs as a separately approved, bounded discovery pass (two query variants, up to five pages each); its URLs and titles remain unverified leads, never evidence or claim support.</p>
         <p>OpenAlex, Common Crawl and generic official-page capture remain disabled until the source owner attests terms, licences, parser support and egress hosts. Public-office and official-action questions therefore surface a capability gap until an eligible primary source is enabled.</p>
       </section>
 

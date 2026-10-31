@@ -28,7 +28,7 @@ from sources.executor import HttpSourceExecutor, _basic_auth  # noqa: E402
 
 ESTORIDES = APP / "sources" / "estorides"
 
-EXPECTED_TOTAL = 151  # 152 files, minus the duplicate hunter_email
+EXPECTED_TOTAL = 152  # 153 files, minus the duplicate hunter_email
 EXPECTED_CATEGORIES = 20
 
 
@@ -105,7 +105,7 @@ def test_keyed_and_open_split_is_visible() -> None:
     defs = all_definitions()
     keyed = [d for d in defs if d.requires_key]
     assert len(keyed) == 26
-    assert len(defs) - len(keyed) == 125  # runnable with no credential at all
+    assert len(defs) - len(keyed) == 126  # runnable with no credential at all
 
 
 # -- basic auth ---------------------------------------------------------------
