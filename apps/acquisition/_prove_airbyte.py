@@ -203,7 +203,7 @@ async def main() -> int:
         "derived_ref": derived,
     }
 
-    out = Path("artifacts/acquisition-integration")
+    out = Path(os.environ.get("COGNITIVE_PROOF_OUTPUT", "artifacts/acquisition-integration"))
     out.mkdir(parents=True, exist_ok=True)
     (out / "airbyte.json").write_text(
         json.dumps(
