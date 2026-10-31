@@ -35,7 +35,7 @@ from api.auth import TenantContext, resolve_tenant
 
 router = APIRouter(prefix="/dossier", tags=["dossier"])
 
-#: Hard ceiling on sources per sweep. The catalogue holds 146 definitions; asking for all of
+#: Hard ceiling on sources per sweep. The catalogue holds 151 definitions; asking for all of
 #: them from a web request is a request that can outlive its connection. The cap is a
 #: throughput guard, not a coverage claim -- the plan reports what was *not* attempted.
 MAX_SOURCES = 60
