@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 403 |
+| PRODUCTION | 408 |
 | TEST_ONLY | 146 |
 | ORPHAN | 122 |
-| TEST | 339 |
+| TEST | 341 |
 
 ## Entrypoints (production roots)
 
@@ -18,6 +18,8 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/_measure_coverage.py` |
 | `apps/acquisition/_prove_airbyte.py` |
 | `apps/acquisition/_prove_backbone.py` |
+| `apps/acquisition/_prove_blockchain_sources.py` |
+| `apps/acquisition/_prove_commoncrawl.py` |
 | `apps/acquisition/_prove_searxng.py` |
 | `apps/acquisition/_prove_tools.py` |
 | `apps/acquisition/sources/append_parse_blocks.py` |
@@ -31,6 +33,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/services/pow_run.py` |
 | `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/workflows/worker.py` |
+| `apps/deploy/minio-init/init-buckets.py` |
 | `apps/interpretation/_consume_searxng.py` |
 | `apps/interpretation/_prove_primproc.py` |
 | `apps/interpretation/dictionaries/build_mini.py` |
@@ -73,7 +76,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/adapters/stormcrawler/__init__.py` |
 | `apps/acquisition/adapters/stormcrawler/collect.py` |
 | `apps/acquisition/adapters/warc/__init__.py` |
-| `apps/acquisition/adapters/warc/collect.py` |
 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/registry.py` |
 | `apps/acquisition/source_query_set.py` |
@@ -125,6 +127,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/interpretation/pipeline.py` |
 | `apps/interpretation/retrieval/__init__.py` |
 | `apps/interpretation/retrieval/retriever.py` |
+| `apps/interpretation/transaction_lineage.py` |
 | `apps/projection/analytics/projector.py` |
 | `apps/projection/analytics/store.py` |
 | `apps/projection/graph/claim_projection.py` |

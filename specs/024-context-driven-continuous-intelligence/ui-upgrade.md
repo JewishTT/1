@@ -40,27 +40,27 @@ Rationale: the stack is a solved problem. The requirement is depth of capability
 ## 3. VISUAL DIRECTION
 
 ### 3.1 Register
-Big-tech intelligence workstation. Neomilitarist precision, near-black graphite, restrained instrumentation green, amber for metadata, red reserved for genuine semantic failure. Data-dense but calm. No decoration without data meaning.
+Big-tech intelligence workstation. Neomilitarist precision: near-black graphite, cold steel surfaces and typography, restrained phosphor green for active state, muted amber for provenance and metadata, red reserved for genuine semantic failure. Data-dense but calm. No decoration without data meaning.
 
 ### 3.2 Palette (normative tokens)
 
 | Token | Value | Role |
 |---|---|---|
-| `--bg-0` | `#070909` | app background |
-| `--bg-1` | `#0B0E0D` | panel background |
-| `--surface-0` | `#121715` | raised surface, cards |
-| `--surface-1` | `#161B18` | hover / secondary surface |
-| `--surface-2` | `#1C221E` | active / selected surface |
-| `--border-0` | `#252C28` | default border |
-| `--border-1` | `#323B35` | strong border, focus |
-| `--text-primary` | `#E5EAE7` | primary text |
-| `--text-secondary` | `#A5AEA9` | secondary text |
-| `--text-muted` | `#6E7873` | tertiary, metadata, axis labels |
-| `--accent-green` | `#8FCB64` | primary accent, semantic state |
-| `--accent-green-bright` | `#A7E477` | active accent, focus ring |
-| `--accent-amber` | `#B99A66` | warning, provenance, metadata |
-| `--accent-red` | `#BF5B57` | semantic failure only |
-| `--accent-blue` | `#718D9B` | informational, secondary series |
+| `--bg-0` | `#080B0C` | app background |
+| `--bg-1` | `#0D1214` | panel background |
+| `--surface-0` | `#141B1E` | raised surface, cards |
+| `--surface-1` | `#1A2327` | hover / secondary surface |
+| `--surface-2` | `#222E32` | active / selected surface |
+| `--border-0` | `#2A383D` | default border |
+| `--border-1` | `#40545A` | strong border, focus |
+| `--text-primary` | `#E6EEF0` | primary text |
+| `--text-secondary` | `#ADBDC2` | secondary text |
+| `--text-muted` | `#7B8F95` | tertiary, metadata, axis labels |
+| `--accent-green` | `#A6D85E` | primary accent, semantic state |
+| `--accent-green-bright` | `#C2EF70` | active accent, focus ring |
+| `--accent-amber` | `#D1A45B` | warning, provenance, metadata |
+| `--accent-red` | `#C65F59` | semantic failure only |
+| `--accent-blue` | `#70AABB` | informational, secondary series |
 
 ### 3.3 Forbidden
 - No purple or magenta as a decorative or series color.

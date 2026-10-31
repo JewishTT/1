@@ -8,32 +8,28 @@ name: cognitive-dev
 services:
   minio:
     profiles: ["core"]
-    image: quay.io/minio/minio:RELEASE.2024-08-17T01-24-54Z
+    # Chainguard's public, source-built MinIO image is continuously rebuilt with
+    # signed provenance/SBOM. Override MINIO_IMAGE to pin a reviewed digest.
+    image: ${MINIO_IMAGE:-cgr.dev/chainguard/minio:latest}
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: demo
       MINIO_ROOT_PASSWORD: demopass
     ports: ["9000:9000", "9001:9001"]
     volumes: [minio-data:/data]
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
   minio-init:
     profiles: ["core"]
-    image: quay.io/minio/mc:latest
+    build:
+      context: ./minio-init
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: demo
+      MINIO_ROOT_PASSWORD: demopass
+      MINIO_BUCKETS: knowledge,knowledge-raw
     depends_on:
       minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 demo demopass &&
-      mc mb -p local/knowledge &&
-      mc mb -p local/knowledge-raw &&
-      exit 0
-      "
+        condition: service_started
+    restart: "no"
 
   # Feature 024 / D1=a: Redpanda is the canonical transport. Confluent Kafka remains
   # available under the "legacy-kafka" profile for comparison and for the

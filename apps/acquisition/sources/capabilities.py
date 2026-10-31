@@ -1,7 +1,7 @@
 """Capability offers derived from the live source catalogue (spec 026 FR-097, FR-098).
 
 The enrichment planner can only fetch what some source says it can fetch. Until now that
-sentence had no producer: :mod:`sources.catalogue` validated 145 definitions and stopped at
+sentence had no producer: :mod:`sources.catalogue` validated 151 definitions and stopped at
 the boundary, so "who can produce ``certificate`` for a ``domain``" was answered by whatever
 a consumer happened to hardcode. FR-097 requires capabilities to be *data discoverable at
 runtime*, and FR-098 requires the planner to invent nothing. Both are satisfied by deriving
@@ -224,7 +224,7 @@ def catalogue_offers(root: Path | None = None) -> tuple[dict, ...]:
     cannot disagree with the definitions the executor runs: a source added to the catalogue
     is offerable the moment it loads, with no registration step and no second list to update.
     Rejected definitions contribute nothing, exactly as they contribute no executable source.
-    Today all 145 definitions load and all 145 declare at least one attribute, so every one
+    Today all 151 definitions load and all 151 declare at least one attribute, so every one
     of them yields exactly one offer and 206 distinct attribute names exist across them.
     """
     definitions, _rejected = load_catalogue(root)

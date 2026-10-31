@@ -4,7 +4,7 @@
 
 ## Repo layout
 
-Monorepo: `apps/` (acquisition, admission, bulk-ingestion, control-plane, feedback, interpretation, projection, science, shared, specops, webapp, zero), `bench/`, `docs/`, `specs/`. The tree holds 1010 Python modules, 266 TypeScript modules and 16 Rust source files.
+Monorepo: `apps/` (acquisition, admission, bulk-ingestion, control-plane, deploy, feedback, interpretation, projection, science, shared, specops, webapp, zero), `bench/`, `docs/`, `specs/`. The tree holds 1017 Python modules, 266 TypeScript modules and 16 Rust source files.
 
 ## Tooling
 

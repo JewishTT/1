@@ -18,13 +18,15 @@
     {
       "name": "acquisition",
       "description": "Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.",
-      "python_modules": 105,
+      "python_modules": 108,
       "typescript_modules": 0,
       "modules": [
         "apps.acquisition._measure_coverage",
         "apps.acquisition._probe_catalogue",
         "apps.acquisition._prove_airbyte",
         "apps.acquisition._prove_backbone",
+        "apps.acquisition._prove_blockchain_sources",
+        "apps.acquisition._prove_commoncrawl",
         "apps.acquisition._prove_readback",
         "apps.acquisition._prove_searxng",
         "apps.acquisition._prove_tools",
@@ -55,6 +57,7 @@
         "apps.acquisition.adapters.stormcrawler.collect",
         "apps.acquisition.adapters.warc",
         "apps.acquisition.adapters.warc.collect",
+        "apps.acquisition.airbyte_acceptance",
         "apps.acquisition.artifact_sink",
         "apps.acquisition.case_execution_guard",
         "apps.acquisition.cc_extract",
@@ -413,6 +416,15 @@
       ]
     },
     {
+      "name": "deploy",
+      "description": "Docker Compose dev topology, Grafana, k8s configs.",
+      "python_modules": 1,
+      "typescript_modules": 0,
+      "modules": [
+        "apps.deploy.minio-init.init-buckets"
+      ]
+    },
+    {
       "name": "feedback",
       "description": "Recrawl/priority feedback, stopping policy.",
       "python_modules": 11,
@@ -434,7 +446,7 @@
     {
       "name": "interpretation",
       "description": "Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.",
-      "python_modules": 112,
+      "python_modules": 115,
       "typescript_modules": 0,
       "modules": [
         "apps.interpretation",
@@ -528,6 +540,7 @@
         "apps.interpretation.tests.test_evidence_manifest",
         "apps.interpretation.tests.test_mention_binding_seam",
         "apps.interpretation.tests.test_observation_consumer",
+        "apps.interpretation.tests.test_onchain_source_parsers",
         "apps.interpretation.tests.test_parser_adapter",
         "apps.interpretation.tests.test_payload_binding",
         "apps.interpretation.tests.test_payload_detection",
@@ -548,7 +561,9 @@
         "apps.interpretation.tests.test_syntactic_producer",
         "apps.interpretation.tests.test_tenzir_live",
         "apps.interpretation.tests.test_tenzir_normalization",
-        "apps.interpretation.tests.test_warc_reader"
+        "apps.interpretation.tests.test_transaction_lineage",
+        "apps.interpretation.tests.test_warc_reader",
+        "apps.interpretation.transaction_lineage"
       ]
     },
     {
@@ -1113,33 +1128,33 @@
     }
   ],
   "import_graph": {
-    "module_count": 1010,
-    "edge_count": 2808,
+    "module_count": 1017,
+    "edge_count": 2819,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 880,
+      "stdlib:__future__": 887,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
-      "stdlib:asyncio": 70,
+      "stdlib:asyncio": 72,
       "stdlib:base64": 9,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 241,
+      "stdlib:collections": 242,
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 390,
-      "stdlib:datetime": 190,
+      "stdlib:dataclasses": 391,
+      "stdlib:datetime": 191,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
       "stdlib:enum": 118,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 127,
+      "stdlib:hashlib": 128,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 9,
@@ -1149,35 +1164,35 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 193,
+      "stdlib:json": 197,
       "stdlib:logging": 23,
       "stdlib:math": 41,
-      "stdlib:os": 69,
-      "stdlib:pathlib": 318,
+      "stdlib:os": 73,
+      "stdlib:pathlib": 322,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 96,
+      "stdlib:re": 98,
       "stdlib:secrets": 2,
       "stdlib:shlex": 1,
-      "stdlib:shutil": 14,
+      "stdlib:shutil": 16,
       "stdlib:signal": 2,
       "stdlib:socket": 9,
       "stdlib:stat": 2,
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 16,
-      "stdlib:sys": 256,
+      "stdlib:sys": 260,
       "stdlib:sysconfig": 1,
-      "stdlib:tempfile": 20,
+      "stdlib:tempfile": 21,
       "stdlib:threading": 17,
-      "stdlib:time": 29,
+      "stdlib:time": 30,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 33,
-      "stdlib:typing": 367,
+      "stdlib:typing": 369,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 43,
+      "stdlib:urllib": 48,
       "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -1191,7 +1206,8 @@
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
       "third-party:bm25s": 1,
-      "third-party:botocore": 1,
+      "third-party:boto3": 1,
+      "third-party:botocore": 2,
       "third-party:charset_normalizer": 1,
       "third-party:confluent_kafka": 16,
       "third-party:docx": 2,
@@ -1201,7 +1217,7 @@
       "third-party:google": 6,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
-      "third-party:httpx": 20,
+      "third-party:httpx": 22,
       "third-party:litellm": 2,
       "third-party:nameparser": 3,
       "third-party:neo4j": 1,
@@ -1216,7 +1232,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 268,
+      "third-party:pytest": 269,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -1297,6 +1313,11 @@
       },
       {
         "from": "apps/acquisition/_prove_airbyte.py",
+        "to": "apps/acquisition/airbyte_acceptance.py",
+        "via": "airbyte_acceptance"
+      },
+      {
+        "from": "apps/acquisition/_prove_airbyte.py",
         "to": "apps/acquisition/_prove_readback.py",
         "via": "_prove_readback"
       },
@@ -1319,6 +1340,31 @@
         "from": "apps/acquisition/_prove_backbone.py",
         "to": "apps/acquisition/sources/executor.py",
         "via": "sources.executor"
+      },
+      {
+        "from": "apps/acquisition/_prove_blockchain_sources.py",
+        "to": "apps/interpretation/parsers/families.py",
+        "via": "parsers.families"
+      },
+      {
+        "from": "apps/acquisition/_prove_blockchain_sources.py",
+        "to": "apps/acquisition/sources/catalogue.py",
+        "via": "sources.catalogue"
+      },
+      {
+        "from": "apps/acquisition/_prove_blockchain_sources.py",
+        "to": "apps/acquisition/sources/connector.py",
+        "via": "sources.connector"
+      },
+      {
+        "from": "apps/acquisition/_prove_commoncrawl.py",
+        "to": "apps/acquisition/adapters/warc/collect.py",
+        "via": "adapters.warc.collect"
+      },
+      {
+        "from": "apps/acquisition/_prove_commoncrawl.py",
+        "to": "apps/shared/network/commoncrawl.py",
+        "via": "network.commoncrawl"
       },
       {
         "from": "apps/acquisition/_prove_readback.py",
@@ -2292,6 +2338,11 @@
       },
       {
         "from": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
+        "to": "apps/acquisition/airbyte_acceptance.py",
+        "via": "airbyte_acceptance"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
         "to": "apps/acquisition/runtime/airbyte.py",
         "via": "runtime.airbyte"
       },
@@ -2474,6 +2525,11 @@
         "from": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "to": "apps/acquisition/sources/executor.py",
         "via": "sources.executor"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+        "to": "apps/acquisition/sources/catalogue.py",
+        "via": "sources.catalogue"
       },
       {
         "from": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
@@ -9616,6 +9672,16 @@
         "via": "normalization.tenzir"
       },
       {
+        "from": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "to": "apps/interpretation/parsers/families.py",
+        "via": "parsers.families"
+      },
+      {
+        "from": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "to": "apps/acquisition/sources/catalogue.py",
+        "via": "sources.catalogue"
+      },
+      {
         "from": "apps/interpretation/tests/test_parser_adapter.py",
         "to": "apps/interpretation/parsers/registry.py",
         "via": "parsers.registry"
@@ -10089,6 +10155,11 @@
         "from": "apps/interpretation/tests/test_tenzir_normalization.py",
         "to": "apps/interpretation/normalization/tenzir.py",
         "via": "normalization.tenzir"
+      },
+      {
+        "from": "apps/interpretation/tests/test_transaction_lineage.py",
+        "to": "apps/interpretation/transaction_lineage.py",
+        "via": "transaction_lineage"
       },
       {
         "from": "apps/interpretation/tests/test_warc_reader.py",
@@ -15293,6 +15364,7 @@
       "adapters": "apps/acquisition/adapters/__init__.py",
       "admission": "apps/admission",
       "aggregation": "apps/interpretation/aggregation",
+      "airbyte_acceptance": "apps/acquisition/airbyte_acceptance.py",
       "analytics": "apps/projection/analytics/__init__.py",
       "anchoring": "apps/science/anchoring.py",
       "api": "apps/control-plane/api/__init__.py",
@@ -15384,6 +15456,7 @@
       "tda": "apps/projection/tda/__init__.py",
       "temporal": "apps/science/temporal/__init__.py",
       "tools": "apps/shared/tools",
+      "transaction_lineage": "apps/interpretation/transaction_lineage.py",
       "websearch": "apps/shared/websearch/__init__.py",
       "worker_acquisition": "apps/acquisition/worker_acquisition.py",
       "worker_browser": "apps/acquisition/worker_browser/__init__.py",
@@ -15690,7 +15763,7 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
-        "tests": 28,
+        "tests": 33,
         "test_names": [
           "test_spec_returns_the_connector_spec",
           "test_spec_without_a_spec_message_fails_by_name",
@@ -15719,9 +15792,12 @@
           "test_worker_ref_is_not_http",
           "test_transport_names_the_process_boundary",
           "test_digest_is_deterministic",
-          "test_image_digest_is_carried_on_the_run"
+          "test_image_digest_is_carried_on_the_run",
+          "test_default_airbyte_postgres_config_uses_only_options_in_connector_spec",
+          "test_airbyte_postgres_config_refuses_unhandled_required_spec_fields"
         ],
         "targets": [
+          "apps/acquisition/airbyte_acceptance.py",
           "apps/acquisition/runtime/__init__.py",
           "apps/acquisition/runtime/airbyte.py",
           "apps/shared/domain/acquisition_artifact.py"
@@ -16024,7 +16100,7 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
-        "tests": 15,
+        "tests": 19,
         "test_names": [
           "test_every_definition_loads",
           "test_all_sources_are_enabled",
@@ -16040,7 +16116,11 @@
           "test_basic_auth_refuses_half_a_credential",
           "test_basic_auth_rejects_wrong_arity",
           "test_wigle_is_enabled_and_names_its_pair",
-          "test_hunter_is_enabled"
+          "test_hunter_is_enabled",
+          "test_blockstream_address_feed_is_in_the_live_catalogue",
+          "test_explicit_provider_offset_pagination_uses_declared_parameter",
+          "test_explicit_cursor_pagination_is_rejected_until_runtime_support_exists",
+          "test_btc_eth_tron_read_only_sources_are_present_and_enabled"
         ],
         "targets": [
           "apps/acquisition/sources/catalogue.py",
@@ -16049,12 +16129,18 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_source_executor_contracts.py",
-        "tests": 4,
+        "tests": 10,
         "test_names": [
           "test_query_is_encoded_as_data_not_url_syntax",
           "test_percent_encoded_placeholder_is_also_replaced_safely",
           "test_crossref_request_fails_closed_without_real_contact",
-          "test_crossref_user_agent_uses_configured_contact_not_yaml_sample"
+          "test_crossref_user_agent_uses_configured_contact_not_yaml_sample",
+          "test_twitch_headers_resolve_declared_environment_placeholders",
+          "test_keyed_url_parameter_is_injected_but_redacted_from_capture",
+          "test_missing_declared_api_key_fails_before_network_io",
+          "test_basic_auth_only_source_executes_with_both_declared_credentials",
+          "test_basic_auth_only_source_fails_closed_when_pair_is_incomplete",
+          "test_transport_error_redacts_api_key_from_failure_detail"
         ],
         "targets": [
           "apps/acquisition/sources/catalogue.py",
@@ -18564,6 +18650,21 @@
         ]
       },
       {
+        "path": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "tests": 5,
+        "test_names": [
+          "test_blockstream_transaction_detail_preserves_explicit_utxo_parent_refs",
+          "test_blockscout_address_metadata_extracts_address_and_native_balance",
+          "test_blockscout_transactions_extracts_first_page_records",
+          "test_trongrid_account_uses_explicit_data_array_index",
+          "test_trongrid_transaction_feed_reads_nested_contract_fields_without_guessing"
+        ],
+        "targets": [
+          "apps/acquisition/sources/catalogue.py",
+          "apps/interpretation/parsers/families.py"
+        ]
+      },
+      {
         "path": "apps/interpretation/tests/test_parser_adapter.py",
         "tests": 17,
         "test_names": [
@@ -19174,6 +19275,26 @@
         ],
         "targets": [
           "apps/interpretation/normalization/tenzir.py"
+        ]
+      },
+      {
+        "path": "apps/interpretation/tests/test_transaction_lineage.py",
+        "tests": 11,
+        "test_names": [
+          "test_bitcoin_input_reference_creates_parent_to_spend_edge",
+          "test_same_transaction_observed_twice_keeps_both_observation_ids",
+          "test_missing_parent_is_reported_not_fabricated",
+          "test_cross_chain_reference_is_rejected_without_joining_graphs",
+          "test_conflicting_raw_digests_are_preserved_as_a_quality_condition",
+          "test_cycle_is_reported_and_not_hidden_by_topological_sort",
+          "test_account_chain_feed_does_not_infer_edges_from_order_or_amount",
+          "test_network_is_part_of_transaction_identity_and_dependency_scope",
+          "test_transaction_refs_require_canonical_chain_hashes",
+          "test_cycle_members_exclude_acyclic_descendants_blocked_by_the_cycle",
+          "test_self_referential_parent_is_reported_as_a_cycle"
+        ],
+        "targets": [
+          "apps/interpretation/transaction_lineage.py"
         ]
       },
       {
@@ -23584,7 +23705,7 @@
         "targets": []
       }
     ],
-    "total": 5285
+    "total": 5316
   },
   "contracts": {
     "python": [
@@ -28703,6 +28824,8 @@
     "apps/acquisition/_probe_catalogue.py",
     "apps/acquisition/_prove_airbyte.py",
     "apps/acquisition/_prove_backbone.py",
+    "apps/acquisition/_prove_blockchain_sources.py",
+    "apps/acquisition/_prove_commoncrawl.py",
     "apps/acquisition/_prove_readback.py",
     "apps/acquisition/_prove_searxng.py",
     "apps/acquisition/_prove_tools.py",
@@ -28823,6 +28946,7 @@
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
+    "apps/deploy/minio-init/init-buckets.py",
     "apps/feedback/feedback/branch/__init__.py",
     "apps/interpretation/__init__.py",
     "apps/interpretation/_consume_searxng.py",
@@ -28895,12 +29019,9 @@
     "apps/shared/events/coalesce.py",
     "apps/shared/events/fabric_events.py",
     "apps/shared/events/registry.py",
-    "apps/shared/ids/gen.py",
-    "apps/shared/network/__init__.py",
-    "apps/shared/observability/__init__.py",
-    "apps/shared/scoring/metrics.py"
+    "apps/shared/ids/gen.py"
   ],
-  "untested_count": 267,
+  "untested_count": 270,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -28995,6 +29116,8 @@
             "apps/acquisition/_probe_catalogue.py",
             "apps/acquisition/_prove_airbyte.py",
             "apps/acquisition/_prove_backbone.py",
+            "apps/acquisition/_prove_blockchain_sources.py",
+            "apps/acquisition/_prove_commoncrawl.py",
             "apps/acquisition/_prove_readback.py",
             "apps/acquisition/_prove_searxng.py",
             "apps/acquisition/_prove_tools.py",
@@ -29025,6 +29148,7 @@
             "apps/acquisition/adapters/stormcrawler/collect.py",
             "apps/acquisition/adapters/warc/__init__.py",
             "apps/acquisition/adapters/warc/collect.py",
+            "apps/acquisition/airbyte_acceptance.py",
             "apps/acquisition/artifact_sink.py",
             "apps/acquisition/case_execution_guard.py",
             "apps/acquisition/cc_extract.py",
@@ -29133,7 +29257,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 141
+          "module_count": 144
         },
         {
           "id": "interpretation",
@@ -29233,6 +29357,7 @@
             "apps/interpretation/tests/test_evidence_manifest.py",
             "apps/interpretation/tests/test_mention_binding_seam.py",
             "apps/interpretation/tests/test_observation_consumer.py",
+            "apps/interpretation/tests/test_onchain_source_parsers.py",
             "apps/interpretation/tests/test_parser_adapter.py",
             "apps/interpretation/tests/test_payload_binding.py",
             "apps/interpretation/tests/test_payload_detection.py",
@@ -29253,9 +29378,11 @@
             "apps/interpretation/tests/test_syntactic_producer.py",
             "apps/interpretation/tests/test_tenzir_live.py",
             "apps/interpretation/tests/test_tenzir_normalization.py",
-            "apps/interpretation/tests/test_warc_reader.py"
+            "apps/interpretation/tests/test_transaction_lineage.py",
+            "apps/interpretation/tests/test_warc_reader.py",
+            "apps/interpretation/transaction_lineage.py"
           ],
-          "module_count": 112
+          "module_count": 115
         },
         {
           "id": "investigations",
@@ -29430,6 +29557,7 @@
             "specops"
           ],
           "modules": [
+            "apps/deploy/minio-init/init-buckets.py",
             "apps/specops/__init__.py",
             "apps/specops/counterintel.py",
             "apps/specops/emulation.py",
@@ -29501,7 +29629,7 @@
             "tools/specs/build_owner_map.py",
             "tools/strip_zero_inventory.py"
           ],
-          "module_count": 70
+          "module_count": 71
         },
         {
           "id": "orchestration-temporal",
@@ -30421,6 +30549,7 @@
         "components.md",
         "composition.py",
         "compression.type",
+        "config.json",
         "conftest.py",
         "connection.asn",
         "connection.isp",
@@ -30474,6 +30603,7 @@
         "data.url",
         "database.name",
         "datetime.now",
+        "db.example",
         "db.schema",
         "dc.creator",
         "dc.description",
@@ -30506,9 +30636,7 @@
         "enable.idempotence",
         "engine.py",
         "entities.entity_id",
-        "entity.claimed",
-        "entity.created",
-        "entity.extract"
+        "entity.claimed"
       ]
     },
     "context_map": {
@@ -30523,7 +30651,7 @@
           "from": "ingestion",
           "to": "interpretation",
           "type": "direct",
-          "via_import": "parsers.primproc"
+          "via_import": "parsers.families"
         },
         {
           "from": "ingestion",
@@ -31699,7 +31827,7 @@
       {
         "path": "apps/acquisition/_prove_airbyte.py",
         "status": "IMPLEMENTED",
-        "loc": 241,
+        "loc": 256,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -31710,6 +31838,24 @@
         "status": "IMPLEMENTED",
         "loc": 164,
         "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/_prove_blockchain_sources.py",
+        "status": "IMPLEMENTED",
+        "loc": 103,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/_prove_commoncrawl.py",
+        "status": "IMPLEMENTED",
+        "loc": 201,
+        "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -31989,6 +32135,15 @@
         "markers": []
       },
       {
+        "path": "apps/acquisition/airbyte_acceptance.py",
+        "status": "IMPLEMENTED",
+        "loc": 172,
+        "callables": 5,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/acquisition/artifact_sink.py",
         "status": "IMPLEMENTED",
         "loc": 325,
@@ -32231,7 +32386,7 @@
       {
         "path": "apps/acquisition/sources/catalogue.py",
         "status": "IMPLEMENTED",
-        "loc": 503,
+        "loc": 537,
         "callables": 18,
         "stubs": 0,
         "not_implemented": 0,
@@ -32249,11 +32404,13 @@
       {
         "path": "apps/acquisition/sources/executor.py",
         "status": "IMPLEMENTED",
-        "loc": 355,
-        "callables": 15,
+        "loc": 466,
+        "callables": 19,
         "stubs": 0,
         "not_implemented": 0,
-        "markers": []
+        "markers": [
+          "placeholder"
+        ]
       },
       {
         "path": "apps/acquisition/stream.py",
@@ -32377,8 +32534,8 @@
       {
         "path": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
         "status": "TEST",
-        "loc": 350,
-        "callables": 35,
+        "loc": 429,
+        "callables": 41,
         "stubs": 1,
         "not_implemented": 0,
         "markers": []
@@ -32521,8 +32678,8 @@
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "status": "TEST",
-        "loc": 164,
-        "callables": 17,
+        "loc": 265,
+        "callables": 21,
         "stubs": 0,
         "not_implemented": 0,
         "markers": [
@@ -32532,8 +32689,8 @@
       {
         "path": "apps/acquisition/tests/unit/test_source_executor_contracts.py",
         "status": "TEST",
-        "loc": 52,
-        "callables": 5,
+        "loc": 195,
+        "callables": 16,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -35166,6 +35323,15 @@
         "markers": []
       },
       {
+        "path": "apps/deploy/minio-init/init-buckets.py",
+        "status": "IMPLEMENTED",
+        "loc": 73,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/feedback/feedback/__init__.py",
         "status": "PACKAGE_INIT",
         "loc": 34,
@@ -36045,7 +36211,7 @@
       {
         "path": "apps/interpretation/tests/integration/test_all_sources_parse.py",
         "status": "TEST",
-        "loc": 346,
+        "loc": 358,
         "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
@@ -36085,6 +36251,15 @@
         "status": "TEST",
         "loc": 490,
         "callables": 37,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "status": "TEST",
+        "loc": 139,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -36272,10 +36447,28 @@
         "markers": []
       },
       {
+        "path": "apps/interpretation/tests/test_transaction_lineage.py",
+        "status": "TEST",
+        "loc": 160,
+        "callables": 15,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/interpretation/tests/test_warc_reader.py",
         "status": "TEST",
         "loc": 402,
         "callables": 48,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/interpretation/transaction_lineage.py",
+        "status": "IMPLEMENTED",
+        "loc": 245,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40875,12 +41068,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 543,
+      "IMPLEMENTED": 548,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 339,
+      "TEST": 341,
       "MIGRATION": 19,
-      "total": 1010
+      "total": 1017
     }
   },
   "reachability": {
@@ -40899,6 +41092,14 @@
       },
       {
         "path": "apps/acquisition/_prove_backbone.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/acquisition/_prove_blockchain_sources.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/acquisition/_prove_commoncrawl.py",
         "status": "PRODUCTION"
       },
       {
@@ -41019,7 +41220,11 @@
       },
       {
         "path": "apps/acquisition/adapters/warc/collect.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/acquisition/airbyte_acceptance.py",
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/acquisition/artifact_sink.py",
@@ -42414,6 +42619,10 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/deploy/minio-init/init-buckets.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/feedback/feedback/__init__.py",
         "status": "TEST_ONLY"
       },
@@ -42822,6 +43031,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/interpretation/tests/test_parser_adapter.py",
         "status": "TEST"
       },
@@ -42902,8 +43115,16 @@
         "status": "TEST"
       },
       {
+        "path": "apps/interpretation/tests/test_transaction_lineage.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/interpretation/tests/test_warc_reader.py",
         "status": "TEST"
+      },
+      {
+        "path": "apps/interpretation/transaction_lineage.py",
+        "status": "TEST_ONLY"
       },
       {
         "path": "apps/projection/analytics/__init__.py",
@@ -44930,6 +45151,8 @@
       "apps/acquisition/_measure_coverage.py",
       "apps/acquisition/_prove_airbyte.py",
       "apps/acquisition/_prove_backbone.py",
+      "apps/acquisition/_prove_blockchain_sources.py",
+      "apps/acquisition/_prove_commoncrawl.py",
       "apps/acquisition/_prove_searxng.py",
       "apps/acquisition/_prove_tools.py",
       "apps/acquisition/sources/append_parse_blocks.py",
@@ -44943,6 +45166,7 @@
       "apps/control-plane/services/pow_run.py",
       "apps/control-plane/services/worker_pools.py",
       "apps/control-plane/workflows/worker.py",
+      "apps/deploy/minio-init/init-buckets.py",
       "apps/interpretation/_consume_searxng.py",
       "apps/interpretation/_prove_primproc.py",
       "apps/interpretation/dictionaries/build_mini.py",
@@ -44966,11 +45190,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 403,
+      "PRODUCTION": 408,
       "TEST_ONLY": 146,
       "ORPHAN": 122,
-      "TEST": 339,
-      "total": 1010
+      "TEST": 341,
+      "total": 1017
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -44987,7 +45211,6 @@
       "apps/acquisition/adapters/stormcrawler/__init__.py",
       "apps/acquisition/adapters/stormcrawler/collect.py",
       "apps/acquisition/adapters/warc/__init__.py",
-      "apps/acquisition/adapters/warc/collect.py",
       "apps/acquisition/dispatcher/regional.py",
       "apps/acquisition/registry.py",
       "apps/acquisition/source_query_set.py",
@@ -45039,6 +45262,7 @@
       "apps/interpretation/pipeline.py",
       "apps/interpretation/retrieval/__init__.py",
       "apps/interpretation/retrieval/retriever.py",
+      "apps/interpretation/transaction_lineage.py",
       "apps/projection/analytics/projector.py",
       "apps/projection/analytics/store.py",
       "apps/projection/graph/claim_projection.py",
@@ -47280,7 +47504,7 @@
         "status": "INFERRED",
         "method": "architecture_compiler:direct",
         "evidence": {
-          "via_import": "parsers.primproc",
+          "via_import": "parsers.families",
           "event": null
         },
         "confidence": 0.6
@@ -47715,6 +47939,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "906b1fd09c2431e3",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_airbyte.py",
+        "object": "apps/acquisition/airbyte_acceptance.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_airbyte.py",
+          "via": "airbyte_acceptance"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "1d78c0a0f635b128",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/_prove_airbyte.py",
@@ -47854,6 +48091,71 @@
         "evidence": {
           "file": "apps/acquisition/_prove_backbone.py",
           "via": "events.topics"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "5b4184af4209f7e7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_blockchain_sources.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_blockchain_sources.py",
+          "via": "sources.catalogue"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "5dd93b1ae068e201",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_blockchain_sources.py",
+        "object": "apps/acquisition/sources/connector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_blockchain_sources.py",
+          "via": "sources.connector"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "44109ea5c9087feb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_blockchain_sources.py",
+        "object": "apps/interpretation/parsers/families.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_blockchain_sources.py",
+          "via": "parsers.families"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b79b76fc6e81db4a",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_commoncrawl.py",
+        "object": "apps/acquisition/adapters/warc/collect.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_commoncrawl.py",
+          "via": "adapters.warc.collect"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "5750c93eb9e0a2e3",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_commoncrawl.py",
+        "object": "apps/shared/network/commoncrawl.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_commoncrawl.py",
+          "via": "network.commoncrawl"
         },
         "confidence": 1.0
       },
@@ -50354,6 +50656,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "4ce44af1685a44bb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
+        "object": "apps/acquisition/airbyte_acceptance.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
+          "via": "airbyte_acceptance"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "6bc462b9e54c4b4b",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
@@ -50831,6 +51146,19 @@
         "evidence": {
           "file": "apps/acquisition/tests/unit/test_replay_journal.py",
           "via": "observation_gate.replay"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "42152e186cc1d6a1",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+          "via": "sources.catalogue"
         },
         "confidence": 1.0
       },
@@ -69425,6 +69753,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "79e7cf903c430e5e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_onchain_source_parsers.py",
+          "via": "sources.catalogue"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "4c371175c8cd69ac",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "object": "apps/interpretation/parsers/families.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_onchain_source_parsers.py",
+          "via": "parsers.families"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3ac7273116b8b5bd",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/interpretation/tests/test_parser_adapter.py",
@@ -70656,6 +71010,19 @@
         "evidence": {
           "file": "apps/interpretation/tests/test_tenzir_normalization.py",
           "via": "normalization.tenzir"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "291b75e445f9da48",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_transaction_lineage.py",
+        "object": "apps/interpretation/transaction_lineage.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_transaction_lineage.py",
+          "via": "transaction_lineage"
         },
         "confidence": 1.0
       },
@@ -91621,6 +91988,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "384473d12a385600",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
+        "object": "apps/acquisition/airbyte_acceptance.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_airbyte_runtime.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "65239dea2b2e4185",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/acquisition/tests/unit/test_airbyte_runtime.py",
@@ -96217,6 +96596,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "fe38c74da3467017",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_onchain_source_parsers.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "16607deb63a24c51",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_onchain_source_parsers.py",
+        "object": "apps/interpretation/parsers/families.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_onchain_source_parsers.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "8bd2cc9209130764",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/interpretation/tests/test_parser_adapter.py",
@@ -97149,6 +97552,18 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/interpretation/tests/test_tenzir_normalization.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "76e6740ff8626e25",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_transaction_lineage.py",
+        "object": "apps/interpretation/transaction_lineage.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_transaction_lineage.py"
         },
         "confidence": 1.0
       },
@@ -102230,49 +102645,51 @@
       }
     ],
     "stats": {
-      "facts_total": 4367,
-      "static_facts": 4073,
+      "facts_total": 4382,
+      "static_facts": 4088,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
-    "components": 16,
-    "python_modules": 1010,
+    "components": 17,
+    "python_modules": 1017,
     "typescript_modules": 266,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2808,
-    "test_files": 342,
-    "test_functions": 5285,
-    "untested_modules": 267,
+    "import_edges": 2819,
+    "test_files": 344,
+    "test_functions": 5316,
+    "untested_modules": 270,
     "http_routes": 182
   },
   "evidence_stats": {
-    "facts_total": 4367,
-    "static_facts": 4073,
+    "facts_total": 4382,
+    "static_facts": 4088,
     "inferred": 294,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 543,
+    "IMPLEMENTED": 548,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 339,
+    "TEST": 341,
     "MIGRATION": 19,
-    "total": 1010
+    "total": 1017
   },
   "reachability_summary": {
-    "PRODUCTION": 403,
+    "PRODUCTION": 408,
     "TEST_ONLY": 146,
     "ORPHAN": 122,
-    "TEST": 339,
-    "total": 1010
+    "TEST": 341,
+    "total": 1017
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
     "apps/acquisition/_prove_airbyte.py",
     "apps/acquisition/_prove_backbone.py",
+    "apps/acquisition/_prove_blockchain_sources.py",
+    "apps/acquisition/_prove_commoncrawl.py",
     "apps/acquisition/_prove_searxng.py",
     "apps/acquisition/_prove_tools.py",
     "apps/acquisition/sources/append_parse_blocks.py",
@@ -102286,6 +102703,7 @@
     "apps/control-plane/services/pow_run.py",
     "apps/control-plane/services/worker_pools.py",
     "apps/control-plane/workflows/worker.py",
+    "apps/deploy/minio-init/init-buckets.py",
     "apps/interpretation/_consume_searxng.py",
     "apps/interpretation/_prove_primproc.py",
     "apps/interpretation/dictionaries/build_mini.py",
@@ -102323,7 +102741,6 @@
     "apps/acquisition/adapters/stormcrawler/__init__.py",
     "apps/acquisition/adapters/stormcrawler/collect.py",
     "apps/acquisition/adapters/warc/__init__.py",
-    "apps/acquisition/adapters/warc/collect.py",
     "apps/acquisition/dispatcher/regional.py",
     "apps/acquisition/registry.py",
     "apps/acquisition/source_query_set.py",
@@ -102375,6 +102792,7 @@
     "apps/interpretation/pipeline.py",
     "apps/interpretation/retrieval/__init__.py",
     "apps/interpretation/retrieval/retriever.py",
+    "apps/interpretation/transaction_lineage.py",
     "apps/projection/analytics/projector.py",
     "apps/projection/analytics/store.py",
     "apps/projection/graph/claim_projection.py",

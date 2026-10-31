@@ -362,21 +362,16 @@ export function AppShell({ children, activity }: AppShellProps) {
           </div>
         </div>
 
-        <div className="ui-topbar-navigation">
-          <div className="ui-topbar-nav-label">
-            <span className="ui-nav-status-mark" aria-hidden="true" />
-            <span>OPERATIONS</span>
-          </div>
-          <TopNav />
-        </div>
-
         <div className="ui-topbar-state">
           <WorkStateBar />
         </div>
       </header>
 
       <div className="ui-shell-body">
-        {children}
+        <TopNav />
+        <main className="ui-shell-main" data-testid="shell-main">
+          {children}
+        </main>
       </div>
 
       {paneVisibility.activity ? (

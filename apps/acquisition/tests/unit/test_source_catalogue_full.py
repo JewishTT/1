@@ -24,11 +24,11 @@ sys.path.insert(0, str(APP))
 sys.path.insert(0, str(REPO / "apps" / "shared"))
 
 from sources.catalogue import load_catalogue, load_source  # noqa: E402
-from sources.executor import _basic_auth  # noqa: E402
+from sources.executor import HttpSourceExecutor, _basic_auth  # noqa: E402
 
 ESTORIDES = APP / "sources" / "estorides"
 
-EXPECTED_TOTAL = 145  # 146 files, minus the duplicate hunter_email
+EXPECTED_TOTAL = 151  # 152 files, minus the duplicate hunter_email
 EXPECTED_CATEGORIES = 20
 
 
@@ -104,8 +104,8 @@ def test_keyed_and_open_split_is_visible() -> None:
     the count of runnable-without-credentials sources cannot quietly collapse."""
     defs = all_definitions()
     keyed = [d for d in defs if d.requires_key]
-    assert len(keyed) == 24
-    assert len(defs) - len(keyed) == 121  # runnable with no credential at all
+    assert len(keyed) == 26
+    assert len(defs) - len(keyed) == 125  # runnable with no credential at all
 
 
 # -- basic auth ---------------------------------------------------------------
@@ -161,3 +161,104 @@ def test_wigle_is_enabled_and_names_its_pair() -> None:
 def test_hunter_is_enabled() -> None:
     defs = {d.name: d for d in all_definitions()}
     assert defs["hunter_email"].enabled
+
+
+
+def test_blockstream_address_feed_is_in_the_live_catalogue() -> None:
+    definitions = {item.name: item for item in all_definitions()}
+    feed = definitions["blockstream_btc_address_transactions"]
+    assert feed.enabled
+    assert feed.kind == "http"
+    assert feed.tool["url"].endswith("/address/{query}/txs")
+    assert feed.applies_to == ("btc_address",)
+    assert feed.definition["parse"]["family"] == "json_rows"
+
+
+def test_explicit_provider_offset_pagination_uses_declared_parameter(tmp_path: Path) -> None:
+    source_file = tmp_path / "offset-feed.yaml"
+    source_file.write_text(
+        """
+name: offset_feed
+enabled: true
+category: test
+description: Bounded provider offset feed
+os: any
+requires_key: false
+parser: raw_text
+tool:
+  method: GET
+  url: https://api.example.test/items?start=0&limit=50
+  params: {}
+pagination:
+  strategy: offset
+  param: start
+  page_size: 50
+  max_pages: 3
+""",
+        encoding="utf-8",
+    )
+    source = load_source(source_file)
+    assert source.pagination.strategy == "offset"
+    assert source.pagination.param == "start"
+    assert source.pagination.page_size == 50
+    assert source.pagination.max_pages == 3
+    assert source.pagination.inferred is False
+
+    executor = HttpSourceExecutor()
+    second_page = executor._page_url(source.tool["url"], source.pagination, 2)
+    from urllib.parse import parse_qs, urlsplit
+
+    query = parse_qs(urlsplit(second_page).query)
+    assert query["start"] == ["50"]
+    assert query["limit"] == ["50"]
+
+
+def test_explicit_cursor_pagination_is_rejected_until_runtime_support_exists(tmp_path: Path) -> None:
+    source_file = tmp_path / "cursor-feed.yaml"
+    source_file.write_text(
+        """
+name: cursor_feed
+enabled: true
+category: test
+description: Unsupported cursor feed
+os: any
+requires_key: false
+parser: raw_text
+tool:
+  method: GET
+  url: https://api.example.test/items
+  params: {}
+pagination:
+  strategy: cursor
+  param: cursor
+  page_size: 50
+  max_pages: 3
+""",
+        encoding="utf-8",
+    )
+    from sources.catalogue import CatalogueError
+
+    with pytest.raises(CatalogueError, match="not supported"):
+        load_source(source_file)
+
+
+
+def test_btc_eth_tron_read_only_sources_are_present_and_enabled() -> None:
+    definitions = {item.name: item for item in all_definitions()}
+    expected = {
+        "blockstream_btc_address_transactions",
+        "blockstream_btc_tx_detail",
+        "blockscout_eth_address",
+        "blockscout_eth_transactions",
+        "trongrid_account",
+        "trongrid_account_transactions",
+    }
+    assert expected <= set(definitions)
+    for name in expected:
+        definition = definitions[name]
+        assert definition.enabled
+        assert definition.kind == "http"
+        assert definition.definition.get("parse")
+        assert definition.tool.get("method", "GET").upper() == "GET"
+    assert definitions["trongrid_account"].key_env == "TRONGRID_API_KEY"
+    assert definitions["trongrid_account_transactions"].key_env == "TRONGRID_API_KEY"

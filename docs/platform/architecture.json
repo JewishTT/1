@@ -92,6 +92,8 @@
           "apps/acquisition/_probe_catalogue.py",
           "apps/acquisition/_prove_airbyte.py",
           "apps/acquisition/_prove_backbone.py",
+          "apps/acquisition/_prove_blockchain_sources.py",
+          "apps/acquisition/_prove_commoncrawl.py",
           "apps/acquisition/_prove_readback.py",
           "apps/acquisition/_prove_searxng.py",
           "apps/acquisition/_prove_tools.py",
@@ -122,6 +124,7 @@
           "apps/acquisition/adapters/stormcrawler/collect.py",
           "apps/acquisition/adapters/warc/__init__.py",
           "apps/acquisition/adapters/warc/collect.py",
+          "apps/acquisition/airbyte_acceptance.py",
           "apps/acquisition/artifact_sink.py",
           "apps/acquisition/case_execution_guard.py",
           "apps/acquisition/cc_extract.py",
@@ -230,7 +233,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 141
+        "module_count": 144
       },
       {
         "id": "interpretation",
@@ -330,6 +333,7 @@
           "apps/interpretation/tests/test_evidence_manifest.py",
           "apps/interpretation/tests/test_mention_binding_seam.py",
           "apps/interpretation/tests/test_observation_consumer.py",
+          "apps/interpretation/tests/test_onchain_source_parsers.py",
           "apps/interpretation/tests/test_parser_adapter.py",
           "apps/interpretation/tests/test_payload_binding.py",
           "apps/interpretation/tests/test_payload_detection.py",
@@ -350,9 +354,11 @@
           "apps/interpretation/tests/test_syntactic_producer.py",
           "apps/interpretation/tests/test_tenzir_live.py",
           "apps/interpretation/tests/test_tenzir_normalization.py",
-          "apps/interpretation/tests/test_warc_reader.py"
+          "apps/interpretation/tests/test_transaction_lineage.py",
+          "apps/interpretation/tests/test_warc_reader.py",
+          "apps/interpretation/transaction_lineage.py"
         ],
-        "module_count": 112
+        "module_count": 115
       },
       {
         "id": "investigations",
@@ -527,6 +533,7 @@
           "specops"
         ],
         "modules": [
+          "apps/deploy/minio-init/init-buckets.py",
           "apps/specops/__init__.py",
           "apps/specops/counterintel.py",
           "apps/specops/emulation.py",
@@ -598,7 +605,7 @@
           "tools/specs/build_owner_map.py",
           "tools/strip_zero_inventory.py"
         ],
-        "module_count": 70
+        "module_count": 71
       },
       {
         "id": "orchestration-temporal",
@@ -1518,6 +1525,7 @@
       "components.md",
       "composition.py",
       "compression.type",
+      "config.json",
       "conftest.py",
       "connection.asn",
       "connection.isp",
@@ -1571,6 +1579,7 @@
       "data.url",
       "database.name",
       "datetime.now",
+      "db.example",
       "db.schema",
       "dc.creator",
       "dc.description",
@@ -1603,9 +1612,7 @@
       "enable.idempotence",
       "engine.py",
       "entities.entity_id",
-      "entity.claimed",
-      "entity.created",
-      "entity.extract"
+      "entity.claimed"
     ]
   },
   "context_map": {
@@ -1620,7 +1627,7 @@
         "from": "ingestion",
         "to": "interpretation",
         "type": "direct",
-        "via_import": "parsers.primproc"
+        "via_import": "parsers.families"
       },
       {
         "from": "ingestion",

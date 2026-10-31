@@ -1,0 +1,31 @@
+name: commoncrawl-live-proof
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: commoncrawl-live-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  commoncrawl-index-and-warc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Query live CDX index and fetch exact WARC range
+        run: .venv/bin/python apps/acquisition/_prove_commoncrawl.py
+      - name: Upload live Common Crawl proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: commoncrawl-live-proof
+          path: artifacts/acquisition-integration/commoncrawl-live.json
+          if-no-files-found: warn
+          retention-days: 14

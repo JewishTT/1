@@ -1,5 +1,6 @@
 /**
- * Screenshot and geometry regression for the compact navigation deck.
+ * Screenshot and geometry regression for the persistent field-navigation rail.
+ *
  * Run from apps/webapp after starting Vite:
  *   npm run ui:shoot:nav -- http://127.0.0.1:5173 artifacts/nav-screenshots
  */
@@ -18,62 +19,140 @@ const VIEWPORTS = [
 mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const problems = [];
+const pageErrors = [];
+const browserPage = await browser.newPage({
+  viewport: { width: 1440, height: 900 },
+  deviceScaleFactor: 1,
+});
+browserPage.on("pageerror", (error) => pageErrors.push(error.message.slice(0, 180)));
 
-for (const [width, height, label] of VIEWPORTS) {
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
-  page.on("pageerror", (error) => problems.push(`${label}: ${error.message.slice(0, 180)}`));
-  try {
-    await page.goto(new URL("/ui-kit", BASE).href, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await page.getByTestId("app-shell").waitFor({ timeout: 20000 });
-    await page.getByTestId("nav-deck-trigger").waitFor({ timeout: 20000 });
-    await page.getByTestId("nav-deck-trigger").click();
-    const deck = page.getByTestId("nav-deck");
-    await deck.waitFor({ state: "visible", timeout: 10000 });
-    await page.getByTestId("nav-module-osint").waitFor({ state: "visible" });
-    await page.getByTestId("nav-module-economic").waitFor({ state: "visible" });
-    await page.getByTestId("nav-module-specops").waitFor({ state: "visible" });
-    await page.screenshot({ path: join(OUT, `nav-deck-${label}.png`), fullPage: false, animations: "disabled" });
-    const geometry = await page.evaluate(() => {
-      const element = document.querySelector(".ui-nav-deck");
-      const rect = element?.getBoundingClientRect();
+async function waitForNav(module) {
+  await browserPage.waitForFunction(
+    (expected) => document.querySelector(".ui-primary-nav")?.getAttribute("data-module") === expected,
+    module,
+    { timeout: 15000 },
+  );
+  await browserPage.locator(".ui-primary-nav").waitFor({ state: "visible" });
+}
+
+try {
+  await browserPage.goto(new URL("/investigations", BASE).href, {
+    waitUntil: "domcontentloaded",
+    timeout: 60000,
+  });
+  await browserPage.getByTestId("app-shell").waitFor({ timeout: 20000 });
+  await browserPage.locator(".ui-primary-nav").waitFor({ timeout: 20000 });
+  await waitForNav("osint");
+
+  for (const [width, height, label] of VIEWPORTS) {
+    await browserPage.setViewportSize({ width, height });
+    await browserPage.waitForTimeout(180);
+    const metrics = await browserPage.evaluate(() => {
+      const bounds = (selector) => {
+        const element = document.querySelector(selector);
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          left: Math.round(rect.left),
+          top: Math.round(rect.top),
+          right: Math.round(rect.right),
+          bottom: Math.round(rect.bottom),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          display: style.display,
+          overflowX: style.overflowX,
+        };
+      };
       return {
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
         documentWidth: document.documentElement.scrollWidth,
         bodyWidth: document.body.scrollWidth,
-        deck: rect ? {
-          left: Math.round(rect.left), top: Math.round(rect.top),
-          right: Math.round(rect.right), bottom: Math.round(rect.bottom),
-          width: Math.round(rect.width), height: Math.round(rect.height)
-        } : null
+        nav: bounds(".ui-primary-nav"),
+        main: bounds(".ui-shell-main"),
+        modules: [...document.querySelectorAll(".ui-primary-nav-module")].map((el) => ({
+          label: el.innerText.replace(/\s+/g, " ").trim(),
+          href: el.getAttribute("href"),
+          active: el.getAttribute("data-active") === "true",
+        })),
+        destinationCount: document.querySelectorAll(".ui-primary-nav-link").length,
       };
     });
-    process.stdout.write(JSON.stringify({ viewport: label, ...geometry }) + "\n");
-    if (!geometry.deck) problems.push(`${label}: navigation deck is missing`);
-    else if (geometry.deck.left < 0 || geometry.deck.right > width + 1 ||
-             geometry.deck.top < 0 || geometry.deck.bottom > height + 1) {
-      problems.push(`${label}: navigation deck escapes viewport: ${JSON.stringify(geometry.deck)}`);
-    } else if (label !== "phone") {
-      const centerX = Math.abs((geometry.deck.left + geometry.deck.right) / 2 - width / 2);
-      const centerY = Math.abs((geometry.deck.top + geometry.deck.bottom) / 2 - height / 2);
-      if (centerX > 2 || centerY > 2) problems.push(`${label}: desktop/tablet deck is not centered`);
-      if (geometry.deck.width < 900) problems.push(`${label}: desktop/tablet deck is too narrow`);
-    } else if (geometry.deck.left > 12 || geometry.deck.width < width - 20) {
-      problems.push(`phone: navigation deck should use the available sheet width`);
+
+    await browserPage.locator(".ui-primary-nav").screenshot({
+      path: join(OUT, `nav-field-domains-${label}.png`),
+      animations: "disabled",
+    });
+    process.stdout.write(JSON.stringify({ viewport: label, ...metrics }) + "\n");
+
+    if (!metrics.nav || !metrics.main || metrics.nav.width <= 0 || metrics.nav.height <= 0) {
+      problems.push(`${label}: navigation rail or workspace is missing`);
+      continue;
     }
-    if (geometry.documentWidth > width + 1 || geometry.bodyWidth > width + 1) {
-      problems.push(`${label}: page horizontally overflows by document=${geometry.documentWidth}, body=${geometry.bodyWidth}`);
+    if (metrics.nav.left < -1 || metrics.nav.right > width + 1 ||
+        metrics.nav.top < -1 || metrics.nav.bottom > height + 1) {
+      problems.push(`${label}: navigation rail escapes viewport: ${JSON.stringify(metrics.nav)}`);
     }
-  } catch (error) {
-    problems.push(`${label}: ${String(error).slice(0, 220)}`);
-  } finally {
-    await page.close();
+    if (metrics.documentWidth > width + 1 || metrics.bodyWidth > width + 1) {
+      problems.push(`${label}: document horizontally overflows: document=${metrics.documentWidth}, body=${metrics.bodyWidth}`);
+    }
+    if (metrics.modules.length !== 3 || metrics.destinationCount === 0) {
+      problems.push(`${label}: expected three domains and at least one current-domain destination`);
+    }
+    if (width > 1279) {
+      if (metrics.nav.width < 200 || metrics.nav.width > 260) {
+        problems.push(`${label}: desktop rail width outside 200–260px: ${metrics.nav.width}`);
+      }
+      if (metrics.main.left < metrics.nav.right - 1) {
+        problems.push(`${label}: workspace overlaps the desktop navigation rail`);
+      }
+    } else if (width > 767) {
+      if (metrics.nav.width < 50 || metrics.nav.width > 80) {
+        problems.push(`${label}: tablet rail should collapse to 50–80px, got ${metrics.nav.width}`);
+      }
+      if (metrics.main.left < metrics.nav.right - 1) {
+        problems.push(`${label}: workspace overlaps the tablet icon rail`);
+      }
+    } else {
+      if (metrics.nav.height > 150) {
+        problems.push(`phone: domain/destination strip is too tall: ${metrics.nav.height}px`);
+      }
+      if (metrics.main.top < metrics.nav.bottom - 1) {
+        problems.push("phone: workspace overlaps the horizontal navigation strip");
+      }
+    }
   }
+
+  // Capture the two non-default domain states as well as the OSINT default.
+  await browserPage.setViewportSize({ width: 1440, height: 900 });
+  await browserPage.getByTestId("nav-module-specops").click();
+  await waitForNav("specops");
+  await browserPage.getByRole("navigation", { name: "specops workspaces" })
+    .getByRole("link", { name: /Pipeline Operations/i }).waitFor({ state: "visible" });
+  await browserPage.locator(".ui-primary-nav").screenshot({
+    path: join(OUT, "nav-specops-desktop.png"),
+    animations: "disabled",
+  });
+
+  await browserPage.getByTestId("nav-module-economic").click();
+  await waitForNav("economic");
+  await browserPage.getByRole("navigation", { name: "economic workspaces" })
+    .locator("a").first().waitFor({ state: "visible" });
+  await browserPage.locator(".ui-primary-nav").screenshot({
+    path: join(OUT, "nav-economic-desktop.png"),
+    animations: "disabled",
+  });
+} catch (error) {
+  problems.push(`screenshot regression aborted: ${String(error).slice(0, 220)}`);
+} finally {
+  await browser.close();
 }
-await browser.close();
+
+if (pageErrors.length) problems.push(...pageErrors.map((error) => `pageerror: ${error}`));
 if (problems.length) {
-  process.stderr.write(`\nNavigation screenshot regression failed:\n- ${problems.join("\n- ")}\n`);
+  process.stderr.write(`\nPersistent navigation screenshot regression failed:\n- ${problems.join("\n- ")}\n`);
   process.exitCode = 1;
 } else {
-  process.stdout.write(`Navigation screenshots and geometry checks passed. Artifacts: ${OUT}\n`);
+  process.stdout.write(`Persistent navigation screenshots and geometry checks passed. Artifacts: ${OUT}\n`);
 }

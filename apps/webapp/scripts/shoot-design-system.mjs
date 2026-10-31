@@ -55,11 +55,23 @@ async function capture(name, extra = {}) {
       : null,
     text: (document.body.innerText || "").replace(/\s+/g, " ").slice(0, 140),
     nav: (() => {
-      const nav = document.querySelector(".ui-topnav");
-      return nav ? {
+      const nav = document.querySelector(".ui-primary-nav");
+      const rect = nav?.getBoundingClientRect();
+      const main = document.querySelector(".ui-shell-main");
+      const mainRect = main?.getBoundingClientRect();
+      return nav && rect ? {
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        top: Math.round(rect.top),
+        bottom: Math.round(rect.bottom),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
         clientWidth: nav.clientWidth,
         scrollWidth: nav.scrollWidth,
-        overflowX: getComputedStyle(nav).overflowX,
+        moduleCount: nav.querySelectorAll(".ui-primary-nav-module").length,
+        destinationCount: nav.querySelectorAll(".ui-primary-nav-link").length,
+        mainLeft: mainRect ? Math.round(mainRect.left) : null,
+        mainTop: mainRect ? Math.round(mainRect.top) : null,
       } : null;
     })(),
     geometry: (() => {
@@ -86,6 +98,7 @@ async function capture(name, extra = {}) {
       return {
         viewportHeight: window.innerHeight,
         shellTopbar: box('[data-testid="app-shell-topbar"]'),
+        shellMain: box(".ui-shell-main"),
         catalogueHeader: box(".ui-kit-header"),
         principles: box(".ui-kit-principles"),
         tabs: box(".ui-kit-page [role=tablist]"),
@@ -120,8 +133,37 @@ async function capture(name, extra = {}) {
   if (metrics.document > metrics.viewport + 1 || metrics.body > metrics.viewport + 1) {
     problems.push(`${name}: horizontal overflow (viewport=${metrics.viewport}, document=${metrics.document}, body=${metrics.body})`);
   }
-  if (metrics.nav && metrics.nav.scrollWidth > metrics.nav.clientWidth + 1) {
-    problems.push(`${name}: top navigation is clipped at ${metrics.viewport}px (client=${metrics.nav.clientWidth}, scroll=${metrics.nav.scrollWidth})`);
+  if (!metrics.nav || metrics.nav.width <= 0 || metrics.nav.destinationCount === 0 || metrics.nav.moduleCount !== 3) {
+    problems.push(`${name}: persistent domain/navigation rail is missing or incomplete`);
+  } else {
+    if (metrics.nav.left < -1 || metrics.nav.right > metrics.viewport + 1) {
+      problems.push(`${name}: navigation rail escapes viewport (left=${metrics.nav.left}, right=${metrics.nav.right})`);
+    }
+    const navBottom = metrics.nav.bottom;
+    const navTop = metrics.nav.top;
+    const mainTop = metrics.nav.mainTop;
+    // The phone layout deliberately stacks the horizontal domain strip above
+    // the canvas. Only report a collision when the rectangles overlap on both
+    // axes; horizontal projection alone is not a valid overlap test.
+    if (metrics.nav.mainLeft !== null && mainTop !== null) {
+      const main = metrics.geometry?.shellMain;
+      const mainRight = main?.right ?? metrics.viewport;
+      const mainBottom = main?.bottom ?? metrics.geometry?.viewportHeight ?? 0;
+      const overlapsX = metrics.nav.left < mainRight - 1 && metrics.nav.right > metrics.nav.mainLeft + 1;
+      const overlapsY = navTop < mainBottom - 1 && navBottom > mainTop + 1;
+      if (overlapsX && overlapsY) {
+        problems.push(`${name}: workspace overlaps the navigation rail`);
+      }
+    }
+    if (metrics.viewport > 1279 && (metrics.nav.width < 200 || metrics.nav.width > 260)) {
+      problems.push(`${name}: desktop navigation rail width is outside 200–260px (${metrics.nav.width})`);
+    }
+    if (metrics.viewport <= 1279 && metrics.viewport > 767 && (metrics.nav.width < 50 || metrics.nav.width > 80)) {
+      problems.push(`${name}: tablet navigation rail did not collapse to icons (${metrics.nav.width}px)`);
+    }
+    if (metrics.viewport <= 767 && (metrics.nav.height <= 0 || metrics.nav.height > 150)) {
+      problems.push(`${name}: mobile navigation strip height is outside 1–150px (${metrics.nav.height})`);
+    }
   }
   const order = metrics.geometry?.contentOrder;
   if (order) {
@@ -177,31 +219,35 @@ try {
     await page.setViewportSize({ width, height });
     await page.locator(".ui-kit-page").evaluate((element) => { element.scrollTop = 0; });
     await capture(`primitives-dark-${label}`, { surface: "primitives", viewportPosition: "top", expectedTheme: "dark" });
-    // A dedicated chrome crop makes nav alignment, active state and overflow
-    // inspectable without the catalogue competing for screenshot space.
-    const topbar = page.locator('[data-testid="app-shell-topbar"]');
-    await topbar.screenshot({ path: join(OUT, `navigation-${label}.png`), animations: "disabled" });
-    const navMetrics = await page.locator(".ui-topnav").evaluate((element) => {
+    // Capture the persistent field-navigation rail independently from the catalogue.
+    const nav = page.locator(".ui-primary-nav");
+    await nav.waitFor({ state: "visible", timeout: 10000 });
+    await nav.screenshot({ path: join(OUT, `navigation-${label}.png`), animations: "disabled" });
+    const navMetrics = await nav.evaluate((element) => {
       const rect = element.getBoundingClientRect();
-      const trigger = element.querySelector(".ui-nav-deck-trigger")?.getBoundingClientRect();
+      const main = document.querySelector(".ui-shell-main")?.getBoundingClientRect();
       return {
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        top: Math.round(rect.top),
+        bottom: Math.round(rect.bottom),
         width: Math.round(rect.width),
         height: Math.round(rect.height),
-        trigger: trigger ? {
-          left: Math.round(trigger.left),
-          right: Math.round(trigger.right),
-          top: Math.round(trigger.top),
-          bottom: Math.round(trigger.bottom),
-          width: Math.round(trigger.width),
-          height: Math.round(trigger.height),
-        } : null,
+        modules: element.querySelectorAll(".ui-primary-nav-module").length,
+        destinations: element.querySelectorAll(".ui-primary-nav-link").length,
+        mainLeft: main ? Math.round(main.left) : null,
+        mainTop: main ? Math.round(main.top) : null,
       };
     });
-    manifest.push({ filename: `navigation-${label}.png`, surface: "navigation", viewport: width, geometry: navMetrics });
-    if (navMetrics.width <= 0 || navMetrics.height <= 0 || !navMetrics.trigger || navMetrics.trigger.width <= 0) {
-      problems.push(`navigation-${label}: missing compact navigation trigger geometry`);
-    } else if (navMetrics.trigger.left < -1 || navMetrics.trigger.right > width + 1) {
-      problems.push(`navigation-${label}: compact navigation trigger escapes viewport`);
+    manifest.push({ filename: `navigation-${label}.png`, surface: "persistent-navigation", viewport: width, geometry: navMetrics });
+    if (navMetrics.width <= 0 || navMetrics.height <= 0 || navMetrics.modules !== 3 || navMetrics.destinations <= 0) {
+      problems.push(`navigation-${label}: persistent domain rail is missing or incomplete`);
+    } else if (navMetrics.left < -1 || navMetrics.right > width + 1) {
+      problems.push(`navigation-${label}: persistent rail escapes viewport`);
+    } else if (width > 767 && navMetrics.mainLeft !== null && navMetrics.mainLeft < navMetrics.right - 1) {
+      problems.push(`navigation-${label}: workbench overlaps the vertical navigation rail`);
+    } else if (width <= 767 && navMetrics.mainTop !== null && navMetrics.mainTop < navMetrics.bottom - 1) {
+      problems.push(`navigation-${label}: workbench overlaps the stacked navigation strip`);
     }
     await page.locator(".ui-kit-page").evaluate((element) => { element.scrollTop = element.scrollHeight; });
     await capture(`primitives-dark-${label}-bottom`, { surface: "primitives", viewportPosition: "bottom", expectedTheme: "dark" });

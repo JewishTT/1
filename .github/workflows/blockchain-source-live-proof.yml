@@ -1,0 +1,25 @@
+name: blockchain-source-live-proof
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: blockchain-live-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  live-read-only-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Fetch and parse BTC / ETH / TRON public-chain evidence
+        env:
+          TRONGRID_API_KEY: ${{ secrets.TRONGRID_API_KEY }}
+        run: .venv/bin/python apps/acquisition/_prove_blockchain_sources.py

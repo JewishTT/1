@@ -20,12 +20,12 @@ Raw observations are immutable and content-addressed; every analytical result re
 
 | Metric | Value |
 |---|---|
-| Components | 16 |
-| Python / TypeScript / Rust modules | 1010 / 266 / 16 |
+| Components | 17 |
+| Python / TypeScript / Rust modules | 1017 / 266 / 16 |
 | HTTP routes | 182 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 342 / 5285 |
+| Test files / functions | 344 / 5316 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -56,13 +56,14 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 
 | Component | Python | TypeScript | Rust | Description |
 |---|---|---|---|---|
-| `acquisition` | 105 | 0 | 15 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
+| `acquisition` | 108 | 0 | 15 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
 | `control-plane` | 241 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
-| `interpretation` | 112 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
+| `interpretation` | 115 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |

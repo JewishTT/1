@@ -1,13 +1,11 @@
 /**
- * Compact workspace navigation for the UI 2.0 shell.
+ * Persistent field navigation for the UI 2.0 shell.
  *
- * The full route catalogue lives in nav.ts. This component presents it as a
- * lightweight active-workspace trigger and an accessible navigation deck so
- * the graph canvas and work-state controls keep their width.
+ * Domain selection and destinations remain visible while the analyst works. The
+ * workbench is the primary surface; navigation is an always-available rail, not
+ * a modal deck hidden behind a single NAV button.
  */
-import { createPortal } from "react-dom";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { NavLink, useInRouterContext, useLocation } from "react-router-dom";
+import { Link, NavLink, useInRouterContext, useLocation } from "react-router-dom";
 
 import { Icon } from "../ui/Icon";
 import {
@@ -20,31 +18,36 @@ import {
   type NavItem,
 } from "./nav";
 
-function NavEntry({
+const MODULE_ICONS: Record<ModuleKey, "view-ops" | "view-analysis" | "view-evidence"> = {
+  osint: "view-ops",
+  economic: "view-analysis",
+  specops: "view-evidence",
+};
+
+function DestinationLink({
   item,
   pathname,
   search,
-  onNavigate,
 }: {
   item: NavItem;
   pathname: string;
   search: string;
-  onNavigate: () => void;
 }) {
   const active = isNavItemActive(pathname, item, search);
   return (
     <NavLink
       to={item.to}
-      className="ui-nav-deck-link"
+      className="ui-primary-nav-link"
       data-active={active}
       aria-current={active ? "page" : undefined}
-      onClick={onNavigate}
+      title={item.label}
+      data-testid={`nav-destination-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
     >
-      <span className="ui-nav-deck-link-icon" aria-hidden="true">
+      <span className="ui-primary-nav-link-icon" aria-hidden="true">
         <Icon name={item.icon} size={15} />
       </span>
-      <span className="ui-nav-deck-link-label">{item.label}</span>
-      {active ? <span className="ui-nav-deck-current">CURRENT</span> : null}
+      <span className="ui-primary-nav-link-label">{item.label}</span>
+      {active ? <span className="ui-primary-nav-current" aria-hidden="true" /> : null}
     </NavLink>
   );
 }
@@ -59,168 +62,69 @@ function RoutedTopNav() {
   const location = useLocation();
   const currentModule = resolveModule(location.pathname);
   const currentTitle = resolveTitle(location.pathname);
-  const currentModuleInfo = NAV_MODULES.find((item) => item.key === currentModule) ?? NAV_MODULES[0];
-  const [open, setOpen] = useState(false);
-  const [selectedModule, setSelectedModule] = useState<ModuleKey>(currentModule);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const sections = NAV_SECTIONS[selectedModule];
-  const close = useCallback(() => setOpen(false), []);
-
-  useEffect(() => {
-    if (!open) return;
-    const firstDestination = document.querySelector<HTMLElement>(".ui-nav-deck-link");
-    firstDestination?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        close();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = Array.from(
-        document.querySelectorAll<HTMLElement>(".ui-nav-deck button:not(:disabled), .ui-nav-deck a[href]"),
-      ).filter((element) => element.offsetParent !== null || element === document.activeElement);
-      if (!focusable.length) {
-        event.preventDefault();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      triggerRef.current?.focus();
-    };
-  }, [open, close]);
-
-  const portalHost = typeof document !== "undefined"
-    ? document.querySelector<HTMLElement>(".ui-root[data-theme]") ?? document.body
-    : null;
-  const deck =
-    open && portalHost
-      ? createPortal(
-          <div className="ui-nav-deck-layer" data-testid="nav-deck-layer">
-            <button
-              type="button"
-              className="ui-nav-deck-scrim"
-              aria-label="Close navigation"
-              tabIndex={-1}
-              onClick={close}
-            />
-            <section
-              className="ui-nav-deck"
-              id="ui-navigation-deck"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="ui-nav-deck-title"
-              data-testid="nav-deck"
-            >
-              <header className="ui-nav-deck-header">
-                <div>
-                  <span className="ui-nav-deck-eyebrow">COGNITIVE / FIELD SYSTEMS</span>
-                  <h2 id="ui-nav-deck-title">Navigation deck</h2>
-                  <p>Choose an operational domain, then enter a workspace.</p>
-                </div>
-                <button type="button" className="ui-nav-deck-close" onClick={close}>
-                  Close <span aria-hidden="true">×</span>
-                </button>
-              </header>
-
-              <div className="ui-nav-deck-grid">
-                <div className="ui-nav-deck-modules" role="group" aria-label="Operational domains">
-                  <span className="ui-nav-deck-section-label">01 / DOMAIN</span>
-                  {NAV_MODULES.map((module) => (
-                    <button
-                      key={module.key}
-                      type="button"
-                      className="ui-nav-deck-module"
-                      data-active={selectedModule === module.key}
-                      aria-pressed={selectedModule === module.key}
-                      data-testid={`nav-module-${module.key}`}
-                      onClick={() => setSelectedModule(module.key)}
-                    >
-                      <span className="ui-nav-deck-module-code">{module.short}</span>
-                      <span className="ui-nav-deck-module-name">{module.label}</span>
-                      <span className="ui-nav-deck-module-arrow" aria-hidden="true">↗</span>
-                    </button>
-                  ))}
-                  <div className="ui-nav-deck-scope">
-                    <span className="ui-nav-deck-section-label">ACTIVE CONTEXT</span>
-                    <strong>{currentModuleInfo.short} / {currentTitle}</strong>
-                    <span>Routes are grouped by domain; the current route is marked in the list.</span>
-                  </div>
-                </div>
-
-                <div className="ui-nav-deck-destinations" data-testid="nav-deck-destinations">
-                  <div className="ui-nav-deck-destinations-heading">
-                    <span className="ui-nav-deck-section-label">02 / DESTINATIONS</span>
-                    <span className="ui-nav-deck-destinations-domain">{NAV_MODULES.find((item) => item.key === selectedModule)?.label}</span>
-                  </div>
-                  {sections.map((section, index) => (
-                    <div className="ui-nav-deck-section" key={section.label}>
-                      <div className="ui-nav-deck-section-heading">
-                        <span className="ui-nav-deck-section-index">{String(index + 1).padStart(2, "0")}</span>
-                        <span>{section.label}</span>
-                      </div>
-                      <div className="ui-nav-deck-section-items">
-                        {section.items.map((item) => (
-                          <NavEntry
-                            key={item.to}
-                            item={item}
-                            pathname={location.pathname}
-                            search={location.search}
-                            onNavigate={close}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <footer className="ui-nav-deck-footer">
-                <span>FIELD SYSTEMS / ROUTE INDEX</span>
-                <span><kbd>ESC</kbd> CLOSE</span>
-              </footer>
-            </section>
-          </div>,
-          portalHost,
-        )
-      : null;
+  const sections = NAV_SECTIONS[currentModule];
 
   return (
-    <div className="ui-topnav" data-testid="topnav" data-module={currentModule} data-open={open}>
-      <button
-        ref={triggerRef}
-        type="button"
-        className="ui-nav-deck-trigger"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-controls="ui-navigation-deck"
-        aria-label={`Open navigation. Current domain: ${currentModuleInfo.label}. Current workspace: ${currentTitle}.`}
-        data-testid="nav-deck-trigger"
-        onClick={() => {
-          if (!open) setSelectedModule(currentModule);
-          setOpen((value) => !value);
-        }}
-      >
-        <span className="ui-nav-deck-trigger-mark" aria-hidden="true"><Icon name="view-ops" size={15} /></span>
-        <span className="ui-nav-deck-trigger-copy">
-          <span className="ui-nav-deck-trigger-code">{currentModuleInfo.short}</span>
-          <span className="ui-nav-deck-trigger-separator" aria-hidden="true">/</span>
-          <span className="ui-nav-deck-trigger-title">{currentTitle}</span>
-        </span>
-        <span className="ui-nav-deck-trigger-action">{open ? "CLOSE" : "NAV"} <span aria-hidden="true">{open ? "−" : "+"}</span></span>
-      </button>
-      {deck}
-    </div>
+    <aside className="ui-primary-nav" data-testid="topnav" data-module={currentModule}>
+      <div className="ui-primary-nav-header">
+        <span className="ui-primary-nav-kicker">ROUTE INDEX / 01</span>
+        <span className="ui-primary-nav-heading">FIELD DOMAINS</span>
+      </div>
+
+      <nav className="ui-primary-nav-modules" aria-label="Operational domains">
+        {NAV_MODULES.map((module) => {
+          const active = currentModule === module.key;
+          return (
+            <Link
+              key={module.key}
+              to={module.landing}
+              className="ui-primary-nav-module"
+              data-active={active}
+              aria-current={active ? "location" : undefined}
+              title={module.label}
+              data-testid={`nav-module-${module.key}`}
+            >
+              <span className="ui-primary-nav-module-icon" aria-hidden="true">
+                <Icon name={MODULE_ICONS[module.key]} size={16} />
+              </span>
+              <span className="ui-primary-nav-module-copy">
+                <span className="ui-primary-nav-module-code">{module.short}</span>
+                <span className="ui-primary-nav-module-name">{module.label}</span>
+              </span>
+              {active ? <span className="ui-primary-nav-module-marker" aria-hidden="true" /> : null}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="ui-primary-nav-divider" />
+
+      <nav className="ui-primary-nav-destinations" aria-label={`${currentModule} workspaces`}>
+        {sections.map((section, index) => (
+          <section className="ui-primary-nav-section" key={section.label}>
+            <h2 className="ui-primary-nav-section-heading">
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              {section.label}
+            </h2>
+            <div className="ui-primary-nav-section-items">
+              {section.items.map((item) => (
+                <DestinationLink
+                  key={item.to}
+                  item={item}
+                  pathname={location.pathname}
+                  search={location.search}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </nav>
+
+      <footer className="ui-primary-nav-footer">
+        <span className="ui-primary-nav-kicker">ACTIVE WORKSPACE</span>
+        <strong title={currentTitle}>{currentTitle}</strong>
+        <span className="ui-primary-nav-footer-code">{currentModule.toUpperCase()} / ROUTED</span>
+      </footer>
+    </aside>
   );
 }

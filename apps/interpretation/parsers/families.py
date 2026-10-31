@@ -1,7 +1,7 @@
-"""Declarative source parsing: six families, 145 definitions (spec 025 §33).
+"""Declarative source parsing: six families, 151 definitions (spec 025 §33).
 
 The catalogue declares 92 distinct ``parser:`` names and implements two. This module closes
-that gap without writing 145 parsers, by noticing that a parser's job is determined by the
+that gap without writing 151 parsers, by noticing that a parser's job is determined by the
 *shape of the response*, not by the endpoint: Shodan's ``hostnames`` and OpenAlex's
 ``authorships`` are both "walk a list, read named fields".
 
@@ -9,7 +9,7 @@ So a source names a **family** plus the paths it cares about, and this module do
 
 **A family is a shape, not a vendor.** ``json_rows`` covers 84 sources across feeds, search
 APIs, blockchain explorers and threat intel, because they all return a list of records under
-some path. Keying on the shape is what keeps 145 integrations from becoming 145 code paths
+some path. Keying on the shape is what keeps 151 integrations from becoming 151 code paths
 that drift apart.
 
 **An undeclared field is unresolved, never guessed.** ``resolve_path`` distinguishes a

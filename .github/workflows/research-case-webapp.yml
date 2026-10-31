@@ -58,7 +58,7 @@ jobs:
         env:
           UI_SHOTS_DIR: artifacts/ui-screenshots
         run: npm run ui:shoot:design-system -- http://127.0.0.1:5173 artifacts/ui-screenshots
-      - name: Capture compact navigation deck screenshots
+      - name: Capture persistent field-navigation screenshots
         if: ${{ always() && steps.build.outcome == 'success' }}
         working-directory: apps/webapp
         run: npm run ui:shoot:nav -- http://127.0.0.1:5173 artifacts/nav-screenshots

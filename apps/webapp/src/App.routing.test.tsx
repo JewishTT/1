@@ -71,16 +71,17 @@ describe("routes are reachable and render something", () => {
     });
   });
 
-  it("wires the Dossier destination into the shell's navigation", async () => {
-    // The nav is the only place a destination becomes reachable by clicking. A route that
-    // exists but is absent from `NAV_SECTIONS` is invisible, and an entry with no route is a
-    // dead link -- both look identical from the URL bar.
+  it("wires the Dossier destination into the persistent shell navigation", async () => {
+    // A route that exists but is absent from NAV_SECTIONS is unreachable from the
+    // workbench. The route index is always visible, so no modal/deck action is involved.
     mountAt("/dossier");
-    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
 
     await waitFor(() => {
-      expect(screen.getByRole("link", { name: /Dossier/i })).toHaveAttribute("href", "/dossier");
+      const link = screen.getByRole("link", { name: /Dossier/i });
+      expect(link).toHaveAttribute("href", "/dossier");
+      expect(link).toHaveAttribute("aria-current", "page");
     });
+    expect(screen.getByTestId("topnav")).toBeInTheDocument();
   });
 
   it("renders the dossier route instead of an empty root", async () => {

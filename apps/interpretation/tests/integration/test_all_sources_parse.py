@@ -1,6 +1,6 @@
 """Every source in the catalogue parses, and every failure has a name (spec 025 §33).
 
-The catalogue shipped 145 definitions declaring 92 ``parser:`` names, of which two were
+The catalogue ships 151 definitions declaring 92 ``parser:`` names, of which two were
 implemented. The rest were configuration that would have run and produced nothing, which is
 worse than not running: the platform reported an observation and its content was discarded
 before anyone read it.
@@ -70,7 +70,19 @@ QUERIES: dict[str, str] = {
 CONN = SourceConnector()
 
 
+SOURCE_QUERIES: dict[str, str] = {
+    "blockstream_btc_tx_detail": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
+    "blockscout_eth_address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "blockscout_eth_transactions": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "trongrid_account": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+    "trongrid_account_transactions": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+}
+
+
 def _query_for(definition) -> str:
+    specific = SOURCE_QUERIES.get(definition.name)
+    if specific:
+        return specific
     category = definition.source_path.split("/")[-2] if "/" in definition.source_path else ""
     return QUERIES.get(category, "example.com")
 
@@ -128,7 +140,7 @@ def _classify(definition, status: int, body: bytes, content_type: str) -> Source
 class TestDeclarationsAreHonest:
     def test_every_definition_loads(self) -> None:
         assert not REJECTED, f"catalogue rejected definitions: {REJECTED}"
-        assert len(DEFINITIONS) == 145
+        assert len(DEFINITIONS) == 151
 
     def test_every_remote_definition_declares_a_parse_block(self) -> None:
         missing = sorted(

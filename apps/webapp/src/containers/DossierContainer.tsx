@@ -21,7 +21,7 @@ const EMPTY_KNOWN: string[] = [];
  * Two things are kept apart on purpose. A *sweep* mutates: it calls real sources and appends
  * to the stream, so it is slow, can fail per source, and must not be retried automatically.
  * A *read* is pure. Keeping them in one effect would mean a page load re-ran a sweep, and
- * re-running a sweep on every refresh is how a catalogue with 145 definitions turns a
+ * re-running a sweep on every refresh is how a catalogue with 151 definitions turns a
  * navigation into minutes of outbound traffic.
  */
 export function DossierContainer() {

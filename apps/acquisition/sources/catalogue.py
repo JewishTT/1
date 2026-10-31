@@ -13,14 +13,14 @@ because they are properties of the loader and every reader would otherwise have 
 them:
 
 ``params`` must reach the cache key
-    The upstream HTTP cache key is ``sha256(METHOD \\\\0 URL \\\\0 BODY)``. 72 of the 146
+    The upstream HTTP cache key is ``sha256(METHOD \\\\0 URL \\\\0 BODY)``. 72 of the source
     definitions put their query in ``tool.params`` rather than in the URL, which made the
     key constant across every query. :func:`_flatten_params` folds the params into the URL
     at load time, so the cache key cannot collide, and the executor needs no knowledge of
     where the query lived.
 
 ``pagination`` is absent from the schema
-    Zero of the 146 definitions declare it, so multi-page sources silently returned page one.
+    The legacy corpus had no explicit provider pagination declarations; the schema now accepts bounded page/offset declarations.
     :func:`_derive_pagination` infers a page strategy from ``per_page``/``limit``/``page``
     where the definition already carries one, and records that the inference happened.
 
@@ -32,9 +32,10 @@ them:
 ``kind`` is absent from 127 definitions
     We derive it from the ``tool`` body: a ``url`` means HTTP, a ``binary`` means a local tool.
 
-``requires_key`` without ``key_env``
-    Keyed definitions must name the environment variable. An unnamed one is a definition that
-    cannot run, and it is refused at load time with a named reason.
+``requires_key`` without a credential declaration
+    Keyed definitions must name either one ``key_env`` variable or a two-variable
+    ``basic_auth_env`` pair. A definition with neither is rejected; a Basic Auth
+    definition with a partial pair fails closed before outbound I/O.
 
 ``parser`` resolving to a no-op
     Ten names are ``lambda x: x`` in the upstream parser table — they return their input.
@@ -155,7 +156,7 @@ class SourceDefinition:
     #: registry's explicit-runtime branch was unreachable because no task could ever set
     #: the key it reads.
     #:
-    #: Optional rather than required because 145 of the existing sources genuinely run
+    #: Optional rather than required because 151 of the existing sources genuinely run
     #: through the HTTP or system executor. Making it mandatory would mean inventing a
     #: ``runtime_ref`` for sources that have none, which is the kind of fiction that later
     #: reads as a routing decision.
@@ -170,7 +171,7 @@ class SourceDefinition:
     definition: Mapping[str, Any] = field(default_factory=dict, repr=False, compare=False)
     #: FR-014: this source's declared ability to find a thing it was asked to look for,
     #: as a fraction in [0, 1]. **``None`` means the source has never declared one**, and
-    #: that is the only safe default -- every one of the 145 sources that never says so
+    #: that is the only safe default -- every one of the 151 sources that never say so
     #: is genuinely unquantified, and a default of 1.0 would certify all of them as
     #: exhaustive searches.
     #:
@@ -311,16 +312,46 @@ def _flatten_params(tool: Mapping[str, Any]) -> dict[str, Any]:
     return merged_tool
 
 
-def _derive_pagination(tool: Mapping[str, Any]) -> Pagination:
-    """Read a page strategy out of the tool body, or declare there is none.
+def _derive_pagination(
+    tool: Mapping[str, Any], declared: Mapping[str, Any] | None = None
+) -> Pagination:
+    """Read a bounded page strategy, preferring an explicit source declaration.
 
-    Upstream ships no ``pagination`` key at all, so this inference is what makes a
-    multi-page source return more than its first page. The result records that it was
-    inferred, so a definition that genuinely does not paginate is distinguishable from one
-    whose strategy we failed to see.
+    Inference remains for common page/offset cases. Explicit metadata supports APIs
+    whose offset parameter has a provider-specific name (for example, start).
+    Cursor pagination is rejected until the executor can follow opaque next-page
+    tokens without guessing their semantics.
     """
     if tool.get("binary"):
         return Pagination()  # a local tool runs once
+    if declared:
+        strategy = str(declared.get("strategy") or "").strip().lower()
+        if strategy not in {"page", "offset"}:
+            raise CatalogueError(
+                "pagination_strategy_unsupported",
+                f"explicit pagination strategy {strategy!r} is not supported by the HTTP executor",
+            )
+        param = str(declared.get("param") or "").strip()
+        try:
+            page_size = int(declared.get("page_size") or 0)
+            max_pages = int(declared.get("max_pages") or 1)
+        except (TypeError, ValueError) as exc:
+            raise CatalogueError(
+                "pagination_config_invalid",
+                "explicit pagination page_size and max_pages must be integers",
+            ) from exc
+        if not param or page_size < 1 or max_pages < 1 or max_pages > 100:
+            raise CatalogueError(
+                "pagination_config_invalid",
+                "explicit pagination requires a param, positive page_size, and max_pages in [1, 100]",
+            )
+        return Pagination(
+            strategy=strategy,
+            param=param,
+            page_size=page_size,
+            max_pages=max_pages,
+            inferred=False,
+        )
     url = str(tool.get("url") or "")
     if not url:
         return Pagination()
@@ -434,7 +465,10 @@ def load_source(path: Path) -> SourceDefinition:
         kind_inferred=kind_inferred,
         os_requirement=str(raw.get("os") or "any"),
         tool=dict(tool),
-        pagination=_derive_pagination(tool),
+        pagination=_derive_pagination(
+            tool,
+            raw.get("pagination") if isinstance(raw.get("pagination"), Mapping) else None,
+        ),
         parser_is_identity=parser in IDENTITY_PARSERS,
         source_path=str(path),
         logs_queries=bool(raw.get("logs_queries", False)),

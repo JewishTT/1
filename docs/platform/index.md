@@ -8,21 +8,21 @@ committed model no longer matches the tree.
 
 | Metric | Value |
 |---|---|
-| Components | 16 |
-| Python modules | 1010 |
+| Components | 17 |
+| Python modules | 1017 |
 | TypeScript modules | 266 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 2808 |
+| Import edges (local) | 2819 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 342 |
-| Test functions | 5285 |
-| Untested platform modules | 267 |
+| Test files | 344 |
+| Test functions | 5316 |
+| Untested platform modules | 270 |
 | HTTP routes | 182 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
 | Capabilities | 30 |
@@ -48,13 +48,14 @@ committed model no longer matches the tree.
 
 | Component | Python | TS | Description |
 |---|---|---|---|
-| acquisition | 105 | 0 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
+| acquisition | 108 | 0 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
 | control-plane | 241 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
-| interpretation | 112 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
+| interpretation | 115 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |
 | projection | 67 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
