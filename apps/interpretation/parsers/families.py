@@ -1,4 +1,4 @@
-"""Declarative source parsing: six families, 145 definitions (spec 025 §33).
+"""Declarative source parsing: six families, 146 definitions (spec 025 §33).
 
 The catalogue declares 92 distinct ``parser:`` names and implements two. This module closes
 that gap without writing 145 parsers, by noticing that a parser's job is determined by the
