@@ -133,3 +133,27 @@ def test_network_is_part_of_transaction_identity_and_dependency_scope() -> None:
 def test_transaction_refs_require_canonical_chain_hashes() -> None:
     with pytest.raises(ValueError, match="invalid bitcoin"):
         TransactionRef(chain="bitcoin", network="mainnet", txid="not-a-hash")  # type: ignore[arg-type]
+
+
+
+def test_cycle_members_exclude_acyclic_descendants_blocked_by_the_cycle() -> None:
+    first = ref("bitcoin", "a")
+    second = ref("bitcoin", "b")
+    downstream = ref("bitcoin", "c")
+    dag = build_transaction_dag([
+        observed(first, "obs-a", "1", second),
+        observed(second, "obs-b", "2", first),
+        observed(downstream, "obs-c", "3", second),
+    ])
+    assert set(dag.cycle_nodes) == {first, second}
+    assert downstream not in dag.cycle_nodes
+    assert downstream not in dag.topological_order
+
+
+def test_self_referential_parent_is_reported_as_a_cycle() -> None:
+    transaction = ref("bitcoin", "a")
+    dag = build_transaction_dag([
+        observed(transaction, "obs-self", "1", transaction),
+    ])
+    assert dag.cycle_nodes == (transaction,)
+    assert not dag.is_acyclic
