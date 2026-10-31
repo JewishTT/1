@@ -1142,7 +1142,7 @@
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 242,
+      "stdlib:collections": 243,
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
@@ -34464,7 +34464,7 @@
       {
         "path": "apps/control-plane/services/research_case_service.py",
         "status": "IMPLEMENTED",
-        "loc": 1627,
+        "loc": 1628,
         "callables": 22,
         "stubs": 0,
         "not_implemented": 0,
@@ -35886,7 +35886,7 @@
       {
         "path": "apps/interpretation/observation_consumer/__init__.py",
         "status": "IMPLEMENTED",
-        "loc": 626,
+        "loc": 627,
         "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
