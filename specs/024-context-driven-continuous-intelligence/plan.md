@@ -139,10 +139,10 @@ Each wave declares its entry gate, deliverables, FR coverage, exit criteria, and
 ### W6 — Multi-Source Acquisition
 
 **Entry**: W5 complete (needs obligations to route); W2 complete
-**Deliverables**: catalogue-as-planner→dispatcher bridge; declarative capabilities from the 146 source definitions; `runtime_ref`-first routing with capabilities as compatibility check only; runtime contract unchanged; existing five runtimes reused; acquisition emits captures/records only; primary-processing contract preserved (raw always emitted unchanged beside any derived artifact).
+**Deliverables**: catalogue-as-planner→dispatcher bridge; declarative capabilities from the 151 source definitions; `runtime_ref`-first routing with capabilities as compatibility check only; runtime contract unchanged; existing five runtimes reused; acquisition emits captures/records only; primary-processing contract preserved (raw always emitted unchanged beside any derived artifact).
 **FR**: FR-067…FR-073
 **Exit**: an obligation routes to a concrete runtime and executes; `runtime/__init__.py:10-14` invariant intact.
-**Wave 0 finding**: `capabilities()` returns are hardcoded per class; the real capability-as-data layer is `sources/estorides/` (146 definitions, 20 categories) already exposed via `GET /api/v1/connectors` and `/api/v1/tools`. D4=a closes §4.7 through that catalogue, not by amending the runtime contract.
+**Wave 0 finding**: `capabilities()` returns are hardcoded per class; the real capability-as-data layer is `sources/estorides/` (151 definitions, 20 categories) already exposed via `GET /api/v1/connectors` and `/api/v1/tools`. D4=a closes §4.7 through that catalogue, not by amending the runtime contract.
 
 ### W7 — Interpretation / Resolution / Admission
 
