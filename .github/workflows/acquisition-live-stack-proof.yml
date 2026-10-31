@@ -1,0 +1,103 @@
+name: acquisition-live-stack-proof
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: acquisition-live-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  airbyte-and-searxng:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Start the real core acquisition stack
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml --profile core up -d minio minio-init postgres redpanda searxng
+      - name: Wait for Postgres, MinIO, Redpanda and SearXNG readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for attempt in $(seq 1 90); do
+            pg=0
+            minio=0
+            broker=0
+            search=0
+            docker compose -f apps/deploy/docker-compose.yml exec -T postgres pg_isready -U cognitive -d cognitive >/dev/null 2>&1 && pg=1
+            curl -fsS http://127.0.0.1:9000/minio/health/ready >/dev/null 2>&1 && minio=1
+            docker compose -f apps/deploy/docker-compose.yml exec -T redpanda rpk cluster info >/dev/null 2>&1 && broker=1
+            curl -fsS http://127.0.0.1:18090/config >/dev/null 2>&1 && search=1
+            echo "readiness attempt $attempt/90: postgres=$pg minio=$minio redpanda=$broker searxng=$search"
+            if [ "$pg" -eq 1 ] && [ "$minio" -eq 1 ] && [ "$broker" -eq 1 ] && [ "$search" -eq 1 ]; then
+              ready=1
+              break
+            fi
+            sleep 5
+          done
+          test "$ready" -eq 1
+      - name: Seed a controlled Postgres connector fixture
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          CREATE TABLE IF NOT EXISTS public.airbyte_smoke (
+            id INTEGER PRIMARY KEY,
+            label TEXT NOT NULL,
+            observed_at TIMESTAMPTZ NOT NULL
+          );
+          TRUNCATE TABLE public.airbyte_smoke;
+          INSERT INTO public.airbyte_smoke (id, label, observed_at)
+          SELECT n, 'airbyte-live-proof-' || n, TIMESTAMPTZ '2026-10-31 00:00:00+00' + (n || ' minutes')::interval
+          FROM generate_series(1, 12) AS n;
+          GRANT SELECT ON public.airbyte_smoke TO cognitive;
+          SELECT COUNT(*) AS seeded_rows FROM public.airbyte_smoke;
+          SQL
+      - name: Prove real Airbyte SPEC / CHECK / DISCOVER / READ / Observation / Redpanda read-back
+        env:
+          COGNITIVE_AIRBYTE_CFG: ${{ runner.temp }}/cognitive-airbyte
+          COGNITIVE_AIRBYTE_PG_HOST: host.docker.internal
+          COGNITIVE_AIRBYTE_PG_PORT: "5432"
+          COGNITIVE_AIRBYTE_PG_DATABASE: cognitive
+          COGNITIVE_AIRBYTE_PG_USERNAME: cognitive
+          COGNITIVE_AIRBYTE_PG_PASSWORD: cognitive
+          COGNITIVE_AIRBYTE_PG_SCHEMAS: public
+          COGNITIVE_AIRBYTE_STREAM: airbyte_smoke
+          COGNITIVE_KAFKA_BROKERS: localhost:19092
+          COGNITIVE_MINIO_ENDPOINT: http://localhost:9000
+          COGNITIVE_MINIO_ACCESS_KEY: demo
+          COGNITIVE_MINIO_SECRET_KEY: demopass
+          COGNITIVE_TENANT: acceptance
+        run: .venv/bin/python apps/acquisition/_prove_airbyte.py
+      - name: Prove live SearXNG JSON search / raw capture / Observation / Redpanda read-back
+        env:
+          COGNITIVE_SEARXNG_URL: http://127.0.0.1:18090
+          COGNITIVE_SEARXNG_IMAGE: searxng/searxng@sha256:3284e8900e9b3e5df284ae8c48a26851ae2eff6f99b4b0b18ec3da5a4d9095c3
+          COGNITIVE_KAFKA_BROKERS: localhost:19092
+          COGNITIVE_MINIO_ENDPOINT: http://localhost:9000
+          COGNITIVE_MINIO_ACCESS_KEY: demo
+          COGNITIVE_MINIO_SECRET_KEY: demopass
+          COGNITIVE_TENANT: acceptance
+        run: .venv/bin/python apps/acquisition/_prove_searxng.py
+      - name: Upload end-to-end acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acquisition-live-stack-proof
+          path: |
+            apps/acquisition/artifacts/acquisition-integration/airbyte.json
+            apps/acquisition/artifacts/acquisition-integration/searxng.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose -f apps/deploy/docker-compose.yml logs --no-color --tail=160
+      - name: Stop the real acquisition stack
+        if: always()
+        run: docker compose -f apps/deploy/docker-compose.yml down -v
