@@ -244,8 +244,10 @@ try {
       problems.push(`navigation-${label}: persistent domain rail is missing or incomplete`);
     } else if (navMetrics.left < -1 || navMetrics.right > width + 1) {
       problems.push(`navigation-${label}: persistent rail escapes viewport`);
-    } else if (navMetrics.mainLeft !== null && navMetrics.mainLeft < navMetrics.right - 1) {
-      problems.push(`navigation-${label}: workbench overlaps persistent rail`);
+    } else if (width > 767 && navMetrics.mainLeft !== null && navMetrics.mainLeft < navMetrics.right - 1) {
+      problems.push(`navigation-${label}: workbench overlaps the vertical navigation rail`);
+    } else if (width <= 767 && navMetrics.mainTop !== null && navMetrics.mainTop < navMetrics.bottom - 1) {
+      problems.push(`navigation-${label}: workbench overlaps the stacked navigation strip`);
     }
     await page.locator(".ui-kit-page").evaluate((element) => { element.scrollTop = element.scrollHeight; });
     await capture(`primitives-dark-${label}-bottom`, { surface: "primitives", viewportPosition: "bottom", expectedTheme: "dark" });
