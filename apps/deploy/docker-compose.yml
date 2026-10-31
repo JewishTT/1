@@ -8,7 +8,7 @@ name: cognitive-dev
 services:
   minio:
     profiles: ["core"]
-    image: public.ecr.aws/y9w4h2u9/minio:RELEASE.2025-09-07T16-13-09Z
+    image: dappros/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: demo
