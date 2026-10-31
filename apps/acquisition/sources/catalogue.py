@@ -311,16 +311,40 @@ def _flatten_params(tool: Mapping[str, Any]) -> dict[str, Any]:
     return merged_tool
 
 
-def _derive_pagination(tool: Mapping[str, Any]) -> Pagination:
-    """Read a page strategy out of the tool body, or declare there is none.
+def _derive_pagination(
+    tool: Mapping[str, Any], declared: Mapping[str, Any] | None = None
+) -> Pagination:
+    """Read a bounded page strategy, preferring an explicit source declaration.
 
-    Upstream ships no ``pagination`` key at all, so this inference is what makes a
-    multi-page source return more than its first page. The result records that it was
-    inferred, so a definition that genuinely does not paginate is distinguishable from one
-    whose strategy we failed to see.
+    Inference remains for common page/offset cases. Explicit metadata supports APIs
+    whose offset parameter has a provider-specific name (for example, start).
+    Cursor pagination is rejected until the executor can follow opaque next-page
+    tokens without guessing their semantics.
     """
     if tool.get("binary"):
         return Pagination()  # a local tool runs once
+    if declared:
+        strategy = str(declared.get("strategy") or "").strip().lower()
+        if strategy not in {"page", "offset"}:
+            raise CatalogueError(
+                "pagination_strategy_unsupported",
+                f"explicit pagination strategy {strategy!r} is not supported by the HTTP executor",
+            )
+        param = str(declared.get("param") or "").strip()
+        page_size = int(declared.get("page_size") or 0)
+        max_pages = int(declared.get("max_pages") or 1)
+        if not param or page_size < 1 or max_pages < 1 or max_pages > 100:
+            raise CatalogueError(
+                "pagination_config_invalid",
+                "explicit pagination requires a param, positive page_size, and max_pages in [1, 100]",
+            )
+        return Pagination(
+            strategy=strategy,
+            param=param,
+            page_size=page_size,
+            max_pages=max_pages,
+            inferred=False,
+        )
     url = str(tool.get("url") or "")
     if not url:
         return Pagination()
@@ -434,7 +458,10 @@ def load_source(path: Path) -> SourceDefinition:
         kind_inferred=kind_inferred,
         os_requirement=str(raw.get("os") or "any"),
         tool=dict(tool),
-        pagination=_derive_pagination(tool),
+        pagination=_derive_pagination(
+            tool,
+            raw.get("pagination") if isinstance(raw.get("pagination"), Mapping) else None,
+        ),
         parser_is_identity=parser in IDENTITY_PARSERS,
         source_path=str(path),
         logs_queries=bool(raw.get("logs_queries", False)),
