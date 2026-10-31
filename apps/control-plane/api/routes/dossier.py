@@ -51,9 +51,38 @@ class EnrichRequest(BaseModel):
     """
 
     subject: str = Field(min_length=1, max_length=512)
-    kind: str = Field(default="", max_length=64)
+    kind: str = Field(default="domain", max_length=64)
     max_sources: int | None = Field(default=None, ge=1, le=MAX_SOURCES)
     depth: int = Field(default=0, ge=0, le=2)
+
+
+def _require_infrastructure_asset(subject: str, kind: str) -> None:
+    """Restrict the quick dossier sweep to domains and IP addresses.
+
+    Public-person research goes through Feature 034, which binds the request to
+    purpose, authority, source policy, budget and explicit action approval.
+    """
+    from context_engine.enrichment_service import _query_shapes
+
+    if kind.strip().lower() not in {"domain", "ipv4", "ipv6"}:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "GOVERNED_RESEARCH_CASE_REQUIRED",
+                "message": "Use a governed Research Case for people, public figures and organisations.",
+                "next_step": "/research-cases/new",
+            },
+        )
+    shapes = set(_query_shapes(subject, kind))
+    if not shapes or not shapes.issubset({"domain", "ipv4", "ipv6"}):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "GOVERNED_RESEARCH_CASE_REQUIRED",
+                "message": "The dossier sweep accepts infrastructure identifiers only; use a Research Case for people, public figures, organisations and free text.",
+                "next_step": "/research-cases/new",
+            },
+        )
 
 
 def _source_names() -> dict[str, str]:
@@ -92,6 +121,7 @@ async def enrich(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict[str, Any]:
     """Run a sweep, persist it, and return the dossier it produced."""
+    _require_infrastructure_asset(body.subject, body.kind)
     from context_engine.dossier_store import PostgresEnrichmentSink
     from context_engine.enrichment_service import EnrichmentService
 
@@ -102,7 +132,7 @@ async def enrich(
     )
     report = await service.enrich(
         body.subject,
-        kind=body.kind or "unknown",
+        kind=body.kind,
         depth=body.depth,
         max_sources=body.max_sources,
     )

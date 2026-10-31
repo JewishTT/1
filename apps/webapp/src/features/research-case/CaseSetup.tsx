@@ -11,6 +11,7 @@ import {
   ResearchCase,
   SubjectAnchor,
 } from "./api";
+import styles from "./ResearchCase.module.css";
 
 const LAUNCH_PROFILES: LaunchProfile[] = [
   "PUBLIC_PROFESSIONAL",
@@ -142,7 +143,7 @@ export function CaseSetup() {
   </div>;
 
   return (
-    <main className="mx-auto max-w-4xl space-y-5 p-6">
+    <main className={styles.setupShell}>
       <header>
         <h1 className="text-xl font-semibold">{isEditing ? "Review case scope" : "Create research case"}</h1>
         <p className="mt-1 text-sm text-slate-600">

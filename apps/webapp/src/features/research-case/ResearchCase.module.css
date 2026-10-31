@@ -1,0 +1,264 @@
+/* Feature 034 analyst workspace — normative COGNITIVE UI 2.0 tokens.
+   Scoped route treatment: graphite ground, steel structure, restrained phosphor. */
+.shell,
+.setupShell,
+.dossierShell {
+  color: var(--text-primary);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.shell {
+  display: flex;
+  min-height: 0;
+  height: calc(100vh - var(--ui-shell-chrome, 0px));
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-0);
+}
+.setupShell {
+  width: min(100% - 32px, 1120px);
+  margin: 20px auto 40px;
+  padding: 24px;
+  border: 1px solid var(--border-0);
+  background: var(--bg-1);
+}
+.dossierShell {
+  min-height: 100%;
+  padding: 20px;
+  background: var(--bg-0);
+  color: var(--text-primary);
+}
+.shell :global(.bg-white),
+.setupShell :global(.bg-white),
+.dossierShell :global(.bg-white) { background-color: var(--surface-0); }
+.shell :global(.bg-slate-50),
+.setupShell :global(.bg-slate-50),
+.dossierShell :global(.bg-slate-50) { background-color: var(--bg-1); }
+.shell :global(.bg-slate-100),
+.setupShell :global(.bg-slate-100) { background-color: var(--surface-1); }
+.shell :global(.bg-slate-200),
+.setupShell :global(.bg-slate-200) { background-color: var(--surface-2); }
+.shell :global(.text-slate-900),
+.shell :global(.text-slate-800),
+.shell :global(.text-slate-700),
+.setupShell :global(.text-slate-900),
+.setupShell :global(.text-slate-800),
+.setupShell :global(.text-slate-700),
+.dossierShell :global(.text-slate-900),
+.dossierShell :global(.text-slate-800),
+.dossierShell :global(.text-slate-700) { color: var(--text-primary); }
+.shell :global(.text-slate-600),
+.shell :global(.text-slate-500),
+.shell :global(.text-slate-400),
+.setupShell :global(.text-slate-600),
+.setupShell :global(.text-slate-500),
+.dossierShell :global(.text-slate-600),
+.dossierShell :global(.text-slate-500) { color: var(--text-secondary); }
+.shell :global(.border-slate-200),
+.shell :global(.border-slate-100),
+.setupShell :global(.border-slate-200),
+.setupShell :global(.border-slate-100),
+.dossierShell :global(.border-slate-200) { border-color: var(--border-0); }
+.shell :global(.border-slate-300),
+.setupShell :global(.border-slate-300) { border-color: var(--border-1); }
+.shell > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-0);
+  background: var(--bg-1);
+}
+.shell > header h1,
+.setupShell h1 { color: var(--text-primary); letter-spacing: -0.025em; }
+.shell > div { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.shell > div > aside {
+  display: flex;
+  width: 20rem;
+  min-width: 250px;
+  max-width: 320px;
+  flex: 0 0 20rem;
+  flex-direction: column;
+  border-right: 1px solid var(--border-0);
+  background: var(--bg-1);
+}
+.shell > div > main {
+  min-width: 0;
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-0);
+  color: var(--text-primary);
+}
+.shell :global(section),
+.setupShell section,
+.shell :global(article),
+.setupShell article { border-color: var(--border-0); }
+.shell :global(.rounded-lg),
+.setupShell :global(.rounded-lg),
+.dossierShell :global(.rounded-lg) { border-radius: 3px; }
+.shell :global(.rounded),
+.setupShell :global(.rounded),
+.dossierShell :global(.rounded) { border-radius: 2px; }
+.shell :global(button),
+.setupShell :global(button) {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-1);
+  border-radius: 2px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.shell :global(button:hover:not(:disabled)),
+.setupShell :global(button:hover:not(:disabled)) {
+  border-color: var(--accent-green);
+  background: var(--surface-2);
+}
+.shell :global(button:disabled),
+.setupShell :global(button:disabled) { cursor: not-allowed; opacity: .48; }
+.shell :global(button.bg-slate-900),
+.shell :global(button.bg-blue-600),
+.shell :global(button.bg-indigo-700),
+.shell :global(button.bg-emerald-700),
+.setupShell :global(button.bg-slate-900),
+.setupShell :global(button.bg-blue-600),
+.setupShell :global(button.bg-indigo-700) {
+  border-color: var(--accent-green);
+  background: var(--accent-green);
+  color: var(--bg-0);
+}
+.shell :global(button.bg-amber-600),
+.setupShell :global(button.bg-amber-600) {
+  border-color: var(--accent-amber);
+  background: var(--accent-amber);
+  color: var(--bg-0);
+}
+.shell :global(button.bg-red-700),
+.setupShell :global(button.bg-red-700) {
+  border-color: var(--accent-red);
+  background: var(--accent-red);
+  color: var(--bg-0);
+}
+.shell :global(input),
+.shell :global(select),
+.shell :global(textarea),
+.setupShell :global(input),
+.setupShell :global(select),
+.setupShell :global(textarea) {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid var(--border-1);
+  border-radius: 2px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font: inherit;
+}
+.shell :global(input::placeholder),
+.shell :global(textarea::placeholder),
+.setupShell :global(input::placeholder),
+.setupShell :global(textarea::placeholder) { color: var(--text-muted); }
+.shell :global(label),
+.setupShell :global(label) { color: var(--text-secondary); }
+.shell :global(table),
+.setupShell :global(table) {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.shell :global(th),
+.setupShell :global(th) {
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.shell :global(th), .shell :global(td),
+.setupShell :global(th), .setupShell :global(td) {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-0);
+  vertical-align: top;
+}
+.shell :global(tr:hover),
+.setupShell :global(tr:hover) { background: var(--surface-1); }
+.shell :global(a),
+.setupShell :global(a),
+.dossierShell :global(a) { color: var(--accent-green); text-underline-offset: 3px; }
+.shell :global(.bg-green-100),
+.shell :global(.bg-emerald-100),
+.setupShell :global(.bg-green-100) { background: var(--accent-green-wash); }
+.shell :global(.text-green-800),
+.shell :global(.text-emerald-800),
+.setupShell :global(.text-green-800) { color: var(--accent-green); }
+.shell :global(.bg-amber-100),
+.shell :global(.bg-amber-50),
+.setupShell :global(.bg-amber-100),
+.setupShell :global(.bg-amber-50) { background: var(--accent-amber-wash); }
+.shell :global(.text-amber-900),
+.shell :global(.text-amber-800),
+.setupShell :global(.text-amber-900),
+.setupShell :global(.text-amber-800) { color: var(--accent-amber); }
+.shell :global(.bg-red-100),
+.shell :global(.bg-red-50),
+.setupShell :global(.bg-red-100),
+.setupShell :global(.bg-red-50) { background: var(--accent-red-wash); }
+.shell :global(.text-red-800),
+.shell :global(.text-red-700),
+.shell :global(.text-red-600),
+.setupShell :global(.text-red-800),
+.setupShell :global(.text-red-700) { color: var(--accent-red); }
+.shell :global(.bg-blue-100),
+.shell :global(.bg-blue-50),
+.setupShell :global(.bg-blue-100) { background: var(--accent-blue-wash); }
+.shell :global(.text-blue-800),
+.shell :global(.text-blue-700),
+.setupShell :global(.text-blue-800) { color: var(--accent-blue); }
+.shell :global(.border-red-300),
+.setupShell :global(.border-red-300) { border-color: var(--accent-red); }
+.shell :global(.border-amber-300),
+.setupShell :global(.border-amber-300) { border-color: var(--accent-amber); }
+.shell :global(.font-mono),
+.shell :global(.font-mono *) {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.shell :global(:focus-visible),
+.setupShell :global(:focus-visible),
+.dossierShell :global(:focus-visible) {
+  outline: 2px solid var(--accent-green-bright);
+  outline-offset: 2px;
+}
+@media (max-width: 1023px) {
+  .shell { height: auto; min-height: 100vh; overflow: visible; }
+  .shell > div { flex-direction: column; overflow: visible; }
+  .shell > div > aside {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    max-height: 280px;
+    flex: 0 0 auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-0);
+  }
+  .shell > div > main { overflow: visible; }
+  .setupShell { width: calc(100% - 20px); margin: 10px auto 24px; padding: 14px; }
+}
+@media (min-width: 1920px) {
+  .shell > div > main { padding: 24px 28px; }
+  .shell > div > aside { max-width: 360px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell *, .setupShell *, .dossierShell * {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}

@@ -23,6 +23,7 @@ import {
   CloseCaseRequest,
 } from "./api";
 import { useResearchCaseView } from "./store";
+import styles from "./ResearchCase.module.css";
 import { ErrorView, LoadingView } from "../../ui/Feedback";
 import { ObligationsBoard } from "./ObligationsBoard";
 import { SubjectOverview } from "./SubjectOverview";
@@ -168,7 +169,7 @@ export function CasePage() {
   const obligations: Obligation[] = obligationsData?.obligations ?? [];
 
   return (
-    <div className="research-case h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className={`research-case ${styles.shell}`}>
       {/* Header */}
       <header className="flex-shrink-0 border-b border-slate-200 bg-white px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
