@@ -44,7 +44,7 @@ parse:
       path: status.block_time
       kind: timestamp
     input_addresses:
-      path: vin.prevout.scriptpubkey_address
+      path: vin[*].prevout[*].scriptpubkey_address
       kind: btc_address
       many: true
     output_addresses:
