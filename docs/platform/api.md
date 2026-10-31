@@ -21,8 +21,8 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| POST | `/enrich` | 87 |
-| GET | `/{entity_ref}` | 160 |
+| POST | `/enrich` | 116 |
+| GET | `/{entity_ref}` | 190 |
 
 ## `entities` — `apps/control-plane/api/routes/entities.py`
 

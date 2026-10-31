@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4382,
-    "static_facts": 4088,
+    "facts_total": 4385,
+    "static_facts": 4091,
     "inferred": 294,
     "intended": 0
   },
@@ -6486,6 +6486,19 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/dossier.py",
         "via": "context_engine.dossier_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5077e7458e4017b8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/dossier.py",
+      "object": "apps/control-plane/context_engine/enrichment_service.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/dossier.py",
+        "via": "context_engine.enrichment_service"
       },
       "confidence": 1.0
     },
@@ -16899,6 +16912,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_donor_patterns.py",
         "via": "scoring.scorer"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6d089692a8d01537",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_dossier_store.py",
+      "object": "apps/control-plane/api/routes/dossier.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_dossier_store.py",
+        "via": "api.routes.dossier"
       },
       "confidence": 1.0
     },
@@ -38452,7 +38478,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/dossier.py",
-        "line": 162
+        "line": 192
       },
       "confidence": 1.0
     },
@@ -38868,7 +38894,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/dossier.py",
-        "line": 89
+        "line": 118
       },
       "confidence": 1.0
     },
@@ -47839,6 +47865,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_donor_patterns.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0e5966363f5edee3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_dossier_store.py",
+      "object": "apps/control-plane/api/routes/dossier.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_dossier_store.py"
       },
       "confidence": 1.0
     },

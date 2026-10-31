@@ -1129,7 +1129,7 @@
   ],
   "import_graph": {
     "module_count": 1017,
-    "edge_count": 2819,
+    "edge_count": 2821,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 887,
@@ -1213,7 +1213,7 @@
       "third-party:docx": 2,
       "third-party:duckdb": 5,
       "third-party:extruct": 1,
-      "third-party:fastapi": 66,
+      "third-party:fastapi": 67,
       "third-party:google": 6,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
@@ -1232,7 +1232,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 269,
+      "third-party:pytest": 271,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -3405,6 +3405,11 @@
         "from": "apps/control-plane/api/routes/dossier.py",
         "to": "apps/control-plane/api/auth.py",
         "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/api/routes/dossier.py",
+        "to": "apps/control-plane/context_engine/enrichment_service.py",
+        "via": "context_engine.enrichment_service"
       },
       {
         "from": "apps/control-plane/api/routes/dossier.py",
@@ -7425,6 +7430,11 @@
         "from": "apps/control-plane/tests/unit/test_donor_patterns.py",
         "to": "apps/control-plane/services/source_registry.py",
         "via": "services.source_registry"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_dossier_store.py",
+        "to": "apps/control-plane/api/routes/dossier.py",
+        "via": "api.routes.dossier"
       },
       {
         "from": "apps/control-plane/tests/unit/test_dossier_store.py",
@@ -17482,7 +17492,7 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_dossier_store.py",
-        "tests": 9,
+        "tests": 12,
         "test_names": [
           "test_a_sweep_is_written_as_one_transaction",
           "test_sequence_continues_the_stream_instead_of_restarting",
@@ -17492,9 +17502,13 @@
           "test_a_persisted_sweep_reads_back_as_a_dossier",
           "test_two_sources_disagreeing_produce_a_conflict_not_a_silent_winner",
           "test_a_dossier_read_without_offices_says_it_does_not_know_its_coverage",
-          "test_offers_turn_a_read_into_a_coverage_statement"
+          "test_offers_turn_a_read_into_a_coverage_statement",
+          "test_quick_dossier_only_accepts_domain_and_ip_assets",
+          "test_quick_dossier_rejects_a_public_figure_name",
+          "test_quick_dossier_rejects_person_kind_even_for_domain_input"
         ],
         "targets": [
+          "apps/control-plane/api/routes/dossier.py",
           "apps/control-plane/context_engine/dossier_store.py",
           "apps/science/context/enrichment.py"
         ]
@@ -23705,7 +23719,7 @@
         "targets": []
       }
     ],
-    "total": 5316
+    "total": 5319
   },
   "contracts": {
     "python": [
@@ -24316,12 +24330,12 @@
         {
           "method": "POST",
           "path": "/enrich",
-          "lineno": 87
+          "lineno": 116
         },
         {
           "method": "GET",
           "path": "/{entity_ref}",
-          "lineno": 160
+          "lineno": 190
         }
       ]
     },
@@ -28861,7 +28875,6 @@
     "apps/control-plane/api/path_shim.py",
     "apps/control-plane/api/routes/connectors.py",
     "apps/control-plane/api/routes/discovery.py",
-    "apps/control-plane/api/routes/dossier.py",
     "apps/control-plane/api/routes/fabric.py",
     "apps/control-plane/api/routes/investigation_context.py",
     "apps/control-plane/api/routes/investigations.py",
@@ -29019,9 +29032,10 @@
     "apps/shared/events/coalesce.py",
     "apps/shared/events/fabric_events.py",
     "apps/shared/events/registry.py",
-    "apps/shared/ids/gen.py"
+    "apps/shared/ids/gen.py",
+    "apps/shared/network/__init__.py"
   ],
-  "untested_count": 270,
+  "untested_count": 269,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -33200,8 +33214,8 @@
       {
         "path": "apps/control-plane/api/routes/dossier.py",
         "status": "IMPLEMENTED",
-        "loc": 181,
-        "callables": 6,
+        "loc": 211,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -34918,8 +34932,8 @@
       {
         "path": "apps/control-plane/tests/unit/test_dossier_store.py",
         "status": "TEST",
-        "loc": 297,
-        "callables": 25,
+        "loc": 327,
+        "callables": 28,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -53516,6 +53530,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "5077e7458e4017b8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/dossier.py",
+        "object": "apps/control-plane/context_engine/enrichment_service.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/dossier.py",
+          "via": "context_engine.enrichment_service"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "de007b092cfdc9c9",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/dossier.py",
@@ -63912,6 +63939,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_donor_patterns.py",
           "via": "scoring.scorer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "6d089692a8d01537",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_dossier_store.py",
+        "object": "apps/control-plane/api/routes/dossier.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_dossier_store.py",
+          "via": "api.routes.dossier"
         },
         "confidence": 1.0
       },
@@ -85465,7 +85505,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/dossier.py",
-          "line": 162
+          "line": 192
         },
         "confidence": 1.0
       },
@@ -85881,7 +85921,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/dossier.py",
-          "line": 89
+          "line": 118
         },
         "confidence": 1.0
       },
@@ -94856,6 +94896,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "0e5966363f5edee3",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_dossier_store.py",
+        "object": "apps/control-plane/api/routes/dossier.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_dossier_store.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "4b2955e7c15aad2d",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_dossier_store.py",
@@ -102645,8 +102697,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4382,
-      "static_facts": 4088,
+      "facts_total": 4385,
+      "static_facts": 4091,
       "inferred": 294,
       "intended": 0
     }
@@ -102657,15 +102709,15 @@
     "typescript_modules": 266,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2819,
+    "import_edges": 2821,
     "test_files": 344,
-    "test_functions": 5316,
-    "untested_modules": 270,
+    "test_functions": 5319,
+    "untested_modules": 269,
     "http_routes": 182
   },
   "evidence_stats": {
-    "facts_total": 4382,
-    "static_facts": 4088,
+    "facts_total": 4385,
+    "static_facts": 4091,
     "inferred": 294,
     "intended": 0
   },
