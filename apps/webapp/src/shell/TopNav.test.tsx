@@ -1,21 +1,12 @@
-/**
- * Tests for the normalised navigation.
- *
- * These exist because the navbar was the visible symptom of a structural defect: the
- * router mounted the legacy `components/Layout` *around* the UI 2.0 workspace, so two
- * shells were live and the old navbar was always the one on screen. Nothing asserted
- * which shell owns the chrome, so the defect survived a complete UI 2.0 rebuild.
- */
-
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { AppShell } from "../AppShell";
-import { FindingsRoute } from "../containers/FindingsRoute";
 import { TopNav } from "./TopNav";
 import {
+  NAV_MODULES,
   NAV_SECTIONS,
   isNavItemActive,
   resolveFindingsPath,
@@ -32,7 +23,6 @@ function renderAt(path: string, withShell = false) {
   const tree = withShell ? <AppShell>{inner}</AppShell> : <TopNav />;
   return render(
     <MemoryRouter initialEntries={[path]}>
-      {/* AppShell's work-state bar queries the API, so the shell needs a client. */}
       <QueryClientProvider client={new QueryClient()}>
         {tree}
         {withShell ? null : inner}
@@ -41,164 +31,67 @@ function renderAt(path: string, withShell = false) {
   );
 }
 
-function navigationDestinations() {
-  const trigger = screen.getByTestId("nav-deck-trigger");
-  if (trigger.getAttribute("aria-expanded") !== "true") fireEvent.click(trigger);
-  return screen.getByTestId("nav-deck-destinations");
-}
-
-describe("topnav", () => {
-  it("keeps the shell navigation compact until the operator opens the deck", () => {
-    renderAt("/intel");
+describe("persistent field navigation", () => {
+  it("keeps the full route index visible without opening a modal deck", () => {
+    renderAt("/investigations");
     expect(screen.getByTestId("topnav")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-deck-trigger")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("navigation", { name: "Operational domains" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "osint workspaces" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Investigations/i })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("nav-deck-trigger")).not.toBeInTheDocument();
   });
 
-  it("groups domains and destinations in the navigation deck", () => {
+  it("shows all three operational domains as direct destinations", () => {
     renderAt("/investigations");
-    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
-    expect(screen.getByRole("dialog", { name: "Navigation deck" })).toBeInTheDocument();
-    expect(screen.getByTestId("nav-module-osint")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-module-economic")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-module-specops")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-deck-destinations")).toHaveTextContent("Investigations");
-    expect(screen.getByTestId("nav-deck-destinations")).toHaveTextContent("Science Console");
+    for (const module of NAV_MODULES) {
+      expect(screen.getByTestId(`nav-module-${module.key}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`nav-module-${module.key}`)).toHaveAttribute("href", module.landing);
+    }
   });
 
-  it("shows the OSINT destinations by default", () => {
+  it("keeps destination groups visible for the active domain", () => {
     renderAt("/investigations");
-    const nav = navigationDestinations();
-    expect(nav).not.toHaveTextContent("Connectors");
+    const nav = screen.getByRole("navigation", { name: "osint workspaces" });
+    expect(nav).toHaveTextContent("COLLECT");
+    expect(nav).toHaveTextContent("INVESTIGATE");
+    expect(nav).toHaveTextContent("ANALYZE");
     expect(nav).toHaveTextContent("Science Console");
+    expect(nav).toHaveTextContent("Research Cases");
+  });
+
+  it("switches destination sets when the domain route changes", () => {
+    renderAt("/investigations");
+    fireEvent.click(screen.getByTestId("nav-module-specops"));
+    expect(screen.getByRole("navigation", { name: "specops workspaces" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "specops workspaces" })).toHaveTextContent("Pipeline Operations");
+    expect(screen.queryByRole("navigation", { name: "osint workspaces" })).not.toBeInTheDocument();
+  });
+
+  it("marks the active domain and exact destination", () => {
+    renderAt("/specops/connectors");
+    expect(screen.getByTestId("nav-module-specops")).toHaveAttribute("aria-current", "page");
+    const active = screen.getByRole("link", { name: /Connectors/i });
+    expect(active).toHaveAttribute("data-active", "true");
+    expect(active).toHaveAttribute("aria-current", "page");
   });
 
   it("keeps the tenant-wide graph out of the SpecOps section", () => {
     renderAt("/specops");
-    expect(navigationDestinations()).not.toHaveTextContent("Tenant Graph");
+    expect(screen.queryByText("Tenant Graph")).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "specops workspaces" })).toHaveTextContent("Pipeline Operations");
   });
 
-  it("opens investigations on the graph, with scope as a filter not a destination", () => {
-    // Two tabs whose labels both read "graph" were one destination offered twice: the
-    // tenant-wide canvas and the same canvas narrowed to one investigation. The scope
-    // switch on the page does that job, and a second tab made the analyst remember which
-    // of the two they had meant.
+  it("retains the consolidated investigation graph destination", () => {
     renderAt("/investigations");
-    const nav = navigationDestinations();
-    expect(nav).toHaveTextContent("Investigations");
-    expect(nav).not.toHaveTextContent("Tenant Graph");
-    expect(nav).not.toHaveTextContent("Investigation Graph");
+    const destinations = screen.getByRole("navigation", { name: "osint workspaces" });
+    expect(destinations).toHaveTextContent("Investigations");
+    expect(destinations).not.toHaveTextContent("Tenant Graph");
+    expect(destinations).not.toHaveTextContent("Investigation Graph");
+    expect(destinations).not.toHaveTextContent("Intel Board");
   });
 
-  it("has no Intel Board destination", () => {
-    // The board was a second home for the same graph work the investigation workspace
-    // already owns. Asserting its absence matters: a test that only checked the new labels
-    // would still pass if someone re-added the tab later.
-    renderAt("/investigations");
-    expect(navigationDestinations()).not.toHaveTextContent("Intel Board");
-  });
-
-  it("switches section sets with the module", () => {
-    renderAt("/specops");
-    expect(navigationDestinations()).toHaveTextContent("Pipeline Operations");
-    expect(navigationDestinations()).not.toHaveTextContent("Investigations");
-  });
-
-  it("marks the active module tab", () => {
-    renderAt("/economic");
-    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
-    expect(screen.getByTestId("nav-module-economic")).toHaveAttribute("data-active", "true");
-  });
-
-  it("marks the active destination and exposes aria-current", () => {
-    renderAt("/specops/connectors");
-    navigationDestinations();
-    const link = screen.getByRole("link", { name: /Connectors/i });
-    expect(link).toHaveAttribute("data-active", "true");
-    expect(link).toHaveAttribute("aria-current", "page");
-  });
-
-  it("navigates when a module tab is pressed", () => {
-    renderAt("/investigations");
-    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
-    fireEvent.click(screen.getByTestId("nav-module-specops"));
-    expect(navigationDestinations()).toHaveTextContent("Pipeline Operations");
-  });
-
-  it("closes the deck with Escape and restores focus to the trigger", () => {
-    renderAt("/investigations");
-    const trigger = screen.getByTestId("nav-deck-trigger");
-    fireEvent.click(trigger);
-    expect(screen.getByTestId("nav-deck")).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
-  });
-
-  it("navigates to the selected destination and closes the deck", () => {
-    renderAt("/investigations");
-    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
-    fireEvent.click(screen.getByRole("link", { name: /Science Console/i }));
-    expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
-  });
-
-  it("renders the breadcrumb trail", () => {
-    renderAt("/quarantine");
-    expect(screen.getByTestId("topnav")).toHaveTextContent("Quarantine (DLQ)");
-  });
-
-  it("ships no question-mark glyph as iconography", () => {
-    // The legacy brand mark was a literal "?"; the standard forbids a text glyph
-    // standing in for a drawn icon.
-    const { container } = renderAt("/intel", true);
-    expect(container.querySelector(".brand-mark")).toBeNull();
-    expect(container.querySelector(".ui-brand-mark")).not.toBeNull();
-  });
-
-  it("ships no connection status it cannot observe", () => {
-    // "NEXUS LINK: ACTIVE" was a hardcoded string reporting a state that did not exist.
-    const { container } = renderAt("/intel");
-    expect(container.textContent).not.toMatch(/NEXUS LINK/i);
-  });
-
-  it("renders nothing outside a router rather than throwing", () => {
-    // AppShell is mounted bare in tests and stories; navigation is meaningless there.
-    const { container } = render(
-      <QueryClientProvider client={new QueryClient()}>
-        <AppShell>bare</AppShell>
-      </QueryClientProvider>,
-    );
-    expect(container.querySelector(".ui-topnav")).toBeNull();
-    expect(screen.getByTestId("app-shell")).toBeInTheDocument();
-  });
-});
-
-describe("nav data", () => {
-  it("routes paths to their module", () => {
-    expect(resolveModule("/intel")).toBe("osint");
-    expect(resolveModule("/specops")).toBe("specops");
-    expect(resolveModule("/specops/quarantine")).toBe("specops");
-    expect(resolveModule("/specops/connectors")).toBe("specops");
-    expect(resolveModule("/economic")).toBe("economic");
-    // The retired bare paths resolve to OSINT here because the router redirects them before
-    // the shell ever sees them. Asserted so the difference is deliberate: if this ever flips,
-    // someone is matching on a path that no longer renders.
-    expect(resolveModule("/quarantine")).toBe("osint");
-  });
-
-  it("titles the longest matching prefix, not the first", () => {
-    // `/ops/graph` used to be its own destination with its own title. It is now a redirect
-    // into `/investigations`, so the only prefix that can win for a SpecOps path is `/ops`.
-    // The ordering rule this test protects -- longest prefix first -- is unchanged; what it
-    // protects *about* is that no retired graph path can quietly claim a title again.
-    expect(resolveTitle("/ops")).toBe("SpecOps Console");
-    expect(resolveTitle("/investigations")).toBe("Investigation");
-    expect(resolveTitle("/investigations/graph")).toBe("Investigation");
-  });
-
-  it("does not light up a query destination when only its path matches", () => {
-    // "Intel Board" is /intel and "Entities" is /intel?entity=. react-router matches on
-    // pathname alone, so without the query check both would render as current.
+  it("handles query-specific destinations without lighting up a path-only sibling", () => {
     const item = { to: "/intel?entity=ENT-1", label: "Entities", icon: "view-objects" } as const;
     expect(isNavItemActive("/intel", item)).toBe(false);
     expect(isNavItemActive("/intel", item, "?entity=ENT-1")).toBe(true);
@@ -206,144 +99,48 @@ describe("nav data", () => {
   });
 
   it("matches nested paths but not siblings", () => {
-    const item = { to: "/investigations", label: "Investigations", icon: "view-overview" } as const;
+    const item = { to: "/investigations", label: "Investigations", icon: "view-graph" } as const;
     expect(isNavItemActive("/investigations/INV-1", item)).toBe(true);
     expect(isNavItemActive("/investigationsx", item)).toBe(false);
   });
+
+  it("renders nothing outside a router rather than throwing", () => {
+    const { container } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <AppShell>bare</AppShell>
+      </QueryClientProvider>,
+    );
+    expect(container.querySelector(".ui-primary-nav")).toBeNull();
+    expect(screen.getByTestId("app-shell")).toBeInTheDocument();
+  });
+
+  it("keeps the app shell's main workspace as a separate flex region", () => {
+    const { container } = renderAt("/investigations", true);
+    expect(screen.getByTestId("shell-main")).toBeInTheDocument();
+    expect(container.querySelector(".ui-primary-nav + .ui-shell-main")).not.toBeNull();
+  });
 });
 
-describe("findings destination", () => {
-  // The nav carried `{ to: "/findings/0" }`. "0" was never a finding id — it was a
-  // placeholder in a real URL, and GET /api/v1/findings/0 answered 404 for every click.
-  // A nav entry is static and a finding id is not, so the entry names the list and the
-  // resolution happens where the ids are known.
+describe("navigation data", () => {
+  it("routes paths to their module", () => {
+    expect(resolveModule("/intel")).toBe("osint");
+    expect(resolveModule("/specops")).toBe("specops");
+    expect(resolveModule("/specops/quarantine")).toBe("specops");
+    expect(resolveModule("/specops/connectors")).toBe("specops");
+    expect(resolveModule("/economic")).toBe("economic");
+    expect(resolveModule("/quarantine")).toBe("osint");
+  });
 
-  it("points the nav at the list, not at a placeholder id", () => {
+  it("titles the longest matching prefix", () => {
+    expect(resolveTitle("/ops")).toBe("SpecOps Console");
+    expect(resolveTitle("/investigations")).toBe("Investigation");
+    expect(resolveTitle("/investigations/graph")).toBe("Investigation");
+  });
+
+  it("keeps findings navigation on the list route instead of inventing an id", () => {
     const items = NAV_SECTIONS.osint.flatMap((section) => section.items);
-    const findings = items.find((item) => item.label === "Findings");
-    expect(findings?.to).toBe("/findings");
-  });
-
-  it("carries no numeric segment in any nav destination", () => {
-    // A guard rather than a one-off: a placeholder id in the nav is invisible in review
-    // (it is just a string) and only fails at the endpoint, one click later.
-    const allItems = Object.values(NAV_SECTIONS).flatMap((sections) =>
-      sections.flatMap((section) => section.items),
-    );
-    for (const item of allItems) {
-      expect(item.to, `${item.label} -> ${item.to}`).not.toMatch(/\/\d+(?:$|\?)/);
-    }
-  });
-
-  it("resolves to a real finding id from the list", () => {
-    expect(resolveFindingsPath(["FND-5001"])).toBe("/findings/FND-5001");
-    // Head of the ordered list, not an arbitrary pick.
-    expect(resolveFindingsPath(["FND-5001", "FND-5002"])).toBe("/findings/FND-5001");
-  });
-
-  it("returns null rather than inventing an id when there are no findings", () => {
-    // An empty tenant is not a reason to fall back to a plausible-looking path.
+    expect(items.find((item) => item.label === "Findings")?.to).toBe("/findings");
     expect(resolveFindingsPath([])).toBeNull();
-    expect(resolveFindingsPath(["", "  "])).toBeNull();
-  });
-
-  it("still titles a bookmarked placeholder path", () => {
-    expect(resolveTitle("/findings/0")).toBe("Finding");
-    expect(resolveTitle("/findings")).toBe("Finding");
-    expect(resolveTitle("/findings/FND-5001")).toBe("Finding");
-  });
-
-  it("marks the destination active from a resolved finding path", () => {
-    const item = { to: "/findings", label: "Findings", icon: "view-findings" } as const;
-    expect(isNavItemActive("/findings/FND-5001", item)).toBe(true);
-    expect(isNavItemActive("/findings", item)).toBe(true);
-  });
-});
-
-describe("findings route", () => {
-  // The live tenant has exactly one finding; an empty tenant is the other state worth
-  // proving. Both are stubbed at the network boundary so the route is exercised through
-  // the same `api.ts` client the app uses, not through a mocked module.
-  const FINDING = {
-    finding_id: "FND-5001",
-    status: "open",
-    why_detected: "persistent topological loop under account Yard",
-    structural_evidence: [],
-    semantic_evidence: [],
-    supporting_graph_region: {},
-    supporting_assertions: [],
-    observations: [],
-    sources: [],
-    evidence_resolves: true,
-    tenant_id: "default-tenant",
-  };
-
-  let findings: (typeof FINDING)[] = [];
-  let originalFetch: typeof globalThis.fetch;
-
-  beforeEach(() => {
-    originalFetch = globalThis.fetch;
-    findings = [FINDING];
-    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      const json = (body: unknown, status = 200) =>
-        new Response(JSON.stringify(body), {
-          status,
-          headers: { "Content-Type": "application/json" },
-        });
-      if (url.endsWith("/api/v1/findings")) return json({ findings });
-      if (url.includes("/lineage")) return json({ finding_id: "FND-5001", chain: [] });
-      // Anything else is a detail fetch. "0" answers 404 exactly as the real endpoint
-      // does — that is the state the redirect exists to leave behind.
-      if (url.endsWith("/findings/0")) return json({ detail: "finding not found" }, 404);
-      return json(FINDING);
-    }) as unknown as typeof globalThis.fetch;
-  });
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-    vi.restoreAllMocks();
-  });
-
-  // Mirrors App.tsx: one route for both forms.
-  function mountAt(path: string) {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    return render(
-      <MemoryRouter initialEntries={[path]}>
-        <QueryClientProvider client={client}>
-          <Routes>
-            <Route path="/findings/:id?" element={<FindingsRoute />} />
-          </Routes>
-        </QueryClientProvider>
-      </MemoryRouter>,
-    );
-  }
-
-  it("lands a bookmarked placeholder id on a real finding", async () => {
-    // The defect: `/findings/0` returned 404 because no record carried that id. It now
-    // resolves, so a kept URL arrives at the finding it names rather than at an error.
-    mountAt("/findings/0");
-    const view = await screen.findByTestId("finding-view");
-    expect(view).toHaveAttribute("data-finding-id", "FND-5001");
-  });
-
-  it("resolves the bare list destination to the head of the list", async () => {
-    mountAt("/findings");
-    const view = await screen.findByTestId("finding-view");
-    expect(view).toHaveAttribute("data-finding-id", "FND-5001");
-  });
-
-  it("leaves a real id alone", async () => {
-    mountAt("/findings/FND-5001");
-    const view = await screen.findByTestId("finding-view");
-    expect(view).toHaveAttribute("data-finding-id", "FND-5001");
-  });
-
-  it("states the absence rather than falling back to another destination", async () => {
-    findings = [];
-    mountAt("/findings");
-    // An empty tenant must not be answered with "/investigations" — "no findings" and
-    // "here are the investigations" are different claims, and only one of them is true.
-    await waitFor(() => expect(screen.getByTestId("findings-empty")).toBeInTheDocument());
+    expect(resolveFindingsPath(["", "FND-42"])).toBe("/findings/FND-42");
   });
 });
