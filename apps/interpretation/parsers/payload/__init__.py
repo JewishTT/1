@@ -9,7 +9,7 @@ constitution IV (fail-closed, a finding is a finding) and VI (determinism, Domai
 into one record: a regex hit, a key-name heuristic, a type assertion, a mention and a
 resolution result all arrive as ``Entity(type, value, source, context, confidence, attributes,
 sources)`` with ``confidence`` defaulted to ``1.0``. Six epistemic levels in one row, with a
-number nobody measured. And 23 of 146 definitions declare a parser that is the identity
+number nobody measured. And 22 of 151 definitions declare a parser that is the identity
 function, so for those the "structured view" is the payload itself.
 
 So this package is the instrumentation layer between the bytes and everything that would like
