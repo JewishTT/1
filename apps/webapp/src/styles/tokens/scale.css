@@ -35,9 +35,9 @@
 }
 
 [data-theme="light"] {
-  --ui-elevation-1: 0 1px 0 rgba(17, 25, 27, 0.06);
-  --ui-elevation-2: 0 6px 18px rgba(17, 25, 27, 0.1);
-  --ui-elevation-3: 0 16px 40px rgba(17, 25, 27, 0.14);
+  --ui-elevation-1: 0 1px 0 rgba(18, 23, 20, 0.06);
+  --ui-elevation-2: 0 6px 18px rgba(18, 23, 20, 0.1);
+  --ui-elevation-3: 0 16px 40px rgba(18, 23, 20, 0.14);
 }
 
 :root {
