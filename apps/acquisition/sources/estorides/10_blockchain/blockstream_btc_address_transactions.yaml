@@ -48,6 +48,6 @@ parse:
       kind: btc_address
       many: true
     output_addresses:
-      path: vout.scriptpubkey_address
+      path: vout[*].scriptpubkey_address
       kind: btc_address
       many: true
