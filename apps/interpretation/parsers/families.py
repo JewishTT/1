@@ -1,7 +1,7 @@
-"""Declarative source parsing: six families, 146 definitions (spec 025 §33).
+"""Declarative source parsing: six families, 151 definitions (spec 025 §33).
 
 The catalogue declares 92 distinct ``parser:`` names and implements two. This module closes
-that gap without writing 145 parsers, by noticing that a parser's job is determined by the
+that gap without writing 151 parsers, by noticing that a parser's job is determined by the
 *shape of the response*, not by the endpoint: Shodan's ``hostnames`` and OpenAlex's
 ``authorships`` are both "walk a list, read named fields".
 
