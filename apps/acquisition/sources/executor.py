@@ -138,12 +138,101 @@ def resolve_query(tool: Mapping[str, Any], query: str) -> str:
     )
 
 
-def request_headers(source: SourceDefinition) -> dict[str, str]:
-    """Build headers with required operator identity for documented public APIs."""
+def _source_api_key(source: SourceDefinition) -> str | None:
+    """Resolve a source's declared credential without exposing its value."""
+    if not source.requires_key:
+        return None
+    if not source.key_env:
+        raise AcquisitionError(
+            "keyed_source_without_key_env",
+            f"{source.name} needs a key but declares no key_env",
+        )
+    value = os.environ.get(source.key_env, "").strip()
+    if not value:
+        raise AcquisitionError(
+            "missing_credential",
+            f"{source.name} needs credential {source.key_env}",
+        )
+    return value
+
+
+def _replace_api_key(value: str, api_key: str | None, *, url_value: bool = False) -> str:
+    """Resolve a declared API-key placeholder in a header or URL."""
+    if not api_key:
+        return value
+    from urllib.parse import quote
+
+    replacement = quote(api_key, safe="") if url_value else api_key
+    return (
+        value.replace("{api_key}", replacement)
+        .replace("%7Bapi_key%7D", replacement)
+        .replace("%7bapi_key%7d", replacement)
+    )
+
+
+def _redact_url(url: str, *, credentials: tuple[str | None, ...] = ()) -> str:
+    """Remove credentials from URLs before they enter captures or provenance."""
+    from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
+
+    credential_values = {
+        encoded
+        for credential in credentials
+        if credential
+        for encoded in (credential, quote(credential, safe=""), quote(credential, safe="+"))
+    }
+    parts = urlsplit(url)
+    sensitive_names = {
+        "apikey", "api_key", "key", "token", "access_token", "auth",
+        "authorization", "signature", "secret", "client_secret", "password",
+    }
+    sensitive_names = {name.replace("_", "") for name in sensitive_names}
+    query = []
+    for name, value in parse_qsl(parts.query, keep_blank_values=True):
+        normalized = name.lower().replace("-", "").replace("_", "")
+        contains_credential = any(item and item in value for item in credential_values)
+        query.append(
+            (name, "[REDACTED]" if normalized in sensitive_names or contains_credential else value)
+        )
+    path = parts.path
+    for credential in credential_values:
+        path = path.replace(credential, "[REDACTED]")
+    return urlunsplit((parts.scheme, parts.netloc, path, urlencode(query), parts.fragment))
+
+
+def request_headers(
+    source: SourceDefinition, *, api_key: str | None = None
+) -> dict[str, str]:
+    """Build source headers and resolve explicitly named environment credentials."""
     headers = {
         str(key): str(value)
         for key, value in (source.tool.get("headers") or {}).items()
     }
+    if api_key is None:
+        api_key = _source_api_key(source)
+
+    import re
+
+    def replace_header(match: re.Match[str]) -> str:
+        placeholder = match.group(1)
+        if placeholder.lower() == "api_key":
+            if not api_key:
+                raise AcquisitionError(
+                    "missing_credential",
+                    f"{source.name} uses an API-key placeholder without a configured key",
+                )
+            return api_key
+        env_name = placeholder.upper()
+        value = os.environ.get(env_name, "").strip()
+        if not value:
+            raise AcquisitionError(
+                "missing_credential",
+                f"{source.name} needs credential {env_name}",
+            )
+        return value
+
+    for name, value in tuple(headers.items()):
+        headers[name] = re.sub(r"\{([A-Za-z][A-Za-z0-9_]*)\}", replace_header, value)
+
     if source.source_id == "crossref_doi" or source.name == "crossref_doi":
         # Crossref's polite pool requires a reachable operator contact. The YAML
         # sample address is historical documentation and must not be sent upstream.
@@ -290,15 +379,15 @@ class HttpSourceExecutor:
             raise AcquisitionError(
                 "keyed_source_without_key_env", f"{source.name} needs a key it cannot name"
             )
-        base_url = resolve_query(source.tool, query)
+        api_key = _source_api_key(source)
+        base_url = _replace_api_key(resolve_query(source.tool, query), api_key, url_value=True)
         _refuse_blocked_host(base_url)
         session = await self._session()
         method = str(source.tool.get("method") or "GET").upper()
-        headers = request_headers(source)
+        headers = request_headers(source, api_key=api_key)
         # Only forwarded when a source actually declares basic auth. Passing auth=None
         # to every request would be harmless against httpx but changes the call
-        # signature every transport double has to match, for a feature 120+ of the
-        # 145 sources never use.
+        # signature every transport double has to match.
         auth = _basic_auth(source)
 
         total = page_count(source.pagination)
@@ -320,12 +409,14 @@ class HttpSourceExecutor:
             truncated = len(body) > self.max_bytes
             if truncated:
                 body = body[: self.max_bytes]
+            # The request uses the real credential; capture metadata never does.
+            safe_url = _redact_url(url, credentials=(api_key,))
             yield CapturePage(
                 source_id=source.source_id,
                 source_name=source.name,
                 query=query,
                 page=page,
-                url=url,
+                url=safe_url,
                 status=int(response.status_code),
                 content_type=str(response.headers.get("content-type", "")),
                 body=body,
@@ -341,11 +432,11 @@ class HttpSourceExecutor:
                     # http -> https), and a reader of the provenance should see that the
                     # bytes came from somewhere other than the URL they asked for.
                     "redirects": [
-                        str(h.url)
+                        _redact_url(str(h.url), credentials=(api_key,))
                         for h in (getattr(response, "history", None) or ())
                     ],
-                    "requested_url": url,
-                    "final_url": str(getattr(response, "url", url) or url),
+                    "requested_url": safe_url,
+                    "final_url": _redact_url(str(getattr(response, "url", url) or url), credentials=(api_key,)),
                 },
             )
             # A short page is a short page: the source told us there is no next one.
