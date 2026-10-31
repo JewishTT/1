@@ -3,7 +3,8 @@ enabled: true
 category: 10. Blockchain
 description: TronGrid TRON mainnet account transaction feed, bounded first page
 os: any
-requires_key: false
+requires_key: true
+key_env: TRONGRID_API_KEY
 contact: public_api
 parser: trongrid
 applies_to:
@@ -15,6 +16,7 @@ tool:
   method: GET
   url: https://api.trongrid.io/v1/accounts/{query}/transactions?only_confirmed=true&limit=50&order_by=block_timestamp,desc
   headers:
+    TRON-PRO-API-KEY: '{api_key}'
     Accept: application/json
     User-Agent: cognitive-substrate/034 (read-only evidence)
   params: {}
