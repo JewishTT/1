@@ -16,7 +16,9 @@ services:
     ports: ["9000:9000", "9001:9001"]
     volumes: [minio-data:/data]
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      # The pinned, unmodified ECR mirror includes the upstream static curl binary.
+      # Probe the server readiness endpoint directly; no mutable mc alias state.
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/ready"]
       interval: 5s
       timeout: 5s
       retries: 20
