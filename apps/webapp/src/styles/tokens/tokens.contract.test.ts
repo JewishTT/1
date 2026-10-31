@@ -53,7 +53,7 @@ function readShipped(...segments: string[]): string {
  * `color.css` would be a tautology.
  */
 const NORMATIVE_PALETTE: ReadonlyArray<readonly [string, string]> = [
-  ["--bg-0", "#070909"],
+  ["--bg-0", "#080b0c"],
   ["--bg-1", "#0b0e0d"],
   ["--surface-0", "#121715"],
   ["--surface-1", "#161b18"],
