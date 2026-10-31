@@ -26,15 +26,15 @@ parse:
       kind: identifier
       required: true
     input_txids:
-      path: vin.txid
+      path: vin[*].txid
       kind: identifier
       many: true
     input_addresses:
-      path: vin.prevout.scriptpubkey_address
+      path: vin[*].prevout[*].scriptpubkey_address
       kind: crypto
       many: true
     output_addresses:
-      path: vout.scriptpubkey_address
+      path: vout[*].scriptpubkey_address
       kind: crypto
       many: true
     fee_satoshi:
