@@ -331,8 +331,14 @@ def _derive_pagination(
                 f"explicit pagination strategy {strategy!r} is not supported by the HTTP executor",
             )
         param = str(declared.get("param") or "").strip()
-        page_size = int(declared.get("page_size") or 0)
-        max_pages = int(declared.get("max_pages") or 1)
+        try:
+            page_size = int(declared.get("page_size") or 0)
+            max_pages = int(declared.get("max_pages") or 1)
+        except (TypeError, ValueError) as exc:
+            raise CatalogueError(
+                "pagination_config_invalid",
+                "explicit pagination page_size and max_pages must be integers",
+            ) from exc
         if not param or page_size < 1 or max_pages < 1 or max_pages > 100:
             raise CatalogueError(
                 "pagination_config_invalid",
