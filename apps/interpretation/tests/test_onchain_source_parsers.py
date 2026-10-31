@@ -106,7 +106,7 @@ def test_trongrid_account_uses_explicit_data_array_index() -> None:
     )
     assert outcome.status == "ok"
     assert outcome.records[0].all_of("address") == (address,)
-    assert outcome.values_for("balance_sun") == ("100000000",)
+    assert outcome.records[0].all_of("balance_sun") == ("100000000",)
 
 
 def test_trongrid_transaction_feed_reads_nested_contract_fields_without_guessing() -> None:
