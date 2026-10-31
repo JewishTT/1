@@ -215,7 +215,7 @@ As an operator, I want the Investigation Workspace to show the context, obligati
 ### Functional Requirements — Acquisition Routing
 
 - **FR-067**: `runtime_ref` MUST remain the routing identity for acquisition; capabilities MUST remain a compatibility check and MUST NOT select the runtime.
-- **FR-068**: Declarative capability data MUST be sourced from the existing Source/Tool Catalogue (146 definitions, 20 categories) exposed via the existing API.
+- **FR-068**: Declarative capability data MUST be sourced from the existing Source/Tool Catalogue (151 definitions, 20 categories) exposed via the existing API.
 - **FR-069**: The catalogue MUST act as the bridge between the Context Planner and the Runtime Dispatcher.
 - **FR-070**: Existing live-proven acquisition runtimes (SearXNG, Airbyte, BBOT, external tools: Maigret, SpiderFoot) MUST be reused, not replaced.
 - **FR-071**: Acquisition MUST emit captures and records only; it MUST create no entity, claim, or membership.
