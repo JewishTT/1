@@ -119,3 +119,76 @@ async def test_missing_declared_api_key_fails_before_network_io(
                 pass
     finally:
         await executor.aclose()
+
+
+
+@pytest.mark.asyncio
+async def test_basic_auth_only_source_executes_with_both_declared_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The full executor path must accept a key pair without a single key_env."""
+    monkeypatch.setenv("WIGLE_API_NAME", "operator-name")
+    monkeypatch.setenv("WIGLE_API_TOKEN", "operator-token")
+    source = load_source(CATALOGUE_ROOT / "09_wireless" / "wigle_search.yaml")
+    observed: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed["authorization"] = request.headers.get("authorization", "")
+        return httpx.Response(200, json={"results": []}, request=request)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    executor = HttpSourceExecutor(client=client)
+    try:
+        captures = [capture async for capture in executor.capture(source, "3C-37-86")]
+    finally:
+        await executor.aclose()
+
+    assert captures
+    assert captures[0].status == 200
+    assert observed["authorization"].startswith("Basic ")
+
+
+@pytest.mark.asyncio
+async def test_basic_auth_only_source_fails_closed_when_pair_is_incomplete(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("WIGLE_API_NAME", "operator-name")
+    monkeypatch.delenv("WIGLE_API_TOKEN", raising=False)
+    source = load_source(CATALOGUE_ROOT / "09_wireless" / "wigle_search.yaml")
+
+    def forbidden_handler(_request: httpx.Request) -> httpx.Response:
+        raise AssertionError("network must not be touched with incomplete credentials")
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(forbidden_handler))
+    executor = HttpSourceExecutor(client=client)
+    try:
+        with pytest.raises(AcquisitionError, match="WIGLE_API_TOKEN"):
+            async for _capture in executor.capture(source, "3C-37-86"):
+                pass
+    finally:
+        await executor.aclose()
+
+
+@pytest.mark.asyncio
+async def test_transport_error_redacts_api_key_from_failure_detail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    marker = "transport-secret-marker-ethplorer"
+    monkeypatch.setenv("ETHPLORER_API_KEY", marker)
+    source = load_source(CATALOGUE_ROOT / "10_blockchain" / "ethplorer_address.yaml")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError(f"connect failed for {request.url}", request=request)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    executor = HttpSourceExecutor(client=client)
+    try:
+        with pytest.raises(AcquisitionError) as raised:
+            async for _capture in executor.capture(source, "0xabc"):
+                pass
+    finally:
+        await executor.aclose()
+
+    assert raised.value.code == "transport_failed"
+    assert marker not in raised.value.message
+    assert "[REDACTED]" in raised.value.message
