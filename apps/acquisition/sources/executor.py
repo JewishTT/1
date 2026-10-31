@@ -143,6 +143,10 @@ def _source_api_key(source: SourceDefinition) -> str | None:
     if not source.requires_key:
         return None
     if not source.key_env:
+        # Some keyed catalogue entries use the explicitly-declared two-part
+        # HTTP Basic credential pair instead of an API-key environment variable.
+        if source.tool.get("basic_auth_env"):
+            return None
         raise AcquisitionError(
             "keyed_source_without_key_env",
             f"{source.name} needs a key but declares no key_env",
