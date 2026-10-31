@@ -20,4 +20,6 @@ jobs:
       - name: Install locked workspace
         run: uv sync --locked --all-packages --all-groups
       - name: Fetch and parse BTC / ETH / TRON public-chain evidence
+        env:
+          TRONGRID_API_KEY: ${{ secrets.TRONGRID_API_KEY }}
         run: .venv/bin/python apps/acquisition/_prove_blockchain_sources.py
