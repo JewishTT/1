@@ -109,6 +109,62 @@ class TransactionDAG:
         )
 
 
+def _cycle_members(
+    residual: set[TransactionRef],
+    outgoing: dict[TransactionRef, set[TransactionRef]],
+) -> tuple[TransactionRef, ...]:
+    """Return exact cyclic strongly-connected components, not blocked descendants.
+
+    Kahn's residual set also contains acyclic nodes downstream of a cycle. Kosaraju's
+    two-pass traversal separates those nodes from actual cycle participants without
+    recursion, so large evidence graphs do not hit Python's recursion limit.
+    """
+    visited: set[TransactionRef] = set()
+    finish_order: list[TransactionRef] = []
+    for start in sorted(residual):
+        if start in visited:
+            continue
+        stack: list[tuple[TransactionRef, bool]] = [(start, False)]
+        while stack:
+            current, exiting = stack.pop()
+            if exiting:
+                finish_order.append(current)
+                continue
+            if current in visited:
+                continue
+            visited.add(current)
+            stack.append((current, True))
+            for child in sorted(outgoing[current] & residual, reverse=True):
+                if child not in visited:
+                    stack.append((child, False))
+
+    incoming: dict[TransactionRef, set[TransactionRef]] = {
+        ref: set() for ref in residual
+    }
+    for parent in residual:
+        for child in outgoing[parent] & residual:
+            incoming[child].add(parent)
+
+    visited.clear()
+    cyclic: set[TransactionRef] = set()
+    for start in reversed(finish_order):
+        if start in visited:
+            continue
+        component: list[TransactionRef] = []
+        stack = [start]
+        visited.add(start)
+        while stack:
+            current = stack.pop()
+            component.append(current)
+            for parent in sorted(incoming[current], reverse=True):
+                if parent not in visited:
+                    visited.add(parent)
+                    stack.append(parent)
+        if len(component) > 1 or start in outgoing[start]:
+            cyclic.update(component)
+    return tuple(sorted(cyclic))
+
+
 def build_transaction_dag(records: Iterable[ObservedTransaction]) -> TransactionDAG:
     """Build parent→spend dependencies from explicit same-chain references only."""
     by_observation: dict[str, ObservedTransaction] = {}
@@ -174,7 +230,8 @@ def build_transaction_dag(records: Iterable[ObservedTransaction]) -> Transaction
                 ready.append(child)
                 ready.sort()
 
-    cycles = tuple(sorted(ref for ref, degree in indegree.items() if degree > 0))
+    residual = {ref for ref, degree in indegree.items() if degree > 0}
+    cycles = _cycle_members(residual, outgoing)
     conflicts = tuple(sorted(node.ref for node in nodes if node.conflicting))
     return TransactionDAG(
         nodes=nodes,
