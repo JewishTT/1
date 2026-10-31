@@ -16,7 +16,7 @@ import { DENSITIES, DEFAULT_DENSITY, THEME_NAMES } from "../../workspace/types";
  * in each case it was invisible:
  *
  *   - `color.css` held `--ui-accent: #46c07a` while the spec fixed phosphor
- *     `#8FCB64`. Nothing broke, because nothing compared the two.
+ *     `#A6D85E`. Nothing broke, because nothing compared the two.
  *   - `data-density` and `data-theme` appeared in ZERO `.ts`/`.tsx` files. The
  *     token blocks were declared, `toggleDensity()` moved a Zustand field, and
  *     not one pixel changed. Green build, green lint, green tests.
@@ -100,7 +100,7 @@ describe("T134 — all fifteen §3.2 tokens, at the spec's values (FR-102)", () 
 
   it("keeps the accent phosphor, not the pure green it used to be", () => {
     // The specific regression this file exists for: `--ui-accent` pointed at
-    // `#46c07a`, a pure green, where §3.2 fixes phosphor `#8FCB64`. A different
+    // `#46c07a`, a pure green, where §3.2 fixes phosphor `#A6D85E`. A different
     // hue family, so the mistake was invisible rather than a shade.
     const accent = new RegExp("--ui-accent:\\s*([^;]+);", "i").exec(darkBlock(css))?.[1]?.trim().toLowerCase();
     expect(accent).toBe("var(--accent-green)");
@@ -632,7 +632,7 @@ describe("UI scale tokens — light-theme elevation scope", () => {
     const scale = readShipped("styles", "tokens", "scale.css");
     expect(scale).toMatch(/\n}\s*\n\s*\[data-theme="light"\]\s*\{/);
     expect(scale).toMatch(/\n}\s*\n\s*:root\s*\{\s*\/\* ── Layout metrics/);
-    expect(scale).toContain("--ui-elevation-2: 0 6px 18px rgba(18, 23, 20, 0.1);");
+    expect(scale).toContain("--ui-elevation-2: 0 6px 18px rgba(17, 25, 27, 0.1);");
   });
 });
 
