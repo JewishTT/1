@@ -76,6 +76,7 @@ jobs:
           COGNITIVE_MINIO_ACCESS_KEY: demo
           COGNITIVE_MINIO_SECRET_KEY: demopass
           COGNITIVE_TENANT: acceptance
+          COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
         run: .venv/bin/python apps/acquisition/_prove_airbyte.py
       - name: Prove live SearXNG JSON search / raw capture / Observation / Redpanda read-back
         env:
@@ -86,6 +87,7 @@ jobs:
           COGNITIVE_MINIO_ACCESS_KEY: demo
           COGNITIVE_MINIO_SECRET_KEY: demopass
           COGNITIVE_TENANT: acceptance
+          COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
         run: .venv/bin/python apps/acquisition/_prove_searxng.py
       - name: Upload end-to-end acceptance evidence
         if: always()
