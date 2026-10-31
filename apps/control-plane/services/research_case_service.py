@@ -26,6 +26,7 @@ from context_engine.person_case_profile import (
     CONSENTED_RECORDS,
     PUBLIC_PROFESSIONAL,
     PUBLIC_ROLE_REVIEW,
+    profile_for,
 )
 from domain.investigation_context import (
     ContextEngineError,

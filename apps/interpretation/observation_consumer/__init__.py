@@ -34,6 +34,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from collections.abc import Mapping
 from typing import Any
 
 from events import event_envelope_pb2 as pb
