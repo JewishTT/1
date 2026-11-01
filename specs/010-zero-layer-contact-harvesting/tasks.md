@@ -6,7 +6,7 @@
 ## Phase 0 — Type Detection (Layer 1)
 - [x] T100 — Regex+heuristic type detector для 8 input types — `apps/zero/zero/type_detector.py` (✅ 8 типов + UNKNOWN, byte-magic, Soundex)
 - [x] T101 — SeedInput schema + deterministic confidence scoring — реализовано в `apps/zero/zero/type_detector.py` (⚠️ target `apps/shared/contracts/` deviated — см. отчёт)
-- [x] T102 — Harvester spawner на основе detected type — `apps/zero/zero/harvesters/registry.py` + `harvest_wave.py` (✅ детерминированный dispatcher; параллелизм возложен на worker-слой)
+- [x] T102 — Harvester spawner на основе detected type — `apps/zero/zero/harvesters/registry.py` + `harvest_wave.py` (✅ default wave регистрирует полный checked-in module table через `register_all()`; фактический запуск каждого built-in module проверяется unit tests; live worker parallelism остаётся отдельным T183).
 
 ## Phase 1 — Harvest Modules (Layer 1–2)
 - [x] T110 — Domain harvesters: email-permutation, subdomain-discovery, DNS, social — `apps/zero/zero/harvesters/domain.py` (✅ breach реализован как enricher `email_to_breach`, mock-индекс)
@@ -61,3 +61,15 @@
 ---
 
 **Трекинг**: отмечать `[x]` по мере закрытия; новые задачи добавляют запись в `09-INTEGRATION-MATRIX.md` и passing guarding test.
+
+## Phase 7 — Canonical evidence stages and production hardening
+- [x] T180 — Стабильные HARVEST / ENRICHMENT / RESOLUTION stage records — `apps/zero/zero/harvest_wave.py` (`WaveStageRecord`, run-scoped reset, bounded depth, per-wave metrics, deterministic ordering; unit contracts).
+- [x] T181 — Raw-first stage persistence — `apps/zero/zero/evidence.py` (`ZeroLayerEvidenceSink` → shared `AcquisitionArtifact` → canonical `ArtifactSink` → immutable Capture/Observation + refs-only event; `CaptureTimeBasis.ABSENT`; `DISCOVERY_ONLY`, `claim_admission_allowed=false`; integration contract).
+- [ ] T182 — Authenticated, tenant-scoped and case-governed API/composition wiring for stage runs; use the existing Research Case approval/budget authority rather than a second dispatch path.
+- [ ] T183 — Live public-source adapters through the existing catalogue → durable budget reservation → `PlanDriver` → Kafka worker → secure egress → ArtifactSink path. No raw `httpx` shortcut, no unbounded concurrency, no bypass of robots/licensing/rate/purpose policy.
+- [ ] T184 — Promote HARVEST/ENRICHMENT/RESOLUTION payloads to explicit versioned `EntityResolutionObservation` / `EnrichmentObservation` contracts and close T122/T133 with replay + consumer-admission tests.
+- [ ] T185 — Replace all deterministic mock lookup tables with real, attested, public and purpose-appropriate enrichers; expand beyond the current 11 modules only when each has license, terms, provenance, budget and live contract evidence.
+- [ ] T186 — Bounded file-seed ingestion (image/PDF/DOCX), content-type validation, malware/quarantine policy, parser workers, and immutable raw retention/deletion contracts.
+- [ ] T187 — Eight-input-type end-to-end smoke with independent fixtures, replay, retry/DLQ, backpressure and observable stage health; publish coverage/unsupported-source ledger without treating unknown as zero.
+
+**Current boundary**: T180–T181 prove that deterministic zero-layer stage outputs can be persisted via the canonical raw-first evidence boundary. They do **not** establish live web acquisition, runtime execution of `CommandSpec`, the 50+ enrichment target, a public-person research API, or completion of T122/T133.
