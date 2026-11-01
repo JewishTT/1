@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4510,
-    "static_facts": 4216,
+    "facts_total": 4517,
+    "static_facts": 4223,
     "inferred": 294,
     "intended": 0
   },
@@ -14884,6 +14884,19 @@
       "evidence": {
         "file": "apps/control-plane/services/zero_layer.py",
         "via": "storage.s3"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0e22dd52c0ea93c3",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/zero_layer.py",
+      "object": "apps/zero/zero/enrichment/feedback.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/zero_layer.py",
+        "via": "zero.enrichment.feedback"
       },
       "confidence": 1.0
     },
@@ -36988,6 +37001,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "98f01e001eb15ce1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/enrichment/feedback.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py",
+        "via": "zero.enrichment.feedback"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "cac88409c23fbda4",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/zero/tests/test_public_acquisition_policy.py",
@@ -37010,6 +37036,32 @@
       "evidence": {
         "file": "apps/zero/tests/test_public_acquisition_policy.py",
         "via": "zero.harvesters.contracts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0e1d502c6b5f57a7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvesters/public_document.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py",
+        "via": "zero.harvesters.public_document"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2d9e4d5fa602f251",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvesters/registry.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py",
+        "via": "zero.harvesters.registry"
       },
       "confidence": 1.0
     },
@@ -56997,6 +57049,18 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "0568c6e83dbc5c8e",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/enrichment/feedback.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "1f92f751d9701520",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/zero/tests/test_public_acquisition_policy.py",
@@ -57013,6 +57077,30 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/zero/tests/test_public_acquisition_policy.py",
       "object": "apps/zero/zero/harvesters/contracts.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "652894aab404648d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvesters/public_document.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c8d7114ead983ed7",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvesters/registry.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
