@@ -147,6 +147,9 @@ class PinnedHttpcoreTransport:
         limits: ResourceLimits,
         backend_factory: Callable[[str, str], httpcore.AsyncNetworkBackend] | None = None,
     ) -> None:
+        # Explicit contract: redirects are surfaced to SecureFetcher for
+        # hop-by-hop DNS/egress validation; the transport never follows them.
+        self.follow_redirects = False
         self._limits = limits
         self._backend_factory = backend_factory or (
             lambda hostname, pinned_ip: PinnedNetworkBackend(

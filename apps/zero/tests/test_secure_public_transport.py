@@ -86,7 +86,7 @@ class _PathPolicyFetcher(_Fetcher):
             return FetchResult(
                 url=url,
                 status=200,
-                body=b"User-agent: *\\nDisallow: /private\\nAllow: /",
+                body=b"User-agent: *\nDisallow: /private\nAllow: /",
                 headers={"content-type": "text/plain"},
                 pinned_ip="203.0.113.10",
                 content_type="text/plain",
