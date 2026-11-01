@@ -1,6 +1,6 @@
 # Tests
 
-352 test files, 5371 test functions. 269 platform modules are not targeted by any test.
+352 test files, 5372 test functions. 269 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -352,7 +352,7 @@
 | `apps/zero/tests/test_public_document.py` | 7 | `apps/zero/zero/harvesters/public_document.py`, `apps/zero/zero/harvesters/registry.py`, `apps/zero/zero/harvesters/transport.py`, `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_public_wave_persistence.py` | 1 | `apps/zero/zero/enrichment/feedback.py`, `apps/zero/zero/harvest_wave.py`, `apps/zero/zero/harvesters/public_document.py`, `apps/zero/zero/harvesters/registry.py` |
 | `apps/zero/tests/test_resolution.py` | 23 | `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/resolution/fellegi_sunter.py`, `apps/zero/zero/resolution/graph.py`, `apps/zero/zero/resolution/similarity.py` |
-| `apps/zero/tests/test_secure_public_transport.py` | 4 | `apps/shared/net/secure_fetch.py`, `apps/zero/zero/harvesters/transport.py` |
+| `apps/zero/tests/test_secure_public_transport.py` | 5 | `apps/shared/net/secure_fetch.py`, `apps/zero/zero/harvesters/transport.py` |
 | `apps/zero/tests/test_type_detector.py` | 22 | `apps/zero/zero/type_detector.py` |
 | `bench/tests/test_harness.py` | 10 | `bench/bench/__init__.py` |
 | `bench/tests/test_knowledge.py` | 10 | — |

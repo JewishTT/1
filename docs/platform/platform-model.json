@@ -24227,12 +24227,13 @@
       },
       {
         "path": "apps/zero/tests/test_secure_public_transport.py",
-        "tests": 4,
+        "tests": 5,
         "test_names": [
           "test_transport_caps_physical_requests_including_robots",
           "test_exists_uses_head_and_does_not_persist_a_body_capture",
           "test_concurrent_same_url_fetches_are_coalesced",
-          "test_robots_rules_are_cached_per_host_but_evaluated_per_path"
+          "test_robots_rules_are_cached_per_host_but_evaluated_per_path",
+          "test_public_document_transport_rejects_non_html_mime_even_without_file_suffix"
         ],
         "targets": [
           "apps/shared/net/secure_fetch.py",
@@ -24374,7 +24375,7 @@
         "targets": []
       }
     ],
-    "total": 5371
+    "total": 5372
   },
   "contracts": {
     "python": [
@@ -41248,8 +41249,8 @@
       {
         "path": "apps/zero/tests/test_secure_public_transport.py",
         "status": "TEST",
-        "loc": 126,
-        "callables": 11,
+        "loc": 154,
+        "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41421,7 +41422,7 @@
       {
         "path": "apps/zero/zero/harvesters/transport.py",
         "status": "IMPLEMENTED",
-        "loc": 371,
+        "loc": 380,
         "callables": 20,
         "stubs": 2,
         "not_implemented": 0,
@@ -105337,7 +105338,7 @@
     "rust_crates": 9,
     "import_edges": 2919,
     "test_files": 352,
-    "test_functions": 5371,
+    "test_functions": 5372,
     "untested_modules": 269,
     "http_routes": 185
   },
