@@ -436,6 +436,11 @@ export function CasePage() {
                       {zeroLayerMutation.data.captured_pages} page(s) captured · {zeroLayerMutation.data.failed_pages} refused/failed · {zeroLayerMutation.data.observation_refs.length} Observation refs
                     </p>
                     <p className="mt-1 text-xs text-slate-400">{zeroLayerMutation.data.notice}</p>
+                    {zeroLayerMutation.data.waves.some((wave) => wave.budget_limited) && (
+                      <p className="mt-2 border-s border-amber-400 bg-amber-400/5 ps-3 text-xs text-amber-300" role="status">
+                        PAGE BUDGET REACHED — remaining discovered links were not fetched. The captured set is partial, not an exhaustive inventory.
+                      </p>
+                    )}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {zeroLayerMutation.data.observation_refs.map((ref) => (
                         <span key={ref} className="border border-slate-600 px-2 py-1 font-mono text-[10px] text-slate-300">{ref}</span>
