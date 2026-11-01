@@ -263,13 +263,22 @@ class SecurePublicTransport:
                 )
             if response.status < 200 or response.status >= 300:
                 raise SecurityBlocked(f"origin returned HTTP {response.status}")
+            content_type = str(response.content_type or "").split(";", 1)[0].strip().lower()
+            if method == "GET" and content_type not in {
+                "text/html",
+                "application/xhtml+xml",
+                "text/plain",
+            }:
+                raise SecurityBlocked(
+                    f"public document parser does not accept content type: {content_type or 'unknown'}"
+                )
             with self._lock:
                 metadata = dict(self._source_metadata.get(canonical, {}))
             return PublicFetchCapture(
                 url=response.url,
                 status=response.status,
                 body=response.body,
-                content_type=str(response.content_type or "application/octet-stream").split(";", 1)[0].strip().lower(),
+                content_type=content_type or "application/octet-stream",
                 fetched_at=datetime.now(UTC),
                 pinned_ip=response.pinned_ip,
                 redirects=response.redirects,

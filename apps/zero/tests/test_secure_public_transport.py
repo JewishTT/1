@@ -123,3 +123,31 @@ def test_robots_rules_are_cached_per_host_but_evaluated_per_path() -> None:
     assert ("https://example.org/public/another", "GET") in calls
     assert ("https://example.org/private/profile", "GET") not in calls
     assert transport.requests_used == 3
+
+
+class _BinaryFetcher(_Fetcher):
+    async def fetch(self, url: str, *, method: str = "GET", headers: dict[str, str] | None = None) -> FetchResult:
+        self.calls.append((url, method))
+        if url.endswith("/robots.txt"):
+            return FetchResult(url=url, status=404, body=b"", headers={}, pinned_ip="203.0.113.10")
+        return FetchResult(
+            url=url,
+            status=200,
+            body=b"%PDF-1.7 fake payload",
+            headers={"content-type": "application/pdf"},
+            pinned_ip="203.0.113.10",
+            content_type="application/pdf",
+        )
+
+
+def test_public_document_transport_rejects_non_html_mime_even_without_file_suffix() -> None:
+    calls: list[tuple[str, str]] = []
+    transport = SecurePublicTransport(
+        max_requests=3,
+        minimum_host_interval_s=0,
+        fetcher_factory=lambda **_kwargs: _BinaryFetcher(calls),
+    )
+
+    assert transport.fetch("https://example.org/download?id=42") == ""
+    assert transport.captures == ()
+    assert any("does not accept content type: application/pdf" in item["detail"] for item in transport.failures)
