@@ -44,9 +44,11 @@ class _RecordingEvidenceSink:
         self.records = []
 
     async def persist_capture(self, capture, *, tenant_id: str, investigation_id: str | None):
+        from types import SimpleNamespace
+
         self.order.append("raw_capture")
         self.captures.append((capture, tenant_id, investigation_id))
-        return capture
+        return SimpleNamespace(observation_id="OBS-RAW-PAGE")
 
     async def persist(self, record, *, tenant_id: str, investigation_id: str | None):
         self.order.append("stage_observation")
@@ -77,7 +79,7 @@ async def test_wave_persists_capture_first_then_discovery_only_stages() -> None:
         enable_enrichment=False,
         seed_context={
             url: {
-                "parent_observation_id": "OBS-searxng-parent",
+                "discovery_observation_id": "OBS-searxng-parent",
                 "source_id": "searxng_public_search",
             }
         },
@@ -95,6 +97,8 @@ async def test_wave_persists_capture_first_then_discovery_only_stages() -> None:
     assert sink.order[0] == "raw_capture"
     assert sink.captures[0][0].parent_observation_id == "OBS-searxng-parent"
     assert sink.records
+    assert all(record.as_dict()["parent_observation_id"] == "OBS-RAW-PAGE" for record, *_ in sink.records)
+    assert all(record.as_dict()["discovery_observation_id"] == "OBS-searxng-parent" for record, *_ in sink.records)
     assert all(record.as_dict()["result_role"] == "DISCOVERY_ONLY" for record, *_ in sink.records)
     assert all(record.as_dict()["claim_admission_allowed"] is False for record, *_ in sink.records)
     assert all(record.as_dict()["source_id"] == "searxng_public_search" for record, *_ in sink.records)

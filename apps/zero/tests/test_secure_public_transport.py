@@ -77,3 +77,45 @@ def test_concurrent_same_url_fetches_are_coalesced() -> None:
     assert calls.count(("https://example.org/robots.txt", "GET")) == 1
     assert calls.count(("https://example.org/page", "GET")) == 1
     assert len(transport.captures) == 1
+
+
+class _PathPolicyFetcher(_Fetcher):
+    async def fetch(self, url: str, *, method: str = "GET", headers: dict[str, str] | None = None) -> FetchResult:
+        self.calls.append((url, method))
+        if url.endswith("/robots.txt"):
+            return FetchResult(
+                url=url,
+                status=200,
+                body=b"User-agent: *\\nDisallow: /private\\nAllow: /",
+                headers={"content-type": "text/plain"},
+                pinned_ip="203.0.113.10",
+                content_type="text/plain",
+            )
+        body = b"" if method == "HEAD" else b"<html><body>public</body></html>"
+        return FetchResult(
+            url=url,
+            status=200,
+            body=body,
+            headers={"content-type": "text/html"},
+            pinned_ip="203.0.113.10",
+            content_type="text/html",
+        )
+
+
+def test_robots_rules_are_cached_per_host_but_evaluated_per_path() -> None:
+    calls: list[tuple[str, str]] = []
+
+    def factory(**_kwargs: Any) -> _PathPolicyFetcher:
+        return _PathPolicyFetcher(calls)
+
+    transport = SecurePublicTransport(
+        max_requests=4,
+        minimum_host_interval_s=0,
+        fetcher_factory=factory,
+    )
+    assert transport.fetch("https://example.org/public") == "<html><body>public</body></html>"
+    assert transport.fetch("https://example.org/private/profile") == ""
+    assert calls.count(("https://example.org/robots.txt", "GET")) == 1
+    assert ("https://example.org/public", "GET") in calls
+    assert ("https://example.org/private/profile", "GET") not in calls
+    assert transport.requests_used == 2

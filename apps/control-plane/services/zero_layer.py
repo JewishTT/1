@@ -200,7 +200,7 @@ class ZeroLayerCaseService:
             self._host(url)
             urls.append(url)
             seed_context[url] = {
-                "parent_observation_id": str(lead.get("observation_id") or lead["lead_id"]),
+                "discovery_observation_id": str(lead.get("observation_id") or lead["lead_id"]),
                 "source_id": discovery_source,
             }
 

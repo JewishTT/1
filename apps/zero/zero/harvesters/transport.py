@@ -91,6 +91,9 @@ class SecurePublicTransport:
         self._captures: list[PublicFetchCapture] = []
         self._failures: list[dict[str, str]] = []
         self._source_metadata: dict[str, dict[str, str]] = {}
+        self._robots_cache: dict[str, tuple[float, int, tuple[str, ...]]] = {}
+        self._robots_pending: dict[str, threading.Event] = {}
+        self._robots_cache_ttl_s = 300.0
         self._network_requests_used = 0
         self._request_slots = threading.BoundedSemaphore(self.max_concurrency)
         self._pending_fetches: dict[str, threading.Event] = {}
@@ -167,6 +170,63 @@ class SecurePublicTransport:
                 "detail": detail[:1000],
             })
 
+    async def _robots_permits(self, host: str, canonical_url: str, fetcher: SecureFetcher) -> bool:
+        """Fetch robots once per host, but evaluate its rules for each exact URL."""
+        now = time.monotonic()
+        with self._lock:
+            cached = self._robots_cache.get(host)
+            if cached and now - cached[0] <= self._robots_cache_ttl_s:
+                status, lines = cached[1], cached[2]
+                leader = False
+                pending = None
+            else:
+                pending = self._robots_pending.get(host)
+                leader = pending is None
+                if leader:
+                    pending = threading.Event()
+                    self._robots_pending[host] = pending
+                status, lines = 0, ()
+
+        if not leader:
+            assert pending is not None
+            if not pending.wait(timeout=17.0):
+                raise SecurityBlocked("robots.txt coalesced wait exceeded timeout")
+            with self._lock:
+                cached = self._robots_cache.get(host)
+            if not cached or time.monotonic() - cached[0] > self._robots_cache_ttl_s:
+                raise SecurityBlocked("robots.txt policy could not be established")
+            status, lines = cached[1], cached[2]
+        else:
+            assert pending is not None
+            try:
+                robots_url = f"https://{host}/robots.txt"
+                self._reserve_request(robots_url)
+                response = await fetcher.fetch(robots_url, headers={"Accept": "text/plain"})
+                status = int(response.status)
+                lines = tuple(response.body.decode("utf-8", errors="replace").splitlines())
+                with self._lock:
+                    self._robots_cache[host] = (time.monotonic(), status, lines)
+            except Exception:
+                # A failed policy lookup is a fail-closed decision for this
+                # transport lifetime; do not stampede an unavailable origin.
+                with self._lock:
+                    self._robots_cache[host] = (time.monotonic(), 0, ())
+                raise
+            finally:
+                with self._lock:
+                    event = self._robots_pending.pop(host, None)
+                    if event is not None:
+                        event.set()
+
+        if status in (404, 410):
+            return True
+        if status != 200:
+            return False
+        parser = RobotFileParser()
+        parser.set_url(f"https://{host}/robots.txt")
+        parser.parse(list(lines))
+        return parser.can_fetch(self.user_agent, canonical_url)
+
     async def _fetch_async(
         self, url: str, timeout: float, *, method: str = "GET"
     ) -> PublicFetchCapture:
@@ -184,19 +244,7 @@ class SecurePublicTransport:
             rebinding=self._rebinding,
         )
         try:
-            robots_url = f"https://{host}/robots.txt"
-            self._reserve_request(robots_url)
-            robots = await fetcher.fetch(robots_url, headers={"Accept": "text/plain"})
-            if robots.status in (404, 410):
-                permitted = True
-            elif robots.status == 200:
-                parser = RobotFileParser()
-                parser.set_url(robots_url)
-                parser.parse(robots.body.decode("utf-8", errors="replace").splitlines())
-                permitted = parser.can_fetch(self.user_agent, canonical)
-            else:
-                permitted = False
-            if not permitted:
+            if not await self._robots_permits(host, canonical, fetcher):
                 raise SecurityBlocked("robots policy does not permit this fetch")
             self._pace(host)
             self._reserve_request(canonical)

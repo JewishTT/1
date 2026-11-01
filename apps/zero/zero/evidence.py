@@ -133,6 +133,8 @@ class ZeroLayerEvidenceSink:
             "zero_layer_wave_index": wave_index,
             "zero_layer_seed_id": seed_id,
             "zero_layer_seed_type": str(data.get("seed_type") or "unknown"),
+            "parent_observation_id": str(data.get("parent_observation_id") or ""),
+            "discovery_observation_id": str(data.get("discovery_observation_id") or ""),
             "zero_layer_candidate_count": candidate_count,
             "zero_layer_worker_commands_pending": int(data.get("pending_worker_commands") or 0),
             "target_uri": target_uri,

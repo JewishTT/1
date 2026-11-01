@@ -68,8 +68,9 @@ class WaveStageRecord:
     notes: tuple[str, ...] = ()
     pending_worker_commands: int = 0
     derived_seeds: tuple[str, ...] = ()
-    parent_observation_id: str = ""
+    parent_observation_id: str = ""  # canonical raw-page Observation
     source_id: str = ""
+    discovery_observation_id: str = ""  # search/discovery Observation that nominated the URL
 
     def __post_init__(self) -> None:
         if self.wave_index < 0:
@@ -93,6 +94,7 @@ class WaveStageRecord:
             "candidates": [candidate.as_dict() for candidate in self.candidates],
             "derived_seeds": list(self.derived_seeds),
             "parent_observation_id": self.parent_observation_id,
+            "discovery_observation_id": self.discovery_observation_id,
             "source_id": self.source_id,
             "result_role": "DISCOVERY_ONLY",
             "claim_admission_allowed": False,
@@ -218,7 +220,18 @@ class HarvestWave:
             raise TypeError("evidence_sink must implement persist_capture for raw network captures")
         from dataclasses import replace
 
-        capture_refs_by_host: dict[str, str] = {}
+        capture_refs_by_url: dict[str, str] = {}
+        capture_refs_by_host: dict[str, set[str]] = {}
+
+        def capture_key(value: str) -> str:
+            parsed = urlsplit(str(value or "").strip())
+            host = (parsed.hostname or "").encode("idna").decode("ascii").lower()
+            if not host:
+                return ""
+            port = parsed.port
+            authority = host if port in (None, 443) else f"{host}:{port}"
+            return f"{parsed.scheme.lower()}://{authority}{parsed.path or '/'}?{parsed.query}"
+
         for capture in captures or ():
             accepted_capture = await persist_capture(
                 capture,
@@ -226,20 +239,28 @@ class HarvestWave:
                 investigation_id=investigation_id,
             )
             accepted.append(accepted_capture)
-            host = (urlsplit(str(getattr(capture, "url", "") or "")).hostname or "").lower()
+            capture_url = str(getattr(capture, "url", "") or "")
+            key = capture_key(capture_url)
+            host = (urlsplit(capture_url).hostname or "").encode("idna").decode("ascii").lower()
             observation_id = str(getattr(accepted_capture, "observation_id", "") or "")
-            if host and observation_id:
-                capture_refs_by_host[host] = observation_id
+            if key and observation_id:
+                capture_refs_by_url[key] = observation_id
+                capture_refs_by_host.setdefault(host, set()).add(observation_id)
 
-        # Attach derived stages to the immutable source page for that host. A
-        # domain seed and its canonical HTTPS homepage therefore share one parent
-        # without inventing a lineage edge for unrelated hosts.
+        # A stage's parent is the immutable raw page that was parsed. The
+        # discovery result remains a separate causal predecessor on the record;
+        # it must never be substituted for the raw Capture/Observation. Host-only
+        # linking is safe only when that host produced exactly one capture.
         linked_records: list[WaveStageRecord] = []
         for record in self._stage_records:
-            host = (urlsplit(record.seed_value).hostname or "").lower()
+            key = capture_key(record.seed_value)
+            parent = record.parent_observation_id or capture_refs_by_url.get(key, "")
+            host = (urlsplit(record.seed_value).hostname or "").encode("idna").decode("ascii").lower()
             if not host and record.seed_type == "domain":
                 host = record.seed_value.strip().lower().rstrip(".")
-            parent = record.parent_observation_id or capture_refs_by_host.get(host, "")
+            host_refs = capture_refs_by_host.get(host, set())
+            if not parent and len(host_refs) == 1:
+                parent = next(iter(host_refs))
             linked_records.append(
                 replace(record, parent_observation_id=parent) if parent else record
             )
@@ -299,7 +320,15 @@ class HarvestWave:
                 "seed_id": seed.seed_id,
                 "seed_type": seed.detected_type.value,
                 "seed_value": seed.raw_value,
-                "parent_observation_id": str(seed_context.get("parent_observation_id") or ""),
+                # The old parent_observation_id supplied by the case projection is
+                # the search result, not the fetched page. Preserve it as discovery
+                # lineage. Raw page parent is attached after persist_capture().
+                "parent_observation_id": str(seed_context.get("capture_observation_id") or ""),
+                "discovery_observation_id": str(
+                    seed_context.get("discovery_observation_id")
+                    or seed_context.get("parent_observation_id")
+                    or ""
+                ),
                 "source_id": str(seed_context.get("source_id") or ""),
             }
             self._stage_records.extend(
