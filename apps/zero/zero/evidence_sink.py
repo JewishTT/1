@@ -30,6 +30,7 @@ class CanonicalArtifactSink:
         scope_digest: str,
         scope_revision: int,
         run_id: str,
+        actor_id: str = "",
     ) -> None:
         if artifact_sink is None:
             raise ValueError("ArtifactSink is required")
@@ -40,6 +41,7 @@ class CanonicalArtifactSink:
         self._scope_digest = scope_digest
         self._scope_revision = int(scope_revision)
         self._run_id = run_id
+        self._actor_id = str(actor_id or "")
 
     async def persist_capture(
         self,
@@ -74,6 +76,7 @@ class CanonicalArtifactSink:
                 "scope_digest": self._scope_digest,
                 "scope_revision": self._scope_revision,
                 "run_id": self._run_id,
+                "actor_id": self._actor_id,
                 "http_status": int(capture.status),
                 "pinned_ip": str(capture.pinned_ip),
                 "redirect_chain": list(capture.redirects),
@@ -141,6 +144,7 @@ class CanonicalArtifactSink:
                 "scope_digest": self._scope_digest,
                 "scope_revision": self._scope_revision,
                 "run_id": self._run_id,
+                "actor_id": self._actor_id,
                 "stage": str(record.stage),
                 "seed_id": str(record.seed_id),
                 "parent_observation_id": str(getattr(record, "parent_observation_id", "")),

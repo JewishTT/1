@@ -149,6 +149,7 @@ class PostgresCaseBudgetService:
         concurrency: int = 1,
         wall_seconds: int = 300,
         source_refs: Sequence[str] = (),
+        request_digest: str | None = None,
     ) -> dict[str, Any]:
         if not budget_ref or not budget_ref.strip():
             raise CaseRuntimeBlocked("budget_ref is required before dispatch")
@@ -256,6 +257,10 @@ class PostgresCaseBudgetService:
                     payload = existing.get("payload") or {}
                     if isinstance(payload, str):
                         payload = json.loads(payload)
+                    if request_digest is not None and payload.get("request_digest") != request_digest:
+                        raise CaseRuntimeBlocked(
+                            "idempotency key reused with a different case request payload"
+                        )
                     return {
                         **dict(existing),
                         "limits": dict(ceilings),
@@ -303,6 +308,8 @@ class PostgresCaseBudgetService:
                     "source_refs": sorted(set(source_refs)),
                     "created_at": datetime.now(UTC).isoformat(),
                 }
+                if request_digest is not None:
+                    payload["request_digest"] = str(request_digest)
                 await session.execute(
                     text(
                         "INSERT INTO person_case_budget_reservations "

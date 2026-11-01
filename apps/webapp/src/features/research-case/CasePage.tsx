@@ -20,6 +20,7 @@ import {
   CoverageLedger,
   CaseActions,
   DiscoveryLeadsResponse,
+  ZeroLayerHarvestResponse,
   CompletionReport,
   CloseCaseRequest,
 } from "./api";
@@ -50,6 +51,7 @@ export function CasePage() {
   const { selectedTab, setSelectedTab } = useResearchCaseView();
   const [selectedActionRefs, setSelectedActionRefs] = useState<string[]>([]);
   const [runIdempotencyKey, setRunIdempotencyKey] = useState<string | null>(null);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
 
   const { data: caseData, isLoading: caseLoading, error: caseError } = useQuery<ResearchCase>({
     queryKey: ["research-case", caseId],
@@ -114,6 +116,25 @@ export function CasePage() {
       queryClient.invalidateQueries({ queryKey: ["research-case-coverage", caseId] });
     },
   });
+
+  const zeroLayerMutation = useMutation<ZeroLayerHarvestResponse, Error, { leadIds: string[]; key: string }>({
+    mutationFn: (input) => api.harvestPublicLeads(caseId!, {
+      lead_ids: input.leadIds,
+      idempotency_key: input.key,
+    }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["research-case-discovery-leads", caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["research-case-artifacts", caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["research-case-coverage", caseId] }),
+      ]);
+    },
+  });
+
+  useEffect(() => {
+    const currentIds = new Set((discoveryData?.leads ?? []).map((lead) => lead.lead_id));
+    setSelectedLeadIds((previous) => previous.filter((id) => currentIds.has(id)).slice(0, 25));
+  }, [discoveryData?.leads]);
 
   const currentActions = actionsData?.actions ?? [];
   const proposedActions = currentActions.filter(
@@ -259,9 +280,10 @@ export function CasePage() {
               <section className="rounded border border-slate-300 bg-white p-4" data-testid="research-case-discovery-leads">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="font-semibold">Public-web discovery leads</h2>
-                    <p className="mt-1 text-xs text-slate-600">
-                      SearXNG results are unverified URLs for analyst triage. They are not evidence, cannot satisfy obligations and never enter the factual claim graph.
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-300">Layer 0 / Public document intake</p>
+                    <h2 className="mt-1 font-semibold">Discovery leads</h2>
+                    <p className="mt-1 max-w-3xl text-xs text-slate-400">
+                      Search results are unverified pointers only. Select current leads to fetch permitted public HTTPS pages. Robots policy, public-address SSRF checks, per-host pacing and byte/time caps apply. No private contacts, breach data or account enumeration is performed.
                     </p>
                   </div>
                   <button
@@ -272,39 +294,121 @@ export function CasePage() {
                   </button>
                 </div>
                 {discoveryLoading ? (
-                  <p className="mt-3 text-sm text-slate-500">Loading discovery leads…</p>
+                  <p className="mt-3 text-sm text-slate-400">Loading discovery leads…</p>
                 ) : discoveryError ? (
-                  <p className="mt-3 text-sm text-red-700">
+                  <p className="mt-3 text-sm text-red-400" role="alert">
                     Discovery projection unavailable: {discoveryError instanceof Error ? discoveryError.message : "request failed"}
                   </p>
                 ) : !discoveryData?.leads.length ? (
-                  <p className="mt-3 text-sm text-slate-500">
-                    No discovery leads have been captured for this scope. Plan the case, approve the discovery actions and queue them with a reserved budget.
+                  <p className="mt-3 text-sm text-slate-400">
+                    No discovery leads have been captured for this scope. Plan and approve the case, then run the discovery-only action.
                   </p>
                 ) : (
                   <>
-                    <p className="mt-3 text-xs text-amber-800">
-                      {discoveryData.count} unverified lead(s) · scope revision {discoveryData.scope_revision}
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-y border-slate-700 py-2">
+                      <span className="font-mono text-[10px] text-amber-300">
+                        {discoveryData.count} UNVERIFIED LEADS · SCOPE REV {discoveryData.scope_revision} · MAX 25 / RUN
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="rounded border border-slate-500 px-2 py-1 text-[11px]"
+                          onClick={() => setSelectedLeadIds(discoveryData.leads.slice(0, 25).map((lead) => lead.lead_id))}
+                        >
+                          Select first 25
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded border border-slate-500 px-2 py-1 text-[11px]"
+                          onClick={() => setSelectedLeadIds([])}
+                        >
+                          Clear
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="zero-layer-harvest"
+                          disabled={
+                            selectedLeadIds.length === 0
+                            || selectedLeadIds.length > 25
+                            || !caseData.approved
+                            || zeroLayerMutation.isPending
+                          }
+                          onClick={() => zeroLayerMutation.mutate({
+                            leadIds: selectedLeadIds,
+                            key: `zl:${caseId}:${Date.now()}:${selectedLeadIds.length}`,
+                          })}
+                          className="rounded border border-cyan-300 bg-cyan-300 px-3 py-1.5 text-[11px] font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {zeroLayerMutation.isPending ? "CAPTURING…" : `FETCH SELECTED / ${selectedLeadIds.length}`}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2 divide-y divide-slate-700">
+                      {discoveryData.leads.map((lead) => {
+                        const checked = selectedLeadIds.includes(lead.lead_id);
+                        const limitReached = selectedLeadIds.length >= 25 && !checked;
+                        return (
+                          <article key={lead.lead_id} className="flex items-start gap-3 py-3">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select public discovery lead ${lead.title || lead.url}`}
+                              checked={checked}
+                              disabled={limitReached}
+                              onChange={(event) => setSelectedLeadIds((previous) => (
+                                event.target.checked
+                                  ? [...previous, lead.lead_id].slice(0, 25)
+                                  : previous.filter((id) => id !== lead.lead_id)
+                              ))}
+                              className="mt-1 h-4 w-4 shrink-0 accent-cyan-300"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-amber-300">UNVERIFIED / DISCOVERY ONLY</span>
+                                <span className="font-mono text-[10px] text-slate-400">{lead.engine || lead.source_id}</span>
+                                {lead.published_at && <span className="text-[10px] text-slate-400">Published {lead.published_at}</span>}
+                              </div>
+                              <a href={lead.url} target="_blank" rel="noreferrer" className="mt-1 block break-words text-sm font-medium text-cyan-300 underline">
+                                {lead.title || lead.url}
+                              </a>
+                              <p className="mt-1 break-all font-mono text-[10px] text-slate-500">{lead.url}</p>
+                              <p className="mt-1 font-mono text-[10px] text-slate-500">OBS {lead.observation_id} · captured {lead.captured_at || "time unavailable"}</p>
+                              <p className="mt-1 text-xs text-slate-400">{lead.next_step}</p>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-400">{discoveryData.notice}</p>
+                  </>
+                )}
+                {zeroLayerMutation.error && (
+                  <p className="mt-3 border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300" role="alert">
+                    Public-document capture blocked: {zeroLayerMutation.error.message}
+                  </p>
+                )}
+                {zeroLayerMutation.data && (
+                  <div className="mt-3 border border-cyan-400/30 bg-cyan-400/5 p-3" data-testid="zero-layer-result">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-cyan-200">Capture run / discovery-only</span>
+                      <span className="font-mono text-[10px] text-slate-400">{zeroLayerMutation.data.run_id}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-200">
+                      {zeroLayerMutation.data.captured_pages} page(s) captured · {zeroLayerMutation.data.failed_pages} refused/failed · {zeroLayerMutation.data.observation_refs.length} Observation refs
                     </p>
-                    <div className="mt-2 divide-y divide-slate-200">
-                      {discoveryData.leads.map((lead) => (
-                        <article key={lead.lead_id} className="py-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Unverified lead</span>
-                            <span className="text-[10px] font-mono text-slate-500">{lead.engine || lead.source_id}</span>
-                            {lead.published_at && <span className="text-[10px] text-slate-500">Published {lead.published_at}</span>}
-                          </div>
-                          <a href={lead.url} target="_blank" rel="noreferrer" className="mt-1 block break-words text-sm font-medium text-emerald-700 underline">
-                            {lead.title || lead.url}
-                          </a>
-                          <p className="mt-1 break-all text-[10px] text-slate-500">{lead.url}</p>
-                          <p className="mt-1 text-[10px] text-slate-500">Observation {lead.observation_id} · captured {lead.captured_at || "time unavailable"}</p>
-                          <p className="mt-1 text-xs text-slate-600">{lead.next_step}</p>
-                        </article>
+                    <p className="mt-1 text-xs text-slate-400">{zeroLayerMutation.data.notice}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {zeroLayerMutation.data.observation_refs.map((ref) => (
+                        <span key={ref} className="border border-slate-600 px-2 py-1 font-mono text-[10px] text-slate-300">{ref}</span>
                       ))}
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">{discoveryData.notice}</p>
-                  </>
+                    {zeroLayerMutation.data.failures.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-[10px] text-amber-300">
+                        {zeroLayerMutation.data.failures.slice(0, 5).map((failure, index) => (
+                          <li key={`${failure.url}:${index}`}>{failure.code} · {failure.url}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 )}
               </section>
             </div>

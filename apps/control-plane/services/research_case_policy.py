@@ -302,6 +302,7 @@ class PersonCasePolicy:
         allowed_licenses = {
             "PUBLIC_METADATA_ONLY_ABSTRACTS_SEPARATELY_GATED",
             "NOT_APPLICABLE_INTERNAL_DISCOVERY",
+            "PUBLIC_ORIGIN_TERMS_APPLY",
         }
         if license_status not in allowed_licenses:
             return f"source {source_id} licence status is not approved ({license_status or 'missing'})"

@@ -388,6 +388,30 @@ export interface DiscoveryLeadsResponse {
   notice: string;
 }
 
+export interface ZeroLayerHarvestResponse {
+  case_id: string;
+  run_id: string;
+  scope_digest: string;
+  scope_revision: number;
+  budget_reservation_id: string;
+  selected_leads: number;
+  captured_pages: number;
+  failed_pages: number;
+  failures: Array<{ url: string; code: string; detail: string }>;
+  waves: Array<{
+    wave_index: number;
+    seeds_in: number;
+    contacts_out: number;
+    new_seeds_discovered: number;
+    confidence_dist: Record<string, number>;
+    stabilized: boolean;
+  }>;
+  observation_refs: string[];
+  result_role: "DISCOVERY_ONLY";
+  claim_admission_allowed: false;
+  notice: string;
+}
+
 
 export interface CasePlan {
   case_id: string;
@@ -423,6 +447,16 @@ export async function listActions(caseId: string): Promise<CaseActions> {
 
 export async function listDiscoveryLeads(caseId: string): Promise<DiscoveryLeadsResponse> {
   return request(`/${encodeURIComponent(caseId)}/discovery-leads`);
+}
+
+export async function harvestPublicLeads(
+  caseId: string,
+  body: { lead_ids: string[]; idempotency_key: string },
+): Promise<ZeroLayerHarvestResponse> {
+  return request(`/${encodeURIComponent(caseId)}/zero-layer/harvest`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 
@@ -600,6 +634,7 @@ export const api = {
   planCase,
   listActions,
   listDiscoveryLeads,
+  harvestPublicLeads,
   approveActions,
   runCase,
   pauseCase,

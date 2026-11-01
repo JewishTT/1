@@ -338,3 +338,23 @@ def test_research_action_result_role_preserves_legacy_evidence_addresses() -> No
     assert restored.action_id == discovery.action_id
     assert restored.result_role == "DISCOVERY_ONLY"
 
+
+
+def test_public_page_capture_source_is_enabled_but_never_evidence(
+    loaded_policy: PersonCasePolicy,
+) -> None:
+    source_id = "public_web_document_fetch"
+    eligibility = loaded_policy.source_eligible(
+        source_id=source_id,
+        launch_profile=PUBLIC_PROFESSIONAL,
+    )
+    assert eligibility.eligible is True
+    assert loaded_policy.eligible_evidence_sources(
+        claim_family="public_professional_role",
+        source_ids=[source_id],
+        launch_profile=PUBLIC_PROFESSIONAL,
+    ) == ()
+    assert loaded_policy.eligible_discovery_sources(
+        source_ids=[source_id],
+        launch_profile=PUBLIC_PROFESSIONAL,
+    ) == ()

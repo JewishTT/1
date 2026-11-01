@@ -43,7 +43,7 @@ export function CaseSetup() {
   const [validUntil, setValidUntil] = useState("");
   const [precision, setPrecision] = useState<"instant" | "day" | "month" | "year" | "unknown">("unknown");
   const [claimFamiliesText, setClaimFamiliesText] = useState("public_authorship_or_publication");
-  const [sourceIdsText, setSourceIdsText] = useState("crossref_works, searxng_public_search");
+  const [sourceIdsText, setSourceIdsText] = useState("crossref_works, searxng_public_search, public_web_document_fetch");
   const [deniedFamiliesText, setDeniedFamiliesText] = useState("");
   const [budgetRef, setBudgetRef] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
