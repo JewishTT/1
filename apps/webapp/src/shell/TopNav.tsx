@@ -66,19 +66,17 @@ function RoutedPrimaryRouteSpine() {
   const location = useLocation();
   const currentModule = resolveModule(location.pathname);
   const currentTitle = resolveTitle(location.pathname);
-  const sections = NAV_SECTIONS[currentModule];
-  const destinationCount = sections.reduce((total, section) => total + section.items.length, 0);
 
   return (
     <aside
       className="ui-primary-nav"
       data-testid="primary-route-spine"
       data-module={currentModule}
-      aria-label="Primary route spine"
+      aria-label="Operational domains"
     >
       <header className="ui-primary-nav-header">
-        <span className="ui-primary-nav-kicker">COMMAND ROUTE INDEX</span>
-        <strong className="ui-primary-nav-heading">FIELD SYSTEMS / {currentModule.toUpperCase()}</strong>
+        <span className="ui-primary-nav-kicker">DOMAIN INDEX / 03</span>
+        <strong className="ui-primary-nav-heading">C2 DOMAINS</strong>
       </header>
 
       <nav className="ui-primary-nav-modules" aria-label="Operational domains">
@@ -95,7 +93,7 @@ function RoutedPrimaryRouteSpine() {
               title={module.label}
             >
               <span className="ui-primary-nav-module-icon" aria-hidden="true">
-                <Icon name={MODULE_ICONS[module.key]} size={16} />
+                <Icon name={MODULE_ICONS[module.key]} size={17} />
               </span>
               <span className="ui-primary-nav-module-copy">
                 <small className="ui-primary-nav-module-code">{module.short}</small>
@@ -107,37 +105,9 @@ function RoutedPrimaryRouteSpine() {
         })}
       </nav>
 
-      <div className="ui-primary-nav-divider" />
-
-      <div className="ui-primary-nav-destinations">
-        {sections.map((section, index) => (
-          <section className="ui-primary-nav-section" key={section.label}>
-            <h2 className="ui-primary-nav-section-heading">
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              {section.label}
-            </h2>
-            <nav
-              className="ui-primary-nav-section-items"
-              aria-label={`${currentModule} workspaces`}
-            >
-              {section.items.map((item) => (
-                <DestinationLink
-                  key={item.to}
-                  item={item}
-                  pathname={location.pathname}
-                  search={location.search}
-                  onNavigate={() => undefined}
-                />
-              ))}
-            </nav>
-          </section>
-        ))}
-      </div>
-
       <footer className="ui-primary-nav-footer">
-        <span className="ui-primary-nav-footer-code">ACTIVE WORKSPACE / {destinationCount.toString().padStart(2, "0")} DESTINATIONS</span>
-        <strong>{currentTitle}</strong>
-        <span className="ui-primary-nav-footer-code">COGNITIVE · C2 FIELD SYSTEMS</span>
+        <span className="ui-primary-nav-footer-code">ACTIVE WORKSPACE</span>
+        <strong title={currentTitle}>{currentTitle}</strong>
       </footer>
     </aside>
   );

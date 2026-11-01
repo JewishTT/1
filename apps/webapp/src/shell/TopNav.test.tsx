@@ -120,16 +120,18 @@ describe("command-centre workspace navigation", () => {
     expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
   });
 
-  it("keeps the operational route spine mounted beside every workspace", () => {
+  it("keeps a compact domain rail and reserves deep destinations for the searchable deck", () => {
     const { container } = renderAt("/specops/connectors", true);
     const spine = screen.getByTestId("primary-route-spine");
     expect(spine).toHaveAttribute("data-module", "specops");
-    expect(spine).toHaveTextContent("COMMAND ROUTE INDEX");
-    expect(spine).toHaveTextContent("COUNTERINTEL");
-    expect(spine).toHaveTextContent("OPERATIONS");
+    expect(spine).toHaveTextContent("C2 DOMAINS");
     expect(spine.querySelector('[data-testid="nav-module-specops"]')).toHaveAttribute("aria-current", "location");
-    expect(spine.querySelector('[data-testid="nav-destination-connectors"]')).toHaveAttribute("aria-current", "page");
+    expect(spine.querySelectorAll(".ui-primary-nav-module")).toHaveLength(3);
+    expect(spine.querySelector('[data-testid="nav-destination-connectors"]')).toBeNull();
     expect(container.querySelector(".ui-shell-body > .ui-shell-main")).not.toBeNull();
+
+    openDeck();
+    expect(screen.getByTestId("nav-destination-connectors")).toHaveAttribute("aria-current", "page");
   });
 
   it("keeps the tenant-wide graph out of the SpecOps section", () => {

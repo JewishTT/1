@@ -1251,7 +1251,7 @@
   position: relative;
   z-index: var(--ui-z-sticky);
   display: flex;
-  flex: 0 0 228px;
+  flex: 0 0 112px;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
@@ -1285,18 +1285,21 @@
 .ui-primary-nav-modules {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  flex: 0 0 auto;
+  gap: var(--ui-space-2);
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--ui-space-3) var(--ui-space-2);
 }
 .ui-primary-nav-module {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: var(--ui-space-3);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--ui-space-2);
   min-width: 0;
-  min-height: 44px;
-  padding: var(--ui-space-2) var(--ui-space-3);
+  min-height: 72px;
+  padding: var(--ui-space-3);
   color: var(--ui-text-secondary);
   background: transparent;
   border: 1px solid transparent;
@@ -1330,6 +1333,10 @@
   gap: 2px;
   min-width: 0;
 }
+.ui-primary-nav-module-name {
+  font-size: 10px;
+  letter-spacing: .01em;
+}
 .ui-primary-nav-module-code {
   color: var(--ui-text-muted);
   font-family: var(--ui-font-mono);
@@ -1344,27 +1351,19 @@
   font-weight: var(--ui-weight-medium);
 }
 .ui-primary-nav-module-marker {
+  position: absolute;
+  inset-inline-end: 4px;
+  top: 50%;
   width: 3px;
-  height: 20px;
-  margin-inline-start: auto;
+  height: 22px;
+  margin: 0;
+  transform: translateY(-50%);
   background: var(--ui-accent);
   border-radius: 1px;
 }
-.ui-primary-nav-divider {
-  flex: 0 0 1px;
-  margin-inline: var(--ui-space-3);
-  background: var(--ui-border);
-}
+.ui-primary-nav-divider { display: none; }
 .ui-primary-nav-destinations {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: var(--ui-space-3);
-  min-height: 0;
-  padding: var(--ui-space-4) var(--ui-space-2);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
+  display: none; /* Deep routes live in the single searchable workspace deck. */
 }
 .ui-primary-nav-section { min-width: 0; }
 .ui-primary-nav-section-heading {
@@ -1518,21 +1517,24 @@
   .ui-primary-nav {
     flex: 0 0 auto;
     width: 100%;
-    max-height: 132px;
+    max-height: 64px;
     border-inline-end: 0;
     border-bottom: 1px solid var(--ui-border-strong);
   }
   .ui-primary-nav-header,
   .ui-primary-nav-divider,
+  .ui-primary-nav-destinations,
   .ui-primary-nav-footer { display: none; }
   .ui-primary-nav-modules {
     flex-direction: row;
+    justify-content: center;
     gap: var(--ui-space-2);
     padding: var(--ui-space-2) var(--ui-space-3);
-    border-bottom: 1px solid var(--ui-border);
   }
   .ui-primary-nav-module {
     flex: 1 1 0;
+    flex-direction: row;
+    align-items: center;
     justify-content: center;
     min-height: 36px;
     padding: 0 var(--ui-space-2);
