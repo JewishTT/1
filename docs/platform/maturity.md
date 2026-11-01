@@ -27,7 +27,7 @@ A non-``__init__`` module with no callables is either a data/declaration module 
 |---|---|---|
 | `apps/acquisition/source_query_set.py` | 0 | — |
 | `apps/shared/conftest.py` | 2 | — |
-| `apps/zero/zero/harvesters/modules.py` | 16 | — |
+| `apps/zero/zero/harvesters/modules.py` | 18 | — |
 | `apps/projection/path_shim.py` | 20 | — |
 | `tools/strip_zero_inventory.py` | 22 | — |
 | `apps/projection/search/tantivy_backend.py` | 23 | — |

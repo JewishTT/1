@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4414,
-    "static_facts": 4120,
+    "facts_total": 4413,
+    "static_facts": 4119,
     "inferred": 294,
     "intended": 0
   },
@@ -36984,19 +36984,6 @@
       "evidence": {
         "file": "apps/zero/zero/harvesters/modules.py",
         "via": "image"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "40f035311b269360",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/zero/zero/harvesters/modules.py",
-      "object": "apps/zero/zero/harvesters/phone.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/zero/zero/harvesters/modules.py",
-        "via": "phone"
       },
       "confidence": 1.0
     },

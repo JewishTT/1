@@ -1131,7 +1131,7 @@
   ],
   "import_graph": {
     "module_count": 1019,
-    "edge_count": 2840,
+    "edge_count": 2839,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 889,
@@ -15155,11 +15155,6 @@
       },
       {
         "from": "apps/zero/zero/harvesters/modules.py",
-        "to": "apps/zero/zero/harvesters/phone.py",
-        "via": "phone"
-      },
-      {
-        "from": "apps/zero/zero/harvesters/modules.py",
         "to": "apps/zero/zero/harvesters/url.py",
         "via": "url"
       },
@@ -23581,7 +23576,7 @@
           "test_without_resolver_no_records",
           "test_recognizes_social_host",
           "test_non_social_host_ignored",
-          "test_projects_id",
+          "test_synthetic_messenger_projection_is_fixture_only",
           "test_github_profile",
           "test_personal_emails_from_name_and_domain",
           "test_without_domain_nothing",
@@ -23639,7 +23634,7 @@
       },
       {
         "path": "apps/zero/tests/test_harvesters.py",
-        "tests": 25,
+        "tests": 26,
         "test_names": [
           "test_generates_unique_deterministic_candidates",
           "test_requires_all_three_components",
@@ -23664,6 +23659,7 @@
           "test_whatsapp_presence_not_confirmed",
           "test_phone_dorks_variants",
           "test_register_and_sort_dispatch",
+          "test_phone_presence_probes_are_not_in_production_registry",
           "test_duplicate_registration_rejected",
           "test_fault_contained"
         ],
@@ -23850,7 +23846,7 @@
         "targets": []
       }
     ],
-    "total": 5337
+    "total": 5338
   },
   "contracts": {
     "python": [
@@ -40588,7 +40584,7 @@
       {
         "path": "apps/zero/tests/test_enrichment.py",
         "status": "TEST",
-        "loc": 220,
+        "loc": 222,
         "callables": 30,
         "stubs": 0,
         "not_implemented": 0,
@@ -40606,8 +40602,8 @@
       {
         "path": "apps/zero/tests/test_harvesters.py",
         "status": "TEST",
-        "loc": 367,
-        "callables": 29,
+        "loc": 375,
+        "callables": 30,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40669,7 +40665,7 @@
       {
         "path": "apps/zero/zero/enrichment/modules.py",
         "status": "IMPLEMENTED",
-        "loc": 386,
+        "loc": 389,
         "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
@@ -40743,7 +40739,7 @@
       {
         "path": "apps/zero/zero/harvesters/modules.py",
         "status": "DECLARATION_ONLY",
-        "loc": 16,
+        "loc": 18,
         "callables": 0,
         "stubs": 0,
         "not_implemented": 0,
@@ -84179,19 +84175,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "40f035311b269360",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/zero/zero/harvesters/modules.py",
-        "object": "apps/zero/zero/harvesters/phone.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/zero/zero/harvesters/modules.py",
-          "via": "phone"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "7d409a42408901d3",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/zero/harvesters/modules.py",
@@ -103229,8 +103212,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4414,
-      "static_facts": 4120,
+      "facts_total": 4413,
+      "static_facts": 4119,
       "inferred": 294,
       "intended": 0
     }
@@ -103241,15 +103224,15 @@
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2840,
+    "import_edges": 2839,
     "test_files": 345,
-    "test_functions": 5337,
+    "test_functions": 5338,
     "untested_modules": 268,
     "http_routes": 183
   },
   "evidence_stats": {
-    "facts_total": 4414,
-    "static_facts": 4120,
+    "facts_total": 4413,
+    "static_facts": 4119,
     "inferred": 294,
     "intended": 0
   },
