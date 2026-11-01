@@ -70,7 +70,9 @@ class WaveStageRecord:
     notes: tuple[str, ...] = ()
     pending_worker_commands: int = 0
     derived_seeds: tuple[str, ...] = ()
-    parent_observation_id: str = ""  # canonical raw-page Observation
+    parent_observation_id: str = ""  # raw Observation of this page
+    discovery_parent_observation_id: str = ""  # raw Observation of the page that linked this URL
+    parent_capture_url: str = ""  # resolved after all captures have durable Observation refs
     source_id: str = ""
     discovery_observation_id: str = ""  # search/discovery Observation that nominated the URL
 
@@ -96,6 +98,8 @@ class WaveStageRecord:
             "candidates": [candidate.as_dict() for candidate in self.candidates],
             "derived_seeds": list(self.derived_seeds),
             "parent_observation_id": self.parent_observation_id,
+            "discovery_parent_observation_id": self.discovery_parent_observation_id,
+            "parent_capture_url": self.parent_capture_url,
             "discovery_observation_id": self.discovery_observation_id,
             "source_id": self.source_id,
             "result_role": "DISCOVERY_ONLY",
@@ -142,9 +146,10 @@ class HarvestWave:
         self._max_seed_workers = int(max_seed_workers)
         self._enable_enrichment = bool(enable_enrichment)
         self._candidate_allowed = candidate_allowed
-        self._seed_context = {
+        self._initial_seed_context = {
             str(key): dict(value) for key, value in (seed_context or {}).items()
         }
+        self._seed_context = {key: dict(value) for key, value in self._initial_seed_context.items()}
         self._seen_keys: set[str] = set()
         self._observations = []
         self._stage_records: list[WaveStageRecord] = []
@@ -166,6 +171,7 @@ class HarvestWave:
         self._seen_keys.clear()
         self._observations.clear()
         self._stage_records.clear()
+        self._seed_context = {key: dict(value) for key, value in self._initial_seed_context.items()}
 
         # Duplicate seed values are one unit of work. Deduplicate before starting
         # worker threads so retries or repeated UI selections cannot multiply a
@@ -187,6 +193,38 @@ class HarvestWave:
 
             new_seeds = self._feedback.new_seeds(wave_candidates, seen=self._seen_keys)
             summary.new_seeds_discovered = len(new_seeds)
+            # Keep each next-wave page tied to the exact page that nominated it.
+            # No cross-origin or generic entity feedback enters this production path.
+            candidates_by_url = {
+                candidate.value: candidate
+                for candidate in wave_candidates
+                if candidate.kind == "public_page_link"
+            }
+            set_source_metadata = getattr(self._transport, "set_source_metadata", None)
+            for derived_seed in new_seeds:
+                candidate = candidates_by_url.get(derived_seed.derived_value)
+                if candidate is None:
+                    continue
+                parent_url = str(candidate.raw_fields.get("parent_url") or "")
+                parent_context = self._seed_context.get(parent_url, {})
+                discovery_observation_id = str(
+                    parent_context.get("discovery_observation_id")
+                    or parent_context.get("parent_observation_id")
+                    or ""
+                )
+                self._seed_context[derived_seed.derived_value] = {
+                    "parent_capture_url": parent_url,
+                    "discovery_observation_id": discovery_observation_id,
+                    "source_id": str(parent_context.get("source_id") or ""),
+                    "action_ref": str(parent_context.get("action_ref") or ""),
+                }
+                if callable(set_source_metadata):
+                    set_source_metadata(
+                        derived_seed.derived_value,
+                        parent_observation_id=discovery_observation_id,
+                        discovery_source_id=str(parent_context.get("source_id") or ""),
+                        action_ref=str(parent_context.get("action_ref") or ""),
+                    )
             if len(new_seeds) < self._min_new_seeds:
                 summary.stabilized = True
             self._gate.emit_cycle(
@@ -275,15 +313,22 @@ class HarvestWave:
         for record in self._stage_records:
             key = capture_key(record.seed_value)
             parent = record.parent_observation_id or capture_refs_by_url.get(key, "")
+            discovery_parent = (
+                capture_refs_by_url.get(capture_key(record.parent_capture_url), "")
+                if record.parent_capture_url else record.discovery_parent_observation_id
+            )
             host = (urlsplit(record.seed_value).hostname or "").encode("idna").decode("ascii").lower()
             if not host and record.seed_type == "domain":
                 host = record.seed_value.strip().lower().rstrip(".")
             host_refs = capture_refs_by_host.get(host, set())
             if not parent and len(host_refs) == 1:
                 parent = next(iter(host_refs))
-            linked_records.append(
-                replace(record, parent_observation_id=parent) if parent else record
-            )
+            updates = {}
+            if parent:
+                updates["parent_observation_id"] = parent
+            if discovery_parent:
+                updates["discovery_parent_observation_id"] = discovery_parent
+            linked_records.append(replace(record, **updates) if updates else record)
         self._stage_records = linked_records
         for record in self._stage_records:
             accepted.append(await evidence_sink.persist(
@@ -385,6 +430,8 @@ class HarvestWave:
                 # The search result remains a separate causal predecessor. The
                 # immutable raw-page parent is attached after persist_capture().
                 "parent_observation_id": str(seed_context.get("capture_observation_id") or ""),
+                "discovery_parent_observation_id": "",
+                "parent_capture_url": str(seed_context.get("parent_capture_url") or ""),
                 "discovery_observation_id": str(
                     seed_context.get("discovery_observation_id")
                     or seed_context.get("parent_observation_id")

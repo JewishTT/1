@@ -65,3 +65,52 @@ def test_production_filter_removes_personal_leads_before_all_stages() -> None:
         assert "security@example.org" in values or record.stage != "HARVEST"
         assert "alice@example.org" not in values
         assert "12025550199" not in values
+
+
+def test_public_page_feedback_is_same_origin_and_source_bound() -> None:
+    seed = TypeDetector().detect("https://example.org/about")
+    allowed = _candidate("https://example.org/official", "public_page_link", "public_document_metadata")
+    allowed.raw_fields["parent_url"] = seed.raw_value
+    denied = _candidate("https://evil.example.net/collect", "public_page_link", "public_document_metadata")
+    denied.raw_fields["parent_url"] = seed.raw_value
+    wrong_source = _candidate("https://example.org/official", "public_page_link", "other-module")
+    wrong_source.raw_fields["parent_url"] = seed.raw_value
+    assert allow_public_candidate(seed, allowed)
+    assert not allow_public_candidate(seed, denied)
+    assert not allow_public_candidate(seed, wrong_source)
+
+
+def test_public_page_feedback_wave_stays_on_host_and_keeps_parent_context() -> None:
+    from zero.enrichment.feedback import FeedbackLoop
+    from zero.harvesters.public_document import PublicDocumentHarvester
+    from zero.harvesters.registry import HarvesterRegistry
+
+    root = "https://example.org/about"
+    child = "https://example.org/official"
+    transport = DictTransport(bodies={
+        root: '<html><body><a href="/official">Official</a><a href="https://outside.test/x">outside</a></body></html>',
+        child: '<html><head><title>Official public profile</title></head><body></body></html>',
+    })
+    registry = HarvesterRegistry(max_workers=1)
+    registry.register(PublicDocumentHarvester())
+    wave = HarvestWave(
+        registry=registry,
+        transport=transport,
+        max_depth=2,
+        min_new_seeds=1,
+        enable_enrichment=False,
+        feedback=FeedbackLoop(kinds=frozenset({"public_page_link"})),
+        seed_context={root: {
+            "discovery_observation_id": "OBS-SEARCH-1",
+            "source_id": "searxng-public",
+            "action_ref": "action-1",
+        }},
+        candidate_allowed=allow_public_candidate,
+    )
+    summaries = wave.run([root])
+    assert [summary.seeds_in for summary in summaries] == [1, 1]
+    child_records = [record for record in wave.stage_records if record.seed_value == child]
+    assert child_records
+    assert all(record.parent_capture_url == root for record in child_records)
+    assert all(record.discovery_observation_id == "OBS-SEARCH-1" for record in child_records)
+    assert all(record.source_id == "searxng-public" for record in child_records)

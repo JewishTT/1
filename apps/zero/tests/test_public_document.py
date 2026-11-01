@@ -6,7 +6,7 @@ private contact strings even when they appear in meta tags or JSON-LD.
 
 from __future__ import annotations
 
-from zero.harvesters.public_document import PublicDocumentHarvester
+from zero.harvesters.public_document import PublicDocumentHarvester, same_origin_public_links, MAX_INTERNAL_LINKS_PER_PAGE
 from zero.harvesters.registry import HarvesterContext
 from zero.harvesters.transport import DictTransport
 from zero.type_detector import TypeDetector
@@ -78,3 +78,31 @@ def test_public_document_candidate_limit_matches_reserved_record_ceiling() -> No
     from zero.harvesters.public_document import MAX_CANDIDATES_PER_PAGE
 
     assert MAX_CANDIDATES_PER_PAGE == 8
+
+
+def test_public_document_only_emits_bounded_same_origin_links() -> None:
+    base = "https://example.org/about"
+    links = same_origin_public_links(base, [
+        "/official",
+        "https://example.org/leadership",
+        "https://evil.example.net/collect",
+        "http://example.org/insecure",
+        "javascript:alert(1)",
+        "https://example.org/private.pdf",
+        "mailto:press@example.org",
+    ])
+    assert links == ("https://example.org/leadership", "https://example.org/official")
+    assert len(same_origin_public_links(base, [f"/page-{i}" for i in range(10)])) == MAX_INTERNAL_LINKS_PER_PAGE
+
+
+def test_public_document_exposes_same_origin_links_as_discovery_candidates() -> None:
+    url = "https://example.org/about"
+    html = '<html><body><a href="/official">Official profile</a><a href="https://outside.test/x">outside</a></body></html>'
+    seed = TypeDetector().detect(url)
+    result = PublicDocumentHarvester().run(
+        seed,
+        HarvesterContext(seed=seed, transport=DictTransport(bodies={url: html})),
+    )
+    links = [candidate for candidate in result.candidates if candidate.kind == "public_page_link"]
+    assert [item.value for item in links] == ["https://example.org/official"]
+    assert links[0].raw_fields["parent_url"] == url

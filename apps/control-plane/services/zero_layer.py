@@ -32,6 +32,9 @@ class ZeroLayerCaseService:
     MAX_BYTES_PER_PAGE = 2_000_000
     MAX_SECONDS_PER_PAGE = 20
     MAX_CONCURRENCY = 4
+    MAX_INTERNAL_LINKS_PER_PAGE = 2
+    MAX_PAGES_PER_RUN = 64
+    MAX_HTTP_REQUESTS_PER_RUN = 128
 
     def __init__(
         self,
@@ -256,6 +259,11 @@ class ZeroLayerCaseService:
         request_digest = "sha256:" + hashlib.sha256(
             json.dumps(request_material, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         ).hexdigest()
+        max_pages = min(
+            self.MAX_PAGES_PER_RUN,
+            len(urls) * (1 + self.MAX_INTERNAL_LINKS_PER_PAGE),
+        )
+        max_http_requests = min(self.MAX_HTTP_REQUESTS_PER_RUN, max_pages * 2)
         reservation = await self._budget.reserve_case(
             budget_ref=str(metadata.get("budget_ref") or ""),
             tenant_id=tenant_id,
@@ -264,11 +272,11 @@ class ZeroLayerCaseService:
             idempotency_key=key,
             scope_digest=scope_digest,
             policy_digest=policy_digest,
-            requests=len(urls),
-            raw_bytes=len(urls) * self.MAX_BYTES_PER_PAGE,
-            records=len(urls) * 8,
+            requests=max_http_requests,
+            raw_bytes=max_pages * self.MAX_BYTES_PER_PAGE,
+            records=max_pages * 8,
             concurrency=self.MAX_CONCURRENCY,
-            wall_seconds=len(urls) * self.MAX_SECONDS_PER_PAGE,
+            wall_seconds=max_pages * self.MAX_SECONDS_PER_PAGE,
             source_refs=(page_source,),
             request_digest=request_digest,
         )
@@ -285,7 +293,7 @@ class ZeroLayerCaseService:
             transport = SecurePublicTransport(
                 max_response_bytes=self.MAX_BYTES_PER_PAGE,
                 minimum_host_interval_s=1.0,
-                max_requests=64,
+                max_requests=self.MAX_HTTP_REQUESTS_PER_RUN,
                 max_concurrency=self.MAX_CONCURRENCY,
             )
         else:
@@ -299,6 +307,7 @@ class ZeroLayerCaseService:
             )
 
         from zero.evidence_sink import CanonicalArtifactSink
+        from zero.enrichment.feedback import FeedbackLoop
         from zero.harvest_wave import HarvestWave
         from zero.harvesters.public_document import PublicDocumentHarvester
         from zero.harvesters.registry import HarvesterRegistry
@@ -314,9 +323,10 @@ class ZeroLayerCaseService:
             detector=TypeDetector(),
             registry=registry,
             gate=ZeroLayerGate(),
+            feedback=FeedbackLoop(detector=TypeDetector(), kinds=frozenset({"public_page_link"})),
             transport=transport,
-            max_depth=1,
-            min_new_seeds=0,
+            max_depth=2,
+            min_new_seeds=1,
             enable_enrichment=False,
             seed_context=seed_context,
             candidate_allowed=allow_public_candidate,

@@ -12,7 +12,7 @@ import html.parser
 import json
 import re
 from collections.abc import Mapping
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from ..type_detector import InputType, SeedInput
 from .contracts import HarvestResult, ObservationCandidate
@@ -25,6 +25,9 @@ _PHONE = re.compile(r"(?<!\w)(?:\+?\d[\d ()-]{7,}\d)(?!\w)")
 # JSON-LD traversal bounded before constructing candidate objects.
 MAX_JSONLD_NODES = 64
 MAX_CANDIDATES_PER_PAGE = 8
+MAX_INTERNAL_LINKS_PER_PAGE = 2
+MAX_SCANNED_LINKS_PER_PAGE = 200
+_NON_HTML_SUFFIXES = (".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".css", ".js", ".zip", ".mp4", ".woff", ".woff2")
 
 
 def _safe_text(value: object, limit: int = 500) -> str:
@@ -42,6 +45,46 @@ def _object_name(value: object) -> str:
     return _safe_text(value)
 
 
+def same_origin_public_links(base_url: str, hrefs: list[str], *, limit: int = MAX_INTERNAL_LINKS_PER_PAGE) -> tuple[str, ...]:
+    """Return a small deterministic set of same-origin HTTPS HTML links only.
+
+    This is discovery, not URL authorization. The secure transport still repeats
+    DNS/SSRF, HTTPS, robots and port checks immediately before each request.
+    """
+    try:
+        base = urlsplit(str(base_url or ""))
+        base_host = (base.hostname or "").encode("idna").decode("ascii").lower()
+        if base.scheme.lower() != "https" or not base_host or base.port not in (None, 443):
+            return ()
+    except (UnicodeError, ValueError):
+        return ()
+
+    found: set[str] = set()
+    for href in hrefs[:MAX_SCANNED_LINKS_PER_PAGE]:
+        try:
+            candidate = urlsplit(urljoin(base_url, str(href or "").strip()))
+            host = (candidate.hostname or "").encode("idna").decode("ascii").lower()
+            if (
+                candidate.scheme.lower() != "https"
+                or host != base_host
+                or candidate.username
+                or candidate.password
+                or candidate.port not in (None, 443)
+            ):
+                continue
+            path = candidate.path or "/"
+            if path.lower().endswith(_NON_HTML_SUFFIXES):
+                continue
+            canonical = urlunsplit(("https", base_host, path, candidate.query, ""))
+            if canonical != urlunsplit(("https", base_host, base.path or "/", base.query, "")):
+                found.add(canonical)
+        except (UnicodeError, ValueError):
+            continue
+        if len(found) >= limit:
+            break
+    return tuple(sorted(found))
+
+
 class _DocumentScanner(html.parser.HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -49,6 +92,7 @@ class _DocumentScanner(html.parser.HTMLParser):
         self.h1_parts: list[str] = []
         self.meta: dict[str, str] = {}
         self.json_ld: list[str] = []
+        self.links: list[str] = []
         self._in_title = False
         self._in_h1 = False
         self._in_json_ld = False
@@ -60,6 +104,8 @@ class _DocumentScanner(html.parser.HTMLParser):
             self._in_title = True
         elif tag == "h1":
             self._in_h1 = True
+        elif tag == "a" and values.get("href") and len(self.links) < MAX_SCANNED_LINKS_PER_PAGE:
+            self.links.append(values["href"])
         elif tag == "meta":
             key = (values.get("name") or values.get("property") or "").lower()
             if key in {"description", "og:title", "og:description", "article:published_time"}:
@@ -165,6 +211,19 @@ class PublicDocumentHarvester:
                 evidence="publisher-provided publication timestamp",
             ))
 
+        # Same-origin links create bounded discovery candidates for the next wave;
+        # they are not fetched here and cannot escape this page's host.
+        for linked_url in same_origin_public_links(url, scanner.links):
+            candidates.append(ObservationCandidate(
+                value=linked_url,
+                kind="public_page_link",
+                confidence=0.85,
+                source_module=self.name,
+                method=self.method,
+                raw_fields={"parent_url": url},
+                evidence="same-origin HTTPS page link discovered in public HTML",
+            ))
+
         for raw in scanner.json_ld:
             try:
                 root = json.loads(raw)
@@ -225,11 +284,15 @@ class PublicDocumentHarvester:
         for candidate in sorted(candidates, key=lambda item: (item.kind, item.value, item.method)):
             unique.setdefault((candidate.kind, candidate.value.casefold()), candidate)
         keys = sorted(unique)
+        # Preserve the link-discovery budget even on schema-rich pages.
+        link_keys = [key for key in keys if key[0] == "public_page_link"][:MAX_INTERNAL_LINKS_PER_PAGE]
+        fact_keys = [key for key in keys if key[0] != "public_page_link"]
+        selected_keys = sorted(fact_keys[:MAX_CANDIDATES_PER_PAGE - len(link_keys)] + link_keys)
         notes = ()
-        if len(keys) > MAX_CANDIDATES_PER_PAGE:
+        if len(keys) > len(selected_keys):
             notes = (f"candidate limit reached ({MAX_CANDIDATES_PER_PAGE}); additional public metadata was not emitted",)
         return HarvestResult(
             module=self.name,
-            candidates=tuple(unique[key] for key in keys[:MAX_CANDIDATES_PER_PAGE]),
+            candidates=tuple(unique[key] for key in selected_keys),
             notes=notes,
         )
