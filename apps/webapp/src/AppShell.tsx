@@ -4,7 +4,7 @@ import { Icon, type IconName } from "./ui/Icon";
 import { Badge, StatusDot } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
 import { Popover, Tooltip } from "./ui/Overlay";
-import { TopNav } from "./shell/TopNav";
+import { PrimaryRouteSpine, TopNav } from "./shell/TopNav";
 import { DENSITIES, THEME_NAMES } from "./workspace/types";
 import { useWorkspace } from "./workspace/store";
 import { useAppearanceAttributes } from "./workspace/useAppearance";
@@ -378,6 +378,7 @@ export function AppShell({ children, activity }: AppShellProps) {
       </header>
 
       <div className="ui-shell-body">
+        <PrimaryRouteSpine />
         <main className="ui-shell-main" data-testid="shell-main">
           {children}
         </main>

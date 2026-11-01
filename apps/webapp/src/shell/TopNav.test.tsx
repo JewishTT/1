@@ -120,6 +120,18 @@ describe("command-centre workspace navigation", () => {
     expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
   });
 
+  it("keeps the operational route spine mounted beside every workspace", () => {
+    const { container } = renderAt("/specops/connectors", true);
+    const spine = screen.getByTestId("primary-route-spine");
+    expect(spine).toHaveAttribute("data-module", "specops");
+    expect(spine).toHaveTextContent("COMMAND ROUTE INDEX");
+    expect(spine).toHaveTextContent("COUNTERINTEL");
+    expect(spine).toHaveTextContent("OPERATIONS");
+    expect(spine.querySelector('[data-testid="nav-module-specops"]')).toHaveAttribute("aria-current", "location");
+    expect(spine.querySelector('[data-testid="nav-destination-connectors"]')).toHaveAttribute("aria-current", "page");
+    expect(container.querySelector(".ui-shell-body > .ui-shell-main")).not.toBeNull();
+  });
+
   it("keeps the tenant-wide graph out of the SpecOps section", () => {
     renderAt("/specops");
     openDeck();
@@ -157,14 +169,17 @@ describe("command-centre workspace navigation", () => {
       </QueryClientProvider>,
     );
     expect(container.querySelector(".ui-primary-nav")).toBeNull();
+    expect(container.querySelector(".ui-workspace-switcher")).toBeNull();
     expect(screen.getByTestId("app-shell")).toBeInTheDocument();
   });
 
   it("keeps the full-width workbench separate from the command-bar selector", () => {
     const { container } = renderAt("/investigations", true);
     expect(screen.getByTestId("shell-main")).toBeInTheDocument();
-    expect(container.querySelector(".ui-topbar-brand .ui-primary-nav")).not.toBeNull();
-    expect(container.querySelector(".ui-shell-body > .ui-primary-nav")).toBeNull();
+    expect(container.querySelector(".ui-topbar-brand .ui-workspace-switcher")).not.toBeNull();
+    expect(container.querySelector(".ui-shell-body > .ui-primary-nav")).not.toBeNull();
+    expect(container.querySelector(".ui-shell-body > .ui-primary-nav"))
+      .toHaveAttribute("data-module", "osint");
   });
 });
 
