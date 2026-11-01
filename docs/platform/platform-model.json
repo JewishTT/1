@@ -1092,7 +1092,7 @@
     {
       "name": "zero",
       "description": "Zero-layer contact harvesting from arbitrary seeds.",
-      "python_modules": 31,
+      "python_modules": 32,
       "typescript_modules": 0,
       "modules": [
         "apps.zero.tests.conftest",
@@ -1108,6 +1108,7 @@
         "apps.zero.zero.enrichment.feedback",
         "apps.zero.zero.enrichment.modules",
         "apps.zero.zero.evidence",
+        "apps.zero.zero.evidence_sink",
         "apps.zero.zero.harvest_wave",
         "apps.zero.zero.harvesters",
         "apps.zero.zero.harvesters.contracts",
@@ -1130,33 +1131,33 @@
     }
   ],
   "import_graph": {
-    "module_count": 1019,
-    "edge_count": 2839,
+    "module_count": 1020,
+    "edge_count": 2843,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 889,
+      "stdlib:__future__": 890,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
-      "stdlib:asyncio": 72,
+      "stdlib:asyncio": 74,
       "stdlib:base64": 10,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 244,
+      "stdlib:collections": 245,
       "stdlib:concurrent": 1,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 392,
-      "stdlib:datetime": 192,
+      "stdlib:dataclasses": 393,
+      "stdlib:datetime": 194,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
       "stdlib:enum": 118,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 129,
+      "stdlib:hashlib": 130,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 9,
@@ -1166,7 +1167,7 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 198,
+      "stdlib:json": 199,
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 73,
@@ -1186,15 +1187,15 @@
       "stdlib:sys": 260,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
-      "stdlib:threading": 17,
-      "stdlib:time": 30,
+      "stdlib:threading": 18,
+      "stdlib:time": 31,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 33,
-      "stdlib:typing": 370,
+      "stdlib:typing": 371,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 51,
+      "stdlib:urllib": 53,
       "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -15049,6 +15050,16 @@
         "via": "domain.capture"
       },
       {
+        "from": "apps/zero/zero/evidence_sink.py",
+        "to": "apps/shared/domain/acquisition_artifact.py",
+        "via": "domain.acquisition_artifact"
+      },
+      {
+        "from": "apps/zero/zero/evidence_sink.py",
+        "to": "apps/shared/domain/capture.py",
+        "via": "domain.capture"
+      },
+      {
         "from": "apps/zero/zero/harvest_wave.py",
         "to": "apps/zero/zero/enrichment/feedback.py",
         "via": "enrichment.feedback"
@@ -15192,6 +15203,16 @@
         "from": "apps/zero/zero/harvesters/registry.py",
         "to": "apps/zero/zero/harvesters/transport.py",
         "via": "transport"
+      },
+      {
+        "from": "apps/zero/zero/harvesters/transport.py",
+        "to": "apps/shared/net/secure_fetch.py",
+        "via": "net.secure_fetch"
+      },
+      {
+        "from": "apps/zero/zero/harvesters/transport.py",
+        "to": "apps/shared/security.py",
+        "via": "security"
       },
       {
         "from": "apps/zero/zero/harvesters/url.py",
@@ -29167,7 +29188,7 @@
     "apps/shared/network/__init__.py",
     "apps/shared/observability/__init__.py"
   ],
-  "untested_count": 268,
+  "untested_count": 269,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -29386,6 +29407,7 @@
             "apps/zero/zero/enrichment/feedback.py",
             "apps/zero/zero/enrichment/modules.py",
             "apps/zero/zero/evidence.py",
+            "apps/zero/zero/evidence_sink.py",
             "apps/zero/zero/harvest_wave.py",
             "apps/zero/zero/harvesters/__init__.py",
             "apps/zero/zero/harvesters/contracts.py",
@@ -29405,7 +29427,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 146
+          "module_count": 147
         },
         {
           "id": "interpretation",
@@ -40683,9 +40705,18 @@
         "markers": []
       },
       {
+        "path": "apps/zero/zero/evidence_sink.py",
+        "status": "IMPLEMENTED",
+        "loc": 158,
+        "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/zero/zero/harvest_wave.py",
         "status": "IMPLEMENTED",
-        "loc": 294,
+        "loc": 323,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -40766,8 +40797,8 @@
       {
         "path": "apps/zero/zero/harvesters/transport.py",
         "status": "IMPLEMENTED",
-        "loc": 53,
-        "callables": 7,
+        "loc": 246,
+        "callables": 17,
         "stubs": 2,
         "not_implemented": 0,
         "markers": []
@@ -41235,12 +41266,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 549,
+      "IMPLEMENTED": 550,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
       "TEST": 342,
       "MIGRATION": 19,
-      "total": 1019
+      "total": 1020
     }
   },
   "reachability": {
@@ -45086,6 +45117,10 @@
         "status": "TEST_ONLY"
       },
       {
+        "path": "apps/zero/zero/evidence_sink.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/zero/zero/harvest_wave.py",
         "status": "TEST_ONLY"
       },
@@ -45367,9 +45402,9 @@
     "summary": {
       "PRODUCTION": 410,
       "TEST_ONLY": 145,
-      "ORPHAN": 122,
+      "ORPHAN": 123,
       "TEST": 342,
-      "total": 1019
+      "total": 1020
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -45626,6 +45661,7 @@
       "apps/specops/roe/__init__.py",
       "apps/zero/zero/__init__.py",
       "apps/zero/zero/enrichment/__init__.py",
+      "apps/zero/zero/evidence_sink.py",
       "apps/zero/zero/harvesters/__init__.py",
       "apps/zero/zero/harvesters/modules.py",
       "apps/zero/zero/resolution/__init__.py",
@@ -83902,6 +83938,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "a65d6de0a6702960",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/zero/evidence_sink.py",
+        "object": "apps/shared/domain/acquisition_artifact.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/zero/evidence_sink.py",
+          "via": "domain.acquisition_artifact"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "34083e26d4d28120",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/zero/evidence_sink.py",
+        "object": "apps/shared/domain/capture.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/zero/evidence_sink.py",
+          "via": "domain.capture"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "64612da09a7dfa35",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/zero/harvest_wave.py",
@@ -84275,6 +84337,32 @@
         "evidence": {
           "file": "apps/zero/zero/harvesters/registry.py",
           "via": "type_detector"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7dbafac88c4d8a21",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/zero/harvesters/transport.py",
+        "object": "apps/shared/net/secure_fetch.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/zero/harvesters/transport.py",
+          "via": "net.secure_fetch"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3e28193349e3925f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/zero/harvesters/transport.py",
+        "object": "apps/shared/security.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/zero/harvesters/transport.py",
+          "via": "security"
         },
         "confidence": 1.0
       },
@@ -103212,44 +103300,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4413,
-      "static_facts": 4119,
+      "facts_total": 4417,
+      "static_facts": 4123,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1019,
+    "python_modules": 1020,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2839,
+    "import_edges": 2843,
     "test_files": 345,
     "test_functions": 5338,
-    "untested_modules": 268,
+    "untested_modules": 269,
     "http_routes": 183
   },
   "evidence_stats": {
-    "facts_total": 4413,
-    "static_facts": 4119,
+    "facts_total": 4417,
+    "static_facts": 4123,
     "inferred": 294,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 549,
+    "IMPLEMENTED": 550,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
     "TEST": 342,
     "MIGRATION": 19,
-    "total": 1019
+    "total": 1020
   },
   "reachability_summary": {
     "PRODUCTION": 410,
     "TEST_ONLY": 145,
-    "ORPHAN": 122,
+    "ORPHAN": 123,
     "TEST": 342,
-    "total": 1019
+    "total": 1020
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -103548,6 +103636,7 @@
     "apps/specops/roe/__init__.py",
     "apps/zero/zero/__init__.py",
     "apps/zero/zero/enrichment/__init__.py",
+    "apps/zero/zero/evidence_sink.py",
     "apps/zero/zero/harvesters/__init__.py",
     "apps/zero/zero/harvesters/modules.py",
     "apps/zero/zero/resolution/__init__.py",

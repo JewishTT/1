@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4413,
-    "static_facts": 4119,
+    "facts_total": 4417,
+    "static_facts": 4123,
     "inferred": 294,
     "intended": 0
   },
@@ -36715,6 +36715,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "a65d6de0a6702960",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/evidence_sink.py",
+      "object": "apps/shared/domain/acquisition_artifact.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/evidence_sink.py",
+        "via": "domain.acquisition_artifact"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "34083e26d4d28120",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/evidence_sink.py",
+      "object": "apps/shared/domain/capture.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/evidence_sink.py",
+        "via": "domain.capture"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "64612da09a7dfa35",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/zero/zero/harvest_wave.py",
@@ -37088,6 +37114,32 @@
       "evidence": {
         "file": "apps/zero/zero/harvesters/registry.py",
         "via": "type_detector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7dbafac88c4d8a21",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/harvesters/transport.py",
+      "object": "apps/shared/net/secure_fetch.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/harvesters/transport.py",
+        "via": "net.secure_fetch"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3e28193349e3925f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/harvesters/transport.py",
+      "object": "apps/shared/security.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/harvesters/transport.py",
+        "via": "security"
       },
       "confidence": 1.0
     },
