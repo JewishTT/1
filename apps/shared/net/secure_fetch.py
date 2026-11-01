@@ -1,31 +1,17 @@
-"""Security-First fetch boundary (Principle VII, FR-100, Feature 024 T023).
+"""Security-first HTTP fetch boundary (Principle VII, FR-100, Feature 024 T023).
 
-``shared.security`` provides the *policy* -- ``ssrf_guard``, ``is_public_ip``,
-``DnsRebindingGuard``, ``EgressPolicy``, ``ResourceLimits``. It deliberately holds
-no network calls: it takes a ``resolved_ip`` from the caller. Nothing in the platform
-actually resolved that IP, validated redirects, or enforced the response-size limit
-during streaming, so ``ssrf_guard`` had a single call site.
+The policy layer resolves and validates every DNS answer. This module carries that
+validated address all the way to the TCP connect call: HTTPCore connects to the IP
+literal while retaining the original URL hostname for the HTTP Host header, TLS SNI
+and certificate verification. The client never performs a second DNS lookup.
 
-This module supplies the missing mechanics and wires them to that policy:
+Redirects are handled here, not by the HTTP client. Every hop is independently
+resolved, checked and connected to its validated address. Bodies are bounded while
+streaming, and each hop has an explicit timeout. No environment proxy is consulted.
 
-1. **Resolve, then validate.** DNS is resolved here, and the resolved address is
-   what gets validated. A host that resolves into a private range is refused.
-2. **Pin, then connect.** The validated IP is pinned per host. A later resolution
-   that disagrees is DNS rebinding and is refused rather than followed.
-3. **Redirects are followed by us, never by the client.** ``httpx`` with
-   ``follow_redirects=True`` validates nothing on the hops it follows -- a public
-   host can 302 into ``169.254.169.254``. Every hop is re-resolved and
-   re-validated against the same policy, bounded by ``max_redirects``.
-4. **Size is enforced while streaming**, not after the body is already in memory.
-5. **Timeout is enforced** per attempt, fail-closed.
-
-What this module does not do, deliberately: connect to the pinned IP with a forged
-``Host`` header. That needs a transport that supports it, and pretending to do it
-here would be a silent hole. Until such a transport exists, the honest guarantee is
-resolve-and-revalidate-per-hop, and this docstring says so.
-
-Reused from platform code: every policy function above. Written here: resolution,
-redirect handling, streaming limits.
+The network backend is intentionally single-host/single-address and rejects any
+unexpected host requested by the HTTP stack. It cannot be repurposed to reach an
+unvalidated proxy or redirect destination.
 """
 
 from __future__ import annotations
@@ -35,10 +21,10 @@ import ipaddress
 import socket
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Any, Protocol
 from urllib.parse import urljoin, urlsplit
 
-import httpx
+import httpcore
 
 from security import (
     DnsRebindingGuard,
@@ -56,7 +42,7 @@ class RedirectBlocked(SecurityBlocked):
 
 
 class ResponseTooLarge(SecurityBlocked):
-    """The response exceeded ``ResourceLimits.max_response_bytes`` mid-stream."""
+    """The response exceeded ResourceLimits.max_response_bytes mid-stream."""
 
 
 @dataclass(frozen=True)
@@ -78,15 +64,182 @@ Resolver = Callable[[str, int], Awaitable[list[str]]]
 """(host, port) -> candidate IPs. Injectable so the boundary is testable hermetically."""
 
 
-class Transport(Protocol):
-    """The subset of an HTTP client this boundary needs.
+@dataclass(frozen=True)
+class _PinnedResponse:
+    status_code: int
+    headers: dict[str, str]
+    body: bytes
 
-    Deliberately not ``httpx.AsyncClient``: depending on the concrete client would
-    let a caller reintroduce client-side redirect following by passing one that has
-    it enabled.
+    async def aiter_bytes(self):
+        if self.body:
+            yield self.body
+
+    async def aclose(self) -> None:
+        return None
+
+
+def _normalise_host(host: str) -> str:
+    token = str(host or "").strip().rstrip(".")
+    try:
+        return ipaddress.ip_address(token).compressed.lower()
+    except ValueError:
+        try:
+            return token.encode("idna").decode("ascii").lower()
+        except UnicodeError as exc:
+            raise SecurityBlocked("invalid DNS hostname at the connect boundary") from exc
+
+
+class PinnedNetworkBackend(httpcore.AsyncNetworkBackend):
+    """Map exactly one already-validated origin hostname to its checked IP.
+
+    HTTPCore still sees the original URL hostname, so it uses that name for Host and
+    TLS SNI/certificate checks. Only the TCP destination is rewritten. A different
+    hostname or Unix socket request is rejected instead of falling back to DNS.
     """
 
-    async def get(self, url: str, *, headers: dict[str, str]) -> httpx.Response: ...
+    def __init__(
+        self,
+        *,
+        hostname: str,
+        pinned_ip: str,
+        delegate: httpcore.AsyncNetworkBackend | None = None,
+    ) -> None:
+        self.hostname = _normalise_host(hostname)
+        self.pinned_ip = str(ipaddress.ip_address(pinned_ip))
+        self._delegate = delegate or httpcore.AnyIOBackend()
+
+    async def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: float | None = None,
+        local_address: str | None = None,
+        socket_options: Any = None,
+    ) -> httpcore.AsyncNetworkStream:
+        if _normalise_host(host) != self.hostname:
+            raise SecurityBlocked("HTTP stack requested a host outside the validated origin")
+        return await self._delegate.connect_tcp(
+            self.pinned_ip,
+            port,
+            timeout=timeout,
+            local_address=local_address,
+            socket_options=socket_options,
+        )
+
+    async def connect_unix_socket(
+        self,
+        path: str,
+        timeout: float | None = None,
+        socket_options: Any = None,
+    ) -> httpcore.AsyncNetworkStream:
+        raise SecurityBlocked("Unix-domain socket access is not available to public fetches")
+
+    async def sleep(self, seconds: float) -> None:
+        await self._delegate.sleep(seconds)
+
+
+class PinnedHttpcoreTransport:
+    """Direct HTTP/1.1 transport whose TCP connection uses the validated IP literal."""
+
+    def __init__(
+        self,
+        *,
+        limits: ResourceLimits,
+        backend_factory: Callable[[str, str], httpcore.AsyncNetworkBackend] | None = None,
+    ) -> None:
+        self._limits = limits
+        self._backend_factory = backend_factory or (
+            lambda hostname, pinned_ip: PinnedNetworkBackend(
+                hostname=hostname,
+                pinned_ip=pinned_ip,
+            )
+        )
+
+    async def request_pinned(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: dict[str, str],
+        pinned_ip: str,
+        timeout: float,
+    ) -> _PinnedResponse:
+        parsed = urlsplit(url)
+        hostname = parsed.hostname
+        if not hostname:
+            raise SecurityBlocked("missing host at pinned transport boundary")
+        expected_ip = str(ipaddress.ip_address(pinned_ip))
+        backend = self._backend_factory(hostname, expected_ip)
+        timeout_value = max(0.1, float(timeout))
+        extensions = {
+            "timeout": {
+                "connect": timeout_value,
+                "read": timeout_value,
+                "write": timeout_value,
+                "pool": timeout_value,
+            }
+        }
+
+        chunks: list[bytes] = []
+        total = 0
+        async with httpcore.AsyncConnectionPool(
+            network_backend=backend,
+            max_connections=1,
+            max_keepalive_connections=0,
+            keepalive_expiry=0,
+            retries=0,
+            http1=True,
+            http2=False,
+        ) as pool:
+            async with pool.stream(
+                method,
+                url,
+                headers=headers,
+                extensions=extensions,
+            ) as response:
+                response_headers = {
+                    key.decode("latin-1").lower(): value.decode("latin-1")
+                    for key, value in response.headers
+                }
+                declared = response_headers.get("content-length", "")
+                if declared.isdigit() and int(declared) > self._limits.max_response_bytes:
+                    raise ResponseTooLarge(
+                        f"response exceeded {self._limits.max_response_bytes}B"
+                    )
+                async for chunk in response.aiter_stream():
+                    total += len(chunk)
+                    if total > self._limits.max_response_bytes:
+                        raise ResponseTooLarge(
+                            f"response exceeded {self._limits.max_response_bytes}B"
+                        )
+                    chunks.append(chunk)
+                status = int(response.status)
+
+        return _PinnedResponse(
+            status_code=status,
+            headers=response_headers,
+            body=b"".join(chunks),
+        )
+
+    async def aclose(self) -> None:
+        # A fresh, bounded pool is opened and closed for each validated hop.
+        return None
+
+
+class Transport(Protocol):
+    """A transport must consume the validated IP; unpinned clients are not accepted."""
+
+    async def request_pinned(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: dict[str, str],
+        pinned_ip: str,
+        timeout: float,
+    ) -> _PinnedResponse: ...
+
+    async def aclose(self) -> None: ...
 
 
 async def default_resolver(host: str, port: int) -> list[str]:
@@ -108,9 +261,9 @@ def _split_host_port(url: str) -> tuple[str, int, str]:
 class SecureFetcher:
     """Fetch a URL through the full security policy, hop by hop.
 
-    Fail-closed by construction: an unresolvable host, an off-policy port, a
-    private destination, an over-budget redirect chain, and an oversized body all
-    raise ``SecurityBlocked`` rather than returning a degraded result.
+    The validated DNS address is passed to a transport that uses it for the TCP
+    connect. If an injected transport cannot accept a pinned IP, it does not satisfy
+    this protocol and the request is refused.
     """
 
     def __init__(
@@ -126,26 +279,18 @@ class SecureFetcher:
     ) -> None:
         self._egress = egress or EgressPolicy()
         self._limits = limits or ResourceLimits()
-        self._max_redirects = max_redirects
+        self._max_redirects = int(max_redirects)
         self._user_agent = user_agent
         self._resolver = resolver or default_resolver
         self._rebinding = rebinding or DnsRebindingGuard()
-        # follow_redirects is False and must stay False: this class walks the chain
-        # itself so every hop is re-validated. See module docstring.
-        self._transport = transport or httpx.AsyncClient(
-            timeout=self._limits.max_timeout_ms / 1000.0,
-            follow_redirects=False,
-            headers={"User-Agent": user_agent},
-        )
+        self._transport: Transport = transport or PinnedHttpcoreTransport(limits=self._limits)
 
     @property
     def rebinding_guard(self) -> DnsRebindingGuard:
         return self._rebinding
 
     async def aclose(self) -> None:
-        closer = getattr(self._transport, "aclose", None)
-        if closer is not None:
-            await closer()
+        await self._transport.aclose()
 
     async def _validate_hop(
         self, url: str, *, trusted_private_hosts: frozenset[str] = frozenset()
@@ -165,11 +310,8 @@ class SecureFetcher:
         last_blocked: SecurityBlocked | None = None
         for ip in candidates:
             try:
-                # Compares against any earlier pin for this host; a disagreement is
-                # rebinding, not a round-robin answer.
                 self._rebinding.check(host, ip)
-                if host.lower() in trusted_private_hosts:
-                    parsed = urlsplit(url)
+                if _normalise_host(host) in trusted_private_hosts:
                     if scheme not in self._egress.schemes or port not in self._egress.ports:
                         raise SecurityBlocked(f"scheme/port not allowed for trusted service {host!r}")
                     address = ipaddress.ip_address(ip)
@@ -187,15 +329,14 @@ class SecureFetcher:
                         )
                 else:
                     ssrf_guard(url, ip, port=port, egress=self._egress)
-            except SecurityBlocked as blocked:
-                last_blocked = blocked
+            except (SecurityBlocked, ValueError) as blocked:
+                last_blocked = blocked if isinstance(blocked, SecurityBlocked) else SecurityBlocked("invalid DNS address")
                 continue
             self._rebinding.pin(host, ip)
-            return ip
+            return str(ipaddress.ip_address(ip))
         raise last_blocked or SecurityBlocked(f"no permitted address for {host!r}")
 
-    async def _read_capped(self, response: httpx.Response) -> bytes:
-        """Read the body, aborting as soon as the cap is passed."""
+    async def _read_capped(self, response: _PinnedResponse) -> bytes:
         declared = response.headers.get("content-length")
         if declared and declared.isdigit():
             self._limits.check_bytes(int(declared))
@@ -218,30 +359,28 @@ class SecureFetcher:
         method: str = "GET",
         trusted_private_hosts: tuple[str, ...] | frozenset[str] = (),
     ) -> FetchResult:
-        """Fetch ``url``, following at most ``max_redirects`` policy-checked hops.
-
-        Returns the final response. Raises ``SecurityBlocked`` on any violation.
-        """
+        """Fetch url, following at most max_redirects policy-checked hops."""
         current = url
         current_method = str(method or "GET").upper()
         if current_method not in {"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}:
             raise SecurityBlocked(f"HTTP method {current_method!r} is not supported")
-        private_hosts = frozenset(str(host).strip().lower() for host in trusted_private_hosts if str(host).strip())
+        private_hosts = frozenset(
+            _normalise_host(host) for host in trusted_private_hosts if str(host).strip()
+        )
         chain: list[str] = []
-        base_scheme = urlsplit(url).scheme
+        base_scheme = urlsplit(url).scheme.lower()
 
         for hop in range(self._max_redirects + 1):
             pinned = await self._validate_hop(current, trusted_private_hosts=private_hosts)
             request_headers = {"User-Agent": self._user_agent}
             request_headers.update(headers or {})
-
-            requester = getattr(self._transport, "request", None)
-            if callable(requester):
-                response = await requester(current_method, current, headers=request_headers)
-            elif current_method in {"GET", "HEAD"}:
-                response = await getattr(self._transport, current_method.lower())(current, headers=request_headers)
-            else:
-                raise SecurityBlocked("transport does not support non-GET methods safely")
+            response = await self._transport.request_pinned(
+                current_method,
+                current,
+                headers=request_headers,
+                pinned_ip=pinned,
+                timeout=self._limits.max_timeout_ms / 1000.0,
+            )
             status = response.status_code
 
             if status in (301, 302, 303, 307, 308):
@@ -253,10 +392,8 @@ class SecureFetcher:
                         f"redirect chain exceeds {self._max_redirects} hops at {current}"
                     )
                 nxt = urljoin(current, location)
-                if urlsplit(nxt).scheme == "http" and base_scheme == "https":
-                    # A downgrade lets an active network rewrite a trusted hop.
+                if urlsplit(nxt).scheme.lower() == "http" and base_scheme == "https":
                     raise RedirectBlocked(f"scheme downgrade https->http at {current}")
-                await response.aclose()
                 chain.append(current)
                 if status == 303 or (status in {301, 302} and current_method not in {"GET", "HEAD"}):
                     current_method = "GET"
@@ -268,7 +405,7 @@ class SecureFetcher:
                 url=current,
                 status=status,
                 body=body,
-                headers={k.lower(): v for k, v in response.headers.items()},
+                headers=dict(response.headers),
                 redirects=tuple(chain),
                 pinned_ip=pinned,
                 content_type=response.headers.get("content-type"),
@@ -286,6 +423,8 @@ def is_public_address(addr: ipaddress._BaseAddress) -> bool:  # pragma: no cover
 __all__ = [
     "DEFAULT_MAX_REDIRECTS",
     "FetchResult",
+    "PinnedNetworkBackend",
+    "PinnedHttpcoreTransport",
     "RedirectBlocked",
     "Resolver",
     "ResponseTooLarge",
