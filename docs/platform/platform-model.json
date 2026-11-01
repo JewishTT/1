@@ -41248,7 +41248,7 @@
       {
         "path": "apps/zero/tests/test_secure_public_transport.py",
         "status": "TEST",
-        "loc": 122,
+        "loc": 126,
         "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
@@ -41421,7 +41421,7 @@
       {
         "path": "apps/zero/zero/harvesters/transport.py",
         "status": "IMPLEMENTED",
-        "loc": 367,
+        "loc": 371,
         "callables": 20,
         "stubs": 2,
         "not_implemented": 0,
