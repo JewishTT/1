@@ -52,3 +52,29 @@ def test_public_document_refuses_to_invent_a_record_from_empty_transport() -> No
     result = PublicDocumentHarvester().run(seed, context)
     assert result.candidates == ()
     assert result.notes
+
+
+
+def test_jsonld_walker_is_iterative_and_bounded() -> None:
+    from zero.harvesters.public_document import MAX_JSONLD_NODES, _jsonld_nodes
+
+    nodes = [{"@type": "Person", "name": f"Person {i}"} for i in range(MAX_JSONLD_NODES + 10)]
+    walked = list(_jsonld_nodes({"@graph": nodes}))
+    assert len(walked) == MAX_JSONLD_NODES
+    assert walked[0]["name"] == "Person 0"
+    assert walked[-1]["name"] == f"Person {MAX_JSONLD_NODES - 1}"
+
+
+def test_jsonld_walker_handles_deep_graph_wrappers_without_recursion() -> None:
+    from zero.harvesters.public_document import _jsonld_nodes
+
+    root: object = {"@type": "Person", "name": "Public Example"}
+    for _ in range(1500):
+        root = {"@graph": [root]}
+    assert list(_jsonld_nodes(root))[0]["name"] == "Public Example"
+
+
+def test_public_document_candidate_limit_matches_reserved_record_ceiling() -> None:
+    from zero.harvesters.public_document import MAX_CANDIDATES_PER_PAGE
+
+    assert MAX_CANDIDATES_PER_PAGE == 8

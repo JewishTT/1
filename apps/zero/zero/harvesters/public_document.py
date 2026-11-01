@@ -21,6 +21,11 @@ from .registry import HarvestContext
 _EMAIL = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 _PHONE = re.compile(r"(?<!\w)(?:\+?\d[\d ()-]{7,}\d)(?!\w)")
 
+# The reservation contract is eight derived records per public page. Keep
+# JSON-LD traversal bounded before constructing candidate objects.
+MAX_JSONLD_NODES = 64
+MAX_CANDIDATES_PER_PAGE = 8
+
 
 def _safe_text(value: object, limit: int = 500) -> str:
     text = " ".join(str(value or "").split())
