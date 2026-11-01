@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **241** · TypeScript modules: **0**
+Python modules: **242** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -567,7 +567,7 @@ Python modules: **0** · TypeScript modules: **267**
 
 Zero-layer contact harvesting from arbitrary seeds.
 
-Python modules: **32** · TypeScript modules: **0**
+Python modules: **36** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -577,7 +577,10 @@ apps.zero.tests.test_cc_capture
 apps.zero.tests.test_enrichment
 apps.zero.tests.test_harvest_wave
 apps.zero.tests.test_harvesters
+apps.zero.tests.test_public_document
+apps.zero.tests.test_public_wave_persistence
 apps.zero.tests.test_resolution
+apps.zero.tests.test_secure_public_transport
 apps.zero.tests.test_type_detector
 apps.zero.zero
 apps.zero.zero.cc_capture
@@ -594,6 +597,7 @@ apps.zero.zero.harvesters.git
 apps.zero.zero.harvesters.image
 apps.zero.zero.harvesters.modules
 apps.zero.zero.harvesters.phone
+apps.zero.zero.harvesters.public_document
 apps.zero.zero.harvesters.registry
 apps.zero.zero.harvesters.transport
 apps.zero.zero.harvesters.url

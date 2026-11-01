@@ -208,7 +208,10 @@
           "apps/zero/tests/test_enrichment.py",
           "apps/zero/tests/test_harvest_wave.py",
           "apps/zero/tests/test_harvesters.py",
+          "apps/zero/tests/test_public_document.py",
+          "apps/zero/tests/test_public_wave_persistence.py",
           "apps/zero/tests/test_resolution.py",
+          "apps/zero/tests/test_secure_public_transport.py",
           "apps/zero/tests/test_type_detector.py",
           "apps/zero/zero/__init__.py",
           "apps/zero/zero/cc_capture.py",
@@ -225,6 +228,7 @@
           "apps/zero/zero/harvesters/image.py",
           "apps/zero/zero/harvesters/modules.py",
           "apps/zero/zero/harvesters/phone.py",
+          "apps/zero/zero/harvesters/public_document.py",
           "apps/zero/zero/harvesters/registry.py",
           "apps/zero/zero/harvesters/transport.py",
           "apps/zero/zero/harvesters/url.py",
@@ -236,7 +240,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 147
+        "module_count": 151
       },
       {
         "id": "interpretation",
@@ -982,6 +986,7 @@
           "apps/control-plane/services/throttle.py",
           "apps/control-plane/services/tool_catalog.py",
           "apps/control-plane/services/worker_pools.py",
+          "apps/control-plane/services/zero_layer.py",
           "apps/control-plane/tests/contract/test_context_graph_contract.py",
           "apps/control-plane/tests/integration/__init__.py",
           "apps/control-plane/tests/integration/test_cc_temporality_api.py",
@@ -1136,7 +1141,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 300
+        "module_count": 301
       },
       {
         "id": "webapp",

@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 410 |
-| TEST_ONLY | 145 |
-| ORPHAN | 123 |
-| TEST | 342 |
+| PRODUCTION | 423 |
+| TEST_ONLY | 135 |
+| ORPHAN | 122 |
+| TEST | 345 |
 
 ## Entrypoints (production roots)
 
@@ -58,7 +58,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**145** modules are reached only by tests.
+**135** modules are reached only by tests.
 
 | Module |
 |---|
@@ -190,27 +190,17 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/websearch/discovery.py` |
 | `apps/shared/websearch/providers.py` |
 | `apps/shared/websearch/relevance.py` |
-| `apps/zero/zero/enrichment/feedback.py` |
-| `apps/zero/zero/enrichment/modules.py` |
 | `apps/zero/zero/evidence.py` |
-| `apps/zero/zero/harvest_wave.py` |
-| `apps/zero/zero/harvesters/contracts.py` |
-| `apps/zero/zero/harvesters/domain.py` |
 | `apps/zero/zero/harvesters/git.py` |
 | `apps/zero/zero/harvesters/image.py` |
 | `apps/zero/zero/harvesters/phone.py` |
-| `apps/zero/zero/harvesters/registry.py` |
-| `apps/zero/zero/harvesters/transport.py` |
 | `apps/zero/zero/harvesters/url.py` |
 | `apps/zero/zero/harvesters/username.py` |
-| `apps/zero/zero/observation_gate.py` |
 | `apps/zero/zero/resolution/fellegi_sunter.py` |
-| `apps/zero/zero/resolution/graph.py` |
-| `apps/zero/zero/resolution/similarity.py` |
 
 ## Orphan modules (nothing imports them)
 
-**123** modules are imported by neither production nor tests.
+**122** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -321,7 +311,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/specops/roe/__init__.py` |
 | `apps/zero/zero/__init__.py` |
 | `apps/zero/zero/enrichment/__init__.py` |
-| `apps/zero/zero/evidence_sink.py` |
 | `apps/zero/zero/harvesters/__init__.py` |
 | `apps/zero/zero/harvesters/modules.py` |
 | `apps/zero/zero/resolution/__init__.py` |

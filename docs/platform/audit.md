@@ -7,24 +7,24 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1020 / 267 / 16 |
-| Resolved import edges | 2843 |
-| HTTP routes / routers | 183 / 33 |
-| Test files / functions | 345 / 5338 |
-| Evidence facts (static) | 4417 |
+| Python / TypeScript / Rust modules | 1025 / 267 / 16 |
+| Resolved import edges | 2874 |
+| HTTP routes / routers | 184 / 33 |
+| Test files / functions | 348 / 5345 |
+| Evidence facts (static) | 4459 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 550 |
+| IMPLEMENTED | 552 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
 | PACKAGE_INIT | 91 |
 | MIGRATION | 19 |
-| TEST | 342 |
+| TEST | 345 |
 
 See [maturity.md](maturity.md).
 
@@ -32,10 +32,10 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 410 |
-| TEST_ONLY | 145 |
-| ORPHAN | 123 |
-| TEST | 342 |
+| PRODUCTION | 423 |
+| TEST_ONLY | 135 |
+| ORPHAN | 122 |
+| TEST | 345 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 

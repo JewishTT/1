@@ -1,6 +1,6 @@
 # Tests
 
-345 test files, 5338 test functions. 269 platform modules are not targeted by any test.
+348 test files, 5345 test functions. 270 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -82,7 +82,7 @@
 | `apps/control-plane/tests/integration/test_tenancy.py` | 6 | `apps/shared/isolation.py` |
 | `apps/control-plane/tests/integration/test_tools_api.py` | 8 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/tests/test_auth_security.py` | 6 | `apps/control-plane/api/auth.py` |
-| `apps/control-plane/tests/test_research_case_invariants.py` | 10 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/person_case_profile.py` |
+| `apps/control-plane/tests/test_research_case_invariants.py` | 11 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/person_case_profile.py` |
 | `apps/control-plane/tests/test_research_case_projection.py` | 6 | `apps/control-plane/services/research_case_projection.py` |
 | `apps/control-plane/tests/test_research_case_reports.py` | 5 | `apps/control-plane/services/research_case_artifacts.py`, `apps/control-plane/services/research_case_reports.py`, `apps/shared/contracts/evidence_span.py` |
 | `apps/control-plane/tests/unit/test_action_memory.py` | 19 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/contracts/stage_outcome.py` |
@@ -345,7 +345,10 @@
 | `apps/zero/tests/test_enrichment.py` | 26 | `apps/zero/zero/enrichment/feedback.py`, `apps/zero/zero/enrichment/modules.py`, `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_harvest_wave.py` | 17 | `apps/zero/zero/harvest_wave.py`, `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/harvesters/domain.py`, `apps/zero/zero/harvesters/registry.py` |
 | `apps/zero/tests/test_harvesters.py` | 26 | `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/harvesters/domain.py`, `apps/zero/zero/harvesters/git.py`, `apps/zero/zero/harvesters/image.py` |
+| `apps/zero/tests/test_public_document.py` | 2 | `apps/zero/zero/harvesters/public_document.py`, `apps/zero/zero/harvesters/registry.py`, `apps/zero/zero/harvesters/transport.py`, `apps/zero/zero/type_detector.py` |
+| `apps/zero/tests/test_public_wave_persistence.py` | 1 | `apps/zero/zero/harvest_wave.py`, `apps/zero/zero/harvesters/public_document.py`, `apps/zero/zero/harvesters/registry.py`, `apps/zero/zero/harvesters/transport.py` |
 | `apps/zero/tests/test_resolution.py` | 23 | `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/resolution/fellegi_sunter.py`, `apps/zero/zero/resolution/graph.py`, `apps/zero/zero/resolution/similarity.py` |
+| `apps/zero/tests/test_secure_public_transport.py` | 3 | `apps/zero/zero/harvesters/transport.py` |
 | `apps/zero/tests/test_type_detector.py` | 22 | `apps/zero/zero/type_detector.py` |
 | `bench/tests/test_harness.py` | 10 | `bench/bench/__init__.py` |
 | `bench/tests/test_knowledge.py` | 10 | — |
