@@ -23,11 +23,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "apps" / "config"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "apps" / "shared"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "apps" / "control-plane"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "apps" / "interpretation"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "apps" / "acquisition"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "apps" / "zero"))
 
 import pytest
 from events.content_router import ContentRouter
 from events.observation_gate import ObservationGate
 from storage.memory import MemoryObjectStore
+from artifact_sink import ArtifactSink
+from zero.evidence import ZeroLayerEvidenceSink
+from zero.harvest_wave import HarvestWave
+from zero.harvesters.registry import HarvesterRegistry
+from zero.harvesters.transport import DictTransport
+from zero.type_detector import TypeDetector
 
 from services.acquisition_loop import AcquisitionLoop
 from services.frontier import Frontier, FrontierItem
@@ -391,3 +399,73 @@ async def test_direct_pipeline_reobservation_is_noop(local_server: str) -> None:
     assert fabric.appended and len(search.indexed) == 1  # no reinterpretation
 
     await loop.aclose()
+
+
+
+class _ZeroLayerRecordingProducer:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, object, str | None]] = []
+
+    def produce(self, topic: str, envelope, *, key: str | None = None) -> None:
+        self.calls.append((topic, envelope, key))
+
+
+@pytest.mark.asyncio
+async def test_zero_layer_stages_enter_the_canonical_raw_first_evidence_path() -> None:
+    """HARVEST, ENRICHMENT and RESOLUTION become real Capture/Observation pairs.
+
+    The test intentionally uses the same ArtifactSink + ObservationGate boundary as
+    the production acquisition worker. It asserts raw bytes are durable before the
+    ref-only observation event and that downstream role metadata prevents candidate
+    output from being promoted to a claim.
+    """
+    tenant = f"t-{uuid.uuid4().hex[:8]}"
+    investigation_id = str(uuid.uuid4())
+    html = (
+        "<html><body>public contact desk@acme.test</body></html>"
+        '<a href="https://github.com/acme">source</a>'
+    )
+    store = MemoryObjectStore()
+    producer = _ZeroLayerRecordingProducer()
+    gate = ObservationGate(store, ContentRouter(), producer)
+    platform_sink = ArtifactSink(
+        gate=gate,
+        store=store,
+        source_family="platform-derived",
+        recorded_by="zero-layer-test",
+    )
+    evidence_sink = ZeroLayerEvidenceSink(platform_sink)
+
+    registry = HarvesterRegistry()
+    registry.register_all()
+    wave = HarvestWave(
+        detector=TypeDetector(),
+        registry=registry,
+        transport=DictTransport(bodies={"https://acme.test/about": html}),
+        max_depth=1,
+    )
+    summaries, accepted = await wave.run_and_persist(
+        ["https://acme.test/about"],
+        evidence_sink=evidence_sink,
+        tenant_id=tenant,
+        investigation_id=investigation_id,
+    )
+
+    assert summaries and summaries[0].contacts_out >= 1
+    assert [item.stage for item in accepted] == ["HARVEST", "ENRICHMENT", "RESOLUTION"]
+    assert len({item.observation_id for item in accepted}) == 3
+    assert all(len(item.observation_id) == 36 for item in accepted)
+    assert all(item.capture_id.startswith("CAP-") for item in accepted)
+    assert all(item.raw_ref.startswith("s3://") for item in accepted)
+    assert store.count() == 3
+    assert len(producer.calls) == 3
+    assert all(topic == "observation" for topic, _, _ in producer.calls)
+
+    records = list(gate._observations.values())
+    assert len(records) == 3
+    for record in records:
+        metadata = record["record_metadata"]["runtime_metadata"]
+        assert metadata["result_role"] == "DISCOVERY_ONLY"
+        assert metadata["claim_admission_allowed"] is False
+        assert metadata["zero_layer_stage"] in {"HARVEST", "ENRICHMENT", "RESOLUTION"}
+        assert record["raw_ref"].startswith("s3://")
