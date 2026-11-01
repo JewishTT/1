@@ -25,7 +25,7 @@ _PHONE = re.compile(r"(?<!\w)(?:\+?\d[\d ()-]{7,}\d)(?!\w)")
 # JSON-LD traversal bounded before constructing candidate objects.
 MAX_JSONLD_NODES = 64
 MAX_CANDIDATES_PER_PAGE = 8
-MAX_INTERNAL_LINKS_PER_PAGE = 2
+MAX_INTERNAL_LINKS_PER_PAGE = 6
 MAX_SCANNED_LINKS_PER_PAGE = 200
 _NON_HTML_SUFFIXES = (".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".css", ".js", ".zip", ".mp4", ".woff", ".woff2")
 
