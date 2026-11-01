@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from zero.enrichment.feedback import FeedbackLoop, ZeroLayerSeed
-from zero.enrichment.modules import ENRICHERS, run_enrichers
+from zero.enrichment.modules import (
+    ENRICHERS,
+    FIXTURE_ONLY_ENRICHERS,
+    PRODUCTION_ENRICHERS,
+    run_enrichers,
+)
 from zero.harvesters.contracts import ObservationCandidate
 from zero.type_detector import InputType, SeedInput, TypeDetector
 
@@ -20,6 +25,13 @@ class TestEnricherRegistry:
         names = [e.name for e in ENRICHERS]
         assert len(names) == len(set(names))
 
+    def test_fixture_lookup_modules_are_excluded_from_production_registry(self) -> None:
+        fixture_names = {item.name for item in FIXTURE_ONLY_ENRICHERS}
+        production_names = {item.name for item in PRODUCTION_ENRICHERS}
+        assert fixture_names == {"email_to_breach", "ip_to_geo"}
+        assert fixture_names.isdisjoint(production_names)
+        assert len(PRODUCTION_ENRICHERS) >= 8
+
 
 class TestReverseEmailUsername:
     def test_email_to_username(self) -> None:
@@ -30,13 +42,13 @@ class TestReverseEmailUsername:
 
 class TestEmailToBreach:
     def test_mock_breach_hits(self) -> None:
-        candidates = run_enrichers(_seed("victim@acme.com"))
+        candidates = run_enrichers(_seed("victim@acme.com"), include_fixtures=True)
         breaches = [c for c in candidates if c.kind == "breach"]
         assert breaches, "acme.com must be in mock breach index"
         assert any("Marriott" in c.value for c in breaches)
 
     def test_unknown_domain_no_breach(self) -> None:
-        candidates = run_enrichers(_seed("victim@not-in-index.io"))
+        candidates = run_enrichers(_seed("victim@not-in-index.io"), include_fixtures=True)
         assert [c for c in candidates if c.kind == "breach"] == []
 
 
@@ -100,13 +112,21 @@ class TestEmailToLinkedIn:
 
 
 class TestIpToGeo:
+    def test_mock_ip_lookup_is_not_enabled_for_normal_execution(self) -> None:
+        seed = SeedInput(
+            raw_value="8.8.8.8",
+            detected_type=InputType.UNKNOWN,
+            confidence=0.05,
+        )
+        assert all(candidate.kind != "geo" for candidate in run_enrichers(seed))
+
     def test_mock_ip_lookup(self) -> None:
         seed = SeedInput(
             raw_value="8.8.8.8",
             detected_type=InputType.UNKNOWN,
             confidence=0.05,
         )
-        candidates = run_enrichers(seed)
+        candidates = run_enrichers(seed, include_fixtures=True)
         geos = [c for c in candidates if c.kind == "geo"]
         assert any("Mountain View" in c.value for c in geos)
 
