@@ -222,7 +222,7 @@ function RoutedTopNav() {
           <strong>{currentModule.toUpperCase()}</strong>
           <span>{currentTitle}</span>
         </span>
-        <Icon name={open ? "chevron-up" : "chevron-down"} size={14} />
+        <Icon name="chevron-down" size={14} />
       </button>
 
       {open ? (

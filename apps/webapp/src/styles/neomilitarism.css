@@ -142,6 +142,11 @@
 
 .ui-nav-deck-trigger > svg:last-child {
   color: var(--ui-text-muted);
+  transition: transform 120ms ease;
+}
+
+.ui-nav-deck-trigger[aria-expanded="true"] > svg:last-child {
+  transform: rotate(180deg);
 }
 
 .ui-nav-overlay {
