@@ -33,6 +33,14 @@ def test_public_profile_suppresses_personal_or_enumerative_outputs() -> None:
     assert all(not allow_public_candidate(seed, item) for item in blocked)
 
 
+def test_public_professional_metadata_is_allowed_only_from_a_url_seed() -> None:
+    seed = TypeDetector().detect("https://example.org/about")
+    for kind in ("public_name", "public_role", "public_affiliation", "public_organization", "public_document_title"):
+        assert allow_public_candidate(seed, _candidate("Public Example", kind))
+    name_seed = TypeDetector().detect("Example Person")
+    assert not allow_public_candidate(name_seed, _candidate("Minister", "public_role"))
+
+
 def test_non_public_seed_types_fail_closed() -> None:
     seed = SeedInput("Jane Doe", InputType.NAME, 0.6)
     assert not allow_public_candidate(seed, _candidate("api.example.org", "domain"))

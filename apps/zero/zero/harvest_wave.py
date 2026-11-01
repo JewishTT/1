@@ -13,6 +13,7 @@ able to constrain the execution surface.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass

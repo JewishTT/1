@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import re
 from datetime import UTC, datetime
 from typing import Any, Mapping
@@ -30,6 +31,7 @@ class ZeroLayerCaseService:
     MAX_LEADS = 25
     MAX_BYTES_PER_PAGE = 2_000_000
     MAX_SECONDS_PER_PAGE = 20
+    MAX_CONCURRENCY = 4
 
     def __init__(
         self,
@@ -78,6 +80,32 @@ class ZeroLayerCaseService:
         if host == "localhost" or host.endswith(".local"):
             raise ZeroLayerCaseError("local hostnames are not public sources")
         return host
+
+    @staticmethod
+    def _cached_idempotent_response(reservation: Mapping[str, Any]) -> dict[str, Any] | None:
+        """Replay a completed run; never re-fetch for an already-used key."""
+        if bool(reservation.get("created", True)):
+            return None
+        payload = reservation.get("payload") or {}
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except (TypeError, ValueError):
+                payload = {}
+        if not isinstance(payload, Mapping):
+            payload = {}
+        state = str(reservation.get("state") or "UNKNOWN").upper()
+        outcome = payload.get("outcome") or {}
+        if state == "PUBLISHED" and isinstance(outcome, Mapping):
+            response = outcome.get("response")
+            if isinstance(response, Mapping):
+                return {**dict(response), "replayed": True}
+        # RESERVED means a previous process crossed the durable reservation boundary
+        # but did not commit a terminal result. Repeating the fetch could duplicate
+        # external requests and raw captures, so require explicit reconciliation.
+        raise ZeroLayerCaseError(
+            f"idempotency key already has a {state} reservation; duplicate collection is refused"
+        )
 
     async def _get_artifact_sink(self) -> Any:
         if self._artifact_sink is not None:
@@ -207,9 +235,26 @@ class ZeroLayerCaseService:
         policy_digest = str(self._policy.policy_digest)
         scope_digest = str(metadata["scope_digest"])
         scope_revision = int(metadata["scope_revision"])
+        request_material = {
+            "tenant_id": tenant_id,
+            "case_id": case_id,
+            "actor_id": str(actor_id),
+            "scope_digest": scope_digest,
+            "scope_revision": scope_revision,
+            "policy_digest": policy_digest,
+            "selected_leads": [
+                {
+                    "lead_id": str(lead.get("lead_id") or ""),
+                    "url": str(lead.get("url") or ""),
+                    "observation_id": str(lead.get("observation_id") or ""),
+                    "action_ref": str(lead.get("action_ref") or ""),
+                    "source_id": str(lead.get("source_id") or ""),
+                }
+                for lead in selected
+            ],
+        }
         request_digest = "sha256:" + hashlib.sha256(
-            (tenant_id + "|" + case_id + "|" + scope_digest + "|" + policy_digest + "|" +
-             "|".join(selected_ids)).encode("utf-8")
+            json.dumps(request_material, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         ).hexdigest()
         reservation = await self._budget.reserve_case(
             budget_ref=str(metadata.get("budget_ref") or ""),
@@ -222,11 +267,14 @@ class ZeroLayerCaseService:
             requests=len(urls),
             raw_bytes=len(urls) * self.MAX_BYTES_PER_PAGE,
             records=len(urls) * 8,
-            concurrency=1,
+            concurrency=self.MAX_CONCURRENCY,
             wall_seconds=len(urls) * self.MAX_SECONDS_PER_PAGE,
             source_refs=(page_source,),
             request_digest=request_digest,
         )
+        cached_response = self._cached_idempotent_response(reservation)
+        if cached_response is not None:
+            return cached_response
         reservation_id = str(reservation["reservation_id"])
         run_id = "ZLR-" + hashlib.sha256(
             (case_id + "|" + key + "|" + request_digest).encode("utf-8")
@@ -237,6 +285,8 @@ class ZeroLayerCaseService:
             transport = SecurePublicTransport(
                 max_response_bytes=self.MAX_BYTES_PER_PAGE,
                 minimum_host_interval_s=1.0,
+                max_requests=64,
+                max_concurrency=self.MAX_CONCURRENCY,
             )
         else:
             transport = self._transport_factory()
@@ -255,7 +305,10 @@ class ZeroLayerCaseService:
         from zero.observation_gate import ZeroLayerGate
         from zero.type_detector import TypeDetector
 
-        registry = HarvesterRegistry()
+        from zero.public_policy import allow_public_candidate
+
+        # One worker per seed; the outer pool owns the reserved concurrency budget.
+        registry = HarvesterRegistry(max_workers=1)
         registry.register(PublicDocumentHarvester())
         wave = HarvestWave(
             detector=TypeDetector(),
@@ -266,6 +319,8 @@ class ZeroLayerCaseService:
             min_new_seeds=0,
             enable_enrichment=False,
             seed_context=seed_context,
+            candidate_allowed=allow_public_candidate,
+            max_seed_workers=self.MAX_CONCURRENCY,
         )
         artifact_sink = await self._get_artifact_sink()
         canonical_sink = CanonicalArtifactSink(
@@ -286,37 +341,26 @@ class ZeroLayerCaseService:
             )
             failures = list(getattr(transport, "failures", ()))
             captures = list(getattr(transport, "captures", ()))
-            await self._budget.mark_reservation(
-                reservation_id=reservation_id,
-                state="PUBLISHED",
-                outcome={
-                    "run_id": run_id,
-                    "selected_leads": selected_ids,
-                    "captured_pages": len(captures),
-                    "failed_pages": len(failures),
-                    "accepted_artifacts": len(accepted),
-                    "observation_refs": [
-                        str(item.observation_id) for item in accepted
-                        if getattr(item, "observation_id", None)
-                    ],
-                    "result_role": "DISCOVERY_ONLY",
-                },
-            )
         except Exception as exc:
-            await self._budget.mark_reservation(
-                reservation_id=reservation_id,
-                state="FAILED",
-                outcome={
-                    "run_id": run_id,
-                    "failed_stage": "zero_layer_public_document_capture",
-                    "error_type": type(exc).__name__,
-                },
-            )
+            try:
+                await self._budget.mark_reservation(
+                    reservation_id=reservation_id,
+                    state="FAILED",
+                    outcome={
+                        "run_id": run_id,
+                        "failed_stage": "zero_layer_public_document_capture",
+                        "error_type": type(exc).__name__,
+                    },
+                )
+            except Exception:
+                # Preserve the original failure. A still-RESERVED row is reconciled
+                # on retry and is deliberately never treated as permission to re-fetch.
+                pass
             raise ZeroLayerCaseError(
                 f"public document processing failed at the canonical evidence boundary ({type(exc).__name__})"
             ) from exc
 
-        return {
+        response = {
             "case_id": case_id,
             "run_id": run_id,
             "scope_digest": scope_digest,
@@ -333,8 +377,28 @@ class ZeroLayerCaseService:
             ],
             "result_role": "DISCOVERY_ONLY",
             "claim_admission_allowed": False,
+            "replayed": False,
             "notice": (
                 "Pages and deterministic metadata were captured for analyst triage only. "
                 "They are not admitted claims and do not satisfy research obligations."
             ),
         }
+        # A failed status write must not relabel already-persisted raw evidence as
+        # FAILED. The reservation remains RESERVED and retries are blocked until a
+        # reconciler can verify the committed Observation refs.
+        await self._budget.mark_reservation(
+            reservation_id=reservation_id,
+            state="PUBLISHED",
+            outcome={
+                "run_id": run_id,
+                "request_digest": request_digest,
+                "selected_leads": selected_ids,
+                "captured_pages": len(captures),
+                "failed_pages": len(failures),
+                "accepted_artifacts": len(accepted),
+                "observation_refs": response["observation_refs"],
+                "result_role": "DISCOVERY_ONLY",
+                "response": response,
+            },
+        )
+        return response

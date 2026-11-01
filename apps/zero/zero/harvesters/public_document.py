@@ -82,15 +82,21 @@ class _DocumentScanner(html.parser.HTMLParser):
             self._script_parts.append(data)
 
 
-def _jsonld_nodes(value: object):
-    if isinstance(value, list):
-        for item in value:
-            yield from _jsonld_nodes(item)
-    elif isinstance(value, Mapping):
-        if "@graph" in value:
-            yield from _jsonld_nodes(value.get("@graph"))
-        else:
-            yield value
+def _jsonld_nodes(value: object, *, limit: int = MAX_JSONLD_NODES):
+    """Iterative, bounded JSON-LD walker; hostile nesting cannot recurse forever."""
+    stack = [value]
+    yielded = 0
+    while stack and yielded < limit:
+        item = stack.pop()
+        if isinstance(item, list):
+            stack.extend(reversed(item))
+        elif isinstance(item, Mapping):
+            graph = item.get("@graph")
+            if graph is not None:
+                stack.append(graph)
+            else:
+                yield item
+                yielded += 1
 
 
 class PublicDocumentHarvester:
@@ -207,11 +213,18 @@ class PublicDocumentHarvester:
                             evidence="schema.org public document headline",
                         ))
 
-        # Stable deduplication: the same fact can appear in both meta and JSON-LD.
+        # Stable deduplication and a hard per-page record ceiling. The budget
+        # reservation is sized for this maximum; excess schema.org fan-out is
+        # recorded rather than silently materialized without reservation.
         unique: dict[tuple[str, str], ObservationCandidate] = {}
         for candidate in sorted(candidates, key=lambda item: (item.kind, item.value, item.method)):
             unique.setdefault((candidate.kind, candidate.value.casefold()), candidate)
+        keys = sorted(unique)
+        notes = ()
+        if len(keys) > MAX_CANDIDATES_PER_PAGE:
+            notes = (f"candidate limit reached ({MAX_CANDIDATES_PER_PAGE}); additional public metadata was not emitted",)
         return HarvestResult(
             module=self.name,
-            candidates=tuple(unique[key] for key in sorted(unique)),
+            candidates=tuple(unique[key] for key in keys[:MAX_CANDIDATES_PER_PAGE]),
+            notes=notes,
         )

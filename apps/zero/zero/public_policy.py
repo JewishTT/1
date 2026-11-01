@@ -24,7 +24,9 @@ _BLOCKED_KINDS = frozenset({
 
 _ALLOWED_PUBLIC_KINDS = frozenset({
     "domain", "dns_record", "url", "technology", "certificate",
-    "public_document", "publication",
+    "public_document", "publication", "public_name", "public_role",
+    "public_affiliation", "public_organization", "public_document_title",
+    "public_document_summary", "public_document_published_at",
 })
 
 
