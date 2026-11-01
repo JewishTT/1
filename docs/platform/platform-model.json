@@ -27951,6 +27951,22 @@
         "vendored": true
       },
       {
+        "id": "httpcore",
+        "path": null,
+        "upstream": "https://github.com/encode/httpcore",
+        "version": "1.0.9",
+        "license": "BSD-3-Clause",
+        "license_source": "https://github.com/encode/httpcore/blob/1.0.9/LICENSE.md",
+        "status": "unverified",
+        "verification_note": "Declared in apps/shared/pyproject.toml as httpcore>=1.0.9,<2; exact lock version is 1.0.9. BSD-3-Clause was verified against the upstream LICENSE.md and pyproject.toml; the installed wheel metadata has not been independently materialized in this checkout.",
+        "role": "third-party declared dependency",
+        "vendored": false,
+        "declared_requirement": [
+          "httpcore>=1.0.9,<2"
+        ],
+        "installed_version": "1.0.9"
+      },
+      {
         "id": "httpx",
         "path": null,
         "upstream": "https://pypi.org/project/httpx/",
@@ -39606,7 +39622,7 @@
       {
         "path": "apps/shared/net/secure_fetch.py",
         "status": "IMPLEMENTED",
-        "loc": 436,
+        "loc": 439,
         "callables": 22,
         "stubs": 2,
         "not_implemented": 0,
