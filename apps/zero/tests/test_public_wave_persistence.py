@@ -110,7 +110,9 @@ async def test_wave_persists_capture_first_then_discovery_only_stages() -> None:
     assert sink.captures[1][0].url.endswith("/official")
     assert all(capture.parent_observation_id == "OBS-searxng-parent" for capture, *_ in sink.captures)
     assert sink.records
-    assert all(record.as_dict()["parent_observation_id"] == "OBS-RAW-PAGE" for record, *_ in sink.records)
+    root_records = [record for record, *_ in sink.records if record.seed_value == url]
+    assert len(root_records) == 3
+    assert all(record.as_dict()["parent_observation_id"] == "OBS-RAW-about" for record in root_records)
     assert all(record.as_dict()["discovery_observation_id"] == "OBS-searxng-parent" for record, *_ in sink.records)
     assert all(record.as_dict()["result_role"] == "DISCOVERY_ONLY" for record, *_ in sink.records)
     assert all(record.as_dict()["claim_admission_allowed"] is False for record, *_ in sink.records)
