@@ -314,6 +314,7 @@ export function AppShell({ children, activity }: AppShellProps) {
               <Icon name="view-ops" size={16} />
             </span>
             <span className="ui-brand">COGNITIVE</span>
+            <TopNav />
             <span className="ui-meta">FIELD SYSTEMS</span>
             <span className="ui-command-mark">C2 / ANALYST COMMAND</span>
           </div>
@@ -377,7 +378,6 @@ export function AppShell({ children, activity }: AppShellProps) {
       </header>
 
       <div className="ui-shell-body">
-        <TopNav />
         <main className="ui-shell-main" data-testid="shell-main">
           {children}
         </main>

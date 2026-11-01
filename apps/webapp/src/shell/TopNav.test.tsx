@@ -31,63 +31,105 @@ function renderAt(path: string, withShell = false) {
   );
 }
 
-describe("persistent field navigation", () => {
-  it("keeps the full route index visible without opening a modal deck", () => {
+function openDeck() {
+  fireEvent.click(screen.getByTestId("nav-deck-trigger"));
+}
+
+describe("command-centre workspace navigation", () => {
+  it("keeps only the active workspace trigger visible until requested", () => {
     renderAt("/investigations");
     expect(screen.getByTestId("topnav")).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Operational domains" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "osint workspaces" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Investigations/i })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByTestId("nav-deck-trigger")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByTestId("nav-deck-trigger")).toHaveTextContent("OSINT");
+    expect(screen.getByTestId("nav-deck-trigger")).toHaveTextContent("Investigation");
     expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("nav-deck-trigger")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("nav-module-osint")).not.toBeInTheDocument();
   });
 
-  it("shows all three operational domains as direct destinations", () => {
+  it("opens all three domains and preserves their direct destinations", () => {
     renderAt("/investigations");
+    openDeck();
+    expect(screen.getByRole("dialog", { name: "Workspace navigation" })).toBeInTheDocument();
     for (const module of NAV_MODULES) {
-      expect(screen.getByTestId(`nav-module-${module.key}`)).toBeInTheDocument();
       expect(screen.getByTestId(`nav-module-${module.key}`)).toHaveAttribute("href", module.landing);
     }
-    const activeDomain = screen.getByTestId("nav-module-osint");
-    expect(activeDomain).toHaveAttribute("data-active", "true");
-    expect(activeDomain).toHaveAttribute("aria-current", "location");
+    expect(screen.getByTestId("nav-module-osint")).toHaveAttribute("data-active", "true");
+    expect(screen.getByTestId("nav-module-osint")).toHaveAttribute("aria-current", "location");
     expect(screen.getByTestId("nav-module-specops")).not.toHaveAttribute("aria-current");
   });
 
-  it("keeps destination groups visible for the active domain", () => {
+  it("keeps all route groups searchable and grouped by their operational domain", () => {
     renderAt("/investigations");
-    const nav = screen.getByRole("navigation", { name: "osint workspaces" });
-    expect(nav).toHaveTextContent("COLLECT");
-    expect(nav).toHaveTextContent("INVESTIGATE");
-    expect(nav).toHaveTextContent("ANALYZE");
-    expect(nav).toHaveTextContent("Science Console");
-    expect(nav).toHaveTextContent("Research Cases");
+    openDeck();
+    const osint = screen.getByRole("navigation", { name: "osint workspaces" });
+    const economic = screen.getByRole("navigation", { name: "economic workspaces" });
+    const specops = screen.getByRole("navigation", { name: "specops workspaces" });
+    expect(osint).toHaveTextContent("COLLECT");
+    expect(osint).toHaveTextContent("INVESTIGATE");
+    expect(osint).toHaveTextContent("ANALYZE");
+    expect(osint).toHaveTextContent("Research Cases");
+    expect(economic).toHaveTextContent("Intelligence Economy");
+    expect(specops).toHaveTextContent("Pipeline Operations");
+    expect(specops).toHaveTextContent("Connectors");
   });
 
-  it("switches destination sets when the domain route changes", () => {
+  it("changes the active domain after selecting it and closes the deck", () => {
     renderAt("/investigations");
+    openDeck();
     fireEvent.click(screen.getByTestId("nav-module-specops"));
-    expect(screen.getByRole("navigation", { name: "specops workspaces" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "specops workspaces" })).toHaveTextContent("Pipeline Operations");
-    expect(screen.queryByRole("navigation", { name: "osint workspaces" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
+    expect(screen.getByTestId("nav-deck-trigger")).toHaveTextContent("SPECOPS");
+    openDeck();
+    expect(screen.getByTestId("nav-module-specops")).toHaveAttribute("aria-current", "location");
+    expect(screen.getByTestId("nav-destination-pipeline-operations")).toHaveAttribute("aria-current", "page");
   });
 
-  it("marks the active domain and exact destination", () => {
+  it("marks the active destination precisely for nested routes", () => {
     renderAt("/specops/connectors");
+    openDeck();
     expect(screen.getByTestId("nav-module-specops")).toHaveAttribute("aria-current", "location");
-    const active = screen.getByRole("link", { name: /Connectors/i });
+    const active = screen.getByTestId("nav-destination-connectors");
     expect(active).toHaveAttribute("data-active", "true");
     expect(active).toHaveAttribute("aria-current", "page");
   });
 
+  it("searches all modules and reduces the deck to matching workspaces", () => {
+    renderAt("/investigations");
+    openDeck();
+    fireEvent.change(screen.getByTestId("nav-deck-search"), { target: { value: "connectors" } });
+    expect(screen.getByTestId("nav-destination-connectors")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-module-specops")).toBeInTheDocument();
+    expect(screen.queryByTestId("nav-destination-research-cases")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("nav-module-economic")).not.toBeInTheDocument();
+  });
+
+  it("clears the search and closes the deck with Escape", () => {
+    renderAt("/investigations");
+    openDeck();
+    fireEvent.change(screen.getByTestId("nav-deck-search"), { target: { value: "science" } });
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
+    openDeck();
+    expect(screen.getByTestId("nav-deck-search")).toHaveValue("");
+  });
+
+  it("closes when the user clicks outside the navigation deck", () => {
+    renderAt("/investigations");
+    openDeck();
+    fireEvent.click(screen.getByRole("button", { name: "Close workspace navigation" }));
+    expect(screen.queryByTestId("nav-deck")).not.toBeInTheDocument();
+  });
+
   it("keeps the tenant-wide graph out of the SpecOps section", () => {
     renderAt("/specops");
+    openDeck();
     expect(screen.queryByText("Tenant Graph")).not.toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "specops workspaces" })).toHaveTextContent("Pipeline Operations");
   });
 
   it("retains the consolidated investigation graph destination", () => {
     renderAt("/investigations");
+    openDeck();
     const destinations = screen.getByRole("navigation", { name: "osint workspaces" });
     expect(destinations).toHaveTextContent("Investigations");
     expect(destinations).not.toHaveTextContent("Tenant Graph");
@@ -118,10 +160,11 @@ describe("persistent field navigation", () => {
     expect(screen.getByTestId("app-shell")).toBeInTheDocument();
   });
 
-  it("keeps the app shell's main workspace as a separate flex region", () => {
+  it("keeps the full-width workbench separate from the command-bar selector", () => {
     const { container } = renderAt("/investigations", true);
     expect(screen.getByTestId("shell-main")).toBeInTheDocument();
-    expect(container.querySelector(".ui-primary-nav + .ui-shell-main")).not.toBeNull();
+    expect(container.querySelector(".ui-topbar-brand .ui-primary-nav")).not.toBeNull();
+    expect(container.querySelector(".ui-shell-body > .ui-primary-nav")).toBeNull();
   });
 });
 
