@@ -114,8 +114,12 @@ def test_robots_rules_are_cached_per_host_but_evaluated_per_path() -> None:
         fetcher_factory=factory,
     )
     assert transport.fetch("https://example.org/public") == "<html><body>public</body></html>"
+    # A fresh host cache hit must reuse the parsed rules, not wait on a
+    # non-existent in-flight lookup. A second public path is therefore fetched.
+    assert transport.fetch("https://example.org/public/another") == "<html><body>public</body></html>"
     assert transport.fetch("https://example.org/private/profile") == ""
     assert calls.count(("https://example.org/robots.txt", "GET")) == 1
     assert ("https://example.org/public", "GET") in calls
+    assert ("https://example.org/public/another", "GET") in calls
     assert ("https://example.org/private/profile", "GET") not in calls
-    assert transport.requests_used == 2
+    assert transport.requests_used == 3

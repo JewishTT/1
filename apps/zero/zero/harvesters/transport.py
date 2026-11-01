@@ -175,7 +175,9 @@ class SecurePublicTransport:
         now = time.monotonic()
         with self._lock:
             cached = self._robots_cache.get(host)
-            if cached and now - cached[0] <= self._robots_cache_ttl_s:
+            cache_hit = bool(cached and now - cached[0] <= self._robots_cache_ttl_s)
+            if cache_hit:
+                assert cached is not None
                 status, lines = cached[1], cached[2]
                 leader = False
                 pending = None
@@ -187,7 +189,9 @@ class SecurePublicTransport:
                     self._robots_pending[host] = pending
                 status, lines = 0, ()
 
-        if not leader:
+        # A fresh cache hit is already authoritative. It must not enter the
+        # coalesced-wait branch, which is only for an in-flight first lookup.
+        if not cache_hit and not leader:
             assert pending is not None
             if not pending.wait(timeout=17.0):
                 raise SecurityBlocked("robots.txt coalesced wait exceeded timeout")
@@ -196,7 +200,7 @@ class SecurePublicTransport:
             if not cached or time.monotonic() - cached[0] > self._robots_cache_ttl_s:
                 raise SecurityBlocked("robots.txt policy could not be established")
             status, lines = cached[1], cached[2]
-        else:
+        elif not cache_hit:
             assert pending is not None
             try:
                 robots_url = f"https://{host}/robots.txt"
