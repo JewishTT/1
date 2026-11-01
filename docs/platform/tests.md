@@ -1,6 +1,6 @@
 # Tests
 
-348 test files, 5345 test functions. 270 platform modules are not targeted by any test.
+349 test files, 5348 test functions. 270 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -345,6 +345,7 @@
 | `apps/zero/tests/test_enrichment.py` | 26 | `apps/zero/zero/enrichment/feedback.py`, `apps/zero/zero/enrichment/modules.py`, `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_harvest_wave.py` | 17 | `apps/zero/zero/harvest_wave.py`, `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/harvesters/domain.py`, `apps/zero/zero/harvesters/registry.py` |
 | `apps/zero/tests/test_harvesters.py` | 26 | `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/harvesters/domain.py`, `apps/zero/zero/harvesters/git.py`, `apps/zero/zero/harvesters/image.py` |
+| `apps/zero/tests/test_public_acquisition_policy.py` | 3 | `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/public_policy.py`, `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_public_document.py` | 2 | `apps/zero/zero/harvesters/public_document.py`, `apps/zero/zero/harvesters/registry.py`, `apps/zero/zero/harvesters/transport.py`, `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_public_wave_persistence.py` | 1 | `apps/zero/zero/harvest_wave.py`, `apps/zero/zero/harvesters/public_document.py`, `apps/zero/zero/harvesters/registry.py`, `apps/zero/zero/harvesters/transport.py` |
 | `apps/zero/tests/test_resolution.py` | 23 | `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/resolution/fellegi_sunter.py`, `apps/zero/zero/resolution/graph.py`, `apps/zero/zero/resolution/similarity.py` |

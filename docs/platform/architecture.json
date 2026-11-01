@@ -208,6 +208,7 @@
           "apps/zero/tests/test_enrichment.py",
           "apps/zero/tests/test_harvest_wave.py",
           "apps/zero/tests/test_harvesters.py",
+          "apps/zero/tests/test_public_acquisition_policy.py",
           "apps/zero/tests/test_public_document.py",
           "apps/zero/tests/test_public_wave_persistence.py",
           "apps/zero/tests/test_resolution.py",
@@ -234,13 +235,14 @@
           "apps/zero/zero/harvesters/url.py",
           "apps/zero/zero/harvesters/username.py",
           "apps/zero/zero/observation_gate.py",
+          "apps/zero/zero/public_policy.py",
           "apps/zero/zero/resolution/__init__.py",
           "apps/zero/zero/resolution/fellegi_sunter.py",
           "apps/zero/zero/resolution/graph.py",
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 151
+        "module_count": 153
       },
       {
         "id": "interpretation",
@@ -1460,6 +1462,7 @@
       "amazon.com",
       "analytics.projected",
       "api.example.com",
+      "api.example.org",
       "api.md",
       "api.routes.search_rebuild",
       "api.tavily.com",
@@ -1620,8 +1623,7 @@
       "enable.auto.offset.store",
       "enable.idempotence",
       "engine.py",
-      "entities.entity_id",
-      "entity.claimed"
+      "entities.entity_id"
     ]
   },
   "context_map": {

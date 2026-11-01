@@ -34,9 +34,9 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 11 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 267 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
-| `zero` | 36 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
+| `zero` | 38 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
-1025 Python modules, 267 TypeScript modules, 16 Rust source files in 9 crates.
+1027 Python modules, 267 TypeScript modules, 16 Rust source files in 9 crates.
 
 ## Key properties (Constitution invariants)
 

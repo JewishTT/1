@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4459,
-    "static_facts": 4165,
+    "facts_total": 4467,
+    "static_facts": 4173,
     "inferred": 294,
     "intended": 0
   },
@@ -36663,6 +36663,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "045aad8eabff99e6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvesters/contracts.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py",
+        "via": "zero.harvesters.contracts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d2fe3233b7bffdb8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/public_policy.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py",
+        "via": "zero.public_policy"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "69efd4f07bd261d6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/type_detector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py",
+        "via": "zero.type_detector"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "e4c94700dda6d015",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/zero/tests/test_public_document.py",
@@ -37685,6 +37724,32 @@
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/zero/zero/observation_gate.py",
+        "via": "type_detector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c11fd95a30465692",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/public_policy.py",
+      "object": "apps/zero/zero/harvesters/contracts.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/public_policy.py",
+        "via": "harvesters.contracts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "30d2e61301aacadf",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/public_policy.py",
+      "object": "apps/zero/zero/type_detector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/public_policy.py",
         "via": "type_detector"
       },
       "confidence": 1.0
@@ -56416,6 +56481,42 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/zero/tests/test_harvesters.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a53933eacfb20acc",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvesters/contracts.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "03603392aa593ff5",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/public_policy.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d71be1a5f0c1fb40",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/type_detector.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py"
       },
       "confidence": 1.0
     },
