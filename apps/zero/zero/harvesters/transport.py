@@ -200,11 +200,15 @@ class SecurePublicTransport:
                 raise SecurityBlocked("robots policy does not permit this fetch")
             self._pace(host)
             self._reserve_request(canonical)
-            response = await fetcher.fetch(
-                canonical,
-                method=method,
-                headers={"Accept": "text/html,application/xhtml+xml,text/plain;q=0.8"},
-            )
+            request_headers = {"Accept": "text/html,application/xhtml+xml,text/plain;q=0.8"}
+            if method == "GET":
+                response = await fetcher.fetch(canonical, headers=request_headers)
+            else:
+                response = await fetcher.fetch(
+                    canonical,
+                    method=method,
+                    headers=request_headers,
+                )
             if response.status < 200 or response.status >= 300:
                 raise SecurityBlocked(f"origin returned HTTP {response.status}")
             with self._lock:

@@ -28,7 +28,7 @@ class TestEnricherRegistry:
     def test_fixture_lookup_modules_are_excluded_from_production_registry(self) -> None:
         fixture_names = {item.name for item in FIXTURE_ONLY_ENRICHERS}
         production_names = {item.name for item in PRODUCTION_ENRICHERS}
-        assert fixture_names == {"email_to_breach", "ip_to_geo"}
+        assert fixture_names == {"email_to_breach", "ip_to_geo", "phone_to_whatsapp"}
         assert fixture_names.isdisjoint(production_names)
         assert len(PRODUCTION_ENRICHERS) >= 8
 
