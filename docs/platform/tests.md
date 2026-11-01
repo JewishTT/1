@@ -1,6 +1,6 @@
 # Tests
 
-350 test files, 5353 test functions. 270 platform modules are not targeted by any test.
+350 test files, 5355 test functions. 270 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -330,7 +330,7 @@
 | `apps/shared/tests/unit/test_research_lineage.py` | 19 | `apps/shared/domain/research_lineage.py` |
 | `apps/shared/tests/unit/test_resolution_mention_span.py` | 13 | `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/semantic/contracts.py`, `apps/shared/semantic/resolution.py` |
 | `apps/shared/tests/unit/test_schema_hierarchy.py` | 20 | `apps/shared/domain/schema.py` |
-| `apps/shared/tests/unit/test_secure_fetch.py` | 18 | `apps/shared/net/secure_fetch.py`, `apps/shared/security.py` |
+| `apps/shared/tests/unit/test_secure_fetch.py` | 20 | `apps/shared/net/secure_fetch.py`, `apps/shared/security.py` |
 | `apps/shared/tests/unit/test_security.py` | 19 | `apps/shared/security.py` |
 | `apps/shared/tests/unit/test_temporal_metrics.py` | 9 | `apps/shared/domain/temporal_metrics.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |

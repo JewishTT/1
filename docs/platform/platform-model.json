@@ -1139,7 +1139,7 @@
   ],
   "import_graph": {
     "module_count": 1028,
-    "edge_count": 2898,
+    "edge_count": 2901,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 898,
@@ -1227,7 +1227,8 @@
       "third-party:google": 6,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
-      "third-party:httpx": 21,
+      "third-party:httpcore": 1,
+      "third-party:httpx": 20,
       "third-party:litellm": 2,
       "third-party:nameparser": 3,
       "third-party:neo4j": 1,
@@ -14452,6 +14453,21 @@
         "via": "security"
       },
       {
+        "from": "apps/shared/tests/unit/test_secure_fetch.py",
+        "to": "apps/shared/net/secure_fetch.py",
+        "via": "net.secure_fetch"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_secure_fetch.py",
+        "to": "apps/shared/net/secure_fetch.py",
+        "via": "net.secure_fetch"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_secure_fetch.py",
+        "to": "apps/shared/net/secure_fetch.py",
+        "via": "net.secure_fetch"
+      },
+      {
         "from": "apps/shared/tests/unit/test_security.py",
         "to": "apps/shared/security.py",
         "via": "security"
@@ -23560,7 +23576,7 @@
       },
       {
         "path": "apps/shared/tests/unit/test_secure_fetch.py",
-        "tests": 18,
+        "tests": 20,
         "test_names": [
           "test_happy_path_pins_public_ip",
           "test_exact_trusted_private_service_hostname_is_allowed",
@@ -23579,7 +23595,9 @@
           "test_unresolvable_host_refused",
           "test_egress_allowlist_cannot_punch_through_private_ranges",
           "test_egress_allowlist_narrows_permitted_public_set",
-          "test_client_never_follows_redirects_itself"
+          "test_default_transport_is_ip_pinned_and_has_no_client_redirect_mode",
+          "test_pinned_network_backend_connects_to_the_validated_ip_only",
+          "test_pinned_network_backend_refuses_an_unexpected_origin_host"
         ],
         "targets": [
           "apps/shared/net/secure_fetch.py",
@@ -24223,7 +24241,7 @@
         "targets": []
       }
     ],
-    "total": 5353
+    "total": 5355
   },
   "contracts": {
     "python": [
@@ -39587,9 +39605,9 @@
       {
         "path": "apps/shared/net/secure_fetch.py",
         "status": "IMPLEMENTED",
-        "loc": 297,
-        "callables": 11,
-        "stubs": 1,
+        "loc": 436,
+        "callables": 22,
+        "stubs": 2,
         "not_implemented": 0,
         "markers": []
       },
@@ -40580,8 +40598,8 @@
       {
         "path": "apps/shared/tests/unit/test_secure_fetch.py",
         "status": "TEST",
-        "loc": 314,
-        "callables": 28,
+        "loc": 361,
+        "callables": 34,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -82792,6 +82810,45 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "542cae384b83518e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_secure_fetch.py",
+        "object": "apps/shared/net/secure_fetch.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_secure_fetch.py",
+          "via": "net.secure_fetch"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "542cae384b83518e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_secure_fetch.py",
+        "object": "apps/shared/net/secure_fetch.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_secure_fetch.py",
+          "via": "net.secure_fetch"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "542cae384b83518e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_secure_fetch.py",
+        "object": "apps/shared/net/secure_fetch.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_secure_fetch.py",
+          "via": "net.secure_fetch"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "4256f0b4296fa231",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/shared/tests/unit/test_secure_fetch.py",
@@ -104735,8 +104792,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4493,
-      "static_facts": 4199,
+      "facts_total": 4496,
+      "static_facts": 4202,
       "inferred": 294,
       "intended": 0
     }
@@ -104747,15 +104804,15 @@
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2898,
+    "import_edges": 2901,
     "test_files": 350,
-    "test_functions": 5353,
+    "test_functions": 5355,
     "untested_modules": 270,
     "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4493,
-    "static_facts": 4199,
+    "facts_total": 4496,
+    "static_facts": 4202,
     "inferred": 294,
     "intended": 0
   },

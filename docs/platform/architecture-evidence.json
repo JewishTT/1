@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4493,
-    "static_facts": 4199,
+    "facts_total": 4496,
+    "static_facts": 4202,
     "inferred": 294,
     "intended": 0
   },
@@ -35086,6 +35086,45 @@
       "evidence": {
         "file": "apps/shared/tests/unit/test_schema_hierarchy.py",
         "via": "domain.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "542cae384b83518e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/unit/test_secure_fetch.py",
+      "object": "apps/shared/net/secure_fetch.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/unit/test_secure_fetch.py",
+        "via": "net.secure_fetch"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "542cae384b83518e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/unit/test_secure_fetch.py",
+      "object": "apps/shared/net/secure_fetch.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/unit/test_secure_fetch.py",
+        "via": "net.secure_fetch"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "542cae384b83518e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/unit/test_secure_fetch.py",
+      "object": "apps/shared/net/secure_fetch.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/unit/test_secure_fetch.py",
+        "via": "net.secure_fetch"
       },
       "confidence": 1.0
     },
