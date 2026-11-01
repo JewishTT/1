@@ -38,6 +38,8 @@ describe("command tactical visual system", () => {
     for (const selector of [
       ".ui-topbar", ".ui-primary-nav", ".ui-primary-nav-link[data-active=\"true\"]",
       ".ui-shell-main", ".ui-ops-block", ".ui-signal", ".ui-command-strip",
+      ".ui-graph", ".ui-timeline", ".ui-evidence", ".ui-obj", ".ui-cicanvas",
+      ".ui-gl-stage", ".ui-lineage-chain", ".ui-raw-code",
     ]) expect(css).toContain(selector);
   });
 

@@ -428,3 +428,319 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* -------------------------------------------------------------------------
+   Instrumentation surfaces — a shared material system for the full workbench.
+   These rules style the existing first-party surfaces in place; they do not
+   wrap the product in a decorative dashboard skin.
+   ------------------------------------------------------------------------- */
+.ui-root :where(
+  .ui-graph, .ui-timeline, .ui-evidence, .ui-obj, .ui-ops, .ui-quar,
+  .ui-catalog, .ui-cicanvas, .ui-gl-deck, .ui-gl-stage, .ui-gl-card,
+  .ui-raw, .ui-lineage, .ui-timeline-focus, .ui-graph-detail
+) {
+  color: var(--cmd-text);
+  background: var(--cmd-graphite);
+  border-color: var(--cmd-line);
+  border-radius: 2px;
+}
+
+.ui-root :where(
+  .ui-graph-toolbar, .ui-timeline-toolbar, .ui-evidence-toolbar,
+  .ui-obj-toolbar, .ui-ops-head, .ui-cicanvas-head,
+  .ui-evidence-viewer-head, .ui-graph-drawer-head,
+  .ui-gl-stage-head, .ui-gl-trace-head, .ui-obj-head-bar
+) {
+  color: var(--cmd-text);
+  background: #0a141e;
+  border-color: var(--cmd-line-strong);
+}
+
+.ui-root :where(
+  .ui-graph-host, .ui-graph-body, .ui-timeline-chart,
+  .ui-timeline-lanes, .ui-evidence-body, .ui-obj-body,
+  .ui-cicanvas-body, .ui-raw-lines, .ui-gl-trace
+) {
+  background: #08111a;
+  border-color: var(--cmd-line);
+}
+
+.ui-root :where(
+  .ui-graph-drawer, .ui-graph-side, .ui-graph-detail,
+  .ui-evidence-viewer, .ui-evidence-panel, .ui-obj-detail,
+  .ui-obj-record, .ui-quar-detail
+) {
+  background: var(--cmd-panel);
+  border-color: var(--cmd-line-strong);
+}
+
+.ui-root :where(
+  .ui-graph-legend-row, .ui-graph-facet-row,
+  .ui-graph-participant, .ui-timeline-lane,
+  .ui-timeline-events, .ui-evidence-row,
+  .ui-lineage-node, .ui-obj-grid-row,
+  .ui-quar-row, .ui-catalog-row, .ui-ci-list-row
+) {
+  border-color: rgb(40 64 77 / 70%);
+}
+
+.ui-root :where(
+  .ui-graph-facet-label, .ui-graph-note, .ui-timeline-lane-label,
+  .ui-timeline-note, .ui-raw-note, .ui-lineage-step-detail,
+  .ui-obj-cell-sub, .ui-catalog-row-note, .ui-blocker-settled,
+  .ui-gl-hint, .ui-gl-donor, .ui-gl-provenance-side
+) {
+  color: var(--cmd-muted);
+}
+
+.ui-root :where(
+  .ui-graph-facet-value, .ui-graph-detail-head,
+  .ui-timeline-focus-field, .ui-evidence-viewer-titles,
+  .ui-lineage-step-ref, .ui-lineage-step-at,
+  .ui-obj-ref, .ui-catalog-source, .ui-signal-value,
+  .ui-gl-readout-value, .ui-gl-subject-id
+) {
+  color: var(--cmd-ice);
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-root :where(
+  .ui-graph-toolbar-counts, .ui-timeline-toolbar-state,
+  .ui-obj-kind-count, .ui-pool-num,
+  .ui-ci-metric, .ui-gl-readout
+) {
+  color: var(--cmd-text);
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-root :where(
+  .ui-graph-overlay, .ui-graph-temporal, .ui-graph-timeline,
+  .ui-timeline-brush, .ui-timeline-spacer,
+  .ui-evidence-spacer, .ui-obj-grid-head,
+  .ui-obj-grid-canvas, .ui-obj-grid-viewport
+) {
+  border-color: var(--cmd-line);
+}
+
+.ui-root :where(
+  .ui-evidence-tab, .ui-tab, .ui-graph-facet,
+  .ui-obj-kind-group, .ui-obj-head-sortable
+) {
+  border-radius: 2px;
+  color: #b6cbd3;
+}
+
+.ui-root :where(
+  .ui-evidence-tab[aria-selected="true"], .ui-tab[aria-selected="true"],
+  .ui-obj-kind-group[aria-pressed="true"]
+) {
+  color: var(--cmd-ice);
+  background: rgb(86 216 245 / 9%);
+  border-color: rgb(86 216 245 / 35%);
+  box-shadow: inset 0 -1px 0 var(--cmd-cyan);
+}
+
+.ui-root :where(
+  .ui-signal, .ui-blocker, .ui-gl-refusal,
+  .ui-gl-invalid, .ui-lineage-violation, .ui-raw-error
+) {
+  color: var(--cmd-text);
+  background: rgb(225 110 104 / 8%);
+  border-color: rgb(225 110 104 / 36%);
+}
+
+.ui-root :where(
+  .ui-ci-coverage, .ui-ci-trajectory, .ui-ci-abilities,
+  .ui-ci-invariants, .ui-gl-providers, .ui-gl-kinds,
+  .ui-gl-funnel, .ui-gl-training, .ui-gl-subjects
+) {
+  border-color: var(--cmd-line);
+  background: #0b1722;
+}
+
+.ui-root :where(
+  .ui-gl-stage, .ui-gl-card, .ui-gl-deck,
+  .ui-gl-readout, .ui-gl-pair, .ui-gl-turns,
+  .ui-gl-bars, .ui-gl-funnel-track, .ui-gl-bar-track
+) {
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgb(164 239 251 / 3%);
+}
+
+.ui-root :where(
+  .ui-ops-block-head, .ui-ci-panel-head, .ui-gl-subhead,
+  .ui-gl-stage-name, .ui-obj-cell-label,
+  .ui-evidence-kindgroup, .ui-evidence-sort
+) {
+  color: #a8c6d0;
+  font-family: var(--ui-font-mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.ui-root :where(
+  .ui-graph-toolbar button, .ui-timeline-toolbar button,
+  .ui-evidence-toolbar button, .ui-obj-toolbar button,
+  .ui-ops-actions button, .ui-gl-actions button
+) {
+  min-height: 28px;
+  border-radius: 2px;
+}
+
+.ui-root :where(
+  .ui-graph-toolbar button[aria-pressed="true"],
+  .ui-timeline-toolbar button[aria-pressed="true"],
+  .ui-evidence-toolbar button[aria-pressed="true"],
+  .ui-obj-toolbar button[aria-pressed="true"]
+) {
+  color: var(--cmd-ice);
+  background: rgb(86 216 245 / 9%);
+  border-color: rgb(86 216 245 / 40%);
+}
+
+.ui-root :where(.ui-raw-code, .ui-raw-gutter, .ui-gl-turn-text, .ui-gl-trace-utterance) {
+  color: #c5d9df;
+  font-family: var(--ui-font-mono);
+}
+
+.ui-root :where(.ui-raw-gutter) {
+  color: #68828e;
+  user-select: none;
+}
+
+.ui-root :where(.ui-lineage-step[data-active="true"], .ui-lineage-node-button[aria-pressed="true"]) {
+  color: var(--cmd-ice);
+  background: rgb(86 216 245 / 8%);
+  outline: 1px solid rgb(86 216 245 / 28%);
+}
+
+.ui-shell-main, .ui-workbench, .ui-workspace, .ui-canvas,
+.ui-canvas-body, .ui-inspector, .ui-inspector-body,
+.ui-graph, .ui-timeline, .ui-evidence, .ui-obj, .ui-ops, .ui-cicanvas {
+  min-width: 0;
+  min-height: 0;
+}
+
+.ui-primary-nav { flex-basis: 218px; }
+
+.ui-root :where(.ui-canvas-head, .ui-inspector-head) {
+  background: #0a141e;
+  border-color: var(--cmd-line-strong);
+}
+
+.ui-root :where(.ui-canvas-contract, .ui-rail-block + .ui-rail-block) {
+  border-color: var(--cmd-line);
+}
+
+.ui-root :where(.ui-rail, .ui-inspector, .ui-workbench-rail, .ui-workbench-inspector) {
+  background: #0a141e;
+}
+
+/* Remove legacy glass/HUD material on every first-party surface. */
+.ui-root .ui-holo,
+.ui-root .ui-holo-edge {
+  border: 1px solid var(--cmd-line);
+  border-radius: 2px;
+  background: var(--cmd-panel);
+  box-shadow: inset 0 1px 0 rgb(164 239 251 / 3%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.ui-root .ui-holo-sweep::after,
+.ui-root .ui-holo-bracket::before,
+.ui-root .ui-holo-bracket::after,
+.ui-root .ui-holo-field::before,
+.ui-root .ui-holo-field::after {
+  display: none;
+  animation: none;
+}
+
+/* Legacy route surfaces use the same dark hierarchy during migration. */
+.ui-root .bg-white,
+.ui-root .bg-gray-50,
+.ui-root .bg-slate-50,
+.ui-root .bg-zinc-50 {
+  background-color: var(--cmd-panel);
+}
+
+.ui-root .text-slate-900,
+.ui-root .text-gray-900,
+.ui-root .text-zinc-900 {
+  color: var(--cmd-text);
+}
+
+.ui-root .border-gray-200,
+.ui-root .border-slate-200,
+.ui-root .border-zinc-200 {
+  border-color: var(--cmd-line);
+}
+
+@media (max-width: 1279px) {
+  .ui-primary-nav { flex-basis: 184px; }
+  .ui-primary-nav-module { min-height: 39px; }
+  .ui-primary-nav-link { min-height: 32px; }
+  .ui-topbar-main { min-height: 42px; }
+}
+
+@media (max-width: 767px) {
+  .ui-primary-nav {
+    flex-basis: 56px;
+    overflow-x: hidden;
+  }
+
+  .ui-primary-nav-header,
+  .ui-primary-nav-divider,
+  .ui-primary-nav-section-heading,
+  .ui-primary-nav-footer {
+    display: none;
+  }
+
+  .ui-primary-nav-modules { padding: 6px 3px; }
+
+  .ui-primary-nav-module {
+    min-height: 42px;
+    justify-content: center;
+    padding-inline: 3px;
+  }
+
+  .ui-primary-nav-module-marker { display: none; }
+
+  .ui-primary-nav-module-copy,
+  .ui-primary-nav-link-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .ui-primary-nav-link {
+    min-height: 37px;
+    justify-content: center;
+    padding-inline: 3px;
+  }
+
+  .ui-primary-nav-module-icon,
+  .ui-primary-nav-link-icon { flex-basis: 22px; }
+
+  .ui-topbar-brand { min-width: 0; }
+  .ui-topbar-controls { gap: 3px; }
+  .ui-topbar-state { min-height: 28px; }
+  .ui-shell-body { min-width: 0; }
+  .ui-shell-main { overflow: auto; }
+}
+
+@media (forced-colors: active) {
+  .ui-root :where(
+    .ui-graph, .ui-timeline, .ui-evidence, .ui-obj, .ui-ops, .ui-cicanvas
+  ) { border: 1px solid CanvasText; }
+}
