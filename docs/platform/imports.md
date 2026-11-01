@@ -29,7 +29,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `urllib` | stdlib | 56 |
 | `uuid` | stdlib | 48 |
 | `math` | stdlib | 41 |
-| `types` | stdlib | 35 |
+| `types` | stdlib | 36 |
 | `pydantic` | third-party | 34 |
 | `importlib` | stdlib | 33 |
 | `time` | stdlib | 31 |

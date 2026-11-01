@@ -1198,7 +1198,7 @@
       "stdlib:time": 31,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
-      "stdlib:types": 35,
+      "stdlib:types": 36,
       "stdlib:typing": 373,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
@@ -24095,11 +24095,12 @@
       },
       {
         "path": "apps/zero/tests/test_secure_public_transport.py",
-        "tests": 3,
+        "tests": 4,
         "test_names": [
           "test_transport_caps_physical_requests_including_robots",
           "test_exists_uses_head_and_does_not_persist_a_body_capture",
-          "test_concurrent_same_url_fetches_are_coalesced"
+          "test_concurrent_same_url_fetches_are_coalesced",
+          "test_robots_rules_are_cached_per_host_but_evaluated_per_path"
         ],
         "targets": [
           "apps/shared/net/secure_fetch.py",
@@ -24241,7 +24242,7 @@
         "targets": []
       }
     ],
-    "total": 5355
+    "total": 5356
   },
   "contracts": {
     "python": [
@@ -41061,7 +41062,7 @@
       {
         "path": "apps/zero/tests/test_public_wave_persistence.py",
         "status": "TEST",
-        "loc": 102,
+        "loc": 106,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
@@ -41079,8 +41080,8 @@
       {
         "path": "apps/zero/tests/test_secure_public_transport.py",
         "status": "TEST",
-        "loc": 80,
-        "callables": 8,
+        "loc": 122,
+        "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41144,7 +41145,7 @@
       {
         "path": "apps/zero/zero/evidence.py",
         "status": "IMPLEMENTED",
-        "loc": 238,
+        "loc": 240,
         "callables": 5,
         "stubs": 1,
         "not_implemented": 0,
@@ -41162,7 +41163,7 @@
       {
         "path": "apps/zero/zero/harvest_wave.py",
         "status": "IMPLEMENTED",
-        "loc": 353,
+        "loc": 382,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -41252,8 +41253,8 @@
       {
         "path": "apps/zero/zero/harvesters/transport.py",
         "status": "IMPLEMENTED",
-        "loc": 319,
-        "callables": 19,
+        "loc": 367,
+        "callables": 20,
         "stubs": 2,
         "not_implemented": 0,
         "markers": []
@@ -104806,7 +104807,7 @@
     "rust_crates": 9,
     "import_edges": 2901,
     "test_files": 350,
-    "test_functions": 5355,
+    "test_functions": 5356,
     "untested_modules": 270,
     "http_routes": 185
   },
