@@ -1140,7 +1140,7 @@
   ],
   "import_graph": {
     "module_count": 1030,
-    "edge_count": 2909,
+    "edge_count": 2912,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 899,
@@ -15209,6 +15209,21 @@
         "via": "zero.harvesters.registry"
       },
       {
+        "from": "apps/zero/tests/test_public_acquisition_policy.py",
+        "to": "apps/zero/zero/enrichment/feedback.py",
+        "via": "zero.enrichment.feedback"
+      },
+      {
+        "from": "apps/zero/tests/test_public_acquisition_policy.py",
+        "to": "apps/zero/zero/harvesters/public_document.py",
+        "via": "zero.harvesters.public_document"
+      },
+      {
+        "from": "apps/zero/tests/test_public_acquisition_policy.py",
+        "to": "apps/zero/zero/harvesters/registry.py",
+        "via": "zero.harvesters.registry"
+      },
+      {
         "from": "apps/zero/tests/test_public_document.py",
         "to": "apps/zero/zero/harvesters/public_document.py",
         "via": "zero.harvesters.public_document"
@@ -24082,7 +24097,7 @@
       },
       {
         "path": "apps/zero/tests/test_public_acquisition_policy.py",
-        "tests": 7,
+        "tests": 9,
         "test_names": [
           "test_public_domain_keeps_technical_leads_and_role_mailboxes",
           "test_public_profile_suppresses_personal_or_enumerative_outputs",
@@ -24090,7 +24105,9 @@
           "test_non_public_seed_types_fail_closed",
           "test_production_filter_removes_personal_leads_before_all_stages",
           "test_public_page_feedback_is_same_origin_and_source_bound",
-          "test_public_page_feedback_wave_stays_on_host_and_keeps_parent_context"
+          "test_public_page_feedback_wave_stays_on_host_and_keeps_parent_context",
+          "test_recursive_public_discovery_respects_total_page_budget",
+          "test_total_page_budget_must_be_positive"
         ],
         "targets": [
           "apps/zero/zero/enrichment/feedback.py",
@@ -24322,7 +24339,7 @@
         "targets": []
       }
     ],
-    "total": 5369
+    "total": 5371
   },
   "contracts": {
     "python": [
@@ -35208,7 +35225,7 @@
       {
         "path": "apps/control-plane/services/zero_layer.py",
         "status": "IMPLEMENTED",
-        "loc": 414,
+        "loc": 415,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
@@ -41160,8 +41177,8 @@
       {
         "path": "apps/zero/tests/test_public_acquisition_policy.py",
         "status": "TEST",
-        "loc": 117,
-        "callables": 8,
+        "loc": 161,
+        "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41279,7 +41296,7 @@
       {
         "path": "apps/zero/zero/harvest_wave.py",
         "status": "IMPLEMENTED",
-        "loc": 496,
+        "loc": 515,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -84846,6 +84863,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "98f01e001eb15ce1",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+        "object": "apps/zero/zero/enrichment/feedback.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_acquisition_policy.py",
+          "via": "zero.enrichment.feedback"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "cac88409c23fbda4",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/tests/test_public_acquisition_policy.py",
@@ -84881,6 +84911,32 @@
         "evidence": {
           "file": "apps/zero/tests/test_public_acquisition_policy.py",
           "via": "zero.harvesters.public_document"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0e1d502c6b5f57a7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+        "object": "apps/zero/zero/harvesters/public_document.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_acquisition_policy.py",
+          "via": "zero.harvesters.public_document"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2d9e4d5fa602f251",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+        "object": "apps/zero/zero/harvesters/registry.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_acquisition_policy.py",
+          "via": "zero.harvesters.registry"
         },
         "confidence": 1.0
       },
@@ -105141,8 +105197,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4514,
-      "static_facts": 4220,
+      "facts_total": 4517,
+      "static_facts": 4223,
       "inferred": 294,
       "intended": 0
     }
@@ -105153,15 +105209,15 @@
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2909,
+    "import_edges": 2912,
     "test_files": 352,
-    "test_functions": 5369,
+    "test_functions": 5371,
     "untested_modules": 269,
     "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4514,
-    "static_facts": 4220,
+    "facts_total": 4517,
+    "static_facts": 4223,
     "inferred": 294,
     "intended": 0
   },
