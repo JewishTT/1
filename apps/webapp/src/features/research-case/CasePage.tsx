@@ -10,7 +10,7 @@
  */
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
@@ -48,25 +48,38 @@ const VIEW_LABELS: Record<ViewId, string> = {
  * contains no URL or subject data; only a short fingerprint is used as the
  * sessionStorage key. Reloading the page cannot accidentally create a second
  * network run for the same case scope and lead set. */
-function zeroLayerBatchKey(caseId: string, scopeDigest: string, leadIds: string[]): string {
-  const material = [caseId, scopeDigest, ...leadIds].sort().join("|");
+function zeroLayerBatchKey(
+  caseId: string,
+  scopeDigest: string,
+  leadIds: string[],
+  fallbackKeys: Map<string, string>,
+): string {
+  const material = [caseId, scopeDigest, ...[...leadIds].sort()].join("|");
   let hash = 2166136261;
   for (let index = 0; index < material.length; index += 1) {
     hash ^= material.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
   const storageKey = `cognitive.zero-layer.${(hash >>> 0).toString(16)}`;
+  const inMemory = fallbackKeys.get(storageKey);
+  if (inMemory) return inMemory;
   try {
     const existing = window.sessionStorage.getItem(storageKey);
-    if (existing) return existing;
-    const key = `zl-${crypto.randomUUID()}`;
-    window.sessionStorage.setItem(storageKey, key);
-    return key;
+    if (existing) {
+      fallbackKeys.set(storageKey, existing);
+      return existing;
+    }
   } catch {
-    // Storage can be blocked by browser privacy settings. The request still gets
-    // a unique key; the durable backend reservation remains the final authority.
-    return `zl-${crypto.randomUUID()}`;
+    // Some privacy modes block sessionStorage. Keep a per-page fallback below.
   }
+  const key = `zl-${crypto.randomUUID()}`;
+  fallbackKeys.set(storageKey, key);
+  try {
+    window.sessionStorage.setItem(storageKey, key);
+  } catch {
+    // The mounted page still reuses the in-memory key on every retry.
+  }
+  return key;
 }
 
 
@@ -78,6 +91,7 @@ export function CasePage() {
   const [selectedActionRefs, setSelectedActionRefs] = useState<string[]>([]);
   const [runIdempotencyKey, setRunIdempotencyKey] = useState<string | null>(null);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const zeroLayerFallbackKeys = useRef(new Map<string, string>());
 
   const { data: caseData, isLoading: caseLoading, error: caseError } = useQuery<ResearchCase>({
     queryKey: ["research-case", caseId],
@@ -361,7 +375,7 @@ export function CasePage() {
                           }
                           onClick={() => zeroLayerMutation.mutate({
                             leadIds: [...selectedLeadIds].sort(),
-                            key: zeroLayerBatchKey(caseId!, caseData.scope_digest, [...selectedLeadIds].sort()),
+                            key: zeroLayerBatchKey(caseId!, caseData.scope_digest, [...selectedLeadIds].sort(), zeroLayerFallbackKeys.current),
                           })}
                           className="rounded border border-cyan-300 bg-cyan-300 px-3 py-1.5 text-[11px] font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
                         >
