@@ -41234,7 +41234,7 @@
       {
         "path": "apps/zero/zero/harvesters/transport.py",
         "status": "IMPLEMENTED",
-        "loc": 315,
+        "loc": 319,
         "callables": 19,
         "stubs": 2,
         "not_implemented": 0,
