@@ -13,6 +13,7 @@ able to constrain the execution surface.
 from __future__ import annotations
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -118,11 +119,14 @@ class HarvestWave:
         enable_enrichment: bool = True,
         seed_context: Mapping[str, Mapping[str, Any]] | None = None,
         candidate_allowed: Callable[[SeedInput, ObservationCandidate], bool] | None = None,
+        max_seed_workers: int = 1,
     ) -> None:
         if not 1 <= int(max_depth) <= 5:
             raise ValueError("max_depth must be between 1 and 5")
         if int(min_new_seeds) < 0:
             raise ValueError("min_new_seeds cannot be negative")
+        if not 1 <= int(max_seed_workers) <= 16:
+            raise ValueError("max_seed_workers must be between 1 and 16")
         self._detector = detector or TypeDetector()
         if registry is None:
             registry = HarvesterRegistry()
@@ -134,6 +138,7 @@ class HarvestWave:
         self._dns_exists = dns_exists
         self._max_depth = int(max_depth)
         self._min_new_seeds = int(min_new_seeds)
+        self._max_seed_workers = int(max_seed_workers)
         self._enable_enrichment = bool(enable_enrichment)
         self._candidate_allowed = candidate_allowed
         self._seed_context = {
@@ -161,11 +166,15 @@ class HarvestWave:
         self._observations.clear()
         self._stage_records.clear()
 
-        current: list[SeedInput] = []
+        # Duplicate seed values are one unit of work. Deduplicate before starting
+        # worker threads so retries or repeated UI selections cannot multiply a
+        # source's request budget.
+        unique: dict[str, SeedInput] = {}
         for raw in raw_seeds:
             seed = self._detector.detect(raw)
-            current.append(seed)
-            self._seen_keys.add(_seed_key(seed))
+            unique.setdefault(_seed_key(seed), seed)
+        current = sorted(unique.values(), key=lambda item: item.raw_value)
+        self._seen_keys.update(_seed_key(seed) for seed in current)
         if not current:
             return []
 
@@ -232,7 +241,17 @@ class HarvestWave:
             authority = host if port in (None, 443) else f"{host}:{port}"
             return f"{parsed.scheme.lower()}://{authority}{parsed.path or '/'}?{parsed.query}"
 
-        for capture in captures or ():
+        # A concurrent transport can finish pages in any order. Persist the
+        # raw captures in a stable order so event publication and the returned
+        # manifest are reproducible across identical runs.
+        captures = sorted(
+            captures or (),
+            key=lambda item: (
+                str(getattr(item, "url", "")),
+                hashlib.sha256(bytes(getattr(item, "body", b""))).hexdigest(),
+            ),
+        )
+        for capture in captures:
             accepted_capture = await persist_capture(
                 capture,
                 tenant_id=tenant_id,
@@ -278,8 +297,19 @@ class HarvestWave:
     def _run_wave(
         self, wave_index: int, seeds: list[SeedInput]
     ) -> tuple[WaveSummary, list[ObservationCandidate]]:
-        wave_candidates: list[ObservationCandidate] = []
-        for seed in sorted(seeds, key=lambda s: s.raw_value):
+        ordered_seeds = sorted(seeds, key=lambda item: item.raw_value)
+
+        def process_seed(seed: SeedInput) -> tuple[
+            SeedInput,
+            list[ObservationCandidate],
+            list[ObservationCandidate],
+            list[ObservationCandidate],
+            list[str],
+            tuple[str, ...],
+            tuple[str, ...],
+            int,
+        ]:
+            """Process one seed without mutating wave-level shared state."""
             ctx = HarvesterContext(
                 seed=seed,
                 transport=self._transport,
@@ -300,13 +330,21 @@ class HarvestWave:
             # Filter before materializing stages or feedback. Production allow-lists
             # therefore cannot be bypassed through a sibling stage or re-harvest.
             if self._candidate_allowed is not None:
-                harvested = [candidate for candidate in harvested if self._candidate_allowed(seed, candidate)]
-                enriched = [candidate for candidate in enriched if self._candidate_allowed(seed, candidate)]
-            combined = harvested + enriched
-            clustering = cluster_candidates(combined)
-            clustering = sorted(clustering, key=lambda c: (c.kind, c.value, c.source_module))
-            derived = sorted(c.value for c in clustering if c.confidence >= 0.5)
-
+                harvested = [
+                    candidate for candidate in harvested
+                    if self._candidate_allowed(seed, candidate)
+                ]
+                enriched = [
+                    candidate for candidate in enriched
+                    if self._candidate_allowed(seed, candidate)
+                ]
+            clustering = sorted(
+                cluster_candidates(harvested + enriched),
+                key=lambda item: (item.kind, item.value, item.source_module),
+            )
+            derived = sorted(
+                candidate.value for candidate in clustering if candidate.confidence >= 0.5
+            )
             module_names = tuple(result.module for result in module_results)
             module_notes = tuple(
                 f"{result.module}: {note}"
@@ -314,15 +352,37 @@ class HarvestWave:
                 for note in result.notes
             )
             pending_commands = sum(len(result.commands) for result in module_results)
+            return (
+                seed, harvested, enriched, clustering, derived,
+                module_names, module_notes, pending_commands,
+            )
+
+        # Different seeds are independent. The transport remains responsible for
+        # its own host-level pacing, DNS pinning, request semaphore and global cap;
+        # this pool only bounds how many seed pipelines can be active at once.
+        # executor.map preserves input order even when a later seed finishes first.
+        if self._max_seed_workers == 1 or len(ordered_seeds) < 2:
+            processed = [process_seed(seed) for seed in ordered_seeds]
+        else:
+            with ThreadPoolExecutor(
+                max_workers=min(self._max_seed_workers, len(ordered_seeds)),
+                thread_name_prefix="zero-seed",
+            ) as executor:
+                processed = list(executor.map(process_seed, ordered_seeds))
+
+        wave_candidates: list[ObservationCandidate] = []
+        for (
+            seed, harvested, enriched, clustering, derived,
+            module_names, module_notes, pending_commands,
+        ) in processed:
             seed_context = self._seed_context.get(seed.raw_value, {})
             common = {
                 "wave_index": wave_index,
                 "seed_id": seed.seed_id,
                 "seed_type": seed.detected_type.value,
                 "seed_value": seed.raw_value,
-                # The old parent_observation_id supplied by the case projection is
-                # the search result, not the fetched page. Preserve it as discovery
-                # lineage. Raw page parent is attached after persist_capture().
+                # The search result remains a separate causal predecessor. The
+                # immutable raw-page parent is attached after persist_capture().
                 "parent_observation_id": str(seed_context.get("capture_observation_id") or ""),
                 "discovery_observation_id": str(
                     seed_context.get("discovery_observation_id")
@@ -336,7 +396,9 @@ class HarvestWave:
                     WaveStageRecord(
                         **common,
                         stage="HARVEST",
-                        candidates=tuple(sorted(harvested, key=lambda c: (c.kind, c.value, c.source_module))),
+                        candidates=tuple(sorted(
+                            harvested, key=lambda item: (item.kind, item.value, item.source_module)
+                        )),
                         module_names=module_names,
                         notes=module_notes,
                         pending_worker_commands=pending_commands,
@@ -344,7 +406,9 @@ class HarvestWave:
                     WaveStageRecord(
                         **common,
                         stage="ENRICHMENT",
-                        candidates=tuple(sorted(enriched, key=lambda c: (c.kind, c.value, c.source_module))),
+                        candidates=tuple(sorted(
+                            enriched, key=lambda item: (item.kind, item.value, item.source_module)
+                        )),
                         module_names=("deterministic-enrichers",),
                     ),
                     WaveStageRecord(
@@ -356,6 +420,8 @@ class HarvestWave:
                 )
             )
             wave_candidates.extend(clustering)
+            # The gate/producer is deliberately called on the coordinating thread;
+            # adapters need not be thread-safe and event order stays deterministic.
             self._observations.append(
                 self._gate.emit(seed=seed, candidates=clustering, derived_seeds=derived)
             )
@@ -363,7 +429,7 @@ class HarvestWave:
         dist = _confidence_dist_from(wave_candidates)
         summary = WaveSummary(
             wave_index=wave_index,
-            seeds_in=len(seeds),
+            seeds_in=len(ordered_seeds),
             contacts_out=len(wave_candidates),
             new_seeds_discovered=0,
             confidence_dist=dist,
