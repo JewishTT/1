@@ -23569,10 +23569,11 @@
       },
       {
         "path": "apps/zero/tests/test_enrichment.py",
-        "tests": 24,
+        "tests": 26,
         "test_names": [
           "test_at_least_eight_enrichers_registered",
           "test_names_unique_and_sorted",
+          "test_fixture_lookup_modules_are_excluded_from_production_registry",
           "test_email_to_username",
           "test_mock_breach_hits",
           "test_unknown_domain_no_breach",
@@ -23585,6 +23586,7 @@
           "test_personal_emails_from_name_and_domain",
           "test_without_domain_nothing",
           "test_profile_from_local_part",
+          "test_mock_ip_lookup_is_not_enabled_for_normal_execution",
           "test_mock_ip_lookup",
           "test_tech_signals_from_injected_html",
           "test_no_html_no_tech",
@@ -23848,7 +23850,7 @@
         "targets": []
       }
     ],
-    "total": 5335
+    "total": 5337
   },
   "contracts": {
     "python": [
@@ -40586,8 +40588,8 @@
       {
         "path": "apps/zero/tests/test_enrichment.py",
         "status": "TEST",
-        "loc": 200,
-        "callables": 28,
+        "loc": 220,
+        "callables": 30,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40667,7 +40669,7 @@
       {
         "path": "apps/zero/zero/enrichment/modules.py",
         "status": "IMPLEMENTED",
-        "loc": 366,
+        "loc": 386,
         "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
@@ -103241,7 +103243,7 @@
     "rust_crates": 9,
     "import_edges": 2840,
     "test_files": 345,
-    "test_functions": 5335,
+    "test_functions": 5337,
     "untested_modules": 268,
     "http_routes": 183
   },
