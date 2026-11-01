@@ -31,7 +31,7 @@ class _Fetcher:
         self.child_page = b"""<html><head><title>Public Office Holder</title>
         <script type="application/ld+json">
         {"@context":"https://schema.org","@type":"Person","name":"Example","jobTitle":"Public Director"}
-        </script></head><body><h1>Example</h1></body></html>""
+        </script></head><body><h1>Example</h1></body></html>"""
 
     async def fetch(self, url: str, *, headers=None):
         if url.endswith("/robots.txt"):
