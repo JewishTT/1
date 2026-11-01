@@ -244,7 +244,9 @@ class HarvestWave:
                         discovery_source_id=str(parent_context.get("source_id") or ""),
                         action_ref=str(parent_context.get("action_ref") or ""),
                     )
-            if (self._max_total_seeds is not None and processed_seed_count >= self._max_total_seeds) or len(new_seeds) < self._min_new_seeds:
+            # A final permitted batch still has to run. Stop only when there
+            # are no more queued children (possibly because the budget truncated them).
+            if len(new_seeds) < self._min_new_seeds:
                 summary.stabilized = True
             self._gate.emit_cycle(
                 wave_index=wave_index,
