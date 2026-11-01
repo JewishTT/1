@@ -405,6 +405,7 @@ export interface ZeroLayerHarvestResponse {
     new_seeds_discovered: number;
     confidence_dist: Record<string, number>;
     stabilized: boolean;
+    budget_limited?: boolean;
   }>;
   observation_refs: string[];
   result_role: "DISCOVERY_ONLY";

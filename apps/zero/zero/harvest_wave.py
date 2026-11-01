@@ -44,6 +44,7 @@ class WaveSummary:
     new_seeds_discovered: int
     confidence_dist: tuple[tuple[str, int], ...]
     stabilized: bool = False
+    budget_limited: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -53,6 +54,7 @@ class WaveSummary:
             "new_seeds_discovered": self.new_seeds_discovered,
             "confidence_dist": dict(self.confidence_dist),
             "stabilized": self.stabilized,
+            "budget_limited": self.budget_limited,
         }
 
 
@@ -125,6 +127,7 @@ class HarvestWave:
         seed_context: Mapping[str, Mapping[str, Any]] | None = None,
         candidate_allowed: Callable[[SeedInput, ObservationCandidate], bool] | None = None,
         max_seed_workers: int = 1,
+        max_total_seeds: int | None = None,
     ) -> None:
         if not 1 <= int(max_depth) <= 5:
             raise ValueError("max_depth must be between 1 and 5")
@@ -132,6 +135,8 @@ class HarvestWave:
             raise ValueError("min_new_seeds cannot be negative")
         if not 1 <= int(max_seed_workers) <= 16:
             raise ValueError("max_seed_workers must be between 1 and 16")
+        if max_total_seeds is not None and int(max_total_seeds) < 1:
+            raise ValueError("max_total_seeds must be at least 1 when configured")
         self._detector = detector or TypeDetector()
         if registry is None:
             registry = HarvesterRegistry()
@@ -144,6 +149,7 @@ class HarvestWave:
         self._max_depth = int(max_depth)
         self._min_new_seeds = int(min_new_seeds)
         self._max_seed_workers = int(max_seed_workers)
+        self._max_total_seeds = int(max_total_seeds) if max_total_seeds is not None else None
         self._enable_enrichment = bool(enable_enrichment)
         self._candidate_allowed = candidate_allowed
         self._initial_seed_context = {
@@ -181,6 +187,11 @@ class HarvestWave:
             seed = self._detector.detect(raw)
             unique.setdefault(_seed_key(seed), seed)
         current = sorted(unique.values(), key=lambda item: item.raw_value)
+        initial_budget_limited = False
+        if self._max_total_seeds is not None and len(current) > self._max_total_seeds:
+            current = current[:self._max_total_seeds]
+            initial_budget_limited = True
+        processed_seed_count = len(current)
         self._seen_keys.update(_seed_key(seed) for seed in current)
         if not current:
             return []
@@ -189,10 +200,18 @@ class HarvestWave:
         for wave_index in range(self._max_depth):
             self._gate.emit_started(wave_index=wave_index, seed_count=len(current))
             summary, wave_candidates = self._run_wave(wave_index, current)
+            if initial_budget_limited and wave_index == 0:
+                summary.budget_limited = True
             summaries.append(summary)
 
             new_seeds = self._feedback.new_seeds(wave_candidates, seen=self._seen_keys)
             summary.new_seeds_discovered = len(new_seeds)
+            if self._max_total_seeds is not None:
+                remaining = max(0, self._max_total_seeds - processed_seed_count)
+                if len(new_seeds) > remaining:
+                    summary.budget_limited = True
+                    new_seeds = new_seeds[:remaining]
+                processed_seed_count += len(new_seeds)
             # Keep each next-wave page tied to the exact page that nominated it.
             # No cross-origin or generic entity feedback enters this production path.
             candidates_by_url = {
@@ -225,7 +244,7 @@ class HarvestWave:
                         discovery_source_id=str(parent_context.get("source_id") or ""),
                         action_ref=str(parent_context.get("action_ref") or ""),
                     )
-            if len(new_seeds) < self._min_new_seeds:
+            if (self._max_total_seeds is not None and processed_seed_count >= self._max_total_seeds) or len(new_seeds) < self._min_new_seeds:
                 summary.stabilized = True
             self._gate.emit_cycle(
                 wave_index=wave_index,

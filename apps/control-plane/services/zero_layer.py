@@ -331,6 +331,7 @@ class ZeroLayerCaseService:
             seed_context=seed_context,
             candidate_allowed=allow_public_candidate,
             max_seed_workers=self.MAX_CONCURRENCY,
+            max_total_seeds=self.MAX_PAGES_PER_RUN,
         )
         artifact_sink = await self._get_artifact_sink()
         canonical_sink = CanonicalArtifactSink(

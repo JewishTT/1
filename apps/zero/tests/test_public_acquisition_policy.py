@@ -114,3 +114,47 @@ def test_public_page_feedback_wave_stays_on_host_and_keeps_parent_context() -> N
     assert all(record.parent_capture_url == root for record in child_records)
     assert all(record.discovery_observation_id == "OBS-SEARCH-1" for record in child_records)
     assert all(record.source_id == "searxng-public" for record in child_records)
+
+
+def test_recursive_public_discovery_respects_total_page_budget() -> None:
+    from zero.enrichment.feedback import FeedbackLoop
+    from zero.harvesters.public_document import PublicDocumentHarvester
+    from zero.harvesters.registry import HarvesterRegistry
+
+    root = "https://example.org/about"
+    first = "https://example.org/a"
+    second = "https://example.org/b"
+    transport = DictTransport(bodies={
+        root: '<a href="/a">A</a><a href="/b">B</a>',
+        first: "<title>First public page</title>",
+        second: "<title>Second public page</title>",
+    })
+    registry = HarvesterRegistry(max_workers=1)
+    registry.register(PublicDocumentHarvester())
+    wave = HarvestWave(
+        registry=registry,
+        transport=transport,
+        max_depth=2,
+        min_new_seeds=1,
+        enable_enrichment=False,
+        feedback=FeedbackLoop(kinds=frozenset({"public_page_link"})),
+        candidate_allowed=allow_public_candidate,
+        max_total_seeds=2,
+    )
+
+    summaries = wave.run([root])
+
+    assert [summary.seeds_in for summary in summaries] == [1, 1]
+    assert summaries[0].new_seeds_discovered == 2
+    assert summaries[0].budget_limited is True
+    assert summaries[1].seeds_in == 1
+    assert {record.seed_value for record in wave.stage_records} == {root, first}
+
+
+def test_total_page_budget_must_be_positive() -> None:
+    try:
+        HarvestWave(max_total_seeds=0)
+    except ValueError as exc:
+        assert "max_total_seeds" in str(exc)
+    else:  # pragma: no cover - assertion
+        raise AssertionError("zero page limit must be rejected")
