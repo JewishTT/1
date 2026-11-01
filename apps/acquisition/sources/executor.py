@@ -315,38 +315,42 @@ class HttpSourceExecutor:
         max_bytes: int = 2_000_000,
         user_agent: str = DEFAULT_USER_AGENT,
         client: Any | None = None,
+        secure_fetcher: Any | None = None,
     ) -> None:
         self.timeout = timeout
         self.max_bytes = max_bytes
         self.user_agent = user_agent
         self._client = client
+        self._secure_fetcher = secure_fetcher
+        if self._client is None and self._secure_fetcher is None:
+            from net.secure_fetch import SecureFetcher
+            from security import ResourceLimits
+
+            self._secure_fetcher = SecureFetcher(
+                limits=ResourceLimits(
+                    max_response_bytes=max_bytes,
+                    max_timeout_ms=max(1, int(timeout * 1000)),
+                ),
+                user_agent=user_agent,
+            )
 
     async def _session(self) -> Any:
+        if self._secure_fetcher is not None:
+            raise RuntimeError("secure production fetch does not expose a raw HTTP client")
         if self._client is not None:
             return self._client
-        import httpx
-
-        # ``follow_redirects=False`` turned every source that redirects into a permanent
-        # ``upstream_down``: rdap.org answers 302 to rdap.verisign.com, arxiv redirects
-        # http->https, openphish redirects to the plain-text feed. A live sweep found six
-        # sources in exactly that state, none of which was broken -- they just answered
-        # 301/302 like most of the web.
-        #
-        # The redirect chain is still recorded on the capture (see ``redirects_from``), so
-        # following one is visible rather than silent: a source that redirects is a fact
-        # about the source, and it belongs in the provenance of what came back.
-        self._client = httpx.AsyncClient(
-            timeout=self.timeout,
-            follow_redirects=True,
-            max_redirects=5,
-            headers={"User-Agent": self.user_agent},
+        raise AcquisitionError(
+            "secure_fetcher_missing",
+            "production HTTP acquisition requires the shared SecureFetcher boundary",
         )
-        return self._client
 
     async def aclose(self) -> None:
         if self._client is not None and hasattr(self._client, "aclose"):
             await self._client.aclose()
+        if self._secure_fetcher is not None:
+            await self._secure_fetcher.aclose()
         self._client = None
+        self._secure_fetcher = None
 
     def _page_url(self, base_url: str, pagination: Pagination, page: int) -> str:
         """Advance the URL to ``page``. Page 1 is the definition's own URL, unmodified."""
@@ -390,7 +394,7 @@ class HttpSourceExecutor:
         api_key = _source_api_key(source)
         base_url = _replace_api_key(resolve_query(source.tool, query), api_key, url_value=True)
         _refuse_blocked_host(base_url)
-        session = await self._session()
+        session = None if self._secure_fetcher is not None else await self._session()
         method = str(source.tool.get("method") or "GET").upper()
         headers = request_headers(source, api_key=api_key)
         # Only forwarded when a source actually declares basic auth. Passing auth=None
@@ -404,11 +408,51 @@ class HttpSourceExecutor:
             _refuse_blocked_host(url)
             started = time.monotonic()
             retrieved_at = time.time()
+            secure_result = None
             try:
-                if auth is None:
-                    response = await session.request(method, url, headers=headers)
+                if self._secure_fetcher is not None:
+                    from security import SecurityBlocked
+
+                    secure_headers = dict(headers)
+                    if auth is not None:
+                        import base64
+
+                        token = base64.b64encode(f"{auth[0]}:{auth[1]}".encode("utf-8")).decode("ascii")
+                        secure_headers["Authorization"] = f"Basic {token}"
+                    try:
+                        secure_result = await self._secure_fetcher.fetch(
+                            url,
+                            headers=secure_headers,
+                            method=method,
+                            trusted_private_hosts=tuple(source.tool.get("trusted_private_hosts") or ()),
+                        )
+                    except SecurityBlocked as blocked:
+                        raise AcquisitionError(
+                            "security_blocked",
+                            f"{source.name} page {page}: {type(blocked).__name__}: {blocked}",
+                        ) from blocked
+                    response = None
+                    body = secure_result.body
+                    response_status = secure_result.status
+                    response_headers = secure_result.headers
+                    response_url = secure_result.url
+                    response_redirects = secure_result.redirects
+                    pinned_ip = secure_result.pinned_ip
                 else:
-                    response = await session.request(method, url, headers=headers, auth=auth)
+                    if auth is None:
+                        response = await session.request(method, url, headers=headers)
+                    else:
+                        response = await session.request(method, url, headers=headers, auth=auth)
+                    body = response.content or b""
+                    response_status = int(response.status_code)
+                    response_headers = dict(response.headers)
+                    response_url = str(getattr(response, "url", url) or url)
+                    response_redirects = tuple(
+                        str(h.url) for h in (getattr(response, "history", None) or ())
+                    )
+                    pinned_ip = ""
+            except AcquisitionError:
+                raise
             except Exception as exc:  # transport failure is a value, not a crash
                 # HTTP client exceptions can include the request URL; redact credentials
                 # before this detail reaches a failure journal or an event payload.
@@ -425,20 +469,20 @@ class HttpSourceExecutor:
                     "transport_failed",
                     f"{source.name} page {page}: {type(exc).__name__}: {error_detail}",
                 ) from exc
-            body = response.content or b""
             truncated = len(body) > self.max_bytes
             if truncated:
                 body = body[: self.max_bytes]
             # The request uses the real credential; capture metadata never does.
             safe_url = _redact_url(url, credentials=(api_key,))
+            safe_final_url = _redact_url(response_url, credentials=(api_key,))
             yield CapturePage(
                 source_id=source.source_id,
                 source_name=source.name,
                 query=query,
                 page=page,
                 url=safe_url,
-                status=int(response.status_code),
-                content_type=str(response.headers.get("content-type", "")),
+                status=response_status,
+                content_type=str(response_headers.get("content-type", response_headers.get("Content-Type", ""))),
                 body=body,
                 content_digest=_digest(body),
                 retrieved_at=retrieved_at,
@@ -452,11 +496,13 @@ class HttpSourceExecutor:
                     # http -> https), and a reader of the provenance should see that the
                     # bytes came from somewhere other than the URL they asked for.
                     "redirects": [
-                        _redact_url(str(h.url), credentials=(api_key,))
-                        for h in (getattr(response, "history", None) or ())
+                        _redact_url(str(h), credentials=(api_key,))
+                        for h in (response_redirects or ())
                     ],
                     "requested_url": safe_url,
-                    "final_url": _redact_url(str(getattr(response, "url", url) or url), credentials=(api_key,)),
+                    "final_url": safe_final_url,
+                    "dns_checked_ip": pinned_ip or None,
+                    "fetch_security": "SECURE_FETCHER" if secure_result is not None else "INJECTED_TEST_TRANSPORT",
                 },
             )
             # A short page is a short page: the source told us there is no next one.

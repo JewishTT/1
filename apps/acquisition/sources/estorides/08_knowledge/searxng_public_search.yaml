@@ -24,6 +24,8 @@ pagination:
 tool:
   method: GET
   url: http://searxng:8080/search
+  trusted_private_hosts:
+    - searxng
   headers:
     Accept: application/json
   params:

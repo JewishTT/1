@@ -81,6 +81,36 @@ async def test_happy_path_pins_public_ip():
 
 
 @pytest.mark.asyncio
+async def test_exact_trusted_private_service_hostname_is_allowed():
+    t = FakeTransport({"http://searxng:8080/search": resp(200, b"json")})
+    f = SecureFetcher(
+        transport=t,
+        resolver=await resolver_for({"searxng": ["172.20.0.4"]}),
+    )
+    result = await f.fetch("http://searxng:8080/search", trusted_private_hosts=("searxng",))
+    assert result.status == 200
+    assert result.pinned_ip == "172.20.0.4"
+
+
+@pytest.mark.asyncio
+async def test_trusted_service_allowlist_does_not_cover_other_private_redirect_hosts():
+    t = FakeTransport({
+        "http://searxng:8080/search": resp(302, headers={"location": "http://metadata.internal/latest"}),
+        "http://metadata.internal/latest": resp(200, b"secret"),
+    })
+    f = SecureFetcher(
+        transport=t,
+        resolver=await resolver_for({
+            "searxng": ["172.20.0.4"],
+            "metadata.internal": ["169.254.169.254"],
+        }),
+    )
+    with pytest.raises(SecurityBlocked):
+        await f.fetch("http://searxng:8080/search", trusted_private_hosts=("searxng",))
+    assert "http://metadata.internal/latest" not in t.seen
+
+
+@pytest.mark.asyncio
 async def test_private_destination_refused():
     """The classic SSRF: a public name resolving into the metadata range."""
     t = FakeTransport({"http://evil.test/": resp(200, b"secret")})
@@ -280,3 +310,4 @@ async def test_client_never_follows_redirects_itself():
     assert own._transport.follow_redirects is False
     await own.aclose()
     await transport.aclose()
+

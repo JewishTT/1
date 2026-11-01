@@ -67,12 +67,17 @@ from adapters.discovery.registry import (
 )
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from urllib.parse import parse_qsl, urlsplit
 
 from api.auth import TenantContext, require_analyst
+from db.schema import Investigation as InvestigationRow
 from db.session import make_session_factory
 from services.discovery_frontier import FrontierSinkAdapter, LinkEdgeProvider, canonical_host
 from services.query_planner import _error_text
 from services.search_backends import search_projection
+from security import SecurityBlocked, validate_seed_url
+from zero.type_detector import InputType, TypeDetector
 
 # The vendor source modules are loaded by file path, not by dotted name.
 #
@@ -147,11 +152,12 @@ _ABSOLUTE_PATH = re.compile(r"(^|[\s'\"=(])(?:[A-Za-z]:)?[\\/][^\s'\"]*")
 
 class DiscoveryRunRequest(BaseModel):
     seed: str = Field(min_length=1)
-    seed_type: str = "domain"  # domain | entity | url
-    investigation_id: str = Field(default="", max_length=64)
+    seed_type: str | None = None  # inferred from deterministic TypeDetector; public domain/url only
+    investigation_id: str = Field(min_length=1, max_length=64)
     sources: list[str] | None = None
     limit: int = Field(default=DEFAULT_CANDIDATE_CAP, ge=1, le=MAX_CANDIDATE_CAP)
-    priority: int = 0
+    max_enqueue_candidates: int = Field(default=250, ge=1, le=500)
+    priority: int = Field(default=0, ge=0, le=100)
 
 
 class AdmittedSource:
@@ -227,8 +233,9 @@ class _RecordingSink:
     introspect, which is this one.
     """
 
-    def __init__(self, inner: Any) -> None:
+    def __init__(self, inner: Any, *, seed_provenance: dict[str, Any]) -> None:
         self._inner = inner
+        self._seed_provenance = dict(seed_provenance)
         self.candidates: list[dict[str, Any]] = []
 
     def enqueue(
@@ -241,25 +248,30 @@ class _RecordingSink:
         method: str,
         priority: int = 0,
         provenance: dict[str, Any] | None = None,
-    ) -> None:
-        self.candidates.append(
-            {
-                "uri": uri,
-                "source": source,
-                "method": method,
-                "priority": priority,
-                "provenance": dict(provenance or {}),
-            }
-        )
-        self._inner.enqueue(
+    ) -> bool:
+        enriched = dict(provenance or {})
+        enriched["zero_layer"] = dict(self._seed_provenance)
+        inserted = self._inner.enqueue(
             uri=uri,
             tenant_id=tenant_id,
             investigation_id=investigation_id,
             source=source,
             method=method,
             priority=priority,
-            provenance=provenance,
+            provenance=enriched,
         )
+        self.candidates.append(
+            {
+                "uri": uri,
+                "source": source,
+                "method": method,
+                "priority": priority,
+                "provenance": enriched,
+                "state": "UNVERIFIED_DISCOVERY_LEAD",
+                "claim_admission_allowed": False,
+            }
+        )
+        return bool(inserted)
 
 
 def _bounded_error(entry: dict[str, str]) -> dict[str, str]:
@@ -290,7 +302,76 @@ async def run_discovery(
     body: DiscoveryRunRequest,
     ctx: Annotated[TenantContext, Depends(require_analyst)] = None,
 ) -> dict[str, Any]:
-    """Run one discovery pass for a seed and report what it did."""
+    """Run a tenant- and investigation-bound public discovery pass."""
+    detected = TypeDetector().detect(body.seed)
+    detected_type = detected.detected_type
+    if detected_type not in {InputType.DOMAIN, InputType.URL}:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "unsupported_seed_type",
+                "detail": "Production Zero Layer intake accepts public domains and HTTP(S) URLs only.",
+                "detected_type": detected_type.value,
+            },
+        )
+    if body.seed_type and body.seed_type.lower() != detected_type.value:
+        raise HTTPException(status_code=422, detail={"error": "seed_type_mismatch", "detected_type": detected_type.value})
+    try:
+        if detected_type is InputType.DOMAIN:
+            normalized_seed = f"https://{body.seed.strip().lower().rstrip('.')}/"
+            validate_seed_url(normalized_seed)
+        else:
+            normalized_seed = validate_seed_url(body.seed.strip())
+        parsed_seed = urlsplit(normalized_seed)
+        if parsed_seed.username or parsed_seed.password:
+            raise ValueError("URL userinfo is not accepted as a public discovery seed")
+        sensitive_query_keys = {"key", "api_key", "token", "access_token", "auth", "password", "signature", "sig"}
+        if any(key.lower() in sensitive_query_keys for key, _ in parse_qsl(parsed_seed.query, keep_blank_values=True)):
+            raise ValueError("credential-like query parameters are not accepted in a discovery seed")
+        query_anchor = parsed_seed.hostname or ""
+        if not query_anchor:
+            raise ValueError("seed has no host")
+    except (SecurityBlocked, ValueError) as exc:
+        raise HTTPException(status_code=422, detail={"error": "invalid_public_seed", "detail": str(exc)}) from exc
+
+    async with make_session_factory()() as session:
+        investigation = (
+            await session.execute(
+                select(InvestigationRow).where(
+                    InvestigationRow.investigation_id == body.investigation_id,
+                    InvestigationRow.tenant_id == ctx.tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+    if investigation is None:
+        raise HTTPException(status_code=404, detail="investigation not found")
+    state = str(getattr(investigation.state, "value", investigation.state)).upper()
+    if state not in {"DRAFT", "PLANNING", "RUNNING"}:
+        raise HTTPException(status_code=409, detail=f"investigation does not accept discovery in state {state}")
+    scope = investigation.scope if isinstance(investigation.scope, dict) else {}
+    allowed_types = scope.get("allowed_discovery_seed_types")
+    if isinstance(allowed_types, list) and detected_type.value not in {str(x).lower() for x in allowed_types}:
+        raise HTTPException(status_code=403, detail="seed type is outside the investigation discovery scope")
+    # Link-graph is intentionally withheld here: its current production provider
+    # enforces tenant scope but not investigation scope.
+    safe_sources = {
+        InputType.DOMAIN: {"commoncrawl-index", "crtsh", "wayback-cdx"},
+        InputType.URL: {"commoncrawl-index", "wayback-cdx"},
+    }[detected_type]
+    scoped_sources = scope.get("allowed_discovery_sources")
+    if isinstance(scoped_sources, list):
+        safe_sources &= {str(x) for x in scoped_sources}
+    requested_sources = set(body.sources) if body.sources is not None else set(safe_sources)
+    if not requested_sources or not requested_sources.issubset(safe_sources):
+        raise HTTPException(status_code=403, detail={"error": "discovery_source_outside_scope", "allowed_sources": sorted(safe_sources)})
+    seed_id = detected.seed_id
+    seed_provenance = {
+        "seed_id": seed_id,
+        "seed_type": detected_type.value,
+        "detector_confidence": round(float(detected.confidence), 6),
+        "entrypoint": "api.v1.discovery.run",
+        "claim_admission_allowed": False,
+    }
     registry = DiscoveryRegistry()
     admitted: list[dict[str, Any]] = []
     refused: list[dict[str, str]] = []
@@ -322,16 +403,18 @@ async def run_discovery(
         )
 
     sink = _RecordingSink(
-        FrontierSinkAdapter(make_session_factory(), host_key_of=canonical_host)
+        FrontierSinkAdapter(make_session_factory(), host_key_of=canonical_host),
+        seed_provenance=seed_provenance,
     )
     try:
         report = registry.discover(
-            body.seed,
-            sources=body.sources,
+            query_anchor,
+            sources=sorted(requested_sources),
             frontier=sink,
             tenant_id=ctx.tenant_id,
             investigation_id=body.investigation_id,
             priority=body.priority,
+            max_enqueues=body.max_enqueue_candidates,
         )
     except Exception as exc:
         # The pass ran and found candidates that could not be committed. Reported
@@ -350,14 +433,20 @@ async def run_discovery(
     payload["sources_failed"] = [_bounded_error(entry) for entry in payload["sources_failed"]]
     candidates = sink.candidates
     return {
-        "seed": body.seed,
-        "seed_type": body.seed_type,
+        "seed": normalized_seed,
+        "seed_id": seed_id,
+        "seed_type": detected_type.value,
+        "detector_confidence": round(float(detected.confidence), 6),
         "tenant_id": ctx.tenant_id,
         "investigation_id": body.investigation_id,
         "report": payload,
         "candidates": candidates[: body.limit],
         "candidates_returned": min(len(candidates), body.limit),
         "candidates_truncated": len(candidates) > body.limit,
+        "candidates_enqueue_capped": payload.get("candidates_enqueue_capped", False),
+        "max_enqueue_candidates": body.max_enqueue_candidates,
+        "result_role": "DISCOVERY_ONLY",
+        "claim_admission_allowed": False,
         "sources_admitted": admitted,
         "sources_refused": refused,
     }

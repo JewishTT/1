@@ -67,7 +67,7 @@ function RoutedTopNav() {
   return (
     <aside className="ui-primary-nav" data-testid="topnav" data-module={currentModule}>
       <div className="ui-primary-nav-header">
-        <span className="ui-primary-nav-kicker">ROUTE INDEX / 01</span>
+        <span className="ui-primary-nav-kicker">COMMAND ROUTE INDEX / 01</span>
         <span className="ui-primary-nav-heading">FIELD DOMAINS</span>
       </div>
 
@@ -121,7 +121,7 @@ function RoutedTopNav() {
       </nav>
 
       <footer className="ui-primary-nav-footer">
-        <span className="ui-primary-nav-kicker">ACTIVE WORKSPACE</span>
+        <span className="ui-primary-nav-kicker">CURRENT OPERATING THEATRE</span>
         <strong title={currentTitle}>{currentTitle}</strong>
         <span className="ui-primary-nav-footer-code">{currentModule.toUpperCase()} / ROUTED</span>
       </footer>

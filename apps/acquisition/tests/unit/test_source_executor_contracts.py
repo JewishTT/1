@@ -192,3 +192,14 @@ async def test_transport_error_redacts_api_key_from_failure_detail(
     assert raised.value.code == "transport_failed"
     assert marker not in raised.value.message
     assert "[REDACTED]" in raised.value.message
+
+@pytest.mark.asyncio
+async def test_production_executor_uses_secure_fetch_boundary_by_default() -> None:
+    executor = HttpSourceExecutor()
+    try:
+        assert executor._client is None
+        assert executor._secure_fetcher is not None
+        assert executor._secure_fetcher._transport.follow_redirects is False
+    finally:
+        await executor.aclose()
+

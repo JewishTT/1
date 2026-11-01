@@ -315,6 +315,7 @@ export function AppShell({ children, activity }: AppShellProps) {
             </span>
             <span className="ui-brand">COGNITIVE</span>
             <span className="ui-meta">FIELD SYSTEMS</span>
+            <span className="ui-command-mark">C2 / ANALYST COMMAND</span>
           </div>
 
           <div className="ui-topbar-controls" role="group" aria-label="Shell controls">
@@ -364,6 +365,14 @@ export function AppShell({ children, activity }: AppShellProps) {
 
         <div className="ui-topbar-state">
           <WorkStateBar />
+        </div>
+        <div className="ui-command-strip" aria-label="Platform workflow">
+          <span className="ui-command-strip-label">OPERATING CYCLE</span>
+          <span>OBSERVATION</span><i aria-hidden="true" />
+          <span>CONTEXT</span><i aria-hidden="true" />
+          <span>INTERPRETATION</span><i aria-hidden="true" />
+          <span>VALIDATION</span><i aria-hidden="true" />
+          <span>CLAIM</span>
         </div>
       </header>
 

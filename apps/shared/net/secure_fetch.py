@@ -147,9 +147,17 @@ class SecureFetcher:
         if closer is not None:
             await closer()
 
-    async def _validate_hop(self, url: str) -> str:
-        """Resolve and validate one hop, returning the pinned IP."""
-        host, port, _ = _split_host_port(url)
+    async def _validate_hop(
+        self, url: str, *, trusted_private_hosts: frozenset[str] = frozenset()
+    ) -> str:
+        """Resolve and validate one hop, returning the checked address.
+
+        Private destinations are never accepted by a broad CIDR exception. A source
+        may opt one exact internal DNS name in (e.g. the deployment's own SearXNG
+        service); only RFC1918/ULA addresses for that name are accepted, and every
+        redirect hop must independently match the same exact allow-list.
+        """
+        host, port, scheme = _split_host_port(url)
         candidates = await self._resolver(host, port)
         if not candidates:
             raise SecurityBlocked(f"dns: no address for {host!r}")
@@ -160,7 +168,25 @@ class SecureFetcher:
                 # Compares against any earlier pin for this host; a disagreement is
                 # rebinding, not a round-robin answer.
                 self._rebinding.check(host, ip)
-                ssrf_guard(url, ip, port=port, egress=self._egress)
+                if host.lower() in trusted_private_hosts:
+                    parsed = urlsplit(url)
+                    if scheme not in self._egress.schemes or port not in self._egress.ports:
+                        raise SecurityBlocked(f"scheme/port not allowed for trusted service {host!r}")
+                    address = ipaddress.ip_address(ip)
+                    if (
+                        not address.is_private
+                        or address.is_loopback
+                        or address.is_link_local
+                        or address.is_reserved
+                        or address.is_multicast
+                        or address.is_unspecified
+                        or address in ipaddress.ip_network("100.64.0.0/10")
+                    ):
+                        raise SecurityBlocked(
+                            f"trusted service {host!r} resolved outside private service ranges"
+                        )
+                else:
+                    ssrf_guard(url, ip, port=port, egress=self._egress)
             except SecurityBlocked as blocked:
                 last_blocked = blocked
                 continue
@@ -184,21 +210,38 @@ class SecureFetcher:
             chunks.append(chunk)
         return b"".join(chunks)
 
-    async def fetch(self, url: str, *, headers: dict[str, str] | None = None) -> FetchResult:
+    async def fetch(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        method: str = "GET",
+        trusted_private_hosts: tuple[str, ...] | frozenset[str] = (),
+    ) -> FetchResult:
         """Fetch ``url``, following at most ``max_redirects`` policy-checked hops.
 
         Returns the final response. Raises ``SecurityBlocked`` on any violation.
         """
         current = url
+        current_method = str(method or "GET").upper()
+        if current_method not in {"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}:
+            raise SecurityBlocked(f"HTTP method {current_method!r} is not supported")
+        private_hosts = frozenset(str(host).strip().lower() for host in trusted_private_hosts if str(host).strip())
         chain: list[str] = []
         base_scheme = urlsplit(url).scheme
 
         for hop in range(self._max_redirects + 1):
-            pinned = await self._validate_hop(current)
+            pinned = await self._validate_hop(current, trusted_private_hosts=private_hosts)
             request_headers = {"User-Agent": self._user_agent}
             request_headers.update(headers or {})
 
-            response = await self._transport.get(current, headers=request_headers)
+            requester = getattr(self._transport, "request", None)
+            if callable(requester):
+                response = await requester(current_method, current, headers=request_headers)
+            elif current_method in {"GET", "HEAD"}:
+                response = await getattr(self._transport, current_method.lower())(current, headers=request_headers)
+            else:
+                raise SecurityBlocked("transport does not support non-GET methods safely")
             status = response.status_code
 
             if status in (301, 302, 303, 307, 308):
@@ -215,6 +258,8 @@ class SecureFetcher:
                     raise RedirectBlocked(f"scheme downgrade https->http at {current}")
                 await response.aclose()
                 chain.append(current)
+                if status == 303 or (status in {301, 302} and current_method not in {"GET", "HEAD"}):
+                    current_method = "GET"
                 current = nxt
                 continue
 
