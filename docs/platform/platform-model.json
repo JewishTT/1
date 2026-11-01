@@ -1140,7 +1140,7 @@
   ],
   "import_graph": {
     "module_count": 1030,
-    "edge_count": 2907,
+    "edge_count": 2910,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 900,
@@ -15209,6 +15209,21 @@
         "via": "zero.type_detector"
       },
       {
+        "from": "apps/zero/tests/test_public_document.py",
+        "to": "apps/zero/zero/harvesters/public_document.py",
+        "via": "zero.harvesters.public_document"
+      },
+      {
+        "from": "apps/zero/tests/test_public_document.py",
+        "to": "apps/zero/zero/harvesters/public_document.py",
+        "via": "zero.harvesters.public_document"
+      },
+      {
+        "from": "apps/zero/tests/test_public_document.py",
+        "to": "apps/zero/zero/harvesters/public_document.py",
+        "via": "zero.harvesters.public_document"
+      },
+      {
         "from": "apps/zero/tests/test_public_wave_persistence.py",
         "to": "apps/zero/zero/harvest_wave.py",
         "via": "zero.harvest_wave"
@@ -24090,10 +24105,13 @@
       },
       {
         "path": "apps/zero/tests/test_public_document.py",
-        "tests": 2,
+        "tests": 5,
         "test_names": [
           "test_public_document_extracts_role_and_affiliation_without_private_contacts",
-          "test_public_document_refuses_to_invent_a_record_from_empty_transport"
+          "test_public_document_refuses_to_invent_a_record_from_empty_transport",
+          "test_jsonld_walker_is_iterative_and_bounded",
+          "test_jsonld_walker_handles_deep_graph_wrappers_without_recursion",
+          "test_public_document_candidate_limit_matches_reserved_record_ceiling"
         ],
         "targets": [
           "apps/zero/zero/harvesters/public_document.py",
@@ -24300,7 +24318,7 @@
         "targets": []
       }
     ],
-    "total": 5362
+    "total": 5365
   },
   "contracts": {
     "python": [
@@ -41147,8 +41165,8 @@
       {
         "path": "apps/zero/tests/test_public_document.py",
         "status": "TEST",
-        "loc": 55,
-        "callables": 2,
+        "loc": 81,
+        "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41329,7 +41347,7 @@
       {
         "path": "apps/zero/zero/harvesters/public_document.py",
         "status": "IMPLEMENTED",
-        "loc": 231,
+        "loc": 236,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
@@ -84876,6 +84894,45 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "e4c94700dda6d015",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_public_document.py",
+        "object": "apps/zero/zero/harvesters/public_document.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_document.py",
+          "via": "zero.harvesters.public_document"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e4c94700dda6d015",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_public_document.py",
+        "object": "apps/zero/zero/harvesters/public_document.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_document.py",
+          "via": "zero.harvesters.public_document"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e4c94700dda6d015",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_public_document.py",
+        "object": "apps/zero/zero/harvesters/public_document.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_document.py",
+          "via": "zero.harvesters.public_document"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "b5e1ec8821616d45",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/tests/test_public_document.py",
@@ -105033,8 +105090,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4507,
-      "static_facts": 4213,
+      "facts_total": 4510,
+      "static_facts": 4216,
       "inferred": 294,
       "intended": 0
     }
@@ -105045,15 +105102,15 @@
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2907,
+    "import_edges": 2910,
     "test_files": 352,
-    "test_functions": 5362,
+    "test_functions": 5365,
     "untested_modules": 269,
     "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4507,
-    "static_facts": 4213,
+    "facts_total": 4510,
+    "static_facts": 4216,
     "inferred": 294,
     "intended": 0
   },

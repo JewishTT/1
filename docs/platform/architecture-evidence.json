@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4507,
-    "static_facts": 4213,
+    "facts_total": 4510,
+    "static_facts": 4216,
     "inferred": 294,
     "intended": 0
   },
@@ -37049,6 +37049,45 @@
       "evidence": {
         "file": "apps/zero/tests/test_public_acquisition_policy.py",
         "via": "zero.type_detector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e4c94700dda6d015",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_document.py",
+      "object": "apps/zero/zero/harvesters/public_document.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_document.py",
+        "via": "zero.harvesters.public_document"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e4c94700dda6d015",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_document.py",
+      "object": "apps/zero/zero/harvesters/public_document.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_document.py",
+        "via": "zero.harvesters.public_document"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e4c94700dda6d015",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_document.py",
+      "object": "apps/zero/zero/harvesters/public_document.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_document.py",
+        "via": "zero.harvesters.public_document"
       },
       "confidence": 1.0
     },
