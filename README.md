@@ -13,20 +13,20 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python modules | 1017 |
-| TypeScript modules | 266 |
+| Python modules | 1018 |
+| TypeScript modules | 267 |
 | Rust source files / crates | 16 / 9 |
-| Resolved local import edges | 2823 |
+| Resolved local import edges | 2831 |
 | HTTP routes / routers | 183 / 33 |
 | Event types / lanes | 99 / 29 |
-| Test files / test functions | 344 / 5327 |
-| Untested platform modules | 269 |
+| Test files / test functions | 345 / 5332 |
+| Untested platform modules | 268 |
 
 ## Components
 
 | Component | Python | TypeScript | Rust | Description |
 |---|---|---|---|---|
-| `acquisition` | 108 | 0 | 15 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
+| `acquisition` | 109 | 0 | 15 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
@@ -41,7 +41,7 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | `shared` | 198 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 11 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
-| `webapp` | 0 | 266 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| `webapp` | 0 | 267 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 30 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Quick start

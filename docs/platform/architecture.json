@@ -176,6 +176,7 @@
           "apps/acquisition/tests/unit/test_cc_extract.py",
           "apps/acquisition/tests/unit/test_cc_index.py",
           "apps/acquisition/tests/unit/test_cc_plan.py",
+          "apps/acquisition/tests/unit/test_discovery_registry.py",
           "apps/acquisition/tests/unit/test_engine_adapters.py",
           "apps/acquisition/tests/unit/test_entity_search.py",
           "apps/acquisition/tests/unit/test_evidence_writer.py",
@@ -233,7 +234,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 144
+        "module_count": 145
       },
       {
         "id": "interpretation",
@@ -1358,6 +1359,7 @@
           "apps/webapp/src/shell/TopNav.test.tsx",
           "apps/webapp/src/shell/TopNav.tsx",
           "apps/webapp/src/shell/nav.ts",
+          "apps/webapp/src/styles/tokens/command_tactical.contract.test.ts",
           "apps/webapp/src/styles/tokens/tokens.contract.test.ts",
           "apps/webapp/src/test-setup.ts",
           "apps/webapp/src/test-support/cytoscape-test-double.ts",
@@ -1409,7 +1411,7 @@
           "apps/webapp/src/workspace/useWorkState.ts",
           "apps/webapp/vite.config.ts"
         ],
-        "module_count": 266
+        "module_count": 267
       }
     ],
     "event_names_sample": [
@@ -1660,6 +1662,12 @@
         "via_import": "adapters.discovery"
       },
       {
+        "from": "projection-query",
+        "to": "platform-shared",
+        "type": "direct",
+        "via_import": "security"
+      },
+      {
         "from": "identity-entities",
         "to": "ingestion",
         "type": "direct",
@@ -1682,12 +1690,6 @@
         "to": "investigations",
         "type": "direct",
         "via_import": "db.investigation_store"
-      },
-      {
-        "from": "projection-query",
-        "to": "platform-shared",
-        "type": "direct",
-        "via_import": "ids"
       },
       {
         "from": "investigations",

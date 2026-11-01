@@ -1,6 +1,6 @@
 # Tests
 
-344 test files, 5327 test functions. 269 platform modules are not targeted by any test.
+345 test files, 5332 test functions. 268 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -29,6 +29,7 @@
 | `apps/acquisition/tests/unit/test_cc_extract.py` | 10 | `apps/acquisition/cc_extract.py` |
 | `apps/acquisition/tests/unit/test_cc_index.py` | 3 | `apps/acquisition/adapters/commoncrawl/index.py` |
 | `apps/acquisition/tests/unit/test_cc_plan.py` | 12 | `apps/acquisition/cc_plan.py` |
+| `apps/acquisition/tests/unit/test_discovery_registry.py` | 2 | `apps/acquisition/adapters/discovery/contracts.py`, `apps/acquisition/adapters/discovery/registry.py` |
 | `apps/acquisition/tests/unit/test_engine_adapters.py` | 6 | `apps/acquisition/adapters/browsertrix/__init__.py`, `apps/acquisition/adapters/browsertrix/collect.py`, `apps/acquisition/adapters/heritrix/__init__.py`, `apps/acquisition/adapters/heritrix/collect.py` |
 | `apps/acquisition/tests/unit/test_entity_search.py` | 4 | `apps/acquisition/entity_search.py` |
 | `apps/acquisition/tests/unit/test_evidence_writer.py` | 2 | `apps/acquisition/evidence_writer.py` |
@@ -37,7 +38,7 @@
 | `apps/acquisition/tests/unit/test_render_pipeline.py` | 6 | `apps/acquisition/worker_browser/renderer.py` |
 | `apps/acquisition/tests/unit/test_replay_journal.py` | 5 | `apps/acquisition/observation_gate/replay.py` |
 | `apps/acquisition/tests/unit/test_source_catalogue_full.py` | 19 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
-| `apps/acquisition/tests/unit/test_source_executor_contracts.py` | 10 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
+| `apps/acquisition/tests/unit/test_source_executor_contracts.py` | 11 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_source_query_set.py` | 12 | `apps/acquisition/cc_plan.py`, `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py` |
 | `apps/acquisition/tests/unit/test_warc_adapter.py` | 3 | `apps/acquisition/adapters/warc/collect.py` |
 | `apps/admission/tests/contract/test_no_auto_merge.py` | 25 | `apps/admission/engine/admission.py`, `apps/admission/engine/calibration.py`, `apps/admission/resolution/blocking.py`, `apps/admission/resolution/candidate.py` |
@@ -329,7 +330,7 @@
 | `apps/shared/tests/unit/test_research_lineage.py` | 19 | `apps/shared/domain/research_lineage.py` |
 | `apps/shared/tests/unit/test_resolution_mention_span.py` | 13 | `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/semantic/contracts.py`, `apps/shared/semantic/resolution.py` |
 | `apps/shared/tests/unit/test_schema_hierarchy.py` | 20 | `apps/shared/domain/schema.py` |
-| `apps/shared/tests/unit/test_secure_fetch.py` | 16 | `apps/shared/net/secure_fetch.py`, `apps/shared/security.py` |
+| `apps/shared/tests/unit/test_secure_fetch.py` | 18 | `apps/shared/net/secure_fetch.py`, `apps/shared/security.py` |
 | `apps/shared/tests/unit/test_security.py` | 19 | `apps/shared/security.py` |
 | `apps/shared/tests/unit/test_temporal_metrics.py` | 9 | `apps/shared/domain/temporal_metrics.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |
@@ -370,7 +371,6 @@
 | `apps/acquisition/adapters/_ingest.py` |
 | `apps/acquisition/adapters/common_crawl.py` |
 | `apps/acquisition/adapters/discovery/commoncrawl_index.py` |
-| `apps/acquisition/adapters/discovery/contracts.py` |
 | `apps/acquisition/adapters/discovery/crtsh.py` |
 | `apps/acquisition/adapters/discovery/linkgraph.py` |
 | `apps/acquisition/adapters/discovery/wayback_cdx.py` |
@@ -417,3 +417,4 @@
 | `apps/control-plane/api/routes/science_tda.py` |
 | `apps/control-plane/api/routes/science_temporal.py` |
 | `apps/control-plane/api/routes/search.py` |
+| `apps/control-plane/api/routes/search_rebuild.py` |

@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **108** · TypeScript modules: **0**
+Python modules: **109** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -560,7 +560,7 @@ tools.strip_zero_inventory
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **266**
+Python modules: **0** · TypeScript modules: **267**
 
 
 ## `zero`

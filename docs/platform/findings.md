@@ -60,7 +60,7 @@ _None: every declared capability has a module in the tree._
 
 ## Untested modules
 
-269 platform modules are not imported by any test. Sample:
+268 platform modules are not imported by any test. Sample:
 
 | Module |
 |---|
@@ -77,7 +77,6 @@ _None: every declared capability has a module in the tree._
 | `apps/acquisition/adapters/_ingest.py` |
 | `apps/acquisition/adapters/common_crawl.py` |
 | `apps/acquisition/adapters/discovery/commoncrawl_index.py` |
-| `apps/acquisition/adapters/discovery/contracts.py` |
 | `apps/acquisition/adapters/discovery/crtsh.py` |
 | `apps/acquisition/adapters/discovery/linkgraph.py` |
 | `apps/acquisition/adapters/discovery/wayback_cdx.py` |
@@ -104,6 +103,7 @@ _None: every declared capability has a module in the tree._
 | `apps/control-plane/__init__.py` |
 | `apps/control-plane/api/path_shim.py` |
 | `apps/control-plane/api/routes/connectors.py` |
+| `apps/control-plane/api/routes/discovery.py` |
 
 ## Unresolved imports (by evidence)
 
