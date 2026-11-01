@@ -1,6 +1,7 @@
-/* COGNITIVE // COMMAND — cyberpunk neomilitarist system layer.
- * The single final stylesheet for every mounted workspace. Palette roles are
- * intentionally semantic; no component-local or donor palette is introduced.
+/* COGNITIVE // COMMAND — cyberpunk neomilitarist material layer.
+ * Imported by the final normalization.css layer. Palette roles are semantic;
+ * normalization retains final authority over accessible state and responsive
+ * behavior. No component-local or donor palette is introduced.
  */
 .ui-root {
   --cmd-void: #070b10;
@@ -610,6 +611,12 @@
 .ui-root :where(.ui-raw-gutter) {
   color: #68828e;
   user-select: none;
+}
+
+.ui-root .ui-lineage-chain {
+  border: 1px solid var(--cmd-line);
+  background: var(--cmd-panel);
+  border-radius: 2px;
 }
 
 .ui-root :where(.ui-lineage-step[data-active="true"], .ui-lineage-node-button[aria-pressed="true"]) {

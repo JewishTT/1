@@ -228,3 +228,43 @@ class TestFullPipelineIntegration:
         observations = gate.observations()
         assert observations
         assert all(o.content_digest for o in observations)
+
+class TestDefaultHarvestWaveRegistry:
+    def test_default_wave_registers_builtin_modules(self) -> None:
+        wave = HarvestWave(
+            transport=DictTransport(
+                bodies={
+                    "https://acme.com/contact": (
+                        "<html><body>Public desk sales@acme.com</body>"
+                        '<a href="https://github.com/acme">GitHub</a></html>'
+                    )
+                }
+            ),
+            max_depth=1,
+        )
+        summaries = wave.run(["https://acme.com/contact"])
+        assert summaries and summaries[0].contacts_out >= 1
+        harvest = next(record for record in wave.stage_records if record.stage == "HARVEST")
+        assert "embedded_contacts" in harvest.module_names
+        assert "social_link_extractor" in harvest.module_names
+
+    def test_reusing_wave_resets_stage_records_and_feedback_state(self) -> None:
+        wave = HarvestWave(
+            transport=DictTransport(
+                bodies={
+                    "https://acme.com/contact": (
+                        "<html><body>Public desk sales@acme.com</body></html>"
+                    )
+                }
+            ),
+            max_depth=1,
+        )
+        first = wave.run(["https://acme.com/contact"])
+        first_records = wave.stage_records
+        second = wave.run(["https://acme.com/contact"])
+        assert len(first_records) == 3
+        assert len(wave.stage_records) == 3
+        assert first == second
+        assert [record.stage for record in wave.stage_records] == [
+            "HARVEST", "ENRICHMENT", "RESOLUTION"
+        ]

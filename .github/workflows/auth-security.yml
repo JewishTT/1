@@ -16,8 +16,8 @@ jobs:
           enable-cache: true
       - name: Install the locked workspace
         run: uv sync --locked --all-packages --all-groups
-      - name: Compile control-plane, acquisition, interpretation and shared packages
-        run: .venv/bin/python -m compileall -q apps/control-plane apps/acquisition apps/interpretation apps/shared
+      - name: Compile control-plane, acquisition, interpretation, shared and zero-layer packages
+        run: .venv/bin/python -m compileall -q apps/control-plane apps/acquisition apps/interpretation apps/shared apps/zero
       - name: Run authentication, migration, acquisition and interpretation contracts
         run: >-
           .venv/bin/python -m pytest
@@ -38,3 +38,7 @@ jobs:
           apps/interpretation/tests/test_onchain_source_parsers.py
           apps/interpretation/tests/test_observation_consumer.py
           -q
+      - name: Run zero-layer unit and canonical evidence integration contracts
+        run: |
+          .venv/bin/python -m pytest apps/zero/tests -q
+          .venv/bin/python -m pytest apps/control-plane/tests/integration/test_layer0_direct_pipeline.py::test_zero_layer_stages_enter_the_canonical_raw_first_evidence_path -q

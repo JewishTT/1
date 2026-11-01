@@ -57,6 +57,3 @@
 /* Cross-surface UI contract: focus, numeric typography, overflow and motion. */
 @import "./normalization.css";
 
-/* Command-grade visual system. Loaded last by design: this is the single visual
- * authority across migrated workspaces and legacy operational surfaces. */
-@import "./command-tactical.css";

@@ -115,7 +115,9 @@ class ZeroLayerEvidenceSink:
             default=str,
         ).encode("utf-8")
         digest = hashlib.sha256(body).hexdigest()
-        task_id = "ZL-" + digest[:32]  # 35 chars; Observation.task_id is VARCHAR(36).
+        task_scope = f"{tenant_id}|{investigation_id or ''}|{digest}"
+        task_id = "ZL-" + hashlib.sha256(task_scope.encode("utf-8")).hexdigest()[:32]
+        # 35 chars; Observation.task_id is VARCHAR(36).
         locator = (
             f"zero-layer/v1/{seed_id}/wave-{wave_index:02d}/"
             f"{stage.lower()}/{digest[:24]}"

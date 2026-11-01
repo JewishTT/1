@@ -17,14 +17,17 @@ function readShipped(...segments: string[]): string {
 describe("command tactical visual system", () => {
   const css = readShipped("styles", "command-tactical.css");
   const layers = readShipped("styles", "layers.css");
+  const normalization = readShipped("styles", "normalization.css");
   const shell = readShipped("AppShell.tsx");
   const nav = readShipped("shell", "TopNav.tsx");
 
-  it("is the final global design layer after normalization", () => {
-    expect(layers.indexOf('@import "./normalization.css";')).toBeGreaterThan(-1);
-    expect(layers.indexOf('@import "./command-tactical.css";')).toBeGreaterThan(
-      layers.indexOf('@import "./normalization.css";'),
+  it("is composed inside the final normalization layer", () => {
+    expect(layers.trim().endsWith('@import "./normalization.css";')).toBe(true);
+    expect(normalization).toContain('@import "./command-tactical.css";');
+    expect(normalization.indexOf('@import "./command-tactical.css";')).toBeLessThan(
+      normalization.indexOf(".ui-root {"),
     );
+    expect(layers).not.toContain('@import "./command-tactical.css";');
   });
 
   it("defines the command palette as semantic roles", () => {
