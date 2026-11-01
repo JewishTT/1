@@ -49,6 +49,7 @@ label, not a wall, and every narrowing is reported in the response's
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import re
 import sys
@@ -158,6 +159,14 @@ class DiscoveryRunRequest(BaseModel):
     limit: int = Field(default=DEFAULT_CANDIDATE_CAP, ge=1, le=MAX_CANDIDATE_CAP)
     max_enqueue_candidates: int = Field(default=250, ge=1, le=500)
     priority: int = Field(default=0, ge=0, le=100)
+
+
+class HarvestRunRequest(BaseModel):
+    """Bounded zero-layer harvest over a public domain or HTTPS page."""
+
+    seed: str = Field(min_length=1, max_length=2048)
+    seed_type: str | None = None
+    investigation_id: str = Field(min_length=1, max_length=64)
 
 
 class AdmittedSource:
@@ -450,3 +459,240 @@ async def run_discovery(
         "sources_admitted": admitted,
         "sources_refused": refused,
     }
+
+
+
+@router.post("/harvest")
+async def run_zero_layer_harvest(
+    body: HarvestRunRequest,
+    ctx: Annotated[TenantContext, Depends(require_analyst)] = None,
+) -> dict[str, Any]:
+    """Collect one scoped public seed through Zero Layer and canonical evidence.
+
+    This route is not a name/phone/account profiler. It accepts only public domain or
+    HTTPS URL seeds; it honours investigation source scope, robots.txt, a bounded
+    SecurePublicTransport budget and a no-AI candidate allow-list. Raw pages and all
+    three derivation stages are persisted as Capture/Observation records and emitted
+    through the existing observation event contract.
+    """
+    detected = TypeDetector().detect(body.seed)
+    detected_type = detected.detected_type
+    if detected_type not in {InputType.DOMAIN, InputType.URL}:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "unsupported_seed_type",
+                "detail": "Production zero-layer harvest accepts public domains and HTTPS URLs only.",
+                "detected_type": detected_type.value,
+            },
+        )
+    if body.seed_type and body.seed_type.lower() != detected_type.value:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "seed_type_mismatch", "detected_type": detected_type.value},
+        )
+    try:
+        if detected_type is InputType.DOMAIN:
+            normalized_seed = f"https://{body.seed.strip().lower().rstrip('.')}/"
+        else:
+            normalized_seed = body.seed.strip()
+        normalized_seed = validate_seed_url(normalized_seed)
+        parsed = urlsplit(normalized_seed)
+        if parsed.scheme.lower() != "https":
+            raise ValueError("production zero-layer only collects HTTPS public pages")
+        if parsed.username or parsed.password:
+            raise ValueError("URL userinfo is not accepted")
+        sensitive_query_keys = {
+            "key", "api_key", "token", "access_token", "auth", "password",
+            "signature", "sig", "session",
+        }
+        if any(
+            key.lower() in sensitive_query_keys
+            for key, _ in parse_qsl(parsed.query, keep_blank_values=True)
+        ):
+            raise ValueError("credential-like URL query parameters are not accepted")
+    except (SecurityBlocked, ValueError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "invalid_public_seed", "detail": str(exc)},
+        ) from exc
+
+    session_factory = make_session_factory()
+    async with session_factory() as session:
+        investigation = (
+            await session.execute(
+                select(InvestigationRow).where(
+                    InvestigationRow.investigation_id == body.investigation_id,
+                    InvestigationRow.tenant_id == ctx.tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+    if investigation is None:
+        raise HTTPException(status_code=404, detail="investigation not found")
+    state = str(getattr(investigation.state, "value", investigation.state)).upper()
+    if state not in {"DRAFT", "PLANNING", "RUNNING"}:
+        raise HTTPException(
+            status_code=409,
+            detail=f"investigation does not accept acquisition in state {state}",
+        )
+    scope = investigation.scope if isinstance(investigation.scope, dict) else {}
+    allowed_types = scope.get("allowed_discovery_seed_types")
+    if isinstance(allowed_types, list) and detected_type.value not in {
+        str(value).lower() for value in allowed_types
+    }:
+        raise HTTPException(status_code=403, detail="seed type is outside the investigation scope")
+    allowed_sources = scope.get("allowed_source_ids")
+    if isinstance(allowed_sources, list) and allowed_sources and "zero-layer" not in {
+        str(value) for value in allowed_sources
+    }:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "source_outside_scope",
+                "source_id": "zero-layer",
+                "allowed_source_ids": sorted(str(value) for value in allowed_sources),
+            },
+        )
+
+    try:
+        from artifact_sink import ArtifactSink
+        from dispatcher.kafka_producer import KafkaProducer
+        from evidence_writer import PostgresAcquisitionEvidenceWriter
+        from events.content_router import ContentRouter
+        from events.kafka import build_envelope
+        from events.observation_gate import ObservationGate
+        from events.topics import topic_for
+        from storage.s3 import ObjectStore
+        from zero.evidence import ZeroLayerEvidenceSink
+        from zero.harvest_wave import HarvestWave
+        from zero.harvesters.transport import SecurePublicTransport
+        from zero.public_policy import allow_public_candidate
+
+        store = ObjectStore()
+        producer = KafkaProducer()
+        gate = ObservationGate(store=store, router=ContentRouter(), producer=producer)
+        artifact_sink = ArtifactSink(
+            gate=gate,
+            store=store,
+            source_family="zero_layer_public",
+            recorded_by="zero-layer",
+            evidence_writer=PostgresAcquisitionEvidenceWriter(session_factory),
+        )
+        transport = SecurePublicTransport(
+            max_response_bytes=2_000_000,
+            minimum_host_interval_s=1.0,
+            max_requests=64,
+            max_concurrency=4,
+        )
+        wave = HarvestWave(
+            transport=transport,
+            max_depth=1,
+            enable_enrichment=False,
+            candidate_allowed=allow_public_candidate,
+        )
+        evidence_sink = ZeroLayerEvidenceSink(artifact_sink, source_id="zero-layer")
+        summaries, accepted = await wave.run_and_persist(
+            [normalized_seed, parsed.hostname or ""],
+            evidence_sink=evidence_sink,
+            tenant_id=ctx.tenant_id,
+            investigation_id=body.investigation_id,
+        )
+
+        # Persist a cycle-complete event in the canonical Zero Layer lane. It is
+        # keyed deterministically; event delivery is awaited together with every
+        # Capture/Observation event, so the response does not report a phantom run.
+        for summary in summaries:
+            payload = {
+                "investigation_id": body.investigation_id,
+                "seed_id": detected.seed_id,
+                "wave": summary.as_dict(),
+                "raw_capture_count": len(transport.captures),
+                "stage_observation_count": len(wave.stage_records),
+                "result_role": "DISCOVERY_ONLY",
+                "claim_admission_allowed": False,
+            }
+            encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            envelope = build_envelope(
+                event_type="zero_layer.harvest_cycle_complete",
+                event_version="1.0",
+                producer="zero-layer",
+                producer_version="1.0.0",
+                payload=encoded,
+                investigation_id=body.investigation_id,
+                tenant_id=ctx.tenant_id,
+                source_id="zero-layer",
+                work_id=detected.seed_id,
+            )
+            producer.produce(
+                topic_for("zero_layer.harvest_cycle_complete"),
+                envelope,
+                key=f"{ctx.tenant_id}:{body.investigation_id}:{detected.seed_id}:{summary.wave_index}",
+            )
+
+        expected_events = sum(
+            1 for item in accepted
+            if getattr(item, "event_id", None) and getattr(item, "topic", None)
+        ) + len(summaries)
+        undelivered = producer.flush(15.0)
+        acknowledged = producer.drain()
+        if undelivered or len(acknowledged) < expected_events:
+            raise RuntimeError(
+                f"zero-layer event delivery incomplete: expected {expected_events}, "
+                f"acknowledged {len(acknowledged)}, pending {undelivered}"
+            )
+
+        refs = [
+            {
+                "stage": getattr(item, "stage", "RAW_CAPTURE"),
+                "wave_index": getattr(item, "wave_index", 0),
+                "seed_id": getattr(item, "seed_id", detected.seed_id),
+                "capture_id": item.capture_id,
+                "observation_id": item.observation_id,
+                "raw_ref": item.raw_ref,
+                "content_digest": getattr(item, "content_digest", ""),
+                "event_id": getattr(item, "event_id", None),
+                "topic": getattr(item, "topic", None),
+            }
+            for item in accepted
+        ]
+        return {
+            "seed": normalized_seed,
+            "seed_id": detected.seed_id,
+            "seed_type": detected_type.value,
+            "tenant_id": ctx.tenant_id,
+            "investigation_id": body.investigation_id,
+            "wave_summaries": [summary.as_dict() for summary in summaries],
+            "raw_captures_persisted": len(transport.captures),
+            "stage_observations_persisted": len(wave.stage_records),
+            "fetch_failures": [
+                {
+                    "url": str(item.get("url") or "")[:256],
+                    "code": str(item.get("code") or "")[:120],
+                    "detail": str(item.get("detail") or "")[:300],
+                }
+                for item in transport.failures[:64]
+            ],
+            "request_budget": {
+                "max_requests": transport.max_requests,
+                "requests_used": transport.requests_used,
+                "max_concurrency": transport.max_concurrency,
+                "max_response_bytes": transport.max_response_bytes,
+            },
+            "event_acknowledgements": len(acknowledged),
+            "evidence_refs": refs,
+            "result_role": "DISCOVERY_ONLY",
+            "claim_admission_allowed": False,
+            "notice": (
+                "Raw HTTPS pages are immutable captures. Extracted technical leads and "
+                "generic organisational contact channels remain unverified; personal emails, "
+                "phone numbers, breach hits, presence probes and guessed social profiles are "
+                "suppressed by the production policy."
+            ),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001 - persistence failure is never an empty success
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "zero_layer_unavailable", "cause": _error_text(exc)},
+        ) from exc

@@ -16,6 +16,7 @@ import asyncio
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit
 
 from .enrichment.feedback import FeedbackLoop
 from .enrichment.modules import run_enrichers
@@ -215,25 +216,34 @@ class HarvestWave:
         persist_capture = getattr(evidence_sink, "persist_capture", None)
         if captures and not callable(persist_capture):
             raise TypeError("evidence_sink must implement persist_capture for raw network captures")
-        capture_refs = []
+        from dataclasses import replace
+
+        capture_refs_by_host: dict[str, str] = {}
         for capture in captures or ():
-            capture_refs.append(await persist_capture(
+            accepted_capture = await persist_capture(
                 capture,
                 tenant_id=tenant_id,
                 investigation_id=investigation_id,
-            ))
-        accepted.extend(capture_refs)
+            )
+            accepted.append(accepted_capture)
+            host = (urlsplit(str(getattr(capture, "url", "") or "")).hostname or "").lower()
+            observation_id = str(getattr(accepted_capture, "observation_id", "") or "")
+            if host and observation_id:
+                capture_refs_by_host[host] = observation_id
 
-        # A single-seed public harvest ties each derived stage to the raw page
-        # that produced it. For multi-seed runs, retain the explicit blank parent
-        # rather than guessing which fetched URL belongs to which seed.
-        if len(raw_seeds) == 1 and capture_refs:
-            from dataclasses import replace
-            parent_observation_id = str(getattr(capture_refs[0], "observation_id", "") or "")
-            self._stage_records = [
-                replace(record, parent_observation_id=record.parent_observation_id or parent_observation_id)
-                for record in self._stage_records
-            ]
+        # Attach derived stages to the immutable source page for that host. A
+        # domain seed and its canonical HTTPS homepage therefore share one parent
+        # without inventing a lineage edge for unrelated hosts.
+        linked_records: list[WaveStageRecord] = []
+        for record in self._stage_records:
+            host = (urlsplit(record.seed_value).hostname or "").lower()
+            if not host and record.seed_type == "domain":
+                host = record.seed_value.strip().lower().rstrip(".")
+            parent = record.parent_observation_id or capture_refs_by_host.get(host, "")
+            linked_records.append(
+                replace(record, parent_observation_id=parent) if parent else record
+            )
+        self._stage_records = linked_records
         for record in self._stage_records:
             accepted.append(await evidence_sink.persist(
                 record,

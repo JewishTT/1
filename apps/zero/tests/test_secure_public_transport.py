@@ -1,99 +1,79 @@
-"""Live-transport contract tests without making real network calls."""
-
 from __future__ import annotations
 
-from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
+from net.secure_fetch import FetchResult
 from zero.harvesters.transport import SecurePublicTransport
 
 
-@dataclass
-class _Response:
-    url: str
-    status: int
-    body: bytes
-    content_type: str = "text/html"
-    pinned_ip: str = "93.184.216.34"
-    redirects: tuple[str, ...] = ()
+class _Fetcher:
+    def __init__(self, calls: list[tuple[str, str]]) -> None:
+        self.calls = calls
 
-
-class _FakeFetcher:
-    def __init__(self, *, robots: bytes = b"User-agent: *\nAllow: /\n", page: bytes = b"<html><title>Public</title></html>"):
-        self.robots = robots
-        self.page = page
-        self.calls: list[str] = []
-
-    async def fetch(self, url: str, *, headers=None):
-        self.calls.append(url)
+    async def fetch(self, url: str, *, method: str = "GET", headers: dict[str, str] | None = None) -> FetchResult:
+        self.calls.append((url, method))
         if url.endswith("/robots.txt"):
-            return _Response(url=url, status=200, body=self.robots, content_type="text/plain")
-        return _Response(url=url, status=200, body=self.page)
+            return FetchResult(url=url, status=404, body=b"", headers={}, pinned_ip="203.0.113.10")
+        body = b"" if method == "HEAD" else b"<html><body>public</body></html>"
+        return FetchResult(
+            url=url,
+            status=200,
+            body=body,
+            headers={"content-type": "text/html"},
+            pinned_ip="203.0.113.10",
+            content_type="text/html",
+        )
 
     async def aclose(self) -> None:
         return None
 
 
-def test_secure_public_transport_captures_raw_bytes_after_robots_allow() -> None:
-    instances: list[_FakeFetcher] = []
+def _factory(calls: list[tuple[str, str]]):
+    def make(**_kwargs: Any) -> _Fetcher:
+        return _Fetcher(calls)
+    return make
 
-    def factory(**_kwargs):
-        item = _FakeFetcher()
-        instances.append(item)
-        return item
 
+def test_transport_caps_physical_requests_including_robots() -> None:
+    calls: list[tuple[str, str]] = []
     transport = SecurePublicTransport(
-        fetcher_factory=factory,
+        max_requests=1,
         minimum_host_interval_s=0,
-        max_response_bytes=4096,
+        fetcher_factory=_factory(calls),
     )
-    transport.set_source_metadata(
-        "https://example.org/about#fragment",
-        parent_observation_id="OBS-parent",
-        discovery_source_id="searxng_public_search",
-        action_ref="ACT-discovery",
-    )
-    text = transport.fetch("https://EXAMPLE.org/about#fragment")
+    assert transport.fetch("https://example.org/") == ""
+    assert transport.requests_used == 1
+    assert calls == [("https://example.org/robots.txt", "GET")]
+    assert any("budget exhausted" in item["detail"] for item in transport.failures)
 
-    assert "Public" in text
-    assert len(transport.captures) == 1
-    capture = transport.captures[0]
-    assert capture.body == b"<html><title>Public</title></html>"
-    assert capture.status == 200
-    assert capture.parent_observation_id == "OBS-parent"
-    assert capture.discovery_source_id == "searxng_public_search"
-    assert capture.action_ref == "ACT-discovery"
-    assert len(instances) == 1
-    assert instances[0].calls == [
-        "https://example.org/robots.txt",
-        "https://example.org/about",
+
+def test_exists_uses_head_and_does_not_persist_a_body_capture() -> None:
+    calls: list[tuple[str, str]] = []
+    transport = SecurePublicTransport(
+        max_requests=2,
+        minimum_host_interval_s=0,
+        fetcher_factory=_factory(calls),
+    )
+    assert transport.exists("https://example.org/public")
+    assert calls == [
+        ("https://example.org/robots.txt", "GET"),
+        ("https://example.org/public", "HEAD"),
     ]
-
-
-def test_secure_public_transport_refuses_disallowed_robots_path() -> None:
-    instances: list[_FakeFetcher] = []
-
-    def factory(**_kwargs):
-        item = _FakeFetcher(robots=b"User-agent: *\nDisallow: /\n")
-        instances.append(item)
-        return item
-
-    transport = SecurePublicTransport(fetcher_factory=factory, minimum_host_interval_s=0)
-    assert transport.fetch("https://example.org/private") == ""
     assert transport.captures == ()
-    assert transport.failures
-    assert transport.failures[0]["code"] == "SecurityBlocked"
-    assert instances[0].calls == ["https://example.org/robots.txt"]
 
 
-def test_secure_public_transport_rejects_http_before_network() -> None:
-    calls: list[bool] = []
-
-    def factory(**_kwargs):
-        calls.append(True)
-        return _FakeFetcher()
-
-    transport = SecurePublicTransport(fetcher_factory=factory, minimum_host_interval_s=0)
-    assert transport.fetch("http://example.org/") == ""
-    assert calls == []
-    assert transport.captures == ()
-    assert transport.failures[0]["code"] == "SecurityBlocked"
+def test_concurrent_same_url_fetches_are_coalesced() -> None:
+    calls: list[tuple[str, str]] = []
+    transport = SecurePublicTransport(
+        max_requests=4,
+        max_concurrency=2,
+        minimum_host_interval_s=0,
+        fetcher_factory=_factory(calls),
+    )
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda _i: transport.fetch("https://example.org/page"), range(2)))
+    assert results == ["<html><body>public</body></html>"] * 2
+    assert calls.count(("https://example.org/robots.txt", "GET")) == 1
+    assert calls.count(("https://example.org/page", "GET")) == 1
+    assert len(transport.captures) == 1

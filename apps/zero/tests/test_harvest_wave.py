@@ -268,3 +268,57 @@ class TestDefaultHarvestWaveRegistry:
         assert [record.stage for record in wave.stage_records] == [
             "HARVEST", "ENRICHMENT", "RESOLUTION"
         ]
+
+
+
+@pytest.mark.asyncio
+async def test_run_and_persist_links_stages_to_raw_capture_observation() -> None:
+    from datetime import UTC, datetime
+    from types import SimpleNamespace
+
+    from zero.harvesters.transport import PublicFetchCapture
+
+    class CaptureTransport(DictTransport):
+        def __init__(self) -> None:
+            super().__init__(bodies={
+                "https://example.org/about":
+                    "<html><body>Public desk security@example.org</body></html>"
+            })
+            self.captures = (
+                PublicFetchCapture(
+                    url="https://example.org/about",
+                    status=200,
+                    body=b"<html><body>Public desk security@example.org</body></html>",
+                    content_type="text/html",
+                    fetched_at=datetime.now(UTC),
+                    pinned_ip="203.0.113.10",
+                ),
+            )
+
+    class RecordingEvidenceSink:
+        def __init__(self) -> None:
+            self.persisted = []
+
+        async def persist_capture(self, capture, *, tenant_id, investigation_id=None):
+            self.persisted.append(("RAW", capture.url, tenant_id, investigation_id))
+            return SimpleNamespace(observation_id="OBS-PARENT")
+
+        async def persist(self, record, *, tenant_id, investigation_id=None):
+            self.persisted.append((record.stage, record, tenant_id, investigation_id))
+            return record
+
+    transport = CaptureTransport()
+    sink = RecordingEvidenceSink()
+    wave = HarvestWave(transport=transport, max_depth=1, enable_enrichment=False)
+    summaries, accepted = await wave.run_and_persist(
+        ["https://example.org/about"],
+        evidence_sink=sink,
+        tenant_id="tenant-1",
+        investigation_id="INV-1",
+    )
+
+    assert summaries and len(accepted) == 4
+    assert sink.persisted[0][0] == "RAW"
+    stage_records = [entry[1] for entry in sink.persisted[1:]]
+    assert [record.stage for record in stage_records] == ["HARVEST", "ENRICHMENT", "RESOLUTION"]
+    assert all(record.parent_observation_id == "OBS-PARENT" for record in stage_records)
