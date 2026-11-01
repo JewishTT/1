@@ -1,6 +1,9 @@
 """Enricher modules (spec/010 §0.9 table, T131) — 10+ deterministic transforms.
 
 Every enricher is a pure function ``(SeedInput, context-dict) → candidates``.
+Mock breach/geo tables and synthetic phone-to-messenger projections are explicitly
+fixture-only and excluded from the production registry. Phone-to-messenger presence
+checks are not registered as production harvesters.
 Network-dependent steps (DNS, HTML) consume context injected by the caller
 (transport result / resolver), never make a bare socket call, so the whole
 layer is testable offline. Breach / geo / influence lookups are deterministic
@@ -317,7 +320,7 @@ ENRICHERS: tuple[Enricher, ...] = (
     Enricher(
         "phone_to_whatsapp", frozenset({InputType.PHONE}), "MIT",
         "donors/PhoneInfoga, donors/ignorant", "WhatsApp ID projection",
-        _phone_to_whatsapp,
+        _phone_to_whatsapp, fixture_only=True,
     ),
     Enricher(
         "username_to_github", frozenset({InputType.USERNAME}), "MIT",

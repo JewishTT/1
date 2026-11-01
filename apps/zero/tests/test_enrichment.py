@@ -79,8 +79,10 @@ class TestUrlToSocial:
 
 
 class TestPhoneToWhatsapp:
-    def test_projects_id(self) -> None:
-        candidates = run_enrichers(_seed("+12025550199"))
+    def test_synthetic_messenger_projection_is_fixture_only(self) -> None:
+        seed = _seed("+12025550199")
+        assert all(c.kind != "presence" for c in run_enrichers(seed))
+        candidates = run_enrichers(seed, include_fixtures=True)
         presence = [c for c in candidates if c.kind == "presence"]
         assert "whatsapp:12025550199" in {c.value for c in presence}
 

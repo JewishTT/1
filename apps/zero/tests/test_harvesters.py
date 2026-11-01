@@ -340,6 +340,14 @@ class TestHarvesterRegistry:
         domain_modules = registry.modules_for(InputType.DOMAIN)
         assert domain_modules == sorted(domain_modules, key=lambda m: m.name)
 
+    def test_phone_presence_probes_are_not_in_production_registry(self) -> None:
+        registry = HarvesterRegistry()
+        registry.register_all()
+        names = set(registry.names())
+        assert "whatsapp_presence" not in names
+        assert "telegram_presence" not in names
+        assert "phone_dorks" not in names
+
     def test_duplicate_registration_rejected(self) -> None:
         registry = HarvesterRegistry()
         module = EmailPermutationHarvester()
