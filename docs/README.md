@@ -21,11 +21,11 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1027 / 267 / 16 |
-| HTTP routes | 184 |
+| Python / TypeScript / Rust modules | 1028 / 267 / 16 |
+| HTTP routes | 185 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 349 / 5348 |
+| Test files / functions | 350 / 5353 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -72,7 +72,7 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 11 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 267 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
-| `zero` | 38 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
+| `zero` | 39 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Event model
 

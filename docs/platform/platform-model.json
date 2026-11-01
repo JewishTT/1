@@ -1092,12 +1092,13 @@
     {
       "name": "zero",
       "description": "Zero-layer contact harvesting from arbitrary seeds.",
-      "python_modules": 38,
+      "python_modules": 39,
       "typescript_modules": 0,
       "modules": [
         "apps.zero.tests.conftest",
         "apps.zero.tests.test_cc_capture",
         "apps.zero.tests.test_enrichment",
+        "apps.zero.tests.test_evidence",
         "apps.zero.tests.test_harvest_wave",
         "apps.zero.tests.test_harvesters",
         "apps.zero.tests.test_public_acquisition_policy",
@@ -1137,11 +1138,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1027,
-    "edge_count": 2879,
+    "module_count": 1028,
+    "edge_count": 2898,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 897,
+      "stdlib:__future__": 898,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
@@ -1152,11 +1153,11 @@
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
       "stdlib:collections": 246,
-      "stdlib:concurrent": 2,
+      "stdlib:concurrent": 3,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 395,
-      "stdlib:datetime": 195,
+      "stdlib:dataclasses": 394,
+      "stdlib:datetime": 197,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1173,7 +1174,7 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 200,
+      "stdlib:json": 201,
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 73,
@@ -1197,11 +1198,11 @@
       "stdlib:time": 31,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
-      "stdlib:types": 33,
-      "stdlib:typing": 372,
+      "stdlib:types": 35,
+      "stdlib:typing": 373,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 55,
+      "stdlib:urllib": 56,
       "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -1241,7 +1242,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 273,
+      "third-party:pytest": 274,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -3449,6 +3450,66 @@
         "from": "apps/control-plane/api/routes/discovery.py",
         "to": "apps/zero/zero/type_detector.py",
         "via": "zero.type_detector"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/acquisition/artifact_sink.py",
+        "via": "artifact_sink"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/acquisition/dispatcher/kafka_producer.py",
+        "via": "dispatcher.kafka_producer"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/acquisition/evidence_writer.py",
+        "via": "evidence_writer"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/shared/events/content_router.py",
+        "via": "events.content_router"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/shared/events/kafka.py",
+        "via": "events.kafka"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/shared/events/observation_gate.py",
+        "via": "events.observation_gate"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/shared/events/topics.py",
+        "via": "events.topics"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/shared/storage/s3.py",
+        "via": "storage.s3"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/zero/zero/evidence.py",
+        "via": "zero.evidence"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/zero/zero/harvest_wave.py",
+        "via": "zero.harvest_wave"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/zero/zero/harvesters/transport.py",
+        "via": "zero.harvesters.transport"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery.py",
+        "to": "apps/zero/zero/public_policy.py",
+        "via": "zero.public_policy"
       },
       {
         "from": "apps/control-plane/api/routes/dossier.py",
@@ -14941,6 +15002,21 @@
         "via": "zero.type_detector"
       },
       {
+        "from": "apps/zero/tests/test_evidence.py",
+        "to": "apps/shared/domain/capture.py",
+        "via": "domain.capture"
+      },
+      {
+        "from": "apps/zero/tests/test_evidence.py",
+        "to": "apps/zero/zero/evidence.py",
+        "via": "zero.evidence"
+      },
+      {
+        "from": "apps/zero/tests/test_evidence.py",
+        "to": "apps/zero/zero/harvesters/transport.py",
+        "via": "zero.harvesters.transport"
+      },
+      {
         "from": "apps/zero/tests/test_harvest_wave.py",
         "to": "apps/zero/zero/harvest_wave.py",
         "via": "zero.harvest_wave"
@@ -14984,6 +15060,11 @@
         "from": "apps/zero/tests/test_harvest_wave.py",
         "to": "apps/zero/zero/harvesters/contracts.py",
         "via": "zero.harvesters.contracts"
+      },
+      {
+        "from": "apps/zero/tests/test_harvest_wave.py",
+        "to": "apps/zero/zero/harvesters/transport.py",
+        "via": "zero.harvesters.transport"
       },
       {
         "from": "apps/zero/tests/test_harvesters.py",
@@ -15039,6 +15120,16 @@
         "from": "apps/zero/tests/test_public_acquisition_policy.py",
         "to": "apps/zero/zero/harvesters/contracts.py",
         "via": "zero.harvesters.contracts"
+      },
+      {
+        "from": "apps/zero/tests/test_public_acquisition_policy.py",
+        "to": "apps/zero/zero/harvest_wave.py",
+        "via": "zero.harvest_wave"
+      },
+      {
+        "from": "apps/zero/tests/test_public_acquisition_policy.py",
+        "to": "apps/zero/zero/harvesters/transport.py",
+        "via": "zero.harvesters.transport"
       },
       {
         "from": "apps/zero/tests/test_public_acquisition_policy.py",
@@ -15114,6 +15205,11 @@
         "from": "apps/zero/tests/test_resolution.py",
         "to": "apps/zero/zero/resolution/similarity.py",
         "via": "zero.resolution.similarity"
+      },
+      {
+        "from": "apps/zero/tests/test_secure_public_transport.py",
+        "to": "apps/shared/net/secure_fetch.py",
+        "via": "net.secure_fetch"
       },
       {
         "from": "apps/zero/tests/test_secure_public_transport.py",
@@ -23809,8 +23905,22 @@
         ]
       },
       {
+        "path": "apps/zero/tests/test_evidence.py",
+        "tests": 3,
+        "test_names": [
+          "test_raw_public_capture_uses_canonical_fetch_capture_time_basis",
+          "test_stage_observations_are_also_discovery_only",
+          "test_raw_capture_rejects_non_https_and_empty_payloads"
+        ],
+        "targets": [
+          "apps/shared/domain/capture.py",
+          "apps/zero/zero/evidence.py",
+          "apps/zero/zero/harvesters/transport.py"
+        ]
+      },
+      {
         "path": "apps/zero/tests/test_harvest_wave.py",
-        "tests": 17,
+        "tests": 18,
         "test_names": [
           "test_stabilizes_before_max_depth",
           "test_first_wave_discovers_contacts",
@@ -23828,7 +23938,8 @@
           "test_bins",
           "test_single_seed_to_observation",
           "test_default_wave_registers_builtin_modules",
-          "test_reusing_wave_resets_stage_records_and_feedback_state"
+          "test_reusing_wave_resets_stage_records_and_feedback_state",
+          "test_run_and_persist_links_stages_to_raw_capture_observation"
         ],
         "targets": [
           "apps/zero/zero/harvest_wave.py",
@@ -23886,14 +23997,17 @@
       },
       {
         "path": "apps/zero/tests/test_public_acquisition_policy.py",
-        "tests": 3,
+        "tests": 4,
         "test_names": [
           "test_public_domain_keeps_technical_leads_and_role_mailboxes",
           "test_public_profile_suppresses_personal_or_enumerative_outputs",
-          "test_non_public_seed_types_fail_closed"
+          "test_non_public_seed_types_fail_closed",
+          "test_production_filter_removes_personal_leads_before_all_stages"
         ],
         "targets": [
+          "apps/zero/zero/harvest_wave.py",
           "apps/zero/zero/harvesters/contracts.py",
+          "apps/zero/zero/harvesters/transport.py",
           "apps/zero/zero/public_policy.py",
           "apps/zero/zero/type_detector.py"
         ]
@@ -23965,11 +24079,12 @@
         "path": "apps/zero/tests/test_secure_public_transport.py",
         "tests": 3,
         "test_names": [
-          "test_secure_public_transport_captures_raw_bytes_after_robots_allow",
-          "test_secure_public_transport_refuses_disallowed_robots_path",
-          "test_secure_public_transport_rejects_http_before_network"
+          "test_transport_caps_physical_requests_including_robots",
+          "test_exists_uses_head_and_does_not_persist_a_body_capture",
+          "test_concurrent_same_url_fetches_are_coalesced"
         ],
         "targets": [
+          "apps/shared/net/secure_fetch.py",
           "apps/zero/zero/harvesters/transport.py"
         ]
       },
@@ -24108,7 +24223,7 @@
         "targets": []
       }
     ],
-    "total": 5348
+    "total": 5353
   },
   "contracts": {
     "python": [
@@ -24708,7 +24823,12 @@
         {
           "method": "POST",
           "path": "/run",
-          "lineno": 298
+          "lineno": 307
+        },
+        {
+          "method": "POST",
+          "path": "/harvest",
+          "lineno": 462
         }
       ]
     },
@@ -29643,6 +29763,7 @@
             "apps/zero/tests/conftest.py",
             "apps/zero/tests/test_cc_capture.py",
             "apps/zero/tests/test_enrichment.py",
+            "apps/zero/tests/test_evidence.py",
             "apps/zero/tests/test_harvest_wave.py",
             "apps/zero/tests/test_harvesters.py",
             "apps/zero/tests/test_public_acquisition_policy.py",
@@ -29679,7 +29800,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 153
+          "module_count": 154
         },
         {
           "id": "interpretation",
@@ -33624,8 +33745,8 @@
       {
         "path": "apps/control-plane/api/routes/discovery.py",
         "status": "IMPLEMENTED",
-        "loc": 453,
-        "callables": 12,
+        "loc": 699,
+        "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40875,10 +40996,19 @@
         "markers": []
       },
       {
+        "path": "apps/zero/tests/test_evidence.py",
+        "status": "TEST",
+        "loc": 107,
+        "callables": 5,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/zero/tests/test_harvest_wave.py",
         "status": "TEST",
-        "loc": 271,
-        "callables": 23,
+        "loc": 325,
+        "callables": 28,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40895,8 +41025,8 @@
       {
         "path": "apps/zero/tests/test_public_acquisition_policy.py",
         "status": "TEST",
-        "loc": 35,
-        "callables": 4,
+        "loc": 60,
+        "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40931,8 +41061,8 @@
       {
         "path": "apps/zero/tests/test_secure_public_transport.py",
         "status": "TEST",
-        "loc": 100,
-        "callables": 9,
+        "loc": 80,
+        "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41014,7 +41144,7 @@
       {
         "path": "apps/zero/zero/harvest_wave.py",
         "status": "IMPLEMENTED",
-        "loc": 343,
+        "loc": 353,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -41585,9 +41715,9 @@
       "IMPLEMENTED": 553,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 346,
+      "TEST": 347,
       "MIGRATION": 19,
-      "total": 1027
+      "total": 1028
     }
   },
   "reachability": {
@@ -45397,6 +45527,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/zero/tests/test_evidence.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/zero/tests/test_harvest_wave.py",
         "status": "TEST"
       },
@@ -45450,7 +45584,7 @@
       },
       {
         "path": "apps/zero/zero/evidence.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/zero/zero/evidence_sink.py",
@@ -45514,7 +45648,7 @@
       },
       {
         "path": "apps/zero/zero/public_policy.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/zero/zero/resolution/__init__.py",
@@ -45744,11 +45878,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 423,
-      "TEST_ONLY": 136,
+      "PRODUCTION": 425,
+      "TEST_ONLY": 134,
       "ORPHAN": 122,
-      "TEST": 346,
-      "total": 1027
+      "TEST": 347,
+      "total": 1028
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -45879,13 +46013,11 @@
       "apps/shared/websearch/discovery.py",
       "apps/shared/websearch/providers.py",
       "apps/shared/websearch/relevance.py",
-      "apps/zero/zero/evidence.py",
       "apps/zero/zero/harvesters/git.py",
       "apps/zero/zero/harvesters/image.py",
       "apps/zero/zero/harvesters/phone.py",
       "apps/zero/zero/harvesters/url.py",
       "apps/zero/zero/harvesters/username.py",
-      "apps/zero/zero/public_policy.py",
       "apps/zero/zero/resolution/fellegi_sunter.py"
     ],
     "orphan": [
@@ -47541,7 +47673,7 @@
       },
       "zero_layer.harvest_cycle_complete": {
         "lane": "zero_layer",
-        "files": 1,
+        "files": 2,
         "producer_files": 0
       },
       "zero_layer.harvest_started": {
@@ -53995,6 +54127,45 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "8cc5e4cf7f10e80f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/acquisition/artifact_sink.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "artifact_sink"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "724498abe5daaa95",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/acquisition/dispatcher/kafka_producer.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "dispatcher.kafka_producer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a7c105d6cd7b2f0b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/acquisition/evidence_writer.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "evidence_writer"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "d1be546fe548bdca",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/discovery.py",
@@ -54073,6 +54244,58 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "d38f343e7d6ecaca",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/shared/events/content_router.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "events.content_router"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "dc4e0951a529f8f6",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/shared/events/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "events.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "03189a7cf0b9d49b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/shared/events/observation_gate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "events.observation_gate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "6d85136a9a5e4c8c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/shared/events/topics.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "events.topics"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "77aa91796836705e",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/discovery.py",
@@ -54082,6 +54305,71 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/discovery.py",
           "via": "security"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "bc5c296dbcf9d03a",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/shared/storage/s3.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "storage.s3"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "67e205845f8ea4fd",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/zero/zero/evidence.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "zero.evidence"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "88d15b93c23ea6bf",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/zero/zero/harvest_wave.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "zero.harvest_wave"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b7e6e2d02d67cc58",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/zero/zero/harvesters/transport.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "zero.harvesters.transport"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "36d098da8c4fe2bd",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery.py",
+        "object": "apps/zero/zero/public_policy.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "via": "zero.public_policy"
         },
         "confidence": 1.0
       },
@@ -83973,6 +84261,45 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "b35e2998c94a917c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_evidence.py",
+        "object": "apps/shared/domain/capture.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_evidence.py",
+          "via": "domain.capture"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "def03fc26778dd96",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_evidence.py",
+        "object": "apps/zero/zero/evidence.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_evidence.py",
+          "via": "zero.evidence"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "fb967e1c41217d4e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_evidence.py",
+        "object": "apps/zero/zero/harvesters/transport.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_evidence.py",
+          "via": "zero.harvesters.transport"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "34a3637081fb06fd",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/tests/test_harvest_wave.py",
@@ -84047,6 +84374,19 @@
         "evidence": {
           "file": "apps/zero/tests/test_harvest_wave.py",
           "via": "zero.harvesters.registry"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3d88f14dddf58997",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_wave.py",
+        "object": "apps/zero/zero/harvesters/transport.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_wave.py",
+          "via": "zero.harvesters.transport"
         },
         "confidence": 1.0
       },
@@ -84220,6 +84560,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "cac88409c23fbda4",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+        "object": "apps/zero/zero/harvest_wave.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_acquisition_policy.py",
+          "via": "zero.harvest_wave"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "045aad8eabff99e6",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/tests/test_public_acquisition_policy.py",
@@ -84229,6 +84582,19 @@
         "evidence": {
           "file": "apps/zero/tests/test_public_acquisition_policy.py",
           "via": "zero.harvesters.contracts"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d1b3e5119ffa4136",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+        "object": "apps/zero/zero/harvesters/transport.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_acquisition_policy.py",
+          "via": "zero.harvesters.transport"
         },
         "confidence": 1.0
       },
@@ -84424,6 +84790,19 @@
         "evidence": {
           "file": "apps/zero/tests/test_resolution.py",
           "via": "zero.resolution.similarity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "252a0b288a8bc7bb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_secure_public_transport.py",
+        "object": "apps/shared/net/secure_fetch.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_secure_public_transport.py",
+          "via": "net.secure_fetch"
         },
         "confidence": 1.0
       },
@@ -87340,6 +87719,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "757dd149a2e9d507",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "POST /harvest",
+        "object": "apps/control-plane/api/routes/discovery.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery.py",
+          "line": 465
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3c0446cf1cbcff73",
         "kind": "ROUTE_DEFINED_IN",
         "subject": "POST /hypergraph",
@@ -87608,7 +88000,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/discovery.py",
-          "line": 300
+          "line": 309
         },
         "confidence": 1.0
       },
@@ -103838,6 +104230,42 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "12cd2babee2ad0f2",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_evidence.py",
+        "object": "apps/shared/domain/capture.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_evidence.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3d8aa84715b603d9",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_evidence.py",
+        "object": "apps/zero/zero/evidence.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_evidence.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "5cb2d7def930a90f",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_evidence.py",
+        "object": "apps/zero/zero/harvesters/transport.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_evidence.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "32ddd0662e8bb5eb",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/zero/tests/test_harvest_wave.py",
@@ -104042,10 +104470,34 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "1f92f751d9701520",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+        "object": "apps/zero/zero/harvest_wave.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_acquisition_policy.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "a53933eacfb20acc",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/zero/tests/test_public_acquisition_policy.py",
         "object": "apps/zero/zero/harvesters/contracts.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_acquisition_policy.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "03711d10595b5f6d",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+        "object": "apps/zero/zero/harvesters/transport.py",
         "status": "STATIC_FACT",
         "method": "import_and_name_scan",
         "evidence": {
@@ -104234,6 +104686,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "f157416ab03542b8",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_secure_public_transport.py",
+        "object": "apps/shared/net/secure_fetch.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_secure_public_transport.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "ca1fe2f37722e5b4",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/zero/tests/test_secure_public_transport.py",
@@ -104271,27 +104735,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4467,
-      "static_facts": 4173,
+      "facts_total": 4493,
+      "static_facts": 4199,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1027,
+    "python_modules": 1028,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2879,
-    "test_files": 349,
-    "test_functions": 5348,
+    "import_edges": 2898,
+    "test_files": 350,
+    "test_functions": 5353,
     "untested_modules": 270,
-    "http_routes": 184
+    "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4467,
-    "static_facts": 4173,
+    "facts_total": 4493,
+    "static_facts": 4199,
     "inferred": 294,
     "intended": 0
   },
@@ -104299,16 +104763,16 @@
     "IMPLEMENTED": 553,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 346,
+    "TEST": 347,
     "MIGRATION": 19,
-    "total": 1027
+    "total": 1028
   },
   "reachability_summary": {
-    "PRODUCTION": 423,
-    "TEST_ONLY": 136,
+    "PRODUCTION": 425,
+    "TEST_ONLY": 134,
     "ORPHAN": 122,
-    "TEST": 346,
-    "total": 1027
+    "TEST": 347,
+    "total": 1028
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -104481,13 +104945,11 @@
     "apps/shared/websearch/discovery.py",
     "apps/shared/websearch/providers.py",
     "apps/shared/websearch/relevance.py",
-    "apps/zero/zero/evidence.py",
     "apps/zero/zero/harvesters/git.py",
     "apps/zero/zero/harvesters/image.py",
     "apps/zero/zero/harvesters/phone.py",
     "apps/zero/zero/harvesters/url.py",
     "apps/zero/zero/harvesters/username.py",
-    "apps/zero/zero/public_policy.py",
     "apps/zero/zero/resolution/fellegi_sunter.py"
   ],
   "orphan_modules": [

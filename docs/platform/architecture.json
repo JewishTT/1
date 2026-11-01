@@ -206,6 +206,7 @@
           "apps/zero/tests/conftest.py",
           "apps/zero/tests/test_cc_capture.py",
           "apps/zero/tests/test_enrichment.py",
+          "apps/zero/tests/test_evidence.py",
           "apps/zero/tests/test_harvest_wave.py",
           "apps/zero/tests/test_harvesters.py",
           "apps/zero/tests/test_public_acquisition_policy.py",
@@ -242,7 +243,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 153
+        "module_count": 154
       },
       {
         "id": "interpretation",

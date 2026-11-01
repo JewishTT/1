@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4467,
-    "static_facts": 4173,
+    "facts_total": 4493,
+    "static_facts": 4199,
     "inferred": 294,
     "intended": 0
   },
@@ -6438,6 +6438,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "8cc5e4cf7f10e80f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/acquisition/artifact_sink.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "artifact_sink"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "724498abe5daaa95",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/acquisition/dispatcher/kafka_producer.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "dispatcher.kafka_producer"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a7c105d6cd7b2f0b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/acquisition/evidence_writer.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "evidence_writer"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "d1be546fe548bdca",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/routes/discovery.py",
@@ -6516,6 +6555,58 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "d38f343e7d6ecaca",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/shared/events/content_router.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "events.content_router"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "dc4e0951a529f8f6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/shared/events/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "events.kafka"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "03189a7cf0b9d49b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/shared/events/observation_gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "events.observation_gate"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6d85136a9a5e4c8c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/shared/events/topics.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "events.topics"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "77aa91796836705e",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/routes/discovery.py",
@@ -6525,6 +6616,71 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/discovery.py",
         "via": "security"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bc5c296dbcf9d03a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/shared/storage/s3.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "storage.s3"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "67e205845f8ea4fd",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/zero/zero/evidence.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "zero.evidence"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "88d15b93c23ea6bf",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/zero/zero/harvest_wave.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "zero.harvest_wave"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b7e6e2d02d67cc58",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/zero/zero/harvesters/transport.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "zero.harvesters.transport"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "36d098da8c4fe2bd",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery.py",
+      "object": "apps/zero/zero/public_policy.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "via": "zero.public_policy"
       },
       "confidence": 1.0
     },
@@ -36416,6 +36572,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "b35e2998c94a917c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_evidence.py",
+      "object": "apps/shared/domain/capture.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_evidence.py",
+        "via": "domain.capture"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "def03fc26778dd96",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_evidence.py",
+      "object": "apps/zero/zero/evidence.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_evidence.py",
+        "via": "zero.evidence"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fb967e1c41217d4e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_evidence.py",
+      "object": "apps/zero/zero/harvesters/transport.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_evidence.py",
+        "via": "zero.harvesters.transport"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "34a3637081fb06fd",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/zero/tests/test_harvest_wave.py",
@@ -36490,6 +36685,19 @@
       "evidence": {
         "file": "apps/zero/tests/test_harvest_wave.py",
         "via": "zero.harvesters.registry"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3d88f14dddf58997",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_harvest_wave.py",
+      "object": "apps/zero/zero/harvesters/transport.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_harvest_wave.py",
+        "via": "zero.harvesters.transport"
       },
       "confidence": 1.0
     },
@@ -36663,6 +36871,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "cac88409c23fbda4",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvest_wave.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py",
+        "via": "zero.harvest_wave"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "045aad8eabff99e6",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/zero/tests/test_public_acquisition_policy.py",
@@ -36672,6 +36893,19 @@
       "evidence": {
         "file": "apps/zero/tests/test_public_acquisition_policy.py",
         "via": "zero.harvesters.contracts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d1b3e5119ffa4136",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvesters/transport.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py",
+        "via": "zero.harvesters.transport"
       },
       "confidence": 1.0
     },
@@ -36867,6 +37101,19 @@
       "evidence": {
         "file": "apps/zero/tests/test_resolution.py",
         "via": "zero.resolution.similarity"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "252a0b288a8bc7bb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/tests/test_secure_public_transport.py",
+      "object": "apps/shared/net/secure_fetch.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/tests/test_secure_public_transport.py",
+        "via": "net.secure_fetch"
       },
       "confidence": 1.0
     },
@@ -39783,6 +40030,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "757dd149a2e9d507",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /harvest",
+      "object": "apps/control-plane/api/routes/discovery.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery.py",
+        "line": 465
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "3c0446cf1cbcff73",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /hypergraph",
@@ -40051,7 +40311,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/discovery.py",
-        "line": 300
+        "line": 309
       },
       "confidence": 1.0
     },
@@ -56281,6 +56541,42 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "12cd2babee2ad0f2",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_evidence.py",
+      "object": "apps/shared/domain/capture.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_evidence.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3d8aa84715b603d9",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_evidence.py",
+      "object": "apps/zero/zero/evidence.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_evidence.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5cb2d7def930a90f",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_evidence.py",
+      "object": "apps/zero/zero/harvesters/transport.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_evidence.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "32ddd0662e8bb5eb",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/zero/tests/test_harvest_wave.py",
@@ -56485,10 +56781,34 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "1f92f751d9701520",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvest_wave.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "a53933eacfb20acc",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/zero/tests/test_public_acquisition_policy.py",
       "object": "apps/zero/zero/harvesters/contracts.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_public_acquisition_policy.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "03711d10595b5f6d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_public_acquisition_policy.py",
+      "object": "apps/zero/zero/harvesters/transport.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
@@ -56673,6 +56993,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/zero/tests/test_resolution.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f157416ab03542b8",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/zero/tests/test_secure_public_transport.py",
+      "object": "apps/shared/net/secure_fetch.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/zero/tests/test_secure_public_transport.py"
       },
       "confidence": 1.0
     },

@@ -15,7 +15,8 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| POST | `/run` | 298 |
+| POST | `/run` | 307 |
+| POST | `/harvest` | 462 |
 
 ## `dossier` — `apps/control-plane/api/routes/dossier.py`
 

@@ -13,13 +13,13 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python modules | 1027 |
+| Python modules | 1028 |
 | TypeScript modules | 267 |
 | Rust source files / crates | 16 / 9 |
-| Resolved local import edges | 2879 |
-| HTTP routes / routers | 184 / 33 |
+| Resolved local import edges | 2898 |
+| HTTP routes / routers | 185 / 33 |
 | Event types / lanes | 99 / 29 |
-| Test files / test functions | 349 / 5348 |
+| Test files / test functions | 350 / 5353 |
 | Untested platform modules | 270 |
 
 ## Components
@@ -42,7 +42,7 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | `specops` | 30 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 11 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 267 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
-| `zero` | 38 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
+| `zero` | 39 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Quick start
 

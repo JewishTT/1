@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 423 |
-| TEST_ONLY | 136 |
+| PRODUCTION | 425 |
+| TEST_ONLY | 134 |
 | ORPHAN | 122 |
-| TEST | 346 |
+| TEST | 347 |
 
 ## Entrypoints (production roots)
 
@@ -58,7 +58,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**136** modules are reached only by tests.
+**134** modules are reached only by tests.
 
 | Module |
 |---|
@@ -190,13 +190,11 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/websearch/discovery.py` |
 | `apps/shared/websearch/providers.py` |
 | `apps/shared/websearch/relevance.py` |
-| `apps/zero/zero/evidence.py` |
 | `apps/zero/zero/harvesters/git.py` |
 | `apps/zero/zero/harvesters/image.py` |
 | `apps/zero/zero/harvesters/phone.py` |
 | `apps/zero/zero/harvesters/url.py` |
 | `apps/zero/zero/harvesters/username.py` |
-| `apps/zero/zero/public_policy.py` |
 | `apps/zero/zero/resolution/fellegi_sunter.py` |
 
 ## Orphan modules (nothing imports them)

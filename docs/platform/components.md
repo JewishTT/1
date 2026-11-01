@@ -567,7 +567,7 @@ Python modules: **0** · TypeScript modules: **267**
 
 Zero-layer contact harvesting from arbitrary seeds.
 
-Python modules: **38** · TypeScript modules: **0**
+Python modules: **39** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -575,6 +575,7 @@ Python modules: **38** · TypeScript modules: **0**
 apps.zero.tests.conftest
 apps.zero.tests.test_cc_capture
 apps.zero.tests.test_enrichment
+apps.zero.tests.test_evidence
 apps.zero.tests.test_harvest_wave
 apps.zero.tests.test_harvesters
 apps.zero.tests.test_public_acquisition_policy
