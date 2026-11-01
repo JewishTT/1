@@ -23605,7 +23605,7 @@
       },
       {
         "path": "apps/zero/tests/test_harvest_wave.py",
-        "tests": 15,
+        "tests": 17,
         "test_names": [
           "test_stabilizes_before_max_depth",
           "test_first_wave_discovers_contacts",
@@ -23621,7 +23621,9 @@
           "test_immutability_enforcement",
           "test_emit_cycle_metrics",
           "test_bins",
-          "test_single_seed_to_observation"
+          "test_single_seed_to_observation",
+          "test_default_wave_registers_builtin_modules",
+          "test_reusing_wave_resets_stage_records_and_feedback_state"
         ],
         "targets": [
           "apps/zero/zero/harvest_wave.py",
@@ -23846,7 +23848,7 @@
         "targets": []
       }
     ],
-    "total": 5333
+    "total": 5335
   },
   "contracts": {
     "python": [
@@ -40593,8 +40595,8 @@
       {
         "path": "apps/zero/tests/test_harvest_wave.py",
         "status": "TEST",
-        "loc": 230,
-        "callables": 21,
+        "loc": 271,
+        "callables": 23,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40676,7 +40678,7 @@
       {
         "path": "apps/zero/zero/evidence.py",
         "status": "IMPLEMENTED",
-        "loc": 178,
+        "loc": 180,
         "callables": 4,
         "stubs": 1,
         "not_implemented": 0,
@@ -103239,7 +103241,7 @@
     "rust_crates": 9,
     "import_edges": 2840,
     "test_files": 345,
-    "test_functions": 5333,
+    "test_functions": 5335,
     "untested_modules": 268,
     "http_routes": 183
   },
