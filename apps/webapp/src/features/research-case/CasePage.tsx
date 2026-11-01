@@ -56,11 +56,17 @@ function zeroLayerBatchKey(caseId: string, scopeDigest: string, leadIds: string[
     hash = Math.imul(hash, 16777619);
   }
   const storageKey = `cognitive.zero-layer.${(hash >>> 0).toString(16)}`;
-  const existing = window.sessionStorage.getItem(storageKey);
-  if (existing) return existing;
-  const key = `zl-${crypto.randomUUID()}`;
-  window.sessionStorage.setItem(storageKey, key);
-  return key;
+  try {
+    const existing = window.sessionStorage.getItem(storageKey);
+    if (existing) return existing;
+    const key = `zl-${crypto.randomUUID()}`;
+    window.sessionStorage.setItem(storageKey, key);
+    return key;
+  } catch {
+    // Storage can be blocked by browser privacy settings. The request still gets
+    // a unique key; the durable backend reservation remains the final authority.
+    return `zl-${crypto.randomUUID()}`;
+  }
 }
 
 
@@ -409,7 +415,7 @@ export function CasePage() {
                 {zeroLayerMutation.data && (
                   <div className="mt-3 border border-cyan-400/30 bg-cyan-400/5 p-3" data-testid="zero-layer-result">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-cyan-200">Capture run / discovery-only${zeroLayerMutation.data.replayed ? " / replayed" : ""}</span>
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-cyan-200">Capture run / discovery-only{zeroLayerMutation.data.replayed ? " / replayed" : ""}</span>
                       <span className="font-mono text-[10px] text-slate-400">{zeroLayerMutation.data.run_id}</span>
                     </div>
                     <p className="mt-2 text-sm text-slate-200">
