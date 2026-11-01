@@ -12,6 +12,8 @@ able to constrain the execution surface.
 
 from __future__ import annotations
 
+import asyncio
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -65,6 +67,8 @@ class WaveStageRecord:
     notes: tuple[str, ...] = ()
     pending_worker_commands: int = 0
     derived_seeds: tuple[str, ...] = ()
+    parent_observation_id: str = ""
+    source_id: str = ""
 
     def __post_init__(self) -> None:
         if self.wave_index < 0:
@@ -87,6 +91,9 @@ class WaveStageRecord:
             "candidate_count": len(self.candidates),
             "candidates": [candidate.as_dict() for candidate in self.candidates],
             "derived_seeds": list(self.derived_seeds),
+            "parent_observation_id": self.parent_observation_id,
+            "source_id": self.source_id,
+            "result_role": "DISCOVERY_ONLY",
             "claim_admission_allowed": False,
         }
 
@@ -105,6 +112,8 @@ class HarvestWave:
         dns_exists=None,
         max_depth: int = DEFAULT_MAX_DEPTH,
         min_new_seeds: int = DEFAULT_MIN_NEW_SEEDS,
+        enable_enrichment: bool = True,
+        seed_context: Mapping[str, Mapping[str, Any]] | None = None,
     ) -> None:
         if not 1 <= int(max_depth) <= 5:
             raise ValueError("max_depth must be between 1 and 5")
@@ -121,6 +130,10 @@ class HarvestWave:
         self._dns_exists = dns_exists
         self._max_depth = int(max_depth)
         self._min_new_seeds = int(min_new_seeds)
+        self._enable_enrichment = bool(enable_enrichment)
+        self._seed_context = {
+            str(key): dict(value) for key, value in (seed_context or {}).items()
+        }
         self._seen_keys: set[str] = set()
         self._observations = []
         self._stage_records: list[WaveStageRecord] = []
@@ -193,16 +206,25 @@ class HarvestWave:
             raise ValueError("evidence_sink is required for persisted zero-layer runs")
         if not tenant_id or not str(tenant_id).strip():
             raise ValueError("tenant_id is required for persisted zero-layer runs")
-        summaries = self.run(raw_seeds)
+        summaries = await asyncio.to_thread(self.run, raw_seeds)
         accepted: list[Any] = []
+        captures = getattr(self._transport, "captures", ())
+        captures = captures() if callable(captures) else captures
+        persist_capture = getattr(evidence_sink, "persist_capture", None)
+        if captures and not callable(persist_capture):
+            raise TypeError("evidence_sink must implement persist_capture for raw network captures")
+        for capture in captures or ():
+            accepted.append(await persist_capture(
+                capture,
+                tenant_id=tenant_id,
+                investigation_id=investigation_id,
+            ))
         for record in self._stage_records:
-            accepted.append(
-                await evidence_sink.persist(
-                    record,
-                    tenant_id=tenant_id,
-                    investigation_id=investigation_id,
-                )
-            )
+            accepted.append(await evidence_sink.persist(
+                record,
+                tenant_id=tenant_id,
+                investigation_id=investigation_id,
+            ))
         return summaries, accepted
 
     # -- per-wave plumbing ---------------------------------------------------------
@@ -224,7 +246,11 @@ class HarvestWave:
                 for result in module_results
                 for candidate in result.candidates
             ]
-            enriched = run_enrichers(seed, {"dns_records": ctx.dns_records})
+            enriched = (
+                run_enrichers(seed, {"dns_records": ctx.dns_records})
+                if self._enable_enrichment
+                else []
+            )
             combined = harvested + enriched
             clustering = cluster_candidates(combined)
             clustering = sorted(clustering, key=lambda c: (c.kind, c.value, c.source_module))
@@ -237,11 +263,14 @@ class HarvestWave:
                 for note in result.notes
             )
             pending_commands = sum(len(result.commands) for result in module_results)
+            seed_context = self._seed_context.get(seed.raw_value, {})
             common = {
                 "wave_index": wave_index,
                 "seed_id": seed.seed_id,
                 "seed_type": seed.detected_type.value,
                 "seed_value": seed.raw_value,
+                "parent_observation_id": str(seed_context.get("parent_observation_id") or ""),
+                "source_id": str(seed_context.get("source_id") or ""),
             }
             self._stage_records.extend(
                 (
