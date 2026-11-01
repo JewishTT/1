@@ -48,19 +48,25 @@ const VIEW_LABELS: Record<ViewId, string> = {
  * contains no URL or subject data; only a short fingerprint is used as the
  * sessionStorage key. Reloading the page cannot accidentally create a second
  * network run for the same case scope and lead set. */
-function zeroLayerBatchKey(
-  caseId: string,
-  scopeDigest: string,
-  leadIds: string[],
-  fallbackKeys: Map<string, string>,
-): string {
+function zeroLayerBatchStorageKey(caseId: string, scopeDigest: string, leadIds: string[]): string {
   const material = [caseId, scopeDigest, ...[...leadIds].sort()].join("|");
   let hash = 2166136261;
   for (let index = 0; index < material.length; index += 1) {
     hash ^= material.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
-  const storageKey = `cognitive.zero-layer.${(hash >>> 0).toString(16)}`;
+  return `cognitive.zero-layer.${(hash >>> 0).toString(16)}`;
+}
+
+/** Reuse a key while a request is uncertain; release it only after a terminal
+ * response so a deliberate new snapshot of the same lead set gets a new run. */
+function zeroLayerBatchKey(
+  caseId: string,
+  scopeDigest: string,
+  leadIds: string[],
+  fallbackKeys: Map<string, string>,
+): string {
+  const storageKey = zeroLayerBatchStorageKey(caseId, scopeDigest, leadIds);
   const inMemory = fallbackKeys.get(storageKey);
   if (inMemory) return inMemory;
   try {
@@ -82,6 +88,25 @@ function zeroLayerBatchKey(
   return key;
 }
 
+function releaseZeroLayerBatchKey(
+  caseId: string,
+  scopeDigest: string,
+  leadIds: string[],
+  completedKey: string,
+  fallbackKeys: Map<string, string>,
+): void {
+  const storageKey = zeroLayerBatchStorageKey(caseId, scopeDigest, leadIds);
+  if (fallbackKeys.get(storageKey) === completedKey) {
+    fallbackKeys.delete(storageKey);
+  }
+  try {
+    if (window.sessionStorage.getItem(storageKey) === completedKey) {
+      window.sessionStorage.removeItem(storageKey);
+    }
+  } catch {
+    // In-memory state is already released; storage may be unavailable.
+  }
+}
 
 export function CasePage() {
   const { caseId } = useParams<{ caseId: string }>();
@@ -162,7 +187,14 @@ export function CasePage() {
       lead_ids: input.leadIds,
       idempotency_key: input.key,
     }),
-    onSuccess: async () => {
+    onSuccess: async (_response, variables) => {
+      releaseZeroLayerBatchKey(
+        caseId!,
+        caseData?.scope_digest ?? "",
+        variables.leadIds,
+        variables.key,
+        zeroLayerFallbackKeys.current,
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["research-case-discovery-leads", caseId] }),
         queryClient.invalidateQueries({ queryKey: ["research-case-artifacts", caseId] }),
