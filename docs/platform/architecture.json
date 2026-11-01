@@ -1021,6 +1021,7 @@
           "apps/control-plane/tests/test_research_case_invariants.py",
           "apps/control-plane/tests/test_research_case_projection.py",
           "apps/control-plane/tests/test_research_case_reports.py",
+          "apps/control-plane/tests/test_zero_layer_service.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
           "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -1145,7 +1146,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 301
+        "module_count": 302
       },
       {
         "id": "webapp",

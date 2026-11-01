@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4504,
-    "static_facts": 4210,
+    "facts_total": 4507,
+    "static_facts": 4213,
     "inferred": 294,
     "intended": 0
   },
@@ -14966,6 +14966,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "1f67e52223ea26b1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/zero_layer.py",
+      "object": "apps/zero/zero/public_policy.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/zero_layer.py",
+        "via": "zero.public_policy"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "553070fc87cb30c4",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/services/zero_layer.py",
@@ -16834,6 +16847,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/test_research_case_reports.py",
         "via": "contracts.evidence_span"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a249f5f40fe4897d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_zero_layer_service.py",
+      "object": "apps/control-plane/services/zero_layer.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_zero_layer_service.py",
+        "via": "services.zero_layer"
       },
       "confidence": 1.0
     },
@@ -48540,6 +48566,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/test_research_case_reports.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0bddb196b0c7370a",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_zero_layer_service.py",
+      "object": "apps/control-plane/services/zero_layer.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_zero_layer_service.py"
       },
       "confidence": 1.0
     },

@@ -211,7 +211,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 242,
+      "python_modules": 243,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -400,6 +400,7 @@
         "apps.control-plane.tests.test_research_case_invariants",
         "apps.control-plane.tests.test_research_case_projection",
         "apps.control-plane.tests.test_research_case_reports",
+        "apps.control-plane.tests.test_zero_layer_service",
         "apps.control-plane.tests.unit.test_action_memory",
         "apps.control-plane.tests.unit.test_approval_gate",
         "apps.control-plane.tests.unit.test_assembly_structural_conflict",
@@ -412,8 +413,7 @@
         "apps.control-plane.tests.unit.test_dispatcher_backpressure",
         "apps.control-plane.tests.unit.test_donor_patterns",
         "apps.control-plane.tests.unit.test_dossier_store",
-        "apps.control-plane.tests.unit.test_enrichment_service",
-        "apps.control-plane.tests.unit.test_entity_stream_persistence"
+        "apps.control-plane.tests.unit.test_enrichment_service"
       ]
     },
     {
@@ -1139,11 +1139,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1029,
-    "edge_count": 2905,
+    "module_count": 1030,
+    "edge_count": 2907,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 899,
+      "stdlib:__future__": 900,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
@@ -1165,7 +1165,7 @@
       "stdlib:enum": 118,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 131,
+      "stdlib:hashlib": 132,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 10,
@@ -1175,7 +1175,7 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 201,
+      "stdlib:json": 202,
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 73,
@@ -1244,7 +1244,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 274,
+      "third-party:pytest": 275,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -6699,6 +6699,11 @@
         "via": "zero.type_detector"
       },
       {
+        "from": "apps/control-plane/services/zero_layer.py",
+        "to": "apps/zero/zero/public_policy.py",
+        "via": "zero.public_policy"
+      },
+      {
         "from": "apps/control-plane/tests/contract/test_context_graph_contract.py",
         "to": "apps/control-plane/context_engine/context_graph.py",
         "via": "context_engine.context_graph"
@@ -7412,6 +7417,11 @@
         "from": "apps/control-plane/tests/test_research_case_reports.py",
         "to": "apps/control-plane/services/research_case_reports.py",
         "via": "services.research_case_reports"
+      },
+      {
+        "from": "apps/control-plane/tests/test_zero_layer_service.py",
+        "to": "apps/control-plane/services/zero_layer.py",
+        "via": "services.zero_layer"
       },
       {
         "from": "apps/control-plane/tests/unit/test_action_memory.py",
@@ -17635,6 +17645,18 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/test_zero_layer_service.py",
+        "tests": 3,
+        "test_names": [
+          "test_published_idempotency_reservation_replays_saved_response",
+          "test_reserved_idempotency_key_never_authorizes_a_second_fetch",
+          "test_new_idempotency_reservation_continues_to_execute"
+        ],
+        "targets": [
+          "apps/control-plane/services/zero_layer.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_action_memory.py",
         "tests": 19,
         "test_names": [
@@ -24050,10 +24072,11 @@
       },
       {
         "path": "apps/zero/tests/test_public_acquisition_policy.py",
-        "tests": 4,
+        "tests": 5,
         "test_names": [
           "test_public_domain_keeps_technical_leads_and_role_mailboxes",
           "test_public_profile_suppresses_personal_or_enumerative_outputs",
+          "test_public_professional_metadata_is_allowed_only_from_a_url_seed",
           "test_non_public_seed_types_fail_closed",
           "test_production_filter_removes_personal_leads_before_all_stages"
         ],
@@ -24277,7 +24300,7 @@
         "targets": []
       }
     ],
-    "total": 5358
+    "total": 5362
   },
   "contracts": {
     "python": [
@@ -29547,7 +29570,6 @@
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
-    "apps/control-plane/services/zero_layer.py",
     "apps/deploy/minio-init/init-buckets.py",
     "apps/feedback/feedback/branch/__init__.py",
     "apps/interpretation/__init__.py",
@@ -29622,9 +29644,10 @@
     "apps/shared/events/fabric_events.py",
     "apps/shared/events/registry.py",
     "apps/shared/ids/gen.py",
-    "apps/shared/network/__init__.py"
+    "apps/shared/network/__init__.py",
+    "apps/shared/observability/__init__.py"
   ],
-  "untested_count": 270,
+  "untested_count": 269,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -30648,6 +30671,7 @@
             "apps/control-plane/tests/test_research_case_invariants.py",
             "apps/control-plane/tests/test_research_case_projection.py",
             "apps/control-plane/tests/test_research_case_reports.py",
+            "apps/control-plane/tests/test_zero_layer_service.py",
             "apps/control-plane/tests/unit/test_action_memory.py",
             "apps/control-plane/tests/unit/test_approval_gate.py",
             "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -30772,7 +30796,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 301
+          "module_count": 302
         },
         {
           "id": "webapp",
@@ -35162,8 +35186,8 @@
       {
         "path": "apps/control-plane/services/zero_layer.py",
         "status": "IMPLEMENTED",
-        "loc": 341,
-        "callables": 5,
+        "loc": 404,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -35442,6 +35466,15 @@
         "status": "TEST",
         "loc": 188,
         "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/test_zero_layer_service.py",
+        "status": "TEST",
+        "loc": 44,
+        "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41105,8 +41138,8 @@
       {
         "path": "apps/zero/tests/test_public_acquisition_policy.py",
         "status": "TEST",
-        "loc": 60,
-        "callables": 5,
+        "loc": 68,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41224,7 +41257,7 @@
       {
         "path": "apps/zero/zero/harvest_wave.py",
         "status": "IMPLEMENTED",
-        "loc": 448,
+        "loc": 449,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -41296,7 +41329,7 @@
       {
         "path": "apps/zero/zero/harvesters/public_document.py",
         "status": "IMPLEMENTED",
-        "loc": 218,
+        "loc": 231,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
@@ -41350,7 +41383,7 @@
       {
         "path": "apps/zero/zero/public_policy.py",
         "status": "IMPLEMENTED",
-        "loc": 48,
+        "loc": 50,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -41795,9 +41828,9 @@
       "IMPLEMENTED": 553,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 348,
+      "TEST": 349,
       "MIGRATION": 19,
-      "total": 1029
+      "total": 1030
     }
   },
   "reachability": {
@@ -43124,6 +43157,10 @@
       },
       {
         "path": "apps/control-plane/tests/test_research_case_reports.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/test_zero_layer_service.py",
         "status": "TEST"
       },
       {
@@ -45965,8 +46002,8 @@
       "PRODUCTION": 425,
       "TEST_ONLY": 134,
       "ORPHAN": 122,
-      "TEST": 348,
-      "total": 1029
+      "TEST": 349,
+      "total": 1030
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -62739,6 +62776,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "1f67e52223ea26b1",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/zero_layer.py",
+        "object": "apps/zero/zero/public_policy.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/zero_layer.py",
+          "via": "zero.public_policy"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "553070fc87cb30c4",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/zero_layer.py",
@@ -64607,6 +64657,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/test_research_case_reports.py",
           "via": "contracts.evidence_span"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a249f5f40fe4897d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_zero_layer_service.py",
+        "object": "apps/control-plane/services/zero_layer.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_zero_layer_service.py",
+          "via": "services.zero_layer"
         },
         "confidence": 1.0
       },
@@ -96317,6 +96380,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "0bddb196b0c7370a",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_zero_layer_service.py",
+        "object": "apps/control-plane/services/zero_layer.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_zero_layer_service.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3c80d1d52a84b093",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_action_memory.py",
@@ -104958,27 +105033,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4504,
-      "static_facts": 4210,
+      "facts_total": 4507,
+      "static_facts": 4213,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1029,
+    "python_modules": 1030,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2905,
-    "test_files": 351,
-    "test_functions": 5358,
-    "untested_modules": 270,
+    "import_edges": 2907,
+    "test_files": 352,
+    "test_functions": 5362,
+    "untested_modules": 269,
     "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4504,
-    "static_facts": 4210,
+    "facts_total": 4507,
+    "static_facts": 4213,
     "inferred": 294,
     "intended": 0
   },
@@ -104986,16 +105061,16 @@
     "IMPLEMENTED": 553,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 348,
+    "TEST": 349,
     "MIGRATION": 19,
-    "total": 1029
+    "total": 1030
   },
   "reachability_summary": {
     "PRODUCTION": 425,
     "TEST_ONLY": 134,
     "ORPHAN": 122,
-    "TEST": 348,
-    "total": 1029
+    "TEST": 349,
+    "total": 1030
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
