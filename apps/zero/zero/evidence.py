@@ -172,6 +172,64 @@ class ZeroLayerEvidenceSink:
         )
 
 
+    async def persist_capture(
+        self,
+        capture: Any,
+        *,
+        tenant_id: str,
+        investigation_id: str | None = None,
+    ) -> Any:
+        """Persist fetched bytes as the parent capture before stage observations."""
+        if not tenant_id or not str(tenant_id).strip():
+            raise ValueError("tenant_id is required")
+        body = bytes(getattr(capture, "body", b"") or b"")
+        if not body:
+            raise ValueError("zero-layer raw capture cannot be empty")
+        url = str(getattr(capture, "url", "") or "").strip()
+        if not url.startswith("https://"):
+            raise ValueError("zero-layer raw capture must retain an HTTPS URL")
+        fetched_at = getattr(capture, "fetched_at", None)
+        if not isinstance(fetched_at, datetime):
+            raise ValueError("zero-layer raw capture requires fetched_at")
+        digest = hashlib.sha256(body).hexdigest()
+        task_scope = f"{tenant_id}|{investigation_id or ''}|{url}|{digest}"
+        task_id = "ZL-" + hashlib.sha256(task_scope.encode("utf-8")).hexdigest()[:32]
+        metadata = {
+            "parser_hint": "html" if "html" in str(getattr(capture, "content_type", "")).lower() else "text",
+            "result_role": "DISCOVERY_ONLY",
+            "claim_admission_allowed": False,
+            "target_uri": url,
+            "http_status": int(getattr(capture, "status", 0)),
+            "pinned_ip": str(getattr(capture, "pinned_ip", "") or ""),
+            "redirects": list(getattr(capture, "redirects", ()) or ()),
+            "parent_observation_id": str(getattr(capture, "parent_observation_id", "") or ""),
+            "discovery_source_id": str(getattr(capture, "discovery_source_id", "") or ""),
+            "action_ref": str(getattr(capture, "action_ref", "") or ""),
+        }
+        artifact = AcquisitionArtifact(
+            task_id=task_id,
+            source_id=self._source_id,
+            worker_ref=self._worker_ref,
+            target_uri=url,
+            locator=f"zero-layer/raw/{hashlib.sha256(url.encode('utf-8')).hexdigest()[:24]}/{digest[:24]}",
+            body=body,
+            content_type=str(getattr(capture, "content_type", "") or "application/octet-stream"),
+            fetched_at=fetched_at,
+            transport="https",
+            producer="zero-layer-secure-public-fetch",
+            producer_version="1.0.0",
+            metadata=metadata,
+            capture_locator=f"zero-layer/capture/{hashlib.sha256(task_scope.encode('utf-8')).hexdigest()[:32]}",
+        )
+        return await self._artifact_sink.accept(
+            artifact,
+            tenant_id=tenant_id,
+            investigation_id=investigation_id,
+            work_id=task_id,
+            time_basis=CaptureTimeBasis.FETCH,
+        )
+
+
 __all__ = [
     "ArtifactSinkProtocol",
     "PersistedZeroLayerStage",

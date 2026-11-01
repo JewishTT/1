@@ -12,6 +12,7 @@ optional DNS resolver so no module ever opens a socket unprompted.
 from __future__ import annotations
 
 import importlib
+from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -68,7 +69,10 @@ class HarvesterRegistry:
     module name, fault-contained (a raising module is reported, the rest run).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, max_workers: int = 4) -> None:
+        if not 1 <= int(max_workers) <= 16:
+            raise ValueError("max_workers must be between 1 and 16")
+        self._max_workers = int(max_workers)
         self._modules: dict[str, _ConcreteModule] = {}
 
     def register(self, module: HarvestModule) -> None:
@@ -101,13 +105,20 @@ class HarvesterRegistry:
         )
 
     def run(self, seed: SeedInput, ctx: HarvestContext) -> list[HarvestResult]:
-        """Run every module registered for the seed type; collect results."""
-        results: list[HarvestResult] = []
-        for module in self.modules_for(seed.detected_type):
+        """Run compatible modules concurrently; collect in stable name order."""
+        modules = self.modules_for(seed.detected_type)
+        if not modules:
+            return []
+
+        def execute(module: _ConcreteModule) -> HarvestResult:
             try:
-                results.append(module.run(seed, ctx))
-            except Exception as exc:  # fault containment, quarantine-style
-                results.append(
-                    HarvestResult(module=module.name, notes=(f"module fault: {exc!r}",))
-                )
-        return results
+                return module.run(seed, ctx)
+            except Exception as exc:  # noqa: BLE001 - fault containment per module
+                return HarvestResult(module=module.name, notes=(f"module fault: {exc!r}",))
+
+        with ThreadPoolExecutor(
+            max_workers=min(self._max_workers, len(modules)),
+            thread_name_prefix="zero-harvester",
+        ) as pool:
+            futures = [pool.submit(execute, module) for module in modules]
+            return [future.result() for future in futures]

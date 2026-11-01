@@ -13,7 +13,7 @@ able to constrain the execution surface.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -114,6 +114,7 @@ class HarvestWave:
         min_new_seeds: int = DEFAULT_MIN_NEW_SEEDS,
         enable_enrichment: bool = True,
         seed_context: Mapping[str, Mapping[str, Any]] | None = None,
+        candidate_allowed: Callable[[SeedInput, ObservationCandidate], bool] | None = None,
     ) -> None:
         if not 1 <= int(max_depth) <= 5:
             raise ValueError("max_depth must be between 1 and 5")
@@ -131,6 +132,7 @@ class HarvestWave:
         self._max_depth = int(max_depth)
         self._min_new_seeds = int(min_new_seeds)
         self._enable_enrichment = bool(enable_enrichment)
+        self._candidate_allowed = candidate_allowed
         self._seed_context = {
             str(key): dict(value) for key, value in (seed_context or {}).items()
         }
@@ -213,12 +215,25 @@ class HarvestWave:
         persist_capture = getattr(evidence_sink, "persist_capture", None)
         if captures and not callable(persist_capture):
             raise TypeError("evidence_sink must implement persist_capture for raw network captures")
+        capture_refs = []
         for capture in captures or ():
-            accepted.append(await persist_capture(
+            capture_refs.append(await persist_capture(
                 capture,
                 tenant_id=tenant_id,
                 investigation_id=investigation_id,
             ))
+        accepted.extend(capture_refs)
+
+        # A single-seed public harvest ties each derived stage to the raw page
+        # that produced it. For multi-seed runs, retain the explicit blank parent
+        # rather than guessing which fetched URL belongs to which seed.
+        if len(raw_seeds) == 1 and capture_refs:
+            from dataclasses import replace
+            parent_observation_id = str(getattr(capture_refs[0], "observation_id", "") or "")
+            self._stage_records = [
+                replace(record, parent_observation_id=record.parent_observation_id or parent_observation_id)
+                for record in self._stage_records
+            ]
         for record in self._stage_records:
             accepted.append(await evidence_sink.persist(
                 record,
@@ -251,6 +266,11 @@ class HarvestWave:
                 if self._enable_enrichment
                 else []
             )
+            # Filter before materializing stages or feedback. Production allow-lists
+            # therefore cannot be bypassed through a sibling stage or re-harvest.
+            if self._candidate_allowed is not None:
+                harvested = [candidate for candidate in harvested if self._candidate_allowed(seed, candidate)]
+                enriched = [candidate for candidate in enriched if self._candidate_allowed(seed, candidate)]
             combined = harvested + enriched
             clustering = cluster_candidates(combined)
             clustering = sorted(clustering, key=lambda c: (c.kind, c.value, c.source_module))

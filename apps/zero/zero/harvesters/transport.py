@@ -66,12 +66,20 @@ class SecurePublicTransport:
         user_agent: str = "COGNITIVE-PublicResearch/1.0",
         max_response_bytes: int = 2_000_000,
         minimum_host_interval_s: float = 1.0,
+        max_requests: int = 64,
+        max_concurrency: int = 4,
         fetcher_factory: SecureFetcherFactory | None = None,
     ) -> None:
         if max_response_bytes < 1024:
             raise ValueError("max_response_bytes must be at least 1024")
         if minimum_host_interval_s < 0:
             raise ValueError("minimum_host_interval_s cannot be negative")
+        if not 1 <= int(max_requests) <= 512:
+            raise ValueError("max_requests must be between 1 and 512")
+        if not 1 <= int(max_concurrency) <= 16:
+            raise ValueError("max_concurrency must be between 1 and 16")
+        self.max_requests = int(max_requests)
+        self.max_concurrency = int(max_concurrency)
         self.user_agent = user_agent
         self.max_response_bytes = int(max_response_bytes)
         self.minimum_host_interval_s = float(minimum_host_interval_s)
@@ -83,6 +91,10 @@ class SecurePublicTransport:
         self._captures: list[PublicFetchCapture] = []
         self._failures: list[dict[str, str]] = []
         self._source_metadata: dict[str, dict[str, str]] = {}
+        self._network_requests_used = 0
+        self._request_slots = threading.BoundedSemaphore(self.max_concurrency)
+        self._pending_fetches: dict[str, threading.Event] = {}
+        self._exists_cache: dict[str, bool] = {}
 
     @property
     def captures(self) -> tuple[PublicFetchCapture, ...]:
@@ -93,6 +105,18 @@ class SecurePublicTransport:
     def failures(self) -> tuple[dict[str, str], ...]:
         with self._lock:
             return tuple(dict(item) for item in self._failures)
+
+    @property
+    def requests_used(self) -> int:
+        """Physical HTTP requests used, including robots.txt checks."""
+        with self._lock:
+            return self._network_requests_used
+
+    def _reserve_request(self, url: str) -> None:
+        with self._lock:
+            if self._network_requests_used >= self.max_requests:
+                raise SecurityBlocked(f"public fetch request budget exhausted ({self.max_requests})")
+            self._network_requests_used += 1
 
     @staticmethod
     def _canonical_public_url(url: str) -> tuple[str, str]:
@@ -143,7 +167,9 @@ class SecurePublicTransport:
                 "detail": detail[:1000],
             })
 
-    async def _fetch_async(self, url: str, timeout: float) -> PublicFetchCapture:
+    async def _fetch_async(
+        self, url: str, timeout: float, *, method: str = "GET"
+    ) -> PublicFetchCapture:
         canonical, host = self._canonical_public_url(url)
         limits = ResourceLimits(
             max_timeout_ms=max(1000, min(int(float(timeout) * 1000), 15000)),
@@ -159,6 +185,7 @@ class SecurePublicTransport:
         )
         try:
             robots_url = f"https://{host}/robots.txt"
+            self._reserve_request(robots_url)
             robots = await fetcher.fetch(robots_url, headers={"Accept": "text/plain"})
             if robots.status in (404, 410):
                 permitted = True
@@ -172,8 +199,10 @@ class SecurePublicTransport:
             if not permitted:
                 raise SecurityBlocked("robots policy does not permit this fetch")
             self._pace(host)
+            self._reserve_request(canonical)
             response = await fetcher.fetch(
                 canonical,
+                method=method,
                 headers={"Accept": "text/html,application/xhtml+xml,text/plain;q=0.8"},
             )
             if response.status < 200 or response.status >= 300:
@@ -200,20 +229,60 @@ class SecurePublicTransport:
             canonical, _host = self._canonical_public_url(url)
             with self._lock:
                 cached = self._body_cache.get(canonical)
-            if cached is not None:
-                return cached
-            capture = asyncio.run(self._fetch_async(canonical, timeout))
-            text_body = capture.body.decode("utf-8", errors="replace")
-            with self._lock:
-                self._captures.append(capture)
-                self._body_cache[canonical] = text_body
-            return text_body
+                if cached is not None:
+                    return cached
+                pending = self._pending_fetches.get(canonical)
+                leader = pending is None
+                if leader:
+                    pending = threading.Event()
+                    self._pending_fetches[canonical] = pending
+            if not leader:
+                if not pending.wait(timeout=max(1.0, float(timeout) + 2.0)):
+                    raise SecurityBlocked("coalesced fetch wait exceeded timeout")
+                with self._lock:
+                    return self._body_cache.get(canonical, "")
+            if not self._request_slots.acquire(blocking=False):
+                raise SecurityBlocked("public fetch concurrency budget exhausted")
+            try:
+                capture = asyncio.run(self._fetch_async(canonical, timeout, method="GET"))
+                text_body = capture.body.decode("utf-8", errors="replace")
+                with self._lock:
+                    self._captures.append(capture)
+                    self._body_cache[canonical] = text_body
+                return text_body
+            finally:
+                self._request_slots.release()
         except Exception as exc:  # noqa: BLE001 - refusals are explicit ledger entries
             self._record_failure(str(url), type(exc).__name__, str(exc))
             return ""
+        finally:
+            # Only the leader owns the pending slot. A waiter must not wake another
+            # waiter before the leader has stored the response in the shared cache.
+            if locals().get("leader", False):
+                with self._lock:
+                    event = self._pending_fetches.pop(canonical, None)
+                    if event is not None:
+                        event.set()
 
     def exists(self, url: str, timeout: float = 5.0) -> bool:
-        return bool(self.fetch(url, timeout=timeout))
+        try:
+            canonical, _host = self._canonical_public_url(url)
+            with self._lock:
+                if canonical in self._exists_cache:
+                    return self._exists_cache[canonical]
+            if not self._request_slots.acquire(blocking=False):
+                raise SecurityBlocked("public fetch concurrency budget exhausted")
+            try:
+                result = asyncio.run(self._fetch_async(canonical, timeout, method="HEAD"))
+                found = 200 <= result.status < 400
+                with self._lock:
+                    self._exists_cache[canonical] = found
+                return found
+            finally:
+                self._request_slots.release()
+        except Exception as exc:  # noqa: BLE001 - refusals are explicit ledger entries
+            self._record_failure(str(url), type(exc).__name__, str(exc))
+            return False
 
 
 class OfflineTransport:

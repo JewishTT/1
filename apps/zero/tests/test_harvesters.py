@@ -82,7 +82,7 @@ class TestEmailPermutationHarvester:
 class TestSubdomainBruteHarvester:
     def test_verified_subs_rank_higher(self) -> None:
         seed = TypeDetector().detect("example.com")
-        transport = DictTransport(existing={"http://www.example.com"})
+        transport = DictTransport(existing={"https://www.example.com"})
         ctx = HarvesterContext(seed=seed, transport=transport)
         result = SubdomainBruteHarvester().run(seed, ctx)
         by_value = {c.value: c for c in result.candidates}
