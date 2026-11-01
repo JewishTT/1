@@ -1140,10 +1140,10 @@
   ],
   "import_graph": {
     "module_count": 1030,
-    "edge_count": 2914,
+    "edge_count": 2909,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 900,
+      "stdlib:__future__": 899,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
@@ -1199,7 +1199,7 @@
       "stdlib:time": 32,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
-      "stdlib:types": 36,
+      "stdlib:types": 35,
       "stdlib:typing": 373,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
@@ -15244,31 +15244,6 @@
         "via": "zero.harvesters.public_document"
       },
       {
-        "from": "apps/zero/tests/test_public_wave_persistence.py",
-        "to": "apps/zero/zero/harvest_wave.py",
-        "via": "zero.harvest_wave"
-      },
-      {
-        "from": "apps/zero/tests/test_public_wave_persistence.py",
-        "to": "apps/zero/zero/harvesters/public_document.py",
-        "via": "zero.harvesters.public_document"
-      },
-      {
-        "from": "apps/zero/tests/test_public_wave_persistence.py",
-        "to": "apps/zero/zero/harvesters/registry.py",
-        "via": "zero.harvesters.registry"
-      },
-      {
-        "from": "apps/zero/tests/test_public_wave_persistence.py",
-        "to": "apps/zero/zero/harvesters/transport.py",
-        "via": "zero.harvesters.transport"
-      },
-      {
-        "from": "apps/zero/tests/test_public_wave_persistence.py",
-        "to": "apps/zero/zero/type_detector.py",
-        "via": "zero.type_detector"
-      },
-      {
         "from": "apps/zero/tests/test_resolution.py",
         "to": "apps/zero/zero/harvesters/contracts.py",
         "via": "zero.harvesters.contracts"
@@ -24154,10 +24129,12 @@
           "test_wave_persists_capture_first_then_discovery_only_stages"
         ],
         "targets": [
+          "apps/zero/zero/enrichment/feedback.py",
           "apps/zero/zero/harvest_wave.py",
           "apps/zero/zero/harvesters/public_document.py",
           "apps/zero/zero/harvesters/registry.py",
           "apps/zero/zero/harvesters/transport.py",
+          "apps/zero/zero/public_policy.py",
           "apps/zero/zero/type_detector.py"
         ]
       },
@@ -41201,8 +41178,8 @@
       {
         "path": "apps/zero/tests/test_public_wave_persistence.py",
         "status": "TEST",
-        "loc": 106,
-        "callables": 8,
+        "loc": 0,
+        "callables": 0,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -85051,71 +85028,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "868c60e7c0fd9b33",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/zero/tests/test_public_wave_persistence.py",
-        "object": "apps/zero/zero/harvest_wave.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/zero/tests/test_public_wave_persistence.py",
-          "via": "zero.harvest_wave"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "daf5bf6b7203f685",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/zero/tests/test_public_wave_persistence.py",
-        "object": "apps/zero/zero/harvesters/public_document.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/zero/tests/test_public_wave_persistence.py",
-          "via": "zero.harvesters.public_document"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "a54eb01fdef61986",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/zero/tests/test_public_wave_persistence.py",
-        "object": "apps/zero/zero/harvesters/registry.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/zero/tests/test_public_wave_persistence.py",
-          "via": "zero.harvesters.registry"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "0e1289c21b9a3557",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/zero/tests/test_public_wave_persistence.py",
-        "object": "apps/zero/zero/harvesters/transport.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/zero/tests/test_public_wave_persistence.py",
-          "via": "zero.harvesters.transport"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "290f312dc8ef20c6",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/zero/tests/test_public_wave_persistence.py",
-        "object": "apps/zero/zero/type_detector.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/zero/tests/test_public_wave_persistence.py",
-          "via": "zero.type_detector"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "f1cc7e8da190abb8",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/tests/test_resolution.py",
@@ -105048,6 +104960,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "3a31485cb26c7b5b",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_public_wave_persistence.py",
+        "object": "apps/zero/zero/enrichment/feedback.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_wave_persistence.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "46fcbba596359070",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/zero/tests/test_public_wave_persistence.py",
@@ -105088,6 +105012,18 @@
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/zero/tests/test_public_wave_persistence.py",
         "object": "apps/zero/zero/harvesters/transport.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_public_wave_persistence.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b53d1fb2d949d4fc",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_public_wave_persistence.py",
+        "object": "apps/zero/zero/public_policy.py",
         "status": "STATIC_FACT",
         "method": "import_and_name_scan",
         "evidence": {
@@ -105205,8 +105141,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4517,
-      "static_facts": 4223,
+      "facts_total": 4514,
+      "static_facts": 4220,
       "inferred": 294,
       "intended": 0
     }
@@ -105217,15 +105153,15 @@
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2914,
+    "import_edges": 2909,
     "test_files": 352,
     "test_functions": 5369,
     "untested_modules": 269,
     "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4517,
-    "static_facts": 4223,
+    "facts_total": 4514,
+    "static_facts": 4220,
     "inferred": 294,
     "intended": 0
   },
