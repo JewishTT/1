@@ -409,6 +409,7 @@ export interface ZeroLayerHarvestResponse {
   observation_refs: string[];
   result_role: "DISCOVERY_ONLY";
   claim_admission_allowed: false;
+  replayed?: boolean;
   notice: string;
 }
 

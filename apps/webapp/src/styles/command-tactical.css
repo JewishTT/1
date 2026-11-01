@@ -18,6 +18,34 @@
   --cmd-text: #e5f0f3;
   --cmd-muted: #90a6b1;
 
+  /* Bridge the normative UI 2.0 palette as well as its newer aliases. Scoped
+     to the mounted application root so every legacy route and feature module
+     shares the same material without changing isolated donor sandboxes. */
+  --bg-0: var(--cmd-void);
+  --bg-1: var(--cmd-graphite);
+  --surface-0: var(--cmd-panel);
+  --surface-1: var(--cmd-raised);
+  --surface-2: #1d3546;
+  --border-0: var(--cmd-line);
+  --border-1: var(--cmd-line-strong);
+  --text-primary: var(--cmd-text);
+  --text-secondary: #bfd0d7;
+  --text-muted: var(--cmd-muted);
+  --accent-green: var(--cmd-cyan);
+  --accent-green-bright: var(--cmd-ice);
+  --accent-green-wash: rgb(86 216 245 / 10%);
+  --accent-green-line: rgb(86 216 245 / 38%);
+  --accent-green-muted: #1c5365;
+  --accent-amber: var(--cmd-amber);
+  --accent-red: var(--cmd-red);
+  --accent-blue: #75b9d0;
+  --accent-amber-wash: rgb(226 184 110 / 12%);
+  --accent-amber-line: rgb(226 184 110 / 38%);
+  --accent-red-wash: rgb(225 110 104 / 12%);
+  --accent-red-line: rgb(225 110 104 / 40%);
+  --accent-blue-wash: rgb(117 185 208 / 12%);
+  --on-accent: #071016;
+
   --ui-bg: var(--cmd-void);
   --ui-surface-1: var(--cmd-graphite);
   --ui-surface-2: var(--cmd-panel);
@@ -39,8 +67,73 @@
   color: var(--cmd-text);
   background:
     radial-gradient(ellipse at 82% 0%, rgb(34 82 102 / 12%), transparent 42%),
-    linear-gradient(180deg, #080e15 0%, var(--cmd-void) 55%);
+    linear-gradient(180deg, var(--cmd-graphite) 0%, var(--cmd-void) 55%);
   font-variant-numeric: tabular-nums;
+}
+
+.ui-root[data-theme="light"] {
+  --cmd-void: #edf3f6;
+  --cmd-graphite: #f7fafb;
+  --cmd-panel: #ffffff;
+  --cmd-raised: #e7eff3;
+  --cmd-line: #c4d2d9;
+  --cmd-line-strong: #8fa6b1;
+  --cmd-cyan: #087c9c;
+  --cmd-ice: #075a72;
+  --cmd-lime: #537c25;
+  --cmd-amber: #875a16;
+  --cmd-red: #a43737;
+  --cmd-text: #13232d;
+  --cmd-muted: #536b77;
+  --accent-blue: #236b8b;
+  --ui-text-secondary: #405964;
+  --ui-bg: var(--cmd-void);
+  --ui-surface-1: var(--cmd-graphite);
+  --ui-surface-2: var(--cmd-panel);
+  --ui-surface-3: var(--cmd-raised);
+  --ui-text: var(--cmd-text);
+  --ui-text-muted: var(--cmd-muted);
+  --ui-border: var(--cmd-line);
+  --ui-border-strong: var(--cmd-line-strong);
+  --ui-accent: var(--cmd-cyan);
+  --ui-accent-bright: var(--cmd-ice);
+  --ui-accent-wash: rgb(8 124 156 / 10%);
+  --ui-accent-line: rgb(8 124 156 / 38%);
+  --ui-focus-ring: var(--cmd-ice);
+  --ui-gold: var(--cmd-amber);
+  --bg-0: var(--cmd-void);
+  --bg-1: var(--cmd-graphite);
+  --surface-0: var(--cmd-panel);
+  --surface-1: var(--cmd-raised);
+  --surface-2: #d5e2e8;
+  --border-0: var(--cmd-line);
+  --border-1: var(--cmd-line-strong);
+  --text-primary: var(--cmd-text);
+  --text-secondary: #405964;
+  --text-muted: var(--cmd-muted);
+  --accent-green: var(--cmd-cyan);
+  --accent-green-bright: var(--cmd-ice);
+  --accent-green-wash: rgb(8 124 156 / 10%);
+  --accent-green-line: rgb(8 124 156 / 38%);
+  --accent-amber: var(--cmd-amber);
+  --accent-red: var(--cmd-red);
+  color-scheme: light;
+  color: var(--cmd-text);
+  background: linear-gradient(180deg, var(--cmd-graphite), var(--cmd-void));
+}
+
+.ui-root[data-theme="light"] :where(input, textarea, select) {
+  background: #ffffff;
+  color: var(--cmd-text);
+}
+
+.ui-root[data-theme="light"] .ui-topbar,
+.ui-root[data-theme="light"] .ui-primary-nav,
+.ui-root[data-theme="light"] .ui-activity,
+.ui-root[data-theme="light"] .ui-canvas-head {
+  background: var(--cmd-graphite);
+  color: var(--cmd-text);
+  border-color: var(--cmd-line);
 }
 
 .ui-root::before {

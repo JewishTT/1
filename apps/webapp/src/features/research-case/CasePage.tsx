@@ -44,6 +44,26 @@ const VIEW_LABELS: Record<ViewId, string> = {
   analytics: "Graph & Timeline",
 };
 
+/** Stable, tab-scoped idempotency key for one approved lead batch. The value
+ * contains no URL or subject data; only a short fingerprint is used as the
+ * sessionStorage key. Reloading the page cannot accidentally create a second
+ * network run for the same case scope and lead set. */
+function zeroLayerBatchKey(caseId: string, scopeDigest: string, leadIds: string[]): string {
+  const material = [caseId, scopeDigest, ...leadIds].sort().join("|");
+  let hash = 2166136261;
+  for (let index = 0; index < material.length; index += 1) {
+    hash ^= material.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  const storageKey = `cognitive.zero-layer.${(hash >>> 0).toString(16)}`;
+  const existing = window.sessionStorage.getItem(storageKey);
+  if (existing) return existing;
+  const key = `zl-${crypto.randomUUID()}`;
+  window.sessionStorage.setItem(storageKey, key);
+  return key;
+}
+
+
 export function CasePage() {
   const { caseId } = useParams<{ caseId: string }>();
   const navigate = useNavigate();
@@ -334,12 +354,12 @@ export function CasePage() {
                             || zeroLayerMutation.isPending
                           }
                           onClick={() => zeroLayerMutation.mutate({
-                            leadIds: selectedLeadIds,
-                            key: `zl:${caseId}:${Date.now()}:${selectedLeadIds.length}`,
+                            leadIds: [...selectedLeadIds].sort(),
+                            key: zeroLayerBatchKey(caseId!, caseData.scope_digest, [...selectedLeadIds].sort()),
                           })}
                           className="rounded border border-cyan-300 bg-cyan-300 px-3 py-1.5 text-[11px] font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          {zeroLayerMutation.isPending ? "CAPTURING…" : `FETCH SELECTED / ${selectedLeadIds.length}`}
+                          {zeroLayerMutation.isPending ? "CAPTURING…" : zeroLayerMutation.isError ? "RETRY / SAME RESERVATION" : `FETCH SELECTED / ${selectedLeadIds.length}`}
                         </button>
                       </div>
                     </div>
@@ -383,13 +403,13 @@ export function CasePage() {
                 )}
                 {zeroLayerMutation.error && (
                   <p className="mt-3 border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300" role="alert">
-                    Public-document capture blocked: {zeroLayerMutation.error.message}
+                    Public-document capture response failed: {zeroLayerMutation.error.message}. Retrying this exact batch reuses its idempotency key; a RESERVED run is never fetched twice.
                   </p>
                 )}
                 {zeroLayerMutation.data && (
                   <div className="mt-3 border border-cyan-400/30 bg-cyan-400/5 p-3" data-testid="zero-layer-result">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-cyan-200">Capture run / discovery-only</span>
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-cyan-200">Capture run / discovery-only${zeroLayerMutation.data.replayed ? " / replayed" : ""}</span>
                       <span className="font-mono text-[10px] text-slate-400">{zeroLayerMutation.data.run_id}</span>
                     </div>
                     <p className="mt-2 text-sm text-slate-200">
