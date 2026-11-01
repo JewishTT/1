@@ -41296,7 +41296,7 @@
       {
         "path": "apps/zero/zero/harvest_wave.py",
         "status": "IMPLEMENTED",
-        "loc": 515,
+        "loc": 517,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
