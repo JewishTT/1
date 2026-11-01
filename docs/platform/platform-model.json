@@ -31219,8 +31219,8 @@
           "has_tasks": true,
           "has_plan": true,
           "spec_path": "specs/010-zero-layer-contact-harvesting/spec.md",
-          "tasks_checked": 16,
-          "tasks_total": 39,
+          "tasks_checked": 18,
+          "tasks_total": 47,
           "modules": [
             "apps/control-plane/services/layer0_pipeline.py",
             "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
