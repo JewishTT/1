@@ -567,7 +567,7 @@ Python modules: **0** · TypeScript modules: **267**
 
 Zero-layer contact harvesting from arbitrary seeds.
 
-Python modules: **30** · TypeScript modules: **0**
+Python modules: **31** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -584,6 +584,7 @@ apps.zero.zero.cc_capture
 apps.zero.zero.enrichment
 apps.zero.zero.enrichment.feedback
 apps.zero.zero.enrichment.modules
+apps.zero.zero.evidence
 apps.zero.zero.harvest_wave
 apps.zero.zero.harvesters
 apps.zero.zero.harvesters.contracts

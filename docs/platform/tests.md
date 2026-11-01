@@ -1,6 +1,6 @@
 # Tests
 
-345 test files, 5332 test functions. 268 platform modules are not targeted by any test.
+345 test files, 5333 test functions. 268 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -66,7 +66,7 @@
 | `apps/control-plane/tests/integration/test_finding_evidence_chain.py` | 7 | `apps/control-plane/api/main.py`, `apps/control-plane/api/routes/findings.py`, `apps/control-plane/services/catalog.py` |
 | `apps/control-plane/tests/integration/test_frontier_provenance.py` | 40 | `apps/acquisition/adapters/discovery/__init__.py`, `apps/acquisition/adapters/discovery/registry.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/services/discovery_frontier.py` |
 | `apps/control-plane/tests/integration/test_investigation_temporal.py` | 12 | `apps/control-plane/workflows/__init__.py`, `apps/control-plane/workflows/investigation.py`, `apps/control-plane/workflows/investigation_activities.py`, `apps/control-plane/workflows/temporal_materialization.py` |
-| `apps/control-plane/tests/integration/test_layer0_direct_pipeline.py` | 4 | `apps/control-plane/services/acquisition_loop.py`, `apps/control-plane/services/frontier.py`, `apps/control-plane/services/layer0_pipeline.py`, `apps/interpretation/pipeline.py` |
+| `apps/control-plane/tests/integration/test_layer0_direct_pipeline.py` | 5 | `apps/acquisition/artifact_sink.py`, `apps/control-plane/services/acquisition_loop.py`, `apps/control-plane/services/frontier.py`, `apps/control-plane/services/layer0_pipeline.py` |
 | `apps/control-plane/tests/integration/test_lineage_api.py` | 4 | `apps/control-plane/services/catalog.py` |
 | `apps/control-plane/tests/integration/test_loop_closure.py` | 43 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/loop.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py` |
 | `apps/control-plane/tests/integration/test_observation_changes_next_action.py` | 9 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/invariant_reducer.py`, `apps/control-plane/context_engine/loop.py`, `apps/control-plane/context_engine/obligations.py` |

@@ -215,6 +215,7 @@
           "apps/zero/zero/enrichment/__init__.py",
           "apps/zero/zero/enrichment/feedback.py",
           "apps/zero/zero/enrichment/modules.py",
+          "apps/zero/zero/evidence.py",
           "apps/zero/zero/harvest_wave.py",
           "apps/zero/zero/harvesters/__init__.py",
           "apps/zero/zero/harvesters/contracts.py",
@@ -234,7 +235,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 145
+        "module_count": 146
       },
       {
         "id": "interpretation",

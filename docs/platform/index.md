@@ -9,11 +9,11 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python modules | 1018 |
+| Python modules | 1019 |
 | TypeScript modules | 267 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 2831 |
+| Import edges (local) | 2840 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
@@ -21,7 +21,7 @@ committed model no longer matches the tree.
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
 | Test files | 345 |
-| Test functions | 5332 |
+| Test functions | 5333 |
 | Untested platform modules | 268 |
 | HTTP routes | 183 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
@@ -64,4 +64,4 @@ committed model no longer matches the tree.
 | specops | 30 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | tools | 11 | 0 | Generators, capability/owner/donor tools, probes. |
 | webapp | 0 | 267 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
-| zero | 30 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
+| zero | 31 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

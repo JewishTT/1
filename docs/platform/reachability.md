@@ -7,7 +7,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | Status | Modules |
 |---|---|
 | PRODUCTION | 410 |
-| TEST_ONLY | 144 |
+| TEST_ONLY | 145 |
 | ORPHAN | 122 |
 | TEST | 342 |
 
@@ -58,7 +58,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**144** modules are reached only by tests.
+**145** modules are reached only by tests.
 
 | Module |
 |---|
@@ -192,6 +192,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/websearch/relevance.py` |
 | `apps/zero/zero/enrichment/feedback.py` |
 | `apps/zero/zero/enrichment/modules.py` |
+| `apps/zero/zero/evidence.py` |
 | `apps/zero/zero/harvest_wave.py` |
 | `apps/zero/zero/harvesters/contracts.py` |
 | `apps/zero/zero/harvesters/domain.py` |

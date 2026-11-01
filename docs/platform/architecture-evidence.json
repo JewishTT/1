@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4399,
-    "static_facts": 4105,
+    "facts_total": 4414,
+    "static_facts": 4120,
     "inferred": 294,
     "intended": 0
   },
@@ -15343,6 +15343,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "0a6d848cb195bc74",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/acquisition/artifact_sink.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+        "via": "artifact_sink"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "37e4f3f5311887f9",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
@@ -15456,6 +15469,71 @@
       "evidence": {
         "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
         "via": "websearch.providers"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "425465d43c5c2061",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/evidence.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+        "via": "zero.evidence"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "cbbb7afb8c9f0891",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/harvest_wave.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+        "via": "zero.harvest_wave"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0a38634d16b03466",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/harvesters/registry.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+        "via": "zero.harvesters.registry"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8fb91e6e38be20f7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/harvesters/transport.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+        "via": "zero.harvesters.transport"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fc2c3eac9e65a824",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/type_detector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+        "via": "zero.type_detector"
       },
       "confidence": 1.0
     },
@@ -36416,6 +36494,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "608624d420c4d1bc",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/__init__.py",
+      "object": "apps/zero/zero/evidence.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/__init__.py",
+        "via": "evidence"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "40db42108f391eb1",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/zero/zero/__init__.py",
@@ -36594,6 +36685,32 @@
       "evidence": {
         "file": "apps/zero/zero/enrichment/modules.py",
         "via": "type_detector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1eafc30626bc8e8f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/evidence.py",
+      "object": "apps/shared/domain/acquisition_artifact.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/evidence.py",
+        "via": "domain.acquisition_artifact"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0f47a2e7ace78b88",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/zero/zero/evidence.py",
+      "object": "apps/shared/domain/capture.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/zero/zero/evidence.py",
+        "via": "domain.capture"
       },
       "confidence": 1.0
     },
@@ -46872,6 +46989,18 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "42da769a5c5214bc",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/acquisition/artifact_sink.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "063112de45dc256c",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
@@ -46960,6 +47089,66 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
       "object": "apps/shared/websearch/providers.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "198defe579c7d2c7",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/evidence.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "40e215c4e382eec3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/harvest_wave.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4054b9499f5b34b8",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/harvesters/registry.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9c7561e3fda2e45a",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/harvesters/transport.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2f58151a85765483",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
+      "object": "apps/zero/zero/type_detector.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
