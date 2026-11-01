@@ -1092,13 +1092,14 @@
     {
       "name": "zero",
       "description": "Zero-layer contact harvesting from arbitrary seeds.",
-      "python_modules": 39,
+      "python_modules": 40,
       "typescript_modules": 0,
       "modules": [
         "apps.zero.tests.conftest",
         "apps.zero.tests.test_cc_capture",
         "apps.zero.tests.test_enrichment",
         "apps.zero.tests.test_evidence",
+        "apps.zero.tests.test_harvest_concurrency",
         "apps.zero.tests.test_harvest_wave",
         "apps.zero.tests.test_harvesters",
         "apps.zero.tests.test_public_acquisition_policy",
@@ -1138,11 +1139,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1028,
-    "edge_count": 2901,
+    "module_count": 1029,
+    "edge_count": 2905,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 898,
+      "stdlib:__future__": 899,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
@@ -1153,7 +1154,7 @@
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
       "stdlib:collections": 246,
-      "stdlib:concurrent": 3,
+      "stdlib:concurrent": 4,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 394,
@@ -1194,8 +1195,8 @@
       "stdlib:sys": 260,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
-      "stdlib:threading": 18,
-      "stdlib:time": 31,
+      "stdlib:threading": 19,
+      "stdlib:time": 32,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 36,
@@ -15033,6 +15034,26 @@
         "via": "zero.harvesters.transport"
       },
       {
+        "from": "apps/zero/tests/test_harvest_concurrency.py",
+        "to": "apps/zero/zero/harvest_wave.py",
+        "via": "zero.harvest_wave"
+      },
+      {
+        "from": "apps/zero/tests/test_harvest_concurrency.py",
+        "to": "apps/zero/zero/harvesters/public_document.py",
+        "via": "zero.harvesters.public_document"
+      },
+      {
+        "from": "apps/zero/tests/test_harvest_concurrency.py",
+        "to": "apps/zero/zero/harvesters/registry.py",
+        "via": "zero.harvesters.registry"
+      },
+      {
+        "from": "apps/zero/tests/test_harvest_concurrency.py",
+        "to": "apps/zero/zero/type_detector.py",
+        "via": "zero.type_detector"
+      },
+      {
         "from": "apps/zero/tests/test_harvest_wave.py",
         "to": "apps/zero/zero/harvest_wave.py",
         "via": "zero.harvest_wave"
@@ -23937,6 +23958,20 @@
         ]
       },
       {
+        "path": "apps/zero/tests/test_harvest_concurrency.py",
+        "tests": 2,
+        "test_names": [
+          "test_seed_processing_is_parallel_bounded_and_ordered",
+          "test_seed_worker_limit_is_validated"
+        ],
+        "targets": [
+          "apps/zero/zero/harvest_wave.py",
+          "apps/zero/zero/harvesters/public_document.py",
+          "apps/zero/zero/harvesters/registry.py",
+          "apps/zero/zero/type_detector.py"
+        ]
+      },
+      {
         "path": "apps/zero/tests/test_harvest_wave.py",
         "tests": 18,
         "test_names": [
@@ -24242,7 +24277,7 @@
         "targets": []
       }
     ],
-    "total": 5356
+    "total": 5358
   },
   "contracts": {
     "python": [
@@ -29799,6 +29834,7 @@
             "apps/zero/tests/test_cc_capture.py",
             "apps/zero/tests/test_enrichment.py",
             "apps/zero/tests/test_evidence.py",
+            "apps/zero/tests/test_harvest_concurrency.py",
             "apps/zero/tests/test_harvest_wave.py",
             "apps/zero/tests/test_harvesters.py",
             "apps/zero/tests/test_public_acquisition_policy.py",
@@ -29835,7 +29871,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 154
+          "module_count": 155
         },
         {
           "id": "interpretation",
@@ -41040,6 +41076,15 @@
         "markers": []
       },
       {
+        "path": "apps/zero/tests/test_harvest_concurrency.py",
+        "status": "TEST",
+        "loc": 76,
+        "callables": 5,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/zero/tests/test_harvest_wave.py",
         "status": "TEST",
         "loc": 325,
@@ -41179,7 +41224,7 @@
       {
         "path": "apps/zero/zero/harvest_wave.py",
         "status": "IMPLEMENTED",
-        "loc": 382,
+        "loc": 448,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -41750,9 +41795,9 @@
       "IMPLEMENTED": 553,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
-      "TEST": 347,
+      "TEST": 348,
       "MIGRATION": 19,
-      "total": 1028
+      "total": 1029
     }
   },
   "reachability": {
@@ -45566,6 +45611,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/zero/tests/test_harvest_concurrency.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/zero/tests/test_harvest_wave.py",
         "status": "TEST"
       },
@@ -45916,8 +45965,8 @@
       "PRODUCTION": 425,
       "TEST_ONLY": 134,
       "ORPHAN": 122,
-      "TEST": 347,
-      "total": 1028
+      "TEST": 348,
+      "total": 1029
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -84374,6 +84423,58 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "37ecc3d9e00179e1",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_concurrency.py",
+        "object": "apps/zero/zero/harvest_wave.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_concurrency.py",
+          "via": "zero.harvest_wave"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0877b24d8930fd16",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_concurrency.py",
+        "object": "apps/zero/zero/harvesters/public_document.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_concurrency.py",
+          "via": "zero.harvesters.public_document"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "10234716d13e44cd",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_concurrency.py",
+        "object": "apps/zero/zero/harvesters/registry.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_concurrency.py",
+          "via": "zero.harvesters.registry"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "657ea34a5ace3e47",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_concurrency.py",
+        "object": "apps/zero/zero/type_detector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_concurrency.py",
+          "via": "zero.type_detector"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "34a3637081fb06fd",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/tests/test_harvest_wave.py",
@@ -104340,6 +104441,54 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "40df6fb8117dba36",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_concurrency.py",
+        "object": "apps/zero/zero/harvest_wave.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_concurrency.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9021cd715fa1f2a5",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_concurrency.py",
+        "object": "apps/zero/zero/harvesters/public_document.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_concurrency.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "162930d2099cca9b",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_concurrency.py",
+        "object": "apps/zero/zero/harvesters/registry.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_concurrency.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a09eddda3675b30f",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/zero/tests/test_harvest_concurrency.py",
+        "object": "apps/zero/zero/type_detector.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/zero/tests/test_harvest_concurrency.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "32ddd0662e8bb5eb",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/zero/tests/test_harvest_wave.py",
@@ -104809,27 +104958,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4496,
-      "static_facts": 4202,
+      "facts_total": 4504,
+      "static_facts": 4210,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1028,
+    "python_modules": 1029,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2901,
-    "test_files": 350,
-    "test_functions": 5356,
+    "import_edges": 2905,
+    "test_files": 351,
+    "test_functions": 5358,
     "untested_modules": 270,
     "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4496,
-    "static_facts": 4202,
+    "facts_total": 4504,
+    "static_facts": 4210,
     "inferred": 294,
     "intended": 0
   },
@@ -104837,16 +104986,16 @@
     "IMPLEMENTED": 553,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
-    "TEST": 347,
+    "TEST": 348,
     "MIGRATION": 19,
-    "total": 1028
+    "total": 1029
   },
   "reachability_summary": {
     "PRODUCTION": 425,
     "TEST_ONLY": 134,
     "ORPHAN": 122,
-    "TEST": 347,
-    "total": 1028
+    "TEST": 348,
+    "total": 1029
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
