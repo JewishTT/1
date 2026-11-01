@@ -41230,7 +41230,7 @@
       {
         "path": "apps/zero/tests/test_public_wave_persistence.py",
         "status": "TEST",
-        "loc": 127,
+        "loc": 132,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
