@@ -104,6 +104,11 @@ async def test_wave_persists_capture_first_then_discovery_only_stages() -> None:
     )
 
     assert summaries and accepted
+    assert summaries[0].new_seeds_discovered == 1, (
+        f"root wave candidates: {[(record.stage, [(item.kind, item.value) for item in record.candidates]) for record in wave.stage_records if record.seed_value == url]}; "
+        f"transport failures: {transport.failures}; requests: {transport.requests_used}; "
+        f"captures: {[capture.url for capture in transport.captures]}"
+    )
     assert sink.order[:2] == ["raw_capture", "raw_capture"]
     assert len(sink.captures) == 2
     assert sink.captures[0][0].url.endswith("/about")
