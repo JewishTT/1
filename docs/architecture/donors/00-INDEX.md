@@ -132,7 +132,7 @@ apps/science (claims, causal/temporal/structure/TDA) · apps/feedback · apps/we
 | `h3` | — | unverified | third-party declared dependency |
 | `hive-mind-gnca` | — | unverified | vendored donor checkout; capability not yet assigned |
 | `holehe` | — | unverified | vendored donor checkout; capability not yet assigned |
-| `httpcore` | BSD-3-Clause | unverified | third-party declared dependency |
+| `httpcore` | BSD-3-Clause | verified | third-party declared dependency |
 | `httpx` | — | unverified | third-party declared dependency |
 | `hypergraphx` | — | unverified | vendored donor checkout; capability not yet assigned |
 | `ignorant` | — | unverified | vendored donor checkout; capability not yet assigned |
