@@ -1,4 +1,7 @@
 name: nvd_cve
+source_family: nvd_cve
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: NVD — National Vulnerability Database CVE feed

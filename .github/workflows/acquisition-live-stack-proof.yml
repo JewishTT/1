@@ -46,6 +46,14 @@ jobs:
           test "$ready" -eq 1
       - name: Initialize MinIO buckets through the compose S3 initializer
         run: docker compose -f apps/deploy/docker-compose.yml --profile core run --rm minio-init
+      - name: Apply PostgreSQL migrations for durable Capture / Observation evidence
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DATABASE: cognitive
+          POSTGRES_USER: cognitive
+          POSTGRES_PASSWORD: cognitive
+        run: uv run --directory apps/control-plane alembic -c alembic.ini upgrade head
       - name: Seed a controlled Postgres connector fixture
         run: |
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
@@ -89,6 +97,23 @@ jobs:
           COGNITIVE_TENANT: acceptance
           COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
         run: .venv/bin/python apps/acquisition/_prove_searxng.py
+      - name: Prove 18 public source families and live zero-layer public-document harvesting
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DATABASE: cognitive
+          POSTGRES_USER: cognitive
+          POSTGRES_PASSWORD: cognitive
+          KAFKA_BOOTSTRAP_SERVERS: localhost:19092
+          COGNITIVE_KAFKA_BROKERS: localhost:19092
+          COGNITIVE_MINIO_ENDPOINT: http://localhost:9000
+          COGNITIVE_MINIO_ACCESS_KEY: demo
+          COGNITIVE_MINIO_SECRET_KEY: demopass
+          COGNITIVE_MINIO_RAW_BUCKET: knowledge-raw
+          COGNITIVE_TENANT: acceptance-public-sources
+          COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
+          COGNITIVE_PUBLIC_SOURCE_MIN_PASSES: "6"
+        run: .venv/bin/python apps/acquisition/_prove_public_source_matrix.py
       - name: Upload end-to-end acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -97,6 +122,8 @@ jobs:
           path: |
             apps/acquisition/artifacts/acquisition-integration/airbyte.json
             apps/acquisition/artifacts/acquisition-integration/searxng.json
+            apps/acquisition/artifacts/acquisition-integration/public-source-matrix.json
+            apps/acquisition/artifacts/acquisition-integration/zero-layer-live.json
           if-no-files-found: warn
           retention-days: 14
       - name: Show service logs on failure

@@ -1,4 +1,7 @@
 name: cve_search_circl
+source_family: circl_cve
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: cve.circl.lu — community CVE mirror

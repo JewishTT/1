@@ -244,7 +244,8 @@ async def _run_source(
 
 
 async def _run_zero_layer(
-    *, gate: ObservationGate, store: ObjectStore, writer: PostgresAcquisitionEvidenceWriter
+    *, gate: ObservationGate, store: ObjectStore, writer: PostgresAcquisitionEvidenceWriter,
+    session_factory,
 ) -> tuple[dict, list[dict]]:
     seed_url = "https://www.python.org/about/"
     transport = SecurePublicTransport(
@@ -322,7 +323,7 @@ async def _run_zero_layer(
             check["raw_error"] = type(exc).__name__
         try:
             check["postgres_capture"], check["postgres_observation"] = await _db_rows(
-                session_factory_placeholder, TENANT, capture_id, observation_id
+                session_factory, TENANT, capture_id, observation_id
             )
         except Exception as exc:
             check["postgres_error"] = type(exc).__name__
@@ -425,7 +426,7 @@ async def main() -> int:
             await asyncio.sleep(0.35)
 
         zero_summary, zero_checks = await _run_zero_layer(
-            gate=gate, store=store, writer=writer
+            gate=gate, store=store, writer=writer, session_factory=session_factory
         )
         producer.flush(timeout_s=60)
 

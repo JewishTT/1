@@ -1,4 +1,7 @@
 name: crt_sh_certificates
+source_family: crtsh_ct
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 01. DNS Intelligence
 description: Certificate Transparency log search (subdomain discovery gold mine)

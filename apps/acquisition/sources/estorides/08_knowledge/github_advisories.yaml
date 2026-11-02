@@ -1,4 +1,7 @@
 name: github_advisories
+source_family: github_security_advisories
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: GitHub Security Advisories — CVE database

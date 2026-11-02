@@ -1,6 +1,7 @@
 name: crossref_doi
 enabled: true
 source_family: crossref
+contact: public_api
 time_basis: fetch
 category: 08. Knowledge
 description: Crossref — DOI / publication metadata

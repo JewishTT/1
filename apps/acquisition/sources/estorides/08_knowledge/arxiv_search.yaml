@@ -1,4 +1,7 @@
 name: arxiv_search
+source_family: arxiv_atom
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: arXiv — preprints (CS, physics, math, security)

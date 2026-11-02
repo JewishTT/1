@@ -1,4 +1,7 @@
 name: wikipedia_search
+source_family: wikipedia_search
+contact: search_engine
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: Wikipedia search — context, biography, events
