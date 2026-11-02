@@ -1,6 +1,6 @@
 # Tests
 
-352 test files, 5372 test functions. 269 platform modules are not targeted by any test.
+352 test files, 5374 test functions. 269 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -146,7 +146,7 @@
 | `apps/interpretation/tests/contract/test_documents.py` | 6 | `apps/interpretation/extractors/lane.py` |
 | `apps/interpretation/tests/contract/test_lang_parity.py` | 9 | `apps/interpretation/extractors/lane.py`, `apps/interpretation/extractors/language.py`, `apps/interpretation/extractors/translit.py` |
 | `apps/interpretation/tests/contract/test_normalize.py` | 11 | `apps/interpretation/extractors/normalize.py`, `apps/interpretation/extractors/types.py` |
-| `apps/interpretation/tests/contract/test_parser_families.py` | 37 | `apps/interpretation/parsers/families.py`, `apps/interpretation/parsers/paths.py` |
+| `apps/interpretation/tests/contract/test_parser_families.py` | 39 | `apps/interpretation/parsers/families.py`, `apps/interpretation/parsers/paths.py` |
 | `apps/interpretation/tests/contract/test_persons.py` | 6 | `apps/interpretation/extractors/persons.py`, `apps/interpretation/extractors/types.py` |
 | `apps/interpretation/tests/contract/test_span_semantics.py` | 16 | `apps/interpretation/extractors/lane.py`, `apps/interpretation/extractors/types.py`, `apps/interpretation/parsers/html_full.py`, `apps/interpretation/parsers/registry.py` |
 | `apps/interpretation/tests/contract/test_to_entities_honesty.py` | 10 | `apps/interpretation/parsers/families.py`, `apps/interpretation/parsers/to_entities.py` |

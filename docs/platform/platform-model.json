@@ -1207,7 +1207,7 @@
       "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
-      "stdlib:xml": 3,
+      "stdlib:xml": 4,
       "stdlib:zipfile": 1,
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
@@ -18944,7 +18944,7 @@
       },
       {
         "path": "apps/interpretation/tests/contract/test_parser_families.py",
-        "tests": 37,
+        "tests": 39,
         "test_names": [
           "test_a_nested_value_resolves",
           "test_a_wildcard_collects_every_match",
@@ -18971,11 +18971,11 @@
           "test_a_field_declared_single_that_returns_many_is_reported",
           "test_html_where_json_was_expected_is_parse_failed",
           "test_truncated_json_says_where",
+          "test_parses_entries_and_all_authors",
+          "test_rejects_dtd_and_entity_declarations",
           "test_only_lines_matching_a_pattern_become_records",
           "test_comments_are_skipped",
-          "test_a_field_without_a_pattern_takes_the_whole_line",
-          "test_a_body_with_no_matching_line_is_empty",
-          "test_a_non_2xx_is_upstream_down"
+          "test_a_field_without_a_pattern_takes_the_whole_line"
         ],
         "targets": [
           "apps/interpretation/parsers/families.py",
@@ -24375,7 +24375,7 @@
         "targets": []
       }
     ],
-    "total": 5372
+    "total": 5374
   },
   "contracts": {
     "python": [
@@ -36618,8 +36618,8 @@
       {
         "path": "apps/interpretation/parsers/families.py",
         "status": "IMPLEMENTED",
-        "loc": 692,
-        "callables": 24,
+        "loc": 781,
+        "callables": 27,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -36917,8 +36917,8 @@
       {
         "path": "apps/interpretation/tests/contract/test_parser_families.py",
         "status": "TEST",
-        "loc": 315,
-        "callables": 37,
+        "loc": 354,
+        "callables": 39,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -105338,7 +105338,7 @@
     "rust_crates": 9,
     "import_edges": 2919,
     "test_files": 352,
-    "test_functions": 5372,
+    "test_functions": 5374,
     "untested_modules": 269,
     "http_routes": 185
   },
