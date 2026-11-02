@@ -46,6 +46,31 @@ jobs:
           test "$ready" -eq 1
       - name: Initialize MinIO buckets through the compose S3 initializer
         run: docker compose -f apps/deploy/docker-compose.yml --profile core run --rm minio-init
+      - name: Bootstrap the legacy frontier table required by migration 017
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          CREATE TABLE IF NOT EXISTS public.frontier_items (
+            frontier_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            investigation_id VARCHAR(36),
+            source_id VARCHAR(36),
+            uri TEXT NOT NULL,
+            host_key VARCHAR(255),
+            priority DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+            state VARCHAR(32) NOT NULL DEFAULT 'READY',
+            retries INTEGER NOT NULL DEFAULT 0,
+            lease_until TIMESTAMPTZ,
+            last_digest VARCHAR(64),
+            last_etag VARCHAR(255),
+            partition VARCHAR(64) NOT NULL DEFAULT 'global',
+            next_schedule_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_frontier_tenant ON public.frontier_items (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_frontier_host ON public.frontier_items (host_key);
+          CREATE INDEX IF NOT EXISTS ix_frontier_partition ON public.frontier_items (partition);
+          CREATE UNIQUE INDEX IF NOT EXISTS uq_frontier_schedule ON public.frontier_items (tenant_id, uri);
+          SQL
       - name: Apply PostgreSQL migrations for durable Capture / Observation evidence
         env:
           POSTGRES_HOST: localhost

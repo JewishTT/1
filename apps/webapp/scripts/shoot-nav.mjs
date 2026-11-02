@@ -48,8 +48,13 @@ try {
     await browserPage.setViewportSize({ width, height });
     await browserPage.waitForTimeout(180);
     const deckTrigger = browserPage.getByTestId("nav-deck-trigger");
-    await deckTrigger.scrollIntoViewIfNeeded();
-    await deckTrigger.click();
+    await deckTrigger.waitFor({ state: "visible" });
+    await deckTrigger.focus();
+    await deckTrigger.press("Enter");
+    await browserPage.waitForFunction(
+      () => document.querySelector('[data-testid="nav-deck-trigger"]')?.getAttribute("aria-expanded") === "true",
+      { timeout: 10000 },
+    );
     await browserPage.getByTestId("nav-deck").waitFor({ state: "visible" });
     const metrics = await browserPage.evaluate(() => {
       const bounds = (selector) => {

@@ -223,7 +223,14 @@ try {
     const nav = page.locator(".ui-primary-nav");
     await nav.waitFor({ state: "visible", timeout: 10000 });
     await nav.screenshot({ path: join(OUT, `navigation-${label}.png`), animations: "disabled" });
-    await page.getByTestId("nav-deck-trigger").click();
+    const routeTrigger = page.getByTestId("nav-deck-trigger");
+    await routeTrigger.waitFor({ state: "visible", timeout: 10000 });
+    await routeTrigger.focus();
+    await routeTrigger.press("Enter");
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="nav-deck-trigger"]')?.getAttribute("aria-expanded") === "true",
+      { timeout: 10000 },
+    );
     await page.getByTestId("nav-deck").waitFor({ state: "visible", timeout: 10000 });
     const routeCount = await page.locator(".ui-nav-deck .ui-primary-nav-link").count();
     await page.locator(".ui-nav-deck").screenshot({

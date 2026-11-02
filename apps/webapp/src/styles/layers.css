@@ -54,6 +54,8 @@
 @import "./scoped/spiderfoot.css";
 @import "./scoped/netforensicai.css";
 @import "./neomilitarism.css";
+/* Product-wide cyber-neomilitarist shell and workspace material system. */
+@import "./command-tactical.css";
 
 /* Cross-surface UI contract: focus, numeric typography, overflow and motion. */
 @import "./normalization.css";
