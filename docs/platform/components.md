@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **109** · TypeScript modules: **0**
+Python modules: **110** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -17,6 +17,7 @@ apps.acquisition._prove_airbyte
 apps.acquisition._prove_backbone
 apps.acquisition._prove_blockchain_sources
 apps.acquisition._prove_commoncrawl
+apps.acquisition._prove_public_source_matrix
 apps.acquisition._prove_readback
 apps.acquisition._prove_searxng
 apps.acquisition._prove_tools
@@ -50,7 +51,6 @@ apps.acquisition.adapters.warc.collect
 apps.acquisition.airbyte_acceptance
 apps.acquisition.artifact_sink
 apps.acquisition.case_execution_guard
-apps.acquisition.cc_extract
 ```
 
 </details>

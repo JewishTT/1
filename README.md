@@ -13,20 +13,20 @@ The OSINT core is complemented by a scientific reasoning layer and a zero-layer 
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python modules | 1030 |
+| Python modules | 1031 |
 | TypeScript modules | 267 |
 | Rust source files / crates | 16 / 9 |
-| Resolved local import edges | 2919 |
+| Resolved local import edges | 2939 |
 | HTTP routes / routers | 185 / 33 |
 | Event types / lanes | 99 / 29 |
 | Test files / test functions | 352 / 5374 |
-| Untested platform modules | 269 |
+| Untested platform modules | 270 |
 
 ## Components
 
 | Component | Python | TypeScript | Rust | Description |
 |---|---|---|---|---|
-| `acquisition` | 109 | 0 | 15 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
+| `acquisition` | 110 | 0 | 15 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |

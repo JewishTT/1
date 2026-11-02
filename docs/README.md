@@ -21,7 +21,7 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1030 / 267 / 16 |
+| Python / TypeScript / Rust modules | 1031 / 267 / 16 |
 | HTTP routes | 185 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
@@ -56,7 +56,7 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 
 | Component | Python | TypeScript | Rust | Description |
 |---|---|---|---|---|
-| `acquisition` | 109 | 0 | 15 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
+| `acquisition` | 110 | 0 | 15 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |

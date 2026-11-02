@@ -6,7 +6,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 425 |
+| PRODUCTION | 426 |
 | TEST_ONLY | 134 |
 | ORPHAN | 122 |
 | TEST | 349 |
@@ -20,6 +20,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/_prove_backbone.py` |
 | `apps/acquisition/_prove_blockchain_sources.py` |
 | `apps/acquisition/_prove_commoncrawl.py` |
+| `apps/acquisition/_prove_public_source_matrix.py` |
 | `apps/acquisition/_prove_searxng.py` |
 | `apps/acquisition/_prove_tools.py` |
 | `apps/acquisition/sources/append_parse_blocks.py` |

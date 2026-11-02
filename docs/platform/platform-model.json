@@ -18,7 +18,7 @@
     {
       "name": "acquisition",
       "description": "Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.",
-      "python_modules": 109,
+      "python_modules": 110,
       "typescript_modules": 0,
       "modules": [
         "apps.acquisition._measure_coverage",
@@ -27,6 +27,7 @@
         "apps.acquisition._prove_backbone",
         "apps.acquisition._prove_blockchain_sources",
         "apps.acquisition._prove_commoncrawl",
+        "apps.acquisition._prove_public_source_matrix",
         "apps.acquisition._prove_readback",
         "apps.acquisition._prove_searxng",
         "apps.acquisition._prove_tools",
@@ -1139,21 +1140,21 @@
     }
   ],
   "import_graph": {
-    "module_count": 1030,
-    "edge_count": 2919,
+    "module_count": 1031,
+    "edge_count": 2939,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 900,
+      "stdlib:__future__": 901,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
-      "stdlib:asyncio": 75,
+      "stdlib:asyncio": 76,
       "stdlib:base64": 10,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 246,
+      "stdlib:collections": 247,
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
@@ -1165,7 +1166,7 @@
       "stdlib:enum": 118,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 132,
+      "stdlib:hashlib": 133,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 10,
@@ -1175,11 +1176,11 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 202,
+      "stdlib:json": 203,
       "stdlib:logging": 23,
       "stdlib:math": 41,
-      "stdlib:os": 73,
-      "stdlib:pathlib": 322,
+      "stdlib:os": 74,
+      "stdlib:pathlib": 323,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 100,
@@ -1192,19 +1193,19 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 16,
-      "stdlib:sys": 260,
+      "stdlib:sys": 261,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 19,
-      "stdlib:time": 32,
+      "stdlib:time": 33,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
       "stdlib:types": 36,
       "stdlib:typing": 373,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 58,
-      "stdlib:uuid": 48,
+      "stdlib:urllib": 59,
+      "stdlib:uuid": 49,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
       "stdlib:xml": 4,
@@ -1251,7 +1252,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 159,
+      "third-party:sqlalchemy": 161,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -1377,6 +1378,106 @@
         "from": "apps/acquisition/_prove_commoncrawl.py",
         "to": "apps/shared/network/commoncrawl.py",
         "via": "network.commoncrawl"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/acquisition/artifact_sink.py",
+        "via": "artifact_sink"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/acquisition/evidence_writer.py",
+        "via": "evidence_writer"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/acquisition/_prove_readback.py",
+        "via": "_prove_readback"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/acquisition/sources/catalogue.py",
+        "via": "sources.catalogue"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/acquisition/sources/connector.py",
+        "via": "sources.connector"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/interpretation/parsers/families.py",
+        "via": "parsers.families"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/shared/config/settings.py",
+        "via": "config.settings"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/shared/domain/capture.py",
+        "via": "domain.capture"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/shared/events/content_router.py",
+        "via": "events.content_router"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/shared/events/kafka.py",
+        "via": "events.kafka"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/shared/events/observation_gate.py",
+        "via": "events.observation_gate"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/shared/storage/s3.py",
+        "via": "storage.s3"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/zero/zero/enrichment/feedback.py",
+        "via": "zero.enrichment.feedback"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/zero/zero/evidence.py",
+        "via": "zero.evidence"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/zero/zero/harvest_wave.py",
+        "via": "zero.harvest_wave"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/zero/zero/harvesters/public_document.py",
+        "via": "zero.harvesters.public_document"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/zero/zero/harvesters/registry.py",
+        "via": "zero.harvesters.registry"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/zero/zero/harvesters/transport.py",
+        "via": "zero.harvesters.transport"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/zero/zero/public_policy.py",
+        "via": "zero.public_policy"
+      },
+      {
+        "from": "apps/acquisition/_prove_public_source_matrix.py",
+        "to": "apps/zero/zero/type_detector.py",
+        "via": "zero.type_detector"
       },
       {
         "from": "apps/acquisition/_prove_readback.py",
@@ -29527,6 +29628,7 @@
     "apps/acquisition/_prove_backbone.py",
     "apps/acquisition/_prove_blockchain_sources.py",
     "apps/acquisition/_prove_commoncrawl.py",
+    "apps/acquisition/_prove_public_source_matrix.py",
     "apps/acquisition/_prove_readback.py",
     "apps/acquisition/_prove_searxng.py",
     "apps/acquisition/_prove_tools.py",
@@ -29719,10 +29821,9 @@
     "apps/shared/events/fabric_events.py",
     "apps/shared/events/registry.py",
     "apps/shared/ids/gen.py",
-    "apps/shared/network/__init__.py",
-    "apps/shared/observability/__init__.py"
+    "apps/shared/network/__init__.py"
   ],
-  "untested_count": 269,
+  "untested_count": 270,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -29819,6 +29920,7 @@
             "apps/acquisition/_prove_backbone.py",
             "apps/acquisition/_prove_blockchain_sources.py",
             "apps/acquisition/_prove_commoncrawl.py",
+            "apps/acquisition/_prove_public_source_matrix.py",
             "apps/acquisition/_prove_readback.py",
             "apps/acquisition/_prove_searxng.py",
             "apps/acquisition/_prove_tools.py",
@@ -29969,7 +30071,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 155
+          "module_count": 156
         },
         {
           "id": "interpretation",
@@ -32571,6 +32673,15 @@
         "status": "IMPLEMENTED",
         "loc": 201,
         "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/_prove_public_source_matrix.py",
+        "status": "IMPLEMENTED",
+        "loc": 532,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41900,12 +42011,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 553,
+      "IMPLEMENTED": 554,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 91,
       "TEST": 349,
       "MIGRATION": 19,
-      "total": 1030
+      "total": 1031
     }
   },
   "reachability": {
@@ -41932,6 +42043,10 @@
       },
       {
         "path": "apps/acquisition/_prove_commoncrawl.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/acquisition/_prove_public_source_matrix.py",
         "status": "PRODUCTION"
       },
       {
@@ -46037,6 +46152,7 @@
       "apps/acquisition/_prove_backbone.py",
       "apps/acquisition/_prove_blockchain_sources.py",
       "apps/acquisition/_prove_commoncrawl.py",
+      "apps/acquisition/_prove_public_source_matrix.py",
       "apps/acquisition/_prove_searxng.py",
       "apps/acquisition/_prove_tools.py",
       "apps/acquisition/sources/append_parse_blocks.py",
@@ -46074,11 +46190,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 425,
+      "PRODUCTION": 426,
       "TEST_ONLY": 134,
       "ORPHAN": 122,
       "TEST": 349,
-      "total": 1030
+      "total": 1031
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -49028,6 +49144,266 @@
         "evidence": {
           "file": "apps/acquisition/_prove_commoncrawl.py",
           "via": "network.commoncrawl"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0dec5794a5a7e0b5",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/acquisition/_prove_readback.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "_prove_readback"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "12c98c34b038067f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/acquisition/artifact_sink.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "artifact_sink"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "fa0c521342088e9b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/acquisition/evidence_writer.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "evidence_writer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0ea349fafd19bacf",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "sources.catalogue"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3c94a56eac6ed075",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/acquisition/sources/connector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "sources.connector"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9cedd0446bcf8c66",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/interpretation/parsers/families.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "parsers.families"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2e65aaa5a5327879",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/shared/config/settings.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "config.settings"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "10832902d6dfedff",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/shared/domain/capture.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "domain.capture"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "18521ea918ad9ee5",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/shared/events/content_router.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "events.content_router"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f9efbb54f9ab24e6",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/shared/events/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "events.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "cba66ec7a02dac2b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/shared/events/observation_gate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "events.observation_gate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "6ea25d223949aeee",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/shared/storage/s3.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "storage.s3"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "56b992ecf23ce016",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/zero/zero/enrichment/feedback.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "zero.enrichment.feedback"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7ba6791e95d468df",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/zero/zero/evidence.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "zero.evidence"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0bd910c73d5d59d7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/zero/zero/harvest_wave.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "zero.harvest_wave"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "86a598af9b0d0640",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/zero/zero/harvesters/public_document.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "zero.harvesters.public_document"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "fb08dbbdb143617c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/zero/zero/harvesters/registry.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "zero.harvesters.registry"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e720adc34f739fec",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/zero/zero/harvesters/transport.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "zero.harvesters.transport"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "5d6c4f10a9e3251c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/zero/zero/public_policy.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "zero.public_policy"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c54830c97787cdbb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/_prove_public_source_matrix.py",
+        "object": "apps/zero/zero/type_detector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/_prove_public_source_matrix.py",
+          "via": "zero.type_detector"
         },
         "confidence": 1.0
       },
@@ -105324,44 +105700,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4524,
-      "static_facts": 4230,
+      "facts_total": 4544,
+      "static_facts": 4250,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1030,
+    "python_modules": 1031,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2919,
+    "import_edges": 2939,
     "test_files": 352,
     "test_functions": 5374,
-    "untested_modules": 269,
+    "untested_modules": 270,
     "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4524,
-    "static_facts": 4230,
+    "facts_total": 4544,
+    "static_facts": 4250,
     "inferred": 294,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 553,
+    "IMPLEMENTED": 554,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 91,
     "TEST": 349,
     "MIGRATION": 19,
-    "total": 1030
+    "total": 1031
   },
   "reachability_summary": {
-    "PRODUCTION": 425,
+    "PRODUCTION": 426,
     "TEST_ONLY": 134,
     "ORPHAN": 122,
     "TEST": 349,
-    "total": 1030
+    "total": 1031
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -105369,6 +105745,7 @@
     "apps/acquisition/_prove_backbone.py",
     "apps/acquisition/_prove_blockchain_sources.py",
     "apps/acquisition/_prove_commoncrawl.py",
+    "apps/acquisition/_prove_public_source_matrix.py",
     "apps/acquisition/_prove_searxng.py",
     "apps/acquisition/_prove_tools.py",
     "apps/acquisition/sources/append_parse_blocks.py",

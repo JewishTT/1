@@ -94,6 +94,7 @@
           "apps/acquisition/_prove_backbone.py",
           "apps/acquisition/_prove_blockchain_sources.py",
           "apps/acquisition/_prove_commoncrawl.py",
+          "apps/acquisition/_prove_public_source_matrix.py",
           "apps/acquisition/_prove_readback.py",
           "apps/acquisition/_prove_searxng.py",
           "apps/acquisition/_prove_tools.py",
@@ -244,7 +245,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 155
+        "module_count": 156
       },
       {
         "id": "interpretation",

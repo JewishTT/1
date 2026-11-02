@@ -7,17 +7,17 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1030 / 267 / 16 |
-| Resolved import edges | 2919 |
+| Python / TypeScript / Rust modules | 1031 / 267 / 16 |
+| Resolved import edges | 2939 |
 | HTTP routes / routers | 185 / 33 |
 | Test files / functions | 352 / 5374 |
-| Evidence facts (static) | 4524 |
+| Evidence facts (static) | 4544 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 553 |
+| IMPLEMENTED | 554 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
@@ -32,7 +32,7 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 425 |
+| PRODUCTION | 426 |
 | TEST_ONLY | 134 |
 | ORPHAN | 122 |
 | TEST | 349 |
