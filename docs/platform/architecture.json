@@ -2059,7 +2059,7 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs/010-zero-layer-contact-harvesting/spec.md",
-        "tasks_checked": 18,
+        "tasks_checked": 20,
         "tasks_total": 47,
         "modules": [
           "apps/control-plane/services/layer0_pipeline.py",

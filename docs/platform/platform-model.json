@@ -31885,7 +31885,7 @@
           "has_tasks": true,
           "has_plan": true,
           "spec_path": "specs/010-zero-layer-contact-harvesting/spec.md",
-          "tasks_checked": 18,
+          "tasks_checked": 20,
           "tasks_total": 47,
           "modules": [
             "apps/control-plane/services/layer0_pipeline.py",
@@ -32662,7 +32662,7 @@
       {
         "path": "apps/acquisition/_prove_blockchain_sources.py",
         "status": "IMPLEMENTED",
-        "loc": 103,
+        "loc": 123,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -32671,8 +32671,8 @@
       {
         "path": "apps/acquisition/_prove_commoncrawl.py",
         "status": "IMPLEMENTED",
-        "loc": 201,
-        "callables": 1,
+        "loc": 248,
+        "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
