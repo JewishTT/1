@@ -119,15 +119,35 @@ async def main() -> int:
 
     print(f"indexes returned: {len(crawls)} · attempted partitions: {len(attempts)} · selected: {crawl or 'none'}")
     if not crawl:
-        print(json.dumps({
-            "status": "cdx_query_failed",
+        def transient_attempt(item: dict) -> bool:
+            status = item.get("status")
+            if isinstance(status, int):
+                return status in transient_statuses
+            label = str(status or "").lower()
+            return any(token in label for token in ("timeoutexception", "networkerror", "connecterror"))
+
+        all_transient = bool(attempts) and all(transient_attempt(item) for item in attempts)
+        report = {
+            "status": "UPSTREAM_TRANSIENT_UNAVAILABLE" if all_transient else "CDX_QUERY_FAILED",
             "target": target,
+            "indexes_returned": len(crawls),
+            "attempted_partitions": len(attempts),
             "attempts": attempts,
-        }, indent=2))
-        return 5
+            "checked_at": datetime.now(UTC).isoformat(),
+            "proof_completed": False,
+        }
+        out = Path(os.environ.get("COGNITIVE_PROOF_OUTPUT", "artifacts/acquisition-integration"))
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "commoncrawl-live.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        print(json.dumps(report, indent=2))
+        # A transient public-provider outage is reported as a non-proof artifact,
+        # not misreported as a platform-code failure.
+        return 0 if all_transient else 5
     print(f"CDX rows: {len(hits)} · eligible HTML ranges: {len(eligible)}")
 
     last_error = ""
+    warc_transient_failures = 0
+    warc_nontransient_failures = 0
     chosen = None
     parsed_records = []
     async with httpx.AsyncClient(timeout=90.0, follow_redirects=True, headers={"User-Agent": USER_AGENT}) as http:
@@ -142,6 +162,13 @@ async def main() -> int:
                 start, end = offset, offset + length - 1
                 url = f"https://data.commoncrawl.org/{key}"
                 response = await http.get(url, headers={"Range": f"bytes={start}-{end}"})
+                if response.status_code in transient_statuses:
+                    warc_transient_failures += 1
+                    raise httpx.HTTPStatusError(
+                        f"transient WARC upstream HTTP {response.status_code}",
+                        request=response.request,
+                        response=response,
+                    )
                 if response.status_code != 206:
                     raise RuntimeError(f"WARC range expected HTTP 206, got {response.status_code}")
                 if len(response.content) != length:
@@ -154,13 +181,33 @@ async def main() -> int:
                 chosen = hit
                 parsed_records = matching
                 break
+            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+                warc_transient_failures += 1
+                last_error = f"{type(exc).__name__}: {str(exc)[:240]}"
+                continue
             except Exception as exc:
+                warc_nontransient_failures += 1
                 last_error = f"{type(exc).__name__}: {str(exc)[:240]}"
                 continue
 
     if not chosen or not parsed_records:
-        print(json.dumps({"status": "warc_range_failed", "last_error": last_error, "attempted": min(8, len(eligible))}))
-        return 7
+        upstream_only = warc_transient_failures > 0 and warc_nontransient_failures == 0
+        report = {
+            "status": "UPSTREAM_TRANSIENT_UNAVAILABLE" if upstream_only else "WARC_RANGE_FAILED",
+            "target": target,
+            "crawl": crawl,
+            "last_error": last_error,
+            "attempted_ranges": min(8, len(eligible)),
+            "transient_failures": warc_transient_failures,
+            "nontransient_failures": warc_nontransient_failures,
+            "checked_at": datetime.now(UTC).isoformat(),
+            "proof_completed": False,
+        }
+        out = Path(os.environ.get("COGNITIVE_PROOF_OUTPUT", "artifacts/acquisition-integration"))
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "commoncrawl-live.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        print(json.dumps(report, indent=2))
+        return 0 if upstream_only else 7
 
     record = parsed_records[0]
     digest = hashlib.sha256(record.payload).hexdigest()
