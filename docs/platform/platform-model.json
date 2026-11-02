@@ -34642,7 +34642,7 @@
       {
         "path": "apps/control-plane/db/migrations/env.py",
         "status": "MIGRATION",
-        "loc": 79,
+        "loc": 84,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
