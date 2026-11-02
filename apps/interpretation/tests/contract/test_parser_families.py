@@ -218,6 +218,45 @@ class TestJsonObject:
         assert "line" in outcome.detail
 
 
+class TestAtomFeed:
+    BODY = b'''<?xml version="1.0" encoding="UTF-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+      <entry><id>https://arxiv.org/abs/2401.00001</id><title>Paper One</title>
+        <summary>Abstract one</summary><published>2024-01-01T00:00:00Z</published>
+        <author><name>Alice Example</name></author><author><name>Bob Example</name></author>
+        <arxiv:doi>10.1234/example</arxiv:doi>
+      </entry>
+      <entry><id>https://arxiv.org/abs/2401.00002</id><title>Paper Two</title>
+        <summary>Abstract two</summary><published>2024-01-02T00:00:00Z</published>
+        <author><name>Carol Example</name></author>
+      </entry>
+    </feed>'''
+
+    def test_parses_entries_and_all_authors(self) -> None:
+        outcome = parse_body(self.BODY, parser="atom_feed", fields=(
+            FieldSpec("id", "id", "article", required=True),
+            FieldSpec("title", "title", "article", required=True),
+            FieldSpec("summary", "summary", "description"),
+            FieldSpec("published", "published", "timestamp"),
+            FieldSpec("author", "author[*].name", "person", many=True),
+            FieldSpec("doi", "arxiv:doi", "identifier"),
+        ))
+        assert outcome.status == "ok"
+        assert outcome.record_count == 2
+        assert outcome.values_for("author") == ("Alice Example", "Bob Example", "Carol Example")
+        assert outcome.values_for("doi") == ("10.1234/example",)
+        assert outcome.values_for("title") == ("Paper One", "Paper Two")
+
+    def test_rejects_dtd_and_entity_declarations(self) -> None:
+        outcome = parse_body(
+            b'<!DOCTYPE feed [<!ENTITY x "expanded">]><feed><entry><title>&x;</title></entry></feed>',
+            parser="atom_feed",
+            fields=(FieldSpec("title", "title", "article"),),
+        )
+        assert outcome.status == "parse_failed"
+        assert "DTD/entity" in outcome.detail
+
+
 class TestTextLines:
     BODY = b"# a comment\n1.1.1.1\n8.8.8.8\nnot-an-address\n"
 
