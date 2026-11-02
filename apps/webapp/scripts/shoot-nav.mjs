@@ -47,7 +47,9 @@ try {
   for (const [width, height, label] of VIEWPORTS) {
     await browserPage.setViewportSize({ width, height });
     await browserPage.waitForTimeout(180);
-    await browserPage.getByTestId("nav-deck-trigger").click();
+    const deckTrigger = browserPage.getByTestId("nav-deck-trigger");
+    await deckTrigger.scrollIntoViewIfNeeded();
+    await deckTrigger.click();
     await browserPage.getByTestId("nav-deck").waitFor({ state: "visible" });
     const metrics = await browserPage.evaluate(() => {
       const bounds = (selector) => {
@@ -91,7 +93,8 @@ try {
       animations: "disabled",
     });
     process.stdout.write(JSON.stringify({ viewport: label, ...metrics }) + "\n");
-    await browserPage.getByRole("button", { name: "Close workspace navigation" }).click();
+    await browserPage.getByRole("button", { name: "Close navigation" }).click();
+    await browserPage.waitForFunction(() => !document.querySelector('[data-testid="nav-deck"]'));
 
     if (!metrics.nav || !metrics.main || metrics.nav.width <= 0 || metrics.nav.height <= 0) {
       problems.push(`${label}: navigation rail or workspace is missing`);
@@ -133,7 +136,7 @@ try {
 
   // Capture the two non-default domain states as well as the OSINT default.
   await browserPage.setViewportSize({ width: 1440, height: 900 });
-  await browserPage.getByTestId("nav-module-specops").click();
+  await browserPage.locator(".ui-primary-nav-modules").getByTestId("nav-module-specops").click();
   await waitForNav("specops");
   await browserPage.getByTestId("nav-deck-trigger").click();
   await browserPage.getByRole("navigation", { name: "specops workspaces" })
@@ -143,8 +146,9 @@ try {
     animations: "disabled",
   });
 
-  await browserPage.getByRole("button", { name: "Close workspace navigation" }).click();
-  await browserPage.getByTestId("nav-module-economic").click();
+  await browserPage.getByRole("button", { name: "Close navigation" }).click();
+  await browserPage.waitForFunction(() => !document.querySelector('[data-testid="nav-deck"]'));
+  await browserPage.locator(".ui-primary-nav-modules").getByTestId("nav-module-economic").click();
   await waitForNav("economic");
   await browserPage.getByTestId("nav-deck-trigger").click();
   await browserPage.getByRole("navigation", { name: "economic workspaces" })

@@ -223,6 +223,16 @@ try {
     const nav = page.locator(".ui-primary-nav");
     await nav.waitFor({ state: "visible", timeout: 10000 });
     await nav.screenshot({ path: join(OUT, `navigation-${label}.png`), animations: "disabled" });
+    await page.getByTestId("nav-deck-trigger").click();
+    await page.getByTestId("nav-deck").waitFor({ state: "visible", timeout: 10000 });
+    const routeCount = await page.locator(".ui-nav-deck .ui-primary-nav-link").count();
+    await page.locator(".ui-nav-deck").screenshot({
+      path: join(OUT, `command-route-index-${label}.png`),
+      animations: "disabled",
+    });
+    if (routeCount < 10) problems.push(`command-route-index-${label}: expected at least 10 destinations, got ${routeCount}`);
+    await page.getByRole("button", { name: "Close navigation" }).click();
+    await page.waitForFunction(() => !document.querySelector('[data-testid="nav-deck"]'));
     const navMetrics = await nav.evaluate((element) => {
       const rect = element.getBoundingClientRect();
       const main = document.querySelector(".ui-shell-main")?.getBoundingClientRect();
@@ -235,13 +245,14 @@ try {
         height: Math.round(rect.height),
         modules: element.querySelectorAll(".ui-primary-nav-module").length,
         destinations: element.querySelectorAll(".ui-primary-nav-link").length,
+        commandTrigger: Boolean(document.querySelector('[data-testid="nav-deck-trigger"]')),
         mainLeft: main ? Math.round(main.left) : null,
         mainTop: main ? Math.round(main.top) : null,
       };
     });
     manifest.push({ filename: `navigation-${label}.png`, surface: "persistent-navigation", viewport: width, geometry: navMetrics });
-    if (navMetrics.width <= 0 || navMetrics.height <= 0 || navMetrics.modules !== 3 || navMetrics.destinations <= 0) {
-      problems.push(`navigation-${label}: persistent domain rail is missing or incomplete`);
+    if (navMetrics.width <= 0 || navMetrics.height <= 0 || navMetrics.modules !== 3 || !navMetrics.commandTrigger) {
+      problems.push(`navigation-${label}: persistent domain spine or command trigger is missing`);
     } else if (navMetrics.left < -1 || navMetrics.right > width + 1) {
       problems.push(`navigation-${label}: persistent rail escapes viewport`);
     } else if (width > 767 && navMetrics.mainLeft !== null && navMetrics.mainLeft < navMetrics.right - 1) {
