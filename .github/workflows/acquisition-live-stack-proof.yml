@@ -46,7 +46,7 @@ jobs:
           test "$ready" -eq 1
       - name: Initialize MinIO buckets through the compose S3 initializer
         run: docker compose -f apps/deploy/docker-compose.yml --profile core run --rm minio-init
-      - name: Bootstrap the legacy frontier table required by migration 017
+      - name: Bootstrap the pre-Alembic legacy schema required by revisions 017/019/023
         run: |
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
           CREATE TABLE IF NOT EXISTS public.frontier_items (
@@ -70,6 +70,83 @@ jobs:
           CREATE INDEX IF NOT EXISTS ix_frontier_host ON public.frontier_items (host_key);
           CREATE INDEX IF NOT EXISTS ix_frontier_partition ON public.frontier_items (partition);
           CREATE UNIQUE INDEX IF NOT EXISTS uq_frontier_schedule ON public.frontier_items (tenant_id, uri);
+
+          -- The Alembic chain starts at feature 014, while the older core tables
+          -- below predate versioned migrations. Recreate only their pre-migration
+          -- shape: later revisions add candidates.regime_id, observations checks,
+          -- entity_stream.source_event_id, frontier_items.provenance and their indexes.
+          CREATE TABLE IF NOT EXISTS public.candidates (
+            candidate_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            mention_ids JSONB,
+            surface_form TEXT,
+            normalized_form TEXT,
+            type_hypothesis VARCHAR(32),
+            state VARCHAR(32) NOT NULL DEFAULT 'OPEN',
+            epistemic_status VARCHAR(32) NOT NULL DEFAULT 'PROVISIONAL',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_candidates_tenant ON public.candidates (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_candidates_state ON public.candidates (state);
+          CREATE INDEX IF NOT EXISTS ix_candidates_epistemic ON public.candidates (epistemic_status);
+
+          CREATE TABLE IF NOT EXISTS public.entities (
+            entity_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            entity_type VARCHAR(32) NOT NULL,
+            canonical_name TEXT,
+            attributes JSONB,
+            current_version INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_entities_tenant ON public.entities (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_entities_type ON public.entities (entity_type);
+
+          CREATE TABLE IF NOT EXISTS public.observations (
+            observation_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            investigation_id VARCHAR(36),
+            source_id VARCHAR(36),
+            task_id VARCHAR(36),
+            uri TEXT NOT NULL,
+            raw_ref TEXT,
+            content_hash VARCHAR(64) NOT NULL,
+            content_type VARCHAR(128),
+            status VARCHAR(32) NOT NULL DEFAULT 'created',
+            duplicate BOOLEAN NOT NULL DEFAULT FALSE,
+            provenance JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            CONSTRAINT ck_obs_immutable_guard CHECK (duplicate IS NOT NULL)
+          );
+          CREATE INDEX IF NOT EXISTS ix_obs_tenant ON public.observations (tenant_id);
+
+          CREATE TABLE IF NOT EXISTS public.entity_stream (
+            tenant_id VARCHAR(36) NOT NULL,
+            entity_id VARCHAR(64) NOT NULL,
+            sequence INTEGER NOT NULL,
+            record_hash VARCHAR(64) NOT NULL UNIQUE,
+            kind VARCHAR(32) NOT NULL,
+            ts TIMESTAMPTZ NOT NULL,
+            payload JSONB NOT NULL,
+            valid_from TIMESTAMPTZ,
+            valid_until TIMESTAMPTZ,
+            observation_id VARCHAR(64) NOT NULL DEFAULT '',
+            dataset_id VARCHAR(64) NOT NULL DEFAULT '',
+            extraction_version VARCHAR(32) NOT NULL DEFAULT '',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (tenant_id, entity_id, sequence)
+          );
+          CREATE INDEX IF NOT EXISTS ix_entity_stream_tenant ON public.entity_stream (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_entity_stream_entity ON public.entity_stream (entity_id);
+          CREATE INDEX IF NOT EXISTS ix_entity_stream_hash ON public.entity_stream (record_hash);
+
+          -- Revision 023 still tightens a legacy plural table that no current ORM
+          -- model or service writes; current durable claims live in relation_claim.
+          -- Keep the historical check target present without inventing claim rows.
+          CREATE TABLE IF NOT EXISTS public.relation_claims (
+            legacy_relation_claim_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+            extractor_version VARCHAR(64)
+          );
           SQL
       - name: Apply PostgreSQL migrations for durable Capture / Observation evidence
         env:
