@@ -522,7 +522,7 @@ async def main() -> int:
         ) else 1
     finally:
         try:
-            await connector.executor.aclose()
+            await connector.aclose()
         except Exception:
             pass
         await engine.dispose()
