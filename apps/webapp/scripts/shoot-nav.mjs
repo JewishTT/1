@@ -47,6 +47,8 @@ try {
   for (const [width, height, label] of VIEWPORTS) {
     await browserPage.setViewportSize({ width, height });
     await browserPage.waitForTimeout(180);
+    await browserPage.getByTestId("nav-deck-trigger").click();
+    await browserPage.getByTestId("nav-deck").waitFor({ state: "visible" });
     const metrics = await browserPage.evaluate(() => {
       const bounds = (selector) => {
         const element = document.querySelector(selector);
@@ -76,7 +78,7 @@ try {
           href: el.getAttribute("href"),
           active: el.getAttribute("data-active") === "true",
         })),
-        destinationCount: document.querySelectorAll(".ui-primary-nav-link").length,
+        destinationCount: document.querySelectorAll(".ui-nav-deck .ui-primary-nav-link").length,
       };
     });
 
@@ -84,7 +86,12 @@ try {
       path: join(OUT, `nav-field-domains-${label}.png`),
       animations: "disabled",
     });
+    await browserPage.locator(".ui-nav-deck").screenshot({
+      path: join(OUT, `nav-command-route-index-${label}.png`),
+      animations: "disabled",
+    });
     process.stdout.write(JSON.stringify({ viewport: label, ...metrics }) + "\n");
+    await browserPage.getByRole("button", { name: "Close workspace navigation" }).click();
 
     if (!metrics.nav || !metrics.main || metrics.nav.width <= 0 || metrics.nav.height <= 0) {
       problems.push(`${label}: navigation rail or workspace is missing`);
@@ -97,7 +104,7 @@ try {
     if (metrics.documentWidth > width + 1 || metrics.bodyWidth > width + 1) {
       problems.push(`${label}: document horizontally overflows: document=${metrics.documentWidth}, body=${metrics.bodyWidth}`);
     }
-    if (metrics.modules.length !== 3 || metrics.destinationCount === 0) {
+    if (metrics.modules.length !== 3 || metrics.destinationCount < 10) {
       problems.push(`${label}: expected three domains and at least one current-domain destination`);
     }
     if (width > 1279) {
@@ -128,18 +135,21 @@ try {
   await browserPage.setViewportSize({ width: 1440, height: 900 });
   await browserPage.getByTestId("nav-module-specops").click();
   await waitForNav("specops");
+  await browserPage.getByTestId("nav-deck-trigger").click();
   await browserPage.getByRole("navigation", { name: "specops workspaces" })
     .getByRole("link", { name: /Pipeline Operations/i }).waitFor({ state: "visible" });
-  await browserPage.locator(".ui-primary-nav").screenshot({
+  await browserPage.locator(".ui-nav-deck").screenshot({
     path: join(OUT, "nav-specops-desktop.png"),
     animations: "disabled",
   });
 
+  await browserPage.getByRole("button", { name: "Close workspace navigation" }).click();
   await browserPage.getByTestId("nav-module-economic").click();
   await waitForNav("economic");
+  await browserPage.getByTestId("nav-deck-trigger").click();
   await browserPage.getByRole("navigation", { name: "economic workspaces" })
     .locator("a").first().waitFor({ state: "visible" });
-  await browserPage.locator(".ui-primary-nav").screenshot({
+  await browserPage.locator(".ui-nav-deck").screenshot({
     path: join(OUT, "nav-economic-desktop.png"),
     animations: "disabled",
   });
