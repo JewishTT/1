@@ -90,6 +90,42 @@ jobs:
           CREATE INDEX IF NOT EXISTS ix_candidates_state ON public.candidates (state);
           CREATE INDEX IF NOT EXISTS ix_candidates_epistemic ON public.candidates (epistemic_status);
 
+          -- Migration 020 widens these two pre-existing candidate references.
+          -- Keep their released baseline width at 36 so the migration itself owns
+          -- the transition to the platform's 64-character CNDR/CAND addresses.
+          CREATE TABLE IF NOT EXISTS public.evidence_links (
+            evidence_link_id VARCHAR(36) PRIMARY KEY,
+            assertion_id VARCHAR(36),
+            candidate_id VARCHAR(36),
+            tenant_id VARCHAR(36) NOT NULL,
+            observation_ids JSONB,
+            publication_count INTEGER NOT NULL DEFAULT 0,
+            independent_sources INTEGER NOT NULL DEFAULT 0,
+            independent_evidence_chains INTEGER NOT NULL DEFAULT 0,
+            source_independence_refs JSONB,
+            provenance JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_evidence_links_tenant ON public.evidence_links (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_evidence_links_assertion ON public.evidence_links (assertion_id);
+
+          CREATE TABLE IF NOT EXISTS public.admission_decisions (
+            decision_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            candidate_id VARCHAR(36),
+            entity_id VARCHAR(36),
+            decision VARCHAR(32) NOT NULL,
+            score_vector JSONB,
+            reasons JSONB,
+            model_version VARCHAR(32),
+            policy_version VARCHAR(32),
+            profile_id VARCHAR(36),
+            evidence_refs JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_admission_decisions_tenant ON public.admission_decisions (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_admission_decisions_decision ON public.admission_decisions (decision);
+
           CREATE TABLE IF NOT EXISTS public.entities (
             entity_id VARCHAR(36) PRIMARY KEY,
             tenant_id VARCHAR(36) NOT NULL,
