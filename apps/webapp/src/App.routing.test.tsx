@@ -71,10 +71,10 @@ describe("routes are reachable and render something", () => {
     });
   });
 
-  it("wires the Dossier destination into the persistent shell navigation", async () => {
-    // A route that exists but is absent from NAV_SECTIONS is unreachable from the
-    // workbench. The route index is always visible, so no modal/deck action is involved.
+  it("wires the Dossier destination into the searchable command route index", async () => {
+    // Deep destinations live in the command deck, not a permanently expanded route strip.
     mountAt("/dossier");
+    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
 
     await waitFor(() => {
       const link = screen.getByRole("link", { name: /Dossier/i });

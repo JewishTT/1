@@ -213,7 +213,7 @@ function RoutedTopNav() {
           >
             <header className="ui-nav-deck-head">
               <div>
-                <span className="ui-nav-deck-kicker">COGNITIVE / ROUTE CONTROL</span>
+                <span className="ui-nav-deck-kicker">COMMAND ROUTE INDEX / COGNITIVE ROUTE CONTROL</span>
                 <h2>Workspace index</h2>
                 <p>Choose an operational domain or open a specific work surface.</p>
               </div>
@@ -265,17 +265,17 @@ function RoutedTopNav() {
                         {active ? <span className="ui-nav-domain-marker" aria-hidden="true" /> : null}
                       </Link>
 
-                      <div className="ui-nav-domain-sections">
+                      <nav
+                        className="ui-nav-domain-sections"
+                        aria-label={`${module.key} workspaces`}
+                      >
                         {sections.map((section, index) => (
                           <section className="ui-primary-nav-section" key={section.label}>
                             <h3 className="ui-primary-nav-section-heading">
                               <span>{String(index + 1).padStart(2, "0")}</span>
                               {section.label}
                             </h3>
-                            <nav
-                              className="ui-primary-nav-section-items"
-                              aria-label={`${module.key} workspaces`}
-                            >
+                            <div className="ui-primary-nav-section-items">
                               {section.items.map((item) => (
                                 <DestinationLink
                                   key={item.to}
@@ -285,10 +285,10 @@ function RoutedTopNav() {
                                   onNavigate={closeDeck}
                                 />
                               ))}
-                            </nav>
+                            </div>
                           </section>
                         ))}
-                      </div>
+                      </nav>
                     </section>
                   );
                 })}
