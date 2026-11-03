@@ -34642,8 +34642,8 @@
       {
         "path": "apps/control-plane/db/migrations/env.py",
         "status": "MIGRATION",
-        "loc": 84,
-        "callables": 5,
+        "loc": 104,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": [
