@@ -133,7 +133,10 @@ async function capture(name, extra = {}) {
   if (metrics.document > metrics.viewport + 1 || metrics.body > metrics.viewport + 1) {
     problems.push(`${name}: horizontal overflow (viewport=${metrics.viewport}, document=${metrics.document}, body=${metrics.body})`);
   }
-  if (!metrics.nav || metrics.nav.width <= 0 || metrics.nav.destinationCount === 0 || metrics.nav.moduleCount !== 3) {
+  // The persistent rail intentionally contains the three domain selectors only.
+  // Workspace destinations live in the searchable command deck and are verified
+  // after the deck opens below; they are not rendered permanently in the rail.
+  if (!metrics.nav || metrics.nav.width <= 0 || metrics.nav.moduleCount !== 3) {
     problems.push(`${name}: persistent domain/navigation rail is missing or incomplete`);
   } else {
     if (metrics.nav.left < -1 || metrics.nav.right > metrics.viewport + 1) {
