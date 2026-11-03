@@ -51,7 +51,27 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def _ensure_version_table_capacity(connection: Connection) -> None:
+    """Create/widen Alembic's own version table before any long revision is stamped.
+
+    Some installations have the default Alembic VARCHAR(32) table already present.
+    The platform uses descriptive revision IDs longer than 32 characters. Setting
+    version_num_length in context.configure does not widen a pre-existing table, so
+    upgrade that metadata column in-place before Alembic writes the next revision.
+    This is metadata-only and does not touch application evidence tables.
+    """
+    connection.exec_driver_sql(
+        "CREATE TABLE IF NOT EXISTS alembic_version "
+        "(version_num VARCHAR(128) NOT NULL PRIMARY KEY)"
+    )
+    connection.exec_driver_sql(
+        "ALTER TABLE alembic_version "
+        "ALTER COLUMN version_num TYPE VARCHAR(128)"
+    )
+
+
 def _do_run_migrations(connection: Connection) -> None:
+    _ensure_version_table_capacity(connection)
     context.configure(
         connection=connection,
         target_metadata=target_metadata,

@@ -98,7 +98,7 @@ try {
       animations: "disabled",
     });
     process.stdout.write(JSON.stringify({ viewport: label, ...metrics }) + "\n");
-    await browserPage.getByRole("button", { name: "Close navigation" }).click();
+    await browserPage.keyboard.press("Escape");
     await browserPage.waitForFunction(() => !document.querySelector('[data-testid="nav-deck"]'));
 
     if (!metrics.nav || !metrics.main || metrics.nav.width <= 0 || metrics.nav.height <= 0) {
@@ -151,7 +151,7 @@ try {
     animations: "disabled",
   });
 
-  await browserPage.getByRole("button", { name: "Close navigation" }).click();
+  await browserPage.keyboard.press("Escape");
   await browserPage.waitForFunction(() => !document.querySelector('[data-testid="nav-deck"]'));
   await browserPage.locator(".ui-primary-nav-modules").getByTestId("nav-module-economic").click();
   await waitForNav("economic");

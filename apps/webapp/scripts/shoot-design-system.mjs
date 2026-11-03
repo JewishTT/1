@@ -238,7 +238,7 @@ try {
       animations: "disabled",
     });
     if (routeCount < 10) problems.push(`command-route-index-${label}: expected at least 10 destinations, got ${routeCount}`);
-    await page.getByRole("button", { name: "Close navigation" }).click();
+    await page.keyboard.press("Escape");
     await page.waitForFunction(() => !document.querySelector('[data-testid="nav-deck"]'));
     const navMetrics = await nav.evaluate((element) => {
       const rect = element.getBoundingClientRect();
