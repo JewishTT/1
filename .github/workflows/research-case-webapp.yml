@@ -6,7 +6,7 @@ on:
 # A branch push and its PR event otherwise launch duplicate full browser installs.
 # Use the source branch name for both event types and keep only the newest sweep.
 concurrency:
-  group: ui-regression-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ui-regression-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}-${{ github.event_name }}
   cancel-in-progress: true
 permissions:
   contents: read
