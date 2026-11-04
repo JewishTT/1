@@ -42207,7 +42207,7 @@
       {
         "path": "platform_model/gaps.py",
         "status": "IMPLEMENTED",
-        "loc": 219,
+        "loc": 221,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -46992,29 +46992,6 @@
         ]
       },
       {
-        "id": "create-tables-in-production-path",
-        "layer": "x",
-        "severity": "high",
-        "claim": "Operational code creates schema with Base.metadata.create_all, not Alembic.",
-        "evidence": [
-          {
-            "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
-            "regex": "await create_tables\\(\\)",
-            "expect": "present",
-            "min_count": 1
-          }
-        ],
-        "status": "RESOLVED",
-        "checks": [
-          {
-            "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
-            "ok": false,
-            "reason": "evidence-mismatch",
-            "count": 0
-          }
-        ]
-      },
-      {
         "id": "alembic-head-is-not-a-base",
         "layer": "x",
         "severity": "high",
@@ -47277,6 +47254,51 @@
         ]
       },
       {
+        "id": "operational-schema-owned-by-alembic",
+        "claim": "Operational service paths no longer create schema at runtime; a static AST contract guards Alembic ownership.",
+        "evidence": [
+          {
+            "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
+            "regex": "create_tables|create_all",
+            "expect": "absent",
+            "min_count": 1
+          },
+          {
+            "path": "apps/control-plane/services/materialization_outbox_relay.py",
+            "regex": "create_tables|create_all",
+            "expect": "absent",
+            "min_count": 1
+          },
+          {
+            "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+            "regex": "create_all.*create_tables",
+            "expect": "present",
+            "min_count": 1
+          }
+        ],
+        "status": "GUARDED",
+        "checks": [
+          {
+            "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 0
+          },
+          {
+            "path": "apps/control-plane/services/materialization_outbox_relay.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 0
+          },
+          {
+            "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 2
+          }
+        ]
+      },
+      {
         "id": "roe-approver-from-authenticated-principal",
         "claim": "Rules-of-Engagement approver identity comes from the verified administrator principal, never request-body input.",
         "evidence": [
@@ -47395,7 +47417,7 @@
       }
     ],
     "open": 6,
-    "stale_or_resolved": 1
+    "stale_or_resolved": 0
   },
   "golden_path": {
     "goal": "Full person-background analysis: Layer 0 (broad, efficient collection over Kafka + lakehouse + sources) -> Layer 1 (extraction, merge, resolution, normalization of entity-artifacts and entity-invariants, plus relation extraction) -> Layer 2 (full context engine), grounded in the platform philosophy (event-driven, evidence-first, immutable observations, rebuildable projections, no fabrication).",

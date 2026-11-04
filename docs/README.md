@@ -130,5 +130,4 @@ Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; 
 | `dlq-tenant-store-not-wired` | critical | The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane. | `apps/control-plane/api/routes/quarantine.py` |
 | `roe-in-memory-registry` | critical | Rules-of-Engagement sign-off is written to an in-process registry, not durable storage. | `apps/control-plane/api/routes/specops_roe.py` |
 | `alembic-head-is-not-a-base` | high | The first Alembic revision has down_revision=None, so upgrade head builds no pre-014 table. | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` |
-| `create-tables-in-production-path` | high | Operational code creates schema with Base.metadata.create_all, not Alembic. | `apps/control-plane/services/temporal_materialization_dispatch.py` |
 | `metrics-not-connected-to-telemetry` | high | The metrics API explicitly reports unavailable because tenant-scoped telemetry and time-windowed aggregates are not connected. | `apps/control-plane/api/routes/metrics.py` |
