@@ -32680,7 +32680,7 @@
       {
         "path": "apps/acquisition/_prove_public_source_matrix.py",
         "status": "IMPLEMENTED",
-        "loc": 533,
+        "loc": 552,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
