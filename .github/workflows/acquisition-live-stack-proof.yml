@@ -216,6 +216,18 @@ jobs:
             ELSE 0
           END AS migration_schema_assertion;
           SQL
+      - name: Assert the final Alembic revision is committed durably
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN EXISTS (
+              SELECT 1 FROM public.alembic_version
+              WHERE version_num = '031_relation_claim_projection_outbox'
+            )
+            THEN 1
+            ELSE 0
+          END AS alembic_head_commit_assertion;
+          SQL
       - name: Seed a controlled Postgres connector fixture
         run: |
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
