@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4544,
-    "static_facts": 4250,
+    "facts_total": 4545,
+    "static_facts": 4251,
     "inferred": 294,
     "intended": 0
   },
@@ -2391,6 +2391,19 @@
       "evidence": {
         "file": "apps/acquisition/entity_search.py",
         "via": "websearch.queries"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ffad397d2b9dd30b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/evidence_writer.py",
+      "object": "apps/shared/domain/ontology.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/evidence_writer.py",
+        "via": "domain.ontology"
       },
       "confidence": 1.0
     },

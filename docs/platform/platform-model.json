@@ -1141,7 +1141,7 @@
   ],
   "import_graph": {
     "module_count": 1031,
-    "edge_count": 2939,
+    "edge_count": 2940,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 901,
@@ -1858,6 +1858,11 @@
         "from": "apps/acquisition/entity_search.py",
         "to": "apps/shared/websearch/queries.py",
         "via": "websearch.queries"
+      },
+      {
+        "from": "apps/acquisition/evidence_writer.py",
+        "to": "apps/shared/domain/ontology.py",
+        "via": "domain.ontology"
       },
       {
         "from": "apps/acquisition/observation_gate/__init__.py",
@@ -16629,9 +16634,11 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_evidence_writer.py",
-        "tests": 2,
+        "tests": 4,
         "test_names": [
           "test_capture_and_observation_are_committed_idempotently",
+          "test_media_type_maps_to_the_declared_static_artifact_kind",
+          "test_html_mime_is_stored_as_markup_while_capture_keeps_real_mime",
           "test_tenant_or_digest_mismatch_fails_before_relational_write"
         ],
         "targets": [
@@ -24476,7 +24483,7 @@
         "targets": []
       }
     ],
-    "total": 5374
+    "total": 5376
   },
   "contracts": {
     "python": [
@@ -33064,8 +33071,8 @@
       {
         "path": "apps/acquisition/evidence_writer.py",
         "status": "IMPLEMENTED",
-        "loc": 183,
-        "callables": 3,
+        "loc": 205,
+        "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -33468,8 +33475,8 @@
       {
         "path": "apps/acquisition/tests/unit/test_evidence_writer.py",
         "status": "TEST",
-        "loc": 160,
-        "callables": 14,
+        "loc": 199,
+        "callables": 16,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -50392,6 +50399,19 @@
         "evidence": {
           "file": "apps/acquisition/entity_search.py",
           "via": "websearch.queries"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ffad397d2b9dd30b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/evidence_writer.py",
+        "object": "apps/shared/domain/ontology.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/evidence_writer.py",
+          "via": "domain.ontology"
         },
         "confidence": 1.0
       },
@@ -105700,8 +105720,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4544,
-      "static_facts": 4250,
+      "facts_total": 4545,
+      "static_facts": 4251,
       "inferred": 294,
       "intended": 0
     }
@@ -105712,15 +105732,15 @@
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2939,
+    "import_edges": 2940,
     "test_files": 352,
-    "test_functions": 5374,
+    "test_functions": 5376,
     "untested_modules": 270,
     "http_routes": 185
   },
   "evidence_stats": {
-    "facts_total": 4544,
-    "static_facts": 4250,
+    "facts_total": 4545,
+    "static_facts": 4251,
     "inferred": 294,
     "intended": 0
   },
