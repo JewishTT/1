@@ -77,6 +77,11 @@ def _do_run_migrations(connection: Connection) -> None:
     # successful upgrade invisible to the services that consume it).
     connection.exec_driver_sql("SET search_path TO public")
     _ensure_version_table_capacity(connection)
+    # The bootstrap DDL above autobegins a SQLAlchemy 2.x transaction. Commit
+    # it before Alembic opens its own migration transaction; otherwise Alembic
+    # sees an externally-open transaction and does not own its commit, so all
+    # revision DDL is rolled back when the connection closes.
+    connection.commit()
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
