@@ -429,6 +429,14 @@ class AcquisitionWorker:
             )
 
         sink = sink_factory(definition)
+        if sink is None or not callable(getattr(sink, "accept", None)):
+            return self._runtime_failure(
+                envelope,
+                task,
+                "runtime_artifact_sink_unavailable",
+                "runtime source did not resolve to an ArtifactSink.accept implementation",
+            )
+
         observations: list[dict[str, Any]] = []
         duplicates: list[str] = []
         failures: list[Failure] = []
