@@ -1,0 +1,36 @@
+name: repo-hygiene
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-hygiene-\${{ github.workflow }}-\${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene-and-foundation-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install the locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Reject tracked local output and generated run artifacts
+        run: .venv/bin/python tools/repo_hygiene.py --check
+      - name: Test repository hygiene policy
+        run: .venv/bin/pytest tools/tests/test_repo_hygiene.py -q
+      - name: Test verified-identity RoE, honest metrics, and DLQ fail-closed contracts
+        run: .venv/bin/pytest apps/control-plane/tests/test_specops_roe_auth.py apps/control-plane/tests/test_metrics_honesty.py apps/control-plane/tests/test_quarantine_api.py -q
+      - name: Test installed wheel package manifest
+        run: .venv/bin/pytest apps/control-plane/tests/unit/test_wheel_package_manifest.py -q
+      - name: Verify generated platform model is current
+        run: .venv/bin/python -m platform_model.build --check

@@ -27,8 +27,12 @@ export function EconomicsPage({ metrics, onRefresh }: Props) {
   const queueEntries = Object.entries(metrics.queues);
   const storageEntries = Object.entries(metrics.storage_growth_b);
   const poolEntries = Object.entries(metrics.pools ?? {});
-  const runningBudget = (metrics.cost_per_1m_obs * metrics.useful_observations) / 1_000_000;
-  const waste = metrics.useful_observations * metrics.duplicate_ratio;
+  const runningBudget = metrics.cost_per_1m_obs === null || metrics.useful_observations === null
+    ? null
+    : (metrics.cost_per_1m_obs * metrics.useful_observations) / 1_000_000;
+  const waste = metrics.useful_observations === null || metrics.duplicate_ratio === null
+    ? null
+    : metrics.useful_observations * metrics.duplicate_ratio;
 
   return (
     <section className="command-page economics-page" data-testid="economic-dashboard">
@@ -36,24 +40,24 @@ export function EconomicsPage({ metrics, onRefresh }: Props) {
         <div>
           <span className="op-label">ECON / RESOURCE INTELLIGENCE</span>
           <h1>Intelligence economy</h1>
-          <p className="panel-note">Cost, yield and worker capacity across the evidence pipeline.</p>
+          <p className="panel-note">Cost, yield and worker capacity across the evidence pipeline. These measurements remain unavailable until tenant-scoped telemetry is connected.</p>
         </div>
-        <span className="status-chip status-chip-live">LEDGER LINKED</span>
+        <span className="status-chip">METRICS NOT WIRED</span>
       </div>
 
       <div className="tiles command-metrics">
-        <Tile label="cost / 1M obs" value={`$${metrics.cost_per_1m_obs.toFixed(2)}`} />
-        <Tile label="running budget" value={`$${runningBudget.toFixed(2)}`} />
-        <Tile label="duplicate waste (obs)" value={waste.toLocaleString()} />
-        <Tile label="discovery yield" value={`${(metrics.discovery_yield * 100).toFixed(0)}%`} />
+        <Tile label="cost / 1M obs" value={metrics.cost_per_1m_obs === null ? "—" : "$" + metrics.cost_per_1m_obs.toFixed(2)} />
+        <Tile label="running budget" value={runningBudget === null ? "—" : "$" + runningBudget.toFixed(2)} />
+        <Tile label="duplicate waste (obs)" value={waste === null ? "—" : waste.toLocaleString()} />
+        <Tile label="discovery yield" value={metrics.discovery_yield === null ? "—" : String(Math.round(metrics.discovery_yield * 100)) + "%"} />
       </div>
 
       <div className="panel command-panel">
         <h2>Throughput economics</h2>
         <div className="tiles">
-          <Tile label="throughput / s" value={metrics.throughput_per_s} />
-          <Tile label="useful observations" value={metrics.useful_observations} />
-          <Tile label="browser utilization" value={`${(metrics.browser_utilization * 100).toFixed(0)}%`} />
+          <Tile label="throughput / s" value={metrics.throughput_per_s === null ? "—" : metrics.throughput_per_s.toLocaleString()} />
+          <Tile label="useful observations" value={metrics.useful_observations === null ? "—" : metrics.useful_observations.toLocaleString()} />
+          <Tile label="browser utilization" value={metrics.browser_utilization === null ? "—" : String(Math.round(metrics.browser_utilization * 100)) + "%"} />
         </div>
       </div>
 

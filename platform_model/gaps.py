@@ -43,29 +43,22 @@ GAPS: list[dict] = [
         "claim": "Rules-of-Engagement sign-off is written to an in-process registry, not durable storage.",
         "evidence": [_ev("apps/control-plane/api/routes/specops_roe.py", r"REGISTRY\.record\(roe\)")],
     },
-    {
-        "id": "roe-approved-by-from-body",
-        "layer": "x",
-        "severity": "high",
-        "claim": "The RoE approver is taken from the request body, not a verified principal.",
-        "evidence": [_ev("apps/control-plane/api/routes/specops_roe.py", r"approved_by=body\.approved_by")],
-    },
     # -- cross-cutting: operational honesty ----------------------------------
-    {
-        "id": "metrics-hardcoded",
+        {
+        "id": "metrics-not-connected-to-telemetry",
         "layer": "x",
         "severity": "high",
-        "claim": "GET /api/v1/metrics returns hard-coded numbers, never measured.",
-        "evidence": [_ev("apps/control-plane/api/routes/metrics.py", r"throughput_per_s=142\.3")],
+        "claim": "The metrics API explicitly reports unavailable because tenant-scoped telemetry and time-windowed aggregates are not connected.",
+        "evidence": [_ev("apps/control-plane/api/routes/metrics.py", r'"availability": "unavailable"')],
     },
     {
-        "id": "dlq-seeded-record",
+        "id": "dlq-tenant-store-not-wired",
         "layer": "x",
-        "severity": "high",
-        "claim": "GET /api/v1/dlq reads an in-process store seeded with one fake record.",
-        "evidence": [_ev("apps/control-plane/api/routes/quarantine.py", r"malformed candidate")],
+        "severity": "critical",
+        "claim": "The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane.",
+        "evidence": [_ev("apps/control-plane/api/routes/quarantine.py", r"tenant-scoped durable quarantine storage is not configured")],
     },
-    # -- cross-cutting: schema ownership -------------------------------------
+# -- cross-cutting: schema ownership -------------------------------------
     {
         "id": "create-tables-in-production-path",
         "layer": "x",
@@ -81,13 +74,6 @@ GAPS: list[dict] = [
         "evidence": [_ev("apps/control-plane/db/migrations/versions/014_temporal_materialization.py", r"down_revision = None")],
     },
     # -- cross-cutting: packaging / CI ---------------------------------------
-    {
-        "id": "wheel-packages-omit-context-engine",
-        "layer": "x",
-        "severity": "high",
-        "claim": "The control-plane wheel omits context_engine/semantic_path, so an installed build differs from checkout.",
-        "evidence": [_ev("apps/control-plane/pyproject.toml", r'packages = \["api", "application", "domain", "services", "db", "workflows", "badges", "modifier"\]')],
-    },
     # -- layer 0: collection -------------------------------------------------
     {
         "id": "search-tantivy-declared-not-implemented",
@@ -156,6 +142,34 @@ RESOLVED_CLAIMS: list[dict] = [
             _ev("apps/control-plane/api/auth.py", r"json\.loads\(token\)", expect="absent"),
         ],
         "note": "Only HS256 is accepted; signature, issuer, audience and time claims are verified before payload use.",
+    },
+    {
+        "id": "roe-approver-from-authenticated-principal",
+        "claim": "Rules-of-Engagement approver identity comes from the verified administrator principal, never request-body input.",
+        "evidence": [
+            _ev("apps/control-plane/api/routes/specops_roe.py", r"approved_by=ctx\.user_id", expect="present"),
+            _ev("apps/control-plane/api/routes/specops_roe.py", r"approved_by=body\.approved_by", expect="absent"),
+        ],
+    },
+    {
+        "id": "control-plane-wheel-includes-runtime-packages",
+        "claim": "The installed control-plane wheel includes context_engine and semantic_path package roots.",
+        "evidence": [_ev("apps/control-plane/pyproject.toml", r'packages = .*"context_engine".*"semantic_path"', expect="present")],
+    },
+    {
+        "id": "dlq-has-no-seeded-fictional-record",
+        "claim": "The quarantine API no longer seeds a fictional rejection to make the dashboard look populated.",
+        "evidence": [_ev("apps/control-plane/api/routes/quarantine.py", r"malformed candidate", expect="absent")],
+    },
+    {
+        "id": "dlq-re-evaluation-does-not-delete-payload",
+        "claim": "The API no longer purges a quarantined payload as part of re-evaluation.",
+        "evidence": [_ev("apps/control-plane/api/routes/quarantine.py", r"store\.purge\(", expect="absent")],
+    },
+    {
+        "id": "metrics-have-no-fabricated-operational-values",
+        "claim": "The metrics API never returns hard-coded demonstration counters as operational measurements.",
+        "evidence": [_ev("apps/control-plane/api/routes/metrics.py", r"142\.3|1_048_576|0\.41|0\.12|3\.75", expect="absent")],
     },
 ]
 
