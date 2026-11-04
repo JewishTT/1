@@ -71,6 +71,11 @@ def _ensure_version_table_capacity(connection: Connection) -> None:
 
 
 def _do_run_migrations(connection: Connection) -> None:
+    # Runtime evidence writers address the canonical application tables in
+    # public.*. Do not let a role/database-level search_path override silently
+    # install an Alembic revision into a different schema (which makes a
+    # successful upgrade invisible to the services that consume it).
+    connection.exec_driver_sql("SET search_path TO public")
     _ensure_version_table_capacity(connection)
     context.configure(
         connection=connection,
