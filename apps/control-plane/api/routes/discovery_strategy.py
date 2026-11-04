@@ -108,6 +108,19 @@ async def create_discovery_plan(
             max_queries=body.max_queries,
         )
         plan = ContextDiscoveryCompiler().compile(context)
+        from sources.catalogue import load_catalogue
+
+        definitions, rejected = load_catalogue()
+        source = next((item for item in definitions if item.name == "searxng_public_search"), None)
+        if source is None or not source.enabled or source.runtime_ref != "searxng":
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "error": "discovery_source_unavailable",
+                    "source": "searxng_public_search",
+                    "rejected_definition": rejected.get("searxng_public_search", ""),
+                },
+            )
     except (TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=422,
@@ -115,7 +128,7 @@ async def create_discovery_plan(
         ) from exc
 
     return {
-        **plan.as_dict(context=context),
+        **plan.as_dict(context=context, source_id=source.source_id, source_name=source.name),
         "execution": {
             "dispatched": False,
             "next_step": "Pass each dispatch_task through the configured Dispatcher; do not publish directly to Redpanda.",
