@@ -22,6 +22,7 @@ from api import sse
 from api.routes import (
     connectors,
     discovery,
+    discovery_strategy,
     dossier,
     entities,
     fabric,
@@ -122,6 +123,7 @@ for _router in (
     search.router,
     search_rebuild.router,
     discovery.router,
+    discovery_strategy.router,
     entities.router,
     findings.router,
     quarantine.router,
