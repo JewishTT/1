@@ -7,7 +7,7 @@ fetched through the canonical Capture/Observation path and reviewed by the platf
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from typing import Any
@@ -70,7 +70,8 @@ class EntitySeed:
                 raise ValueError("direct personal contact identifiers are not supported as search anchors")
             aliases.append(alias)
         domains = []
-        for raw in self.domains:
+        declared_domains = self.domains or ((name,) if self.kind == "domain" else ())
+        for raw in declared_domains:
             domain = str(raw).strip().lower().rstrip(".")
             if not _DOMAIN.fullmatch(domain):
                 raise ValueError(f"invalid public domain anchor: {raw!r}")
