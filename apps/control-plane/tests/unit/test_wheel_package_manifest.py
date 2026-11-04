@@ -10,5 +10,7 @@ def test_control_plane_wheel_contains_every_runtime_package_root() -> None:
     packages = config["tool"]["hatch"]["build"]["targets"]["wheel"]["packages"]
     assert "context_engine" in packages
     assert "semantic_path" in packages
+    assert "cp_domain" in packages
+    assert "domain" not in packages
     assert len(packages) == len(set(packages))
     assert all((project / package).is_dir() for package in packages)

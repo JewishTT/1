@@ -31,6 +31,9 @@ jobs:
       - name: Test verified-identity RoE, honest metrics, and DLQ fail-closed contracts
         run: .venv/bin/pytest apps/control-plane/tests/test_specops_roe_auth.py apps/control-plane/tests/test_metrics_honesty.py apps/control-plane/tests/test_quarantine_api.py -q
       - name: Test installed wheel package manifest
-        run: .venv/bin/pytest apps/control-plane/tests/unit/test_wheel_package_manifest.py -q
+        run: |
+          .venv/bin/pytest apps/control-plane/tests/unit/test_wheel_package_manifest.py -q
+          uv build --package cognitive-control-plane --wheel --out-dir "$RUNNER_TEMP/control-plane-wheel"
+          .venv/bin/python -c "from pathlib import Path; from zipfile import ZipFile; wheel = next(Path(r'$RUNNER_TEMP/control-plane-wheel').glob('*.whl')); names = ZipFile(wheel).namelist(); assert any(n.startswith('context_engine/') for n in names); assert any(n.startswith('semantic_path/') for n in names); print(f'verified wheel contents: {wheel.name}')"
       - name: Verify generated platform model is current
         run: .venv/bin/python -m platform_model.build --check
