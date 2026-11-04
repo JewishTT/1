@@ -112,11 +112,11 @@ async def _read_raw(store: ObjectStore, raw_ref: str, expected_digest: str) -> t
 async def _db_rows(session_factory, tenant_id: str, capture_id: str, observation_id: str) -> tuple[bool, bool]:
     async with session_factory() as session:
         capture = await session.execute(
-            text("SELECT 1 FROM captures WHERE tenant_id=:tenant AND capture_id=:id"),
+            text("SELECT 1 FROM public.captures WHERE tenant_id=:tenant AND capture_id=:id"),
             {"tenant": tenant_id, "id": capture_id},
         )
         observation = await session.execute(
-            text("SELECT 1 FROM observations WHERE tenant_id=:tenant AND observation_id=:id"),
+            text("SELECT 1 FROM public.observations WHERE tenant_id=:tenant AND observation_id=:id"),
             {"tenant": tenant_id, "id": observation_id},
         )
         return capture.first() is not None, observation.first() is not None
@@ -375,6 +375,25 @@ async def main() -> int:
     settings = get_settings()
     engine = create_async_engine(settings.postgres.dsn, pool_pre_ping=True)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    # Fail at startup with the actual runtime connection/schema instead of allowing
+    # a later EvidenceWriter insert to obscure a migration/search_path mismatch.
+    async with engine.connect() as connection:
+        schema_state = (await connection.execute(text("""
+            SELECT current_database() AS database,
+                   current_schema() AS schema,
+                   current_setting('search_path') AS search_path,
+                   to_regclass('public.captures')::text AS captures,
+                   to_regclass('public.observations')::text AS observations
+        """))).mappings().one()
+        print(json.dumps({"postgres_schema_preflight": dict(schema_state)}, sort_keys=True, default=str))
+        if schema_state["captures"] is None or schema_state["observations"] is None:
+            raise RuntimeError(
+                "Canonical public evidence schema is incomplete: "
+                f"captures={schema_state['captures']!r}, "
+                f"observations={schema_state['observations']!r}, "
+                f"database={schema_state['database']!r}, "
+                f"search_path={schema_state['search_path']!r}"
+            )
     producer = IdempotentProducer(bootstrap_servers=BROKERS)
     store = ObjectStore(
         endpoint=S3_ENDPOINT,
