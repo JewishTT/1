@@ -209,11 +209,11 @@ jobs:
               'resolution_decision', 'semantic_regime', 'observations', 'alembic_version'
             )
           ORDER BY n.nspname, c.relname;
-          SELECT CASE
+          SELECT 1 / CASE
             WHEN to_regclass('public.captures') IS NOT NULL
              AND to_regclass('public.observations') IS NOT NULL
-            THEN 'canonical_evidence_tables_present'
-            ELSE 'CANONICAL_EVIDENCE_TABLES_MISSING'
+            THEN 1
+            ELSE 0
           END AS migration_schema_assertion;
           SQL
       - name: Seed a controlled Postgres connector fixture
