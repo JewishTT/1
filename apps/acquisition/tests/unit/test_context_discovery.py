@@ -109,7 +109,7 @@ def test_dispatch_shape_is_discovery_only_and_keeps_tenant_scope() -> None:
     assert task["source_id"] == "SRC-searxng-catalogue"
     assert task["source_name"] == "searxng_public_search"
     assert task["result_role"] == "DISCOVERY_ONLY"
-    assert task["required_capabilities"] == ["search", "json-output", "paged"]
+    assert task["required_capabilities"] == ["http"]
     assert {item["kind"] for item in task["constraints"]} >= {
         "public_source_only",
         "discovery_only",
@@ -124,7 +124,11 @@ def test_time_window_is_carried_into_query_and_dispatch_constraints() -> None:
 
     assert all("after:2020-01-01" in task.query and "before:2024-12-31" in task.query for task in plan.tasks)
     dispatch = plan.tasks[0].as_dispatch_task(
-        plan_id=plan.plan_id, context=context, context_digest=plan.context_digest
+        plan_id=plan.plan_id,
+        context=context,
+        context_digest=plan.context_digest,
+        source_id="SRC-searxng-catalogue",
+        source_name="searxng_public_search",
     )
     assert {"kind": "time_window", "from": "2020-01-01", "to": "2024-12-31"} in dispatch["constraints"]
 
