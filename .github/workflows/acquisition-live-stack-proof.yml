@@ -23,6 +23,8 @@ jobs:
         run: .venv/bin/pytest apps/acquisition/tests/unit/test_evidence_writer.py -q
       - name: Test context-to-discovery compiler contracts
         run: .venv/bin/pytest apps/acquisition/tests/unit/test_context_discovery.py -q
+      - name: Test runtime evidence persistence contract
+        run: .venv/bin/pytest apps/acquisition/tests/unit/test_runtime_artifact_sink.py -q
       - name: Start the real core acquisition stack
         run: |
           docker compose -f apps/deploy/docker-compose.yml --profile core up -d minio postgres redpanda searxng
