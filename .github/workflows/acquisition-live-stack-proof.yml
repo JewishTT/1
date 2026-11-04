@@ -19,6 +19,8 @@ jobs:
           enable-cache: true
       - name: Install locked workspace
         run: uv sync --locked --all-packages --all-groups
+      - name: Test the MIME to semantic artifact-kind persistence contract
+        run: .venv/bin/pytest apps/acquisition/tests/unit/test_evidence_writer.py -q
       - name: Start the real core acquisition stack
         run: |
           docker compose -f apps/deploy/docker-compose.yml --profile core up -d minio postgres redpanda searxng
