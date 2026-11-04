@@ -6,8 +6,8 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 431 |
-| TEST_ONLY | 134 |
+| PRODUCTION | 432 |
+| TEST_ONLY | 133 |
 | ORPHAN | 123 |
 | TEST | 358 |
 
@@ -60,7 +60,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**134** modules are reached only by tests.
+**133** modules are reached only by tests.
 
 | Module |
 |---|
@@ -182,7 +182,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/domain/research_lineage.py` |
 | `apps/shared/domain/stream_events.py` |
 | `apps/shared/domain/temporal_worldline_store.py` |
-| `apps/shared/events/dlq_durable.py` |
 | `apps/shared/events/ontology_pack.py` |
 | `apps/shared/events/timestamps.py` |
 | `apps/shared/isolation.py` |

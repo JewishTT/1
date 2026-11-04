@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4581,
-    "static_facts": 4287,
+    "facts_total": 4583,
+    "static_facts": 4289,
     "inferred": 294,
     "intended": 0
   },
@@ -4744,6 +4744,32 @@
       "evidence": {
         "file": "apps/acquisition/worker_acquisition.py",
         "via": "domain.capture"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7e70f17e95869bf1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_acquisition.py",
+      "object": "apps/shared/events/dlq.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_acquisition.py",
+        "via": "events.dlq"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "dae4359bf9e6d741",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_acquisition.py",
+      "object": "apps/shared/events/dlq_durable.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_acquisition.py",
+        "via": "events.dlq_durable"
       },
       "confidence": 1.0
     },

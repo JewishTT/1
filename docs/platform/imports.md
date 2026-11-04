@@ -1,6 +1,6 @@
 # Import graph
 
-1046 Python modules, 2963 resolved local edges.
+1046 Python modules, 2965 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -38,8 +38,8 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `alembic` | third-party | 24 |
 | `logging` | stdlib | 23 |
 | `numpy` | third-party | 23 |
+| `inspect` | stdlib | 22 |
 | `argparse` | stdlib | 21 |
-| `inspect` | stdlib | 21 |
 | `tempfile` | stdlib | 21 |
 | `httpx` | third-party | 20 |
 | `threading` | stdlib | 19 |

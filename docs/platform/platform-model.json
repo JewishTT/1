@@ -1149,7 +1149,7 @@
   ],
   "import_graph": {
     "module_count": 1046,
-    "edge_count": 2963,
+    "edge_count": 2965,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 914,
@@ -1180,7 +1180,7 @@
       "stdlib:html": 10,
       "stdlib:http": 5,
       "stdlib:importlib": 33,
-      "stdlib:inspect": 21,
+      "stdlib:inspect": 22,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
@@ -2781,6 +2781,16 @@
         "from": "apps/acquisition/worker_acquisition.py",
         "to": "apps/shared/domain/capture.py",
         "via": "domain.capture"
+      },
+      {
+        "from": "apps/acquisition/worker_acquisition.py",
+        "to": "apps/shared/events/dlq.py",
+        "via": "events.dlq"
+      },
+      {
+        "from": "apps/acquisition/worker_acquisition.py",
+        "to": "apps/shared/events/dlq_durable.py",
+        "via": "events.dlq_durable"
       },
       {
         "from": "apps/acquisition/worker_browser/__init__.py",
@@ -33880,8 +33890,8 @@
       {
         "path": "apps/acquisition/worker_acquisition.py",
         "status": "IMPLEMENTED",
-        "loc": 779,
-        "callables": 19,
+        "loc": 822,
+        "callables": 20,
         "stubs": 1,
         "not_implemented": 0,
         "markers": []
@@ -45612,7 +45622,7 @@
       },
       {
         "path": "apps/shared/events/dlq_durable.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/shared/events/event_envelope_pb2.py",
@@ -46652,8 +46662,8 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 431,
-      "TEST_ONLY": 134,
+      "PRODUCTION": 432,
+      "TEST_ONLY": 133,
       "ORPHAN": 123,
       "TEST": 358,
       "total": 1046
@@ -46777,7 +46787,6 @@
       "apps/shared/domain/research_lineage.py",
       "apps/shared/domain/stream_events.py",
       "apps/shared/domain/temporal_worldline_store.py",
-      "apps/shared/events/dlq_durable.py",
       "apps/shared/events/ontology_pack.py",
       "apps/shared/events/timestamps.py",
       "apps/shared/isolation.py",
@@ -53301,6 +53310,32 @@
         "evidence": {
           "file": "apps/acquisition/worker_acquisition.py",
           "via": "domain.capture"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7e70f17e95869bf1",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_acquisition.py",
+        "object": "apps/shared/events/dlq.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_acquisition.py",
+          "via": "events.dlq"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "dae4359bf9e6d741",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_acquisition.py",
+        "object": "apps/shared/events/dlq_durable.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_acquisition.py",
+          "via": "events.dlq_durable"
         },
         "confidence": 1.0
       },
@@ -106725,8 +106760,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4581,
-      "static_facts": 4287,
+      "facts_total": 4583,
+      "static_facts": 4289,
       "inferred": 294,
       "intended": 0
     }
@@ -106737,15 +106772,15 @@
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2963,
+    "import_edges": 2965,
     "test_files": 361,
     "test_functions": 5403,
     "untested_modules": 274,
     "http_routes": 186
   },
   "evidence_stats": {
-    "facts_total": 4581,
-    "static_facts": 4287,
+    "facts_total": 4583,
+    "static_facts": 4289,
     "inferred": 294,
     "intended": 0
   },
@@ -106758,8 +106793,8 @@
     "total": 1046
   },
   "reachability_summary": {
-    "PRODUCTION": 431,
-    "TEST_ONLY": 134,
+    "PRODUCTION": 432,
+    "TEST_ONLY": 133,
     "ORPHAN": 123,
     "TEST": 358,
     "total": 1046
@@ -106927,7 +106962,6 @@
     "apps/shared/domain/research_lineage.py",
     "apps/shared/domain/stream_events.py",
     "apps/shared/domain/temporal_worldline_store.py",
-    "apps/shared/events/dlq_durable.py",
     "apps/shared/events/ontology_pack.py",
     "apps/shared/events/timestamps.py",
     "apps/shared/isolation.py",
