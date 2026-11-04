@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from .models import (
-    DEFAULT_FACETS,
     DiscoveryPlan,
     DiscoveryQuery,
     EntitySeed,
@@ -253,12 +252,13 @@ class ContextDiscoveryCompiler:
         term_clause = " ".join(terms[:4])
         for anchor in anchors:
             quoted = _quote(anchor)
-            out.append(_Candidate(EvidenceFacet.IDENTITY, "exact_phrase", quoted + time_suffix, seed.ref, 100))
-            if term_clause:
-                out.append(_Candidate(
-                    EvidenceFacet.IDENTITY, "contextual_web",
-                    f"{quoted} {_quote(term_clause)}{time_suffix}", seed.ref, 92,
-                ))
+            if EvidenceFacet.IDENTITY in facets:
+                out.append(_Candidate(EvidenceFacet.IDENTITY, "exact_phrase", quoted + time_suffix, seed.ref, 100))
+                if term_clause:
+                    out.append(_Candidate(
+                        EvidenceFacet.IDENTITY, "contextual_web",
+                        f"{quoted} {_quote(term_clause)}{time_suffix}", seed.ref, 92,
+                    ))
             out.extend(self._facet_queries(seed, anchor, facets, time_suffix))
 
         for domain in seed.domains:
@@ -359,7 +359,9 @@ class ContextDiscoveryCompiler:
         if not terms:
             return []
         phrase = _quote(" ".join(terms[:6]))
-        out = [_Candidate(EvidenceFacet.IDENTITY, "contextual_web", phrase + time_suffix, None, 40)]
+        out = []
+        if EvidenceFacet.IDENTITY in facets:
+            out.append(_Candidate(EvidenceFacet.IDENTITY, "contextual_web", phrase + time_suffix, None, 40))
         for facet in facets:
             if facet is EvidenceFacet.IDENTITY:
                 continue
