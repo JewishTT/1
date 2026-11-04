@@ -134,21 +134,29 @@ class DiscoveryQuery:
     query: str
     subject_ref: str | None
     provider: str = "searxng"
-    source_id: str = "searxng.search"
+    source_id: str = ""
+    source_name: str = "searxng_public_search"
     runtime_ref: str = "searxng"
     result_role: str = "DISCOVERY_ONLY"
     max_pages: int = 5
     priority: int = 50
 
-    def as_dispatch_task(self, *, plan_id: str, context: ResearchContext, context_digest: str) -> dict[str, Any]:
+    def as_dispatch_task(
+        self, *, plan_id: str, context: ResearchContext, context_digest: str,
+        source_id: str, source_name: str,
+    ) -> dict[str, Any]:
         """Adapt the plan to the established Dispatcher task shape; do not dispatch here."""
+        if not source_id or not source_name:
+            raise ValueError("the installed source catalogue must resolve source_id and source_name")
         task_id = f"discovery-{self.query_id}"
         return {
             "task_id": task_id,
             "query": self.query,
-            "source_id": self.source_id,
+            "source_id": source_id,
+            "source_name": source_name,
             "runtime_ref": self.runtime_ref,
-            "required_capabilities": ["search", "json-output", "paged"],
+            "category": "08. Knowledge",
+            "required_capabilities": ["http"],
             "tenant_id": context.tenant_id,
             "case_id": context.investigation_id,
             "investigation_id": context.investigation_id,
@@ -205,7 +213,7 @@ class DiscoveryPlan:
     status: str = "PLANNED_NOT_DISPATCHED"
     compiler_version: str = "context-discovery-v1"
 
-    def as_dict(self, *, context: ResearchContext) -> dict[str, Any]:
+    def as_dict(self, *, context: ResearchContext, source_id: str, source_name: str) -> dict[str, Any]:
         return {
             "plan_id": self.plan_id,
             "context_digest": self.context_digest,
@@ -226,12 +234,14 @@ class DiscoveryPlan:
                     "query": item.query,
                     "subject_ref": item.subject_ref,
                     "provider": item.provider,
-                    "source_id": item.source_id,
+                    "source_id": source_id,
+                    "source_name": source_name,
                     "runtime_ref": item.runtime_ref,
                     "result_role": item.result_role,
                     "priority": item.priority,
                     "dispatch_task": item.as_dispatch_task(
-                        plan_id=self.plan_id, context=context, context_digest=self.context_digest
+                        plan_id=self.plan_id, context=context, context_digest=self.context_digest,
+                        source_id=source_id, source_name=source_name,
                     ),
                 }
                 for item in self.tasks
