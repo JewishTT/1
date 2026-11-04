@@ -21,3 +21,29 @@ Each plan item is a Dispatcher-compatible task for the existing SearXNG runtime 
 A facet marked `planned` means the compiler emitted one or more queries. It does not mean a source answered, that the internet was exhaustively searched, or that evidence exists. `not_plannable` records a missing anchor or safe query template. Runtime coverage must additionally account for provider health, licensing, robots restrictions, search-index gaps, budgets, parser success, raw-object read-back and Observation event acknowledgement.
 
 The compiler is a plan producer, not an unrestricted crawler. Adaptive follow-up should consume newly admitted public facts and explicit coverage gaps, not untrusted snippets as identity truth.
+
+## API example
+
+A preview request uses explicit entity anchors and a bounded facet/time selection:
+
+```json
+{
+  "investigation_id": "INV-EXAMPLE",
+  "context_text": "Review the public history, filings and security disclosures concerning Acme Systems.",
+  "entities": [
+    {
+      "ref": "entity-acme",
+      "name": "Acme Systems",
+      "aliases": ["Acme"],
+      "domains": ["acme.example"],
+      "kind": "organization"
+    }
+  ],
+  "facets": ["identity", "official_records", "public_incidents"],
+  "time_from": "2020-01-01",
+  "time_to": "2026-11-04",
+  "max_queries": 48
+}
+```
+
+The response includes a stable `plan_id`, `context_digest`, facet-level planning coverage and dispatcher-compatible task manifests. It is a reviewable plan only; the API does not publish events or schedule workers.
