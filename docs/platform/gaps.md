@@ -2,7 +2,7 @@
 
 Every defect below is a claim tied to re-checkable evidence (a file and a regex). `platform_model/gaps.py` re-reads the tree and a contract test fails if any open gap's evidence no longer holds. This is the replacement for the old free-text `KNOWN_GAPS`.
 
-**9** open gaps; **0** stale/resolved (must be zero — the test fails otherwise).
+**7** open gaps; **0** stale/resolved (must be zero — the test fails otherwise).
 
 ## Layer 0 — collection
 
@@ -20,13 +20,11 @@ Every defect below is a claim tied to re-checkable evidence (a file and a regex)
 
 | ID | Severity | Status | Claim | Evidence |
 |---|---|---|---|---|
+| `dlq-tenant-store-not-wired` | critical | OPEN | The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane. | `apps/control-plane/api/routes/quarantine.py` |
 | `roe-in-memory-registry` | critical | OPEN | Rules-of-Engagement sign-off is written to an in-process registry, not durable storage. | `apps/control-plane/api/routes/specops_roe.py` |
 | `alembic-head-is-not-a-base` | high | OPEN | The first Alembic revision has down_revision=None, so upgrade head builds no pre-014 table. | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` |
 | `create-tables-in-production-path` | high | OPEN | Operational code creates schema with Base.metadata.create_all, not Alembic. | `apps/control-plane/services/temporal_materialization_dispatch.py` |
-| `dlq-seeded-record` | high | OPEN | GET /api/v1/dlq reads an in-process store seeded with one fake record. | `apps/control-plane/api/routes/quarantine.py` |
-| `metrics-hardcoded` | high | OPEN | GET /api/v1/metrics returns hard-coded numbers, never measured. | `apps/control-plane/api/routes/metrics.py` |
-| `roe-approved-by-from-body` | high | OPEN | The RoE approver is taken from the request body, not a verified principal. | `apps/control-plane/api/routes/specops_roe.py` |
-| `wheel-packages-omit-context-engine` | high | OPEN | The control-plane wheel omits context_engine/semantic_path, so an installed build differs from checkout. | `apps/control-plane/pyproject.toml` |
+| `metrics-not-connected-to-telemetry` | high | OPEN | The metrics API explicitly reports unavailable because tenant-scoped telemetry and time-windowed aggregates are not connected. | `apps/control-plane/api/routes/metrics.py` |
 
 ## Resolved claims (regression guards)
 
@@ -40,3 +38,8 @@ Formerly-recorded gaps whose fix must stay in place; a regression flips the guar
 | `ci-sync-installed-no-test-runner` | GUARDED | CI ran `uv sync --locked` and installed no test runner. |
 | `auth-anonymous-admin` | GUARDED | Anonymous requests must not receive an administrator role. |
 | `auth-unverified-token` | GUARDED | JWT claims must be signed and validated before they can establish identity or role. |
+| `roe-approver-from-authenticated-principal` | GUARDED | Rules-of-Engagement approver identity comes from the verified administrator principal, never request-body input. |
+| `control-plane-wheel-includes-runtime-packages` | GUARDED | The installed control-plane wheel includes context_engine and semantic_path package roots. |
+| `dlq-has-no-seeded-fictional-record` | GUARDED | The quarantine API no longer seeds a fictional rejection to make the dashboard look populated. |
+| `dlq-re-evaluation-does-not-delete-payload` | GUARDED | The API no longer purges a quarantined payload as part of re-evaluation. |
+| `metrics-have-no-fabricated-operational-values` | GUARDED | The metrics API never returns hard-coded demonstration counters as operational measurements. |

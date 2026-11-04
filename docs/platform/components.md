@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **244** · TypeScript modules: **0**
+Python modules: **248** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -536,22 +536,25 @@ apps.specops.tests.test_specops_routers
 
 Generators, capability/owner/donor tools, probes.
 
-Python modules: **11** · TypeScript modules: **0**
+Python modules: **14** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
 ```
+tools
 tools.append_zero_frontend_a
 tools.append_zero_frontend_b
 tools.append_zero_inventory
 tools.append_zero_sources_a
 tools.append_zero_sources_b
 tools.fix_zero_layer_doc
+tools.repo_hygiene
 tools.semantic_docgraph
 tools.specs.build_capability_matrix
 tools.specs.build_donor_registry
 tools.specs.build_owner_map
 tools.strip_zero_inventory
+tools.tests.test_repo_hygiene
 ```
 
 </details>

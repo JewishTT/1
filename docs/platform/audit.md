@@ -7,24 +7,24 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1037 / 267 / 16 |
-| Resolved import edges | 2956 |
+| Python / TypeScript / Rust modules | 1044 / 267 / 16 |
+| Resolved import edges | 2962 |
 | HTTP routes / routers | 186 / 34 |
-| Test files / functions | 354 / 5389 |
-| Evidence facts (static) | 4565 |
+| Test files / functions | 359 / 5400 |
+| Evidence facts (static) | 4579 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 557 |
+| IMPLEMENTED | 558 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
-| PACKAGE_INIT | 92 |
+| PACKAGE_INIT | 93 |
 | MIGRATION | 19 |
-| TEST | 351 |
+| TEST | 356 |
 
 See [maturity.md](maturity.md).
 
@@ -32,10 +32,10 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 430 |
+| PRODUCTION | 431 |
 | TEST_ONLY | 134 |
-| ORPHAN | 122 |
-| TEST | 351 |
+| ORPHAN | 123 |
+| TEST | 356 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 
@@ -54,7 +54,7 @@ See [golden-path.md](golden-path.md) for the capability map and the build plan.
 
 ## Gaps (machine-checked)
 
-**9** open, machine-checked gaps. See [gaps.md](gaps.md).
+**7** open, machine-checked gaps. See [gaps.md](gaps.md).
 
 ## Event coverage
 

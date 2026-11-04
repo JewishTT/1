@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 430 |
+| PRODUCTION | 431 |
 | TEST_ONLY | 134 |
-| ORPHAN | 122 |
-| TEST | 351 |
+| ORPHAN | 123 |
+| TEST | 356 |
 
 ## Entrypoints (production roots)
 
@@ -52,6 +52,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/run.py` |
 | `bench/science/bench_structural.py` |
 | `platform_model/build.py` |
+| `tools/repo_hygiene.py` |
 | `tools/semantic_docgraph.py` |
 | `tools/specs/build_capability_matrix.py` |
 | `tools/specs/build_donor_registry.py` |
@@ -200,7 +201,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**122** modules are imported by neither production nor tests.
+**123** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -319,6 +320,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/fixtures/extraction/_generate.py` |
 | `conftest.py` |
 | `platform_model/facts.py` |
+| `tools/__init__.py` |
 | `tools/append_zero_frontend_a.py` |
 | `tools/append_zero_frontend_b.py` |
 | `tools/append_zero_inventory.py` |

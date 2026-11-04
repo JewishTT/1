@@ -1,6 +1,6 @@
 # Tests
 
-354 test files, 5389 test functions. 273 platform modules are not targeted by any test.
+359 test files, 5400 test functions. 274 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -84,9 +84,12 @@
 | `apps/control-plane/tests/integration/test_tenancy.py` | 6 | `apps/shared/isolation.py` |
 | `apps/control-plane/tests/integration/test_tools_api.py` | 8 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/tests/test_auth_security.py` | 6 | `apps/control-plane/api/auth.py` |
+| `apps/control-plane/tests/test_metrics_honesty.py` | 2 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py` |
+| `apps/control-plane/tests/test_quarantine_api.py` | 2 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py` |
 | `apps/control-plane/tests/test_research_case_invariants.py` | 11 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/person_case_profile.py` |
 | `apps/control-plane/tests/test_research_case_projection.py` | 6 | `apps/control-plane/services/research_case_projection.py` |
 | `apps/control-plane/tests/test_research_case_reports.py` | 5 | `apps/control-plane/services/research_case_artifacts.py`, `apps/control-plane/services/research_case_reports.py`, `apps/shared/contracts/evidence_span.py` |
+| `apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/specops/roe/gate.py` |
 | `apps/control-plane/tests/test_zero_layer_service.py` | 3 | `apps/control-plane/services/zero_layer.py` |
 | `apps/control-plane/tests/unit/test_action_memory.py` | 19 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/contracts/stage_outcome.py` |
 | `apps/control-plane/tests/unit/test_approval_gate.py` | 7 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/loop.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/domain/investigation_context.py` |
@@ -138,6 +141,7 @@
 | `apps/control-plane/tests/unit/test_tool_catalog.py` | 8 | `apps/control-plane/services/tool_catalog.py` |
 | `apps/control-plane/tests/unit/test_us1_core.py` | 15 | `apps/control-plane/cp_domain/investigation.py`, `apps/control-plane/cp_domain/policy.py`, `apps/control-plane/services/policy_service.py`, `apps/control-plane/services/source_registry.py` |
 | `apps/control-plane/tests/unit/test_us3_ops.py` | 7 | `apps/control-plane/services/audit.py`, `apps/control-plane/services/worker_pools.py` |
+| `apps/control-plane/tests/unit/test_wheel_package_manifest.py` | 1 | — |
 | `apps/control-plane/tests/unit/test_workflows.py` | 16 | `apps/control-plane/services/__init__.py`, `apps/control-plane/workflows/__init__.py`, `apps/control-plane/workflows/investigation.py`, `apps/control-plane/workflows/temporal_materialization.py` |
 | `apps/feedback/tests/test_branches.py` | 10 | `apps/feedback/feedback/__init__.py`, `apps/feedback/feedback/branch/entity.py`, `apps/feedback/feedback/branch/finding.py`, `apps/feedback/feedback/branch/source.py` |
 | `apps/feedback/tests/test_feedback.py` | 8 | `apps/feedback/feedback_engine.py`, `apps/feedback/stopping.py` |
@@ -362,6 +366,7 @@
 | `implementation/tests/test_contract_files.py` | 4 | — |
 | `implementation/tests/test_person_case_lark.py` | 2 | — |
 | `specs/021-entity-relation-extraction-finalization/repair/tools/test_reference_check.py` | 200 | — |
+| `tools/tests/test_repo_hygiene.py` | 2 | `tools/repo_hygiene.py` |
 
 ## Platform modules not targeted by any test (sample)
 
