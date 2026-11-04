@@ -99,12 +99,15 @@ def test_dispatch_shape_is_discovery_only_and_keeps_tenant_scope() -> None:
         plan_id=plan.plan_id,
         context=context,
         context_digest=plan.context_digest,
+        source_id="SRC-searxng-catalogue",
+        source_name="searxng_public_search",
     )
 
     assert task["tenant_id"] == "tenant-1"
     assert task["case_id"] == "case-1"
     assert task["runtime_ref"] == "searxng"
-    assert task["source_id"] == "searxng.search"
+    assert task["source_id"] == "SRC-searxng-catalogue"
+    assert task["source_name"] == "searxng_public_search"
     assert task["result_role"] == "DISCOVERY_ONLY"
     assert task["required_capabilities"] == ["search", "json-output", "paged"]
     assert {item["kind"] for item in task["constraints"]} >= {
@@ -180,7 +183,7 @@ def test_direct_contact_and_credential_material_is_rejected() -> None:
 def test_plan_is_explicitly_not_dispatched_or_admitted() -> None:
     context = _context()
     plan = ContextDiscoveryCompiler().compile(context)
-    rendered = plan.as_dict(context=context)
+    rendered = plan.as_dict(context=context, source_id="SRC-searxng-catalogue", source_name="searxng_public_search")
 
     assert rendered["status"] == "PLANNED_NOT_DISPATCHED"
     assert rendered["guarantees"]["results_are_unverified_leads"] is True
