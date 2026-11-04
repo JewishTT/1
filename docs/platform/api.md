@@ -18,6 +18,12 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 | POST | `/run` | 307 |
 | POST | `/harvest` | 462 |
 
+## `discovery_strategy` — `apps/control-plane/api/routes/discovery_strategy.py`
+
+| Method | Path | Line |
+|---|---|---|
+| POST | `/plan` | 48 |
+
 ## `dossier` — `apps/control-plane/api/routes/dossier.py`
 
 | Method | Path | Line |

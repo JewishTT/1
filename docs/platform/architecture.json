@@ -130,6 +130,9 @@
           "apps/acquisition/case_execution_guard.py",
           "apps/acquisition/cc_extract.py",
           "apps/acquisition/cc_plan.py",
+          "apps/acquisition/context_discovery/__init__.py",
+          "apps/acquisition/context_discovery/compiler.py",
+          "apps/acquisition/context_discovery/models.py",
           "apps/acquisition/dispatcher/__init__.py",
           "apps/acquisition/dispatcher/kafka_producer.py",
           "apps/acquisition/dispatcher/plan_driver.py",
@@ -177,6 +180,7 @@
           "apps/acquisition/tests/unit/test_cc_extract.py",
           "apps/acquisition/tests/unit/test_cc_index.py",
           "apps/acquisition/tests/unit/test_cc_plan.py",
+          "apps/acquisition/tests/unit/test_context_discovery.py",
           "apps/acquisition/tests/unit/test_discovery_registry.py",
           "apps/acquisition/tests/unit/test_engine_adapters.py",
           "apps/acquisition/tests/unit/test_entity_search.py",
@@ -245,7 +249,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 156
+        "module_count": 160
       },
       {
         "id": "interpretation",
@@ -852,6 +856,7 @@
           "apps/control-plane/api/routes/__init__.py",
           "apps/control-plane/api/routes/connectors.py",
           "apps/control-plane/api/routes/discovery.py",
+          "apps/control-plane/api/routes/discovery_strategy.py",
           "apps/control-plane/api/routes/dossier.py",
           "apps/control-plane/api/routes/fabric.py",
           "apps/control-plane/api/routes/findings.py",
@@ -1147,7 +1152,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 302
+        "module_count": 303
       },
       {
         "id": "webapp",

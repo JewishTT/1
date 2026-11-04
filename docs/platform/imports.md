@@ -1,6 +1,6 @@
 # Import graph
 
-1031 Python modules, 2940 resolved local edges.
+1036 Python modules, 2949 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,27 +10,27 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 901 |
-| `dataclasses` | stdlib | 394 |
-| `typing` | stdlib | 373 |
-| `pathlib` | stdlib | 323 |
-| `pytest` | third-party | 275 |
-| `sys` | stdlib | 261 |
-| `collections` | stdlib | 247 |
-| `json` | stdlib | 203 |
-| `datetime` | stdlib | 197 |
-| `sqlalchemy` | third-party | 161 |
-| `hashlib` | stdlib | 133 |
-| `enum` | stdlib | 118 |
-| `re` | stdlib | 100 |
+| `__future__` | stdlib | 905 |
+| `dataclasses` | stdlib | 396 |
+| `typing` | stdlib | 376 |
+| `pathlib` | stdlib | 324 |
+| `pytest` | third-party | 276 |
+| `sys` | stdlib | 262 |
+| `collections` | stdlib | 248 |
+| `json` | stdlib | 204 |
+| `datetime` | stdlib | 198 |
+| `sqlalchemy` | third-party | 162 |
+| `hashlib` | stdlib | 134 |
+| `enum` | stdlib | 119 |
+| `re` | stdlib | 102 |
 | `asyncio` | stdlib | 76 |
 | `os` | stdlib | 74 |
-| `fastapi` | third-party | 67 |
+| `fastapi` | third-party | 68 |
 | `urllib` | stdlib | 59 |
 | `uuid` | stdlib | 49 |
 | `math` | stdlib | 41 |
 | `types` | stdlib | 36 |
-| `pydantic` | third-party | 34 |
+| `pydantic` | third-party | 35 |
 | `importlib` | stdlib | 33 |
 | `time` | stdlib | 33 |
 | `ast` | stdlib | 27 |
@@ -94,6 +94,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `composition` | `apps/control-plane/composition.py` |
 | `config` | `apps/shared/config/__init__.py` |
 | `context` | `apps/science/context/__init__.py` |
+| `context_discovery` | `apps/acquisition/context_discovery/__init__.py` |
 | `context_engine` | `apps/control-plane/context_engine/__init__.py` |
 | `contracts` | `apps/shared/contracts/__init__.py` |
 | `cp_domain` | `apps/control-plane/cp_domain/__init__.py` |

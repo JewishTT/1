@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4545,
-    "static_facts": 4251,
+    "facts_total": 4556,
+    "static_facts": 4262,
     "inferred": 294,
     "intended": 0
   },
@@ -2200,6 +2200,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "da68241bd1481246",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/context_discovery/__init__.py",
+      "object": "apps/acquisition/context_discovery/compiler.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/context_discovery/__init__.py",
+        "via": "compiler"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "614b4c5135e0245b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/context_discovery/__init__.py",
+      "object": "apps/acquisition/context_discovery/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/context_discovery/__init__.py",
+        "via": "models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a4858fae443dd62d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/context_discovery/compiler.py",
+      "object": "apps/acquisition/context_discovery/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/context_discovery/compiler.py",
+        "via": "models"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "fae8d0e497e8afda",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/dispatcher/__init__.py",
@@ -4228,6 +4267,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "95b26b829facef97",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_context_discovery.py",
+      "object": "apps/acquisition/context_discovery/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_context_discovery.py",
+        "via": "context_discovery"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "412e05590a6cd163",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/tests/unit/test_discovery_registry.py",
@@ -6152,6 +6204,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "4a8d7e52a8687bbf",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/main.py",
+      "object": "apps/control-plane/api/routes/discovery_strategy.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/main.py",
+        "via": "api.routes.discovery_strategy"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "2a48f74910f5d8a8",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/main.py",
@@ -6967,6 +7032,58 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/discovery.py",
         "via": "zero.type_detector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f9d3d9a8181b93e2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/acquisition/context_discovery/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "context_discovery"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "42ef28c7f6b22c26",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5a3f64d76dc0a158",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d0fb85a4477286de",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/control-plane/db/session.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "db.session"
       },
       "confidence": 1.0
     },
@@ -40745,6 +40862,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "39cd90faaa982683",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /plan",
+      "object": "apps/control-plane/api/routes/discovery_strategy.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "line": 50
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "7783916fea14668c",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /plan",
@@ -46775,6 +46905,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_cc_plan.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fe05f9f4affd20f0",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_context_discovery.py",
+      "object": "apps/acquisition/context_discovery/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_context_discovery.py"
       },
       "confidence": 1.0
     },
