@@ -104,7 +104,7 @@ class PostgresAcquisitionEvidenceWriter:
             async with self._session_factory() as session:
                 async with session.begin():
                     await session.execute(text("""
-                        INSERT INTO captures (
+                        INSERT INTO public.captures (
                             capture_id, tenant_id, source_id, source_family, target_uri,
                             locator, content_digest, content_length, media_type, fetched_at,
                             capture_time_basis, transport, ingest_batch_id, ingest_attempt,
@@ -118,7 +118,7 @@ class PostgresAcquisitionEvidenceWriter:
                     """), capture_values)
                     result = await session.execute(text("""
                         SELECT capture_id, capture_fingerprint, content_digest
-                        FROM captures
+                        FROM public.captures
                         WHERE tenant_id = :tenant_id
                           AND (capture_id = :capture_id OR capture_fingerprint = :capture_fingerprint)
                         ORDER BY CASE WHEN capture_id = :capture_id THEN 0 ELSE 1 END
@@ -136,7 +136,7 @@ class PostgresAcquisitionEvidenceWriter:
                         raise EvidenceWriteError("capture row missing or collides with immutable evidence")
 
                     await session.execute(text("""
-                        INSERT INTO observations (
+                        INSERT INTO public.observations (
                             observation_id, tenant_id, investigation_id, source_id, task_id,
                             uri, raw_ref, content_hash, content_type, status, duplicate, provenance
                         ) VALUES (
@@ -150,7 +150,7 @@ class PostgresAcquisitionEvidenceWriter:
                     })
                     result = await session.execute(text("""
                         SELECT tenant_id, task_id, raw_ref, content_hash, provenance
-                        FROM observations WHERE observation_id = :observation_id
+                        FROM public.observations WHERE observation_id = :observation_id
                     """), {"observation_id": observation_id})
                     stored_observation = result.mappings().first()
                     if stored_observation is None:
