@@ -22,11 +22,11 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1044 / 267 / 16 |
+| Python / TypeScript / Rust modules | 1046 / 267 / 16 |
 | HTTP routes | 186 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 359 / 5400 |
+| Test files / functions | 361 / 5403 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -62,7 +62,7 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 248 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 250 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
 | `interpretation` | 115 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
@@ -109,7 +109,7 @@ cd apps/webapp && npm test                        # UI suite
 
 Machine-checked: each row is verified against the tree by a contract test.
 
-Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; `pytest apps/shared/tests/contract/test_platform_gaps.py` fails if any open gap's evidence stops holding. **7** open gaps.
+Every row is a claim in `platform_model/gaps.py` tied to re-checkable evidence; `pytest apps/shared/tests/contract/test_platform_gaps.py` fails if any open gap's evidence stops holding. **6** open gaps.
 
 ### Layer 0 — collection
 

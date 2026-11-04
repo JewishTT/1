@@ -1,6 +1,6 @@
 # Tests
 
-359 test files, 5400 test functions. 274 platform modules are not targeted by any test.
+361 test files, 5403 test functions. 274 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -120,6 +120,7 @@
 | `apps/control-plane/tests/unit/test_monitor.py` | 11 | `apps/control-plane/cp_domain/investigation.py` |
 | `apps/control-plane/tests/unit/test_network_analytics.py` | 10 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/tests/unit/test_ontology_registry.py` | 9 | `apps/shared/domain/ontology.py` |
+| `apps/control-plane/tests/unit/test_operational_schema_ownership.py` | 1 | — |
 | `apps/control-plane/tests/unit/test_postgres_context_store.py` | 7 | `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/postgres_store.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/domain/investigation_context.py` |
 | `apps/control-plane/tests/unit/test_producer_binding_golden_path.py` | 4 | `apps/control-plane/semantic_path/execution.py`, `apps/interpretation/extractors/signals/lexical.py`, `apps/interpretation/extractors/signals/metadata.py`, `apps/shared/domain/capture.py` |
 | `apps/control-plane/tests/unit/test_query_degradation.py` | 17 | `apps/control-plane/services/query_planner.py` |
@@ -136,6 +137,7 @@
 | `apps/control-plane/tests/unit/test_series_lifecycle.py` | 10 | `apps/control-plane/services/series_lifecycle.py` |
 | `apps/control-plane/tests/unit/test_source_query_store.py` | 7 | `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/source_query_store.py` |
 | `apps/control-plane/tests/unit/test_sse_stream.py` | 8 | `apps/control-plane/api/main.py`, `apps/control-plane/api/sse.py` |
+| `apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py` | 2 | `apps/control-plane/services/__init__.py` |
 | `apps/control-plane/tests/unit/test_temporal_materialization_persistence.py` | 9 | `apps/control-plane/db/materialization_cursor.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/temporal_materialization.py`, `apps/shared/domain/dynamics.py` |
 | `apps/control-plane/tests/unit/test_temporal_port.py` | 7 | `apps/control-plane/services/temporal_port.py` |
 | `apps/control-plane/tests/unit/test_tool_catalog.py` | 8 | `apps/control-plane/services/tool_catalog.py` |

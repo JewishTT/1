@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4579,
-    "static_facts": 4285,
+    "facts_total": 4581,
+    "static_facts": 4287,
     "inferred": 294,
     "intended": 0
   },
@@ -19135,6 +19135,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_sse_stream.py",
         "via": "api.sse"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a4501b39aaba3338",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+      "object": "apps/control-plane/services/temporal_materialization_dispatch.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "via": "services.temporal_materialization_dispatch"
       },
       "confidence": 1.0
     },
@@ -50794,6 +50807,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_sse_stream.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "659421c713dc88ad",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+      "object": "apps/control-plane/services/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py"
       },
       "confidence": 1.0
     },

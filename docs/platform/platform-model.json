@@ -217,7 +217,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 248,
+      "python_modules": 250,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -1148,14 +1148,14 @@
     }
   ],
   "import_graph": {
-    "module_count": 1044,
-    "edge_count": 2962,
+    "module_count": 1046,
+    "edge_count": 2963,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 912,
+      "stdlib:__future__": 914,
       "stdlib:abc": 3,
       "stdlib:argparse": 21,
-      "stdlib:ast": 27,
+      "stdlib:ast": 28,
       "stdlib:asyncio": 76,
       "stdlib:base64": 9,
       "stdlib:binascii": 2,
@@ -1188,7 +1188,7 @@
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 74,
-      "stdlib:pathlib": 327,
+      "stdlib:pathlib": 328,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 103,
@@ -1253,7 +1253,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 280,
+      "third-party:pytest": 281,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -8306,6 +8306,11 @@
         "from": "apps/control-plane/tests/unit/test_sse_stream.py",
         "to": "apps/control-plane/api/sse.py",
         "via": "api.sse"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "to": "apps/control-plane/services/temporal_materialization_dispatch.py",
+        "via": "services.temporal_materialization_dispatch"
       },
       {
         "from": "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
@@ -18696,6 +18701,14 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+        "tests": 1,
+        "test_names": [
+          "test_operational_python_does_not_call_create_all_or_create_tables"
+        ],
+        "targets": []
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_postgres_context_store.py",
         "tests": 7,
         "test_names": [
@@ -18964,6 +18977,17 @@
         "targets": [
           "apps/control-plane/api/main.py",
           "apps/control-plane/api/sse.py"
+        ]
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "tests": 2,
+        "test_names": [
+          "test_temporal_launch_fails_closed_when_outbox_cannot_be_committed",
+          "test_temporal_launch_identity_is_idempotent_across_retries"
+        ],
+        "targets": [
+          "apps/control-plane/services/__init__.py"
         ]
       },
       {
@@ -24692,7 +24716,7 @@
         ]
       }
     ],
-    "total": 5400
+    "total": 5403
   },
   "contracts": {
     "python": [
@@ -31117,6 +31141,7 @@
             "apps/control-plane/tests/unit/test_monitor.py",
             "apps/control-plane/tests/unit/test_network_analytics.py",
             "apps/control-plane/tests/unit/test_ontology_registry.py",
+            "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
             "apps/control-plane/tests/unit/test_postgres_context_store.py",
             "apps/control-plane/tests/unit/test_producer_binding_golden_path.py",
             "apps/control-plane/tests/unit/test_query_degradation.py",
@@ -31133,6 +31158,7 @@
             "apps/control-plane/tests/unit/test_series_lifecycle.py",
             "apps/control-plane/tests/unit/test_source_query_store.py",
             "apps/control-plane/tests/unit/test_sse_stream.py",
+            "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
             "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
             "apps/control-plane/tests/unit/test_temporal_port.py",
             "apps/control-plane/tests/unit/test_tool_catalog.py",
@@ -31213,7 +31239,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 307
+          "module_count": 309
         },
         {
           "id": "webapp",
@@ -31663,6 +31689,7 @@
         "datetime.now",
         "db.example",
         "db.schema",
+        "db.session",
         "dc.creator",
         "dc.description",
         "dc.publisher",
@@ -31692,8 +31719,7 @@
         "enable.auto.commit",
         "enable.auto.offset.store",
         "enable.idempotence",
-        "engine.py",
-        "entities.entity_id"
+        "engine.py"
       ]
     },
     "context_map": {
@@ -35612,7 +35638,7 @@
       {
         "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
         "status": "IMPLEMENTED",
-        "loc": 100,
+        "loc": 111,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -36254,6 +36280,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+        "status": "TEST",
+        "loc": 34,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_postgres_context_store.py",
         "status": "TEST",
         "loc": 203,
@@ -36393,6 +36428,15 @@
         "status": "TEST",
         "loc": 146,
         "callables": 10,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "status": "TEST",
+        "loc": 52,
+        "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -42371,9 +42415,9 @@
       "IMPLEMENTED": 558,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 93,
-      "TEST": 356,
+      "TEST": 358,
       "MIGRATION": 19,
-      "total": 1044
+      "total": 1046
     }
   },
   "reachability": {
@@ -43863,6 +43907,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_postgres_context_store.py",
         "status": "TEST"
       },
@@ -43924,6 +43972,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_sse_stream.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
         "status": "TEST"
       },
       {
@@ -46603,8 +46655,8 @@
       "PRODUCTION": 431,
       "TEST_ONLY": 134,
       "ORPHAN": 123,
-      "TEST": 356,
-      "total": 1044
+      "TEST": 358,
+      "total": 1046
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -46952,13 +47004,13 @@
             "min_count": 1
           }
         ],
-        "status": "OPEN",
+        "status": "RESOLVED",
         "checks": [
           {
             "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
-            "ok": true,
-            "reason": "ok",
-            "count": 1
+            "ok": false,
+            "reason": "evidence-mismatch",
+            "count": 0
           }
         ]
       },
@@ -47342,8 +47394,8 @@
         ]
       }
     ],
-    "open": 7,
-    "stale_or_resolved": 0
+    "open": 6,
+    "stale_or_resolved": 1
   },
   "golden_path": {
     "goal": "Full person-background analysis: Layer 0 (broad, efficient collection over Kafka + lakehouse + sources) -> Layer 1 (extraction, merge, resolution, normalization of entity-artifacts and entity-invariants, plus relation extraction) -> Layer 2 (full context engine), grounded in the platform philosophy (event-driven, evidence-first, immutable observations, rebuildable projections, no fabrication).",
@@ -67618,6 +67670,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_sse_stream.py",
           "via": "api.sse"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a4501b39aaba3338",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "object": "apps/control-plane/services/temporal_materialization_dispatch.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+          "via": "services.temporal_materialization_dispatch"
         },
         "confidence": 1.0
       },
@@ -99281,6 +99346,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "659421c713dc88ad",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "object": "apps/control-plane/services/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "7bed6661f8b2a12f",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
@@ -106626,27 +106703,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4579,
-      "static_facts": 4285,
+      "facts_total": 4581,
+      "static_facts": 4287,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1044,
+    "python_modules": 1046,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2962,
-    "test_files": 359,
-    "test_functions": 5400,
+    "import_edges": 2963,
+    "test_files": 361,
+    "test_functions": 5403,
     "untested_modules": 274,
     "http_routes": 186
   },
   "evidence_stats": {
-    "facts_total": 4579,
-    "static_facts": 4285,
+    "facts_total": 4581,
+    "static_facts": 4287,
     "inferred": 294,
     "intended": 0
   },
@@ -106654,16 +106731,16 @@
     "IMPLEMENTED": 558,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 93,
-    "TEST": 356,
+    "TEST": 358,
     "MIGRATION": 19,
-    "total": 1044
+    "total": 1046
   },
   "reachability_summary": {
     "PRODUCTION": 431,
     "TEST_ONLY": 134,
     "ORPHAN": 123,
-    "TEST": 356,
-    "total": 1044
+    "TEST": 358,
+    "total": 1046
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -107015,7 +107092,7 @@
       "zero_layer.enrichment"
     ]
   },
-  "gaps_open": 7,
+  "gaps_open": 6,
   "rust": {
     "count": 16,
     "crates": [
