@@ -173,6 +173,35 @@ class ObjectStore:
                 raise
             return await response["Body"].read()
 
+    async def list_objects_page(
+        self,
+        prefix: str,
+        *,
+        limit: int = 100,
+        continuation_token: str | None = None,
+    ) -> tuple[list[str], str | None]:
+        """List one bounded page of keys and return the opaque S3 continuation token."""
+        if not 1 <= int(limit) <= 1000:
+            raise ValueError("S3 page limit must be between 1 and 1000")
+        request: dict[str, object] = {
+            "Bucket": self.raw_bucket,
+            "Prefix": prefix,
+            "MaxKeys": int(limit),
+        }
+        if continuation_token:
+            request["ContinuationToken"] = continuation_token
+        async with self._s3() as s3:
+            response = await s3.list_objects_v2(**request)
+        keys = [
+            str(item["Key"])
+            for item in response.get("Contents", [])
+            if "Key" in item
+        ]
+        next_token = response.get("NextContinuationToken") if response.get("IsTruncated") else None
+        if response.get("IsTruncated") and not next_token:
+            raise RuntimeError("S3 returned a truncated listing without a continuation token")
+        return keys, str(next_token) if next_token else None
+
     async def list_objects(self, prefix: str) -> list[str]:
         """List every key under a prefix, following S3 continuation tokens."""
         keys: list[str] = []

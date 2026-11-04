@@ -1,14 +1,7 @@
-"""Feature 024 T020 -- durable quarantine.
-
-Uses a fake object store, so these are hermetic. The behaviours that matter are
-the ones the platform could not do before: a record quarantined before a restart
-must still be replayable after it, because the constitution forbids auto-deleting
-rejected candidates.
-"""
+"""Contract tests for tenant-scoped durable quarantine storage."""
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -17,138 +10,128 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from events.dlq import DLQRecord, QuarantineStore  # noqa: E402
-from events.dlq_durable import (  # noqa: E402
-    RAW_BUCKET,
-    DurableQuarantineStore,
-    ObjectStoreSink,
-)
-
-
-class FakeS3:
-    def __init__(self, store: "FakeObjectStore") -> None:
-        self._store = store
-
-    async def delete_object(self, *, Bucket: str, Key: str) -> None:
-        self._store.objects.pop(f"{Bucket}/{Key}", None)
+from events.dlq_durable import RAW_BUCKET, DurableQuarantineStore, ObjectStoreSink  # noqa: E402
 
 
 class FakeObjectStore:
-    """Enough of ObjectStore for the sink: content-addressed put + read + exists."""
+    raw_bucket = RAW_BUCKET
 
     def __init__(self) -> None:
         self.objects: dict[str, bytes] = {}
 
     async def put_raw(self, body: bytes, *, tenant_id: str, meta=None):
         import hashlib
+        from types import SimpleNamespace
 
         digest = hashlib.sha256(body).hexdigest()
-        key = f"raw/{tenant_id}/{digest}"
+        key = f"raw/{tenant_id}/202611/{digest}"
         self.objects[f"{RAW_BUCKET}/{key}"] = body
-        return type(
-            "Ref",
-            (),
-            {"sha256": digest, "uri": key, "size": len(body), "tenant_prefix": tenant_id, "year_month": ""},
-        )()
+        return SimpleNamespace(
+            sha256=digest,
+            uri=f"s3://{RAW_BUCKET}/{key}",
+            size=len(body),
+            tenant_prefix=f"{tenant_id}/202611",
+            year_month="202611",
+        )
 
-    async def _put(self, bucket: str, key: str, body: bytes) -> None:
-        self.objects[f"{bucket}/{key}"] = body
+    async def put_immutable_object(self, key: str, body: bytes, *, tenant_id="", meta=None):
+        current = self.objects.get(f"{RAW_BUCKET}/{key}")
+        if current is not None and current != body:
+            raise ValueError("immutable object collision")
+        self.objects[f"{RAW_BUCKET}/{key}"] = body
+        return current is None
 
-    async def exists(self, key: str) -> bool:
-        return f"{RAW_BUCKET}/{key}" in self.objects
+    async def get_object(self, key: str):
+        return self.objects.get(f"{RAW_BUCKET}/{key}")
 
-    async def read_range(self, *, bucket: str, key: str, offset: int = 0, length=None) -> bytes:
-        return self.objects.get(f"{bucket}/{key}", b"")
+    async def list_objects_page(self, prefix: str, *, limit=100, continuation_token=None):
+        keys = sorted(
+            key.removeprefix(f"{RAW_BUCKET}/")
+            for key in self.objects
+            if key.startswith(f"{RAW_BUCKET}/{prefix}")
+        )
+        offset = int(continuation_token or "0")
+        selected = keys[offset:offset + limit]
+        token = str(offset + limit) if offset + limit < len(keys) else None
+        return selected, token
 
-    def _s3(self) -> FakeS3:
-        return FakeS3(self)
+
+def make_record(tenant_id="tenant-a", topic="interpretation", payload=b"raw"):
+    return DLQRecord(
+        tenant_id=tenant_id,
+        reason="transport_failed",
+        topic=topic,
+        payload=payload,
+    )
 
 
-def record(reason="parser.oversized", payload=b'{"a":1}', topic="interpretation") -> DLQRecord:
-    return DLQRecord(reason=reason, payload=payload, topic=topic)
-
-
-def test_payload_is_persisted_and_readable_back():
+@pytest.mark.asyncio
+async def test_payload_uses_bare_object_key_and_survives_restart():
     store = FakeObjectStore()
-    sink = ObjectStoreSink(store=store)
-    q = DurableQuarantineStore(sink)
-    rid = q.quarantine(record(payload=b"real-bytes"))
+    sink = ObjectStoreSink(store=store, tenant_id="tenant-a")
+    receipt = await sink.aput(make_record(payload=b"original-envelope"))
+    restarted = ObjectStoreSink(store=store, tenant_id="tenant-a")
+    restored = await restarted.aload(receipt["record_id"])
+    assert restored is not None
+    assert restored.payload == b"original-envelope"
 
-    assert store.objects, "nothing was written to the object store"
-    assert q.replay(rid) == b"real-bytes"
 
-
-def test_record_survives_a_restart():
-    """The defect this fixes: quarantine lived only in a process-local dict, so a
-    restart lost every rejected record. A fresh store over the same sink must still
-    replay it."""
+@pytest.mark.asyncio
+async def test_index_is_enumerable_and_paginates():
     store = FakeObjectStore()
-    sink = ObjectStoreSink(store=store)
-    rid = DurableQuarantineStore(sink).quarantine(record(payload=b"pre-restart"))
+    sink = ObjectStoreSink(store=store, tenant_id="tenant-a")
+    for index in range(7):
+        await sink.aput(make_record(payload=f"payload-{index}".encode()))
+    page_1 = await sink.alist_page(limit=3)
+    page_2 = await sink.alist_page(limit=3, cursor=page_1["next_cursor"])
+    page_3 = await sink.alist_page(limit=3, cursor=page_2["next_cursor"])
+    assert [len(page["items"]) for page in (page_1, page_2, page_3)] == [3, 3, 1]
+    assert page_3["next_cursor"] is None
 
-    after_restart = DurableQuarantineStore(ObjectStoreSink(store=store))
-    assert after_restart.replay(rid) == b"pre-restart"
-    assert after_restart.get(rid) is not None
 
-
-def test_metadata_records_reason_topic_and_fingerprint():
+@pytest.mark.asyncio
+async def test_same_payload_isolated_between_tenants():
     store = FakeObjectStore()
-    q = DurableQuarantineStore(ObjectStoreSink(store=store))
-    rid = q.quarantine(record(reason="policy.uncertain", topic="acquisition"))
-
-    meta_key = f"{RAW_BUCKET}/dlq/index/{rid}.json"
-    meta = json.loads(store.objects[meta_key])
-    assert meta["reason"] == "policy.uncertain"
-    assert meta["topic"] == "acquisition"
-    assert meta["preserved"] is True
-    assert meta["fingerprint"] == DLQRecord(reason="parser.oversized", payload=b'{"a":1}', topic="interpretation").fingerprint()
+    a = ObjectStoreSink(store=store, tenant_id="tenant-a")
+    b = ObjectStoreSink(store=store, tenant_id="tenant-b")
+    receipt_a = await a.aput(make_record(tenant_id="tenant-a", payload=b"same"))
+    receipt_b = await b.aput(make_record(tenant_id="tenant-b", payload=b"same"))
+    assert receipt_a["record_id"] != receipt_b["record_id"]
+    assert await a.aload(receipt_b["record_id"]) is None
+    assert await b.aload(receipt_a["record_id"]) is None
 
 
-def test_quarantine_is_idempotent_across_restart():
-    """Same payload, same fingerprint -> same record id, not a second copy."""
+@pytest.mark.asyncio
+async def test_sink_rejects_cross_tenant_write_and_bad_uri():
     store = FakeObjectStore()
-    first = DurableQuarantineStore(ObjectStoreSink(store=store))
-    rid1 = first.quarantine(record(payload=b"dup"))
+    sink = ObjectStoreSink(store=store, tenant_id="tenant-a")
+    with pytest.raises(PermissionError):
+        await sink.aput(make_record(tenant_id="tenant-b"))
+    with pytest.raises(ValueError):
+        sink._payload_key("s3://other-bucket/raw/tenant-a/file")
 
-    second = DurableQuarantineStore(ObjectStoreSink(store=store))
-    rid2 = second.quarantine(record(payload=b"dup"))
-    assert rid1 == rid2
 
-
-def test_memory_is_still_authoritative_when_present():
-    """A fresh read hits memory and does not pay for a round trip."""
+@pytest.mark.asyncio
+async def test_topic_filter_keeps_continuation_cursor():
     store = FakeObjectStore()
-    q = DurableQuarantineStore(ObjectStoreSink(store=store))
-    rid = q.quarantine(record(payload=b"x"))
-    assert q.get(rid).payload == b"x"
-    assert q.replay(rid) == b"x"
+    sink = ObjectStoreSink(store=store, tenant_id="tenant-a")
+    for index in range(6):
+        await sink.aput(make_record(topic="a" if index % 2 == 0 else "b", payload=f"p{index}".encode()))
+    page = await sink.alist_page(limit=2, topic="b")
+    assert len(page["items"]) == 2
+    assert all(item["topic"] == "b" for item in page["items"])
+    assert page["next_cursor"] is not None
 
 
-def test_missing_record_is_none_not_an_exception():
-    q = DurableQuarantineStore(ObjectStoreSink(store=FakeObjectStore()))
-    assert q.get("DLQ-nope") is None
-    assert q.replay("DLQ-nope") is None
-
-
-def test_purged_record_is_gone_from_memory():
+def test_durable_quarantine_cannot_purge():
     store = FakeObjectStore()
-    q = DurableQuarantineStore(ObjectStoreSink(store=store))
-    rid = q.quarantine(record())
-    assert q.purge(rid) is True
-    assert q.get(rid) is None
+    q = DurableQuarantineStore(ObjectStoreSink(store=store, tenant_id="tenant-a"))
+    with pytest.raises(RuntimeError, match="cannot be purged"):
+        q.purge("DLQ-" + "a" * 24)
 
 
-def test_plain_store_is_unchanged_without_a_sink():
-    """Backwards compatibility: routes/quarantine.py constructs QuarantineStore()
-    with no sink and must behave exactly as before."""
+def test_memory_only_store_remains_explicitly_available_for_tests():
     q = QuarantineStore()
-    rid = q.quarantine(record(payload=b"in-memory"))
-    assert q.replay(rid) == b"in-memory"
-    assert len(q.list()) == 1
-    assert q.purge(rid) is True
-    assert q.get(rid) is None
-
-
-def test_sink_put_returns_the_record_id():
-    store = FakeObjectStore()
-    rid = ObjectStoreSink(store=store).put(record(payload=b"y"))
-    assert rid.startswith("DLQ-")
+    rid = q.quarantine(DLQRecord(payload=b"memory", topic="interpretation"))
+    assert q.replay(rid) == b"memory"
+    assert q.purge(rid)

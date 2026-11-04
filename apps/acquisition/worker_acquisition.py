@@ -52,6 +52,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import os
 from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
