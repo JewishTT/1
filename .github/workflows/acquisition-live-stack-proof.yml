@@ -195,14 +195,26 @@ jobs:
       - name: Assert canonical Capture / Observation tables are installed in public
         run: |
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT current_database() AS database_name,
+                 current_user AS database_role,
+                 current_schema() AS current_schema,
+                 current_schemas(true) AS effective_schemas,
+                 current_setting('search_path') AS search_path;
+          SELECT n.nspname AS schema_name, c.relname AS table_name
+          FROM pg_class AS c
+          JOIN pg_namespace AS n ON n.oid = c.relnamespace
+          WHERE c.relkind IN ('r', 'p')
+            AND c.relname IN (
+              'captures', 'ingest_batches', 'data_stream', 'entity_identity',
+              'resolution_decision', 'semantic_regime', 'observations', 'alembic_version'
+            )
+          ORDER BY n.nspname, c.relname;
           SELECT CASE
             WHEN to_regclass('public.captures') IS NOT NULL
              AND to_regclass('public.observations') IS NOT NULL
             THEN 'canonical_evidence_tables_present'
-            ELSE (1 / 0)::text
+            ELSE 'CANONICAL_EVIDENCE_TABLES_MISSING'
           END AS migration_schema_assertion;
-          SELECT current_database(), current_schema(), current_setting('search_path'),
-                 to_regclass('public.captures'), to_regclass('public.observations');
           SQL
       - name: Seed a controlled Postgres connector fixture
         run: |
