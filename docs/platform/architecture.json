@@ -189,6 +189,7 @@
           "apps/acquisition/tests/unit/test_region_backpressure.py",
           "apps/acquisition/tests/unit/test_render_pipeline.py",
           "apps/acquisition/tests/unit/test_replay_journal.py",
+          "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
           "apps/acquisition/tests/unit/test_source_catalogue_full.py",
           "apps/acquisition/tests/unit/test_source_executor_contracts.py",
           "apps/acquisition/tests/unit/test_source_query_set.py",
@@ -249,7 +250,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 160
+        "module_count": 161
       },
       {
         "id": "interpretation",

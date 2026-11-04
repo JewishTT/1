@@ -9,19 +9,19 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python modules | 1036 |
+| Python modules | 1037 |
 | TypeScript modules | 267 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 2949 |
+| Import edges (local) | 2956 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 353 |
-| Test functions | 5387 |
+| Test files | 354 |
+| Test functions | 5389 |
 | Untested platform modules | 273 |
 | HTTP routes | 186 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
@@ -48,7 +48,7 @@ committed model no longer matches the tree.
 
 | Component | Python | TS | Description |
 |---|---|---|---|
-| acquisition | 114 | 0 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
+| acquisition | 115 | 0 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |

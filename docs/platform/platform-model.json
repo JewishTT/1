@@ -18,7 +18,7 @@
     {
       "name": "acquisition",
       "description": "Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.",
-      "python_modules": 114,
+      "python_modules": 115,
       "typescript_modules": 0,
       "modules": [
         "apps.acquisition._measure_coverage",
@@ -122,6 +122,7 @@
         "apps.acquisition.tests.unit.test_region_backpressure",
         "apps.acquisition.tests.unit.test_render_pipeline",
         "apps.acquisition.tests.unit.test_replay_journal",
+        "apps.acquisition.tests.unit.test_runtime_artifact_sink",
         "apps.acquisition.tests.unit.test_source_catalogue_full",
         "apps.acquisition.tests.unit.test_source_executor_contracts",
         "apps.acquisition.tests.unit.test_source_query_set",
@@ -1144,11 +1145,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1036,
-    "edge_count": 2949,
+    "module_count": 1037,
+    "edge_count": 2956,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 905,
+      "stdlib:__future__": 906,
       "stdlib:abc": 3,
       "stdlib:argparse": 20,
       "stdlib:ast": 27,
@@ -1180,11 +1181,11 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 204,
+      "stdlib:json": 205,
       "stdlib:logging": 23,
       "stdlib:math": 41,
       "stdlib:os": 74,
-      "stdlib:pathlib": 324,
+      "stdlib:pathlib": 325,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 102,
@@ -1197,14 +1198,14 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 16,
-      "stdlib:sys": 262,
+      "stdlib:sys": 263,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 19,
       "stdlib:time": 33,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 4,
-      "stdlib:types": 36,
+      "stdlib:types": 37,
       "stdlib:typing": 376,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
@@ -2684,6 +2685,16 @@
         "via": "observation_gate.replay"
       },
       {
+        "from": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "to": "apps/shared/domain/capture.py",
+        "via": "domain.capture"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "to": "apps/acquisition/worker_acquisition.py",
+        "via": "worker_acquisition"
+      },
+      {
         "from": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "to": "apps/acquisition/sources/catalogue.py",
         "via": "sources.catalogue"
@@ -2764,6 +2775,11 @@
         "via": "sources.executor"
       },
       {
+        "from": "apps/acquisition/worker_acquisition.py",
+        "to": "apps/shared/domain/capture.py",
+        "via": "domain.capture"
+      },
+      {
         "from": "apps/acquisition/worker_browser/__init__.py",
         "to": "apps/acquisition/worker_browser/fabric.py",
         "via": "fabric"
@@ -2842,6 +2858,11 @@
         "from": "apps/acquisition/worker_service.py",
         "to": "apps/shared/config/kafka.py",
         "via": "config.kafka"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/acquisition/runtime/searxng.py",
+        "via": "runtime.searxng"
       },
       {
         "from": "apps/admission/engine/admission.py",
@@ -3667,6 +3688,11 @@
         "from": "apps/control-plane/api/routes/discovery_strategy.py",
         "to": "apps/acquisition/context_discovery/__init__.py",
         "via": "context_discovery"
+      },
+      {
+        "from": "apps/control-plane/api/routes/discovery_strategy.py",
+        "to": "apps/acquisition/sources/catalogue.py",
+        "via": "sources.catalogue"
       },
       {
         "from": "apps/control-plane/api/routes/dossier.py",
@@ -6655,6 +6681,11 @@
       },
       {
         "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/acquisition/adapters/registry.py",
+        "via": "adapters.registry"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
         "to": "apps/shared/domain/relation_identity.py",
         "via": "domain.relation_identity"
       },
@@ -6687,6 +6718,11 @@
         "from": "apps/control-plane/services/research_case_service.py",
         "to": "apps/acquisition/sources/catalogue.py",
         "via": "sources.catalogue"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_service.py",
+        "to": "apps/acquisition/context_discovery/__init__.py",
+        "via": "context_discovery"
       },
       {
         "from": "apps/control-plane/services/research_case_service.py",
@@ -16802,6 +16838,18 @@
         ]
       },
       {
+        "path": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "tests": 2,
+        "test_names": [
+          "test_named_runtime_uses_artifact_sink_and_does_not_publish_twice",
+          "test_named_runtime_fails_closed_without_artifact_sink"
+        ],
+        "targets": [
+          "apps/acquisition/worker_acquisition.py",
+          "apps/shared/domain/capture.py"
+        ]
+      },
+      {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "tests": 19,
         "test_names": [
@@ -24553,7 +24601,7 @@
         "targets": []
       }
     ],
-    "total": 5387
+    "total": 5389
   },
   "contracts": {
     "python": [
@@ -25651,132 +25699,132 @@
         {
           "method": "GET",
           "path": "/{case_id}",
-          "lineno": 198
+          "lineno": 199
         },
         {
           "method": "PATCH",
           "path": "/{case_id}/scope",
-          "lineno": 211
+          "lineno": 212
         },
         {
           "method": "POST",
           "path": "/{case_id}/context/amendments",
-          "lineno": 244
+          "lineno": 245
         },
         {
           "method": "POST",
           "path": "/{case_id}/invariants",
-          "lineno": 268
+          "lineno": 269
         },
         {
           "method": "POST",
           "path": "/{case_id}/approve",
-          "lineno": 293
+          "lineno": 294
         },
         {
           "method": "POST",
           "path": "/{case_id}/plan",
-          "lineno": 316
+          "lineno": 317
         },
         {
           "method": "GET",
           "path": "/{case_id}/actions",
-          "lineno": 335
+          "lineno": 336
         },
         {
           "method": "POST",
           "path": "/{case_id}/actions/approve",
-          "lineno": 348
+          "lineno": 349
         },
         {
           "method": "POST",
           "path": "/{case_id}/run",
-          "lineno": 372
+          "lineno": 373
         },
         {
           "method": "POST",
           "path": "/{case_id}/pause",
-          "lineno": 398
+          "lineno": 399
         },
         {
           "method": "POST",
           "path": "/{case_id}/artifacts",
-          "lineno": 414
+          "lineno": 415
         },
         {
           "method": "GET",
           "path": "/{case_id}/artifacts",
-          "lineno": 463
+          "lineno": 464
         },
         {
           "method": "GET",
           "path": "/{case_id}/artifacts/{artifact_id}/download",
-          "lineno": 480
+          "lineno": 481
         },
         {
           "method": "GET",
           "path": "/{case_id}/obligations",
-          "lineno": 511
+          "lineno": 512
         },
         {
           "method": "GET",
           "path": "/{case_id}/coverage",
-          "lineno": 578
+          "lineno": 579
         },
         {
           "method": "GET",
           "path": "/{case_id}/discovery-leads",
-          "lineno": 593
+          "lineno": 594
         },
         {
           "method": "POST",
           "path": "/{case_id}/zero-layer/harvest",
-          "lineno": 608
+          "lineno": 609
         },
         {
           "method": "GET",
           "path": "/{case_id}/claims",
-          "lineno": 643
+          "lineno": 644
         },
         {
           "method": "GET",
           "path": "/{case_id}/timeline",
-          "lineno": 660
+          "lineno": 661
         },
         {
           "method": "GET",
           "path": "/{case_id}/graph",
-          "lineno": 681
+          "lineno": 682
         },
         {
           "method": "POST",
           "path": "/{case_id}/identity-reviews",
-          "lineno": 701
+          "lineno": 702
         },
         {
           "method": "POST",
           "path": "/{case_id}/claim-disputes",
-          "lineno": 725
+          "lineno": 726
         },
         {
           "method": "POST",
           "path": "/{case_id}/report",
-          "lineno": 749
+          "lineno": 750
         },
         {
           "method": "GET",
           "path": "/{case_id}/reports/{report_id}",
-          "lineno": 772
+          "lineno": 773
         },
         {
           "method": "POST",
           "path": "/{case_id}/close",
-          "lineno": 792
+          "lineno": 793
         },
         {
           "method": "POST",
           "path": "/{case_id}/retention-action",
-          "lineno": 849
+          "lineno": 850
         }
       ]
     },
@@ -30103,6 +30151,7 @@
             "apps/acquisition/tests/unit/test_region_backpressure.py",
             "apps/acquisition/tests/unit/test_render_pipeline.py",
             "apps/acquisition/tests/unit/test_replay_journal.py",
+            "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
             "apps/acquisition/tests/unit/test_source_catalogue_full.py",
             "apps/acquisition/tests/unit/test_source_executor_contracts.py",
             "apps/acquisition/tests/unit/test_source_query_set.py",
@@ -30163,7 +30212,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 160
+          "module_count": 161
         },
         {
           "id": "interpretation",
@@ -33121,7 +33170,7 @@
       {
         "path": "apps/acquisition/context_discovery/models.py",
         "status": "IMPLEMENTED",
-        "loc": 247,
+        "loc": 257,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -33285,7 +33334,7 @@
       {
         "path": "apps/acquisition/runtime/searxng.py",
         "status": "IMPLEMENTED",
-        "loc": 370,
+        "loc": 371,
         "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
@@ -33561,7 +33610,7 @@
       {
         "path": "apps/acquisition/tests/unit/test_context_discovery.py",
         "status": "TEST",
-        "loc": 189,
+        "loc": 196,
         "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
@@ -33640,6 +33689,15 @@
         "markers": []
       },
       {
+        "path": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "status": "TEST",
+        "loc": 139,
+        "callables": 11,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "status": "TEST",
         "loc": 265,
@@ -33698,7 +33756,7 @@
       {
         "path": "apps/acquisition/worker_acquisition.py",
         "status": "IMPLEMENTED",
-        "loc": 707,
+        "loc": 779,
         "callables": 19,
         "stubs": 1,
         "not_implemented": 0,
@@ -33754,7 +33812,7 @@
       {
         "path": "apps/acquisition/worker_service.py",
         "status": "IMPLEMENTED",
-        "loc": 190,
+        "loc": 201,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
@@ -34164,7 +34222,7 @@
       {
         "path": "apps/control-plane/api/routes/discovery_strategy.py",
         "status": "IMPLEMENTED",
-        "loc": 126,
+        "loc": 139,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -34272,7 +34330,7 @@
       {
         "path": "apps/control-plane/api/routes/research_cases.py",
         "status": "IMPLEMENTED",
-        "loc": 875,
+        "loc": 876,
         "callables": 31,
         "stubs": 0,
         "not_implemented": 0,
@@ -35391,7 +35449,7 @@
       {
         "path": "apps/control-plane/services/research_case_runtime.py",
         "status": "IMPLEMENTED",
-        "loc": 700,
+        "loc": 706,
         "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
@@ -35400,7 +35458,7 @@
       {
         "path": "apps/control-plane/services/research_case_service.py",
         "status": "IMPLEMENTED",
-        "loc": 1628,
+        "loc": 1804,
         "callables": 22,
         "stubs": 0,
         "not_implemented": 0,
@@ -35770,7 +35828,7 @@
       {
         "path": "apps/control-plane/tests/test_research_case_invariants.py",
         "status": "TEST",
-        "loc": 361,
+        "loc": 366,
         "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
@@ -42152,9 +42210,9 @@
       "IMPLEMENTED": 557,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 92,
-      "TEST": 350,
+      "TEST": 351,
       "MIGRATION": 19,
-      "total": 1036
+      "total": 1037
     }
   },
   "reachability": {
@@ -42561,6 +42619,10 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_replay_journal.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
         "status": "TEST"
       },
       {
@@ -46351,8 +46413,8 @@
       "PRODUCTION": 430,
       "TEST_ONLY": 134,
       "ORPHAN": 122,
-      "TEST": 350,
-      "total": 1036
+      "TEST": 351,
+      "total": 1037
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -47928,7 +47990,7 @@
       },
       "observation.created": {
         "lane": "observation",
-        "files": 27,
+        "files": 28,
         "producer_files": 8
       },
       "observation.duplicate": {
@@ -52686,6 +52748,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "667e884da4dfadc3",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "object": "apps/acquisition/worker_acquisition.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+          "via": "worker_acquisition"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2e51d73b1394c75e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "object": "apps/shared/domain/capture.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+          "via": "domain.capture"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "42152e186cc1d6a1",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
@@ -52868,6 +52956,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "c000ed2e6eaf212f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_acquisition.py",
+        "object": "apps/shared/domain/capture.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_acquisition.py",
+          "via": "domain.capture"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "10d0559099debeeb",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/worker_acquisition.py",
@@ -52981,6 +53082,19 @@
         "evidence": {
           "file": "apps/acquisition/worker_service.py",
           "via": "evidence_writer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "dbfe685f1595b609",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/acquisition/runtime/searxng.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "runtime.searxng"
         },
         "confidence": 1.0
       },
@@ -55204,6 +55318,19 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/discovery_strategy.py",
           "via": "context_discovery"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "06b79bbe35ec3f37",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+        "object": "apps/acquisition/sources/catalogue.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/discovery_strategy.py",
+          "via": "sources.catalogue"
         },
         "confidence": 1.0
       },
@@ -62917,6 +63044,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "ba8609deab6466d6",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_runtime.py",
+        "object": "apps/acquisition/adapters/registry.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_runtime.py",
+          "via": "adapters.registry"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "f04fed71ae9e2b1d",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/research_case_runtime.py",
@@ -63017,6 +63157,19 @@
         "evidence": {
           "file": "apps/control-plane/services/research_case_runtime.py",
           "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "33568578e4b02487",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/research_case_service.py",
+        "object": "apps/acquisition/context_discovery/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/research_case_service.py",
+          "via": "context_discovery"
         },
         "confidence": 1.0
       },
@@ -88015,7 +88168,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 200
+          "line": 201
         },
         "confidence": 1.0
       },
@@ -88028,7 +88181,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 337
+          "line": 338
         },
         "confidence": 1.0
       },
@@ -88041,7 +88194,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 465
+          "line": 466
         },
         "confidence": 1.0
       },
@@ -88054,7 +88207,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 482
+          "line": 483
         },
         "confidence": 1.0
       },
@@ -88067,7 +88220,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 645
+          "line": 646
         },
         "confidence": 1.0
       },
@@ -88080,7 +88233,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 580
+          "line": 581
         },
         "confidence": 1.0
       },
@@ -88093,7 +88246,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 595
+          "line": 596
         },
         "confidence": 1.0
       },
@@ -88106,7 +88259,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 683
+          "line": 684
         },
         "confidence": 1.0
       },
@@ -88119,7 +88272,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 513
+          "line": 514
         },
         "confidence": 1.0
       },
@@ -88132,7 +88285,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 774
+          "line": 775
         },
         "confidence": 1.0
       },
@@ -88145,7 +88298,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 662
+          "line": 663
         },
         "confidence": 1.0
       },
@@ -88457,7 +88610,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 213
+          "line": 214
         },
         "confidence": 1.0
       },
@@ -89315,7 +89468,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 350
+          "line": 351
         },
         "confidence": 1.0
       },
@@ -89328,7 +89481,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 295
+          "line": 296
         },
         "confidence": 1.0
       },
@@ -89341,7 +89494,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 416
+          "line": 417
         },
         "confidence": 1.0
       },
@@ -89354,7 +89507,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 727
+          "line": 728
         },
         "confidence": 1.0
       },
@@ -89367,7 +89520,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 794
+          "line": 795
         },
         "confidence": 1.0
       },
@@ -89380,7 +89533,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 246
+          "line": 247
         },
         "confidence": 1.0
       },
@@ -89393,7 +89546,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 703
+          "line": 704
         },
         "confidence": 1.0
       },
@@ -89406,7 +89559,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 270
+          "line": 271
         },
         "confidence": 1.0
       },
@@ -89419,7 +89572,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 400
+          "line": 401
         },
         "confidence": 1.0
       },
@@ -89432,7 +89585,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 318
+          "line": 319
         },
         "confidence": 1.0
       },
@@ -89445,7 +89598,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 751
+          "line": 752
         },
         "confidence": 1.0
       },
@@ -89458,7 +89611,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 851
+          "line": 852
         },
         "confidence": 1.0
       },
@@ -89471,7 +89624,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 374
+          "line": 375
         },
         "confidence": 1.0
       },
@@ -89484,7 +89637,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/research_cases.py",
-          "line": 610
+          "line": 611
         },
         "confidence": 1.0
       },
@@ -95304,6 +95457,30 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/acquisition/tests/unit/test_replay_journal.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3dc7ef09bb204aca",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "object": "apps/acquisition/worker_acquisition.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c81ef460c1203225",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "object": "apps/shared/domain/capture.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py"
         },
         "confidence": 1.0
       },
@@ -106013,27 +106190,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4556,
-      "static_facts": 4262,
+      "facts_total": 4565,
+      "static_facts": 4271,
       "inferred": 294,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1036,
+    "python_modules": 1037,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2949,
-    "test_files": 353,
-    "test_functions": 5387,
+    "import_edges": 2956,
+    "test_files": 354,
+    "test_functions": 5389,
     "untested_modules": 273,
     "http_routes": 186
   },
   "evidence_stats": {
-    "facts_total": 4556,
-    "static_facts": 4262,
+    "facts_total": 4565,
+    "static_facts": 4271,
     "inferred": 294,
     "intended": 0
   },
@@ -106041,16 +106218,16 @@
     "IMPLEMENTED": 557,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 92,
-    "TEST": 350,
+    "TEST": 351,
     "MIGRATION": 19,
-    "total": 1036
+    "total": 1037
   },
   "reachability_summary": {
     "PRODUCTION": 430,
     "TEST_ONLY": 134,
     "ORPHAN": 122,
-    "TEST": 350,
-    "total": 1036
+    "TEST": 351,
+    "total": 1037
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
