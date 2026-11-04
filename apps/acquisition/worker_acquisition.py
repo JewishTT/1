@@ -459,22 +459,19 @@ class AcquisitionWorker:
                     duplicates.append(observation_id)
                     continue
 
-                event = {
+                # Reuse the ArtifactSink's canonical accepted-artifact shape.
+                # The worker adds task routing metadata only; it must not create a
+                # second observation contract or independently derive evidence fields.
+                event = accepted.to_dict()
+                event.update({
                     "event_type": "observation.created",
-                    "event_id": event_id,
-                    "observation_id": observation_id,
                     "tenant_id": task.tenant_id,
-                    "source_id": task.source_id,
                     "task_id": task.task_id,
                     "investigation_id": task.investigation_id,
-                    "content_digest": accepted.content_digest,
-                    "raw_ref": accepted.raw_ref,
-                    "capture_id": accepted.capture_id,
-                    "locator": accepted.locator,
                     "event_topic": accepted.topic,
                     "event_published": True,
                     "runtime_ref": task.runtime_ref,
-                }
+                })
                 try:
                     await require_stored_evidence(event, store=self.store)
                 except UnstoredEvidenceRefusal as refusal:
