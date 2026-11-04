@@ -1,30 +1,54 @@
 # Context-to-Discovery Fabric
 
-The Context-to-Discovery compiler turns a tenant-scoped investigation brief and explicit public entity anchors into a reproducible, bounded search plan. It is the strategy layer above the existing SearXNG runtime, acquisition dispatcher, frontier and Capture/Observation pipeline. It does not create a second queue.
+## Objective
 
-The first implementation is deterministic. Explicit entity anchors are preferred; quoted phrases and domain literals may be inferred as topics. Keyword heuristics are not an NLP identity resolver. A future model-backed interpreter must implement the same typed contract, retain source spans and expose uncertainty.
+Turn an approved investigation context into a reproducible, bounded set of public-source discovery actions. The compiler is a strategy layer, not a second crawler, event bus or evidence store. It uses the existing research-case lifecycle, source policy, budget reservation, dispatcher, acquisition worker and Capture/Observation pipeline.
 
-## Search slices
+The initial compiler is deterministic. Explicit typed entity anchors are preferred; quoted phrases and domain literals may be inferred as topics. Its token extraction is a conservative fallback, not natural-language understanding or entity resolution. A future semantic context interpreter must preserve source spans, distinguish analyst assertions from model hypotheses, expose uncertainty and write its outputs as typed, reviewable context amendments.
 
-The default plan fans each anchor across several public information surfaces: exact-phrase search, first-party domain pages, public PDF documents, official registries and filings, public affiliations and statements, scholarly indexes, historical web archives, public DNS/RDAP/certificate-transparency references, and official incident advisories.
+## Search strategy slices
 
-Dork syntax is limited to public search operators such as `site:` and `filetype:` plus quoted phrases. It does not attempt authenticated access or private-contact extraction. Incident coverage means public advisories and disclosure notices.
+For each public entity anchor, the compiler can create bounded queries for:
 
-## Execution contract
+- exact phrases, aliases and context-specific combinations;
+- first-party sites and public documents (including PDFs);
+- public registries, filings and official records;
+- public roles, affiliations, statements and relationships;
+- scholarly and publication indexes;
+- historical-web and archive discovery;
+- public DNS, RDAP and certificate-transparency material;
+- public incident advisories and disclosure notices.
 
-Each plan item is a Dispatcher-compatible task for the existing SearXNG runtime (`source_id=searxng.search`, `runtime_ref=searxng`, `result_role=DISCOVERY_ONLY`). Tasks retain tenant/investigation scope, context digest, query reference and idempotency key.
+Dork syntax is constrained to public search operators such as `site:` and `filetype:` plus quoted phrases. Public incident coverage means advisory, disclosure and incident-report metadata. It does not mean acquiring stolen credential collections, stealer logs or restricted breached datasets. The system does not attempt authenticated access, access-control bypass or private-contact extraction.
 
-`POST /api/v1/discovery/plan` validates the investigation's tenant and state, then returns a preview. It does not dispatch tasks or bypass durable budget reservation, source policy or approval checks. Returned tasks must pass through the configured Dispatcher. Search snippets remain unverified discovery leads; only a later governed fetch can create immutable Capture/Observation evidence.
+## Research Case execution lifecycle
 
-## Coverage semantics
+The operational route is the existing case workflow:
 
-A facet marked `planned` means the compiler emitted one or more queries. It does not mean a source answered, that the internet was exhaustively searched, or that evidence exists. `not_plannable` records a missing anchor or safe query template. Runtime coverage must additionally account for provider health, licensing, robots restrictions, search-index gaps, budgets, parser success, raw-object read-back and Observation event acknowledgement.
+1. Create a research case with typed public subject anchors, purpose/basis, jurisdiction, temporal window, source allowlist and a durable budget reference.
+2. An administrator approves the exact scope and its policy digest.
+3. `POST /api/v1/research-cases/{case_id}/plan` compiles the case obligations and context into persisted `ResearchAction` proposals. The returned `discovery_plan` reports planned queries, truncation, facets with no safe query and the resolved policy/catalogue source.
+4. Discovery actions remain `DISCOVERY_ONLY` and require explicit operator approval. They do not satisfy evidence obligations.
+5. `POST /api/v1/research-cases/{case_id}/actions/approve` appends immutable approved action versions. `POST /api/v1/research-cases/{case_id}/run` reserves the case's durable request/byte/record/concurrency/time budgets before publishing requests.
+6. The existing `CaseDispatchExecutor → PlanDispatcher → Dispatcher → acquisition.request → worker` path executes the SearXNG runtime.
+7. The worker persists every runtime artifact through the canonical `ArtifactSink`: raw object first, then Capture, Observation and the broker-acknowledged event. Search-result records remain unverified leads, not admitted assertions.
+8. Only a later governed fetch of a selected public lead can create the source-document Capture/Observation used for interpretation and claim admission.
 
-The compiler is a plan producer, not an unrestricted crawler. Adaptive follow-up should consume newly admitted public facts and explicit coverage gaps, not untrusted snippets as identity truth.
+The standalone `POST /api/v1/discovery/plan` route is a preview helper for an investigation. It does not dispatch or bypass source policy, action approval or durable budgets.
 
-## API example
+## Boundedness and coverage
 
-A preview request uses explicit entity anchors and a bounded facet/time selection:
+The source policy in force is authoritative. For the current SearXNG profile, the plan query cap is derived from `max_requests / max_pages` (currently 20 requests / 5 pages, hence at most four actions per run). A query marked planned is only scheduled intent, not a successful fetch. A facet marked `not_plannable` is an explicit gap, not an empty search result. Truncation and missing anchors are surfaced to the analyst.
+
+Runtime coverage must separately record provider health, rate-limit responses, licensing/terms, robots policy, search-index limitations, budget exhaustion, parser success, raw-object read-back and Observation acknowledgement. The system must never label a search as exhaustive merely because every planned task completed.
+
+## Adaptive expansion
+
+The intended next stage is a feedback-driven strategy loop. It should use admitted facts, verified source metadata and explicit coverage gaps to propose new facets, source adapters, aliases, archive slices and time windows. Search snippets may suggest leads but cannot become identity truth or spawn unrestricted recursive collection. Provider adapters must declare their execution contract, licence/terms state, egress hosts, parser, cost envelope and evidence role before being eligible.
+
+A provider-specific source that is not attested or whose worker integration is absent remains a visible capability gap. Do not silently route it through generic HTTP or claim support because a YAML file exists.
+
+## API preview example
 
 ```json
 {
@@ -45,5 +69,3 @@ A preview request uses explicit entity anchors and a bounded facet/time selectio
   "max_queries": 48
 }
 ```
-
-The response includes a stable `plan_id`, `context_digest`, facet-level planning coverage and dispatcher-compatible task manifests. It is a reviewable plan only; the API does not publish events or schedule workers.
