@@ -1,19 +1,5 @@
+import type { OpsMetrics } from "../lib/api";
 import { Icon } from "../ui/Icon";
-
-export interface OpsMetrics {
-  availability?: "available" | "unavailable";
-  reason?: string;
-  throughput_per_s: number | null;
-  useful_observations: number | null;
-  discovery_yield: number | null;
-  duplicate_ratio: number | null;
-  browser_utilization: number | null;
-  lags_s: Record<string, number>;
-  queues: Record<string, number>;
-  storage_growth_b: Record<string, number>;
-  cost_per_1m_obs: number;
-  pools?: Record<string, { healthy: boolean; active: number; capacity: number; failures: number }>;
-}
 
 interface Props {
   metrics: OpsMetrics;
