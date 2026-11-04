@@ -29,9 +29,9 @@ def classify_tracked_path(path: str) -> str | None:
         return "one-off root probe; move maintained checks under tools/ or tests/"
     if normalized.startswith("apps/webapp/tmp/"):
         return "local screenshot or test output; use the maintained Playwright CI artifact"
-    if len(parts) == 2 and parts[0] == "apps/webapp" and re.fullmatch(r"probe.*\.mjs", parts[1], re.I):
+    if len(parts) == 3 and parts[:2] == ("apps", "webapp") and re.fullmatch(r"probe.*\.mjs", parts[2], re.I):
         return "ad-hoc browser probe; maintain regression coverage under apps/webapp/scripts/"
-    if len(parts) == 2 and parts[0] == "apps/webapp" and re.fullmatch(r"shot[2-9]\.mjs", parts[1], re.I):
+    if len(parts) == 3 and parts[:2] == ("apps", "webapp") and re.fullmatch(r"shot[2-9]\.mjs", parts[2], re.I):
         return "superseded one-off screenshot script"
     if normalized.startswith("apps/acquisition/artifacts/acquisition-integration/"):
         return "generated live acceptance output; CI uploads this as a workflow artifact"

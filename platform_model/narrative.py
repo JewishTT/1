@@ -185,8 +185,8 @@ def render_readme(model: dict) -> str:
         "## Documentation",
         "",
         "- [Platform model (generated)](docs/platform/index.md) — the source of truth for the platform's shape.",
-        "- [Docs index](docs/README.md)
-- [Developer showcase](docs/developer/README.md) — onboarding, AI workflow, operations and source onboarding.",
+        "- [Docs index](docs/README.md)",
+        "- [Developer showcase](docs/developer/README.md) — onboarding, AI workflow, operations and source onboarding.",
         "- Architecture: [overview](docs/architecture/overview.md) · [collection fabric](docs/architecture/fabric-collection.md) · [multi-region](docs/architecture/multi-region.md) · [dynamic entity invariant](docs/architecture/dynamic-entity-invariant.md) · [stream processing](docs/architecture/stream-processing.md)",
         "- [Contributing](docs/CONTRIBUTING.md)",
         "",
