@@ -195,15 +195,12 @@ jobs:
       - name: Assert canonical Capture / Observation tables are installed in public
         run: |
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
-          DO $
-          BEGIN
-            IF to_regclass('public.captures') IS NULL THEN
-              RAISE EXCEPTION 'Alembic upgrade head did not install public.captures';
-            END IF;
-            IF to_regclass('public.observations') IS NULL THEN
-              RAISE EXCEPTION 'Alembic upgrade head did not install public.observations';
-            END IF;
-          END $;
+          SELECT CASE
+            WHEN to_regclass('public.captures') IS NOT NULL
+             AND to_regclass('public.observations') IS NOT NULL
+            THEN 'canonical_evidence_tables_present'
+            ELSE (1 / 0)::text
+          END AS migration_schema_assertion;
           SELECT current_database(), current_schema(), current_setting('search_path'),
                  to_regclass('public.captures'), to_regclass('public.observations');
           SQL
