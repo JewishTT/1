@@ -60,13 +60,6 @@ GAPS: list[dict] = [
     },
 # -- cross-cutting: schema ownership -------------------------------------
     {
-        "id": "create-tables-in-production-path",
-        "layer": "x",
-        "severity": "high",
-        "claim": "Operational code creates schema with Base.metadata.create_all, not Alembic.",
-        "evidence": [_ev("apps/control-plane/services/temporal_materialization_dispatch.py", r"await create_tables\(\)")],
-    },
-    {
         "id": "alembic-head-is-not-a-base",
         "layer": "x",
         "severity": "high",
@@ -142,6 +135,15 @@ RESOLVED_CLAIMS: list[dict] = [
             _ev("apps/control-plane/api/auth.py", r"json\.loads\(token\)", expect="absent"),
         ],
         "note": "Only HS256 is accepted; signature, issuer, audience and time claims are verified before payload use.",
+    },
+    {
+        "id": "operational-schema-owned-by-alembic",
+        "claim": "Operational service paths no longer create schema at runtime; a static AST contract guards Alembic ownership.",
+        "evidence": [
+            _ev("apps/control-plane/services/temporal_materialization_dispatch.py", r"create_tables|create_all", expect="absent"),
+            _ev("apps/control-plane/services/materialization_outbox_relay.py", r"create_tables|create_all", expect="absent"),
+            _ev("apps/control-plane/tests/unit/test_operational_schema_ownership.py", r"create_all.*create_tables", expect="present"),
+        ],
     },
     {
         "id": "roe-approver-from-authenticated-principal",
