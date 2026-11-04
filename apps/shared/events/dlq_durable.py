@@ -12,7 +12,7 @@ from events.dlq import DLQRecord, QuarantineStore
 
 RAW_BUCKET = "knowledge-raw"
 META_PREFIX = "dlq/index"
-_RECORD_ID = re.compile(r"^DLQ-[a-f0-9]{24}$")
+_RECORD_ID = re.compile(r"^DLQ-(?:[a-f0-9]{12}|[a-f0-9]{24})$")
 
 
 class QuarantineSink(Protocol):
@@ -180,7 +180,7 @@ class ObjectStoreSink:
         while len(items) < limit and pages_scanned < 10:
             keys, next_token = await self.store.list_objects_page(
                 self.tenant_prefix,
-                limit=max(50, min(250, limit * 2)),
+                limit=limit,
                 continuation_token=token,
             )
             pages_scanned += 1

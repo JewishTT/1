@@ -37,5 +37,9 @@ jobs:
           .venv/bin/python -c "from pathlib import Path; from zipfile import ZipFile; wheel = next(Path(r'$RUNNER_TEMP/control-plane-wheel').glob('*.whl')); names = ZipFile(wheel).namelist(); assert any(n.startswith('context_engine/') for n in names); assert any(n.startswith('semantic_path/') for n in names); print(f'verified wheel contents: {wheel.name}')"
       - name: Verify operational schema ownership and outbox fail-closed behavior
         run: .venv/bin/pytest apps/control-plane/tests/unit/test_operational_schema_ownership.py apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py -q
+      - name: Verify durable tenant-scoped quarantine and worker hand-off
+        run: |
+          .venv/bin/pytest apps/shared/tests/unit/test_dlq_durable.py apps/acquisition/tests/unit/test_worker_failure_persistence.py -q
+          .venv/bin/pytest apps/control-plane/tests/test_quarantine_api.py -q
       - name: Verify generated platform model is current
         run: .venv/bin/python -m platform_model.build --check
