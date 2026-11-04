@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4545,
-    "static_facts": 4251,
+    "facts_total": 4565,
+    "static_facts": 4271,
     "inferred": 294,
     "intended": 0
   },
@@ -2200,6 +2200,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "da68241bd1481246",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/context_discovery/__init__.py",
+      "object": "apps/acquisition/context_discovery/compiler.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/context_discovery/__init__.py",
+        "via": "compiler"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "614b4c5135e0245b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/context_discovery/__init__.py",
+      "object": "apps/acquisition/context_discovery/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/context_discovery/__init__.py",
+        "via": "models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a4858fae443dd62d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/context_discovery/compiler.py",
+      "object": "apps/acquisition/context_discovery/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/context_discovery/compiler.py",
+        "via": "models"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "fae8d0e497e8afda",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/dispatcher/__init__.py",
@@ -4228,6 +4267,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "95b26b829facef97",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_context_discovery.py",
+      "object": "apps/acquisition/context_discovery/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_context_discovery.py",
+        "via": "context_discovery"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "412e05590a6cd163",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/tests/unit/test_discovery_registry.py",
@@ -4475,6 +4527,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "667e884da4dfadc3",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+      "object": "apps/acquisition/worker_acquisition.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "via": "worker_acquisition"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2e51d73b1394c75e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+      "object": "apps/shared/domain/capture.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+        "via": "domain.capture"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "42152e186cc1d6a1",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
@@ -4657,6 +4735,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "c000ed2e6eaf212f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_acquisition.py",
+      "object": "apps/shared/domain/capture.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_acquisition.py",
+        "via": "domain.capture"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "10d0559099debeeb",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/worker_acquisition.py",
@@ -4770,6 +4861,19 @@
       "evidence": {
         "file": "apps/acquisition/worker_service.py",
         "via": "evidence_writer"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "dbfe685f1595b609",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_service.py",
+      "object": "apps/acquisition/runtime/searxng.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_service.py",
+        "via": "runtime.searxng"
       },
       "confidence": 1.0
     },
@@ -6152,6 +6256,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "4a8d7e52a8687bbf",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/main.py",
+      "object": "apps/control-plane/api/routes/discovery_strategy.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/main.py",
+        "via": "api.routes.discovery_strategy"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "2a48f74910f5d8a8",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/main.py",
@@ -6967,6 +7084,71 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/discovery.py",
         "via": "zero.type_detector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f9d3d9a8181b93e2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/acquisition/context_discovery/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "context_discovery"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "06b79bbe35ec3f37",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/acquisition/sources/catalogue.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "sources.catalogue"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "42ef28c7f6b22c26",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5a3f64d76dc0a158",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d0fb85a4477286de",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/discovery_strategy.py",
+      "object": "apps/control-plane/db/session.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "via": "db.session"
       },
       "confidence": 1.0
     },
@@ -14641,6 +14823,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "ba8609deab6466d6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/research_case_runtime.py",
+      "object": "apps/acquisition/adapters/registry.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/research_case_runtime.py",
+        "via": "adapters.registry"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "f04fed71ae9e2b1d",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/services/research_case_runtime.py",
@@ -14741,6 +14936,19 @@
       "evidence": {
         "file": "apps/control-plane/services/research_case_runtime.py",
         "via": "domain.relation_identity"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "33568578e4b02487",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/research_case_service.py",
+      "object": "apps/acquisition/context_discovery/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/research_case_service.py",
+        "via": "context_discovery"
       },
       "confidence": 1.0
     },
@@ -39739,7 +39947,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 200
+        "line": 201
       },
       "confidence": 1.0
     },
@@ -39752,7 +39960,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 337
+        "line": 338
       },
       "confidence": 1.0
     },
@@ -39765,7 +39973,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 465
+        "line": 466
       },
       "confidence": 1.0
     },
@@ -39778,7 +39986,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 482
+        "line": 483
       },
       "confidence": 1.0
     },
@@ -39791,7 +39999,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 645
+        "line": 646
       },
       "confidence": 1.0
     },
@@ -39804,7 +40012,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 580
+        "line": 581
       },
       "confidence": 1.0
     },
@@ -39817,7 +40025,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 595
+        "line": 596
       },
       "confidence": 1.0
     },
@@ -39830,7 +40038,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 683
+        "line": 684
       },
       "confidence": 1.0
     },
@@ -39843,7 +40051,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 513
+        "line": 514
       },
       "confidence": 1.0
     },
@@ -39856,7 +40064,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 774
+        "line": 775
       },
       "confidence": 1.0
     },
@@ -39869,7 +40077,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 662
+        "line": 663
       },
       "confidence": 1.0
     },
@@ -40181,7 +40389,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 213
+        "line": 214
       },
       "confidence": 1.0
     },
@@ -40745,6 +40953,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "39cd90faaa982683",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /plan",
+      "object": "apps/control-plane/api/routes/discovery_strategy.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/discovery_strategy.py",
+        "line": 50
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "7783916fea14668c",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /plan",
@@ -41026,7 +41247,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 350
+        "line": 351
       },
       "confidence": 1.0
     },
@@ -41039,7 +41260,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 295
+        "line": 296
       },
       "confidence": 1.0
     },
@@ -41052,7 +41273,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 416
+        "line": 417
       },
       "confidence": 1.0
     },
@@ -41065,7 +41286,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 727
+        "line": 728
       },
       "confidence": 1.0
     },
@@ -41078,7 +41299,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 794
+        "line": 795
       },
       "confidence": 1.0
     },
@@ -41091,7 +41312,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 246
+        "line": 247
       },
       "confidence": 1.0
     },
@@ -41104,7 +41325,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 703
+        "line": 704
       },
       "confidence": 1.0
     },
@@ -41117,7 +41338,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 270
+        "line": 271
       },
       "confidence": 1.0
     },
@@ -41130,7 +41351,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 400
+        "line": 401
       },
       "confidence": 1.0
     },
@@ -41143,7 +41364,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 318
+        "line": 319
       },
       "confidence": 1.0
     },
@@ -41156,7 +41377,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 751
+        "line": 752
       },
       "confidence": 1.0
     },
@@ -41169,7 +41390,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 851
+        "line": 852
       },
       "confidence": 1.0
     },
@@ -41182,7 +41403,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 374
+        "line": 375
       },
       "confidence": 1.0
     },
@@ -41195,7 +41416,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/research_cases.py",
-        "line": 610
+        "line": 611
       },
       "confidence": 1.0
     },
@@ -46779,6 +47000,18 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "fe05f9f4affd20f0",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_context_discovery.py",
+      "object": "apps/acquisition/context_discovery/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_context_discovery.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "48afda4544cf43fe",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/acquisition/tests/unit/test_discovery_registry.py",
@@ -47003,6 +47236,30 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_replay_journal.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3dc7ef09bb204aca",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+      "object": "apps/acquisition/worker_acquisition.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c81ef460c1203225",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
+      "object": "apps/shared/domain/capture.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py"
       },
       "confidence": 1.0
     },

@@ -1,6 +1,6 @@
 # Tests
 
-352 test files, 5376 test functions. 270 platform modules are not targeted by any test.
+354 test files, 5389 test functions. 273 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -29,6 +29,7 @@
 | `apps/acquisition/tests/unit/test_cc_extract.py` | 10 | `apps/acquisition/cc_extract.py` |
 | `apps/acquisition/tests/unit/test_cc_index.py` | 3 | `apps/acquisition/adapters/commoncrawl/index.py` |
 | `apps/acquisition/tests/unit/test_cc_plan.py` | 12 | `apps/acquisition/cc_plan.py` |
+| `apps/acquisition/tests/unit/test_context_discovery.py` | 11 | `apps/acquisition/context_discovery/__init__.py` |
 | `apps/acquisition/tests/unit/test_discovery_registry.py` | 2 | `apps/acquisition/adapters/discovery/contracts.py`, `apps/acquisition/adapters/discovery/registry.py` |
 | `apps/acquisition/tests/unit/test_engine_adapters.py` | 6 | `apps/acquisition/adapters/browsertrix/__init__.py`, `apps/acquisition/adapters/browsertrix/collect.py`, `apps/acquisition/adapters/heritrix/__init__.py`, `apps/acquisition/adapters/heritrix/collect.py` |
 | `apps/acquisition/tests/unit/test_entity_search.py` | 4 | `apps/acquisition/entity_search.py` |
@@ -37,6 +38,7 @@
 | `apps/acquisition/tests/unit/test_region_backpressure.py` | 7 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/tests/unit/test_render_pipeline.py` | 6 | `apps/acquisition/worker_browser/renderer.py` |
 | `apps/acquisition/tests/unit/test_replay_journal.py` | 5 | `apps/acquisition/observation_gate/replay.py` |
+| `apps/acquisition/tests/unit/test_runtime_artifact_sink.py` | 2 | `apps/acquisition/worker_acquisition.py`, `apps/shared/domain/capture.py` |
 | `apps/acquisition/tests/unit/test_source_catalogue_full.py` | 19 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_source_executor_contracts.py` | 11 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_source_query_set.py` | 12 | `apps/acquisition/cc_plan.py`, `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py` |
@@ -384,6 +386,8 @@
 | `apps/acquisition/adapters/discovery/wayback_cdx.py` |
 | `apps/acquisition/adapters/scrapy/spider.py` |
 | `apps/acquisition/adapters/sec_edgar.py` |
+| `apps/acquisition/context_discovery/compiler.py` |
+| `apps/acquisition/context_discovery/models.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
 | `apps/acquisition/observation_gate/__init__.py` |
 | `apps/acquisition/policies/__init__.py` |
@@ -406,6 +410,7 @@
 | `apps/control-plane/api/path_shim.py` |
 | `apps/control-plane/api/routes/connectors.py` |
 | `apps/control-plane/api/routes/discovery.py` |
+| `apps/control-plane/api/routes/discovery_strategy.py` |
 | `apps/control-plane/api/routes/fabric.py` |
 | `apps/control-plane/api/routes/investigation_context.py` |
 | `apps/control-plane/api/routes/investigations.py` |
@@ -422,6 +427,3 @@
 | `apps/control-plane/api/routes/science_review.py` |
 | `apps/control-plane/api/routes/science_robustness.py` |
 | `apps/control-plane/api/routes/science_structure.py` |
-| `apps/control-plane/api/routes/science_tda.py` |
-| `apps/control-plane/api/routes/science_temporal.py` |
-| `apps/control-plane/api/routes/search.py` |

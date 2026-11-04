@@ -507,6 +507,12 @@ class CaseDispatchExecutor:
         from dispatcher.kafka_producer import KafkaProducer
         from dispatcher.scheduler import Dispatcher
         from sources.connector import AcquisitionTask
+        from adapters.registry import register as register_runtime
+
+        # SearXNG is an explicitly named runtime, not a generic HTTP fallback.
+        # The case scheduler uses the bounded HTTP execution class; the acquisition
+        # worker resolves the same runtime reference.
+        register_runtime("searxng", execution_class="http", capabilities={"http"})
         from domain.relation_identity import digest128
         from urllib.parse import urlsplit
 

@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **110** · TypeScript modules: **0**
+Python modules: **115** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **243** · TypeScript modules: **0**
+Python modules: **244** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -163,6 +163,7 @@ apps.control-plane.api.path_shim
 apps.control-plane.api.routes
 apps.control-plane.api.routes.connectors
 apps.control-plane.api.routes.discovery
+apps.control-plane.api.routes.discovery_strategy
 apps.control-plane.api.routes.dossier
 apps.control-plane.api.routes.entities
 apps.control-plane.api.routes.fabric
@@ -194,7 +195,6 @@ apps.control-plane.api.routes.specops_ghostline
 apps.control-plane.api.routes.specops_phishing
 apps.control-plane.api.routes.specops_roe
 apps.control-plane.api.routes.specops_social
-apps.control-plane.api.routes.temporal_materializations
 ```
 
 </details>
