@@ -2,7 +2,7 @@
 
 Every defect below is a claim tied to re-checkable evidence (a file and a regex). `platform_model/gaps.py` re-reads the tree and a contract test fails if any open gap's evidence no longer holds. This is the replacement for the old free-text `KNOWN_GAPS`.
 
-**6** open gaps; **0** stale/resolved (must be zero — the test fails otherwise).
+**5** open gaps; **1** stale/resolved (must be zero — the test fails otherwise).
 
 ## Layer 0 — collection
 
@@ -20,7 +20,7 @@ Every defect below is a claim tied to re-checkable evidence (a file and a regex)
 
 | ID | Severity | Status | Claim | Evidence |
 |---|---|---|---|---|
-| `dlq-tenant-store-not-wired` | critical | OPEN | The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane. | `apps/control-plane/api/routes/quarantine.py` |
+| `dlq-tenant-store-not-wired` | critical | RESOLVED | The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane. | `apps/control-plane/api/routes/quarantine.py` |
 | `roe-in-memory-registry` | critical | OPEN | Rules-of-Engagement sign-off is written to an in-process registry, not durable storage. | `apps/control-plane/api/routes/specops_roe.py` |
 | `alembic-head-is-not-a-base` | high | OPEN | The first Alembic revision has down_revision=None, so upgrade head builds no pre-014 table. | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` |
 | `metrics-not-connected-to-telemetry` | high | OPEN | The metrics API explicitly reports unavailable because tenant-scoped telemetry and time-windowed aggregates are not connected. | `apps/control-plane/api/routes/metrics.py` |

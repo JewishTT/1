@@ -156,9 +156,9 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/{record_id}` | 32 |
-| POST | `/{record_id}/replay` | 40 |
-| POST | `/{record_id}/re-evaluate` | 48 |
+| GET | `/{record_id}` | 71 |
+| POST | `/{record_id}/replay` | 99 |
+| POST | `/{record_id}/re-evaluate` | 113 |
 
 ## `research_cases` — `apps/control-plane/api/routes/research_cases.py`
 

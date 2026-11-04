@@ -1,6 +1,6 @@
 # Tests
 
-361 test files, 5401 test functions. 274 platform modules are not targeted by any test.
+362 test files, 5405 test functions. 274 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -43,6 +43,7 @@
 | `apps/acquisition/tests/unit/test_source_executor_contracts.py` | 11 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_source_query_set.py` | 12 | `apps/acquisition/cc_plan.py`, `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py` |
 | `apps/acquisition/tests/unit/test_warc_adapter.py` | 3 | `apps/acquisition/adapters/warc/collect.py` |
+| `apps/acquisition/tests/unit/test_worker_failure_persistence.py` | 2 | `apps/acquisition/worker_acquisition.py`, `apps/shared/events/topics.py` |
 | `apps/admission/tests/contract/test_no_auto_merge.py` | 25 | `apps/admission/engine/admission.py`, `apps/admission/engine/calibration.py`, `apps/admission/resolution/blocking.py`, `apps/admission/resolution/candidate.py` |
 | `apps/admission/tests/contract/test_resolution_history.py` | 35 | `apps/admission/engine/calibration.py`, `apps/admission/engine/intake.py`, `apps/admission/resolution/decision_store.py`, `apps/admission/resolution/gate.py` |
 | `apps/admission/tests/test_admission.py` | 22 | `apps/admission/engine/admission.py`, `apps/admission/engine/assertions.py`, `apps/admission/engine/calibration.py`, `apps/admission/engine/temporal.py` |
@@ -85,7 +86,7 @@
 | `apps/control-plane/tests/integration/test_tools_api.py` | 8 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/tests/test_auth_security.py` | 6 | `apps/control-plane/api/auth.py` |
 | `apps/control-plane/tests/test_metrics_honesty.py` | 2 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py` |
-| `apps/control-plane/tests/test_quarantine_api.py` | 2 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py` |
+| `apps/control-plane/tests/test_quarantine_api.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/shared/events/dlq.py`, `apps/shared/events/dlq_durable.py` |
 | `apps/control-plane/tests/test_research_case_invariants.py` | 11 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/person_case_profile.py` |
 | `apps/control-plane/tests/test_research_case_projection.py` | 6 | `apps/control-plane/services/research_case_projection.py` |
 | `apps/control-plane/tests/test_research_case_reports.py` | 5 | `apps/control-plane/services/research_case_artifacts.py`, `apps/control-plane/services/research_case_reports.py`, `apps/shared/contracts/evidence_span.py` |

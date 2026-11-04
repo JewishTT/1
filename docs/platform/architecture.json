@@ -194,6 +194,7 @@
           "apps/acquisition/tests/unit/test_source_executor_contracts.py",
           "apps/acquisition/tests/unit/test_source_query_set.py",
           "apps/acquisition/tests/unit/test_warc_adapter.py",
+          "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
           "apps/acquisition/worker-dataset/__init__.py",
           "apps/acquisition/worker-dataset/acquire.py",
           "apps/acquisition/worker_acquisition.py",
@@ -250,7 +251,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 161
+        "module_count": 162
       },
       {
         "id": "interpretation",
@@ -1548,6 +1549,7 @@
       "claim.timezone",
       "cloudflare.com",
       "cognitive.acquisition.worker",
+      "cognitive.dlq",
       "cognitive.investigation.activities",
       "cognitive.worker",
       "collections.abc",
@@ -1641,8 +1643,7 @@
       "empty.txt",
       "enable.auto.commit",
       "enable.auto.offset.store",
-      "enable.idempotence",
-      "engine.py"
+      "enable.idempotence"
     ]
   },
   "context_map": {

@@ -18,7 +18,7 @@
     {
       "name": "acquisition",
       "description": "Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.",
-      "python_modules": 115,
+      "python_modules": 116,
       "typescript_modules": 0,
       "modules": [
         "apps.acquisition._measure_coverage",
@@ -127,6 +127,7 @@
         "apps.acquisition.tests.unit.test_source_executor_contracts",
         "apps.acquisition.tests.unit.test_source_query_set",
         "apps.acquisition.tests.unit.test_warc_adapter",
+        "apps.acquisition.tests.unit.test_worker_failure_persistence",
         "apps.acquisition.worker-dataset",
         "apps.acquisition.worker-dataset.acquire",
         "apps.acquisition.worker_acquisition",
@@ -1148,11 +1149,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1046,
-    "edge_count": 2965,
+    "module_count": 1047,
+    "edge_count": 2971,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 914,
+      "stdlib:__future__": 915,
       "stdlib:abc": 3,
       "stdlib:argparse": 21,
       "stdlib:ast": 28,
@@ -1174,7 +1175,7 @@
       "stdlib:enum": 119,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 134,
+      "stdlib:hashlib": 136,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 10,
@@ -1184,11 +1185,11 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 205,
-      "stdlib:logging": 23,
+      "stdlib:json": 206,
+      "stdlib:logging": 24,
       "stdlib:math": 41,
       "stdlib:os": 75,
-      "stdlib:pathlib": 328,
+      "stdlib:pathlib": 329,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 104,
@@ -1201,14 +1202,14 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 17,
-      "stdlib:sys": 264,
+      "stdlib:sys": 265,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 19,
       "stdlib:time": 33,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
-      "stdlib:types": 38,
+      "stdlib:types": 40,
       "stdlib:typing": 377,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
@@ -1253,7 +1254,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 281,
+      "third-party:pytest": 282,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -2748,6 +2749,16 @@
         "via": "adapters.warc.collect"
       },
       {
+        "from": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "to": "apps/shared/events/topics.py",
+        "via": "events.topics"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "to": "apps/acquisition/worker_acquisition.py",
+        "via": "worker_acquisition"
+      },
+      {
         "from": "apps/acquisition/worker-dataset/__init__.py",
         "to": "apps/acquisition/adapters/registry.py",
         "via": "adapters.registry"
@@ -4136,6 +4147,16 @@
         "from": "apps/control-plane/api/routes/quarantine.py",
         "to": "apps/control-plane/api/auth.py",
         "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/api/routes/quarantine.py",
+        "to": "apps/shared/events/dlq_durable.py",
+        "via": "events.dlq_durable"
+      },
+      {
+        "from": "apps/control-plane/api/routes/quarantine.py",
+        "to": "apps/shared/storage/s3.py",
+        "via": "storage.s3"
       },
       {
         "from": "apps/control-plane/api/routes/research_cases.py",
@@ -7576,6 +7597,16 @@
         "from": "apps/control-plane/tests/test_quarantine_api.py",
         "to": "apps/control-plane/api/routes/quarantine.py",
         "via": "api.routes.quarantine"
+      },
+      {
+        "from": "apps/control-plane/tests/test_quarantine_api.py",
+        "to": "apps/shared/events/dlq.py",
+        "via": "events.dlq"
+      },
+      {
+        "from": "apps/control-plane/tests/test_quarantine_api.py",
+        "to": "apps/shared/events/dlq_durable.py",
+        "via": "events.dlq_durable"
       },
       {
         "from": "apps/control-plane/tests/test_research_case_invariants.py",
@@ -16983,6 +17014,18 @@
         ]
       },
       {
+        "path": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "tests": 2,
+        "test_names": [
+          "test_original_envelope_is_persisted_before_failure_marker",
+          "test_sink_refuses_tenantless_failures_without_writing_or_publishing"
+        ],
+        "targets": [
+          "apps/acquisition/worker_acquisition.py",
+          "apps/shared/events/topics.py"
+        ]
+      },
+      {
         "path": "apps/admission/tests/contract/test_no_auto_merge.py",
         "tests": 25,
         "test_names": [
@@ -17935,14 +17978,18 @@
       },
       {
         "path": "apps/control-plane/tests/test_quarantine_api.py",
-        "tests": 2,
+        "tests": 4,
         "test_names": [
-          "test_dlq_list_fails_closed_when_tenant_repository_is_missing",
-          "test_dlq_inspect_replay_and_reevaluate_do_not_fake_not_found"
+          "test_list_and_get_are_backed_by_tenant_scoped_durable_metadata",
+          "test_tenant_cannot_enumerate_or_read_another_tenants_records",
+          "test_replay_requires_admin_and_stays_disabled_without_governed_redrive",
+          "test_re_evaluation_requires_admin_and_does_not_delete_records"
         ],
         "targets": [
           "apps/control-plane/api/auth.py",
-          "apps/control-plane/api/routes/__init__.py"
+          "apps/control-plane/api/routes/__init__.py",
+          "apps/shared/events/dlq.py",
+          "apps/shared/events/dlq_durable.py"
         ]
       },
       {
@@ -24724,7 +24771,7 @@
         ]
       }
     ],
-    "total": 5401
+    "total": 5405
   },
   "contracts": {
     "python": [
@@ -25801,17 +25848,17 @@
         {
           "method": "GET",
           "path": "/{record_id}",
-          "lineno": 32
+          "lineno": 71
         },
         {
           "method": "POST",
           "path": "/{record_id}/replay",
-          "lineno": 40
+          "lineno": 99
         },
         {
           "method": "POST",
           "path": "/{record_id}/re-evaluate",
-          "lineno": 48
+          "lineno": 113
         }
       ]
     },
@@ -30279,6 +30326,7 @@
             "apps/acquisition/tests/unit/test_source_executor_contracts.py",
             "apps/acquisition/tests/unit/test_source_query_set.py",
             "apps/acquisition/tests/unit/test_warc_adapter.py",
+            "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
             "apps/acquisition/worker-dataset/__init__.py",
             "apps/acquisition/worker-dataset/acquire.py",
             "apps/acquisition/worker_acquisition.py",
@@ -30335,7 +30383,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 161
+          "module_count": 162
         },
         {
           "id": "interpretation",
@@ -31633,6 +31681,7 @@
         "claim.timezone",
         "cloudflare.com",
         "cognitive.acquisition.worker",
+        "cognitive.dlq",
         "cognitive.investigation.activities",
         "cognitive.worker",
         "collections.abc",
@@ -31726,8 +31775,7 @@
         "empty.txt",
         "enable.auto.commit",
         "enable.auto.offset.store",
-        "enable.idempotence",
-        "engine.py"
+        "enable.idempotence"
       ]
     },
     "context_map": {
@@ -33865,6 +33913,15 @@
         "markers": []
       },
       {
+        "path": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "status": "TEST",
+        "loc": 100,
+        "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/acquisition/worker-dataset/__init__.py",
         "status": "PACKAGE_INIT",
         "loc": 14,
@@ -34450,8 +34507,8 @@
       {
         "path": "apps/control-plane/api/routes/quarantine.py",
         "status": "IMPLEMENTED",
-        "loc": 56,
-        "callables": 5,
+        "loc": 125,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -35966,8 +36023,8 @@
       {
         "path": "apps/control-plane/tests/test_quarantine_api.py",
         "status": "TEST",
-        "loc": 30,
-        "callables": 2,
+        "loc": 124,
+        "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -42420,9 +42477,9 @@
       "IMPLEMENTED": 558,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 93,
-      "TEST": 358,
+      "TEST": 359,
       "MIGRATION": 19,
-      "total": 1046
+      "total": 1047
     }
   },
   "reachability": {
@@ -42849,6 +42906,10 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_warc_adapter.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
         "status": "TEST"
       },
       {
@@ -46660,8 +46721,8 @@
       "PRODUCTION": 432,
       "TEST_ONLY": 133,
       "ORPHAN": 123,
-      "TEST": 358,
-      "total": 1046
+      "TEST": 359,
+      "total": 1047
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -46985,13 +47046,13 @@
             "min_count": 1
           }
         ],
-        "status": "OPEN",
+        "status": "RESOLVED",
         "checks": [
           {
             "path": "apps/control-plane/api/routes/quarantine.py",
-            "ok": true,
-            "reason": "ok",
-            "count": 1
+            "ok": false,
+            "reason": "evidence-mismatch",
+            "count": 0
           }
         ]
       },
@@ -47420,8 +47481,8 @@
         ]
       }
     ],
-    "open": 6,
-    "stale_or_resolved": 0
+    "open": 5,
+    "stale_or_resolved": 1
   },
   "golden_path": {
     "goal": "Full person-background analysis: Layer 0 (broad, efficient collection over Kafka + lakehouse + sources) -> Layer 1 (extraction, merge, resolution, normalization of entity-artifacts and entity-invariants, plus relation extraction) -> Layer 2 (full context engine), grounded in the platform philosophy (event-driven, evidence-first, immutable observations, rebuildable projections, no fabrication).",
@@ -48085,7 +48146,7 @@
       },
       "acquisition.request": {
         "lane": "acquisition",
-        "files": 14,
+        "files": 15,
         "producer_files": 9
       },
       "admission.decided": {
@@ -53244,6 +53305,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "8f3a5d3ea8bf1d76",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "object": "apps/acquisition/worker_acquisition.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+          "via": "worker_acquisition"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "822515fb6170bc32",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "object": "apps/shared/events/topics.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+          "via": "events.topics"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "c352d5ac76a6abf1",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/worker-dataset/__init__.py",
@@ -56854,6 +56941,32 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/quarantine.py",
           "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "982c04fd7a755c4d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/quarantine.py",
+        "object": "apps/shared/events/dlq_durable.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/quarantine.py",
+          "via": "events.dlq_durable"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8fb2019abc30890d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/quarantine.py",
+        "object": "apps/shared/storage/s3.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/quarantine.py",
+          "via": "storage.s3"
         },
         "confidence": 1.0
       },
@@ -65798,6 +65911,32 @@
         "evidence": {
           "file": "apps/control-plane/tests/test_quarantine_api.py",
           "via": "api.routes.quarantine"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "73eae3f5811fb143",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/shared/events/dlq.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py",
+          "via": "events.dlq"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d458a0f119332ffa",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/shared/events/dlq_durable.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py",
+          "via": "events.dlq_durable"
         },
         "confidence": 1.0
       },
@@ -89028,7 +89167,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/quarantine.py",
-          "line": 34
+          "line": 73
         },
         "confidence": 1.0
       },
@@ -90354,7 +90493,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/quarantine.py",
-          "line": 50
+          "line": 115
         },
         "confidence": 1.0
       },
@@ -90367,7 +90506,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/quarantine.py",
-          "line": 42
+          "line": 101
         },
         "confidence": 1.0
       },
@@ -96014,6 +96153,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "f046a58134aa1e7e",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "object": "apps/acquisition/worker_acquisition.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f09c93dab1f7e4b3",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "object": "apps/shared/events/topics.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "25ddf47923db73d6",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/admission/tests/contract/test_no_auto_merge.py",
@@ -97818,6 +97981,30 @@
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/test_quarantine_api.py",
         "object": "apps/control-plane/api/routes/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8ac2e60e33c4b13d",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/shared/events/dlq.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ad9968923485ae52",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/shared/events/dlq_durable.py",
         "status": "STATIC_FACT",
         "method": "import_and_name_scan",
         "evidence": {
@@ -106731,27 +106918,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4581,
-      "static_facts": 4289,
+      "facts_total": 4591,
+      "static_facts": 4299,
       "inferred": 292,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1046,
+    "python_modules": 1047,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2965,
-    "test_files": 361,
-    "test_functions": 5401,
+    "import_edges": 2971,
+    "test_files": 362,
+    "test_functions": 5405,
     "untested_modules": 274,
     "http_routes": 186
   },
   "evidence_stats": {
-    "facts_total": 4581,
-    "static_facts": 4289,
+    "facts_total": 4591,
+    "static_facts": 4299,
     "inferred": 292,
     "intended": 0
   },
@@ -106759,16 +106946,16 @@
     "IMPLEMENTED": 558,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 93,
-    "TEST": 358,
+    "TEST": 359,
     "MIGRATION": 19,
-    "total": 1046
+    "total": 1047
   },
   "reachability_summary": {
     "PRODUCTION": 432,
     "TEST_ONLY": 133,
     "ORPHAN": 123,
-    "TEST": 358,
-    "total": 1046
+    "TEST": 359,
+    "total": 1047
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -107119,7 +107306,7 @@
       "zero_layer.enrichment"
     ]
   },
-  "gaps_open": 6,
+  "gaps_open": 5,
   "rust": {
     "count": 16,
     "crates": [

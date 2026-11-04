@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **115** · TypeScript modules: **0**
+Python modules: **116** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
