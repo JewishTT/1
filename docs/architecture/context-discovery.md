@@ -69,3 +69,16 @@ A provider-specific source that is not attested or whose worker integration is a
   "max_queries": 48
 }
 ```
+
+## Release-gate coverage snapshot
+
+| Slice | Current status | What this means |
+|---|---|---|
+| Public web search and dorking | Integrated through SearXNG and the governed case worker | Bounded result pages become Capture/Observation-backed discovery leads |
+| First-party pages and public PDFs | Discoverable; source fetch requires the approved lead-harvest path | A search hit alone is not yet source evidence |
+| Public filings, registry and publication sources | Present in the acquisition catalogue; not all are wired into this case discovery plan | Catalogue presence is not proof of case-path execution |
+| Common Crawl, Wayback and certificate transparency | Existing adapters and proofs exist in other acquisition/discovery paths | Not yet a multi-provider context plan in this case workflow |
+| Public incident disclosures | Searchable as public advisory/report leads | Restricted raw datasets are not collected |
+| Adaptive follow-up | Not yet closed-loop in this increment | Coverage gaps are surfaced, but do not yet launch autonomous multi-round plans |
+
+The current integrated Research Case search path is intentionally conservative: the source policy permits up to 20 requests and up to 5 pages per request, so one planning round emits at most four SearXNG actions. Raising that cap requires a policy/budget change and measured provider, parser, storage and Redpanda throughput—not a local compiler constant.
