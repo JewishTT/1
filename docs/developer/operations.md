@@ -19,7 +19,7 @@ Never use production secrets in local fixtures. Do not commit .env, raw captures
 - Migrations must be forward-compatible, tested from the supported deployed revision, and have an explicit rollback/recovery story.
 - Schema drift must fail acceptance instead of being repaired implicitly during a request.
 
-The generated gaps and engineering audit identify remaining migration-chain and create-all defects. Those remain release blockers until the migration base is cleanly established and dispatch no longer creates schema.
+The generated gaps and engineering audit identify migration-chain defects separately. Operational services do not call Base.metadata.create_all() or create_tables(); the Alembic schema must be applied before service startup. The helper in db/session.py is reserved for hermetic tests and explicit local fixtures.
 
 ## Evidence and event path
 

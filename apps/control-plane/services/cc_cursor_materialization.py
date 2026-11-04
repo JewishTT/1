@@ -22,7 +22,7 @@ async def run_cursor_materialization(*, tenant_id: str, entity_id: str, run_id: 
     from context_engine.invariant_reducer import InvariantReducer
     from db.entity_stream import SqlEntityStreamRepository
     from db.materialization_cursor import SqlMaterializationCursorRepository
-    from db.session import create_tables, make_session_factory
+    from db.session import make_session_factory
     from db.temporal_materialization import SqlTemporalMaterializationRepository
     from services.capture_interpretation import interpret_warc_capture
 
@@ -42,7 +42,7 @@ async def run_cursor_materialization(*, tenant_id: str, entity_id: str, run_id: 
     partitions = partitions[:max(1, int(os.getenv("CC_MAX_CRAWLS", "3")))]
     if not partitions:
         raise ValueError("Common Crawl returned no crawl partitions")
-    await create_tables()
+
     factory = make_session_factory()
     async with factory() as session:
         streams = SqlEntityStreamRepository(session)
