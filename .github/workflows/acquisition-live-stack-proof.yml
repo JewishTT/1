@@ -192,6 +192,21 @@ jobs:
           POSTGRES_USER: cognitive
           POSTGRES_PASSWORD: cognitive
         run: uv run --directory apps/control-plane alembic -c alembic.ini upgrade head
+      - name: Assert canonical Capture / Observation tables are installed in public
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          DO $
+          BEGIN
+            IF to_regclass('public.captures') IS NULL THEN
+              RAISE EXCEPTION 'Alembic upgrade head did not install public.captures';
+            END IF;
+            IF to_regclass('public.observations') IS NULL THEN
+              RAISE EXCEPTION 'Alembic upgrade head did not install public.observations';
+            END IF;
+          END $;
+          SELECT current_database(), current_schema(), current_setting('search_path'),
+                 to_regclass('public.captures'), to_regclass('public.observations');
+          SQL
       - name: Seed a controlled Postgres connector fixture
         run: |
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
