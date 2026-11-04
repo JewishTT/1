@@ -1029,47 +1029,222 @@ class ResearchCaseService:
                 "proposed_action_refs": [action.action_id for action in obligation_actions],
             })
 
-        # Discovery-only queries return URL leads, never evidence or obligation satisfaction.
+        # Context-driven discovery proposals are persisted as ordinary ResearchActions.
+        # They still require operator approval, durable budget reservation and the
+        # existing CaseDispatchExecutor; this method never performs network I/O.
         discovery_action_refs: list[str] = []
+        discovery_plan_view: dict[str, Any] = {
+            "status": "NOT_PLANNED",
+            "planned_queries": 0,
+            "coverage": [],
+            "warnings": [],
+        }
         discovery_source_ids = policy.eligible_discovery_sources(
-            source_ids=list(meta.get("allowed_source_ids", [])), launch_profile=str(meta["launch_profile"])
+            source_ids=list(meta.get("allowed_source_ids", [])),
+            launch_profile=str(meta["launch_profile"]),
         )
-        if obligations and query_anchor and discovery_source_ids:
-            discovery_queries = (
-                f'"{query_anchor}" (official biography OR official profile OR appointment)',
-                f'"{query_anchor}" (official statement OR speech OR publication)',
+        if obligations and discovery_source_ids:
+            from urllib.parse import urlsplit
+            from context_discovery import (
+                DEFAULT_FACETS,
+                ContextDiscoveryCompiler,
+                EntitySeed,
+                ResearchContext,
             )
+
+            selected_source: tuple[str, Mapping[str, Any], Any] | None = None
             for source_id in discovery_source_ids:
                 source_profile = policy._sources.get(source_id, {})
                 catalogue_name = str(source_profile.get("catalogue_source_id") or "").strip()
                 definition = by_name.get(catalogue_name)
                 if definition is None or not definition.enabled:
-                    capability_gaps.append({"obligation_id": obligations[0].obligation_id, "claim_families": [], "detail": f"discovery source {source_id} has no enabled catalogue definition {catalogue_name!r}"})
+                    capability_gaps.append({
+                        "obligation_id": obligations[0].obligation_id,
+                        "claim_families": [],
+                        "detail": f"discovery source {source_id} has no enabled catalogue definition {catalogue_name!r}",
+                    })
                     continue
-                from urllib.parse import urlsplit
                 host = (urlsplit(str(definition.tool.get("url") or "")).hostname or "").lower()
-                allowed_hosts = {str(item).strip().lower() for item in (source_profile.get("egress_hosts") or []) if str(item).strip()}
-                if not host or host not in allowed_hosts or definition.runtime_ref != str(source_profile.get("runtime_ref") or ""):
-                    capability_gaps.append({"obligation_id": obligations[0].obligation_id, "claim_families": [], "detail": f"discovery source {source_id} runtime/egress does not match its allow-list"})
+                allowed_hosts = {
+                    str(item).strip().lower()
+                    for item in (source_profile.get("egress_hosts") or [])
+                    if str(item).strip()
+                }
+                if (
+                    not host
+                    or host not in allowed_hosts
+                    or definition.runtime_ref != str(source_profile.get("runtime_ref") or "")
+                    or str(source_profile.get("result_role") or "") != "DISCOVERY_ONLY"
+                ):
+                    capability_gaps.append({
+                        "obligation_id": obligations[0].obligation_id,
+                        "claim_families": [],
+                        "detail": f"discovery source {source_id} runtime, role or egress does not match its allow-list",
+                    })
                     continue
-                for query in discovery_queries:
-                    action = ResearchAction(
-                        obligation_id=obligations[0].obligation_id,
-                        proposed_method=f"Bounded public-web discovery only; source_policy={source_id}; catalogue={catalogue_name}; result_role=DISCOVERY_ONLY",
-                        runtime_ref=definition.runtime_ref, expected_information_gain=0.2,
-                        estimated_cost=0.05, priority=obligations[0].priority,
-                        capability_requirements=("http",), requires_operator_approval=True,
-                        status="proposed", source_id=source_id, catalogue_source_id=definition.source_id,
-                        query=query[:500], scope_digest=scope_digest, policy_digest=policy_digest,
-                        result_role="DISCOVERY_ONLY",
+                # The first integrated provider is the existing, policy-approved
+                # SearXNG public-search runtime. Other discovery families are added
+                # through the same provider contract, not silently routed to HTTP.
+                if definition.runtime_ref == "searxng" and definition.name == "searxng_public_search":
+                    selected_source = (source_id, source_profile, definition)
+                    break
+
+            if selected_source is None:
+                discovery_plan_view["status"] = "BLOCKED_SOURCE"
+                if not capability_gaps:
+                    capability_gaps.append({
+                        "obligation_id": obligations[0].obligation_id,
+                        "claim_families": [],
+                        "detail": "no policy-approved, worker-integrated public discovery runtime is available",
+                    })
+            else:
+                source_id, source_profile, definition = selected_source
+                anchor_rows: list[Mapping[str, Any]] = [
+                    item for item in meta.get("subject_anchors", [])
+                    if isinstance(item, Mapping) and str(item.get("value", "")).strip()
+                ]
+                dynamic_rows: list[Mapping[str, Any]] = [
+                    item for item in meta.get("dynamic_invariant_anchors", [])
+                    if isinstance(item, Mapping) and str(item.get("value", "")).strip()
+                ]
+                seeds: list[EntitySeed] = []
+                for index, anchor in enumerate([*anchor_rows, *dynamic_rows]):
+                    value = str(anchor.get("value") or "").strip()
+                    kind_value = str(anchor.get("kind") or "")
+                    seed_kind = (
+                        "organization" if kind_value in {"public_organization", "organization"}
+                        else "public_person" if kind_value in {
+                            "public_name", "orcid", "openalex_author_id",
+                            "doi_author_record", "official_profile_url",
+                        }
+                        else "topic"
                     )
-                    await self._store.put_action(action)
-                    discovery_action_refs.append(action.action_id)
+                    domains: tuple[str, ...] = ()
+                    if kind_value == "official_profile_url":
+                        try:
+                            host = (urlsplit(value).hostname or "").lower()
+                            domains = (host,) if host else ()
+                        except ValueError:
+                            domains = ()
+                    try:
+                        seeds.append(
+                            EntitySeed(
+                                ref=f"case-anchor-{index:03d}",
+                                name=value,
+                                domains=domains,
+                                kind=seed_kind,
+                            )
+                        )
+                    except ValueError as exc:
+                        capability_gaps.append({
+                            "obligation_id": obligations[0].obligation_id,
+                            "claim_families": [],
+                            "detail": f"anchor {index} is not a safe public discovery seed: {exc}",
+                        })
+
+                context_fragments = [str(context.question or "").strip()]
+                for amendment in meta.get("context_amendments", []):
+                    if not isinstance(amendment, Mapping):
+                        continue
+                    body = str(amendment.get("body") or "").strip()
+                    if body and amendment.get("kind") in {"context", "query_hint", "question"}:
+                        context_fragments.append(body)
+                context_fragments.extend(
+                    str(value).strip()
+                    for value in meta.get("jurisdictions", [])
+                    if str(value).strip()
+                )
+                research_brief = " ".join(dict.fromkeys(item for item in context_fragments if item))
+                valid_time = meta.get("valid_time") if isinstance(meta.get("valid_time"), Mapping) else {}
+
+                def _calendar_day(value: Any) -> str | None:
+                    raw = str(value or "").strip()
+                    if not raw:
+                        return None
+                    try:
+                        return datetime.fromisoformat(raw.replace("Z", "+00:00")).date().isoformat()
+                    except ValueError:
+                        try:
+                            return datetime.fromisoformat(raw[:10]).date().isoformat()
+                        except ValueError:
+                            return None
+
+                max_pages = max(
+                    1,
+                    min(
+                        int(source_profile.get("max_pages") or 1),
+                        int(definition.pagination.max_pages) if definition.pagination.enabled else 1,
+                    ),
+                )
+                max_requests = max(1, int(source_profile.get("max_requests") or max_pages))
+                # A single SearXNG action may fetch at most max_pages. Derive the
+                # query cap from the approved source budget before emitting actions.
+                query_cap = max(1, min(64, max_requests // max_pages))
+                try:
+                    research_context = ResearchContext(
+                        tenant_id=tenant_id,
+                        investigation_id=context.investigation_id,
+                        context_text=research_brief or str(context.question or "Public research"),
+                        entities=tuple(seeds),
+                        facets=DEFAULT_FACETS,
+                        time_from=_calendar_day(valid_time.get("from")),
+                        time_to=_calendar_day(valid_time.get("until")),
+                        max_queries=query_cap,
+                    )
+                    compiled = ContextDiscoveryCompiler().compile(research_context)
+                except (TypeError, ValueError) as exc:
+                    compiled = None
+                    discovery_plan_view = {
+                        "status": "BLOCKED_CONTEXT",
+                        "planned_queries": 0,
+                        "coverage": [],
+                        "warnings": [str(exc)],
+                    }
+
+                if compiled is not None:
+                    for query_task in compiled.tasks:
+                        action = ResearchAction(
+                            obligation_id=obligations[0].obligation_id,
+                            proposed_method=(
+                                "Context-driven public discovery; "
+                                f"facet={query_task.facet.value}; strategy={query_task.strategy}; "
+                                f"source_policy={source_id}; catalogue={definition.name}; "
+                                "result_role=DISCOVERY_ONLY"
+                            ),
+                            runtime_ref=definition.runtime_ref,
+                            expected_information_gain=0.2,
+                            estimated_cost=min(1.0, max_pages / max_requests),
+                            priority=max(0.0, min(1.0, query_task.priority / 100.0)),
+                            capability_requirements=("http",),
+                            requires_operator_approval=True,
+                            status="proposed",
+                            source_id=source_id,
+                            catalogue_source_id=definition.source_id,
+                            query=query_task.query[:500],
+                            scope_digest=scope_digest,
+                            policy_digest=policy_digest,
+                            result_role="DISCOVERY_ONLY",
+                        )
+                        await self._store.put_action(action)
+                        discovery_action_refs.append(action.action_id)
+
                     required_caps.add("http")
                     eligible_caps.add("http")
+                    discovery_plan_view = {
+                        "status": "READY_FOR_REVIEW" if compiled.tasks else "NO_QUERIES",
+                        "plan_id": compiled.plan_id,
+                        "context_digest": compiled.context_digest,
+                        "planned_queries": len(compiled.tasks),
+                        "query_budget": query_cap,
+                        "truncated": compiled.truncated,
+                        "coverage": [item.as_dict() for item in compiled.coverage],
+                        "warnings": list(compiled.warnings),
+                        "source_policy_id": source_id,
+                        "catalogue_source": definition.name,
+                    }
+
             if obligation_views:
                 obligation_views[0]["discovery_action_refs"] = list(discovery_action_refs)
-
         action_read = await self.list_actions(case_id=case_id, tenant_id=tenant_id)
         actions = action_read["actions"]
         runtime_ready = bool(
@@ -1138,6 +1313,7 @@ class ResearchCaseService:
             "capabilities_preview": sorted(eligible_caps),
             "capability_gaps": capability_gaps,
             "discovery_action_refs": sorted(discovery_action_refs),
+            "discovery_plan": discovery_plan_view,
             "evidence_coverage_ready": not bool(capability_gaps),
             "rejected_catalogue_definitions": rejected_definitions,
             "plan_state": status,
