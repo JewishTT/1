@@ -1,6 +1,6 @@
 """Catalogue bridge: Context Planner to Runtime Dispatcher (Feature 024 D4=a, Phase 6).
 
-FR-067/068/069. The gap this closes is specific: 146 source definitions already exist
+FR-067/068/069. The gap this closes is specific: 151 source definitions already exist
 as declarative YAML in ``apps/acquisition/sources/estorides/``, already loaded by
 ``sources/catalogue.py`` and already served by ``GET /api/v1/connectors`` and
 ``/api/v1/tools``. Meanwhile the Context Engine needs to know what capabilities exist
@@ -66,7 +66,7 @@ def _runtime_ref_of(definition: Any) -> str:
 
     Taken from the definition's own ``runtime_ref`` when it declares one, and otherwise
     derived from its ``kind``. The derivation is what makes this bridge usable at all:
-    145 of the catalogue's sources are HTTP or system tools with no declared runtime, and
+    150 of the catalogue's sources are HTTP or system tools with no declared runtime, and
     filtering them out left the bridge permanently empty -- so ``check()`` answered
     "not in the catalogue" for every capability and no obligation could ever be routed.
 

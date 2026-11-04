@@ -1,6 +1,6 @@
 # Import graph
 
-1010 Python modules, 2808 resolved local edges.
+1031 Python modules, 2940 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,46 +10,46 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 880 |
-| `dataclasses` | stdlib | 390 |
-| `typing` | stdlib | 367 |
-| `pathlib` | stdlib | 318 |
-| `pytest` | third-party | 268 |
-| `sys` | stdlib | 256 |
-| `collections` | stdlib | 241 |
-| `json` | stdlib | 193 |
-| `datetime` | stdlib | 190 |
-| `sqlalchemy` | third-party | 158 |
-| `hashlib` | stdlib | 127 |
+| `__future__` | stdlib | 901 |
+| `dataclasses` | stdlib | 394 |
+| `typing` | stdlib | 373 |
+| `pathlib` | stdlib | 323 |
+| `pytest` | third-party | 275 |
+| `sys` | stdlib | 261 |
+| `collections` | stdlib | 247 |
+| `json` | stdlib | 203 |
+| `datetime` | stdlib | 197 |
+| `sqlalchemy` | third-party | 161 |
+| `hashlib` | stdlib | 133 |
 | `enum` | stdlib | 118 |
-| `re` | stdlib | 96 |
-| `asyncio` | stdlib | 70 |
-| `os` | stdlib | 69 |
-| `fastapi` | third-party | 66 |
-| `uuid` | stdlib | 48 |
-| `urllib` | stdlib | 43 |
+| `re` | stdlib | 100 |
+| `asyncio` | stdlib | 76 |
+| `os` | stdlib | 74 |
+| `fastapi` | third-party | 67 |
+| `urllib` | stdlib | 59 |
+| `uuid` | stdlib | 49 |
 | `math` | stdlib | 41 |
+| `types` | stdlib | 36 |
 | `pydantic` | third-party | 34 |
 | `importlib` | stdlib | 33 |
-| `types` | stdlib | 33 |
-| `time` | stdlib | 29 |
+| `time` | stdlib | 33 |
 | `ast` | stdlib | 27 |
 | `io` | stdlib | 25 |
 | `alembic` | third-party | 24 |
 | `logging` | stdlib | 23 |
 | `numpy` | third-party | 23 |
 | `inspect` | stdlib | 21 |
+| `tempfile` | stdlib | 21 |
 | `argparse` | stdlib | 20 |
-| `tempfile` | stdlib | 20 |
 | `httpx` | third-party | 20 |
-| `threading` | stdlib | 17 |
+| `threading` | stdlib | 19 |
+| `shutil` | stdlib | 16 |
 | `subprocess` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |
 | `warcio` | third-party | 15 |
-| `shutil` | stdlib | 14 |
 | `temporalio` | third-party | 13 |
 | `itertools` | stdlib | 11 |
-| `yaml` | third-party | 10 |
+| `base64` | stdlib | 10 |
 
 ## Optional capability probes
 
@@ -75,6 +75,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `adapters` | `apps/acquisition/adapters/__init__.py` |
 | `admission` | `apps/admission` |
 | `aggregation` | `apps/interpretation/aggregation` |
+| `airbyte_acceptance` | `apps/acquisition/airbyte_acceptance.py` |
 | `analytics` | `apps/projection/analytics/__init__.py` |
 | `anchoring` | `apps/science/anchoring.py` |
 | `api` | `apps/control-plane/api/__init__.py` |
@@ -166,6 +167,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `tda` | `apps/projection/tda/__init__.py` |
 | `temporal` | `apps/science/temporal/__init__.py` |
 | `tools` | `apps/shared/tools` |
+| `transaction_lineage` | `apps/interpretation/transaction_lineage.py` |
 | `websearch` | `apps/shared/websearch/__init__.py` |
 | `worker_acquisition` | `apps/acquisition/worker_acquisition.py` |
 | `worker_browser` | `apps/acquisition/worker_browser/__init__.py` |

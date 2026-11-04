@@ -53,6 +53,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 
 | Module | Docstring |
 |---|---|
+| `apps/acquisition/_prove_blockchain_sources.py` | Live proof for the BTC / ETH / TRON read-only source vertical slice. |
 | `apps/acquisition/artifact_sink.py` | The sink: ``AcquisitionArtifact`` -> ``Capture`` + ``Observation`` + event. |
 | `apps/acquisition/cc_plan.py` | CC query planner (L1, CC-TEMPORALITY v1): entity identity -> CC index plan. |
 | `apps/acquisition/dispatcher/__init__.py` | Collection Fabric dispatcher (T110, T132, T133, R-03, R-09). |

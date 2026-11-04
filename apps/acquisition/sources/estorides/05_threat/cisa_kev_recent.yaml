@@ -1,4 +1,7 @@
 name: cisa_kev_recent
+source_family: cisa_kev
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 05. Threat Intel
 description: CISA Known Exploited Vulnerabilities catalog (keyless feed)

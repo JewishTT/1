@@ -26,6 +26,7 @@ from context_engine.person_case_profile import (
     CONSENTED_RECORDS,
     PUBLIC_PROFESSIONAL,
     PUBLIC_ROLE_REVIEW,
+    profile_for,
 )
 from domain.investigation_context import (
     ContextEngineError,
@@ -764,7 +765,10 @@ class ResearchCaseService:
             "actions": [
                 {
                     **action.to_dict(),
-                    "claim_family": self._action_claim_family(action),
+                    "claim_family": (
+                        self._action_claim_family(action)
+                        if getattr(action, "result_role", "EVIDENCE") == "EVIDENCE" else None
+                    ),
                 }
                 for action in leaves
             ],
@@ -825,9 +829,7 @@ class ResearchCaseService:
             reason = policy._source_block_reason(action.source_id, str(meta["launch_profile"]))
             if reason:
                 raise CaseServiceError(f"BLOCKED_POLICY: {reason}")
-            family = self._action_claim_family(action)
-            if not family or not policy._source_supports_claim_family(source_profile, family):
-                raise CaseServiceError(f"source {action.source_id} does not support claim family {family!r}")
+            self._validate_action_result_role(action=action, source_profile=source_profile, policy=policy)
 
             approved_action = replace(
                 action,
@@ -1027,6 +1029,47 @@ class ResearchCaseService:
                 "proposed_action_refs": [action.action_id for action in obligation_actions],
             })
 
+        # Discovery-only queries return URL leads, never evidence or obligation satisfaction.
+        discovery_action_refs: list[str] = []
+        discovery_source_ids = policy.eligible_discovery_sources(
+            source_ids=list(meta.get("allowed_source_ids", [])), launch_profile=str(meta["launch_profile"])
+        )
+        if obligations and query_anchor and discovery_source_ids:
+            discovery_queries = (
+                f'"{query_anchor}" (official biography OR official profile OR appointment)',
+                f'"{query_anchor}" (official statement OR speech OR publication)',
+            )
+            for source_id in discovery_source_ids:
+                source_profile = policy._sources.get(source_id, {})
+                catalogue_name = str(source_profile.get("catalogue_source_id") or "").strip()
+                definition = by_name.get(catalogue_name)
+                if definition is None or not definition.enabled:
+                    capability_gaps.append({"obligation_id": obligations[0].obligation_id, "claim_families": [], "detail": f"discovery source {source_id} has no enabled catalogue definition {catalogue_name!r}"})
+                    continue
+                from urllib.parse import urlsplit
+                host = (urlsplit(str(definition.tool.get("url") or "")).hostname or "").lower()
+                allowed_hosts = {str(item).strip().lower() for item in (source_profile.get("egress_hosts") or []) if str(item).strip()}
+                if not host or host not in allowed_hosts or definition.runtime_ref != str(source_profile.get("runtime_ref") or ""):
+                    capability_gaps.append({"obligation_id": obligations[0].obligation_id, "claim_families": [], "detail": f"discovery source {source_id} runtime/egress does not match its allow-list"})
+                    continue
+                for query in discovery_queries:
+                    action = ResearchAction(
+                        obligation_id=obligations[0].obligation_id,
+                        proposed_method=f"Bounded public-web discovery only; source_policy={source_id}; catalogue={catalogue_name}; result_role=DISCOVERY_ONLY",
+                        runtime_ref=definition.runtime_ref, expected_information_gain=0.2,
+                        estimated_cost=0.05, priority=obligations[0].priority,
+                        capability_requirements=("http",), requires_operator_approval=True,
+                        status="proposed", source_id=source_id, catalogue_source_id=definition.source_id,
+                        query=query[:500], scope_digest=scope_digest, policy_digest=policy_digest,
+                        result_role="DISCOVERY_ONLY",
+                    )
+                    await self._store.put_action(action)
+                    discovery_action_refs.append(action.action_id)
+                    required_caps.add("http")
+                    eligible_caps.add("http")
+            if obligation_views:
+                obligation_views[0]["discovery_action_refs"] = list(discovery_action_refs)
+
         action_read = await self.list_actions(case_id=case_id, tenant_id=tenant_id)
         actions = action_read["actions"]
         runtime_ready = bool(
@@ -1034,12 +1077,14 @@ class ResearchCaseService:
             and callable(getattr(self._dispatch_executor, "dispatch_case", None))
             and callable(getattr(self._dispatch_executor, "estimate_reservation", None))
         )
-        if capability_gaps:
-            status = "BLOCKED_CAPABILITY"
-        elif not actions:
-            status = "BLOCKED_NO_ACTIONS"
+        if not actions:
+            status = "BLOCKED_CAPABILITY" if capability_gaps else "BLOCKED_NO_ACTIONS"
         elif not runtime_ready:
             status = "BLOCKED_RUNTIME"
+        elif capability_gaps and discovery_action_refs:
+            status = "DISCOVERY_ONLY_READY_FOR_REVIEW"
+        elif capability_gaps:
+            status = "BLOCKED_CAPABILITY"
         else:
             status = "READY_FOR_REVIEW"
 
@@ -1048,8 +1093,9 @@ class ResearchCaseService:
             "scope_digest": scope_digest,
             "scope_revision": int(meta["scope_revision"]),
             "policy_digest": policy_digest,
-            "action_refs": sorted(action.action_id for action in actions),
+            "action_refs": sorted(str(action["action_id"]) for action in actions),
             "capability_gaps": capability_gaps,
+            "discovery_action_refs": sorted(discovery_action_refs),
             "plan_state": status,
         }
         plan_digest = self._digest(
@@ -1071,7 +1117,7 @@ class ResearchCaseService:
                     "policy_digest": policy_digest,
                     "plan_digest": plan_digest,
                     "plan_state": status,
-                    "proposed_action_refs": sorted(action.action_id for action in actions),
+                    "proposed_action_refs": sorted(str(action["action_id"]) for action in actions),
                     "capability_gaps": capability_gaps,
                     "no_network_side_effects": True,
                 },
@@ -1091,9 +1137,11 @@ class ResearchCaseService:
             "required_capabilities": sorted(required_caps),
             "capabilities_preview": sorted(eligible_caps),
             "capability_gaps": capability_gaps,
+            "discovery_action_refs": sorted(discovery_action_refs),
+            "evidence_coverage_ready": not bool(capability_gaps),
             "rejected_catalogue_definitions": rejected_definitions,
             "plan_state": status,
-            "ready_to_dispatch": bool(actions) and runtime_ready and not capability_gaps,
+            "ready_to_dispatch": bool(actions) and runtime_ready,
             "no_network_side_effects": True,
         }
 
@@ -1158,9 +1206,7 @@ class ResearchCaseService:
             reason = policy._source_block_reason(action.source_id, str(meta["launch_profile"]))
             if reason:
                 raise CaseServiceError(f"BLOCKED_POLICY: {reason}")
-            family = self._action_claim_family(action)
-            if not family or not policy._source_supports_claim_family(source_profile, family):
-                raise CaseServiceError(f"source {action.source_id} no longer supports claim family {family!r}")
+            self._validate_action_result_role(action=action, source_profile=source_profile, policy=policy)
             selected.append(action)
 
         estimate = dispatcher.estimate_reservation(
@@ -1334,6 +1380,22 @@ class ResearchCaseService:
         if marker not in action.proposed_method:
             return ""
         return action.proposed_method.split(marker, 1)[1].split(";", 1)[0].strip()
+
+    @staticmethod
+    def _validate_action_result_role(
+        *, action: ResearchAction, source_profile: Mapping[str, Any], policy: Any
+    ) -> None:
+        role = str(getattr(action, "result_role", "EVIDENCE") or "EVIDENCE")
+        declared = str(source_profile.get("result_role") or "EVIDENCE")
+        family = ResearchCaseService._action_claim_family(action)
+        if role == "DISCOVERY_ONLY":
+            if declared != "DISCOVERY_ONLY" or family:
+                raise CaseServiceError("discovery action does not match a discovery-only source profile")
+            return
+        if role != "EVIDENCE" or declared == "DISCOVERY_ONLY" or not family:
+            raise CaseServiceError(f"source {action.source_id} does not support evidence claim family {family!r}")
+        if not policy._source_supports_claim_family(source_profile, family):
+            raise CaseServiceError(f"source {action.source_id} does not support claim family {family!r}")
 
     # -- pause --------------------------------------------------------------
 

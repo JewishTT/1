@@ -1,4 +1,7 @@
 name: certspotter_issuances
+source_family: certspotter_ct
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 01. DNS Intelligence
 description: SSLMate Cert Spotter certificate transparency search (subdomain discovery)

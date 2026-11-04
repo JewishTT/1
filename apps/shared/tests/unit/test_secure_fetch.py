@@ -30,13 +30,24 @@ class FakeTransport:
         self.script = script
         self.seen: list[str] = []
         self.closed: list[str] = []
-        self.follow_redirects_setting = False
+        self.pinned: list[tuple[str, str]] = []
 
-    async def get(self, url: str, *, headers: dict[str, str]) -> httpx.Response:
+    async def request_pinned(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: dict[str, str],
+        pinned_ip: str,
+        timeout: float,
+    ) -> httpx.Response:
         self.seen.append(url)
+        self.pinned.append((url, pinned_ip))
         if url not in self.script:
             raise AssertionError(f"unexpected fetch: {url}")
-        return self.script[url]
+        response = self.script[url]
+        response.request = httpx.Request(method, url, headers=headers)
+        return response
 
     async def aclose(self) -> None:
         return None
@@ -78,6 +89,37 @@ async def test_happy_path_pins_public_ip():
     assert r.body == b"ok"
     assert r.pinned_ip == "93.184.216.34"
     assert r.redirects == ()
+    assert t.pinned == [("http://example.com/", "93.184.216.34")]
+
+
+@pytest.mark.asyncio
+async def test_exact_trusted_private_service_hostname_is_allowed():
+    t = FakeTransport({"http://searxng:8080/search": resp(200, b"json")})
+    f = SecureFetcher(
+        transport=t,
+        resolver=await resolver_for({"searxng": ["172.20.0.4"]}),
+    )
+    result = await f.fetch("http://searxng:8080/search", trusted_private_hosts=("searxng",))
+    assert result.status == 200
+    assert result.pinned_ip == "172.20.0.4"
+
+
+@pytest.mark.asyncio
+async def test_trusted_service_allowlist_does_not_cover_other_private_redirect_hosts():
+    t = FakeTransport({
+        "http://searxng:8080/search": resp(302, headers={"location": "http://metadata.internal/latest"}),
+        "http://metadata.internal/latest": resp(200, b"secret"),
+    })
+    f = SecureFetcher(
+        transport=t,
+        resolver=await resolver_for({
+            "searxng": ["172.20.0.4"],
+            "metadata.internal": ["169.254.169.254"],
+        }),
+    )
+    with pytest.raises(SecurityBlocked):
+        await f.fetch("http://searxng:8080/search", trusted_private_hosts=("searxng",))
+    assert "http://metadata.internal/latest" not in t.seen
 
 
 @pytest.mark.asyncio
@@ -270,13 +312,49 @@ async def test_egress_allowlist_narrows_permitted_public_set():
 
 
 @pytest.mark.asyncio
-async def test_client_never_follows_redirects_itself():
-    """Regression guard: a transport with follow_redirects would bypass every hop check."""
-    transport = httpx.AsyncClient(follow_redirects=True)
-    f = SecureFetcher(transport=transport, resolver=await resolver_for(PUBLIC))
-    # SecureFetcher constructs its own client with follow_redirects=False when none is
-    # injected; assert the default, not the injected one.
+async def test_default_transport_is_ip_pinned_and_has_no_client_redirect_mode():
+    """Default production transport connects to the validated IP, not a second DNS lookup."""
+    from net.secure_fetch import PinnedHttpcoreTransport
+
     own = SecureFetcher(resolver=await resolver_for(PUBLIC))
-    assert own._transport.follow_redirects is False
+    assert isinstance(own._transport, PinnedHttpcoreTransport)
     await own.aclose()
-    await transport.aclose()
+
+
+@pytest.mark.asyncio
+async def test_pinned_network_backend_connects_to_the_validated_ip_only():
+    """The HTTP core sees the hostname; the socket backend receives the checked IP."""
+    from net.secure_fetch import PinnedNetworkBackend
+
+    class RecordingBackend:
+        def __init__(self):
+            self.calls = []
+
+        async def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
+            self.calls.append((host, port, timeout, local_address, socket_options))
+            return object()
+
+        async def connect_unix_socket(self, path, timeout=None, socket_options=None):
+            raise AssertionError("public fetch must never use unix sockets")
+
+        async def sleep(self, seconds):
+            return None
+
+    recording = RecordingBackend()
+    backend = PinnedNetworkBackend(
+        hostname="Example.COM",
+        pinned_ip="93.184.216.34",
+        delegate=recording,
+    )
+    await backend.connect_tcp("example.com", 443, timeout=2.0)
+    assert recording.calls[0][:2] == ("93.184.216.34", 443)
+
+
+@pytest.mark.asyncio
+async def test_pinned_network_backend_refuses_an_unexpected_origin_host():
+    from net.secure_fetch import PinnedNetworkBackend
+
+    backend = PinnedNetworkBackend(hostname="example.com", pinned_ip="93.184.216.34")
+    with pytest.raises(SecurityBlocked, match="outside the validated origin"):
+        await backend.connect_tcp("metadata.internal", 443)
+

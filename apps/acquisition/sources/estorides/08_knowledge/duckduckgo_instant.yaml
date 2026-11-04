@@ -1,4 +1,7 @@
 name: duckduckgo_instant
+source_family: duckduckgo_instant
+contact: search_engine
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: DuckDuckGo Instant Answer API (abstract, entity, related topics)

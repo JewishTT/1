@@ -10,7 +10,7 @@
  */
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
@@ -19,10 +19,13 @@ import {
   Obligation,
   CoverageLedger,
   CaseActions,
+  DiscoveryLeadsResponse,
+  ZeroLayerHarvestResponse,
   CompletionReport,
   CloseCaseRequest,
 } from "./api";
 import { useResearchCaseView } from "./store";
+import styles from "./ResearchCase.module.css";
 import { ErrorView, LoadingView } from "../../ui/Feedback";
 import { ObligationsBoard } from "./ObligationsBoard";
 import { SubjectOverview } from "./SubjectOverview";
@@ -41,6 +44,70 @@ const VIEW_LABELS: Record<ViewId, string> = {
   analytics: "Graph & Timeline",
 };
 
+/** Stable, tab-scoped idempotency key for one approved lead batch. The value
+ * contains no URL or subject data; only a short fingerprint is used as the
+ * sessionStorage key. Reloading the page cannot accidentally create a second
+ * network run for the same case scope and lead set. */
+function zeroLayerBatchStorageKey(caseId: string, scopeDigest: string, leadIds: string[]): string {
+  const material = [caseId, scopeDigest, ...[...leadIds].sort()].join("|");
+  let hash = 2166136261;
+  for (let index = 0; index < material.length; index += 1) {
+    hash ^= material.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `cognitive.zero-layer.${(hash >>> 0).toString(16)}`;
+}
+
+/** Reuse a key while a request is uncertain; release it only after a terminal
+ * response so a deliberate new snapshot of the same lead set gets a new run. */
+function zeroLayerBatchKey(
+  caseId: string,
+  scopeDigest: string,
+  leadIds: string[],
+  fallbackKeys: Map<string, string>,
+): string {
+  const storageKey = zeroLayerBatchStorageKey(caseId, scopeDigest, leadIds);
+  const inMemory = fallbackKeys.get(storageKey);
+  if (inMemory) return inMemory;
+  try {
+    const existing = window.sessionStorage.getItem(storageKey);
+    if (existing) {
+      fallbackKeys.set(storageKey, existing);
+      return existing;
+    }
+  } catch {
+    // Some privacy modes block sessionStorage. Keep a per-page fallback below.
+  }
+  const key = `zl-${crypto.randomUUID()}`;
+  fallbackKeys.set(storageKey, key);
+  try {
+    window.sessionStorage.setItem(storageKey, key);
+  } catch {
+    // The mounted page still reuses the in-memory key on every retry.
+  }
+  return key;
+}
+
+function releaseZeroLayerBatchKey(
+  caseId: string,
+  scopeDigest: string,
+  leadIds: string[],
+  completedKey: string,
+  fallbackKeys: Map<string, string>,
+): void {
+  const storageKey = zeroLayerBatchStorageKey(caseId, scopeDigest, leadIds);
+  if (fallbackKeys.get(storageKey) === completedKey) {
+    fallbackKeys.delete(storageKey);
+  }
+  try {
+    if (window.sessionStorage.getItem(storageKey) === completedKey) {
+      window.sessionStorage.removeItem(storageKey);
+    }
+  } catch {
+    // In-memory state is already released; storage may be unavailable.
+  }
+}
+
 export function CasePage() {
   const { caseId } = useParams<{ caseId: string }>();
   const navigate = useNavigate();
@@ -48,6 +115,8 @@ export function CasePage() {
   const { selectedTab, setSelectedTab } = useResearchCaseView();
   const [selectedActionRefs, setSelectedActionRefs] = useState<string[]>([]);
   const [runIdempotencyKey, setRunIdempotencyKey] = useState<string | null>(null);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const zeroLayerFallbackKeys = useRef(new Map<string, string>());
 
   const { data: caseData, isLoading: caseLoading, error: caseError } = useQuery<ResearchCase>({
     queryKey: ["research-case", caseId],
@@ -58,6 +127,12 @@ export function CasePage() {
   const { data: coverage, error: coverageError } = useQuery<CoverageLedger>({
     queryKey: ["research-case-coverage", caseId],
     queryFn: () => api.getCoverage(caseId!),
+    enabled: !!caseId,
+  });
+
+  const { data: discoveryData, isLoading: discoveryLoading, error: discoveryError } = useQuery<DiscoveryLeadsResponse>({
+    queryKey: ["research-case-discovery-leads", caseId],
+    queryFn: () => api.listDiscoveryLeads(caseId!),
     enabled: !!caseId,
   });
 
@@ -102,8 +177,36 @@ export function CasePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["research-case", caseId] });
       queryClient.invalidateQueries({ queryKey: ["research-case-actions", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["research-case-discovery-leads", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["research-case-coverage", caseId] });
     },
   });
+
+  const zeroLayerMutation = useMutation<ZeroLayerHarvestResponse, Error, { leadIds: string[]; key: string }>({
+    mutationFn: (input) => api.harvestPublicLeads(caseId!, {
+      lead_ids: input.leadIds,
+      idempotency_key: input.key,
+    }),
+    onSuccess: async (_response, variables) => {
+      releaseZeroLayerBatchKey(
+        caseId!,
+        caseData?.scope_digest ?? "",
+        variables.leadIds,
+        variables.key,
+        zeroLayerFallbackKeys.current,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["research-case-discovery-leads", caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["research-case-artifacts", caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["research-case-coverage", caseId] }),
+      ]);
+    },
+  });
+
+  useEffect(() => {
+    const currentIds = new Set((discoveryData?.leads ?? []).map((lead) => lead.lead_id));
+    setSelectedLeadIds((previous) => previous.filter((id) => currentIds.has(id)).slice(0, 25));
+  }, [discoveryData?.leads]);
 
   const currentActions = actionsData?.actions ?? [];
   const proposedActions = currentActions.filter(
@@ -168,7 +271,7 @@ export function CasePage() {
   const obligations: Obligation[] = obligationsData?.obligations ?? [];
 
   return (
-    <div className="research-case h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className={`research-case ${styles.shell}`}>
       {/* Header */}
       <header className="flex-shrink-0 border-b border-slate-200 bg-white px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -246,6 +349,145 @@ export function CasePage() {
             <div className="space-y-4">
               <SubjectOverview caseId={caseData.case_id} />
               <CaseContextAndArtifacts caseId={caseData.case_id} caseData={caseData} />
+              <section className="rounded border border-slate-300 bg-white p-4" data-testid="research-case-discovery-leads">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-300">Layer 0 / Public document intake</p>
+                    <h2 className="mt-1 font-semibold">Discovery leads</h2>
+                    <p className="mt-1 max-w-3xl text-xs text-slate-400">
+                      Search results are unverified pointers only. Select current leads to fetch permitted public HTTPS pages. Robots policy, public-address SSRF checks, per-host pacing and byte/time caps apply. No private contacts, breach data or account enumeration is performed.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ["research-case-discovery-leads", caseId] })}
+                    className="rounded border border-slate-300 px-2 py-1 text-xs"
+                  >
+                    Refresh leads
+                  </button>
+                </div>
+                {discoveryLoading ? (
+                  <p className="mt-3 text-sm text-slate-400">Loading discovery leads…</p>
+                ) : discoveryError ? (
+                  <p className="mt-3 text-sm text-red-400" role="alert">
+                    Discovery projection unavailable: {discoveryError instanceof Error ? discoveryError.message : "request failed"}
+                  </p>
+                ) : !discoveryData?.leads.length ? (
+                  <p className="mt-3 text-sm text-slate-400">
+                    No discovery leads have been captured for this scope. Plan and approve the case, then run the discovery-only action.
+                  </p>
+                ) : (
+                  <>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-y border-slate-700 py-2">
+                      <span className="font-mono text-[10px] text-amber-300">
+                        {discoveryData.count} UNVERIFIED LEADS · SCOPE REV {discoveryData.scope_revision} · MAX 25 / RUN
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="rounded border border-slate-500 px-2 py-1 text-[11px]"
+                          onClick={() => setSelectedLeadIds(discoveryData.leads.slice(0, 25).map((lead) => lead.lead_id))}
+                        >
+                          Select first 25
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded border border-slate-500 px-2 py-1 text-[11px]"
+                          onClick={() => setSelectedLeadIds([])}
+                        >
+                          Clear
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="zero-layer-harvest"
+                          disabled={
+                            selectedLeadIds.length === 0
+                            || selectedLeadIds.length > 25
+                            || !caseData.approved
+                            || zeroLayerMutation.isPending
+                          }
+                          onClick={() => zeroLayerMutation.mutate({
+                            leadIds: [...selectedLeadIds].sort(),
+                            key: zeroLayerBatchKey(caseId!, caseData.scope_digest, [...selectedLeadIds].sort(), zeroLayerFallbackKeys.current),
+                          })}
+                          className="rounded border border-cyan-300 bg-cyan-300 px-3 py-1.5 text-[11px] font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {zeroLayerMutation.isPending ? "CAPTURING…" : zeroLayerMutation.isError ? "RETRY / SAME RESERVATION" : `FETCH SELECTED / ${selectedLeadIds.length}`}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2 divide-y divide-slate-700">
+                      {discoveryData.leads.map((lead) => {
+                        const checked = selectedLeadIds.includes(lead.lead_id);
+                        const limitReached = selectedLeadIds.length >= 25 && !checked;
+                        return (
+                          <article key={lead.lead_id} className="flex items-start gap-3 py-3">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select public discovery lead ${lead.title || lead.url}`}
+                              checked={checked}
+                              disabled={limitReached}
+                              onChange={(event) => setSelectedLeadIds((previous) => (
+                                event.target.checked
+                                  ? [...previous, lead.lead_id].slice(0, 25)
+                                  : previous.filter((id) => id !== lead.lead_id)
+                              ))}
+                              className="mt-1 h-4 w-4 shrink-0 accent-cyan-300"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-amber-300">UNVERIFIED / DISCOVERY ONLY</span>
+                                <span className="font-mono text-[10px] text-slate-400">{lead.engine || lead.source_id}</span>
+                                {lead.published_at && <span className="text-[10px] text-slate-400">Published {lead.published_at}</span>}
+                              </div>
+                              <a href={lead.url} target="_blank" rel="noreferrer" className="mt-1 block break-words text-sm font-medium text-cyan-300 underline">
+                                {lead.title || lead.url}
+                              </a>
+                              <p className="mt-1 break-all font-mono text-[10px] text-slate-500">{lead.url}</p>
+                              <p className="mt-1 font-mono text-[10px] text-slate-500">OBS {lead.observation_id} · captured {lead.captured_at || "time unavailable"}</p>
+                              <p className="mt-1 text-xs text-slate-400">{lead.next_step}</p>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-400">{discoveryData.notice}</p>
+                  </>
+                )}
+                {zeroLayerMutation.error && (
+                  <p className="mt-3 border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300" role="alert">
+                    Public-document capture response failed: {zeroLayerMutation.error.message}. Retrying this exact batch reuses its idempotency key; a RESERVED run is never fetched twice.
+                  </p>
+                )}
+                {zeroLayerMutation.data && (
+                  <div className="mt-3 border border-cyan-400/30 bg-cyan-400/5 p-3" data-testid="zero-layer-result">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-cyan-200">Capture run / discovery-only{zeroLayerMutation.data.replayed ? " / replayed" : ""}</span>
+                      <span className="font-mono text-[10px] text-slate-400">{zeroLayerMutation.data.run_id}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-200">
+                      {zeroLayerMutation.data.captured_pages} page(s) captured · {zeroLayerMutation.data.failed_pages} refused/failed · {zeroLayerMutation.data.observation_refs.length} Observation refs
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">{zeroLayerMutation.data.notice}</p>
+                    {zeroLayerMutation.data.waves.some((wave) => wave.budget_limited) && (
+                      <p className="mt-2 border-s border-amber-400 bg-amber-400/5 ps-3 text-xs text-amber-300" role="status">
+                        PAGE BUDGET REACHED — remaining discovered links were not fetched. The captured set is partial, not an exhaustive inventory.
+                      </p>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {zeroLayerMutation.data.observation_refs.map((ref) => (
+                        <span key={ref} className="border border-slate-600 px-2 py-1 font-mono text-[10px] text-slate-300">{ref}</span>
+                      ))}
+                    </div>
+                    {zeroLayerMutation.data.failures.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-[10px] text-amber-300">
+                        {zeroLayerMutation.data.failures.slice(0, 5).map((failure, index) => (
+                          <li key={`${failure.url}:${index}`}>{failure.code} · {failure.url}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </section>
             </div>
           )}
           {selectedTab === "claims" && <ClaimsTable caseId={caseData.case_id} />}
@@ -356,6 +598,12 @@ export function CasePage() {
               <p className="mt-1 text-sm text-slate-600">
                 Required capabilities: {planMutation.data.required_capabilities.join(", ") || "none declared"}.
                 {planMutation.data.ready_to_dispatch ? " Runtime is ready for reviewed actions." : " Dispatch remains blocked."}
+                {planMutation.data.evidence_coverage_ready
+                  ? " Evidence source coverage is available for the declared obligation set."
+                  : " Evidence obligations remain capability-blocked; discovery-only actions can return leads but cannot close those gaps."}
+                {planMutation.data.discovery_action_refs.length > 0
+                  ? ` ${planMutation.data.discovery_action_refs.length} separate discovery-only action(s) are proposed.`
+                  : ""}
               </p>
               {planMutation.data.capability_gaps.map((gap) => (
                 <div key={gap.obligation_id} className="mt-2 text-sm text-amber-800">
@@ -375,8 +623,7 @@ export function CasePage() {
               <div>
                 <h2 className="font-semibold">Source-bound actions</h2>
                 <p className="mt-1 text-xs text-slate-600">
-                  Every action is tied to one policy-approved source, claim family, scope digest and policy digest.
-                  Approval is a separate admin decision. Queueing reserves budget before publishing to Kafka.
+                  Evidence actions are claim-family bound. Discovery-only actions return unverified public URLs and titles, never evidence. Each action remains separately reviewable; queueing reserves budget before Kafka dispatch.
                 </p>
               </div>
               <button
@@ -419,7 +666,9 @@ export function CasePage() {
                         <span className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-semibold">{action.status.toUpperCase()}</span>
                           <span className="text-xs text-slate-500">{action.source_id} → {action.catalogue_source_id}</span>
-                          <span className="text-xs text-slate-500">{action.claim_family ?? "claim family not declared"}</span>
+                          <span className={`text-[10px] font-semibold ${action.result_role === "DISCOVERY_ONLY" ? "text-amber-700" : "text-slate-500"}`}>
+                            {action.result_role === "DISCOVERY_ONLY" ? "DISCOVERY ONLY · LEADS, NOT EVIDENCE" : action.claim_family ?? "claim family not declared"}
+                          </span>
                         </span>
                         <span className="mt-1 block break-all text-xs font-mono text-slate-500">{action.action_id}</span>
                         <span className="mt-1 block text-sm">{action.proposed_method}</span>

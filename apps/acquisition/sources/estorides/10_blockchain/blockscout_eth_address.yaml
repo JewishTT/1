@@ -1,0 +1,42 @@
+name: blockscout_eth_address
+enabled: true
+category: 10. Blockchain
+description: Blockscout Ethereum mainnet address metadata and native balance
+os: any
+requires_key: false
+contact: public_api
+parser: blockscout
+applies_to:
+- crypto
+entity_hints:
+- crypto
+- organization
+tool:
+  method: GET
+  url: https://eth.blockscout.com/api/v2/addresses/{query}
+  headers:
+    Accept: application/json
+    User-Agent: cognitive-substrate/034 (read-only evidence)
+  params: {}
+parse:
+  family: json_object
+  fields:
+    address:
+      path: hash
+      kind: crypto
+      required: true
+    balance_wei:
+      path: coin_balance
+      kind: identifier
+    transactions_count:
+      path: transactions_count
+      kind: identifier
+    is_contract:
+      path: is_contract
+      kind: identifier
+    contract_name:
+      path: name
+      kind: organization
+    creation_tx:
+      path: creation_transaction_hash
+      kind: identifier

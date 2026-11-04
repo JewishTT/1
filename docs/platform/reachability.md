@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 403 |
-| TEST_ONLY | 146 |
+| PRODUCTION | 426 |
+| TEST_ONLY | 134 |
 | ORPHAN | 122 |
-| TEST | 339 |
+| TEST | 349 |
 
 ## Entrypoints (production roots)
 
@@ -18,6 +18,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/_measure_coverage.py` |
 | `apps/acquisition/_prove_airbyte.py` |
 | `apps/acquisition/_prove_backbone.py` |
+| `apps/acquisition/_prove_blockchain_sources.py` |
+| `apps/acquisition/_prove_commoncrawl.py` |
+| `apps/acquisition/_prove_public_source_matrix.py` |
 | `apps/acquisition/_prove_searxng.py` |
 | `apps/acquisition/_prove_tools.py` |
 | `apps/acquisition/sources/append_parse_blocks.py` |
@@ -31,6 +34,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/services/pow_run.py` |
 | `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/workflows/worker.py` |
+| `apps/deploy/minio-init/init-buckets.py` |
 | `apps/interpretation/_consume_searxng.py` |
 | `apps/interpretation/_prove_primproc.py` |
 | `apps/interpretation/dictionaries/build_mini.py` |
@@ -55,7 +59,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**146** modules are reached only by tests.
+**134** modules are reached only by tests.
 
 | Module |
 |---|
@@ -73,7 +77,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/adapters/stormcrawler/__init__.py` |
 | `apps/acquisition/adapters/stormcrawler/collect.py` |
 | `apps/acquisition/adapters/warc/__init__.py` |
-| `apps/acquisition/adapters/warc/collect.py` |
 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/registry.py` |
 | `apps/acquisition/source_query_set.py` |
@@ -125,6 +128,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/interpretation/pipeline.py` |
 | `apps/interpretation/retrieval/__init__.py` |
 | `apps/interpretation/retrieval/retriever.py` |
+| `apps/interpretation/transaction_lineage.py` |
 | `apps/projection/analytics/projector.py` |
 | `apps/projection/analytics/store.py` |
 | `apps/projection/graph/claim_projection.py` |
@@ -181,30 +185,18 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/events/ontology_pack.py` |
 | `apps/shared/events/timestamps.py` |
 | `apps/shared/isolation.py` |
-| `apps/shared/net/secure_fetch.py` |
 | `apps/shared/observability/measured.py` |
 | `apps/shared/storage/memory.py` |
 | `apps/shared/websearch/__init__.py` |
 | `apps/shared/websearch/discovery.py` |
 | `apps/shared/websearch/providers.py` |
 | `apps/shared/websearch/relevance.py` |
-| `apps/zero/zero/enrichment/feedback.py` |
-| `apps/zero/zero/enrichment/modules.py` |
-| `apps/zero/zero/harvest_wave.py` |
-| `apps/zero/zero/harvesters/contracts.py` |
-| `apps/zero/zero/harvesters/domain.py` |
 | `apps/zero/zero/harvesters/git.py` |
 | `apps/zero/zero/harvesters/image.py` |
 | `apps/zero/zero/harvesters/phone.py` |
-| `apps/zero/zero/harvesters/registry.py` |
-| `apps/zero/zero/harvesters/transport.py` |
 | `apps/zero/zero/harvesters/url.py` |
 | `apps/zero/zero/harvesters/username.py` |
-| `apps/zero/zero/observation_gate.py` |
 | `apps/zero/zero/resolution/fellegi_sunter.py` |
-| `apps/zero/zero/resolution/graph.py` |
-| `apps/zero/zero/resolution/similarity.py` |
-| `apps/zero/zero/type_detector.py` |
 
 ## Orphan modules (nothing imports them)
 

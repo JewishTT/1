@@ -1,4 +1,7 @@
 name: wayback_machine_cdx
+source_family: internet_archive_cdx
+contact: archive
+time_basis: fetch
 enabled: true
 category: 03. Web Intelligence
 description: Wayback CDX — full historical index of URLs for a domain

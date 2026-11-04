@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **105** · TypeScript modules: **0**
+Python modules: **110** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -15,6 +15,9 @@ apps.acquisition._measure_coverage
 apps.acquisition._probe_catalogue
 apps.acquisition._prove_airbyte
 apps.acquisition._prove_backbone
+apps.acquisition._prove_blockchain_sources
+apps.acquisition._prove_commoncrawl
+apps.acquisition._prove_public_source_matrix
 apps.acquisition._prove_readback
 apps.acquisition._prove_searxng
 apps.acquisition._prove_tools
@@ -45,12 +48,9 @@ apps.acquisition.adapters.stormcrawler
 apps.acquisition.adapters.stormcrawler.collect
 apps.acquisition.adapters.warc
 apps.acquisition.adapters.warc.collect
+apps.acquisition.airbyte_acceptance
 apps.acquisition.artifact_sink
 apps.acquisition.case_execution_guard
-apps.acquisition.cc_extract
-apps.acquisition.cc_plan
-apps.acquisition.dispatcher
-apps.acquisition.dispatcher.kafka_producer
 ```
 
 </details>
@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **241** · TypeScript modules: **0**
+Python modules: **243** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -199,6 +199,20 @@ apps.control-plane.api.routes.temporal_materializations
 
 </details>
 
+## `deploy`
+
+Docker Compose dev topology, Grafana, k8s configs.
+
+Python modules: **1** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.deploy.minio-init.init-buckets
+```
+
+</details>
+
 ## `feedback`
 
 Recrawl/priority feedback, stopping policy.
@@ -227,7 +241,7 @@ apps.feedback.tests.test_frontier_loop
 
 Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.
 
-Python modules: **112** · TypeScript modules: **0**
+Python modules: **115** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -546,14 +560,14 @@ tools.strip_zero_inventory
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **266**
+Python modules: **0** · TypeScript modules: **267**
 
 
 ## `zero`
 
 Zero-layer contact harvesting from arbitrary seeds.
 
-Python modules: **30** · TypeScript modules: **0**
+Python modules: **40** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -561,15 +575,23 @@ Python modules: **30** · TypeScript modules: **0**
 apps.zero.tests.conftest
 apps.zero.tests.test_cc_capture
 apps.zero.tests.test_enrichment
+apps.zero.tests.test_evidence
+apps.zero.tests.test_harvest_concurrency
 apps.zero.tests.test_harvest_wave
 apps.zero.tests.test_harvesters
+apps.zero.tests.test_public_acquisition_policy
+apps.zero.tests.test_public_document
+apps.zero.tests.test_public_wave_persistence
 apps.zero.tests.test_resolution
+apps.zero.tests.test_secure_public_transport
 apps.zero.tests.test_type_detector
 apps.zero.zero
 apps.zero.zero.cc_capture
 apps.zero.zero.enrichment
 apps.zero.zero.enrichment.feedback
 apps.zero.zero.enrichment.modules
+apps.zero.zero.evidence
+apps.zero.zero.evidence_sink
 apps.zero.zero.harvest_wave
 apps.zero.zero.harvesters
 apps.zero.zero.harvesters.contracts
@@ -578,11 +600,13 @@ apps.zero.zero.harvesters.git
 apps.zero.zero.harvesters.image
 apps.zero.zero.harvesters.modules
 apps.zero.zero.harvesters.phone
+apps.zero.zero.harvesters.public_document
 apps.zero.zero.harvesters.registry
 apps.zero.zero.harvesters.transport
 apps.zero.zero.harvesters.url
 apps.zero.zero.harvesters.username
 apps.zero.zero.observation_gate
+apps.zero.zero.public_policy
 apps.zero.zero.resolution
 apps.zero.zero.resolution.fellegi_sunter
 apps.zero.zero.resolution.graph

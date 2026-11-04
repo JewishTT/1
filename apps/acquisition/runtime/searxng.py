@@ -208,6 +208,9 @@ class SearXNGRuntime:
         observations rather than forty captures (§20).
         """
         query = str(task.get("query") or "").strip()
+        result_role = str(task.get("result_role") or "EVIDENCE")
+        if result_role not in {"EVIDENCE", "DISCOVERY_ONLY"}:
+            raise RuntimeError_("searxng_result_role_invalid", f"unsupported result role: {result_role}")
         if not query:
             raise RuntimeError_("searxng_query_missing", "§18: a task must carry a query")
         task_id = str(task.get("task_id") or "")
@@ -252,6 +255,7 @@ class SearXNGRuntime:
                     # source is known rather than guessed by the consumer from a
                     # producer name.
                     "parser_hint": PARSER_HINT,
+                    "result_role": result_role,
                     "result_count": len(results),
                     "unresponsive_engines": body.get("unresponsive_engines") or [],
                     "suggestions": body.get("suggestions") or [],
@@ -281,6 +285,7 @@ class SearXNGRuntime:
                         "page": page,
                         "index": index,
                         "parser_hint": PARSER_HINT,
+                        "result_role": result_role,
                         # §62: whatever the result carried beyond the fields the
                         # platform names is kept verbatim, and the raw artifact
                         # remains the source of truth for all of it.

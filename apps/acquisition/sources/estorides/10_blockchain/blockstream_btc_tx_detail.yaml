@@ -1,0 +1,57 @@
+name: blockstream_btc_tx_detail
+enabled: true
+category: 10. Blockchain
+description: Blockstream Esplora Bitcoin transaction detail with source-backed input references
+os: any
+requires_key: false
+contact: public_api
+parser: blockstream
+applies_to:
+- btc_tx
+entity_hints:
+- crypto
+- identifier
+tool:
+  method: GET
+  url: https://blockstream.info/api/tx/{query}
+  headers:
+    Accept: application/json
+    User-Agent: cognitive-substrate/034 (read-only evidence)
+  params: {}
+parse:
+  family: json_object
+  fields:
+    txid:
+      path: txid
+      kind: identifier
+      required: true
+    input_txids:
+      path: vin[*].txid
+      kind: identifier
+      many: true
+    input_addresses:
+      path: vin[*].prevout.scriptpubkey_address
+      kind: crypto
+      many: true
+    output_addresses:
+      path: vout[*].scriptpubkey_address
+      kind: crypto
+      many: true
+    fee_satoshi:
+      path: fee
+      kind: identifier
+    block_height:
+      path: status.block_height
+      kind: identifier
+    block_time:
+      path: status.block_time
+      kind: identifier
+    confirmed:
+      path: status.confirmed
+      kind: identifier
+    size:
+      path: size
+      kind: identifier
+    weight:
+      path: weight
+      kind: identifier

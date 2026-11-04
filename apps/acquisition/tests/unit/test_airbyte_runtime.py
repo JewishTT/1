@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from domain.acquisition_artifact import AcquisitionArtifact  # noqa: E402
 from runtime import RuntimeError_  # noqa: E402
+from airbyte_acceptance import default_postgres_config, write_configured_catalog, write_source_config  # noqa: E402
 from runtime.airbyte import (  # noqa: E402
     FAIL_CHECK,
     FAIL_DISCOVER,
@@ -347,3 +348,81 @@ class TestRuntimeMetadata:
         run = rt._new_run("spec")
         assert run.image_digest == "sha256:abc"
         assert run.to_dict()["image_digest"] == "sha256:abc"
+
+
+
+def _postgres_spec() -> dict:
+    return {
+        "connectionSpecification": {
+            "required": ["host", "port", "database", "username", "password", "ssl_mode", "tunnel_method"],
+            "properties": {
+                "host": {"type": "string"},
+                "port": {"type": "integer"},
+                "database": {"type": "string"},
+                "username": {"type": "string"},
+                "password": {"type": "string"},
+                "schemas": {"type": "array", "items": {"type": "string"}},
+                "ssl_mode": {"type": "object", "properties": {
+                    "mode": {"type": "string", "enum": ["require", "disable"]}
+                }},
+                "tunnel_method": {"type": "object", "properties": {
+                    "tunnel_method": {"type": "string", "enum": ["SSH_KEY_AUTH", "NO_TUNNEL"]}
+                }},
+                "replication_method": {"type": "object", "properties": {
+                    "method": {"type": "string", "enum": ["CDC", "Standard"]}
+                }},
+            },
+        }
+    }
+
+
+def test_default_airbyte_postgres_config_uses_only_options_in_connector_spec() -> None:
+    config = default_postgres_config(_postgres_spec(), environment={})
+    assert config["host"] == "host.docker.internal"
+    assert config["port"] == 5432
+    assert config["ssl_mode"] == {"mode": "disable"}
+    assert config["tunnel_method"] == {"tunnel_method": "NO_TUNNEL"}
+    assert config["replication_method"] == {"method": "Standard"}
+    assert config["schemas"] == ["public"]
+
+
+def test_airbyte_postgres_config_refuses_unhandled_required_spec_fields() -> None:
+    spec = _postgres_spec()
+    spec["connectionSpecification"]["required"].append("new_required_field")
+    with pytest.raises(ValueError, match="new_required_field"):
+        default_postgres_config(spec, environment={})
+
+
+def test_airbyte_source_config_can_be_supplied_as_json_and_is_written_restrictively(tmp_path: Path) -> None:
+    env = {"COGNITIVE_AIRBYTE_CONFIG_JSON": '{"host":"db.example","port":5432}'}
+    path = write_source_config(tmp_path, _postgres_spec(), environment=env)
+    assert json.loads(path.read_text(encoding="utf-8")) == {"host": "db.example", "port": 5432}
+    if path.stat().st_mode & 0o777:
+        assert path.stat().st_mode & 0o077 == 0
+
+
+def test_airbyte_catalog_selects_a_real_discovered_stream(tmp_path: Path) -> None:
+    discovered = {
+        "streams": [
+            {
+                "name": "airbyte_smoke",
+                "json_schema": {"type": "object", "properties": {"id": {"type": "integer"}}},
+                "supported_sync_modes": ["full_refresh"],
+                "source_defined_primary_key": [["id"]],
+            },
+            {"name": "ignored", "supported_sync_modes": ["full_refresh"]},
+        ]
+    }
+    path, selected = write_configured_catalog(tmp_path, discovered)
+    config = json.loads(path.read_text(encoding="utf-8"))
+    assert selected == ["airbyte_smoke"]
+    assert len(config["streams"]) == 1
+    assert config["streams"][0]["stream"]["name"] == "airbyte_smoke"
+    assert config["streams"][0]["sync_mode"] == "full_refresh"
+    assert config["streams"][0]["destination_sync_mode"] == "append"
+    assert config["streams"][0]["primary_key"] == [["id"]]
+
+
+def test_airbyte_catalog_missing_smoke_stream_fails_loudly(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="DISCOVER did not return"):
+        write_configured_catalog(tmp_path, {"streams": [{"name": "other"}]})

@@ -4,7 +4,7 @@ import { Icon, type IconName } from "./ui/Icon";
 import { Badge, StatusDot } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
 import { Popover, Tooltip } from "./ui/Overlay";
-import { TopNav } from "./shell/TopNav";
+import { PrimaryRouteSpine, TopNav } from "./shell/TopNav";
 import { DENSITIES, THEME_NAMES } from "./workspace/types";
 import { useWorkspace } from "./workspace/store";
 import { useAppearanceAttributes } from "./workspace/useAppearance";
@@ -314,7 +314,9 @@ export function AppShell({ children, activity }: AppShellProps) {
               <Icon name="view-ops" size={16} />
             </span>
             <span className="ui-brand">COGNITIVE</span>
+            <TopNav />
             <span className="ui-meta">FIELD SYSTEMS</span>
+            <span className="ui-command-mark">C2 / ANALYST COMMAND</span>
           </div>
 
           <div className="ui-topbar-controls" role="group" aria-label="Shell controls">
@@ -362,21 +364,24 @@ export function AppShell({ children, activity }: AppShellProps) {
           </div>
         </div>
 
-        <div className="ui-topbar-navigation">
-          <div className="ui-topbar-nav-label">
-            <span className="ui-nav-status-mark" aria-hidden="true" />
-            <span>OPERATIONS</span>
-          </div>
-          <TopNav />
-        </div>
-
         <div className="ui-topbar-state">
           <WorkStateBar />
+        </div>
+        <div className="ui-command-strip" aria-label="Platform workflow">
+          <span className="ui-command-strip-label">OPERATING CYCLE</span>
+          <span>OBSERVATION</span><i aria-hidden="true" />
+          <span>CONTEXT</span><i aria-hidden="true" />
+          <span>INTERPRETATION</span><i aria-hidden="true" />
+          <span>VALIDATION</span><i aria-hidden="true" />
+          <span>CLAIM</span>
         </div>
       </header>
 
       <div className="ui-shell-body">
-        {children}
+        <PrimaryRouteSpine />
+        <main className="ui-shell-main" data-testid="shell-main">
+          {children}
+        </main>
       </div>
 
       {paneVisibility.activity ? (

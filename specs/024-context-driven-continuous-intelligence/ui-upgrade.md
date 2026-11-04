@@ -40,37 +40,45 @@ Rationale: the stack is a solved problem. The requirement is depth of capability
 ## 3. VISUAL DIRECTION
 
 ### 3.1 Register
-Big-tech intelligence workstation. Neomilitarist precision, near-black graphite, restrained instrumentation green, amber for metadata, red reserved for genuine semantic failure. Data-dense but calm. No decoration without data meaning.
+Cyberpunk neomilitarist command workstation: an institutional intelligence operations console, not a marketing dashboard. The visual language is precise, high-contrast and evidence-first: obsidian/naval graphite base, cold steel panel hierarchy, electric cyan for navigation and active instrumentation, phosphor/acid green for confirmed active state, amber for provenance and review, and controlled vermilion for actual errors. The interface should feel like a field command system with dense mission context, a strong route hierarchy, explicit data provenance and decisive operational controls.
 
-### 3.2 Palette (normative tokens)
+This direction is an original COGNITIVE visual system. It may draw on the broad visual conventions of intelligence command software, but MUST NOT reproduce another vendor's logos, exact layouts, proprietary icons or branded assets.
 
-| Token | Value | Role |
+### 3.2 Palette (command layer)
+The canonical token file remains the semantic foundation. The final `command-tactical.css` layer maps its roles into this command palette:
+
+| Role | Value | Use |
 |---|---|---|
-| `--bg-0` | `#070909` | app background |
-| `--bg-1` | `#0B0E0D` | panel background |
-| `--surface-0` | `#121715` | raised surface, cards |
-| `--surface-1` | `#161B18` | hover / secondary surface |
-| `--surface-2` | `#1C221E` | active / selected surface |
-| `--border-0` | `#252C28` | default border |
-| `--border-1` | `#323B35` | strong border, focus |
-| `--text-primary` | `#E5EAE7` | primary text |
-| `--text-secondary` | `#A5AEA9` | secondary text |
-| `--text-muted` | `#6E7873` | tertiary, metadata, axis labels |
-| `--accent-green` | `#8FCB64` | primary accent, semantic state |
-| `--accent-green-bright` | `#A7E477` | active accent, focus ring |
-| `--accent-amber` | `#B99A66` | warning, provenance, metadata |
-| `--accent-red` | `#BF5B57` | semantic failure only |
-| `--accent-blue` | `#718D9B` | informational, secondary series |
+| Command void | `#070B10` | shell background |
+| Deep graphite | `#0B121B` | navigation and workspace backdrop |
+| Steel panel | `#101C28` | standard working surfaces |
+| Raised steel | `#162634` | selected and raised surfaces |
+| Rule / grid | `#28404D` | boundaries and instrument rules |
+| Strong rule | `#376477` | focus and selected boundaries |
+| Primary text | `#E5F0F3` | body and headings |
+| Muted text | `#90A6B1` | secondary labels and provenance |
+| Electric cyan | `#56D8F5` | navigation, links and active instrumentation |
+| Ice cyan | `#A4EFFB` | high-priority active/focus state |
+| Phosphor lime | `#B6E56A` | confirmed active state and success |
+| Tactical amber | `#E2B86E` | review, temporal and provenance metadata |
+| Controlled red | `#E16E68` | actual failures only |
 
-### 3.3 Forbidden
-- No purple or magenta as a decorative or series color.
-- No neon glow, bloom, or gradient text.
-- No glassmorphism. No frosted-blur panels.
-- No Web3 styling: no wallet chrome, no token/gas metaphors, no coin shapes, no "connect wallet".
-- No rainbow categorical palettes. Series colors MUST come from the restrained set above, differentiated by lightness and saturation, not by hue rotation.
-- No HUD reticles, scanlines, corner brackets, or fake telemetry chrome.
-- No emoji as UI iconography. Icons are inline SVG from a single curated set.
-- No gradient meshes, no aurora backgrounds, no noise overlays.
+The existing 15 normative tokens in `styles/tokens/color.css` remain stable for component compatibility; `command-tactical.css` supplies the last-mile semantic alias mapping. No page or component may introduce a second independent palette.
+
+### 3.3 Command visual grammar
+- A persistent route spine, clear domain identity, active workspace designation and investigation context are visible before the analyst reaches the data canvas.
+- Surfaces use crisp hairline borders, subtle blueprint/grid texture and square or minimally rounded corners. Active modules use a cyan edge/marker and a restrained surface shift, never colour alone.
+- Typography is disciplined: compact uppercase mono for route codes, provenance and system labels; a readable sans face for analysis and narrative; tabular numerals for every metric.
+- Data panels are modular and dense. Graph, timeline, evidence, claims, acquisition and operations retain distinct functional hierarchy while sharing the same system grammar.
+- Cyan is navigation/instrumentation, lime is confirmed state, amber is provenance/review, red is error. An unavailable metric is neutral, never styled as zero-success.
+- Motion is state-driven only: short transitions for navigation and panel changes; a live pulse is reserved for an actual live status. Reduced-motion users receive a fully static interface.
+- No fabricated counters, artificial "online" states, fake maps, mock alert tickers or placeholder telemetry may be used as decoration.
+
+### 3.4 Accessibility and responsive command layout
+- Maintain WCAG AA contrast, semantic landmarks and visible keyboard focus. Electric accents MUST not be the only signal for state.
+- The responsive route spine may collapse to a compact domain strip on phone layouts, while every destination remains keyboard- and touch-reachable.
+- The canvas retains priority at 1280px and above; at narrow widths the rail and inspector become drawers rather than silently compressing evidence tables.
+- The command background texture is decorative only and is removed in forced-colors mode; all information remains available without colour or motion.
 
 ### 3.4 Anti-patterns to eliminate on sight
 - Placeholder panels that render an empty state where a real view is required.

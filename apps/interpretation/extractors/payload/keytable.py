@@ -27,7 +27,7 @@ the source about itself. :meth:`KeyTypeRule.__post_init__` refuses a row whose k
 match its origin, so a schema can never be consulted with a word and a spelling can never be
 consulted with a path.
 
-:data:`DEFAULT_DECLARED_SCHEMAS` is **empty**: the catalogue's 146 definitions publish no
+:data:`DEFAULT_DECLARED_SCHEMAS` is **empty**: the catalogue's 151 definitions publish no
 machine-readable schema this layer can read, so the schema level is reachable only by a caller who
 has been handed one. Shipping an invented schema would be the same forgery as a heuristic, wearing a
 version number and a URL nobody could fetch.
@@ -513,7 +513,7 @@ KEY_RULE_LOOKUP: MappingProxyType[str, KeyTypeRule] = MappingProxyType(
 
 #: The schemas the platform itself publishes. **Empty, and pinned by a test.**
 #:
-#: The catalogue's 146 source definitions publish no machine-readable schema this layer can read,
+#: The catalogue's 151 source definitions publish no machine-readable schema this layer can read,
 #: so the ``declared_schema`` level is reachable only by a caller who has been handed one. Shipping
 #: an invented schema would be the same forgery as a heuristic, wearing a version number and a URL
 #: nobody could fetch.

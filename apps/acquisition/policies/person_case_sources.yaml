@@ -104,6 +104,7 @@ spec:
       retention_class: case_evidence_standard
       enabled: true
     - source_id: searxng_public_search
+      catalogue_source_id: searxng_public_search
       runtime_ref: searxng
       operation: search
       upstream_base: http://searxng:8080/search
@@ -126,6 +127,29 @@ spec:
       egress_hosts: [searxng]
       retention_class: case_evidence_standard
       result_role: DISCOVERY_ONLY
+      enabled: true
+    - source_id: public_web_document_fetch
+      runtime_ref: secure_public_http
+      operation: bounded_public_document_fetch
+      allowed_case_profiles: [PUBLIC_PROFESSIONAL, PUBLIC_ROLE_REVIEW]
+      allowed_claim_families: []
+      contact_class: public_web_document
+      term_policy_ref: deployment-policy:public-web-robots-and-origin-terms
+      term_status: DEPLOYMENT_POLICY
+      license_status: PUBLIC_ORIGIN_TERMS_APPLY
+      required_response_parser: public_document_html
+      pagination: none
+      max_requests: 25
+      max_concurrency: 1
+      max_raw_bytes: 50000000
+      max_decompressed_bytes: 50000000
+      max_records: 200
+      max_pages: 25
+      max_wall_seconds: 600
+      respect_rate_headers: true
+      egress_hosts: [public_https_from_current_discovery_projection]
+      retention_class: case_evidence_standard
+      result_role: PUBLIC_CAPTURE_ONLY
       enabled: true
     - source_id: common_crawl_historical
       runtime_ref: common_crawl

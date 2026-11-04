@@ -117,6 +117,7 @@ def _rows(task=None):
                 "policy_digest": task.policy_digest,
                 "source_id": task.case_policy_source_id,
                 "catalogue_source_id": task.source_id,
+                "result_role": task.result_role,
             }
         },
         "intent": {
@@ -204,3 +205,13 @@ async def test_policy_file_change_invalidates_already_queued_tasks(monkeypatch):
     with pytest.raises(AcquisitionError, match="policy changed after dispatch"):
         await PostgresCaseExecutionGuard(_SessionFactory(session))(task)
     assert session.queries == []
+
+@pytest.mark.asyncio
+async def test_discovery_role_must_match_the_canonical_approved_action():
+    task = _task(result_role="DISCOVERY_ONLY")
+    rows = _rows(task)
+    rows["action"]["payload"]["result_role"] = "EVIDENCE"
+    session = _Session(rows)
+    with pytest.raises(AcquisitionError, match="action approval"):
+        await PostgresCaseExecutionGuard(_SessionFactory(session))(task)
+

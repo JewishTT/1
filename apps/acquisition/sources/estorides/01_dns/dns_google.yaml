@@ -1,4 +1,7 @@
 name: dns_google
+source_family: google_dns
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 01. DNS Intelligence
 description: Google DNS-over-HTTPS, ANY record lookup

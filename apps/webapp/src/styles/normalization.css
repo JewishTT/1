@@ -8,6 +8,13 @@
  * not globally imported.
  */
 
+/* The command material belongs to this final normalization layer. It is loaded
+ * before the semantic and responsive rules below so this file remains the
+ * last authority on focus, state, accessibility and viewport behavior.
+ */
+@import "./command-tactical.css";
+
+
 .ui-root {
   color: var(--ui-text);
   background: var(--ui-bg);
@@ -1171,7 +1178,7 @@ body:has(.ui-root) {
   container-type: inline-size;
 }
 
-@container ui-canvas (max-width: 1220px) {
+@container ui-canvas (max-width: 1360px) {
   .ui-root .ui-canvas-head {
     height: auto;
     min-height: var(--ui-activitybar-h);
@@ -1256,4 +1263,96 @@ body:has(.ui-root) {
     flex: 0 0 auto;
     box-shadow: var(--ui-elevation-3);
   }
+}
+
+
+/* ── Command-grade finishing rules ─────────────────────────────────────
+ * Palette values come from command-tactical.css. These last rules preserve a
+ * single graphite/ice/cyan register after semantic normalization and donor
+ * adapters have loaded; all status meaning remains owned by the state tokens.
+ */
+.ui-root .ui-shell {
+  color: var(--cmd-text);
+  background: var(--cmd-void);
+}
+
+.ui-root .ui-topbar,
+.ui-root .ui-primary-nav,
+.ui-root .ui-activity,
+.ui-root .ui-rail,
+.ui-root .ui-inspector {
+  color: var(--cmd-text);
+  background: var(--cmd-graphite);
+  border-color: var(--cmd-line);
+}
+
+.ui-root .ui-topbar {
+  border-bottom: 1px solid var(--cmd-line-strong);
+}
+
+.ui-root .ui-primary-nav {
+  border-right: 1px solid var(--cmd-line-strong);
+}
+
+.ui-root :where(
+  .ui-graph, .ui-timeline, .ui-evidence, .ui-obj, .ui-ops,
+  .ui-quar, .ui-catalog, .ui-cicanvas, .ui-gl-deck, .ui-gl-stage,
+  .ui-gl-card, .ui-raw, .ui-lineage, .ui-lineage-chain
+) {
+  color: var(--cmd-text);
+  background-color: var(--cmd-graphite);
+  border-color: var(--cmd-line);
+  border-radius: 2px;
+}
+
+.ui-root :where(
+  .ui-graph-toolbar, .ui-timeline-toolbar, .ui-evidence-toolbar,
+  .ui-obj-toolbar, .ui-ops-head, .ui-cicanvas-head,
+  .ui-graph-drawer-head, .ui-evidence-viewer-head,
+  .ui-gl-stage-head, .ui-gl-trace-head
+) {
+  color: var(--cmd-text);
+  background: var(--cmd-panel);
+  border-color: var(--cmd-line-strong);
+}
+
+.ui-root :where(
+  .ui-graph-drawer, .ui-graph-side, .ui-graph-detail,
+  .ui-evidence-viewer, .ui-evidence-panel, .ui-obj-detail,
+  .ui-obj-record, .ui-quar-detail, .ui-lineage-chain
+) {
+  background: var(--cmd-panel);
+  border-color: var(--cmd-line-strong);
+}
+
+.ui-root :where(
+  .ui-graph-facet-value, .ui-graph-detail-head,
+  .ui-lineage-step-ref, .ui-lineage-step-at,
+  .ui-obj-ref, .ui-catalog-source, .ui-gl-readout-value
+) {
+  color: var(--cmd-ice);
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-root :where(
+  .ui-graph-note, .ui-timeline-note, .ui-raw-note,
+  .ui-lineage-step-detail, .ui-catalog-row-note,
+  .ui-gl-hint, .ui-gl-donor
+) {
+  color: var(--cmd-muted);
+}
+
+.ui-root :where(
+  .ui-evidence-tab[aria-selected="true"],
+  .ui-tab[aria-selected="true"],
+  .ui-obj-kind-group[aria-pressed="true"]
+) {
+  color: var(--cmd-ice);
+  background: var(--cmd-raised);
+  border-color: var(--cmd-line-strong);
+}
+
+.ui-root :where(.ui-raw-code, .ui-raw-gutter, .ui-gl-turn-text) {
+  font-family: var(--ui-font-mono);
 }

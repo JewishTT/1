@@ -73,6 +73,7 @@ def envelope(
     raw_ref: str = "s3://bucket/raw/tenant/202609/abc",
     payload: bytes | None = None,
     parser_hint: str = "structured_fields",
+    result_role: str = "EVIDENCE",
 ) -> pb.EventEnvelope:
     body = payload
     if body is None:
@@ -85,6 +86,11 @@ def envelope(
                 "parser_hint": parser_hint,
                 "content_type": "application/json",
                 "runtime_producer": "searxng",
+                "runtime_metadata": {
+                    "result_role": result_role,
+                    "query": "public professional discovery",
+                    "result": SEARX_RESULT,
+                },
             },
             sort_keys=True,
         ).encode("utf-8")
@@ -102,6 +108,32 @@ def envelope(
 
 
 class TestConsumerProcesses:
+    @pytest.mark.asyncio
+    async def test_discovery_only_records_raw_parse_but_never_mints_mentions_or_claims(self):
+        store = _Store()
+        bridge_calls = []
+
+        def forbidden_bridge(**kwargs):
+            bridge_calls.append(kwargs)
+            raise AssertionError("DISCOVERY_ONLY must never invoke InterpretationBridge")
+
+        consumer = ObservationConsumer(
+            store=store,
+            interpretation_bridge_factory=forbidden_bridge,
+        )
+        result = await consumer.handle(envelope(result_role="DISCOVERY_ONLY"))
+
+        assert result.status == "processed"
+        assert result.record_count > 0
+        assert result.mention_count == 0
+        assert result.interpretation == {
+            "status": "SKIPPED_DISCOVERY_ONLY",
+            "reason_code": "DISCOVERY_RESULTS_ARE_LEADS_NOT_EVIDENCE",
+        }
+        assert bridge_calls == []
+        manifest = json.loads(store.derived_writes[-1]["body"].decode("utf-8"))
+        assert manifest["result_role"] == "DISCOVERY_ONLY"
+
     @pytest.mark.asyncio
     async def test_reads_raw_and_parses(self):
         store = _Store()

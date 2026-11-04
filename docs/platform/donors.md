@@ -72,6 +72,7 @@ calling it `verified` would be exactly the guess the gate exists to reject.
 | `hive-mind-gnca` | https://github.com/algoplexity/hive-mind-gnca | — | unverified | vendored donor checkout; capability not yet assigned |
 | `holehe` | https://github.com/megadose/holehe.git | — | unverified | vendored donor checkout; capability not yet assigned |
 | `Hostile-Command-Suite` | https://github.com/cycloarcane/Hostile-Command-Suite.git | — | unverified | vendored donor checkout; capability not yet assigned |
+| `httpcore` | https://github.com/encode/httpcore | BSD-3-Clause | verified | third-party declared dependency |
 | `httpx` | https://pypi.org/project/httpx/ | — | unverified | third-party declared dependency |
 | `hypergraphx` | https://github.com/HGX-Team/hypergraphx | — | unverified | vendored donor checkout; capability not yet assigned |
 | `ignorant` | https://github.com/megadose/ignorant.git | — | unverified | vendored donor checkout; capability not yet assigned |
@@ -86,4 +87,3 @@ calling it `verified` would be exactly the guess the gate exists to reject.
 | `lazyaddon` | https://github.com/grisuno/lazyaddon.git | — | unverified | vendored donor checkout; capability not yet assigned |
 | `LeakHunter` | https://github.com/Und3rTakerOPS/LeakHunter | — | unverified | vendored donor checkout; capability not yet assigned |
 | `litellm` | https://pypi.org/project/litellm/ | — | unverified | third-party declared dependency |
-| `Lying_with_Truth` | https://github.com/CharlesJW222/Lying_with_Truth | — | unverified | vendored donor checkout; capability not yet assigned |

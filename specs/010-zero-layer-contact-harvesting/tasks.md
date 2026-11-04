@@ -6,7 +6,7 @@
 ## Phase 0 — Type Detection (Layer 1)
 - [x] T100 — Regex+heuristic type detector для 8 input types — `apps/zero/zero/type_detector.py` (✅ 8 типов + UNKNOWN, byte-magic, Soundex)
 - [x] T101 — SeedInput schema + deterministic confidence scoring — реализовано в `apps/zero/zero/type_detector.py` (⚠️ target `apps/shared/contracts/` deviated — см. отчёт)
-- [x] T102 — Harvester spawner на основе detected type — `apps/zero/zero/harvesters/registry.py` + `harvest_wave.py` (✅ детерминированный dispatcher; параллелизм возложен на worker-слой)
+- [x] T102 — Harvester spawner на основе detected type — `apps/zero/zero/harvesters/registry.py` + `harvest_wave.py` (✅ default wave регистрирует полный checked-in module table через `register_all()`; фактический запуск каждого built-in module проверяется unit tests; live worker parallelism остаётся отдельным T183).
 
 ## Phase 1 — Harvest Modules (Layer 1–2)
 - [x] T110 — Domain harvesters: email-permutation, subdomain-discovery, DNS, social — `apps/zero/zero/harvesters/domain.py` (✅ breach реализован как enricher `email_to_breach`, mock-индекс)
@@ -51,7 +51,7 @@
 - [ ] T151 — Entity inspector с confidence-страйпами + provenance — `apps/webapp/src/components/zero/EntityInspector.tsx`
 - [ ] T152 — SSE status stream + harvest cycle metrics — `apps/webapp/src/components/zero/HarvestStream.tsx`
 - [ ] T153 — Magma operation-matrix для spec-ops (real-time SSE) — `apps/webapp/src/components/specops/OperationMatrix.tsx`
-- [ ] T154 — Dark tactical theme + zero-layer styles — `apps/webapp/src/styles/zero/`
+- [x] T154 — Dark tactical theme + zero-layer styles — `apps/webapp/src/styles/zero/` (✅ product-wide `command-tactical.css` is now part of `styles/layers.css`; Research Case uses the scoped first-party module).
 
 ## Phase 6 — Verification
 - [ ] T160 — bench/run --scenario zero-layer-smoke (8 seed types → harvest → resolve → enrich → feedback)
@@ -61,3 +61,19 @@
 ---
 
 **Трекинг**: отмечать `[x]` по мере закрытия; новые задачи добавляют запись в `09-INTEGRATION-MATRIX.md` и passing guarding test.
+
+## Phase 7 — Canonical evidence stages and production hardening
+- [x] T180 — Стабильные HARVEST / ENRICHMENT / RESOLUTION stage records — `apps/zero/zero/harvest_wave.py` (`WaveStageRecord`, run-scoped reset, bounded depth, per-wave metrics, deterministic ordering; unit contracts).
+- [x] T181 — Raw-first stage persistence — `apps/zero/zero/evidence.py` (`ZeroLayerEvidenceSink` → shared `AcquisitionArtifact` → canonical `ArtifactSink` → immutable Capture/Observation + refs-only event; `CaptureTimeBasis.ABSENT`; `DISCOVERY_ONLY`, `claim_admission_allowed=false`; integration contract).
+- [x] T182 — Authenticated, tenant-scoped and case-governed API/composition wiring — `apps/control-plane/services/zero_layer.py`, `apps/control-plane/api/routes/research_cases.py`, `apps/control-plane/composition.py` (✅ current projected lead IDs only; approved scope + tenant + policy digest; durable request/byte/record/concurrency reservation; idempotency/replay; canonical ArtifactSink and immutable refs; outputs remain `DISCOVERY_ONLY`).
+- [ ] T183 — Live public-source adapters through the existing catalogue → durable budget reservation → `PlanDriver` → Kafka worker → secure egress → ArtifactSink path. No raw `httpx` shortcut, no unbounded concurrency, no bypass of robots/licensing/rate/purpose policy. (⚠️ public HTTPS document capture is bounded and case-budgeted, but still runs in the dedicated ZeroLayerCaseService/SecurePublicTransport path rather than the catalogue → PlanDriver → Kafka worker chain).
+- [ ] T184 — Promote HARVEST/ENRICHMENT/RESOLUTION payloads to explicit versioned `EntityResolutionObservation` / `EnrichmentObservation` contracts and close T122/T133 with replay + consumer-admission tests.
+- [ ] T185 — Replace all deterministic mock lookup tables with real, attested, public and purpose-appropriate enrichers; expand beyond the current 11 modules only when each has license, terms, provenance, budget and live contract evidence.
+- [ ] T186 — Bounded file-seed ingestion (image/PDF/DOCX), content-type validation, malware/quarantine policy, parser workers, and immutable raw retention/deletion contracts.
+- [ ] T187 — Eight-input-type end-to-end smoke with independent fixtures, replay, retry/DLQ, backpressure and observable stage health; publish coverage/unsupported-source ledger without treating unknown as zero.
+
+**Current boundary**: T180–T182 provide deterministic raw-first stage persistence plus the approved, tenant-scoped public-person API and durable budget/idempotency authority. The dedicated public-document lane currently uses bounded `SecurePublicTransport` and canonical `ArtifactSink`, but T183 remains open until it is driven by the catalogue → `PlanDriver` → Kafka worker chain. T122/T133 typed replayable observation contracts, the 50+ attested-enricher target, runtime execution of `CommandSpec`, bounded file-seed ingestion and the eight-type end-to-end matrix remain open; no mock lookup is presented as live evidence.
+
+**Release posture (2026-11-02)**: `T182` is complete and the global cyber-neomilitarist shell is active through `styles/layers.css`. The approved public-professional path is: SearXNG discovery lead → analyst selection (max 25) → case/tenant/scope/policy validation → durable budget reservation + idempotency → robots/SSRF-safe HTTPS page fetch → raw-first Capture/Observation → DISCOVERY_ONLY stage records. `T183` remains open because page fetching is still a dedicated bounded service, not the catalogue/`PlanDriver`/`Kafka` worker chain; T184–T187 remain explicit gaps. CI provider outages and missing credentials are reported as partial/upstream-blocked, never as source coverage or a fabricated proof pass.
+
+**Clean-Postgres migration acceptance**: CI now provisions the pre-Alembic baseline tables required by revisions 017/019/020/023 (frontier, candidate, entity, observation, entity stream, evidence links, admission decisions, and the legacy relation-claims check target). The application Alembic environment sets `version_num_length=128` because the released revision identifiers exceed Alembic's default 32-character storage. This is a clean-install bootstrap only; released migration files remain unchanged. Do not call migration acceptance green until the acquisition live-stack job reaches Airbyte/SearXNG/ZeroLayer and completes Capture/Observation read-backs.

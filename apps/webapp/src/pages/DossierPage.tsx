@@ -1,4 +1,5 @@
 import { useState } from "react";
+import styles from "../features/research-case/ResearchCase.module.css";
 
 import { Button } from "../ui/Button";
 import { DataTable } from "../ui/DataTable";
@@ -67,8 +68,8 @@ export function DossierPage({
   const [view, setView] = useState<View>("coverage");
 
   return (
-    <section data-testid="dossier-page">
-      <h1>Dossier</h1>
+    <section className={styles.dossierShell} data-testid="dossier-page">
+      <h1>Infrastructure dossier</h1>
       {dossier && (
         <p className="op-label" data-testid="dossier-identity">
           {dossier.identity.entity_ref} · {dossier.identity.type_label} · rev{" "}
@@ -86,25 +87,25 @@ export function DossierPage({
         }}
       >
         <div className="panel-actions">
-          <span className="op-label">Sweep</span>
+          <span className="op-label">Asset acquisition</span>
           {dossier && <span className="status-chip">{query || dossier.identity.entity_ref}</span>}
         </div>
         <div data-testid="dossier-subject-field">
           <Input
             label="Subject"
             mono
-            placeholder="domain, name, address or free text"
+            placeholder="example.org or 203.0.113.10"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
           />
         </div>
         <p className="panel-note">
-          Sources are chosen by the shape of what you type, not by a subject type: a domain reaches
-          the domain sources, a name reaches the ones that take free text.
+          This quick path is limited to domain/IP identifiers. Public-person research must use an approved Research Case so purpose, authority, eligible sources and budget are checked before acquisition. Other entity types need a typed Investigation scope.
         </p>
+        <p className="panel-note">Researching a person or public figure? <a href="/research-cases/new">Create a governed Research Case</a>. Other entities: <a href="/investigations">open an Investigation</a>.</p>
         <div className="panel-actions">
           <Button type="submit" variant="primary" disabled={sweeping || subject.trim() === ""}>
-            {sweeping ? "Sweeping…" : "Sweep sources"}
+            {sweeping ? "Sweeping…" : "Sweep asset sources"}
           </Button>
         </div>
       </form>

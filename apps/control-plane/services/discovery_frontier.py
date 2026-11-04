@@ -186,7 +186,7 @@ class FrontierSinkAdapter:
         method: str,
         priority: int = 0,
         provenance: dict[str, Any] | None = None,
-    ) -> None:
+    ) -> bool:
         """Enqueue one discovered candidate. Never raises on the dedup path.
 
         ``uri`` is canonicalised before it is used as the dedup key, so a caller
@@ -198,7 +198,7 @@ class FrontierSinkAdapter:
         canonical = canonicalize(uri)
         if canonical is None:
             return
-        self._submit(
+        return self._submit(
             self.enqueue_async(
                 uri=canonical,
                 tenant_id=tenant_id,
@@ -289,12 +289,12 @@ class FrontierSinkAdapter:
 
     # -- event loop plumbing ----------------------------------------------
 
-    def _submit(self, coro: Awaitable[None]) -> None:
+    def _submit(self, coro: Awaitable[bool]) -> bool:
         """Run ``coro`` on the adapter's private loop and wait for it."""
         loop = self._ensure_loop()
         future = asyncio.run_coroutine_threadsafe(coro, loop)  # type: ignore[arg-type]
         try:
-            future.result(timeout=self.timeout_s)
+            return bool(future.result(timeout=self.timeout_s))
         except TimeoutError:
             if future.done():
                 # The coroutine itself timed out (a driver-level timeout), not

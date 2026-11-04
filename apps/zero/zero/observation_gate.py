@@ -172,17 +172,18 @@ class ZeroLayerGate:
         contacts_out: int,
         new_seeds_discovered: int,
         confidence_dist: tuple[tuple[str, int], ...],
+        wave_index: int | None = None,
     ) -> None:
         """Emit the ``harvest_cycle_complete`` summary (spec FR-012)."""
-        self._emit(
-            EVENT_HARVEST_CYCLE_COMPLETE,
-            {
-                "seeds_in": seeds_in,
-                "contacts_out": contacts_out,
-                "confidence_dist": dict(confidence_dist),
-                "new_seeds_discovered": new_seeds_discovered,
-            },
-        )
+        payload = {
+            "seeds_in": seeds_in,
+            "contacts_out": contacts_out,
+            "confidence_dist": dict(confidence_dist),
+            "new_seeds_discovered": new_seeds_discovered,
+        }
+        if wave_index is not None:
+            payload["wave_index"] = int(wave_index)
+        self._emit(EVENT_HARVEST_CYCLE_COMPLETE, payload)
 
     def observations(self) -> list[ZeroLayerObservation]:
         return [self._observations[key] for key in sorted(self._observations)]

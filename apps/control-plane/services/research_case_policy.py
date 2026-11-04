@@ -302,6 +302,7 @@ class PersonCasePolicy:
         allowed_licenses = {
             "PUBLIC_METADATA_ONLY_ABSTRACTS_SEPARATELY_GATED",
             "NOT_APPLICABLE_INTERNAL_DISCOVERY",
+            "PUBLIC_ORIGIN_TERMS_APPLY",
         }
         if license_status not in allowed_licenses:
             return f"source {source_id} licence status is not approved ({license_status or 'missing'})"
@@ -347,6 +348,19 @@ class PersonCasePolicy:
             if self._source_block_reason(source_id, launch_profile) is not None:
                 continue
             if self._source_supports_claim_family(source, claim_family):
+                out.append(source_id)
+        return tuple(sorted(out))
+
+    def eligible_discovery_sources(
+        self, *, source_ids: list[str], launch_profile: str
+    ) -> tuple[str, ...]:
+        """Return enabled discovery-only sources, separate from evidence eligibility."""
+        out: list[str] = []
+        for source_id in source_ids:
+            source = self._sources.get(source_id, {})
+            if source.get("result_role") != "DISCOVERY_ONLY":
+                continue
+            if self._source_block_reason(source_id, launch_profile) is None:
                 out.append(source_id)
         return tuple(sorted(out))
 

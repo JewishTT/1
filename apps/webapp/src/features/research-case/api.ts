@@ -333,6 +333,7 @@ export async function approveCase(caseId: string, body: ApproveCaseRequest): Pro
 }
 
 export interface ResearchAction {
+  result_role?: "EVIDENCE" | "DISCOVERY_ONLY";
   action_id: string;
   obligation_id: string;
   proposed_method: string;
@@ -360,6 +361,60 @@ export interface CaseActions {
   actions: ResearchAction[];
 }
 
+export interface DiscoveryLead {
+  lead_id: string;
+  action_ref: string;
+  source_id: string;
+  title: string;
+  url: string;
+  engine: string;
+  published_at: string | null;
+  query: string;
+  observation_id: string;
+  raw_ref: string;
+  captured_at: string | null;
+  result_role: "DISCOVERY_ONLY";
+  state: "UNVERIFIED_DISCOVERY_LEAD";
+  claim_admission_allowed: false;
+  next_step: string;
+}
+
+export interface DiscoveryLeadsResponse {
+  case_id: string;
+  scope_revision: number;
+  result_role: "DISCOVERY_ONLY";
+  leads: DiscoveryLead[];
+  count: number;
+  notice: string;
+}
+
+export interface ZeroLayerHarvestResponse {
+  case_id: string;
+  run_id: string;
+  scope_digest: string;
+  scope_revision: number;
+  budget_reservation_id: string;
+  selected_leads: number;
+  captured_pages: number;
+  failed_pages: number;
+  failures: Array<{ url: string; code: string; detail: string }>;
+  waves: Array<{
+    wave_index: number;
+    seeds_in: number;
+    contacts_out: number;
+    new_seeds_discovered: number;
+    confidence_dist: Record<string, number>;
+    stabilized: boolean;
+    budget_limited?: boolean;
+  }>;
+  observation_refs: string[];
+  result_role: "DISCOVERY_ONLY";
+  claim_admission_allowed: false;
+  replayed?: boolean;
+  notice: string;
+}
+
+
 export interface CasePlan {
   case_id: string;
   tenant_id: string;
@@ -371,8 +426,10 @@ export interface CasePlan {
   required_capabilities: string[];
   capabilities_preview: string[];
   capability_gaps: Array<{ obligation_id: string; claim_families?: string[]; detail: string; required?: string[] }>;
+  discovery_action_refs: string[];
+  evidence_coverage_ready: boolean;
   rejected_catalogue_definitions: Record<string, string[]>;
-  plan_state: "BLOCKED_CAPABILITY" | "BLOCKED_RUNTIME" | "BLOCKED_NO_ACTIONS" | "READY_FOR_REVIEW" | string;
+  plan_state: "BLOCKED_CAPABILITY" | "BLOCKED_RUNTIME" | "BLOCKED_NO_ACTIONS" | "DISCOVERY_ONLY_READY_FOR_REVIEW" | "READY_WITH_CAPABILITY_GAPS" | "READY_FOR_REVIEW" | string;
   ready_to_dispatch: boolean;
   no_network_side_effects: boolean;
 }
@@ -389,6 +446,21 @@ export interface RunCaseRequest {
 export async function listActions(caseId: string): Promise<CaseActions> {
   return request(`/${encodeURIComponent(caseId)}/actions`);
 }
+
+export async function listDiscoveryLeads(caseId: string): Promise<DiscoveryLeadsResponse> {
+  return request(`/${encodeURIComponent(caseId)}/discovery-leads`);
+}
+
+export async function harvestPublicLeads(
+  caseId: string,
+  body: { lead_ids: string[]; idempotency_key: string },
+): Promise<ZeroLayerHarvestResponse> {
+  return request(`/${encodeURIComponent(caseId)}/zero-layer/harvest`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 
 export async function approveActions(
   caseId: string,
@@ -563,6 +635,8 @@ export const api = {
   approveCase,
   planCase,
   listActions,
+  listDiscoveryLeads,
+  harvestPublicLeads,
   approveActions,
   runCase,
   pauseCase,

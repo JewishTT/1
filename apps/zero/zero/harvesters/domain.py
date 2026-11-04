@@ -158,7 +158,7 @@ class SubdomainBruteHarvester:
         candidates: list[ObservationCandidate] = []
         for word in SUBDOMAIN_WORDLIST:
             sub = f"{word}.{domain}"
-            exists = ctx.transport.exists(f"http://{sub}")
+            exists = ctx.transport.exists(f"https://{sub}")
             confidence = 0.85 if exists else 0.30
             candidates.append(
                 ObservationCandidate(

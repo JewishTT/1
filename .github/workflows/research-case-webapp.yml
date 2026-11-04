@@ -6,7 +6,7 @@ on:
 # A branch push and its PR event otherwise launch duplicate full browser installs.
 # Use the source branch name for both event types and keep only the newest sweep.
 concurrency:
-  group: ui-regression-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ui-regression-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}-${{ github.event_name }}
   cancel-in-progress: true
 permissions:
   contents: read
@@ -58,7 +58,7 @@ jobs:
         env:
           UI_SHOTS_DIR: artifacts/ui-screenshots
         run: npm run ui:shoot:design-system -- http://127.0.0.1:5173 artifacts/ui-screenshots
-      - name: Capture compact navigation deck screenshots
+      - name: Capture persistent field-navigation screenshots
         if: ${{ always() && steps.build.outcome == 'success' }}
         working-directory: apps/webapp
         run: npm run ui:shoot:nav -- http://127.0.0.1:5173 artifacts/nav-screenshots
@@ -66,6 +66,10 @@ jobs:
         if: ${{ always() && steps.build.outcome == 'success' }}
         working-directory: apps/webapp
         run: npm run ui:shoot:specops -- http://127.0.0.1:5173 artifacts/specops-screenshots
+      - name: Capture governed Research Case setup screenshots
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        working-directory: apps/webapp
+        run: npm run ui:shoot:research-case -- http://127.0.0.1:5173 artifacts/research-case-screenshots
       - name: Upload UI screenshot regression artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -75,5 +79,6 @@ jobs:
             apps/webapp/artifacts/ui-screenshots/
             apps/webapp/artifacts/specops-screenshots/
             apps/webapp/artifacts/nav-screenshots/
+            apps/webapp/artifacts/research-case-screenshots/
           if-no-files-found: warn
           retention-days: 14

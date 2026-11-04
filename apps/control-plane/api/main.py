@@ -89,6 +89,7 @@ async def lifespan(app: FastAPI):
                 assembled.person_case_policy,
                 artifact_service=assembled.research_case_artifact_service,
                 report_service=assembled.research_case_report_service,
+                zero_layer_service=assembled.zero_layer_service,
             )
             log.info("research-cases router configured")
         else:

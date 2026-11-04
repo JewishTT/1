@@ -1,4 +1,7 @@
 name: openalex_work
+source_family: openalex_works
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: OpenAlex — academic works / authors / institutions

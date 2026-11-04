@@ -92,6 +92,9 @@
           "apps/acquisition/_probe_catalogue.py",
           "apps/acquisition/_prove_airbyte.py",
           "apps/acquisition/_prove_backbone.py",
+          "apps/acquisition/_prove_blockchain_sources.py",
+          "apps/acquisition/_prove_commoncrawl.py",
+          "apps/acquisition/_prove_public_source_matrix.py",
           "apps/acquisition/_prove_readback.py",
           "apps/acquisition/_prove_searxng.py",
           "apps/acquisition/_prove_tools.py",
@@ -122,6 +125,7 @@
           "apps/acquisition/adapters/stormcrawler/collect.py",
           "apps/acquisition/adapters/warc/__init__.py",
           "apps/acquisition/adapters/warc/collect.py",
+          "apps/acquisition/airbyte_acceptance.py",
           "apps/acquisition/artifact_sink.py",
           "apps/acquisition/case_execution_guard.py",
           "apps/acquisition/cc_extract.py",
@@ -173,6 +177,7 @@
           "apps/acquisition/tests/unit/test_cc_extract.py",
           "apps/acquisition/tests/unit/test_cc_index.py",
           "apps/acquisition/tests/unit/test_cc_plan.py",
+          "apps/acquisition/tests/unit/test_discovery_registry.py",
           "apps/acquisition/tests/unit/test_engine_adapters.py",
           "apps/acquisition/tests/unit/test_entity_search.py",
           "apps/acquisition/tests/unit/test_evidence_writer.py",
@@ -202,15 +207,23 @@
           "apps/zero/tests/conftest.py",
           "apps/zero/tests/test_cc_capture.py",
           "apps/zero/tests/test_enrichment.py",
+          "apps/zero/tests/test_evidence.py",
+          "apps/zero/tests/test_harvest_concurrency.py",
           "apps/zero/tests/test_harvest_wave.py",
           "apps/zero/tests/test_harvesters.py",
+          "apps/zero/tests/test_public_acquisition_policy.py",
+          "apps/zero/tests/test_public_document.py",
+          "apps/zero/tests/test_public_wave_persistence.py",
           "apps/zero/tests/test_resolution.py",
+          "apps/zero/tests/test_secure_public_transport.py",
           "apps/zero/tests/test_type_detector.py",
           "apps/zero/zero/__init__.py",
           "apps/zero/zero/cc_capture.py",
           "apps/zero/zero/enrichment/__init__.py",
           "apps/zero/zero/enrichment/feedback.py",
           "apps/zero/zero/enrichment/modules.py",
+          "apps/zero/zero/evidence.py",
+          "apps/zero/zero/evidence_sink.py",
           "apps/zero/zero/harvest_wave.py",
           "apps/zero/zero/harvesters/__init__.py",
           "apps/zero/zero/harvesters/contracts.py",
@@ -219,18 +232,20 @@
           "apps/zero/zero/harvesters/image.py",
           "apps/zero/zero/harvesters/modules.py",
           "apps/zero/zero/harvesters/phone.py",
+          "apps/zero/zero/harvesters/public_document.py",
           "apps/zero/zero/harvesters/registry.py",
           "apps/zero/zero/harvesters/transport.py",
           "apps/zero/zero/harvesters/url.py",
           "apps/zero/zero/harvesters/username.py",
           "apps/zero/zero/observation_gate.py",
+          "apps/zero/zero/public_policy.py",
           "apps/zero/zero/resolution/__init__.py",
           "apps/zero/zero/resolution/fellegi_sunter.py",
           "apps/zero/zero/resolution/graph.py",
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 141
+        "module_count": 156
       },
       {
         "id": "interpretation",
@@ -330,6 +345,7 @@
           "apps/interpretation/tests/test_evidence_manifest.py",
           "apps/interpretation/tests/test_mention_binding_seam.py",
           "apps/interpretation/tests/test_observation_consumer.py",
+          "apps/interpretation/tests/test_onchain_source_parsers.py",
           "apps/interpretation/tests/test_parser_adapter.py",
           "apps/interpretation/tests/test_payload_binding.py",
           "apps/interpretation/tests/test_payload_detection.py",
@@ -350,9 +366,11 @@
           "apps/interpretation/tests/test_syntactic_producer.py",
           "apps/interpretation/tests/test_tenzir_live.py",
           "apps/interpretation/tests/test_tenzir_normalization.py",
-          "apps/interpretation/tests/test_warc_reader.py"
+          "apps/interpretation/tests/test_transaction_lineage.py",
+          "apps/interpretation/tests/test_warc_reader.py",
+          "apps/interpretation/transaction_lineage.py"
         ],
-        "module_count": 112
+        "module_count": 115
       },
       {
         "id": "investigations",
@@ -527,6 +545,7 @@
           "specops"
         ],
         "modules": [
+          "apps/deploy/minio-init/init-buckets.py",
           "apps/specops/__init__.py",
           "apps/specops/counterintel.py",
           "apps/specops/emulation.py",
@@ -598,7 +617,7 @@
           "tools/specs/build_owner_map.py",
           "tools/strip_zero_inventory.py"
         ],
-        "module_count": 70
+        "module_count": 71
       },
       {
         "id": "orchestration-temporal",
@@ -972,6 +991,7 @@
           "apps/control-plane/services/throttle.py",
           "apps/control-plane/services/tool_catalog.py",
           "apps/control-plane/services/worker_pools.py",
+          "apps/control-plane/services/zero_layer.py",
           "apps/control-plane/tests/contract/test_context_graph_contract.py",
           "apps/control-plane/tests/integration/__init__.py",
           "apps/control-plane/tests/integration/test_cc_temporality_api.py",
@@ -1002,6 +1022,7 @@
           "apps/control-plane/tests/test_research_case_invariants.py",
           "apps/control-plane/tests/test_research_case_projection.py",
           "apps/control-plane/tests/test_research_case_reports.py",
+          "apps/control-plane/tests/test_zero_layer_service.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
           "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -1126,7 +1147,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 300
+        "module_count": 302
       },
       {
         "id": "webapp",
@@ -1351,6 +1372,7 @@
           "apps/webapp/src/shell/TopNav.test.tsx",
           "apps/webapp/src/shell/TopNav.tsx",
           "apps/webapp/src/shell/nav.ts",
+          "apps/webapp/src/styles/tokens/command_tactical.contract.test.ts",
           "apps/webapp/src/styles/tokens/tokens.contract.test.ts",
           "apps/webapp/src/test-setup.ts",
           "apps/webapp/src/test-support/cytoscape-test-double.ts",
@@ -1402,7 +1424,7 @@
           "apps/webapp/src/workspace/useWorkState.ts",
           "apps/webapp/vite.config.ts"
         ],
-        "module_count": 266
+        "module_count": 267
       }
     ],
     "event_names_sample": [
@@ -1444,6 +1466,7 @@
       "amazon.com",
       "analytics.projected",
       "api.example.com",
+      "api.example.org",
       "api.md",
       "api.routes.search_rebuild",
       "api.tavily.com",
@@ -1518,6 +1541,7 @@
       "components.md",
       "composition.py",
       "compression.type",
+      "config.json",
       "conftest.py",
       "connection.asn",
       "connection.isp",
@@ -1571,6 +1595,7 @@
       "data.url",
       "database.name",
       "datetime.now",
+      "db.example",
       "db.schema",
       "dc.creator",
       "dc.description",
@@ -1602,10 +1627,7 @@
       "enable.auto.offset.store",
       "enable.idempotence",
       "engine.py",
-      "entities.entity_id",
-      "entity.claimed",
-      "entity.created",
-      "entity.extract"
+      "entities.entity_id"
     ]
   },
   "context_map": {
@@ -1620,7 +1642,7 @@
         "from": "ingestion",
         "to": "interpretation",
         "type": "direct",
-        "via_import": "parsers.primproc"
+        "via_import": "parsers.families"
       },
       {
         "from": "ingestion",
@@ -1653,6 +1675,12 @@
         "via_import": "adapters.discovery"
       },
       {
+        "from": "projection-query",
+        "to": "platform-shared",
+        "type": "direct",
+        "via_import": "security"
+      },
+      {
         "from": "identity-entities",
         "to": "ingestion",
         "type": "direct",
@@ -1675,12 +1703,6 @@
         "to": "investigations",
         "type": "direct",
         "via_import": "db.investigation_store"
-      },
-      {
-        "from": "projection-query",
-        "to": "platform-shared",
-        "type": "direct",
-        "via_import": "ids"
       },
       {
         "from": "investigations",
@@ -2037,8 +2059,8 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs/010-zero-layer-contact-harvesting/spec.md",
-        "tasks_checked": 16,
-        "tasks_total": 39,
+        "tasks_checked": 20,
+        "tasks_total": 47,
         "modules": [
           "apps/control-plane/services/layer0_pipeline.py",
           "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",

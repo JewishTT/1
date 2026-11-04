@@ -1,0 +1,310 @@
+name: acquisition-live-stack-proof
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: acquisition-live-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}-${{ github.event_name }}
+  cancel-in-progress: true
+jobs:
+  airbyte-and-searxng:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Test the MIME to semantic artifact-kind persistence contract
+        run: .venv/bin/pytest apps/acquisition/tests/unit/test_evidence_writer.py -q
+      - name: Start the real core acquisition stack
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml --profile core up -d minio postgres redpanda searxng
+      - name: Wait for Postgres, MinIO, Redpanda and SearXNG readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for attempt in $(seq 1 90); do
+            pg=0
+            minio=0
+            broker=0
+            search=0
+            docker compose -f apps/deploy/docker-compose.yml exec -T postgres pg_isready -U cognitive -d cognitive >/dev/null 2>&1 && pg=1
+            curl -fsS http://127.0.0.1:9000/minio/health/ready >/dev/null 2>&1 && minio=1
+            docker compose -f apps/deploy/docker-compose.yml exec -T redpanda rpk cluster info >/dev/null 2>&1 && broker=1
+            curl -fsS http://127.0.0.1:18090/config >/dev/null 2>&1 && search=1
+            echo "readiness attempt $attempt/90: postgres=$pg minio=$minio redpanda=$broker searxng=$search"
+            if [ "$pg" -eq 1 ] && [ "$minio" -eq 1 ] && [ "$broker" -eq 1 ] && [ "$search" -eq 1 ]; then
+              ready=1
+              break
+            fi
+            sleep 5
+          done
+          test "$ready" -eq 1
+      - name: Initialize MinIO buckets through the compose S3 initializer
+        run: docker compose -f apps/deploy/docker-compose.yml --profile core run --rm minio-init
+      - name: Bootstrap the pre-Alembic legacy schema required by revisions 017/019/023
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          CREATE TABLE IF NOT EXISTS public.frontier_items (
+            frontier_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            investigation_id VARCHAR(36),
+            source_id VARCHAR(36),
+            uri TEXT NOT NULL,
+            host_key VARCHAR(255),
+            priority DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+            state VARCHAR(32) NOT NULL DEFAULT 'READY',
+            retries INTEGER NOT NULL DEFAULT 0,
+            lease_until TIMESTAMPTZ,
+            last_digest VARCHAR(64),
+            last_etag VARCHAR(255),
+            partition VARCHAR(64) NOT NULL DEFAULT 'global',
+            next_schedule_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_frontier_tenant ON public.frontier_items (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_frontier_host ON public.frontier_items (host_key);
+          CREATE INDEX IF NOT EXISTS ix_frontier_partition ON public.frontier_items (partition);
+          CREATE UNIQUE INDEX IF NOT EXISTS uq_frontier_schedule ON public.frontier_items (tenant_id, uri);
+
+          -- The Alembic chain starts at feature 014, while the older core tables
+          -- below predate versioned migrations. Recreate only their pre-migration
+          -- shape: later revisions add candidates.regime_id, observations checks,
+          -- entity_stream.source_event_id, frontier_items.provenance and their indexes.
+          CREATE TABLE IF NOT EXISTS public.candidates (
+            candidate_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            mention_ids JSONB,
+            surface_form TEXT,
+            normalized_form TEXT,
+            type_hypothesis VARCHAR(32),
+            state VARCHAR(32) NOT NULL DEFAULT 'OPEN',
+            epistemic_status VARCHAR(32) NOT NULL DEFAULT 'PROVISIONAL',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_candidates_tenant ON public.candidates (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_candidates_state ON public.candidates (state);
+          CREATE INDEX IF NOT EXISTS ix_candidates_epistemic ON public.candidates (epistemic_status);
+
+          -- Migration 020 widens these two pre-existing candidate references.
+          -- Keep their released baseline width at 36 so the migration itself owns
+          -- the transition to the platform's 64-character CNDR/CAND addresses.
+          CREATE TABLE IF NOT EXISTS public.evidence_links (
+            evidence_link_id VARCHAR(36) PRIMARY KEY,
+            assertion_id VARCHAR(36),
+            candidate_id VARCHAR(36),
+            tenant_id VARCHAR(36) NOT NULL,
+            observation_ids JSONB,
+            publication_count INTEGER NOT NULL DEFAULT 0,
+            independent_sources INTEGER NOT NULL DEFAULT 0,
+            independent_evidence_chains INTEGER NOT NULL DEFAULT 0,
+            source_independence_refs JSONB,
+            provenance JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_evidence_links_tenant ON public.evidence_links (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_evidence_links_assertion ON public.evidence_links (assertion_id);
+
+          CREATE TABLE IF NOT EXISTS public.admission_decisions (
+            decision_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            candidate_id VARCHAR(36),
+            entity_id VARCHAR(36),
+            decision VARCHAR(32) NOT NULL,
+            score_vector JSONB,
+            reasons JSONB,
+            model_version VARCHAR(32),
+            policy_version VARCHAR(32),
+            profile_id VARCHAR(36),
+            evidence_refs JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_admission_decisions_tenant ON public.admission_decisions (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_admission_decisions_decision ON public.admission_decisions (decision);
+
+          CREATE TABLE IF NOT EXISTS public.entities (
+            entity_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            entity_type VARCHAR(32) NOT NULL,
+            canonical_name TEXT,
+            attributes JSONB,
+            current_version INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS ix_entities_tenant ON public.entities (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_entities_type ON public.entities (entity_type);
+
+          CREATE TABLE IF NOT EXISTS public.observations (
+            observation_id VARCHAR(36) PRIMARY KEY,
+            tenant_id VARCHAR(36) NOT NULL,
+            investigation_id VARCHAR(36),
+            source_id VARCHAR(36),
+            task_id VARCHAR(36),
+            uri TEXT NOT NULL,
+            raw_ref TEXT,
+            content_hash VARCHAR(64) NOT NULL,
+            content_type VARCHAR(128),
+            status VARCHAR(32) NOT NULL DEFAULT 'created',
+            duplicate BOOLEAN NOT NULL DEFAULT FALSE,
+            provenance JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            CONSTRAINT ck_obs_immutable_guard CHECK (duplicate IS NOT NULL)
+          );
+          CREATE INDEX IF NOT EXISTS ix_obs_tenant ON public.observations (tenant_id);
+
+          CREATE TABLE IF NOT EXISTS public.entity_stream (
+            tenant_id VARCHAR(36) NOT NULL,
+            entity_id VARCHAR(64) NOT NULL,
+            sequence INTEGER NOT NULL,
+            record_hash VARCHAR(64) NOT NULL UNIQUE,
+            kind VARCHAR(32) NOT NULL,
+            ts TIMESTAMPTZ NOT NULL,
+            payload JSONB NOT NULL,
+            valid_from TIMESTAMPTZ,
+            valid_until TIMESTAMPTZ,
+            observation_id VARCHAR(64) NOT NULL DEFAULT '',
+            dataset_id VARCHAR(64) NOT NULL DEFAULT '',
+            extraction_version VARCHAR(32) NOT NULL DEFAULT '',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (tenant_id, entity_id, sequence)
+          );
+          CREATE INDEX IF NOT EXISTS ix_entity_stream_tenant ON public.entity_stream (tenant_id);
+          CREATE INDEX IF NOT EXISTS ix_entity_stream_entity ON public.entity_stream (entity_id);
+          CREATE INDEX IF NOT EXISTS ix_entity_stream_hash ON public.entity_stream (record_hash);
+
+          -- Revision 023 still tightens a legacy plural table that no current ORM
+          -- model or service writes; current durable claims live in relation_claim.
+          -- Keep the historical check target present without inventing claim rows.
+          CREATE TABLE IF NOT EXISTS public.relation_claims (
+            legacy_relation_claim_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+            extractor_version VARCHAR(64)
+          );
+          SQL
+      - name: Apply PostgreSQL migrations for durable Capture / Observation evidence
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DATABASE: cognitive
+          POSTGRES_USER: cognitive
+          POSTGRES_PASSWORD: cognitive
+        run: uv run --directory apps/control-plane alembic -c alembic.ini upgrade head
+      - name: Assert canonical Capture / Observation tables are installed in public
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT current_database() AS database_name,
+                 current_user AS database_role,
+                 current_schema() AS current_schema,
+                 current_schemas(true) AS effective_schemas,
+                 current_setting('search_path') AS search_path;
+          SELECT n.nspname AS schema_name, c.relname AS table_name
+          FROM pg_class AS c
+          JOIN pg_namespace AS n ON n.oid = c.relnamespace
+          WHERE c.relkind IN ('r', 'p')
+            AND c.relname IN (
+              'captures', 'ingest_batches', 'data_stream', 'entity_identity',
+              'resolution_decision', 'semantic_regime', 'observations', 'alembic_version'
+            )
+          ORDER BY n.nspname, c.relname;
+          SELECT 1 / CASE
+            WHEN to_regclass('public.captures') IS NOT NULL
+             AND to_regclass('public.observations') IS NOT NULL
+            THEN 1
+            ELSE 0
+          END AS migration_schema_assertion;
+          SQL
+      - name: Assert the final Alembic revision is committed durably
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN EXISTS (
+              SELECT 1 FROM public.alembic_version
+              WHERE version_num = '031_relation_claim_projection_outbox'
+            )
+            THEN 1
+            ELSE 0
+          END AS alembic_head_commit_assertion;
+          SQL
+      - name: Seed a controlled Postgres connector fixture
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          CREATE TABLE IF NOT EXISTS public.airbyte_smoke (
+            id INTEGER PRIMARY KEY,
+            label TEXT NOT NULL,
+            observed_at TIMESTAMPTZ NOT NULL
+          );
+          TRUNCATE TABLE public.airbyte_smoke;
+          INSERT INTO public.airbyte_smoke (id, label, observed_at)
+          SELECT n, 'airbyte-live-proof-' || n, TIMESTAMPTZ '2026-10-31 00:00:00+00' + (n || ' minutes')::interval
+          FROM generate_series(1, 12) AS n;
+          GRANT SELECT ON public.airbyte_smoke TO cognitive;
+          SELECT COUNT(*) AS seeded_rows FROM public.airbyte_smoke;
+          SQL
+      - name: Prove real Airbyte SPEC / CHECK / DISCOVER / READ / Observation / Redpanda read-back
+        env:
+          COGNITIVE_AIRBYTE_CFG: ${{ runner.temp }}/cognitive-airbyte
+          COGNITIVE_AIRBYTE_PG_HOST: host.docker.internal
+          COGNITIVE_AIRBYTE_PG_PORT: "5432"
+          COGNITIVE_AIRBYTE_PG_DATABASE: cognitive
+          COGNITIVE_AIRBYTE_PG_USERNAME: cognitive
+          COGNITIVE_AIRBYTE_PG_PASSWORD: cognitive
+          COGNITIVE_AIRBYTE_PG_SCHEMAS: public
+          COGNITIVE_AIRBYTE_STREAM: airbyte_smoke
+          COGNITIVE_KAFKA_BROKERS: localhost:19092
+          COGNITIVE_MINIO_ENDPOINT: http://localhost:9000
+          COGNITIVE_MINIO_ACCESS_KEY: demo
+          COGNITIVE_MINIO_SECRET_KEY: demopass
+          COGNITIVE_TENANT: acceptance
+          COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
+        run: .venv/bin/python apps/acquisition/_prove_airbyte.py
+      - name: Prove live SearXNG JSON search / raw capture / Observation / Redpanda read-back
+        env:
+          COGNITIVE_SEARXNG_URL: http://127.0.0.1:18090
+          COGNITIVE_SEARXNG_IMAGE: searxng/searxng@sha256:3284e8900e9b3e5df284ae8c48a26851ae2eff6f99b4b0b18ec3da5a4d9095c3
+          COGNITIVE_KAFKA_BROKERS: localhost:19092
+          COGNITIVE_MINIO_ENDPOINT: http://localhost:9000
+          COGNITIVE_MINIO_ACCESS_KEY: demo
+          COGNITIVE_MINIO_SECRET_KEY: demopass
+          COGNITIVE_TENANT: acceptance
+          COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
+        run: .venv/bin/python apps/acquisition/_prove_searxng.py
+      - name: Prove 18 public source families and live zero-layer public-document harvesting
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DATABASE: cognitive
+          POSTGRES_USER: cognitive
+          POSTGRES_PASSWORD: cognitive
+          KAFKA_BOOTSTRAP_SERVERS: localhost:19092
+          COGNITIVE_KAFKA_BROKERS: localhost:19092
+          COGNITIVE_MINIO_ENDPOINT: http://localhost:9000
+          COGNITIVE_MINIO_ACCESS_KEY: demo
+          COGNITIVE_MINIO_SECRET_KEY: demopass
+          COGNITIVE_MINIO_RAW_BUCKET: knowledge-raw
+          COGNITIVE_TENANT: acceptance-public-sources
+          COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
+          COGNITIVE_PUBLIC_SOURCE_MIN_PASSES: "6"
+        run: .venv/bin/python apps/acquisition/_prove_public_source_matrix.py
+      - name: Upload end-to-end acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acquisition-live-stack-proof
+          path: |
+            apps/acquisition/artifacts/acquisition-integration/airbyte.json
+            apps/acquisition/artifacts/acquisition-integration/searxng.json
+            apps/acquisition/artifacts/acquisition-integration/public-source-matrix.json
+            apps/acquisition/artifacts/acquisition-integration/zero-layer-live.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose -f apps/deploy/docker-compose.yml logs --no-color --tail=160
+      - name: Stop the real acquisition stack
+        if: always()
+        run: docker compose -f apps/deploy/docker-compose.yml down -v

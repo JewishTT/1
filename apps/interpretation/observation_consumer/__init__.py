@@ -34,6 +34,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from collections.abc import Mapping
 from typing import Any
 
 from events import event_envelope_pb2 as pb
@@ -197,6 +198,14 @@ class ObservationConsumer:
 
     async def _process(self, envelope: pb.EventEnvelope) -> ProcessingResult:
         record_meta = self._record_metadata(envelope)
+        # EventEnvelope.payload is the record_metadata object itself. The
+        # PostgreSQL Observation provenance wraps that same object one level
+        # deeper as provenance.record_metadata; do not apply that DB wrapper
+        # when reading the original event.
+        runtime_metadata = record_meta.get("runtime_metadata")
+        result_role = str(runtime_metadata.get("result_role") or "EVIDENCE") if isinstance(runtime_metadata, Mapping) else "EVIDENCE"
+        if result_role not in {"EVIDENCE", "DISCOVERY_ONLY"}:
+            raise ConsumerContractError(FAILURE_UNKNOWN_SOURCE, f"unknown result role: {result_role}")
         locator = str(record_meta.get("locator") or "")
         if not locator:
             # A capture-level observation has no record locator; that is a
@@ -225,7 +234,7 @@ class ObservationConsumer:
         payload = self._parse(body, content_type, declared_parser)
 
         records = payload.records
-        mentions = self._bind(payload)
+        mentions = 0 if result_role == "DISCOVERY_ONLY" else self._bind(payload)
 
         # The existing parser owns source positions and occurrence identities.
         # Tenzir is a second, additive pass: it may derive structural statistics,
@@ -260,6 +269,7 @@ class ObservationConsumer:
                 "tenant_id": envelope.tenant_id,
                 "investigation_id": envelope.investigation_id,
                 "source_id": envelope.source_id,
+                "result_role": result_role,
                 "task_id": envelope.work_id,
                 "raw_ref": raw_ref,
                 "raw_content_sha256": hashlib.sha256(body).hexdigest(),
@@ -305,7 +315,12 @@ class ObservationConsumer:
             ) from exc
 
         interpretation: dict[str, Any] | None = None
-        if self._interpretation_bridge_factory is not None:
+        if result_role == "DISCOVERY_ONLY":
+            interpretation = {
+                "status": "SKIPPED_DISCOVERY_ONLY",
+                "reason_code": "DISCOVERY_RESULTS_ARE_LEADS_NOT_EVIDENCE",
+            }
+        elif self._interpretation_bridge_factory is not None:
             try:
                 bridge = self._interpretation_bridge_factory(
                     envelope=envelope, record_metadata=record_meta
