@@ -112,7 +112,7 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
         )
         worker = AcquisitionWorker(
             connector=connector,
-            sink=kafka_failure_sink(producer),
+            sink=kafka_failure_sink(producer, object_store),
             # The gate publishes the one canonical protobuf event, after the DB transaction.
             # The worker validates its evidence refs but must not publish a second JSON event.
             publish=None,

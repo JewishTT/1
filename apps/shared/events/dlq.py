@@ -1,17 +1,16 @@
-"""Dead-letter / quarantine handlers (T065, FR-023, US3).
+"""Dead-letter / quarantine records.
 
-Preserves rejected candidates (malformed payloads, repeated failures, poison
-messages) in a quarantine store; supports replay and re-evaluation. Quarantine
-preservation is the guarantee: nothing is dropped silently — every rejected
-candidate stays recoverable (SC-007).
+Failure records are tenant-scoped, content-addressed, and retain the original
+request envelope in immutable object storage. Metadata is safe to project into
+operator views; payload bytes are never returned by list/get APIs.
 """
 
 from __future__ import annotations
 
 import base64
 import hashlib
-import uuid
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -22,27 +21,33 @@ class DLQRecord:
     topic: str = ""
     partition: int = 0
     preserved: bool = True
+    tenant_id: str = ""
+    investigation_id: str = ""
+    source_id: str = ""
+    task_id: str = ""
+    original_event_id: str = ""
+    original_event_type: str = ""
+    status: int = 0
+    detail: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        """Derive ``record_id`` from content when none was supplied.
-
-        Feature 024 T020. This used to be ``uuid4().hex[:12]``, which made the id
-        non-deterministic: the same payload re-quarantined after a restart got a
-        different id, so the durable sink accumulated duplicate copies of one
-        rejected record and cross-restart idempotency was impossible. Identity in
-        this platform is content-addressed everywhere else, and a random id here was
-        an exception with no upside -- these ids never go on the wire.
-        """
         if not self.record_id:
-            self.record_id = "DLQ-" + hashlib.sha256(
-                self.fingerprint().encode("utf-8") + self.topic.encode("utf-8")
-            ).hexdigest()[:12]
+            identity = "\n".join(
+                (
+                    self.tenant_id,
+                    self.topic,
+                    self.reason,
+                    self.original_event_id,
+                    self.fingerprint(),
+                )
+            )
+            self.record_id = "DLQ-" + hashlib.sha256(identity.encode("utf-8")).hexdigest()[:24]
 
     def fingerprint(self) -> str:
         digest = hashlib.sha256(self.payload).hexdigest()
-        return base64.b64encode(self.payload).decode()[:12] + ":" + digest[:12]
+        return base64.b64encode(self.payload[:9]).decode("ascii")[:12] + ":" + digest[:16]
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "record_id": self.record_id,
             "reason": self.reason,
@@ -50,28 +55,41 @@ class DLQRecord:
             "partition": self.partition,
             "preserved": self.preserved,
             "fingerprint": self.fingerprint(),
+            "tenant_id": self.tenant_id,
+            "investigation_id": self.investigation_id,
+            "source_id": self.source_id,
+            "task_id": self.task_id,
+            "original_event_id": self.original_event_id,
+            "original_event_type": self.original_event_type,
+            "status": self.status,
+            "detail": dict(self.detail),
         }
 
 
 class QuarantineStore:
-    """Preserves rejected candidates for replay/re-evaluation."""
+    """Process-local test/development store with optional durable write-through."""
 
     def __init__(self, sink=None) -> None:
-        """sink: optional durable copy (e.g., MinIO prefix) — production adapter."""
         self._records: dict[str, DLQRecord] = {}
-        self._by_fingerprint: dict[str, str] = {}
+        self._by_fingerprint: dict[tuple[str, str, str, str, str], str] = {}
         self.sink = sink
 
     def quarantine(self, record: DLQRecord) -> str:
-        # Idempotent preserve (I-11): dedupe by payload fingerprint so a
-        # re-rejected identical message returns the original record.
-        existing = self._by_fingerprint.get(record.fingerprint())
+        key = (
+            record.tenant_id,
+            record.topic,
+            record.reason,
+            record.original_event_id,
+            record.fingerprint(),
+        )
+        existing = self._by_fingerprint.get(key)
         if existing is not None:
             return existing
-        self._records[record.record_id] = record
-        self._by_fingerprint[record.fingerprint()] = record.record_id
+        # Persist before mutating memory. A sink failure must not look like success.
         if self.sink is not None:
             self.sink.put(record)
+        self._records[record.record_id] = record
+        self._by_fingerprint[key] = record.record_id
         return record.record_id
 
     def get(self, record_id: str) -> DLQRecord | None:
@@ -83,13 +101,17 @@ class QuarantineStore:
 
     def replay(self, record_id: str) -> bytes | None:
         record = self._records.get(record_id)
-        if record is None:
-            return None
-        # Replay hands the preserved payload back to the pipeline unchanged.
-        return record.payload
+        return None if record is None else record.payload
 
     def purge(self, record_id: str) -> bool:
         record = self._records.pop(record_id, None)
         if record is not None:
-            self._by_fingerprint.pop(record.fingerprint(), None)
+            key = (
+                record.tenant_id,
+                record.topic,
+                record.reason,
+                record.original_event_id,
+                record.fingerprint(),
+            )
+            self._by_fingerprint.pop(key, None)
         return record is not None

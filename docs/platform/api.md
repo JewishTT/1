@@ -131,7 +131,7 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/pools` | 52 |
+| GET | `/pools` | 22 |
 
 ## `network` — `apps/control-plane/api/routes/network.py`
 
@@ -156,9 +156,9 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/{record_id}` | 40 |
-| POST | `/{record_id}/replay` | 48 |
-| POST | `/{record_id}/re-evaluate` | 56 |
+| GET | `/{record_id}` | 71 |
+| POST | `/{record_id}/replay` | 99 |
+| POST | `/{record_id}/re-evaluate` | 113 |
 
 ## `research_cases` — `apps/control-plane/api/routes/research_cases.py`
 
@@ -336,7 +336,7 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/{roe_id}` | 71 |
+| GET | `/{roe_id}` | 69 |
 
 ## `specops_social` — `apps/control-plane/api/routes/specops_social.py`
 

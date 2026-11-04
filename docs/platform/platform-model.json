@@ -18,7 +18,7 @@
     {
       "name": "acquisition",
       "description": "Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.",
-      "python_modules": 115,
+      "python_modules": 116,
       "typescript_modules": 0,
       "modules": [
         "apps.acquisition._measure_coverage",
@@ -127,6 +127,7 @@
         "apps.acquisition.tests.unit.test_source_executor_contracts",
         "apps.acquisition.tests.unit.test_source_query_set",
         "apps.acquisition.tests.unit.test_warc_adapter",
+        "apps.acquisition.tests.unit.test_worker_failure_persistence",
         "apps.acquisition.worker-dataset",
         "apps.acquisition.worker-dataset.acquire",
         "apps.acquisition.worker_acquisition",
@@ -217,7 +218,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 244,
+      "python_modules": 250,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -404,9 +405,12 @@
         "apps.control-plane.tests.integration.test_tenancy",
         "apps.control-plane.tests.integration.test_tools_api",
         "apps.control-plane.tests.test_auth_security",
+        "apps.control-plane.tests.test_metrics_honesty",
+        "apps.control-plane.tests.test_quarantine_api",
         "apps.control-plane.tests.test_research_case_invariants",
         "apps.control-plane.tests.test_research_case_projection",
         "apps.control-plane.tests.test_research_case_reports",
+        "apps.control-plane.tests.test_specops_roe_auth",
         "apps.control-plane.tests.test_zero_layer_service",
         "apps.control-plane.tests.unit.test_action_memory",
         "apps.control-plane.tests.unit.test_approval_gate",
@@ -416,10 +420,7 @@
         "apps.control-plane.tests.unit.test_cognitive_loop",
         "apps.control-plane.tests.unit.test_context_engine",
         "apps.control-plane.tests.unit.test_context_termination_and_catalogue",
-        "apps.control-plane.tests.unit.test_digest_gated_revision",
-        "apps.control-plane.tests.unit.test_dispatcher_backpressure",
-        "apps.control-plane.tests.unit.test_donor_patterns",
-        "apps.control-plane.tests.unit.test_dossier_store"
+        "apps.control-plane.tests.unit.test_digest_gated_revision"
       ]
     },
     {
@@ -1072,20 +1073,23 @@
     {
       "name": "tools",
       "description": "Generators, capability/owner/donor tools, probes.",
-      "python_modules": 11,
+      "python_modules": 14,
       "typescript_modules": 0,
       "modules": [
+        "tools",
         "tools.append_zero_frontend_a",
         "tools.append_zero_frontend_b",
         "tools.append_zero_inventory",
         "tools.append_zero_sources_a",
         "tools.append_zero_sources_b",
         "tools.fix_zero_layer_doc",
+        "tools.repo_hygiene",
         "tools.semantic_docgraph",
         "tools.specs.build_capability_matrix",
         "tools.specs.build_donor_registry",
         "tools.specs.build_owner_map",
-        "tools.strip_zero_inventory"
+        "tools.strip_zero_inventory",
+        "tools.tests.test_repo_hygiene"
       ]
     },
     {
@@ -1145,16 +1149,16 @@
     }
   ],
   "import_graph": {
-    "module_count": 1037,
-    "edge_count": 2956,
+    "module_count": 1047,
+    "edge_count": 2971,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 906,
+      "stdlib:__future__": 915,
       "stdlib:abc": 3,
-      "stdlib:argparse": 20,
-      "stdlib:ast": 27,
+      "stdlib:argparse": 21,
+      "stdlib:ast": 28,
       "stdlib:asyncio": 76,
-      "stdlib:base64": 10,
+      "stdlib:base64": 9,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
@@ -1163,32 +1167,32 @@
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 3,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 396,
-      "stdlib:datetime": 198,
+      "stdlib:dataclasses": 395,
+      "stdlib:datetime": 199,
       "stdlib:decimal": 1,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
       "stdlib:enum": 119,
       "stdlib:functools": 9,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 134,
+      "stdlib:hashlib": 136,
       "stdlib:heapq": 1,
       "stdlib:hmac": 3,
       "stdlib:html": 10,
       "stdlib:http": 5,
       "stdlib:importlib": 33,
-      "stdlib:inspect": 21,
+      "stdlib:inspect": 22,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 205,
-      "stdlib:logging": 23,
+      "stdlib:json": 206,
+      "stdlib:logging": 24,
       "stdlib:math": 41,
-      "stdlib:os": 74,
-      "stdlib:pathlib": 325,
+      "stdlib:os": 75,
+      "stdlib:pathlib": 329,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 102,
+      "stdlib:re": 104,
       "stdlib:secrets": 2,
       "stdlib:shlex": 1,
       "stdlib:shutil": 16,
@@ -1197,20 +1201,20 @@
       "stdlib:stat": 2,
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
-      "stdlib:subprocess": 16,
-      "stdlib:sys": 263,
+      "stdlib:subprocess": 17,
+      "stdlib:sys": 265,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 19,
       "stdlib:time": 33,
       "stdlib:tokenize": 1,
-      "stdlib:tomllib": 4,
-      "stdlib:types": 37,
-      "stdlib:typing": 376,
+      "stdlib:tomllib": 5,
+      "stdlib:types": 40,
+      "stdlib:typing": 377,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 59,
-      "stdlib:uuid": 49,
+      "stdlib:urllib": 60,
+      "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
       "stdlib:xml": 4,
@@ -1230,7 +1234,7 @@
       "third-party:docx": 2,
       "third-party:duckdb": 5,
       "third-party:extruct": 1,
-      "third-party:fastapi": 68,
+      "third-party:fastapi": 70,
       "third-party:google": 6,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
@@ -1246,11 +1250,11 @@
       "third-party:phonenumbers": 1,
       "third-party:prometheus_client": 4,
       "third-party:pyarrow": 3,
-      "third-party:pydantic": 35,
+      "third-party:pydantic": 34,
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 276,
+      "third-party:pytest": 282,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -2745,6 +2749,16 @@
         "via": "adapters.warc.collect"
       },
       {
+        "from": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "to": "apps/shared/events/topics.py",
+        "via": "events.topics"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "to": "apps/acquisition/worker_acquisition.py",
+        "via": "worker_acquisition"
+      },
+      {
         "from": "apps/acquisition/worker-dataset/__init__.py",
         "to": "apps/acquisition/adapters/registry.py",
         "via": "adapters.registry"
@@ -2778,6 +2792,16 @@
         "from": "apps/acquisition/worker_acquisition.py",
         "to": "apps/shared/domain/capture.py",
         "via": "domain.capture"
+      },
+      {
+        "from": "apps/acquisition/worker_acquisition.py",
+        "to": "apps/shared/events/dlq.py",
+        "via": "events.dlq"
+      },
+      {
+        "from": "apps/acquisition/worker_acquisition.py",
+        "to": "apps/shared/events/dlq_durable.py",
+        "via": "events.dlq_durable"
       },
       {
         "from": "apps/acquisition/worker_browser/__init__.py",
@@ -4070,11 +4094,6 @@
         "via": "api.auth"
       },
       {
-        "from": "apps/control-plane/api/routes/metrics.py",
-        "to": "apps/control-plane/services/worker_pools.py",
-        "via": "services.worker_pools"
-      },
-      {
         "from": "apps/control-plane/api/routes/network.py",
         "to": "apps/projection/graph/adjacency.py",
         "via": "graph.adjacency"
@@ -4126,13 +4145,18 @@
       },
       {
         "from": "apps/control-plane/api/routes/quarantine.py",
-        "to": "apps/shared/events/dlq.py",
-        "via": "events.dlq"
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
       },
       {
         "from": "apps/control-plane/api/routes/quarantine.py",
-        "to": "apps/control-plane/api/auth.py",
-        "via": "api.auth"
+        "to": "apps/shared/events/dlq_durable.py",
+        "via": "events.dlq_durable"
+      },
+      {
+        "from": "apps/control-plane/api/routes/quarantine.py",
+        "to": "apps/shared/storage/s3.py",
+        "via": "storage.s3"
       },
       {
         "from": "apps/control-plane/api/routes/research_cases.py",
@@ -7555,6 +7579,36 @@
         "via": "api.auth"
       },
       {
+        "from": "apps/control-plane/tests/test_metrics_honesty.py",
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/tests/test_metrics_honesty.py",
+        "to": "apps/control-plane/api/routes/metrics.py",
+        "via": "api.routes.metrics"
+      },
+      {
+        "from": "apps/control-plane/tests/test_quarantine_api.py",
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/tests/test_quarantine_api.py",
+        "to": "apps/control-plane/api/routes/quarantine.py",
+        "via": "api.routes.quarantine"
+      },
+      {
+        "from": "apps/control-plane/tests/test_quarantine_api.py",
+        "to": "apps/shared/events/dlq.py",
+        "via": "events.dlq"
+      },
+      {
+        "from": "apps/control-plane/tests/test_quarantine_api.py",
+        "to": "apps/shared/events/dlq_durable.py",
+        "via": "events.dlq_durable"
+      },
+      {
         "from": "apps/control-plane/tests/test_research_case_invariants.py",
         "to": "apps/control-plane/context_engine/person_case_profile.py",
         "via": "context_engine.person_case_profile"
@@ -7613,6 +7667,21 @@
         "from": "apps/control-plane/tests/test_research_case_reports.py",
         "to": "apps/control-plane/services/research_case_reports.py",
         "via": "services.research_case_reports"
+      },
+      {
+        "from": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "to": "apps/control-plane/api/routes/specops_roe.py",
+        "via": "api.routes.specops_roe"
+      },
+      {
+        "from": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "to": "apps/specops/roe/gate.py",
+        "via": "specops.roe.gate"
       },
       {
         "from": "apps/control-plane/tests/test_zero_layer_service.py",
@@ -8278,6 +8347,11 @@
         "from": "apps/control-plane/tests/unit/test_sse_stream.py",
         "to": "apps/control-plane/api/sse.py",
         "via": "api.sse"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "to": "apps/control-plane/services/temporal_materialization_dispatch.py",
+        "via": "services.temporal_materialization_dispatch"
       },
       {
         "from": "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
@@ -16058,6 +16132,11 @@
         "from": "platform_model/semantic.py",
         "to": "platform_model/scanners.py",
         "via": "scanners"
+      },
+      {
+        "from": "tools/tests/test_repo_hygiene.py",
+        "to": "tools/repo_hygiene.py",
+        "via": "tools.repo_hygiene"
       }
     ],
     "roots": {
@@ -16932,6 +17011,18 @@
         ],
         "targets": [
           "apps/acquisition/adapters/warc/collect.py"
+        ]
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "tests": 2,
+        "test_names": [
+          "test_original_envelope_is_persisted_before_failure_marker",
+          "test_sink_refuses_tenantless_failures_without_writing_or_publishing"
+        ],
+        "targets": [
+          "apps/acquisition/worker_acquisition.py",
+          "apps/shared/events/topics.py"
         ]
       },
       {
@@ -17874,6 +17965,34 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/test_metrics_honesty.py",
+        "tests": 2,
+        "test_names": [
+          "test_metrics_are_unavailable_instead_of_fabricated",
+          "test_worker_pool_endpoint_does_not_publish_private_mock_registry"
+        ],
+        "targets": [
+          "apps/control-plane/api/auth.py",
+          "apps/control-plane/api/routes/__init__.py"
+        ]
+      },
+      {
+        "path": "apps/control-plane/tests/test_quarantine_api.py",
+        "tests": 4,
+        "test_names": [
+          "test_list_and_get_are_backed_by_tenant_scoped_durable_metadata",
+          "test_tenant_cannot_enumerate_or_read_another_tenants_records",
+          "test_replay_requires_admin_and_stays_disabled_without_governed_redrive",
+          "test_re_evaluation_requires_admin_and_does_not_delete_records"
+        ],
+        "targets": [
+          "apps/control-plane/api/auth.py",
+          "apps/control-plane/api/routes/__init__.py",
+          "apps/shared/events/dlq.py",
+          "apps/shared/events/dlq_durable.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/test_research_case_invariants.py",
         "tests": 11,
         "test_names": [
@@ -17928,6 +18047,21 @@
           "apps/control-plane/services/research_case_artifacts.py",
           "apps/control-plane/services/research_case_reports.py",
           "apps/shared/contracts/evidence_span.py"
+        ]
+      },
+      {
+        "path": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "tests": 4,
+        "test_names": [
+          "test_roe_approver_is_verified_admin_not_request_input",
+          "test_analyst_cannot_create_rules_of_engagement",
+          "test_roe_read_is_tenant_scoped",
+          "test_roe_expiry_must_be_valid_zoned_and_future"
+        ],
+        "targets": [
+          "apps/control-plane/api/auth.py",
+          "apps/control-plane/api/routes/__init__.py",
+          "apps/specops/roe/gate.py"
         ]
       },
       {
@@ -18624,6 +18758,14 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+        "tests": 1,
+        "test_names": [
+          "test_operational_python_does_not_call_create_all_or_create_tables"
+        ],
+        "targets": []
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_postgres_context_store.py",
         "tests": 7,
         "test_names": [
@@ -18895,6 +19037,17 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "tests": 2,
+        "test_names": [
+          "test_temporal_launch_fails_closed_when_outbox_cannot_be_committed",
+          "test_temporal_launch_identity_is_idempotent_across_retries"
+        ],
+        "targets": [
+          "apps/control-plane/services/__init__.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
         "tests": 9,
         "test_names": [
@@ -18992,6 +19145,14 @@
           "apps/control-plane/services/audit.py",
           "apps/control-plane/services/worker_pools.py"
         ]
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_wheel_package_manifest.py",
+        "tests": 1,
+        "test_names": [
+          "test_control_plane_wheel_contains_every_runtime_package_root"
+        ],
+        "targets": []
       },
       {
         "path": "apps/control-plane/tests/unit/test_workflows.py",
@@ -23225,17 +23386,15 @@
       },
       {
         "path": "apps/shared/tests/unit/test_dlq_durable.py",
-        "tests": 9,
+        "tests": 7,
         "test_names": [
-          "test_payload_is_persisted_and_readable_back",
-          "test_record_survives_a_restart",
-          "test_metadata_records_reason_topic_and_fingerprint",
-          "test_quarantine_is_idempotent_across_restart",
-          "test_memory_is_still_authoritative_when_present",
-          "test_missing_record_is_none_not_an_exception",
-          "test_purged_record_is_gone_from_memory",
-          "test_plain_store_is_unchanged_without_a_sink",
-          "test_sink_put_returns_the_record_id"
+          "test_payload_uses_bare_object_key_and_survives_restart",
+          "test_index_is_enumerable_and_paginates",
+          "test_same_payload_isolated_between_tenants",
+          "test_sink_rejects_cross_tenant_write_and_bad_uri",
+          "test_topic_filter_keeps_continuation_cursor",
+          "test_durable_quarantine_cannot_purge",
+          "test_memory_only_store_remains_explicitly_available_for_tests"
         ],
         "targets": [
           "apps/shared/events/dlq.py",
@@ -24599,9 +24758,20 @@
           "test_number_word_count_claim_still_fails"
         ],
         "targets": []
+      },
+      {
+        "path": "tools/tests/test_repo_hygiene.py",
+        "tests": 2,
+        "test_names": [
+          "test_local_and_generated_outputs_are_rejected",
+          "test_reproducible_source_and_curated_fixtures_are_kept"
+        ],
+        "targets": [
+          "tools/repo_hygiene.py"
+        ]
       }
     ],
-    "total": 5389
+    "total": 5405
   },
   "contracts": {
     "python": [
@@ -25610,7 +25780,7 @@
         {
           "method": "GET",
           "path": "/pools",
-          "lineno": 52
+          "lineno": 22
         }
       ]
     },
@@ -25678,17 +25848,17 @@
         {
           "method": "GET",
           "path": "/{record_id}",
-          "lineno": 40
+          "lineno": 71
         },
         {
           "method": "POST",
           "path": "/{record_id}/replay",
-          "lineno": 48
+          "lineno": 99
         },
         {
           "method": "POST",
           "path": "/{record_id}/re-evaluate",
-          "lineno": 56
+          "lineno": 113
         }
       ]
     },
@@ -26255,7 +26425,7 @@
         {
           "method": "GET",
           "path": "/{roe_id}",
-          "lineno": 71
+          "lineno": 69
         }
       ]
     },
@@ -29959,7 +30129,7 @@
     "apps/shared/events/coalesce.py",
     "apps/shared/events/fabric_events.py"
   ],
-  "untested_count": 273,
+  "untested_count": 274,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -30156,6 +30326,7 @@
             "apps/acquisition/tests/unit/test_source_executor_contracts.py",
             "apps/acquisition/tests/unit/test_source_query_set.py",
             "apps/acquisition/tests/unit/test_warc_adapter.py",
+            "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
             "apps/acquisition/worker-dataset/__init__.py",
             "apps/acquisition/worker-dataset/acquire.py",
             "apps/acquisition/worker_acquisition.py",
@@ -30212,7 +30383,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 161
+          "module_count": 162
         },
         {
           "id": "interpretation",
@@ -30572,19 +30743,22 @@
             "platform_model/reachability.py",
             "platform_model/scanners.py",
             "platform_model/semantic.py",
+            "tools/__init__.py",
             "tools/append_zero_frontend_a.py",
             "tools/append_zero_frontend_b.py",
             "tools/append_zero_inventory.py",
             "tools/append_zero_sources_a.py",
             "tools/append_zero_sources_b.py",
             "tools/fix_zero_layer_doc.py",
+            "tools/repo_hygiene.py",
             "tools/semantic_docgraph.py",
             "tools/specs/build_capability_matrix.py",
             "tools/specs/build_donor_registry.py",
             "tools/specs/build_owner_map.py",
-            "tools/strip_zero_inventory.py"
+            "tools/strip_zero_inventory.py",
+            "tools/tests/test_repo_hygiene.py"
           ],
-          "module_count": 71
+          "module_count": 74
         },
         {
           "id": "orchestration-temporal",
@@ -30987,9 +31161,12 @@
             "apps/control-plane/tests/integration/test_tenancy.py",
             "apps/control-plane/tests/integration/test_tools_api.py",
             "apps/control-plane/tests/test_auth_security.py",
+            "apps/control-plane/tests/test_metrics_honesty.py",
+            "apps/control-plane/tests/test_quarantine_api.py",
             "apps/control-plane/tests/test_research_case_invariants.py",
             "apps/control-plane/tests/test_research_case_projection.py",
             "apps/control-plane/tests/test_research_case_reports.py",
+            "apps/control-plane/tests/test_specops_roe_auth.py",
             "apps/control-plane/tests/test_zero_layer_service.py",
             "apps/control-plane/tests/unit/test_action_memory.py",
             "apps/control-plane/tests/unit/test_approval_gate.py",
@@ -31020,6 +31197,7 @@
             "apps/control-plane/tests/unit/test_monitor.py",
             "apps/control-plane/tests/unit/test_network_analytics.py",
             "apps/control-plane/tests/unit/test_ontology_registry.py",
+            "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
             "apps/control-plane/tests/unit/test_postgres_context_store.py",
             "apps/control-plane/tests/unit/test_producer_binding_golden_path.py",
             "apps/control-plane/tests/unit/test_query_degradation.py",
@@ -31036,11 +31214,13 @@
             "apps/control-plane/tests/unit/test_series_lifecycle.py",
             "apps/control-plane/tests/unit/test_source_query_store.py",
             "apps/control-plane/tests/unit/test_sse_stream.py",
+            "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
             "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
             "apps/control-plane/tests/unit/test_temporal_port.py",
             "apps/control-plane/tests/unit/test_tool_catalog.py",
             "apps/control-plane/tests/unit/test_us1_core.py",
             "apps/control-plane/tests/unit/test_us3_ops.py",
+            "apps/control-plane/tests/unit/test_wheel_package_manifest.py",
             "apps/control-plane/tests/unit/test_workflows.py",
             "apps/control-plane/workflows/__init__.py",
             "apps/control-plane/workflows/investigation.py",
@@ -31115,7 +31295,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 303
+          "module_count": 309
         },
         {
           "id": "webapp",
@@ -31501,6 +31681,7 @@
         "claim.timezone",
         "cloudflare.com",
         "cognitive.acquisition.worker",
+        "cognitive.dlq",
         "cognitive.investigation.activities",
         "cognitive.worker",
         "collections.abc",
@@ -31565,6 +31746,7 @@
         "datetime.now",
         "db.example",
         "db.schema",
+        "db.session",
         "dc.creator",
         "dc.description",
         "dc.publisher",
@@ -31593,9 +31775,7 @@
         "empty.txt",
         "enable.auto.commit",
         "enable.auto.offset.store",
-        "enable.idempotence",
-        "engine.py",
-        "entities.entity_id"
+        "enable.idempotence"
       ]
     },
     "context_map": {
@@ -32273,9 +32453,7 @@
             "apps/science/anchoring.py",
             "apps/science/tests/test_anchoring.py",
             "apps/shared/domain/investigation_context.py",
-            "apps/shared/events/dlq_durable.py",
             "apps/shared/net/secure_fetch.py",
-            "apps/shared/tests/unit/test_dlq_durable.py",
             "apps/shared/tests/unit/test_event_timestamps.py",
             "apps/shared/tests/unit/test_idempotent_consumer.py",
             "apps/shared/tests/unit/test_investigation_context.py",
@@ -32284,9 +32462,8 @@
             "apps/shared/tests/unit/test_secure_fetch.py",
             "apps/shared/tools/layer_boundaries.py"
           ],
-          "module_count": 24,
+          "module_count": 22,
           "capabilities": [
-            "durable-dlq",
             "layer-boundaries"
           ]
         },
@@ -33736,6 +33913,15 @@
         "markers": []
       },
       {
+        "path": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "status": "TEST",
+        "loc": 100,
+        "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/acquisition/worker-dataset/__init__.py",
         "status": "PACKAGE_INIT",
         "loc": 14,
@@ -33756,8 +33942,8 @@
       {
         "path": "apps/acquisition/worker_acquisition.py",
         "status": "IMPLEMENTED",
-        "loc": 779,
-        "callables": 19,
+        "loc": 823,
+        "callables": 20,
         "stubs": 1,
         "not_implemented": 0,
         "markers": []
@@ -34294,7 +34480,7 @@
       {
         "path": "apps/control-plane/api/routes/metrics.py",
         "status": "IMPLEMENTED",
-        "loc": 76,
+        "loc": 60,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -34321,8 +34507,8 @@
       {
         "path": "apps/control-plane/api/routes/quarantine.py",
         "status": "IMPLEMENTED",
-        "loc": 65,
-        "callables": 4,
+        "loc": 125,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -34492,8 +34678,8 @@
       {
         "path": "apps/control-plane/api/routes/specops_roe.py",
         "status": "IMPLEMENTED",
-        "loc": 102,
-        "callables": 4,
+        "loc": 114,
+        "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -35514,7 +35700,7 @@
       {
         "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
         "status": "IMPLEMENTED",
-        "loc": 100,
+        "loc": 111,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -35826,6 +36012,24 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/tests/test_metrics_honesty.py",
+        "status": "TEST",
+        "loc": 27,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/test_quarantine_api.py",
+        "status": "TEST",
+        "loc": 124,
+        "callables": 11,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/tests/test_research_case_invariants.py",
         "status": "TEST",
         "loc": 366,
@@ -35848,6 +36052,15 @@
         "status": "TEST",
         "loc": 188,
         "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "status": "TEST",
+        "loc": 81,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -36129,6 +36342,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+        "status": "TEST",
+        "loc": 34,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_postgres_context_store.py",
         "status": "TEST",
         "loc": 203,
@@ -36273,6 +36495,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "status": "TEST",
+        "loc": 52,
+        "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
         "status": "TEST",
         "loc": 202,
@@ -36313,6 +36544,15 @@
         "status": "TEST",
         "loc": 69,
         "callables": 7,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_wheel_package_manifest.py",
+        "status": "TEST",
+        "loc": 17,
+        "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -39947,7 +40187,7 @@
       {
         "path": "apps/shared/events/dlq.py",
         "status": "IMPLEMENTED",
-        "loc": 95,
+        "loc": 118,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
@@ -39956,9 +40196,9 @@
       {
         "path": "apps/shared/events/dlq_durable.py",
         "status": "IMPLEMENTED",
-        "loc": 174,
-        "callables": 13,
-        "stubs": 4,
+        "loc": 261,
+        "callables": 20,
+        "stubs": 3,
         "not_implemented": 0,
         "markers": []
       },
@@ -40349,8 +40589,8 @@
       {
         "path": "apps/shared/storage/s3.py",
         "status": "IMPLEMENTED",
-        "loc": 262,
-        "callables": 14,
+        "loc": 291,
+        "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40839,8 +41079,8 @@
       {
         "path": "apps/shared/tests/unit/test_dlq_durable.py",
         "status": "TEST",
-        "loc": 154,
-        "callables": 18,
+        "loc": 138,
+        "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -42029,7 +42269,7 @@
       {
         "path": "platform_model/gaps.py",
         "status": "IMPLEMENTED",
-        "loc": 205,
+        "loc": 221,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -42064,7 +42304,7 @@
       {
         "path": "platform_model/narrative.py",
         "status": "IMPLEMENTED",
-        "loc": 937,
+        "loc": 940,
         "callables": 19,
         "stubs": 0,
         "not_implemented": 0,
@@ -42102,6 +42342,15 @@
         "status": "IMPLEMENTED",
         "loc": 217,
         "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "tools/__init__.py",
+        "status": "PACKAGE_INIT",
+        "loc": 2,
+        "callables": 0,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -42161,6 +42410,15 @@
         "markers": []
       },
       {
+        "path": "tools/repo_hygiene.py",
+        "status": "IMPLEMENTED",
+        "loc": 88,
+        "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "tools/semantic_docgraph.py",
         "status": "IMPLEMENTED",
         "loc": 1108,
@@ -42204,15 +42462,24 @@
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
+      },
+      {
+        "path": "tools/tests/test_repo_hygiene.py",
+        "status": "TEST",
+        "loc": 31,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
       }
     ],
     "summary": {
-      "IMPLEMENTED": 557,
+      "IMPLEMENTED": 558,
       "DECLARATION_ONLY": 18,
-      "PACKAGE_INIT": 92,
-      "TEST": 351,
+      "PACKAGE_INIT": 93,
+      "TEST": 359,
       "MIGRATION": 19,
-      "total": 1037
+      "total": 1047
     }
   },
   "reachability": {
@@ -42639,6 +42906,10 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_warc_adapter.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
         "status": "TEST"
       },
       {
@@ -43558,6 +43829,14 @@
         "status": "TEST"
       },
       {
+        "path": "apps/control-plane/tests/test_metrics_honesty.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/test_quarantine_api.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/control-plane/tests/test_research_case_invariants.py",
         "status": "TEST"
       },
@@ -43567,6 +43846,10 @@
       },
       {
         "path": "apps/control-plane/tests/test_research_case_reports.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/test_specops_roe_auth.py",
         "status": "TEST"
       },
       {
@@ -43690,6 +43973,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_postgres_context_store.py",
         "status": "TEST"
       },
@@ -43754,6 +44041,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
         "status": "TEST"
       },
@@ -43771,6 +44062,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_us3_ops.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_wheel_package_manifest.py",
         "status": "TEST"
       },
       {
@@ -45383,7 +45678,7 @@
       },
       {
         "path": "apps/shared/events/dlq_durable.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/shared/events/event_envelope_pb2.py",
@@ -46322,6 +46617,10 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "tools/__init__.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "tools/append_zero_frontend_a.py",
         "status": "ORPHAN"
       },
@@ -46346,6 +46645,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "tools/repo_hygiene.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "tools/semantic_docgraph.py",
         "status": "PRODUCTION"
       },
@@ -46364,6 +46667,10 @@
       {
         "path": "tools/strip_zero_inventory.py",
         "status": "ORPHAN"
+      },
+      {
+        "path": "tools/tests/test_repo_hygiene.py",
+        "status": "TEST"
       }
     ],
     "entrypoints": [
@@ -46404,17 +46711,18 @@
       "bench/run.py",
       "bench/science/bench_structural.py",
       "platform_model/build.py",
+      "tools/repo_hygiene.py",
       "tools/semantic_docgraph.py",
       "tools/specs/build_capability_matrix.py",
       "tools/specs/build_donor_registry.py",
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 430,
-      "TEST_ONLY": 134,
-      "ORPHAN": 122,
-      "TEST": 351,
-      "total": 1037
+      "PRODUCTION": 432,
+      "TEST_ONLY": 133,
+      "ORPHAN": 123,
+      "TEST": 359,
+      "total": 1047
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -46535,7 +46843,6 @@
       "apps/shared/domain/research_lineage.py",
       "apps/shared/domain/stream_events.py",
       "apps/shared/domain/temporal_worldline_store.py",
-      "apps/shared/events/dlq_durable.py",
       "apps/shared/events/ontology_pack.py",
       "apps/shared/events/timestamps.py",
       "apps/shared/isolation.py",
@@ -46668,6 +46975,7 @@
       "bench/fixtures/extraction/_generate.py",
       "conftest.py",
       "platform_model/facts.py",
+      "tools/__init__.py",
       "tools/append_zero_frontend_a.py",
       "tools/append_zero_frontend_b.py",
       "tools/append_zero_inventory.py",
@@ -46703,37 +47011,14 @@
         ]
       },
       {
-        "id": "roe-approved-by-from-body",
+        "id": "metrics-not-connected-to-telemetry",
         "layer": "x",
         "severity": "high",
-        "claim": "The RoE approver is taken from the request body, not a verified principal.",
-        "evidence": [
-          {
-            "path": "apps/control-plane/api/routes/specops_roe.py",
-            "regex": "approved_by=body\\.approved_by",
-            "expect": "present",
-            "min_count": 1
-          }
-        ],
-        "status": "OPEN",
-        "checks": [
-          {
-            "path": "apps/control-plane/api/routes/specops_roe.py",
-            "ok": true,
-            "reason": "ok",
-            "count": 1
-          }
-        ]
-      },
-      {
-        "id": "metrics-hardcoded",
-        "layer": "x",
-        "severity": "high",
-        "claim": "GET /api/v1/metrics returns hard-coded numbers, never measured.",
+        "claim": "The metrics API explicitly reports unavailable because tenant-scoped telemetry and time-windowed aggregates are not connected.",
         "evidence": [
           {
             "path": "apps/control-plane/api/routes/metrics.py",
-            "regex": "throughput_per_s=142\\.3",
+            "regex": "\"availability\": \"unavailable\"",
             "expect": "present",
             "min_count": 1
           }
@@ -46744,53 +47029,30 @@
             "path": "apps/control-plane/api/routes/metrics.py",
             "ok": true,
             "reason": "ok",
-            "count": 1
+            "count": 2
           }
         ]
       },
       {
-        "id": "dlq-seeded-record",
+        "id": "dlq-tenant-store-not-wired",
         "layer": "x",
-        "severity": "high",
-        "claim": "GET /api/v1/dlq reads an in-process store seeded with one fake record.",
+        "severity": "critical",
+        "claim": "The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane.",
         "evidence": [
           {
             "path": "apps/control-plane/api/routes/quarantine.py",
-            "regex": "malformed candidate",
+            "regex": "tenant-scoped durable quarantine storage is not configured",
             "expect": "present",
             "min_count": 1
           }
         ],
-        "status": "OPEN",
+        "status": "RESOLVED",
         "checks": [
           {
             "path": "apps/control-plane/api/routes/quarantine.py",
-            "ok": true,
-            "reason": "ok",
-            "count": 1
-          }
-        ]
-      },
-      {
-        "id": "create-tables-in-production-path",
-        "layer": "x",
-        "severity": "high",
-        "claim": "Operational code creates schema with Base.metadata.create_all, not Alembic.",
-        "evidence": [
-          {
-            "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
-            "regex": "await create_tables\\(\\)",
-            "expect": "present",
-            "min_count": 1
-          }
-        ],
-        "status": "OPEN",
-        "checks": [
-          {
-            "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
-            "ok": true,
-            "reason": "ok",
-            "count": 1
+            "ok": false,
+            "reason": "evidence-mismatch",
+            "count": 0
           }
         ]
       },
@@ -46811,29 +47073,6 @@
         "checks": [
           {
             "path": "apps/control-plane/db/migrations/versions/014_temporal_materialization.py",
-            "ok": true,
-            "reason": "ok",
-            "count": 1
-          }
-        ]
-      },
-      {
-        "id": "wheel-packages-omit-context-engine",
-        "layer": "x",
-        "severity": "high",
-        "claim": "The control-plane wheel omits context_engine/semantic_path, so an installed build differs from checkout.",
-        "evidence": [
-          {
-            "path": "apps/control-plane/pyproject.toml",
-            "regex": "packages = \\[\"api\", \"application\", \"domain\", \"services\", \"db\", \"workflows\", \"badges\", \"modifier\"\\]",
-            "expect": "present",
-            "min_count": 1
-          }
-        ],
-        "status": "OPEN",
-        "checks": [
-          {
-            "path": "apps/control-plane/pyproject.toml",
             "ok": true,
             "reason": "ok",
             "count": 1
@@ -47078,10 +47317,172 @@
             "count": 0
           }
         ]
+      },
+      {
+        "id": "operational-schema-owned-by-alembic",
+        "claim": "Operational service paths no longer create schema at runtime; a static AST contract guards Alembic ownership.",
+        "evidence": [
+          {
+            "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
+            "regex": "create_tables|create_all",
+            "expect": "absent",
+            "min_count": 1
+          },
+          {
+            "path": "apps/control-plane/services/materialization_outbox_relay.py",
+            "regex": "create_tables|create_all",
+            "expect": "absent",
+            "min_count": 1
+          },
+          {
+            "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+            "regex": "create_all.*create_tables",
+            "expect": "present",
+            "min_count": 1
+          }
+        ],
+        "status": "GUARDED",
+        "checks": [
+          {
+            "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 0
+          },
+          {
+            "path": "apps/control-plane/services/materialization_outbox_relay.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 0
+          },
+          {
+            "path": "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 2
+          }
+        ]
+      },
+      {
+        "id": "roe-approver-from-authenticated-principal",
+        "claim": "Rules-of-Engagement approver identity comes from the verified administrator principal, never request-body input.",
+        "evidence": [
+          {
+            "path": "apps/control-plane/api/routes/specops_roe.py",
+            "regex": "approved_by=ctx\\.user_id",
+            "expect": "present",
+            "min_count": 1
+          },
+          {
+            "path": "apps/control-plane/api/routes/specops_roe.py",
+            "regex": "approved_by=body\\.approved_by",
+            "expect": "absent",
+            "min_count": 1
+          }
+        ],
+        "status": "GUARDED",
+        "checks": [
+          {
+            "path": "apps/control-plane/api/routes/specops_roe.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 1
+          },
+          {
+            "path": "apps/control-plane/api/routes/specops_roe.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 0
+          }
+        ]
+      },
+      {
+        "id": "control-plane-wheel-includes-runtime-packages",
+        "claim": "The installed control-plane wheel includes context_engine and semantic_path package roots.",
+        "evidence": [
+          {
+            "path": "apps/control-plane/pyproject.toml",
+            "regex": "packages = .*\"context_engine\".*\"semantic_path\"",
+            "expect": "present",
+            "min_count": 1
+          }
+        ],
+        "status": "GUARDED",
+        "checks": [
+          {
+            "path": "apps/control-plane/pyproject.toml",
+            "ok": true,
+            "reason": "ok",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "id": "dlq-has-no-seeded-fictional-record",
+        "claim": "The quarantine API no longer seeds a fictional rejection to make the dashboard look populated.",
+        "evidence": [
+          {
+            "path": "apps/control-plane/api/routes/quarantine.py",
+            "regex": "malformed candidate",
+            "expect": "absent",
+            "min_count": 1
+          }
+        ],
+        "status": "GUARDED",
+        "checks": [
+          {
+            "path": "apps/control-plane/api/routes/quarantine.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 0
+          }
+        ]
+      },
+      {
+        "id": "dlq-re-evaluation-does-not-delete-payload",
+        "claim": "The API no longer purges a quarantined payload as part of re-evaluation.",
+        "evidence": [
+          {
+            "path": "apps/control-plane/api/routes/quarantine.py",
+            "regex": "store\\.purge\\(",
+            "expect": "absent",
+            "min_count": 1
+          }
+        ],
+        "status": "GUARDED",
+        "checks": [
+          {
+            "path": "apps/control-plane/api/routes/quarantine.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 0
+          }
+        ]
+      },
+      {
+        "id": "metrics-have-no-fabricated-operational-values",
+        "claim": "The metrics API never returns hard-coded demonstration counters as operational measurements.",
+        "evidence": [
+          {
+            "path": "apps/control-plane/api/routes/metrics.py",
+            "regex": "142\\.3|1_048_576|0\\.41|0\\.12|3\\.75",
+            "expect": "absent",
+            "min_count": 1
+          }
+        ],
+        "status": "GUARDED",
+        "checks": [
+          {
+            "path": "apps/control-plane/api/routes/metrics.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 0
+          }
+        ]
       }
     ],
-    "open": 9,
-    "stale_or_resolved": 0
+    "open": 5,
+    "stale_or_resolved": 1
   },
   "golden_path": {
     "goal": "Full person-background analysis: Layer 0 (broad, efficient collection over Kafka + lakehouse + sources) -> Layer 1 (extraction, merge, resolution, normalization of entity-artifacts and entity-invariants, plus relation extraction) -> Layer 2 (full context engine), grounded in the platform philosophy (event-driven, evidence-first, immutable observations, rebuildable projections, no fabrication).",
@@ -47745,7 +48146,7 @@
       },
       "acquisition.request": {
         "lane": "acquisition",
-        "files": 14,
+        "files": 15,
         "producer_files": 9
       },
       "admission.decided": {
@@ -52904,6 +53305,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "8f3a5d3ea8bf1d76",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "object": "apps/acquisition/worker_acquisition.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+          "via": "worker_acquisition"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "822515fb6170bc32",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "object": "apps/shared/events/topics.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+          "via": "events.topics"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "c352d5ac76a6abf1",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/worker-dataset/__init__.py",
@@ -52965,6 +53392,32 @@
         "evidence": {
           "file": "apps/acquisition/worker_acquisition.py",
           "via": "domain.capture"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7e70f17e95869bf1",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_acquisition.py",
+        "object": "apps/shared/events/dlq.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_acquisition.py",
+          "via": "events.dlq"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "dae4359bf9e6d741",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_acquisition.py",
+        "object": "apps/shared/events/dlq_durable.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_acquisition.py",
+          "via": "events.dlq_durable"
         },
         "confidence": 1.0
       },
@@ -56349,19 +56802,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "c9ab11c4cc7c3c6d",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/control-plane/api/routes/metrics.py",
-        "object": "apps/control-plane/services/worker_pools.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/control-plane/api/routes/metrics.py",
-          "via": "services.worker_pools"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "a7b774fa252e5367",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/network.py",
@@ -56505,15 +56945,28 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "cb6d54d75a9a8c08",
+        "fact_id": "982c04fd7a755c4d",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/quarantine.py",
-        "object": "apps/shared/events/dlq.py",
+        "object": "apps/shared/events/dlq_durable.py",
         "status": "STATIC_FACT",
         "method": "python_ast+import_resolution",
         "evidence": {
           "file": "apps/control-plane/api/routes/quarantine.py",
-          "via": "events.dlq"
+          "via": "events.dlq_durable"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8fb2019abc30890d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/quarantine.py",
+        "object": "apps/shared/storage/s3.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/quarantine.py",
+          "via": "storage.s3"
         },
         "confidence": 1.0
       },
@@ -65410,6 +65863,84 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "5fe97b171fdbde3f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_metrics_honesty.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_metrics_honesty.py",
+          "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2202565db12272ed",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_metrics_honesty.py",
+        "object": "apps/control-plane/api/routes/metrics.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_metrics_honesty.py",
+          "via": "api.routes.metrics"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "bd5e53db96db7e2c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py",
+          "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "441c165e245fec91",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/control-plane/api/routes/quarantine.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py",
+          "via": "api.routes.quarantine"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "73eae3f5811fb143",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/shared/events/dlq.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py",
+          "via": "events.dlq"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d458a0f119332ffa",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/shared/events/dlq_durable.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py",
+          "via": "events.dlq_durable"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "4117bbe6558d11c5",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/tests/test_research_case_invariants.py",
@@ -65562,6 +66093,45 @@
         "evidence": {
           "file": "apps/control-plane/tests/test_research_case_reports.py",
           "via": "contracts.evidence_span"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "520b48d922dbd11b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_specops_roe_auth.py",
+          "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "16b97b86afac329c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "object": "apps/control-plane/api/routes/specops_roe.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_specops_roe_auth.py",
+          "via": "api.routes.specops_roe"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3021678b7c494645",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "object": "apps/specops/roe/gate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_specops_roe_auth.py",
+          "via": "specops.roe.gate"
         },
         "confidence": 1.0
       },
@@ -67291,6 +67861,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_sse_stream.py",
           "via": "api.sse"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a4501b39aaba3338",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "object": "apps/control-plane/services/temporal_materialization_dispatch.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+          "via": "services.temporal_materialization_dispatch"
         },
         "confidence": 1.0
       },
@@ -87523,6 +88106,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "0ab04008bd035ad2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "tools/tests/test_repo_hygiene.py",
+        "object": "tools/repo_hygiene.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "tools/tests/test_repo_hygiene.py",
+          "via": "tools.repo_hygiene"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "ac4802cd26957238",
         "kind": "ROUTE_DEFINED_IN",
         "subject": "DELETE /voices/{voice_id}",
@@ -87921,7 +88517,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/metrics.py",
-          "line": 54
+          "line": 24
         },
         "confidence": 1.0
       },
@@ -88571,7 +89167,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/quarantine.py",
-          "line": 42
+          "line": 73
         },
         "confidence": 1.0
       },
@@ -88584,7 +89180,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_roe.py",
-          "line": 73
+          "line": 71
         },
         "confidence": 1.0
       },
@@ -89897,7 +90493,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/quarantine.py",
-          "line": 58
+          "line": 115
         },
         "confidence": 1.0
       },
@@ -89910,7 +90506,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/quarantine.py",
-          "line": 50
+          "line": 101
         },
         "confidence": 1.0
       },
@@ -91705,34 +92301,10 @@
         "confidence": 0.7
       },
       {
-        "fact_id": "8e20f7f9e5893ff4",
-        "kind": "SPEC_CITES_MODULE",
-        "subject": "024-context-driven-continuous-intelligence",
-        "object": "apps/shared/events/dlq_durable.py",
-        "status": "INFERRED",
-        "method": "docstring_reference",
-        "evidence": {
-          "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
-        },
-        "confidence": 0.7
-      },
-      {
         "fact_id": "63f362ce3f03c7c5",
         "kind": "SPEC_CITES_MODULE",
         "subject": "024-context-driven-continuous-intelligence",
         "object": "apps/shared/net/secure_fetch.py",
-        "status": "INFERRED",
-        "method": "docstring_reference",
-        "evidence": {
-          "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
-        },
-        "confidence": 0.7
-      },
-      {
-        "fact_id": "cf3e76a27ce8b77f",
-        "kind": "SPEC_CITES_MODULE",
-        "subject": "024-context-driven-continuous-intelligence",
-        "object": "apps/shared/tests/unit/test_dlq_durable.py",
         "status": "INFERRED",
         "method": "docstring_reference",
         "evidence": {
@@ -95581,6 +96153,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "f046a58134aa1e7e",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "object": "apps/acquisition/worker_acquisition.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f09c93dab1f7e4b3",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "object": "apps/shared/events/topics.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "25ddf47923db73d6",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/admission/tests/contract/test_no_auto_merge.py",
@@ -97345,6 +97941,78 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "5a437dac861e2ff1",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_metrics_honesty.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_metrics_honesty.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "356cea3cda713f0c",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_metrics_honesty.py",
+        "object": "apps/control-plane/api/routes/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_metrics_honesty.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "af19808b81bd7d7f",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c99e079d9d6903b7",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/control-plane/api/routes/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8ac2e60e33c4b13d",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/shared/events/dlq.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ad9968923485ae52",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_quarantine_api.py",
+        "object": "apps/shared/events/dlq_durable.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_quarantine_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "ff37f4c1b4512886",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/test_research_case_invariants.py",
@@ -97473,6 +98141,42 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/control-plane/tests/test_research_case_reports.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "97562138bbfff05a",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_specops_roe_auth.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3b41a2a73ee2f20d",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "object": "apps/control-plane/api/routes/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_specops_roe_auth.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e127a987e7c489f3",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "object": "apps/specops/roe/gate.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_specops_roe_auth.py"
         },
         "confidence": 1.0
       },
@@ -98853,6 +99557,18 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_sse_stream.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "659421c713dc88ad",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "object": "apps/control-plane/services/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py"
         },
         "confidence": 1.0
       },
@@ -106187,47 +106903,59 @@
           "file": "bench/tests/test_harness.py"
         },
         "confidence": 1.0
+      },
+      {
+        "fact_id": "087caa7e41573272",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "tools/tests/test_repo_hygiene.py",
+        "object": "tools/repo_hygiene.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "tools/tests/test_repo_hygiene.py"
+        },
+        "confidence": 1.0
       }
     ],
     "stats": {
-      "facts_total": 4565,
-      "static_facts": 4271,
-      "inferred": 294,
+      "facts_total": 4591,
+      "static_facts": 4299,
+      "inferred": 292,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1037,
+    "python_modules": 1047,
     "typescript_modules": 267,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2956,
-    "test_files": 354,
-    "test_functions": 5389,
-    "untested_modules": 273,
+    "import_edges": 2971,
+    "test_files": 362,
+    "test_functions": 5405,
+    "untested_modules": 274,
     "http_routes": 186
   },
   "evidence_stats": {
-    "facts_total": 4565,
-    "static_facts": 4271,
-    "inferred": 294,
+    "facts_total": 4591,
+    "static_facts": 4299,
+    "inferred": 292,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 557,
+    "IMPLEMENTED": 558,
     "DECLARATION_ONLY": 18,
-    "PACKAGE_INIT": 92,
-    "TEST": 351,
+    "PACKAGE_INIT": 93,
+    "TEST": 359,
     "MIGRATION": 19,
-    "total": 1037
+    "total": 1047
   },
   "reachability_summary": {
-    "PRODUCTION": 430,
-    "TEST_ONLY": 134,
-    "ORPHAN": 122,
-    "TEST": 351,
-    "total": 1037
+    "PRODUCTION": 432,
+    "TEST_ONLY": 133,
+    "ORPHAN": 123,
+    "TEST": 359,
+    "total": 1047
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -106267,6 +106995,7 @@
     "bench/run.py",
     "bench/science/bench_structural.py",
     "platform_model/build.py",
+    "tools/repo_hygiene.py",
     "tools/semantic_docgraph.py",
     "tools/specs/build_capability_matrix.py",
     "tools/specs/build_donor_registry.py",
@@ -106391,7 +107120,6 @@
     "apps/shared/domain/research_lineage.py",
     "apps/shared/domain/stream_events.py",
     "apps/shared/domain/temporal_worldline_store.py",
-    "apps/shared/events/dlq_durable.py",
     "apps/shared/events/ontology_pack.py",
     "apps/shared/events/timestamps.py",
     "apps/shared/isolation.py",
@@ -106524,6 +107252,7 @@
     "bench/fixtures/extraction/_generate.py",
     "conftest.py",
     "platform_model/facts.py",
+    "tools/__init__.py",
     "tools/append_zero_frontend_a.py",
     "tools/append_zero_frontend_b.py",
     "tools/append_zero_inventory.py",
@@ -106577,7 +107306,7 @@
       "zero_layer.enrichment"
     ]
   },
-  "gaps_open": 9,
+  "gaps_open": 5,
   "rust": {
     "count": 16,
     "crates": [

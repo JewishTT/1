@@ -4,13 +4,13 @@
 
 ## Repo layout
 
-Monorepo: `apps/` (acquisition, admission, bulk-ingestion, control-plane, deploy, feedback, interpretation, projection, science, shared, specops, webapp, zero), `bench/`, `docs/`, `specs/`. The tree holds 1037 Python modules, 267 TypeScript modules and 16 Rust source files.
+Monorepo: `apps/` (acquisition, admission, bulk-ingestion, control-plane, deploy, feedback, interpretation, projection, science, shared, specops, webapp, zero), `bench/`, `docs/`, `specs/`. The tree holds 1047 Python modules, 267 TypeScript modules and 16 Rust source files.
 
 ## Tooling
 
 - Python: `uv` + `pytest`, lint/format via `ruff`.
 - Rust (`apps/acquisition`): `cargo`, `cargo fmt`/`clippy`.
-- Frontend (`apps/webapp`): Node 20+ / pnpm, Vitest, TypeScript strict.
+- Frontend (`apps/webapp`): Node 22+ / npm, Vitest, TypeScript strict.
 
 ## Convention: tests first
 
@@ -21,9 +21,9 @@ Tasks in `specs/*/tasks.md` specify tests that must be written first and **fail 
 `docs/platform/`, `README.md`, `docs/README.md` and `docs/architecture/overview.md` are generated from the tree. After changing anything under `apps/`, `bench/`, `tools/`, `deploy/` or `platform_model/`, regenerate and verify:
 
 ```bash
-.venv/Scripts/python.exe -m platform_model.build
-.venv/Scripts/python.exe -m platform_model.build --check
-.venv/Scripts/python.exe -m pytest apps/shared/tests/contract/test_platform_model.py -q
+uv run python -m platform_model.build
+uv run python -m platform_model.build --check
+uv run python -m pytest apps/shared/tests/contract/test_platform_model.py -q
 ```
 
 ## Gateway constraints (never break)
@@ -46,7 +46,7 @@ Run the whole gate before finishing a change:
 uv run --project apps/<app> pytest apps/<app>/tests -q
 cargo test --workspace                                    # apps/acquisition
 # webapp
-cd apps/webapp && pnpm vitest run && pnpm tsc
+cd apps/webapp && npm vitest run && npm tsc
 # end-to-end on a clean stack
 docker compose -f apps/deploy/docker-compose.yml up -d
 uv run python -m bench.run --scenario smoke-val

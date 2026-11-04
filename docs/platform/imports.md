@@ -1,6 +1,6 @@
 # Import graph
 
-1037 Python modules, 2956 resolved local edges.
+1047 Python modules, 2971 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,46 +10,46 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 906 |
-| `dataclasses` | stdlib | 396 |
-| `typing` | stdlib | 376 |
-| `pathlib` | stdlib | 325 |
-| `pytest` | third-party | 276 |
-| `sys` | stdlib | 263 |
+| `__future__` | stdlib | 915 |
+| `dataclasses` | stdlib | 395 |
+| `typing` | stdlib | 377 |
+| `pathlib` | stdlib | 329 |
+| `pytest` | third-party | 282 |
+| `sys` | stdlib | 265 |
 | `collections` | stdlib | 248 |
-| `json` | stdlib | 205 |
-| `datetime` | stdlib | 198 |
+| `json` | stdlib | 206 |
+| `datetime` | stdlib | 199 |
 | `sqlalchemy` | third-party | 162 |
-| `hashlib` | stdlib | 134 |
+| `hashlib` | stdlib | 136 |
 | `enum` | stdlib | 119 |
-| `re` | stdlib | 102 |
+| `re` | stdlib | 104 |
 | `asyncio` | stdlib | 76 |
-| `os` | stdlib | 74 |
-| `fastapi` | third-party | 68 |
-| `urllib` | stdlib | 59 |
-| `uuid` | stdlib | 49 |
+| `os` | stdlib | 75 |
+| `fastapi` | third-party | 70 |
+| `urllib` | stdlib | 60 |
+| `uuid` | stdlib | 48 |
 | `math` | stdlib | 41 |
-| `types` | stdlib | 37 |
-| `pydantic` | third-party | 35 |
+| `types` | stdlib | 40 |
+| `pydantic` | third-party | 34 |
 | `importlib` | stdlib | 33 |
 | `time` | stdlib | 33 |
-| `ast` | stdlib | 27 |
+| `ast` | stdlib | 28 |
 | `io` | stdlib | 25 |
+| `logging` | stdlib | 24 |
 | `alembic` | third-party | 24 |
-| `logging` | stdlib | 23 |
 | `numpy` | third-party | 23 |
-| `inspect` | stdlib | 21 |
+| `inspect` | stdlib | 22 |
+| `argparse` | stdlib | 21 |
 | `tempfile` | stdlib | 21 |
-| `argparse` | stdlib | 20 |
 | `httpx` | third-party | 20 |
 | `threading` | stdlib | 19 |
+| `subprocess` | stdlib | 17 |
 | `shutil` | stdlib | 16 |
-| `subprocess` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |
 | `warcio` | third-party | 15 |
 | `temporalio` | third-party | 13 |
 | `itertools` | stdlib | 11 |
-| `base64` | stdlib | 10 |
+| `html` | stdlib | 10 |
 
 ## Optional capability probes
 

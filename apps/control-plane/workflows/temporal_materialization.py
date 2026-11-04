@@ -121,9 +121,9 @@ async def reconcile_and_publish(tenant_id: str, entity_id: str, source_record_id
     durable_sql = False
     if os.getenv("COGNITIVE_DURABLE_SQL", "0") == "1":
         from db.entity_stream import SqlEntityStreamRepository
-        from db.session import create_tables, make_session_factory
+        from db.session import make_session_factory
         from db.temporal_materialization import SqlTemporalMaterializationRepository
-        await create_tables()
+
         factory = make_session_factory()
         async with factory() as session:
             await SqlEntityStreamRepository(session).append_many(records)

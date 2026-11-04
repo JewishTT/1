@@ -1,17 +1,5 @@
+import type { OpsMetrics } from "../lib/api";
 import { Icon } from "../ui/Icon";
-
-export interface OpsMetrics {
-  throughput_per_s: number;
-  useful_observations: number;
-  discovery_yield: number;
-  duplicate_ratio: number;
-  browser_utilization: number;
-  lags_s: Record<string, number>;
-  queues: Record<string, number>;
-  storage_growth_b: Record<string, number>;
-  cost_per_1m_obs: number;
-  pools?: Record<string, { healthy: boolean; active: number; capacity: number; failures: number }>;
-}
 
 interface Props {
   metrics: OpsMetrics;
@@ -46,7 +34,7 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
         <div>
           <span className="op-label">SPEC / CONTROL PLANE</span>
           <h1>Operations dashboard</h1>
-          <p className="panel-note">Pipeline health, freshness and worker readiness at a glance.</p>
+          <p className="panel-note">Pipeline health, freshness and worker readiness at a glance. Unavailable measurements are shown as —, never inferred as zero.</p>
         </div>
         <button className="btn btn-primary btn-sm" type="button" data-testid="refresh-btn" onClick={onRefresh}>
           <Icon name="refresh" size={12} /> REFRESH
@@ -56,18 +44,18 @@ export function OpsDashboardPage({ metrics, onRefresh }: Props) {
       <div className="panel command-panel">
         <h2>Throughput & knowledge</h2>
         <div className="tiles">
-          <Tile label="throughput" value={metrics.throughput_per_s} />
-          <Tile label="useful obs" value={metrics.useful_observations} />
-          <Tile label="discovery yield" value={`${(metrics.discovery_yield * 100).toFixed(0)}%`} />
-          <Tile label="duplicate ratio" value={`${(metrics.duplicate_ratio * 100).toFixed(0)}%`} />
+          <Tile label="throughput" value={metrics.throughput_per_s === null ? "—" : metrics.throughput_per_s.toLocaleString()} />
+          <Tile label="useful obs" value={metrics.useful_observations === null ? "—" : metrics.useful_observations.toLocaleString()} />
+          <Tile label="discovery yield" value={metrics.discovery_yield === null ? "—" : String(Math.round(metrics.discovery_yield * 100)) + "%"} />
+          <Tile label="duplicate ratio" value={metrics.duplicate_ratio === null ? "—" : String(Math.round(metrics.duplicate_ratio * 100)) + "%"} />
         </div>
       </div>
 
       <div className="panel command-panel">
         <h2>Cost & utilization</h2>
         <div className="tiles">
-          <Tile label="cost / 1M obs" value={`$${metrics.cost_per_1m_obs}`} />
-          <Tile label="browser util" value={`${(metrics.browser_utilization * 100).toFixed(0)}%`} />
+          <Tile label="cost / 1M obs" value={metrics.cost_per_1m_obs === null ? "—" : "$" + metrics.cost_per_1m_obs.toFixed(2)} />
+          <Tile label="browser util" value={metrics.browser_utilization === null ? "—" : String(Math.round(metrics.browser_utilization * 100)) + "%"} />
         </div>
       </div>
 

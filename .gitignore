@@ -50,3 +50,26 @@ Thumbs.db
 # Local data / fixtures cache
 bench/.cache/
 data/
+
+# Local test output and developer scratch (never commit)
+.pytest_cache*/
+.pytest_cache/
+tmp/
+tmp.*/
+tmpa*/
+logs/
+pytest-of-*/
+pip-metadata-*/
+pip-unpack-*/
+probe_*.py
+scratch_*.py
+
+# Generated acceptance output is retained as CI workflow artifacts.
+apps/acquisition/artifacts/acquisition-integration/
+apps/interpretation/artifacts/acquisition-integration/
+apps/interpretation/artifacts/interpretation/
+
+# Browser debugging residue; maintained screenshot tests live under scripts/.
+apps/webapp/tmp/
+apps/webapp/probe*.mjs
+apps/webapp/shot[2-9].mjs

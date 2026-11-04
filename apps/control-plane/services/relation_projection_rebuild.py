@@ -15,7 +15,7 @@ from sqlalchemy import func, select
 
 from db.relation_claim_store import _from_row
 from db.schema import RelationClaim as RelationClaimRow
-from db.session import create_tables, make_session_factory
+from db.session import make_session_factory
 
 
 def _is_valid(record: dict[str, Any] | None) -> bool:
@@ -44,7 +44,7 @@ async def rebuild_tenant_claim_projection(
         "tenant_id": tenant_id, "seen": 0, "projected": 0, "skipped": 0, "failed": 0
     }
     try:
-        await create_tables()
+
         async with factory() as session:
             result = await session.execute(
                 select(func.count(RelationClaimRow.relation_id)).where(

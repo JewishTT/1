@@ -1,8 +1,8 @@
 {
   "stats": {
-    "facts_total": 4565,
-    "static_facts": 4271,
-    "inferred": 294,
+    "facts_total": 4591,
+    "static_facts": 4299,
+    "inferred": 292,
     "intended": 0
   },
   "facts": [
@@ -4683,6 +4683,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "8f3a5d3ea8bf1d76",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+      "object": "apps/acquisition/worker_acquisition.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "via": "worker_acquisition"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "822515fb6170bc32",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+      "object": "apps/shared/events/topics.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+        "via": "events.topics"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "c352d5ac76a6abf1",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/worker-dataset/__init__.py",
@@ -4744,6 +4770,32 @@
       "evidence": {
         "file": "apps/acquisition/worker_acquisition.py",
         "via": "domain.capture"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7e70f17e95869bf1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_acquisition.py",
+      "object": "apps/shared/events/dlq.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_acquisition.py",
+        "via": "events.dlq"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "dae4359bf9e6d741",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/worker_acquisition.py",
+      "object": "apps/shared/events/dlq_durable.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/worker_acquisition.py",
+        "via": "events.dlq_durable"
       },
       "confidence": 1.0
     },
@@ -8128,19 +8180,6 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "c9ab11c4cc7c3c6d",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/control-plane/api/routes/metrics.py",
-      "object": "apps/control-plane/services/worker_pools.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/metrics.py",
-        "via": "services.worker_pools"
-      },
-      "confidence": 1.0
-    },
-    {
       "fact_id": "a7b774fa252e5367",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/routes/network.py",
@@ -8284,15 +8323,28 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "cb6d54d75a9a8c08",
+      "fact_id": "982c04fd7a755c4d",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/routes/quarantine.py",
-      "object": "apps/shared/events/dlq.py",
+      "object": "apps/shared/events/dlq_durable.py",
       "status": "STATIC_FACT",
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/control-plane/api/routes/quarantine.py",
-        "via": "events.dlq"
+        "via": "events.dlq_durable"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8fb2019abc30890d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/quarantine.py",
+      "object": "apps/shared/storage/s3.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/quarantine.py",
+        "via": "storage.s3"
       },
       "confidence": 1.0
     },
@@ -17189,6 +17241,84 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "5fe97b171fdbde3f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_metrics_honesty.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_metrics_honesty.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2202565db12272ed",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_metrics_honesty.py",
+      "object": "apps/control-plane/api/routes/metrics.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_metrics_honesty.py",
+        "via": "api.routes.metrics"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bd5e53db96db7e2c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_quarantine_api.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_quarantine_api.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "441c165e245fec91",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_quarantine_api.py",
+      "object": "apps/control-plane/api/routes/quarantine.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_quarantine_api.py",
+        "via": "api.routes.quarantine"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "73eae3f5811fb143",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_quarantine_api.py",
+      "object": "apps/shared/events/dlq.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_quarantine_api.py",
+        "via": "events.dlq"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d458a0f119332ffa",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_quarantine_api.py",
+      "object": "apps/shared/events/dlq_durable.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_quarantine_api.py",
+        "via": "events.dlq_durable"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "4117bbe6558d11c5",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/tests/test_research_case_invariants.py",
@@ -17341,6 +17471,45 @@
       "evidence": {
         "file": "apps/control-plane/tests/test_research_case_reports.py",
         "via": "contracts.evidence_span"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "520b48d922dbd11b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "16b97b86afac329c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+      "object": "apps/control-plane/api/routes/specops_roe.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "via": "api.routes.specops_roe"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3021678b7c494645",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+      "object": "apps/specops/roe/gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "via": "specops.roe.gate"
       },
       "confidence": 1.0
     },
@@ -19070,6 +19239,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_sse_stream.py",
         "via": "api.sse"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a4501b39aaba3338",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+      "object": "apps/control-plane/services/temporal_materialization_dispatch.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+        "via": "services.temporal_materialization_dispatch"
       },
       "confidence": 1.0
     },
@@ -39302,6 +39484,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "0ab04008bd035ad2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "tools/tests/test_repo_hygiene.py",
+      "object": "tools/repo_hygiene.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "tools/tests/test_repo_hygiene.py",
+        "via": "tools.repo_hygiene"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "ac4802cd26957238",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "DELETE /voices/{voice_id}",
@@ -39700,7 +39895,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/metrics.py",
-        "line": 54
+        "line": 24
       },
       "confidence": 1.0
     },
@@ -40350,7 +40545,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/quarantine.py",
-        "line": 42
+        "line": 73
       },
       "confidence": 1.0
     },
@@ -40363,7 +40558,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_roe.py",
-        "line": 73
+        "line": 71
       },
       "confidence": 1.0
     },
@@ -41676,7 +41871,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/quarantine.py",
-        "line": 58
+        "line": 115
       },
       "confidence": 1.0
     },
@@ -41689,7 +41884,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/quarantine.py",
-        "line": 50
+        "line": 101
       },
       "confidence": 1.0
     },
@@ -43484,34 +43679,10 @@
       "confidence": 0.7
     },
     {
-      "fact_id": "8e20f7f9e5893ff4",
-      "kind": "SPEC_CITES_MODULE",
-      "subject": "024-context-driven-continuous-intelligence",
-      "object": "apps/shared/events/dlq_durable.py",
-      "status": "INFERRED",
-      "method": "docstring_reference",
-      "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
-      },
-      "confidence": 0.7
-    },
-    {
       "fact_id": "63f362ce3f03c7c5",
       "kind": "SPEC_CITES_MODULE",
       "subject": "024-context-driven-continuous-intelligence",
       "object": "apps/shared/net/secure_fetch.py",
-      "status": "INFERRED",
-      "method": "docstring_reference",
-      "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
-      },
-      "confidence": 0.7
-    },
-    {
-      "fact_id": "cf3e76a27ce8b77f",
-      "kind": "SPEC_CITES_MODULE",
-      "subject": "024-context-driven-continuous-intelligence",
-      "object": "apps/shared/tests/unit/test_dlq_durable.py",
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
@@ -47360,6 +47531,30 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "f046a58134aa1e7e",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+      "object": "apps/acquisition/worker_acquisition.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f09c93dab1f7e4b3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
+      "object": "apps/shared/events/topics.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_worker_failure_persistence.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "25ddf47923db73d6",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/admission/tests/contract/test_no_auto_merge.py",
@@ -49124,6 +49319,78 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "5a437dac861e2ff1",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_metrics_honesty.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_metrics_honesty.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "356cea3cda713f0c",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_metrics_honesty.py",
+      "object": "apps/control-plane/api/routes/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_metrics_honesty.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "af19808b81bd7d7f",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_quarantine_api.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_quarantine_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c99e079d9d6903b7",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_quarantine_api.py",
+      "object": "apps/control-plane/api/routes/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_quarantine_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8ac2e60e33c4b13d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_quarantine_api.py",
+      "object": "apps/shared/events/dlq.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_quarantine_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ad9968923485ae52",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_quarantine_api.py",
+      "object": "apps/shared/events/dlq_durable.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_quarantine_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "ff37f4c1b4512886",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/control-plane/tests/test_research_case_invariants.py",
@@ -49252,6 +49519,42 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/test_research_case_reports.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "97562138bbfff05a",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_specops_roe_auth.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3b41a2a73ee2f20d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+      "object": "apps/control-plane/api/routes/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_specops_roe_auth.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e127a987e7c489f3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_specops_roe_auth.py",
+      "object": "apps/specops/roe/gate.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_specops_roe_auth.py"
       },
       "confidence": 1.0
     },
@@ -50632,6 +50935,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_sse_stream.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "659421c713dc88ad",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
+      "object": "apps/control-plane/services/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py"
       },
       "confidence": 1.0
     },
@@ -57964,6 +58279,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "bench/tests/test_harness.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "087caa7e41573272",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "tools/tests/test_repo_hygiene.py",
+      "object": "tools/repo_hygiene.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "tools/tests/test_repo_hygiene.py"
       },
       "confidence": 1.0
     }
