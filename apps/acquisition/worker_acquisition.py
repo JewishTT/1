@@ -354,12 +354,11 @@ class AcquisitionWorker:
     async def _run_runtime(
         self, envelope: Any, task: AcquisitionTask
     ) -> ObservationResult:
-        """Execute a task on the runtime it names, and publish what it yields.
+        """Execute a named runtime and persist each artifact through ArtifactSink.
 
-        Every failure mode here is reported as a :class:`Failure` with the reason named,
-        because a task that names a runtime it cannot reach must say *which* part is
-        missing -- an unknown runtime, an unwired runtime, a missing config file -- rather
-        than surfacing as a generic acquisition error that reads like a source failure.
+        A runtime is never allowed to publish a digest-only pseudo-observation. It
+        must resolve to a catalogue definition and an ArtifactSink factory; raw
+        bytes are written first, then Capture/Observation are committed by the gate.
         """
         runtime = self.runtimes.get(task.runtime_ref)
         if runtime is None:
@@ -367,88 +366,156 @@ class AcquisitionWorker:
                 envelope,
                 task,
                 "runtime_unavailable",
-                f"task names runtime {task.runtime_ref!r}, "
-                "which this worker has no instance of",
-            )
-        if not self.config_dir:
-            return self._runtime_failure(
-                envelope,
-                task,
-                "runtime_unconfigured",
-                f"runtime {task.runtime_ref!r} needs a config directory, none was wired",
+                f"task names runtime {task.runtime_ref!r}, which this worker has no instance of",
             )
 
-        stem = task.source_name or task.source_id
-        config_path = str(Path(self.config_dir) / f"{stem}.config.json")
-        catalog_path = str(Path(self.config_dir) / f"{stem}.catalog.json")
-        missing = [path for path in (config_path, catalog_path) if not Path(path).exists()]
-        if missing:
-            return self._runtime_failure(
-                envelope,
-                task,
-                "runtime_config_missing",
-                f"missing connector files: {', '.join(missing)}",
-            )
-
+        requires_config = bool(getattr(runtime, "requires_connector_config", True))
         payload = task.to_task()
-        payload["config_path"] = config_path
-        payload["catalog_path"] = catalog_path
+        if requires_config:
+            if not self.config_dir:
+                return self._runtime_failure(
+                    envelope,
+                    task,
+                    "runtime_unconfigured",
+                    f"runtime {task.runtime_ref!r} requires connector config files, but no config directory was wired",
+                )
+            stem = task.source_name or task.source_id
+            config_path = str(Path(self.config_dir) / f"{stem}.config.json")
+            catalog_path = str(Path(self.config_dir) / f"{stem}.catalog.json")
+            missing = [path for path in (config_path, catalog_path) if not Path(path).exists()]
+            if missing:
+                return self._runtime_failure(
+                    envelope,
+                    task,
+                    "runtime_config_missing",
+                    f"missing connector files: {', '.join(missing)}",
+                )
+            payload["config_path"] = config_path
+            payload["catalog_path"] = catalog_path
 
+        definition_for = getattr(self.connector, "definition_for", None)
+        if not callable(definition_for):
+            return self._runtime_failure(
+                envelope, task, "runtime_source_definition_unavailable",
+                "worker connector cannot resolve the runtime task's source definition",
+            )
+        definition = definition_for(task.source_id)
+        if definition is None or not definition.enabled:
+            return self._runtime_failure(
+                envelope, task, "unknown_source",
+                f"no enabled catalogue definition for {task.source_id!r}",
+            )
+
+        sink_factory = getattr(self.connector, "artifact_sink_factory", None)
+        if not callable(sink_factory):
+            return self._runtime_failure(
+                envelope, task, "runtime_artifact_sink_unavailable",
+                "runtime tasks require the canonical ArtifactSink factory; direct observation publication is refused",
+            )
+        if not str(getattr(definition, "source_family", "") or "").strip():
+            return self._runtime_failure(
+                envelope, task, "source_capture_provenance_missing",
+                f"{definition.name} has no source_family for canonical Capture persistence",
+            )
+
+        from domain.capture import CaptureTimeBasis
+
+        try:
+            time_basis = CaptureTimeBasis(definition.time_basis)
+        except (TypeError, ValueError):
+            return self._runtime_failure(
+                envelope, task, "source_time_basis_invalid",
+                f"{definition.name} declares invalid time_basis {definition.time_basis!r}",
+            )
+
+        sink = sink_factory(definition)
         observations: list[dict[str, Any]] = []
         duplicates: list[str] = []
         failures: list[Failure] = []
+        marker = f"{task.task_id}|{task.source_id}|{task.query}"
         try:
             async for artifact in runtime.acquire(payload):
-                # The artifact's observation id. Previously read as
-                # ``getattr(artifact, "observation_id", "") or ""``, and because
-                # ``AcquisitionArtifact`` has no such field the value was *always*
-                # empty, so every artifact a runtime produced hit the ``continue``
-                # below and was discarded with no counter. A runtime that worked
-                # perfectly reported zero yield, indistinguishable from a runtime
-                # that failed silently. The id is now derived from the digest the
-                # artifact actually carries.
-                digest = str(getattr(artifact, "content_hash", "") or "").strip()
-                observation_id = digest or str(getattr(artifact, "task_id", "") or "")
-                if not digest:
-                    # No content hash means no identity and no evidence reference.
-                    # Counted and routed, not dropped: this is a producer defect and
-                    # it must be visible as one.
-                    self.unstored_observations.append(
-                        UnstoredEvidenceRefusal(
-                            "observation_content_digest_missing",
-                            "runtime artifact carries no content hash",
-                        )
+                accepted = await sink.accept(
+                    artifact,
+                    tenant_id=task.tenant_id,
+                    investigation_id=task.investigation_id or None,
+                    work_id=task.task_id,
+                    time_basis=time_basis,
+                )
+                observation_id = str(accepted.observation_id or "")
+                event_id = str(accepted.event_id or "")
+                if not observation_id or not event_id or not accepted.topic:
+                    failure = Failure(
+                        code="observation_event_not_acknowledged",
+                        reason="ArtifactSink did not return a broker-acknowledged observation identity",
+                        topic=TOPIC_QUARANTINE,
+                        source_id=task.source_id,
+                        task_id=task.task_id,
                     )
-                    continue
+                    failures.append(failure)
+                    self._route(failure, envelope)
+                    break
                 if observation_id in self.seen:
                     duplicates.append(observation_id)
                     continue
-                self.seen.add(observation_id)
-                observation = {
-                    "event_id": observation_id,
+
+                event = {
+                    "event_type": "observation.created",
+                    "event_id": event_id,
                     "observation_id": observation_id,
+                    "tenant_id": task.tenant_id,
                     "source_id": task.source_id,
                     "task_id": task.task_id,
+                    "investigation_id": task.investigation_id,
+                    "content_digest": accepted.content_digest,
+                    "raw_ref": accepted.raw_ref,
+                    "capture_id": accepted.capture_id,
+                    "locator": accepted.locator,
+                    "event_topic": accepted.topic,
+                    "event_published": True,
                     "runtime_ref": task.runtime_ref,
-                    "uri": str(getattr(artifact, "uri", "") or ""),
-                    "content_hash": digest,
-                    # Absent today. This is precisely the gap ``require_stored_evidence``
-                    # closes: the runtime path can name its bytes but not an address
-                    # for them, so the refusal fires until the runtime is routed
-                    # through the gate (WP-C T042).
                 }
-                await self._publish_observation(observation)
-                observations.append(observation)
-        except Exception as exc:  # noqa: BLE001 - a runtime failure is a source failure
-            failures.append(
-                classify_error(
-                    AcquisitionError("runtime_execution_failed", str(exc)),
-                    source_id=task.source_id,
-                    task_id=task.task_id,
-                )
+                try:
+                    await require_stored_evidence(event, store=self.store)
+                except UnstoredEvidenceRefusal as refusal:
+                    self.unstored_observations.append(refusal)
+                    failure = Failure(
+                        code=refusal.code,
+                        reason=str(refusal.detail),
+                        topic=TOPIC_QUARANTINE,
+                        source_id=task.source_id,
+                        task_id=task.task_id,
+                    )
+                    failures.append(failure)
+                    self._route(failure, envelope)
+                    break
+
+                # ArtifactSink already committed and published the canonical
+                # protobuf Observation. Never publish a second event here.
+                self.seen.add(observation_id)
+                observations.append(event)
+        except Exception as exc:  # noqa: BLE001 - runtime/storage failures are routed
+            failure = classify_error(
+                AcquisitionError("runtime_execution_failed", f"{type(exc).__name__}: {exc}"),
+                source_id=task.source_id,
+                task_id=task.task_id,
             )
-            for failure in failures:
-                self._route(failure, envelope)
+            failures.append(failure)
+            self._route(failure, envelope)
+
+        if not failures and not observations and not duplicates:
+            failure = Failure(
+                code="runtime_returned_no_artifacts",
+                reason=f"runtime {task.runtime_ref!r} completed without an artifact",
+                topic=TOPIC_QUARANTINE,
+                source_id=task.source_id,
+                task_id=task.task_id,
+            )
+            failures.append(failure)
+            self._route(failure, envelope)
+
+        if not failures:
+            self.completed.add(marker)
 
         return ObservationResult(
             task_id=task.task_id,
