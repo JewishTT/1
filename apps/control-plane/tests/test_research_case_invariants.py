@@ -311,7 +311,7 @@ async def test_planner_proposes_bounded_discovery_actions_without_satisfying_evi
     plan = await svc.plan_case(case_id=created["case_id"], tenant_id="tenant-test-034")
     discovery = [a for a in plan["actions"] if a.get("result_role") == "DISCOVERY_ONLY"]
     evidence = [a for a in plan["actions"] if a.get("result_role", "EVIDENCE") == "EVIDENCE"]
-    assert len(discovery) == 2
+    assert len(discovery) == 4
     assert {a["source_id"] for a in discovery} == {"searxng_public_search"}
     assert all(a.get("claim_family") is None for a in discovery)
     assert all(a["requires_operator_approval"] for a in discovery)
@@ -319,6 +319,11 @@ async def test_planner_proposes_bounded_discovery_actions_without_satisfying_evi
     assert evidence
     assert plan["evidence_coverage_ready"] is True
     assert plan["ready_to_dispatch"] is False
+    assert plan["discovery_plan"]["planned_queries"] == 4
+    assert plan["discovery_plan"]["query_budget"] == 4
+    assert plan["discovery_plan"]["truncated"] is True
+    assert plan["discovery_plan"]["status"] == "READY_FOR_REVIEW"
+    assert any(item["status"] == "not_plannable" for item in plan["discovery_plan"]["coverage"])
     restored = [ResearchAction.from_dict(a) for a in discovery]
     assert all(a.result_role == "DISCOVERY_ONLY" for a in restored)
 
