@@ -136,6 +136,7 @@ class PlanCaseResponse(BaseModel):
     capabilities_preview: list[str]
     capability_gaps: list[dict] = Field(default_factory=list)
     discovery_action_refs: list[str] = Field(default_factory=list)
+    discovery_plan: dict = Field(default_factory=dict)
     evidence_coverage_ready: bool = False
     actions: list[dict] = Field(default_factory=list)
     policy_digest: str = ""
