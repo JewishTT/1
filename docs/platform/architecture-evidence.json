@@ -1,8 +1,8 @@
 {
   "stats": {
-    "facts_total": 4583,
+    "facts_total": 4581,
     "static_facts": 4289,
-    "inferred": 294,
+    "inferred": 292,
     "intended": 0
   },
   "facts": [
@@ -43601,34 +43601,10 @@
       "confidence": 0.7
     },
     {
-      "fact_id": "8e20f7f9e5893ff4",
-      "kind": "SPEC_CITES_MODULE",
-      "subject": "024-context-driven-continuous-intelligence",
-      "object": "apps/shared/events/dlq_durable.py",
-      "status": "INFERRED",
-      "method": "docstring_reference",
-      "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
-      },
-      "confidence": 0.7
-    },
-    {
       "fact_id": "63f362ce3f03c7c5",
       "kind": "SPEC_CITES_MODULE",
       "subject": "024-context-driven-continuous-intelligence",
       "object": "apps/shared/net/secure_fetch.py",
-      "status": "INFERRED",
-      "method": "docstring_reference",
-      "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
-      },
-      "confidence": 0.7
-    },
-    {
-      "fact_id": "cf3e76a27ce8b77f",
-      "kind": "SPEC_CITES_MODULE",
-      "subject": "024-context-driven-continuous-intelligence",
-      "object": "apps/shared/tests/unit/test_dlq_durable.py",
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {

@@ -10,8 +10,8 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Python / TypeScript / Rust modules | 1046 / 267 / 16 |
 | Resolved import edges | 2965 |
 | HTTP routes / routers | 186 / 34 |
-| Test files / functions | 361 / 5403 |
-| Evidence facts (static) | 4583 |
+| Test files / functions | 361 / 5401 |
+| Evidence facts (static) | 4581 |
 
 ## Implementation maturity
 
@@ -95,7 +95,7 @@ Capabilities linked to a spec when the capability's module is cited by that spec
 | `010-zero-layer-contact-harvesting` | `websearch` |
 | `012-dynamic-entity-invariant` | `graph-invariant` |
 | `016-relation-evidence-graph-fabric` | `evidence-context`, `projection-graph` |
-| `024-context-driven-continuous-intelligence` | `durable-dlq`, `layer-boundaries` |
+| `024-context-driven-continuous-intelligence` | `layer-boundaries` |
 | `030-global-platform-upgrade` | `canonical-serialisation` |
 
 ## Test-only capabilities
@@ -125,7 +125,7 @@ Specs whose task list shows 0 checked but whose number is cited by real modules 
 | `018-world-substrate` | 0/30 | 4 |
 | `021-entity-relation-extraction-finalization` | 0/94 | 1 |
 | `023-acquisition-integration-searxng` | 0/214 | 3 |
-| `024-context-driven-continuous-intelligence` | 0/168 | 24 |
+| `024-context-driven-continuous-intelligence` | 0/168 | 22 |
 | `030-global-platform-upgrade` | 0/152 | 24 |
 | `032-global-upgrade-execution` | 0/84 | 8 |
 | `034-person-research-case` | 0/76 | 18 |

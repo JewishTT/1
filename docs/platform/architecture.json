@@ -2320,9 +2320,7 @@
           "apps/science/anchoring.py",
           "apps/science/tests/test_anchoring.py",
           "apps/shared/domain/investigation_context.py",
-          "apps/shared/events/dlq_durable.py",
           "apps/shared/net/secure_fetch.py",
-          "apps/shared/tests/unit/test_dlq_durable.py",
           "apps/shared/tests/unit/test_event_timestamps.py",
           "apps/shared/tests/unit/test_idempotent_consumer.py",
           "apps/shared/tests/unit/test_investigation_context.py",
@@ -2331,9 +2329,8 @@
           "apps/shared/tests/unit/test_secure_fetch.py",
           "apps/shared/tools/layer_boundaries.py"
         ],
-        "module_count": 24,
+        "module_count": 22,
         "capabilities": [
-          "durable-dlq",
           "layer-boundaries"
         ]
       },

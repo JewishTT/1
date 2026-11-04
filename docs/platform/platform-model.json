@@ -1184,14 +1184,14 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 206,
+      "stdlib:json": 205,
       "stdlib:logging": 23,
       "stdlib:math": 41,
-      "stdlib:os": 74,
+      "stdlib:os": 75,
       "stdlib:pathlib": 328,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 103,
+      "stdlib:re": 104,
       "stdlib:secrets": 2,
       "stdlib:shlex": 1,
       "stdlib:shutil": 16,
@@ -1208,12 +1208,12 @@
       "stdlib:time": 33,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
-      "stdlib:types": 37,
-      "stdlib:typing": 376,
+      "stdlib:types": 38,
+      "stdlib:typing": 377,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 59,
-      "stdlib:uuid": 49,
+      "stdlib:urllib": 60,
+      "stdlib:uuid": 48,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
       "stdlib:xml": 4,
@@ -23339,17 +23339,15 @@
       },
       {
         "path": "apps/shared/tests/unit/test_dlq_durable.py",
-        "tests": 9,
+        "tests": 7,
         "test_names": [
-          "test_payload_is_persisted_and_readable_back",
-          "test_record_survives_a_restart",
-          "test_metadata_records_reason_topic_and_fingerprint",
-          "test_quarantine_is_idempotent_across_restart",
-          "test_memory_is_still_authoritative_when_present",
-          "test_missing_record_is_none_not_an_exception",
-          "test_purged_record_is_gone_from_memory",
-          "test_plain_store_is_unchanged_without_a_sink",
-          "test_sink_put_returns_the_record_id"
+          "test_payload_uses_bare_object_key_and_survives_restart",
+          "test_index_is_enumerable_and_paginates",
+          "test_same_payload_isolated_between_tenants",
+          "test_sink_rejects_cross_tenant_write_and_bad_uri",
+          "test_topic_filter_keeps_continuation_cursor",
+          "test_durable_quarantine_cannot_purge",
+          "test_memory_only_store_remains_explicitly_available_for_tests"
         ],
         "targets": [
           "apps/shared/events/dlq.py",
@@ -24726,7 +24724,7 @@
         ]
       }
     ],
-    "total": 5403
+    "total": 5401
   },
   "contracts": {
     "python": [
@@ -32407,9 +32405,7 @@
             "apps/science/anchoring.py",
             "apps/science/tests/test_anchoring.py",
             "apps/shared/domain/investigation_context.py",
-            "apps/shared/events/dlq_durable.py",
             "apps/shared/net/secure_fetch.py",
-            "apps/shared/tests/unit/test_dlq_durable.py",
             "apps/shared/tests/unit/test_event_timestamps.py",
             "apps/shared/tests/unit/test_idempotent_consumer.py",
             "apps/shared/tests/unit/test_investigation_context.py",
@@ -32418,9 +32414,8 @@
             "apps/shared/tests/unit/test_secure_fetch.py",
             "apps/shared/tools/layer_boundaries.py"
           ],
-          "module_count": 24,
+          "module_count": 22,
           "capabilities": [
-            "durable-dlq",
             "layer-boundaries"
           ]
         },
@@ -33890,7 +33885,7 @@
       {
         "path": "apps/acquisition/worker_acquisition.py",
         "status": "IMPLEMENTED",
-        "loc": 822,
+        "loc": 823,
         "callables": 20,
         "stubs": 1,
         "not_implemented": 0,
@@ -40135,7 +40130,7 @@
       {
         "path": "apps/shared/events/dlq.py",
         "status": "IMPLEMENTED",
-        "loc": 95,
+        "loc": 118,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
@@ -40144,9 +40139,9 @@
       {
         "path": "apps/shared/events/dlq_durable.py",
         "status": "IMPLEMENTED",
-        "loc": 174,
-        "callables": 13,
-        "stubs": 4,
+        "loc": 261,
+        "callables": 20,
+        "stubs": 3,
         "not_implemented": 0,
         "markers": []
       },
@@ -40537,8 +40532,8 @@
       {
         "path": "apps/shared/storage/s3.py",
         "status": "IMPLEMENTED",
-        "loc": 262,
-        "callables": 14,
+        "loc": 291,
+        "callables": 15,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41027,8 +41022,8 @@
       {
         "path": "apps/shared/tests/unit/test_dlq_durable.py",
         "status": "TEST",
-        "loc": 154,
-        "callables": 18,
+        "loc": 138,
+        "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -92167,34 +92162,10 @@
         "confidence": 0.7
       },
       {
-        "fact_id": "8e20f7f9e5893ff4",
-        "kind": "SPEC_CITES_MODULE",
-        "subject": "024-context-driven-continuous-intelligence",
-        "object": "apps/shared/events/dlq_durable.py",
-        "status": "INFERRED",
-        "method": "docstring_reference",
-        "evidence": {
-          "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
-        },
-        "confidence": 0.7
-      },
-      {
         "fact_id": "63f362ce3f03c7c5",
         "kind": "SPEC_CITES_MODULE",
         "subject": "024-context-driven-continuous-intelligence",
         "object": "apps/shared/net/secure_fetch.py",
-        "status": "INFERRED",
-        "method": "docstring_reference",
-        "evidence": {
-          "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
-        },
-        "confidence": 0.7
-      },
-      {
-        "fact_id": "cf3e76a27ce8b77f",
-        "kind": "SPEC_CITES_MODULE",
-        "subject": "024-context-driven-continuous-intelligence",
-        "object": "apps/shared/tests/unit/test_dlq_durable.py",
         "status": "INFERRED",
         "method": "docstring_reference",
         "evidence": {
@@ -106760,9 +106731,9 @@
       }
     ],
     "stats": {
-      "facts_total": 4583,
+      "facts_total": 4581,
       "static_facts": 4289,
-      "inferred": 294,
+      "inferred": 292,
       "intended": 0
     }
   },
@@ -106774,14 +106745,14 @@
     "rust_crates": 9,
     "import_edges": 2965,
     "test_files": 361,
-    "test_functions": 5403,
+    "test_functions": 5401,
     "untested_modules": 274,
     "http_routes": 186
   },
   "evidence_stats": {
-    "facts_total": 4583,
+    "facts_total": 4581,
     "static_facts": 4289,
-    "inferred": 294,
+    "inferred": 292,
     "intended": 0
   },
   "maturity_summary": {

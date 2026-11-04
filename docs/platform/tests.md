@@ -1,6 +1,6 @@
 # Tests
 
-361 test files, 5403 test functions. 274 platform modules are not targeted by any test.
+361 test files, 5401 test functions. 274 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -314,7 +314,7 @@
 | `apps/shared/tests/unit/test_co_mention.py` | 4 | `apps/shared/domain/co_mention.py`, `apps/shared/domain/hypergraph.py` |
 | `apps/shared/tests/unit/test_commoncrawl.py` | 7 | `apps/shared/network/commoncrawl.py` |
 | `apps/shared/tests/unit/test_derivation_identity.py` | 32 | `apps/shared/domain/derivation.py` |
-| `apps/shared/tests/unit/test_dlq_durable.py` | 9 | `apps/shared/events/dlq.py`, `apps/shared/events/dlq_durable.py` |
+| `apps/shared/tests/unit/test_dlq_durable.py` | 7 | `apps/shared/events/dlq.py`, `apps/shared/events/dlq_durable.py` |
 | `apps/shared/tests/unit/test_event_timestamps.py` | 11 | `apps/shared/events/timestamps.py` |
 | `apps/shared/tests/unit/test_evidence_context.py` | 27 | `apps/shared/domain/evidence_context.py` |
 | `apps/shared/tests/unit/test_evidence_lineage.py` | 16 | `apps/shared/domain/evidence_lineage.py`, `apps/shared/domain/relation_claim.py`, `apps/shared/domain/relation_identity.py` |
