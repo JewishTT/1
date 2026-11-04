@@ -52,7 +52,7 @@ class _Session:
     async def execute(self, statement, params):
         sql = str(statement).lower()
         p = dict(params)
-        if "insert into captures" in sql:
+        if "insert into public.captures" in sql:
             if p["capture_id"] not in self.captures and not any(
                 row["tenant_id"] == p["tenant_id"]
                 and row["capture_fingerprint"] == p["capture_fingerprint"]
@@ -75,7 +75,7 @@ class _Session:
                         "content_digest": row["content_digest"],
                     })
             return _Result()
-        if "insert into observations" in sql:
+        if "insert into public.observations" in sql:
             p["provenance"] = json.loads(p["provenance"])
             self.observations.setdefault(p["observation_id"], p)
             return _Result()
