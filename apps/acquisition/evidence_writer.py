@@ -12,6 +12,8 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from domain.ontology import StaticArtifactKind, kind_of_media_type
+
 
 class EvidenceWriteError(RuntimeError):
     """A capture/observation transaction failed or collided with immutable evidence."""
@@ -21,6 +23,22 @@ def _json(value: Mapping[str, Any]) -> str:
     return json.dumps(
         dict(value), sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str
     )
+
+
+def _artifact_kind_for_media_type(media_type: str) -> str:
+    """Store the ontology's artifact kind, never a transport MIME, in Observation.
+
+    Capture.media_type and provenance retain the original MIME. The Observation
+    column is constrained to StaticArtifactKind because it describes what the
+    immutable evidence is, not the HTTP Content-Type header.
+    """
+    value = str(media_type or "").strip()
+    if not value:
+        return StaticArtifactKind.UNKNOWN.value
+    try:
+        return StaticArtifactKind(value).value
+    except ValueError:
+        return kind_of_media_type(value).value
 
 
 class PostgresAcquisitionEvidenceWriter:
@@ -75,12 +93,16 @@ class PostgresAcquisitionEvidenceWriter:
         }
         record_metadata = dict(observation.get("record_metadata") or {})
         provenance = dict(observation.get("provenance") or {})
+        media_type = str(
+            getattr(capture, "media_type", "") or observation.get("content_type") or ""
+        )
         provenance.update({
             "capture_id": capture_id,
             "capture_fingerprint": fingerprint,
             "locator": str(observation.get("locator") or ""),
             "raw_ref": raw_uri,
             "record_digest": record_digest,
+            "media_type": media_type,
             "parser_hint": str(observation.get("parser_hint") or ""),
             "record_metadata": record_metadata,
         })
@@ -95,7 +117,7 @@ class PostgresAcquisitionEvidenceWriter:
                        or getattr(capture, "target_uri", "") or ""),
             "raw_ref": raw_uri,
             "content_hash": record_digest,
-            "content_type": str(observation.get("content_type") or "") or None,
+            "content_type": _artifact_kind_for_media_type(media_type),
             "status": str(observation.get("status") or "created"),
             "duplicate": bool(observation.get("duplicate", False)),
             "provenance": _json(provenance),
