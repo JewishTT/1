@@ -37,6 +37,7 @@ calling it `verified` would be exactly the guess the gate exists to reject.
 | `coldreach` | https://github.com/dhruvmojila/coldreach.git | — | unverified | vendored donor checkout; capability not yet assigned |
 | `confluent-kafka` | https://pypi.org/project/confluent-kafka/ | — | unverified | third-party declared dependency |
 | `crawlee` | https://pypi.org/project/crawlee/ | — | unverified | third-party declared dependency |
+| `cryptography` | https://pypi.org/project/cryptography/ | — | unverified | third-party declared dependency |
 | `CyberStrikeAI` | https://github.com/Ed1s0nZ/CyberStrikeAI.git | — | unverified | vendored donor checkout; capability not yet assigned |
 | `DIGI-NETRA` | https://github.com/pwnxotus/DIGI-NETRA.git | — | unverified | vendored donor checkout; capability not yet assigned |
 | `DIMA-OntoToolkit` | https://github.com/benjamin-delhomme/DIMA-OntoToolkit | — | unverified | vendored donor checkout; capability not yet assigned |
@@ -48,9 +49,13 @@ calling it `verified` would be exactly the guess the gate exists to reject.
 | `EmailExtractWithProxyApp` | https://github.com/psoman-star/EmailExtractWithProxyApp.git | — | unverified | vendored donor checkout; capability not yet assigned |
 | `EmailFinder` | https://github.com/elliott-diy/EmailFinder.git | — | unverified | vendored donor checkout; capability not yet assigned |
 | `EmailHarvester` | https://github.com/maldevel/EmailHarvester.git | — | unverified | vendored donor checkout; capability not yet assigned |
+| `embit` | https://pypi.org/project/embit/ | — | unverified | third-party declared dependency |
 | `Entropic-Dynamics-of-the-Universal-Equivalent` | https://github.com/namanh95/Entropic-Dynamics-of-the-Universal-Equivalent | — | unverified | vendored donor checkout; capability not yet assigned |
 | `erlik-graph` | https://github.com/malkreide/erlik-graph | — | unverified | vendored donor checkout; capability not yet assigned |
 | `estorides` | https://github.com/grisuno/estorides.git | — | unverified | vendored donor checkout; capability not yet assigned |
+| `eth-abi` | https://pypi.org/project/eth-abi/ | — | unverified | third-party declared dependency |
+| `eth-account` | https://pypi.org/project/eth-account/ | — | unverified | third-party declared dependency |
+| `eth-utils` | https://pypi.org/project/eth-utils/ | — | unverified | third-party declared dependency |
 | `EvoCorps` | https://github.com/ln2146/EvoCorps | — | unverified | vendored donor checkout; capability not yet assigned |
 | `extruct` | https://pypi.org/project/extruct/ | — | unverified | third-party declared dependency |
 | `fastapi` | https://pypi.org/project/fastapi/ | — | unverified | third-party declared dependency |
@@ -82,8 +87,3 @@ calling it `verified` would be exactly the guess the gate exists to reject.
 | `kafsiem` | https://github.com/scalytics/kafSIEM | — | unverified | donor for pack-contract and analyst-workflow patterns only; its CSS lineage is vendored into apps/webapp/src/styles/donors/kafSIEM/. Not a code dependency and not a checkout. |
 | `Labyrinth` | https://github.com/DaxxSec/Labyrinth | — | unverified | vendored donor checkout; capability not yet assigned |
 | `lark` | https://pypi.org/project/lark/ | — | unverified | third-party declared dependency |
-| `lau-network-science` | https://github.com/SuperInstance/lau-network-science | — | unverified | vendored donor checkout; capability not yet assigned |
-| `lazyaddon` | https://github.com/grisuno/lazyaddon.git | — | unverified | vendored donor checkout; capability not yet assigned |
-| `LeakHunter` | https://github.com/Und3rTakerOPS/LeakHunter | — | unverified | vendored donor checkout; capability not yet assigned |
-| `litellm` | https://pypi.org/project/litellm/ | — | unverified | third-party declared dependency |
-| `Lying_with_Truth` | https://github.com/CharlesJW222/Lying_with_Truth | — | unverified | vendored donor checkout; capability not yet assigned |

@@ -94,6 +94,10 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
         // APT forensics, counterintelligence and social-reaction — NOT throughput or
         // worker pools. The scope note on the canvas keeps the tenant-wide honesty.
         { to: "/investigations/ci", label: "CI / SpecOps Department", icon: "view-ops" },
+        // Feature 036: the Red-Team Lab. Filed beside the department because
+        // it is the same subject at a higher risk tier, but rendered as its own canvas
+        // so its RoE-gated scope travels with every panel.
+        { to: "/specops/lab", label: "Red-Team Lab", icon: "alert" },
       ],
     },
     {
@@ -129,6 +133,7 @@ export const NAV_TITLES: ReadonlyArray<{ prefix: string; title: string }> = [
   { prefix: "/hypotheses", title: "Hypotheses & gain planning" },
   { prefix: "/dossier", title: "Dossier" },
   { prefix: "/experiments", title: "Reproducible experiments" },
+  { prefix: "/specops/lab", title: "Red-Team Lab (isolated)" },
   { prefix: "/specops/connectors", title: "Connectors & Recon Plans" },
   { prefix: "/specops/quarantine", title: "Quarantine (DLQ)" },
   { prefix: "/specops", title: "SpecOps Console" },

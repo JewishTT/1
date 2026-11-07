@@ -111,6 +111,28 @@ CATALOGUE_ONLY: dict[str, dict[str, object]] = {
     },
 }
 
+#: Donors whose licence and upstream revision have been reviewed and pinned. These are
+#: explicit human decisions, not signature matches. The adapter and readiness surface read
+#: the same record, so promotion is one place.
+VERIFIED_DONORS: dict[str, dict[str, object]] = {
+    "phishingclub": {
+        "upstream": "https://github.com/phishingclub/phishingclub",
+        "version": "31ff3f544af8",
+        "license": "AGPL-3.0",
+        "license_source": "donors/phishingclub/LICENSE",
+        "role": (
+            "vendored full-featured phishing simulation donor; run as a local service and "
+            "integrated through the SpecOps lab HTTP adapter"
+        ),
+        "verification_note": (
+            "Human licence review completed 2026-11-02: donors/phishingclub/LICENSE is the "
+            "GNU Affero General Public License v3.0. Upstream pinned at "
+            "31ff3f544af866a5e8f3adec609c58e44514b274. AGPL-3.0 network-use and source-offer "
+            "obligations apply; the deployment/compliance review remains ADR-030-09."
+        ),
+    },
+}
+
 #: Dependencies that left the workspace, with the reason. Kept in the record so the
 #: removal survives the pyproject comment that explained it.
 REMOVED = {
@@ -302,6 +324,20 @@ def _installed_version(name: str) -> str | None:
 
 
 def _donor_entry(name: str) -> dict[str, object]:
+    pinned = VERIFIED_DONORS.get(canonical(name))
+    if pinned is not None:
+        return {
+            "id": name,
+            "path": f"donors/{name}",
+            "upstream": pinned["upstream"],
+            "version": pinned["version"],
+            "license": pinned["license"],
+            "license_source": pinned["license_source"],
+            "status": "verified",
+            "verification_note": pinned["verification_note"],
+            "role": pinned["role"],
+            "vendored": True,
+        }
     donor = DONORS / name
     license_file, spdx, digest = _license_probe(donor)
     remote, commit = _git_of(donor)
@@ -505,8 +541,9 @@ def build() -> dict[str, object]:
                 "[project].optional-dependencies across the workspace manifests, plus every "
                 "checkout under donors/. [dependency-groups] is out of scope: it is never "
                 "shipped. `status: verified` requires a licence and the file it was read from; "
-                "everything generated here is `unverified`, because an SPDX signature match is "
-                "not a licence review."
+                "entries generated from `_license_probe` stay `unverified` because an SPDX "
+                "signature match is not a licence review. Entries in `VERIFIED_DONORS` are "
+                "explicit human decisions with a pinned upstream revision."
             ),
         },
         "donors": donors,

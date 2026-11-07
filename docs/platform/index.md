@@ -9,22 +9,22 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 16 |
-| Python modules | 1010 |
-| TypeScript modules | 266 |
+| Python modules | 1050 |
+| TypeScript modules | 280 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 2808 |
+| Import edges (local) | 2982 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 342 |
-| Test functions | 5285 |
-| Untested platform modules | 267 |
-| HTTP routes | 182 |
-| Contracts (python/docs/root) | 6 / 73 / 12 |
+| Test files | 349 |
+| Test functions | 5325 |
+| Untested platform modules | 280 |
+| HTTP routes | 218 |
+| Contracts (python/docs/root) | 6 / 74 / 12 |
 | Capabilities | 30 |
 
 ## Pages
@@ -52,7 +52,7 @@ committed model no longer matches the tree.
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| control-plane | 241 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| control-plane | 243 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
 | interpretation | 112 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |
@@ -60,7 +60,7 @@ committed model no longer matches the tree.
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | shared | 198 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
-| specops | 30 | 0 | Isolated spec-ops lab profile (never in the routine path). |
+| specops | 68 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | tools | 11 | 0 | Generators, capability/owner/donor tools, probes. |
-| webapp | 0 | 266 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| webapp | 0 | 280 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | zero | 30 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

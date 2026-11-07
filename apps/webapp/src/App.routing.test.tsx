@@ -34,9 +34,59 @@ function stubFetch() {
         headers: { "Content-Type": "application/json" },
       });
     if (url.includes("/api/v1/dossier")) return json({ subjects: [] });
+    if (url.includes("/api/v1/specops/lab")) return json(labOverview());
     if (url.includes("/api/science")) return json({ claims: [], reports: [], results: [] });
     return json({ results: [], observations: [], investigations: [], contexts: [] });
   });
+}
+
+function labOverview() {
+  return {
+    served: ["/specops/lab"],
+    missing: [],
+    scope: "red-team",
+    lab: {
+      lab_id: "lab-test",
+      status: "ready",
+      egress_policy: "roe-gated",
+      targets: ["specops-lab.local"],
+      kill_switch_at: null,
+      teardown_at: null,
+    },
+    readiness: {
+
+      donor: {
+        id: "phishingclub",
+        path: "donors/phishingclub",
+        status: "verified",
+        version: "31ff3f544af8",
+        license: "AGPL-3.0",
+        license_source: "donors/phishingclub/LICENSE",
+        attribution: true,
+        blockers: [],
+        adapter_served: true,
+      },
+      encryption: { algorithm: "AES-256-GCM", key_source: "ephemeral", ready: true, error: null },
+      full_red_team_enabled: true,
+      matrix: [],
+      blockers: [],
+      counts: {},
+    },
+    campaigns: [],
+    templates: [],
+    senders: [],
+    sessions: [],
+    artifacts: [],
+    reports: [],
+    operations: [],
+    engagement: {
+      channel_funnel: { sent: 0, opened: 0, clicked: 0, reported: 0 },
+      training: { assigned: 0, completed: 0 },
+      subjects: 0,
+      anonymized: true,
+    },
+    audit: [],
+  };
 }
 
 let originalFetch: typeof globalThis.fetch;
@@ -96,6 +146,27 @@ describe("routes are reachable and render something", () => {
 
     await waitFor(() => expect(screen.getByTestId("dossier-sweep")).toBeInTheDocument());
     expect(screen.getByLabelText(/subject/i)).toBeInTheDocument();
+  });
+
+  it("reaches the Red-Team Lab through the router", async () => {
+    mountAt("/specops/lab");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("lab-canvas")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("lab-banner")).toHaveTextContent("full red-team");
+  });
+
+  it("wires the Red-Team Lab destination into the shell's navigation", async () => {
+    mountAt("/specops/lab");
+    fireEvent.click(screen.getByTestId("nav-deck-trigger"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: /Red-Team Lab/i })).toHaveAttribute(
+        "href",
+        "/specops/lab",
+      );
+    });
   });
 
   it("renders the internal component library route", async () => {

@@ -25,17 +25,17 @@ the markdown contracts carry the prose contract; the root YAML/JSON carry reques
 | `parser` | `apps/shared/contracts/parser.md` |
 | `resolution-admission` | `apps/shared/contracts/resolution-admission.md` |
 | `statement` | `apps/shared/contracts/statement.md` |
-| `README` | `specs/001-global-osint-platform/contracts/README.md` |
 | `acquisition-worker` | `specs/001-global-osint-platform/contracts/acquisition-worker.md` |
 | `graph` | `specs/001-global-osint-platform/contracts/graph.md` |
+| `README` | `specs/001-global-osint-platform/contracts/README.md` |
 | `resolution-admission` | `specs/001-global-osint-platform/contracts/resolution-admission.md` |
 | `storage` | `specs/001-global-osint-platform/contracts/storage.md` |
 | `utility-scorer` | `specs/001-global-osint-platform/contracts/utility-scorer.md` |
-| `README` | `specs/002-donor-pattern-integration/contracts/README.md` |
 | `connector` | `specs/002-donor-pattern-integration/contracts/connector.md` |
 | `correlation-review` | `specs/002-donor-pattern-integration/contracts/correlation-review.md` |
 | `ontology-pack` | `specs/002-donor-pattern-integration/contracts/ontology-pack.md` |
 | `parser` | `specs/002-donor-pattern-integration/contracts/parser.md` |
+| `README` | `specs/002-donor-pattern-integration/contracts/README.md` |
 | `statement` | `specs/002-donor-pattern-integration/contracts/statement.md` |
 | `interface-contracts` | `specs/005-donor-core-subsystems/contracts/interface-contracts.md` |
 | `ux-reference` | `specs/005-donor-core-subsystems/contracts/ux-reference.md` |
@@ -62,16 +62,15 @@ the markdown contracts carry the prose contract; the root YAML/JSON carry reques
 | `service-contracts` | `specs/016-relation-evidence-graph-fabric/contracts/service-contracts.md` |
 | `contracts` | `specs/025-context-reality-approximation-engine/contracts/contracts.md` |
 | `specops-api` | `specs/027-ci-specops-fabric/contracts/specops-api.md` |
-| `README` | `specs/030-global-platform-upgrade/contracts/README.md` |
 | `context-revision` | `specs/030-global-platform-upgrade/contracts/context-revision.md` |
 | `errors` | `specs/030-global-platform-upgrade/contracts/errors.md` |
 | `evidence-span` | `specs/030-global-platform-upgrade/contracts/evidence-span.md` |
 | `obligation` | `specs/030-global-platform-upgrade/contracts/obligation.md` |
 | `operator-result` | `specs/030-global-platform-upgrade/contracts/operator-result.md` |
 | `projection-manifest` | `specs/030-global-platform-upgrade/contracts/projection-manifest.md` |
+| `README` | `specs/030-global-platform-upgrade/contracts/README.md` |
 | `stage-outcome` | `specs/030-global-platform-upgrade/contracts/stage-outcome.md` |
 | `ghostline-api` | `specs/031-ghostline-vishing-fabric/contracts/ghostline-api.md` |
-| `README` | `specs/032-global-upgrade-execution/contracts/README.md` |
 | `acquisition-task` | `specs/032-global-upgrade-execution/contracts/acquisition-task.md` |
 | `conflict-record` | `specs/032-global-upgrade-execution/contracts/conflict-record.md` |
 | `donor-registry` | `specs/032-global-upgrade-execution/contracts/donor-registry.md` |
@@ -79,9 +78,9 @@ the markdown contracts carry the prose contract; the root YAML/JSON carry reques
 | `evidence-span` | `specs/032-global-upgrade-execution/contracts/evidence-span.md` |
 | `operator-result` | `specs/032-global-upgrade-execution/contracts/operator-result.md` |
 | `projection-manifest` | `specs/032-global-upgrade-execution/contracts/projection-manifest.md` |
+| `README` | `specs/032-global-upgrade-execution/contracts/README.md` |
 | `research-obligation` | `specs/032-global-upgrade-execution/contracts/research-obligation.md` |
 | `resolution-decision` | `specs/032-global-upgrade-execution/contracts/resolution-decision.md` |
-| `README` | `specs/033-universal-context-runtime/contracts/README.md` |
 | `abstraction-manifest` | `specs/033-universal-context-runtime/contracts/abstraction-manifest.md` |
 | `api-and-events` | `specs/033-universal-context-runtime/contracts/api-and-events.md` |
 | `capability-manifest` | `specs/033-universal-context-runtime/contracts/capability-manifest.md` |
@@ -91,6 +90,8 @@ the markdown contracts carry the prose contract; the root YAML/JSON carry reques
 | `context-frame` | `specs/033-universal-context-runtime/contracts/context-frame.md` |
 | `memory-layers` | `specs/033-universal-context-runtime/contracts/memory-layers.md` |
 | `model-gateway` | `specs/033-universal-context-runtime/contracts/model-gateway.md` |
+| `README` | `specs/033-universal-context-runtime/contracts/README.md` |
+| `specops-lab-api` | `specs/036-phishingclub-specops-department/contracts/specops-lab-api.md` |
 
 ## Root schemas
 

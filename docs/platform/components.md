@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **241** · TypeScript modules: **0**
+Python modules: **243** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -187,14 +187,14 @@ apps.control-plane.api.routes.science_temporal
 apps.control-plane.api.routes.search
 apps.control-plane.api.routes.search_rebuild
 apps.control-plane.api.routes.specops_counterintel
+apps.control-plane.api.routes.specops_cryptotx
 apps.control-plane.api.routes.specops_emulation
 apps.control-plane.api.routes.specops_engagement
 apps.control-plane.api.routes.specops_forensics
 apps.control-plane.api.routes.specops_ghostline
+apps.control-plane.api.routes.specops_lab
 apps.control-plane.api.routes.specops_phishing
 apps.control-plane.api.routes.specops_roe
-apps.control-plane.api.routes.specops_social
-apps.control-plane.api.routes.temporal_materializations
 ```
 
 </details>
@@ -479,13 +479,36 @@ apps.shared.domain.relation_participant
 
 Isolated spec-ops lab profile (never in the routine path).
 
-Python modules: **30** · TypeScript modules: **0**
+Python modules: **68** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
 ```
 apps.specops
 apps.specops.counterintel
+apps.specops.cryptotx
+apps.specops.cryptotx.approvals
+apps.specops.cryptotx.chains
+apps.specops.cryptotx.chains.base
+apps.specops.cryptotx.chains.bitcoin
+apps.specops.cryptotx.chains.ethereum
+apps.specops.cryptotx.chains.registry
+apps.specops.cryptotx.chains.tron
+apps.specops.cryptotx.cli
+apps.specops.cryptotx.config
+apps.specops.cryptotx.errors
+apps.specops.cryptotx.executor
+apps.specops.cryptotx.hd
+apps.specops.cryptotx.models
+apps.specops.cryptotx.planner
+apps.specops.cryptotx.store
+apps.specops.cryptotx.swaps
+apps.specops.cryptotx.swaps.base
+apps.specops.cryptotx.swaps.evm
+apps.specops.cryptotx.swaps.router
+apps.specops.cryptotx.swaps.thorchain
+apps.specops.cryptotx.swaps.tron
+apps.specops.cryptotx.vault
 apps.specops.emulation
 apps.specops.engagement
 apps.specops.engagement.config
@@ -501,19 +524,6 @@ apps.specops.ghostline.ledger
 apps.specops.ghostline.loader
 apps.specops.ghostline.redaction
 apps.specops.ghostline.runtime
-apps.specops.ghostline.service
-apps.specops.ghostline.telephony
-apps.specops.ghostline.voices
-apps.specops.phishing
-apps.specops.roe
-apps.specops.roe.gate
-apps.specops.social
-apps.specops.tests.conftest
-apps.specops.tests.test_engagement
-apps.specops.tests.test_ghostline
-apps.specops.tests.test_roe_gate
-apps.specops.tests.test_specops_ghostline_routers
-apps.specops.tests.test_specops_routers
 ```
 
 </details>
@@ -546,7 +556,7 @@ tools.strip_zero_inventory
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **266**
+Python modules: **0** · TypeScript modules: **280**
 
 
 ## `zero`

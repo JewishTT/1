@@ -17,7 +17,7 @@ Adapted (not copied) from PIDSF's ``simulation.launch_campaign`` /
 reimplementation of the *method*, per the platform's donor policy (rev.2).
 
 Deferred by owner decision (FR-003/SC-007): process isolation, egress policy
-and license reconciliation. This gate + lab-only targeting are the wave-1 safety
+and license reconciliation. This gate + validated targeting are the safety
 boundary; broader hardening is a follow-up.
 """
 

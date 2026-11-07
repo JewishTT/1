@@ -265,6 +265,24 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 |---|---|---|
 | GET | `/subjects/{subject_id}` | 25 |
 
+## `specops_cryptotx` — `apps/control-plane/api/routes/specops_cryptotx.py`
+
+| Method | Path | Line |
+|---|---|---|
+| GET | `/status` | 112 |
+| POST | `/vault` | 125 |
+| POST | `/vault/unlock` | 150 |
+| POST | `/wallets` | 160 |
+| POST | `/wallets/list` | 186 |
+| POST | `/plans` | 196 |
+| GET | `/plans` | 211 |
+| GET | `/plans/{plan_id}` | 217 |
+| POST | `/approvals` | 229 |
+| POST | `/plans/{plan_id}/runs` | 254 |
+| GET | `/runs` | 280 |
+| GET | `/runs/{run_id}` | 292 |
+| GET | `/audit` | 304 |
+
 ## `specops_emulation` — `apps/control-plane/api/routes/specops_emulation.py`
 
 | Method | Path | Line |
@@ -314,6 +332,34 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 | POST | `/calls/{call_id}/complete` | 395 |
 | GET | `/analytics` | 415 |
 | GET | `/analytics/export` | 422 |
+
+## `specops_lab` — `apps/control-plane/api/routes/specops_lab.py`
+
+| Method | Path | Line |
+|---|---|---|
+| GET | `/phishingclub/health` | 136 |
+| GET | `/audit` | 161 |
+| GET | `/templates` | 169 |
+| GET | `/senders` | 175 |
+| GET | `/campaigns` | 181 |
+| GET | `/campaigns/{campaign_id}` | 187 |
+| GET | `/aitm/sessions` | 197 |
+| GET | `/aitm/sessions/{session_id}` | 203 |
+| GET | `/reports/{campaign_id}` | 213 |
+| POST | `/templates` | 226 |
+| POST | `/senders` | 244 |
+| POST | `/campaigns` | 263 |
+| POST | `/campaigns/{campaign_id}/launch` | 283 |
+| POST | `/aitm/sessions` | 295 |
+| POST | `/aitm/sessions/{session_id}/capture` | 313 |
+| POST | `/aitm/sessions/{session_id}/stop` | 331 |
+| POST | `/operations` | 341 |
+| POST | `/assessments` | 355 |
+| POST | `/reports/{campaign_id}` | 369 |
+| POST | `/reports/{campaign_id}/export` | 379 |
+| POST | `/kill-switch` | 389 |
+| POST | `/teardown` | 399 |
+| POST | `/reset` | 409 |
 
 ## `specops_phishing` — `apps/control-plane/api/routes/specops_phishing.py`
 

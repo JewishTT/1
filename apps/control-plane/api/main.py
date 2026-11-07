@@ -33,8 +33,8 @@ from api.routes import (
     network,
     platform,
     quarantine,
-    resolutions,
     research_cases,
+    resolutions,
     science_causal,
     science_claims,
     science_hypotheses,
@@ -46,10 +46,12 @@ from api.routes import (
     search,
     search_rebuild,
     specops_counterintel,
+    specops_cryptotx,
     specops_emulation,
     specops_engagement,
     specops_forensics,
     specops_ghostline,
+    specops_lab,
     specops_phishing,
     specops_roe,
     specops_social,
@@ -138,6 +140,10 @@ app.include_router(temporal_materializations.router, prefix="/api/v1")
 # with the control plane because the emulation/phishing routers share this gate;
 # it is the safety precondition for any live spec-ops step.
 app.include_router(specops_roe.router, prefix="/api/v1")
+# Crypto transaction fabric: branched plans, local signing and policy-gated
+# broadcasts. Live execution still requires an approval token bound to the plan
+# digest, so this router cannot turn a draft into a broadcast by itself.
+app.include_router(specops_cryptotx.router, prefix="/api/v1")
 # Kill-chain emulation (027, US2): plans loaded whole from the donor libraries,
 # launched under the RoE gate above.
 app.include_router(specops_emulation.router, prefix="/api/v1")
@@ -159,6 +165,10 @@ app.include_router(specops_engagement.router, prefix="/api/v1")
 # rather than in its own process because it is gated by the same RoE sign-off as
 # phishing and emulation -- a dial is a send, and the gate has to be the same gate.
 app.include_router(specops_ghostline.router, prefix="/api/v1")
+# Red-Team Lab (036): full red-team mode, every action gated by a confirmed RoE.
+# Every action is boundary-gated; the verified Phishing Club donor runs as a local service and executable donor code
+# never leaves `donors/`.
+app.include_router(specops_lab.router, prefix="/api/v1")
 # The platform's own surface: component health and a cycle tick on demand. Mounted beside
 # the context routes because a tick *is* the thing the context routes describe.
 app.include_router(platform.router, prefix="/api/v1")

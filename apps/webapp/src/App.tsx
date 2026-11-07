@@ -18,6 +18,7 @@ import { DossierContainer } from "./containers/DossierContainer";
 import { CasePage } from "./features/research-case/CasePage";
 import { CaseSetup } from "./features/research-case/CaseSetup";
 import { DesignSystemPage } from "./ui/DesignSystemPage";
+import { LabCanvas } from "./lab/LabCanvas";
 
 /**
  * The shell is mounted here, at the root, rather than per-route.
@@ -102,6 +103,10 @@ export function App() {
             redirects rather than as competing pages: two live URLs for one screen means the
             bookmarks disagree with each other and nobody can tell which is canonical. */}
         <Route path="specops" element={<OpsContainer />} />
+        {/* Feature 036: the Red-Team Lab. It runs in full red-team mode and its
+            actions are bound by a confirmed RoE, so it is its own
+            canvas rather than another tab on the CI/SpecOps department. */}
+        <Route path="specops/lab" element={<LabCanvas />} />
         <Route path="specops/quarantine" element={<QuarantineContainer />} />
         <Route path="specops/connectors" element={<ConnectorsContainer />} />
         <Route path="ops" element={<Navigate to="/specops" replace />} />

@@ -1,8 +1,8 @@
 {
   "stats": {
-    "facts_total": 4367,
-    "static_facts": 4073,
-    "inferred": 294,
+    "facts_total": 4624,
+    "static_facts": 4325,
+    "inferred": 299,
     "intended": 0
   },
   "facts": [
@@ -6022,6 +6022,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "9cdc49963d3338e5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/main.py",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/main.py",
+        "via": "api.routes.specops_cryptotx"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "991ff1d9466cc48a",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/main.py",
@@ -6070,6 +6083,19 @@
       "evidence": {
         "file": "apps/control-plane/api/main.py",
         "via": "api.routes.specops_ghostline"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "369a2b0c774bb287",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/main.py",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/main.py",
+        "via": "api.routes.specops_lab"
       },
       "confidence": 1.0
     },
@@ -8349,6 +8375,110 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "d938b4c5b5b0ab3e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d96924d5e3ed3fac",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "object": "apps/specops/cryptotx/approvals.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "via": "specops.cryptotx.approvals"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9960c40f035047b6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7238795db7d9f0ad",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1afd567a97bb7c9a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "object": "apps/specops/cryptotx/executor.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "via": "specops.cryptotx.executor"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9fb012a6bfdda3ff",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ae89f36e209c75b3",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "object": "apps/specops/cryptotx/store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "via": "specops.cryptotx.store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b18bf189ead8e7cd",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "object": "apps/specops/cryptotx/vault.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "via": "specops.cryptotx.vault"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "d44205647220d8e9",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/routes/specops_emulation.py",
@@ -8566,6 +8696,71 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ghostline.py",
         "via": "specops.ghostline.voices"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "394ef638ab1d71ad",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_lab.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "40d47524c5985070",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_lab.py",
+      "object": "apps/specops/lab/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "via": "specops.lab"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "86163b9ca2894177",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_lab.py",
+      "object": "apps/specops/lab/phishingclub.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "via": "specops.lab.phishingclub"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "86163b9ca2894177",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_lab.py",
+      "object": "apps/specops/lab/phishingclub.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "via": "specops.lab.phishingclub"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "073d3c25d4c69fe0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/specops_lab.py",
+      "object": "apps/specops/roe/gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "via": "specops.roe.gate"
       },
       "confidence": 1.0
     },
@@ -34739,6 +34934,1228 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "c412d2785ab7b4f6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/__init__.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/__init__.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "10626466aabd4883",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/__init__.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/__init__.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "05d5e22f39c92d95",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/__init__.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/__init__.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "05431b6e9455bc4a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/approvals.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/approvals.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "88fc67da45af4a44",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/__init__.py",
+      "object": "apps/specops/cryptotx/chains/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/__init__.py",
+        "via": "specops.cryptotx.chains.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "90c9fc3787e616ce",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/__init__.py",
+      "object": "apps/specops/cryptotx/chains/bitcoin.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/__init__.py",
+        "via": "specops.cryptotx.chains.bitcoin"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5c3402eae7bd09ec",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/__init__.py",
+      "object": "apps/specops/cryptotx/chains/ethereum.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/__init__.py",
+        "via": "specops.cryptotx.chains.ethereum"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "87d9b9bab7a2c030",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/__init__.py",
+      "object": "apps/specops/cryptotx/chains/registry.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/__init__.py",
+        "via": "specops.cryptotx.chains.registry"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ba215e65c6bb4a0c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/__init__.py",
+      "object": "apps/specops/cryptotx/chains/tron.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/__init__.py",
+        "via": "specops.cryptotx.chains.tron"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e5fb13634ed148c9",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/base.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/base.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4e9b64cb55264a32",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/base.py",
+      "object": "apps/specops/cryptotx/hd.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/base.py",
+        "via": "specops.cryptotx.hd"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "08a887c7c9cc84f8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/base.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/base.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "230da11790658729",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/bitcoin.py",
+      "object": "apps/specops/cryptotx/chains/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/bitcoin.py",
+        "via": "specops.cryptotx.chains.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b5e0de82b41f4646",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/bitcoin.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/bitcoin.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3e88832ae0561429",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/bitcoin.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/bitcoin.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "113456b505612cf8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/bitcoin.py",
+      "object": "apps/specops/cryptotx/hd.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/bitcoin.py",
+        "via": "specops.cryptotx.hd"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d600fe09f00447b1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/bitcoin.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/bitcoin.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "230c405f51afaf6c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/ethereum.py",
+      "object": "apps/specops/cryptotx/chains/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/ethereum.py",
+        "via": "specops.cryptotx.chains.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8af9f7f7f522b6a4",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/ethereum.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/ethereum.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "77235fa4b0e0e1f1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/ethereum.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/ethereum.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "53c46fa5a4cdc17f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/ethereum.py",
+      "object": "apps/specops/cryptotx/hd.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/ethereum.py",
+        "via": "specops.cryptotx.hd"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7d1db59329f09a0c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/ethereum.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/ethereum.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4e09ab10675903af",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/registry.py",
+      "object": "apps/specops/cryptotx/chains/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/registry.py",
+        "via": "specops.cryptotx.chains.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fd6027f44d093bfe",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/registry.py",
+      "object": "apps/specops/cryptotx/chains/bitcoin.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/registry.py",
+        "via": "specops.cryptotx.chains.bitcoin"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "109fa44c44a32057",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/registry.py",
+      "object": "apps/specops/cryptotx/chains/ethereum.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/registry.py",
+        "via": "specops.cryptotx.chains.ethereum"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7f12bc30aef06a28",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/registry.py",
+      "object": "apps/specops/cryptotx/chains/tron.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/registry.py",
+        "via": "specops.cryptotx.chains.tron"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9e15e0ac0459e71a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/registry.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/registry.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "42134066845fd0c0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/registry.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/registry.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "be72870513e2e3a5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/tron.py",
+      "object": "apps/specops/cryptotx/chains/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/tron.py",
+        "via": "specops.cryptotx.chains.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "caba29c2f6c8028e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/tron.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/tron.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "765bbdb7bd229c46",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/tron.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/tron.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "893530a6c90d0650",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/tron.py",
+      "object": "apps/specops/cryptotx/hd.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/tron.py",
+        "via": "specops.cryptotx.hd"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7b90de909b3bb843",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/chains/tron.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/chains/tron.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "dca797b69dc973ec",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/cli.py",
+      "object": "apps/specops/cryptotx/approvals.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/cli.py",
+        "via": "specops.cryptotx.approvals"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "97d11475babfad05",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/cli.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/cli.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0ee6879cd2d09c3a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/cli.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/cli.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5aed2c2f9de7604d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/cli.py",
+      "object": "apps/specops/cryptotx/executor.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/cli.py",
+        "via": "specops.cryptotx.executor"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "81e740db0fdba137",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/cli.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/cli.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a82457a47011566f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/cli.py",
+      "object": "apps/specops/cryptotx/store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/cli.py",
+        "via": "specops.cryptotx.store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3116bb8c8a0feb61",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/cli.py",
+      "object": "apps/specops/cryptotx/vault.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/cli.py",
+        "via": "specops.cryptotx.vault"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2d7515cf92ad61f1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/config.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/config.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ffe7be213c058318",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/approvals.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.approvals"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9344cc7a439f6add",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/chains/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.chains.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d1660e6d2ccc594b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/chains/registry.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.chains.registry"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c5aef5cc9cfdd73a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a67adf30cd3f0a65",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "92e5072ff25d2290",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/hd.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.hd"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5eb575371d3153df",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d90e75ba4e184e27",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "319a9ce01b2299d2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.swaps.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "19f29adc40f6fc66",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/swaps/router.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.swaps.router"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8e076286718617d0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/executor.py",
+      "object": "apps/specops/cryptotx/vault.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/executor.py",
+        "via": "specops.cryptotx.vault"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b69f9d146c72a525",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/hd.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/hd.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0f27bd2501a07083",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/hd.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/hd.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "46eddf87c5056948",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/models.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/models.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "46eddf87c5056948",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/models.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/models.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "46eddf87c5056948",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/models.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/models.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bf611c2614620360",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/planner.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/planner.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "032977df65d05578",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/planner.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/planner.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c5822dd9c16983f6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/store.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/store.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f7bfdb1f27db560d",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/store.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/store.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "71b87177193919cb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/__init__.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/__init__.py",
+        "via": "specops.cryptotx.swaps.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7f239895440fd8d7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/__init__.py",
+      "object": "apps/specops/cryptotx/swaps/evm.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/__init__.py",
+        "via": "specops.cryptotx.swaps.evm"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "88ef6b5aa25b7863",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/__init__.py",
+      "object": "apps/specops/cryptotx/swaps/router.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/__init__.py",
+        "via": "specops.cryptotx.swaps.router"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a13eea506b93e160",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/__init__.py",
+      "object": "apps/specops/cryptotx/swaps/thorchain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/__init__.py",
+        "via": "specops.cryptotx.swaps.thorchain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ee9d374646641f55",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/__init__.py",
+      "object": "apps/specops/cryptotx/swaps/tron.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/__init__.py",
+        "via": "specops.cryptotx.swaps.tron"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2ba83c2689f2e416",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/base.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/base.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "57ec2054372e1e9a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/evm.py",
+      "object": "apps/specops/cryptotx/chains/ethereum.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/evm.py",
+        "via": "specops.cryptotx.chains.ethereum"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d3b0366c809c2ddd",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/evm.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/evm.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b9ffb10e580fd22a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/evm.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/evm.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4779e4d1c5a8d59c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/evm.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/evm.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fc795e436b616cf0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/evm.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/evm.py",
+        "via": "specops.cryptotx.swaps.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8e48a526f029cfef",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/chains/ethereum.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.chains.ethereum"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8f11f462181fd368",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/chains/registry.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.chains.registry"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5e81ace700336373",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/chains/tron.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.chains.tron"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9acf71b4308eb962",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6103373857f67fa1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3361808bcce42cf6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "86afc025b030925e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.swaps.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3697901452ac1ce1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/swaps/evm.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.swaps.evm"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "105822334e7c5fb6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/swaps/thorchain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.swaps.thorchain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9bcd2801a9912c24",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/router.py",
+      "object": "apps/specops/cryptotx/swaps/tron.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/router.py",
+        "via": "specops.cryptotx.swaps.tron"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "45f47f57489b9612",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/thorchain.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/thorchain.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3e7f11643132835b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/thorchain.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/thorchain.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "882f99b257617f18",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/thorchain.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/thorchain.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b44dd6d217b77235",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/thorchain.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/thorchain.py",
+        "via": "specops.cryptotx.swaps.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f3dff8c51afc09ae",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/tron.py",
+      "object": "apps/specops/cryptotx/chains/tron.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/tron.py",
+        "via": "specops.cryptotx.chains.tron"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7434aee326c2cb66",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/tron.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/tron.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "16af38f117d9445c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/tron.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/tron.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ff84b7d247215ea2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/tron.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/tron.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "099a93d0d3eda9cb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/swaps/tron.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/swaps/tron.py",
+        "via": "specops.cryptotx.swaps.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "634df9b207986e19",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/vault.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/vault.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "68fd9720c3dbb857",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/vault.py",
+      "object": "apps/specops/cryptotx/hd.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/vault.py",
+        "via": "specops.cryptotx.hd"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0afc00edc6405d6a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/cryptotx/vault.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/cryptotx/vault.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "db5ec74f635f201c",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/specops/engagement/__init__.py",
@@ -35337,6 +36754,292 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "085b8fae87409a48",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/__init__.py",
+      "object": "apps/specops/lab/artifacts.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/__init__.py",
+        "via": "specops.lab.artifacts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "19acf0d11790f4be",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/__init__.py",
+      "object": "apps/specops/lab/audit.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/__init__.py",
+        "via": "specops.lab.audit"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7d47ea17a7cc7ada",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/__init__.py",
+      "object": "apps/specops/lab/boundary.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/__init__.py",
+        "via": "specops.lab.boundary"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6fe67f2f0781e0bc",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/__init__.py",
+      "object": "apps/specops/lab/engine.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/__init__.py",
+        "via": "specops.lab.engine"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0be580b497a06e51",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/__init__.py",
+      "object": "apps/specops/lab/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/__init__.py",
+        "via": "specops.lab.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "30a973b82936bea2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/__init__.py",
+      "object": "apps/specops/lab/readiness.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/__init__.py",
+        "via": "specops.lab.readiness"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "91ca530f21fc41e6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/artifacts.py",
+      "object": "apps/specops/lab/audit.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/artifacts.py",
+        "via": "specops.lab.audit"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "84562b98972396eb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/artifacts.py",
+      "object": "apps/specops/lab/boundary.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/artifacts.py",
+        "via": "specops.lab.boundary"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5a923e1666603049",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/artifacts.py",
+      "object": "apps/specops/lab/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/artifacts.py",
+        "via": "specops.lab.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2291da7b76f2daf1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/audit.py",
+      "object": "apps/specops/lab/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/audit.py",
+        "via": "specops.lab.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "39dd4e2bbdbc0223",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/boundary.py",
+      "object": "apps/specops/lab/audit.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/boundary.py",
+        "via": "specops.lab.audit"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ac3d76ef110f5850",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/boundary.py",
+      "object": "apps/specops/lab/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/boundary.py",
+        "via": "specops.lab.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c7689bf0a85c25e3",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/emulation.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.emulation"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c0cfc1bf81663c73",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/engagement/fabric.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.engagement.fabric"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "13980622d612ef78",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/lab/artifacts.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.lab.artifacts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "90c45c2a4d0798bb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/lab/audit.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.lab.audit"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e180a87ea163a2f6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/lab/boundary.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.lab.boundary"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d6f5841375d297a8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/lab/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.lab.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f0b5b4af2d21d0b0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/lab/readiness.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.lab.readiness"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7a5b2ee6a22b2d12",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/roe/gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.roe.gate"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7a5b2ee6a22b2d12",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/engine.py",
+      "object": "apps/specops/roe/gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/engine.py",
+        "via": "specops.roe.gate"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a4ab8dd5e0a29082",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/lab/readiness.py",
+      "object": "apps/specops/lab/phishingclub.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/lab/readiness.py",
+        "via": "specops.lab.phishingclub"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "5243830afa7929fb",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/specops/phishing.py",
@@ -35385,6 +37088,383 @@
       "evidence": {
         "file": "apps/specops/tests/conftest.py",
         "via": "specops.ghostline.runtime"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d4581666bb3f7a94",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_api.py",
+      "object": "apps/control-plane/api/main.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_api.py",
+        "via": "api.main"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7c65a1bb7e11c36c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_api.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_api.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3c366c4ac9de4c90",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/approvals.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py",
+        "via": "specops.cryptotx.approvals"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fbcb377435e31d7c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b78f08cc1350aa89",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/hd.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py",
+        "via": "specops.cryptotx.hd"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "34e6e001c3091efb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "34e6e001c3091efb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b22ce35f50714b07",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/planner.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py",
+        "via": "specops.cryptotx.planner"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c157dd1e1dd6dc8f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py",
+        "via": "specops.cryptotx.store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b51b50c7e8d5f816",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/vault.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py",
+        "via": "specops.cryptotx.vault"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "268162dd7728afb1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/approvals.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.approvals"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "dec40f30c413adcc",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/chains/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.chains.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d5a55e683bc78bf2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "13aa6bd906b7d925",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1405faff04485c32",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/executor.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.executor"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "da5ae074717bf01c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e826f1f71cc3ac28",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/planner.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.planner"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "885bda637b1bad45",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/store.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d5a39b68976f0188",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.swaps.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0b5fcfe5cd26f93f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/swaps/router.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.swaps.router"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "93212193df3e1be3",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/vault.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py",
+        "via": "specops.cryptotx.vault"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "aadc266042611e91",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py",
+        "via": "specops.cryptotx.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0022e5dffc1fa4bf",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py",
+        "via": "specops.cryptotx.errors"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5992fabed8f5602e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py",
+        "via": "specops.cryptotx.models"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "86055ca4e892cc10",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py",
+        "via": "specops.cryptotx.swaps.base"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c1bff51a55ab9654",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/evm.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py",
+        "via": "specops.cryptotx.swaps.evm"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f92d6b43f80c02b8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/router.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py",
+        "via": "specops.cryptotx.swaps.router"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8393aab1c3b635f2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/thorchain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py",
+        "via": "specops.cryptotx.swaps.thorchain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2cf80f42fe718207",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/tron.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py",
+        "via": "specops.cryptotx.swaps.tron"
       },
       "confidence": 1.0
     },
@@ -35675,6 +37755,110 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "4ba211ca5a0120c2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/engagement/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py",
+        "via": "specops.engagement.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "997843dcbeed8517",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/engagement/fabric.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py",
+        "via": "specops.engagement.fabric"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3ef46cafab448a12",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/lab/audit.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py",
+        "via": "specops.lab.audit"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6a36bf06fa0b3374",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/lab/boundary.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py",
+        "via": "specops.lab.boundary"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "af1e45d63f75fb39",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/lab/engine.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py",
+        "via": "specops.lab.engine"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7afe9fa10af7e2a5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/roe/gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py",
+        "via": "specops.roe.gate"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7afe9fa10af7e2a5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/roe/gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py",
+        "via": "specops.roe.gate"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "86e42b222e3ca5f0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_lab_phishingclub.py",
+      "object": "apps/specops/lab/phishingclub.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_phishingclub.py",
+        "via": "specops.lab.phishingclub"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "522ab0378a1cc58b",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/specops/tests/test_roe_gate.py",
@@ -35697,6 +37881,84 @@
       "evidence": {
         "file": "apps/specops/tests/test_specops_ghostline_routers.py",
         "via": "api.main"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1ccefebc9cf91357",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/control-plane/api/main.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py",
+        "via": "api.main"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9f0c9b5bf1804927",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py",
+        "via": "api.routes.specops_lab"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f44d4a571e8b1dcd",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/specops/engagement/config.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py",
+        "via": "specops.engagement.config"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ba47f9f3ed2e74e5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/specops/engagement/fabric.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py",
+        "via": "specops.engagement.fabric"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b32efac48c1107a1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/specops/lab/audit.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py",
+        "via": "specops.lab.audit"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "251b979273de1dd5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/specops/lab/engine.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py",
+        "via": "specops.lab.engine"
       },
       "confidence": 1.0
     },
@@ -37391,6 +39653,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "935a82c60acd58ea",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /aitm/sessions",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 199
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1e61e2feb71d119b",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /aitm/sessions/{session_id}",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 205
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "a8eb7ed9c0d12c0c",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "GET /analytics",
@@ -37413,6 +39701,32 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ghostline.py",
         "line": 424
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a73f4d8e7426505d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /audit",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 306
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "67441557050ed446",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /audit",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 163
       },
       "confidence": 1.0
     },
@@ -37495,6 +39809,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "bd29e711b1d9f24c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /campaigns",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 183
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "c470dffe855af34e",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "GET /campaigns/{campaign_id}",
@@ -37504,6 +39831,19 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_engagement.py",
         "line": 123
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ad99b9191efcd494",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /campaigns/{campaign_id}",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 189
       },
       "confidence": 1.0
     },
@@ -37703,6 +40043,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "70ffaefe80768a7d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /phishingclub/health",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 138
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "001ffe6376eebccb",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /plans",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 213
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "4133b58a1b0ee03a",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "GET /plans",
@@ -37712,6 +40078,19 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_emulation.py",
         "line": 73
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9b4df55932e08898",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /plans/{plan_id}",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 219
       },
       "confidence": 1.0
     },
@@ -37794,6 +40173,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "ea0e33f31f8b6d0c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /reports/{campaign_id}",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 215
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "929a0cc2b65535be",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "GET /results/{result_id}",
@@ -37833,6 +40225,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "ec8da25a60a5ec7c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /runs",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 282
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1c827c097d1bd671",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /runs/{run_id}",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 294
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "5c4cc6a1a356e371",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "GET /search/badge",
@@ -37842,6 +40260,19 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/fabric.py",
         "line": 362
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3be35aef413a4312",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /senders",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 177
       },
       "confidence": 1.0
     },
@@ -37868,6 +40299,19 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/platform.py",
         "line": 107
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fb51841a99c94771",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /status",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 114
       },
       "confidence": 1.0
     },
@@ -37920,6 +40364,19 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_engagement.py",
         "line": 95
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f785f626db459821",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /templates",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 171
       },
       "confidence": 1.0
     },
@@ -38470,6 +40927,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "f3ec44dec2446e10",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /aitm/sessions",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 297
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ab07f1711024505b",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /aitm/sessions/{session_id}/capture",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 315
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "cddbde65e3a7349d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /aitm/sessions/{session_id}/stop",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 333
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "fed78c189ac2d0c1",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /analyze",
@@ -38492,6 +40988,32 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_engagement.py",
         "line": 210
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "37bfd29141f9db7c",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /approvals",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 231
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "30cc65aac2464556",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /assessments",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 357
       },
       "confidence": 1.0
     },
@@ -38587,6 +41109,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "6c68b0c796e7c8be",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /campaigns",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 265
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "4f36971e78da4f89",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /campaigns",
@@ -38596,6 +41131,19 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_phishing.py",
         "line": 60
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5571b0e64e032d68",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /campaigns/{campaign_id}/launch",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 285
       },
       "confidence": 1.0
     },
@@ -38899,6 +41447,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "77eb513e04a7cf7d",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /kill-switch",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 391
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "1895e4fa83cfb9bf",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /measures",
@@ -38977,6 +41538,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "56e75272c6e80a4e",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /operations",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 343
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "652b203bb7933df0",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /partitions/resolve",
@@ -39012,6 +41586,32 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/science_hypotheses.py",
         "line": 127
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5dc7612c40e412e0",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /plans",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 198
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ba6d6a7991eac0fa",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /plans/{plan_id}/runs",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 256
       },
       "confidence": 1.0
     },
@@ -39094,6 +41694,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "fd6607ea9101db0a",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /reports/{campaign_id}",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 371
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e06cbf0e443c8490",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /reports/{campaign_id}/export",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 381
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7539ea86a2119c0f",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /reset",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 411
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "89830935ce818dd0",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /robustness",
@@ -39159,6 +41798,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "340badb33a3d79d7",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /senders",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 246
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "c6ac77747aa2c47e",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /series",
@@ -39168,6 +41820,32 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/science_temporal.py",
         "line": 60
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9e00487ae3031ea8",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /teardown",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 401
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4acdf4d07b14f7f9",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /templates",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_lab.py",
+        "line": 228
       },
       "confidence": 1.0
     },
@@ -39250,6 +41928,32 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "cf5230db52b0c903",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /vault",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 127
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b0dfbedf916cea17",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /vault/unlock",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 152
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "9a4c56c52219d1a9",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "POST /voices",
@@ -39272,6 +41976,32 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ghostline.py",
         "line": 235
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "77ae46d7fc616d89",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /wallets",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 162
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5e295497d771ec08",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "POST /wallets/list",
+      "object": "apps/control-plane/api/routes/specops_cryptotx.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "line": 188
       },
       "confidence": 1.0
     },
@@ -39751,7 +42481,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/003-donor-code-integration/spec.md"
+        "spec": "specs\\003-donor-code-integration\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39763,7 +42493,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/004-donor-coverage-complete/spec.md"
+        "spec": "specs\\004-donor-coverage-complete\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39775,7 +42505,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/004-donor-coverage-complete/spec.md"
+        "spec": "specs\\004-donor-coverage-complete\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39787,7 +42517,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/004-donor-coverage-complete/spec.md"
+        "spec": "specs\\004-donor-coverage-complete\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39799,7 +42529,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/004-donor-coverage-complete/spec.md"
+        "spec": "specs\\004-donor-coverage-complete\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39811,7 +42541,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39823,7 +42553,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39835,7 +42565,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39847,7 +42577,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39859,7 +42589,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39871,7 +42601,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39883,7 +42613,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39895,7 +42625,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39907,7 +42637,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39919,7 +42649,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39931,7 +42661,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39943,7 +42673,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39955,7 +42685,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39967,7 +42697,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39979,7 +42709,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/005-donor-core-subsystems/spec.md"
+        "spec": "specs\\005-donor-core-subsystems\\spec.md"
       },
       "confidence": 0.7
     },
@@ -39991,7 +42721,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40003,7 +42733,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40015,7 +42745,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40027,7 +42757,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40039,7 +42769,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40051,7 +42781,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40063,7 +42793,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40075,7 +42805,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40087,7 +42817,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40099,7 +42829,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40111,7 +42841,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40123,7 +42853,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40135,7 +42865,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40147,7 +42877,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40159,7 +42889,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40171,7 +42901,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40183,7 +42913,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40195,7 +42925,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40207,7 +42937,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40219,7 +42949,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40231,7 +42961,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40243,7 +42973,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40255,7 +42985,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40267,7 +42997,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40279,7 +43009,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40291,7 +43021,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40303,7 +43033,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40315,7 +43045,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40327,7 +43057,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40339,7 +43069,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40351,7 +43081,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40363,7 +43093,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40375,7 +43105,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40387,7 +43117,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40399,7 +43129,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40411,7 +43141,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40423,7 +43153,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40435,7 +43165,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        "spec": "specs\\007-deterministic-entity-extraction-stack\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40447,7 +43177,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/008-discovery-search-fabric/spec.md"
+        "spec": "specs\\008-discovery-search-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40459,7 +43189,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/008-discovery-search-fabric/spec.md"
+        "spec": "specs\\008-discovery-search-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40471,7 +43201,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/009-donor-full-catalogue/spec.md"
+        "spec": "specs\\009-donor-full-catalogue\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40483,7 +43213,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/009-donor-full-catalogue/spec.md"
+        "spec": "specs\\009-donor-full-catalogue\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40495,7 +43225,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/009-donor-full-catalogue/spec.md"
+        "spec": "specs\\009-donor-full-catalogue\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40507,7 +43237,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/009-donor-full-catalogue/spec.md"
+        "spec": "specs\\009-donor-full-catalogue\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40519,7 +43249,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/009-donor-full-catalogue/spec.md"
+        "spec": "specs\\009-donor-full-catalogue\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40531,7 +43261,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40543,7 +43273,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40555,7 +43285,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40567,7 +43297,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40579,7 +43309,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40591,7 +43321,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40603,7 +43333,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40615,7 +43345,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40627,7 +43357,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40639,7 +43369,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40651,7 +43381,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40663,7 +43393,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40675,7 +43405,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40687,7 +43417,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40699,7 +43429,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40711,7 +43441,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40723,7 +43453,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40735,7 +43465,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40747,7 +43477,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40759,7 +43489,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40771,7 +43501,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40783,7 +43513,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40795,7 +43525,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40807,7 +43537,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40819,7 +43549,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40831,7 +43561,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40843,7 +43573,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40855,7 +43585,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40867,7 +43597,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40879,7 +43609,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40891,7 +43621,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40903,7 +43633,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40915,7 +43645,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40927,7 +43657,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40939,7 +43669,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40951,7 +43681,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40963,7 +43693,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40975,7 +43705,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40987,7 +43717,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -40999,7 +43729,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41011,7 +43741,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41023,7 +43753,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/010-zero-layer-contact-harvesting/spec.md"
+        "spec": "specs\\010-zero-layer-contact-harvesting\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41035,7 +43765,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/012-dynamic-entity-invariant/spec.md"
+        "spec": "specs\\012-dynamic-entity-invariant\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41047,7 +43777,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/012-dynamic-entity-invariant/spec.md"
+        "spec": "specs\\012-dynamic-entity-invariant\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41059,7 +43789,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/014-temporal-materialization/spec.md"
+        "spec": "specs\\014-temporal-materialization\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41071,7 +43801,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/014-temporal-materialization/spec.md"
+        "spec": "specs\\014-temporal-materialization\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41083,7 +43813,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/015-worldline-reconstruction/spec.md"
+        "spec": "specs\\015-worldline-reconstruction\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41095,7 +43825,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/015-worldline-reconstruction/spec.md"
+        "spec": "specs\\015-worldline-reconstruction\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41107,7 +43837,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/015-worldline-reconstruction/spec.md"
+        "spec": "specs\\015-worldline-reconstruction\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41119,7 +43849,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/016-relation-evidence-graph-fabric/spec.md"
+        "spec": "specs\\016-relation-evidence-graph-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41131,7 +43861,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/016-relation-evidence-graph-fabric/spec.md"
+        "spec": "specs\\016-relation-evidence-graph-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41143,7 +43873,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/016-relation-evidence-graph-fabric/spec.md"
+        "spec": "specs\\016-relation-evidence-graph-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41155,7 +43885,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/016-relation-evidence-graph-fabric/spec.md"
+        "spec": "specs\\016-relation-evidence-graph-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41167,7 +43897,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/016-relation-evidence-graph-fabric/spec.md"
+        "spec": "specs\\016-relation-evidence-graph-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41179,7 +43909,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/016-relation-evidence-graph-fabric/spec.md"
+        "spec": "specs\\016-relation-evidence-graph-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41191,7 +43921,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/016-relation-evidence-graph-fabric/spec.md"
+        "spec": "specs\\016-relation-evidence-graph-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41203,7 +43933,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/017-semantic-fabric/spec.md"
+        "spec": "specs\\017-semantic-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41215,7 +43945,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/018-world-substrate/spec.md"
+        "spec": "specs\\018-world-substrate\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41227,7 +43957,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/018-world-substrate/spec.md"
+        "spec": "specs\\018-world-substrate\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41239,7 +43969,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/018-world-substrate/spec.md"
+        "spec": "specs\\018-world-substrate\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41251,7 +43981,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/018-world-substrate/spec.md"
+        "spec": "specs\\018-world-substrate\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41263,7 +43993,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/019-universal-relation-extraction/spec.md"
+        "spec": "specs\\019-universal-relation-extraction\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41275,7 +44005,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/019-universal-relation-extraction/spec.md"
+        "spec": "specs\\019-universal-relation-extraction\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41287,7 +44017,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/019-universal-relation-extraction/spec.md"
+        "spec": "specs\\019-universal-relation-extraction\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41299,7 +44029,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/021-entity-relation-extraction-finalization/spec.md"
+        "spec": "specs\\021-entity-relation-extraction-finalization\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41311,7 +44041,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/023-acquisition-integration-searxng/spec.md"
+        "spec": "specs\\023-acquisition-integration-searxng\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41323,7 +44053,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/023-acquisition-integration-searxng/spec.md"
+        "spec": "specs\\023-acquisition-integration-searxng\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41335,7 +44065,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/023-acquisition-integration-searxng/spec.md"
+        "spec": "specs\\023-acquisition-integration-searxng\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41347,7 +44077,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41359,7 +44089,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41371,7 +44101,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41383,7 +44113,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41395,7 +44125,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41407,7 +44137,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41419,7 +44149,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41431,7 +44161,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41443,7 +44173,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41455,7 +44185,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41467,7 +44197,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41479,7 +44209,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41491,7 +44221,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41503,7 +44233,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41515,7 +44245,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41527,7 +44257,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41539,7 +44269,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41551,7 +44281,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41563,7 +44293,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41575,7 +44305,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41587,7 +44317,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41599,7 +44329,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41611,7 +44341,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41623,7 +44353,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/024-context-driven-continuous-intelligence/spec.md"
+        "spec": "specs\\024-context-driven-continuous-intelligence\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41635,7 +44365,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41647,7 +44377,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41659,7 +44389,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41671,7 +44401,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41683,7 +44413,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41695,7 +44425,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41707,7 +44437,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41719,7 +44449,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41731,7 +44461,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41743,7 +44473,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41755,7 +44485,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41767,7 +44497,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41779,7 +44509,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41791,7 +44521,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41803,7 +44533,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41815,7 +44545,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41827,7 +44557,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41839,7 +44569,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41851,7 +44581,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41863,7 +44593,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41875,7 +44605,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41887,7 +44617,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41899,7 +44629,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41911,7 +44641,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41923,7 +44653,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41935,7 +44665,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41947,7 +44677,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41959,7 +44689,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41971,7 +44701,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41983,7 +44713,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -41995,7 +44725,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/025-context-reality-approximation-engine/spec.md"
+        "spec": "specs\\025-context-reality-approximation-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42007,7 +44737,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/026-universal-context-engine/spec.md"
+        "spec": "specs\\026-universal-context-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42019,7 +44749,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/026-universal-context-engine/spec.md"
+        "spec": "specs\\026-universal-context-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42031,7 +44761,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/026-universal-context-engine/spec.md"
+        "spec": "specs\\026-universal-context-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42043,7 +44773,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/026-universal-context-engine/spec.md"
+        "spec": "specs\\026-universal-context-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42055,7 +44785,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/026-universal-context-engine/spec.md"
+        "spec": "specs\\026-universal-context-engine\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42067,7 +44797,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/027-ci-specops-fabric/spec.md"
+        "spec": "specs\\027-ci-specops-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42079,7 +44809,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/027-ci-specops-fabric/spec.md"
+        "spec": "specs\\027-ci-specops-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42091,7 +44821,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/027-ci-specops-fabric/spec.md"
+        "spec": "specs\\027-ci-specops-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42103,7 +44833,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/027-ci-specops-fabric/spec.md"
+        "spec": "specs\\027-ci-specops-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42115,7 +44845,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/027-ci-specops-fabric/spec.md"
+        "spec": "specs\\027-ci-specops-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42127,7 +44857,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/027-ci-specops-fabric/spec.md"
+        "spec": "specs\\027-ci-specops-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42139,7 +44869,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/027-ci-specops-fabric/spec.md"
+        "spec": "specs\\027-ci-specops-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42151,7 +44881,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/027-ci-specops-fabric/spec.md"
+        "spec": "specs\\027-ci-specops-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42163,7 +44893,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42175,7 +44905,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42187,7 +44917,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42199,7 +44929,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42211,7 +44941,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42223,7 +44953,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42235,7 +44965,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42247,7 +44977,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42259,7 +44989,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42271,7 +45001,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42283,7 +45013,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42295,7 +45025,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42307,7 +45037,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42319,7 +45049,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42331,7 +45061,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42343,7 +45073,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42355,7 +45085,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42367,7 +45097,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42379,7 +45109,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42391,7 +45121,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42403,7 +45133,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42415,7 +45145,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42427,7 +45157,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42439,7 +45169,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/030-global-platform-upgrade/spec.md"
+        "spec": "specs\\030-global-platform-upgrade\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42451,7 +45181,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/031-ghostline-vishing-fabric/spec.md"
+        "spec": "specs\\031-ghostline-vishing-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42463,7 +45193,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/031-ghostline-vishing-fabric/spec.md"
+        "spec": "specs\\031-ghostline-vishing-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42475,7 +45205,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/031-ghostline-vishing-fabric/spec.md"
+        "spec": "specs\\031-ghostline-vishing-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42487,7 +45217,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/031-ghostline-vishing-fabric/spec.md"
+        "spec": "specs\\031-ghostline-vishing-fabric\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42499,7 +45229,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/032-global-upgrade-execution/spec.md"
+        "spec": "specs\\032-global-upgrade-execution\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42511,7 +45241,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/032-global-upgrade-execution/spec.md"
+        "spec": "specs\\032-global-upgrade-execution\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42523,7 +45253,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/032-global-upgrade-execution/spec.md"
+        "spec": "specs\\032-global-upgrade-execution\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42535,7 +45265,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/032-global-upgrade-execution/spec.md"
+        "spec": "specs\\032-global-upgrade-execution\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42547,7 +45277,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/032-global-upgrade-execution/spec.md"
+        "spec": "specs\\032-global-upgrade-execution\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42559,7 +45289,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/032-global-upgrade-execution/spec.md"
+        "spec": "specs\\032-global-upgrade-execution\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42571,7 +45301,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/032-global-upgrade-execution/spec.md"
+        "spec": "specs\\032-global-upgrade-execution\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42583,7 +45313,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/032-global-upgrade-execution/spec.md"
+        "spec": "specs\\032-global-upgrade-execution\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42595,7 +45325,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42607,7 +45337,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42619,7 +45349,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42631,7 +45361,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42643,7 +45373,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42655,7 +45385,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42667,7 +45397,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42679,7 +45409,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42691,7 +45421,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42703,7 +45433,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42715,7 +45445,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42727,7 +45457,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42739,7 +45469,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42751,7 +45481,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42763,7 +45493,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42775,7 +45505,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42787,7 +45517,7 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
       },
       "confidence": 0.7
     },
@@ -42799,7 +45529,67 @@
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {
-        "spec": "specs/034-person-research-case/spec.md"
+        "spec": "specs\\034-person-research-case\\spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "c76496fb4a13efa5",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "036-phishingclub-specops-department",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs\\036-phishingclub-specops-department\\spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "8c146efaf5cb2b17",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "036-phishingclub-specops-department",
+      "object": "apps/specops/lab/__init__.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs\\036-phishingclub-specops-department\\spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "461a6bc9520583e0",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "036-phishingclub-specops-department",
+      "object": "apps/specops/lab/models.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs\\036-phishingclub-specops-department\\spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "87c659e781196ee8",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "036-phishingclub-specops-department",
+      "object": "apps/specops/tests/test_lab_engine.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs\\036-phishingclub-specops-department\\spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "03a6c745dd4b30d3",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "036-phishingclub-specops-department",
+      "object": "apps/specops/tests/test_specops_lab_router.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs\\036-phishingclub-specops-department\\spec.md"
       },
       "confidence": 0.7
     },
@@ -43184,6 +45974,18 @@
       "method": "filesystem",
       "evidence": {
         "file": "specs/034-person-research-case/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "22967ee1f7d352a8",
+      "kind": "SPEC_EXISTS",
+      "subject": "036-phishingclub-specops-department",
+      "object": "specs/036-phishingclub-specops-department/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/036-phishingclub-specops-department/spec.md"
       },
       "confidence": 1.0
     },
@@ -54924,6 +57726,342 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "c5c28f73bcc680c2",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_api.py",
+      "object": "apps/control-plane/api/main.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c32202f5ede6b1fa",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_api.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3c1125ac938fe11f",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "156ed768dc9047dc",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/approvals.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e745dff074d73c2a",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3fd79e5f1bb4c44f",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1a751eea1650b5f5",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/planner.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f22c1738efe34a35",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/store.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6b4d491a5a0fc0e5",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_core.py",
+      "object": "apps/specops/cryptotx/vault.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_core.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ca26ba48e9c1082a",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/approvals.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "51e57fd404edc47d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/chains/base.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "853458f0d36a2603",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "40faf2d96ea5279c",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5fabc8c9c6a52f57",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/executor.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "51fa25c5681e49c3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "690327ebf04c911f",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/planner.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "289c36aa05143dc2",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/store.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "363104b8d268a4c2",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ec67d30724089874",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/swaps/router.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1482c0d10d4b06d3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_executor.py",
+      "object": "apps/specops/cryptotx/vault.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_executor.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "70e312716e1a745f",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/config.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b8c34f89cdec28a3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/errors.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2e9cf978c0370a27",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/models.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "85c7c8b4e5fd96c0",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/base.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "93c8befeb241102d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/evm.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a1cdbe638384a657",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/router.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "889bdd223964f787",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/thorchain.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9a6ed4e7ce11b7bc",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_cryptotx_swaps.py",
+      "object": "apps/specops/cryptotx/swaps/tron.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_cryptotx_swaps.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "608558aed5bc9d67",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/specops/tests/test_engagement.py",
@@ -55044,6 +58182,90 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "c3c2d35d23d92e48",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/engagement/config.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fd75b0324d41a11c",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/engagement/fabric.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "764c090dae8a9dc5",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/lab/audit.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bb45aab88389239d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/lab/boundary.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4badf069b114c4d6",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/lab/engine.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "dd5b8196ca2faca4",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_lab_engine.py",
+      "object": "apps/specops/roe/gate.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_engine.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c089c2173dd6a72b",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_lab_phishingclub.py",
+      "object": "apps/specops/lab/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_lab_phishingclub.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "38b0f022cd4a09b5",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/specops/tests/test_roe_gate.py",
@@ -55064,6 +58286,78 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/specops/tests/test_specops_ghostline_routers.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bf68b351191caa36",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/control-plane/api/main.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "cf682137b223b01c",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/control-plane/api/routes/specops_lab.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b60703f73f9d7eaa",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/specops/engagement/config.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c99e84e10d817dd9",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/specops/engagement/fabric.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2caf54fe12162c22",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/specops/lab/audit.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b6ab21398535046e",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops/tests/test_specops_lab_router.py",
+      "object": "apps/specops/lab/engine.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops/tests/test_specops_lab_router.py"
       },
       "confidence": 1.0
     },

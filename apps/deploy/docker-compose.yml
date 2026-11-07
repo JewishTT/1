@@ -172,7 +172,10 @@ services:
       POSTGRES_SEEDS: postgres
     ports: ["7233:7233", "8088:8088"]
     healthcheck:
-      test: ["CMD", "tctl", "workflow", "list", "--pagesize", "1"]
+      # The auto-setup container advertises and binds the frontend on its own
+      # container address, not loopback (the startup log says so explicitly).
+      # tctl with no --address dials 127.0.0.1:7233 and can never pass.
+      test: ["CMD", "tctl", "--address", "temporal:7233", "workflow", "list", "--pagesize", "1"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -300,7 +303,23 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  # Feature 036: full Phishing Club donor. The platform reaches the admin API on
+  # https://127.0.0.1:8002 through /api/v1/specops/lab/phishingclub/*. The release
+  # image listens on 8000 (admin), 8080 (phishing HTTP) and 8443 (phishing HTTPS);
+  # publish HTTP/HTTPS on non-default host ports to avoid the Temporal UI and other
+  # platform services.
+  phishingclub:
+    profiles: ["phishingclub"]
+    image: ghcr.io/phishingclub/phishingclub@sha256:56e6736e8811a67a9b7381f26edb122ff970248e399b3f3504a3eacc78ce5e37
+    ports: ["127.0.0.1:8002:8000", "18080:8080", "18443:8443"]
+    volumes:
+      - phishingclub-config:/app/config
+      - phishingclub-data:/app/data
+    restart: unless-stopped
+
 volumes:
+  phishingclub-config:
+  phishingclub-data:
   minio-data:
   kafka-data:
   postgres-data:

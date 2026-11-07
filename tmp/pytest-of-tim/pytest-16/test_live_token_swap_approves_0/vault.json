@@ -1,0 +1,14 @@
+{
+  "cipher": {
+    "ciphertext": "R/lrfW6vtfDHPvxnjsD3OWeq4bRu68LiMbNVKLs7fsjWjbhyvFQz8qM8Cd9lOzF3ZJ9XD6jfYFwl6h9WjgF2yTX2TYObKpboLKaafD8CncQmJeqtuq7nnB6kYAl/aSHm5dPVXK06s+vURxLM2i5brEdw5SJBM2s6ov+eQmRwCOogantZMcFwYMQn9D1uygo/YgwL22bkJ3xsT8B1/PYJBUYdFlKNsqhsGoFBNKXbV6SlFTcdjzXEMgSEHw7AwSJpLppp9F7+sgMN5XrJkbNuzM65sTAlpbjwXQR8Em5po2Sbz56oyS4OBQqpGXb9cYtWNp6WAy6mp8AGMhqicfbgLkMumYr6ZLq0a8uCqyZXZoFKTJ1mTUtYlfqXawRymDtf+Wgl7MzOM9yO0Ilrt0g1QzJF/eJPy9ikYHL1pHB2rLxws8mdklV+mmiP720iB8JweHrofAvDOjuBAl5AGTMDcgl1GJaKXoswEz87Zt/B+xS9pqTSgY9qztFvqrmrdqDBZUseBoCMW6WcRGFS7e/GB2mGRkb4CsYx940eiCbG45wTxD0U3pBesu9k",
+    "nonce": "VzVfH1T/I6uvPJRe"
+  },
+  "kdf": {
+    "n": 4096,
+    "name": "scrypt",
+    "p": 1,
+    "r": 8,
+    "salt": "0bb741ysqvOBZb/F+ahQAQ=="
+  },
+  "version": 1
+}

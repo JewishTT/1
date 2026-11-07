@@ -1,0 +1,60 @@
+/* Red-Team Lab layout (Feature 036). Layout only; the department's visual
+ * vocabulary comes from ci.css and the UI 2.0 tokens. */
+
+.lab-canvas .ui-cicanvas-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lab-banner {
+  color: var(--ui-gold);
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.lab-button-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.lab-report-figures,
+.ui-cicanvas-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.lab-report-figures th,
+.lab-report-figures td,
+.ui-cicanvas-body table th,
+.ui-cicanvas-body table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-steel) 14%, transparent);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ui-cicanvas-body table th {
+  font-size: 0.62rem;
+  font-variant: all-small-caps;
+  letter-spacing: 0.12em;
+  color: var(--ui-text-muted);
+}
+
+.lab-export-body {
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--ui-steel) 14%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--bg-0) 45%, transparent);
+  white-space: pre-wrap;
+}

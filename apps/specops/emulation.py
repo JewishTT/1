@@ -247,6 +247,10 @@ class OperationRegistry:
     def get(self, operation_id: str) -> Operation | None:
         return self._ops.get(operation_id)
 
+    def operations(self) -> list[Operation]:
+        """All operations, for the department surfaces that scope them by tenant."""
+        return list(self._ops.values())
+
     def advance(self, operation_id: str) -> Operation | None:
         """Mark the next planned ability executed (a deterministic stand-in for a
         live agent reporting back). Sets state to `complete` when none remain."""

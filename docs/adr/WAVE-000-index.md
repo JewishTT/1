@@ -46,3 +46,9 @@ Per the v2 conflict rule — *024 wins on already-approved semantics; amend 025*
 It delivers decisions, not capability. Nothing in the platform runs differently because these
 twelve documents exist. The critical path to a working slice is unchanged and still starts at
 Phase A → B → **2S Slice-0**.
+
+## Later amendments
+
+| ADR | Record | File | Status |
+|---|---|---|---|
+| `ADR-0040` | Lab-only red-team exception (Feature 036; scoped to `/specops/lab`, expires 2027-11-01) | [ADR-0040](ADR-0040-lab-only-red-team-exception.md) | Accepted |

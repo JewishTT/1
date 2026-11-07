@@ -234,7 +234,7 @@ Constitution supersedes all other practices. Changes to architectural decisions 
 
 Compliance is verified on every PR/review. Rejected analysis outputs (admission rejections, TDA signals) are preserved with decision, reasons, score vectors, versions, and timestamps for replay. Source independence (copied/derived sources) is considered in evidence fusion; publication count is not treated as independent-source count.
 
-**Version**: 2.0.0 | **Ratified**: 2026-09-07 | **Last Amended**: 2026-10-17
+**Version**: 2.2.0 | **Ratified**: 2026-09-07 | **Last Amended**: 2026-11-02
 **Amendment log**:
 - 1.1.0 (2026-09-29) — donor reuse is the default, not an exception.
 - 1.2.0 (2026-10-02) — Technology Baseline: event backbone is the Kafka-compatible *protocol* with Redpanda as the pinned *runtime* (ADR-0026, Feature 024 D1=a).
@@ -243,6 +243,10 @@ Compliance is verified on every PR/review. Rejected analysis outputs (admission 
   Principles I–VII, the Domain Invariants, the Technology Baseline and the Additional Constraints are
   unchanged; P1–P15 bind them rather than restate them. Major bump because fifteen new binding
   obligations now constrain the acceptance gates.
+- 2.2.0 (2026-11-02) - feature `036-phishingclub-specops-department`. Removes the lab-only
+  exception (ADR-0040), its target/identity allowlist and runtime ratification gate. The
+  red-team module runs in full mode; every action stays bound by a confirmed RoE, artifact
+  encryption, retention, the audit chain and the kill switch.
 
 **Provenance note (2.0.0).** `plan.md`, `research.md §6` and `current-state-audit.md §2` each record
 `.specify/memory/constitution.md` as a 50-line unfilled template carrying `[PRINCIPLE_1_NAME]`,

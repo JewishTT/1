@@ -6,7 +6,7 @@
  * happens in the container components.
  */
 
-import { clientFor } from "./http";
+import { ApiError, clientFor } from "./http";
 
 const API_BASE = "/api/v1";
 
@@ -16,6 +16,25 @@ const API_BASE = "/api/v1";
 // error contracts, and all four merged `headers` before `...init`, which silently
 // dropped `Content-Type` whenever a caller passed its own headers. See lib/http.ts.
 const request = clientFor(API_BASE);
+
+const phishingClubRequest = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const res = await fetch(`${API_BASE}/specops/lab/phishingclub/api/v1${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+  });
+  const body = (await res.json().catch(() => null)) as
+    | { success?: boolean; data?: T; error?: string }
+    | null;
+  if (!res.ok || body?.success === false || !body) {
+    const detail = body?.error || body || res.statusText;
+    throw new ApiError(
+      res.status,
+      detail,
+      typeof detail === "string" ? detail : "Phishing Club request failed",
+    );
+  }
+  return body.data as T;
+};
 
 // ── Shared types ─────────────────────────────────────────────────
 
@@ -1012,6 +1031,129 @@ export const api = {
       body: JSON.stringify({ campaign_id: campaignId }),
     });
   },
+
+  // ── Red-Team Lab (Feature 036) ──────────────────────────────────────────
+  // `/api/v1/specops/lab/*` runs in full red-team mode, bound by a confirmed RoE. The
+  // overview is one call because the canvas renders one instrument; actions
+  // return the affected object and the caller refetches the overview.
+
+  labOverview(): Promise<LabOverviewWire> {
+    return request("/specops/lab");
+  },
+
+  labAudit(limit = 100): Promise<LabEnvelope<{ events: LabAuditEventWire[]; integrity: LabIntegrityWire }>> {
+    return request(`/specops/lab/audit?limit=${limit}`);
+  },
+
+  labCreateTemplate(body: {
+    name: string;
+    stages: string[];
+    assets?: string[];
+    variables?: Record<string, string>;
+  }): Promise<LabEnvelope<{ template: LabTemplateWire }>> {
+    return request("/specops/lab/templates", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  labCreateSender(body: {
+    name: string;
+    host: string;
+    tls?: boolean;
+    dns_ready?: boolean;
+    credential_ref?: string | null;
+  }): Promise<LabEnvelope<{ sender: LabSenderWire }>> {
+    return request("/specops/lab/senders", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  labCreateCampaign(body: {
+    name: string;
+    template_id?: string;
+    sender_id?: string | null;
+    roster: string[];
+    attack_mapping?: string[];
+    retention_days?: number;
+  }): Promise<LabEnvelope<{ campaign: LabCampaignWire }>> {
+    return request("/specops/lab/campaigns", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  labLaunchCampaign(
+    campaignId: string,
+    body: { roe_id: string },
+  ): Promise<LabEnvelope<{ campaign: LabCampaignWire }>> {
+    return request(`/specops/lab/campaigns/${encodeURIComponent(campaignId)}/launch`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  labGetCampaign(campaignId: string): Promise<LabEnvelope<{ campaign: LabCampaignWire }>> {
+    return request(`/specops/lab/campaigns/${encodeURIComponent(campaignId)}`);
+  },
+
+  labStartSession(body: {
+    mode: "reverse_proxy" | "remote_browser";
+    target_host: string;
+    roe_id: string;
+    retention_hours?: number;
+  }): Promise<LabEnvelope<{ session: LabSessionWire }>> {
+    return request("/specops/lab/aitm/sessions", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  labCapture(
+    sessionId: string,
+    body: { kind: LabArtifactKind; secret: string; label?: string },
+  ): Promise<LabEnvelope<{ artifact: LabArtifactWire }>> {
+    return request(`/specops/lab/aitm/sessions/${encodeURIComponent(sessionId)}/capture`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  labStopSession(sessionId: string): Promise<LabEnvelope<{ session: LabSessionWire }>> {
+    return request(`/specops/lab/aitm/sessions/${encodeURIComponent(sessionId)}/stop`, {
+      method: "POST",
+    });
+  },
+
+  labLaunchOperation(body: {
+    plan_id: string;
+    lab_fixture?: string;
+    roe_id: string;
+  }): Promise<LabEnvelope<{ operation: LabOperationWire }>> {
+    return request("/specops/lab/operations", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  labLinkAssessment(body: {
+    campaign_id: string;
+    operation_id: string;
+  }): Promise<LabEnvelope<{ assessment: LabAssessmentWire }>> {
+    return request("/specops/lab/assessments", { method: "POST", body: JSON.stringify(body) });
+  },
+
+  labGenerateReport(campaignId: string): Promise<LabEnvelope<{ report: LabReportWire }>> {
+    return request(`/specops/lab/reports/${encodeURIComponent(campaignId)}`, { method: "POST" });
+  },
+
+  labGetReport(campaignId: string): Promise<LabEnvelope<{ report: LabReportWire }>> {
+    return request(`/specops/lab/reports/${encodeURIComponent(campaignId)}`);
+  },
+
+  labExportReport(campaignId: string): Promise<LabEnvelope<{ export: LabExportWire }>> {
+    return request(`/specops/lab/reports/${encodeURIComponent(campaignId)}/export`, {
+      method: "POST",
+    });
+  },
+
+  labKillSwitch(): Promise<LabEnvelope<{ lab: LabStateWire; stopped_sessions: number; partial_campaigns: number }>> {
+    return request("/specops/lab/kill-switch", { method: "POST" });
+  },
+
+  labTeardown(): Promise<LabEnvelope<{ lab: LabStateWire; preserved: Record<string, number> }>> {
+    return request("/specops/lab/teardown", { method: "POST" });
+  },
+
+  labReset(): Promise<LabEnvelope<{ lab: LabStateWire }>> {
+    return request("/specops/lab/reset", { method: "POST" });
+  },
 };
 
 /**
@@ -1471,3 +1613,236 @@ export interface GlCampaignWire {
   campaign: GlCampaignFunnelWire;
   events: GlEngagementEventWire[];
 }
+
+// ── Red-Team Lab wire types (Feature 036) ───────────────────────────────────
+// One overview plus targeted mutations. `missing` names the blocker; it is
+// never a fabricated zero. Capture views carry a redacted preview and a
+// digest only — the plaintext never leaves the server.
+
+export type LabEnvelope<T> = {
+  served: string[];
+  missing: string[];
+  scope: "red-team";
+} & T;
+
+export type LabStatusWire = "ready" | "killed" | "torn_down";
+export type LabCampaignStateWire = "draft" | "ready" | "sending" | "partial" | "complete" | "refused";
+export type LabSessionStateWire = "running" | "stopped" | "denied" | "expired";
+export type LabArtifactKind = "cookie" | "token" | "credential" | "header";
+export type LabFigureStatusWire = "measured" | "derived" | "unavailable";
+
+export interface LabStateWire {
+  lab_id: string;
+  status: LabStatusWire;
+  egress_policy: string;
+  targets: string[];
+  kill_switch_at: string | null;
+  teardown_at: string | null;
+}
+
+export interface LabDonorWire {
+  id: string;
+  path: string;
+  status: string;
+  version: string | null;
+  license: string;
+  license_source: string | null;
+  attribution: boolean;
+  blockers: string[];
+  adapter_served: boolean;
+  service_url: string;
+  console_url: string;
+  api_key_configured: boolean;
+}
+
+export interface LabEncryptionWire {
+  algorithm: string;
+  key_source: string;
+  ready: boolean;
+  error: string | null;
+}
+
+export interface LabReadinessRowWire {
+  capability: string;
+  state: "ready" | "blocked";
+  detail: string;
+  missing: string[];
+}
+
+export interface LabReadinessWire {
+  donor: LabDonorWire;
+  encryption: LabEncryptionWire;
+  full_red_team_enabled: boolean;
+  matrix: LabReadinessRowWire[];
+  blockers: string[];
+  counts: Record<string, number>;
+}
+
+export interface LabFunnelWire {
+  sent: number;
+  opened: number;
+  clicked: number;
+  reported: number;
+  submitted: number;
+  training: { assigned: number; completed: number };
+  subject_count: number;
+  source: string;
+}
+
+export interface LabCampaignWire {
+  campaign_id: string;
+  tenant_id: string;
+  name: string;
+  template_id: string;
+  sender_id: string | null;
+  roster: string[];
+  state: LabCampaignStateWire;
+  roe_status: "unconfirmed" | "confirmed" | "expired";
+  roe_id: string | null;
+  attack_mapping: string[];
+  scheme: string;
+  launched_at: string | null;
+  assessment_id: string | null;
+  retention_days: number;
+  funnel: LabFunnelWire;
+  captured_credentials_count: number;
+}
+
+export interface LabTemplateWire {
+  template_id: string;
+  name: string;
+  stages: string[];
+  assets: string[];
+  variables: Record<string, string>;
+  provenance: string;
+  authorized: boolean;
+  created_at: string;
+}
+
+export interface LabSenderWire {
+  sender_id: string;
+  name: string;
+  host: string;
+  tls: boolean;
+  dns_ready: boolean;
+  credential_ref: string | null;
+  ready: boolean;
+  missing: string[];
+  created_at: string;
+}
+
+export interface LabArtifactWire {
+  artifact_id: string;
+  session_id: string;
+  kind: LabArtifactKind;
+  redacted_preview: string;
+  sha256: string;
+  captured_at: string;
+  expires_at: string;
+  available: boolean;
+  access_count: number;
+}
+
+export interface LabSessionWire {
+  session_id: string;
+  mode: string;
+  target_host: string;
+  state: LabSessionStateWire;
+  roe_status: "unconfirmed" | "confirmed" | "expired";
+  started_at: string;
+  stopped_at: string | null;
+  retention_expires_at: string;
+  artifact_ids: string[];
+}
+
+export interface LabAbilityWire {
+  ability_id: string;
+  technique: string;
+  tactic: string;
+  executor: string;
+  state: string;
+  expected_telemetry?: string[];
+}
+
+export interface LabOperationWire {
+  operation_id: string;
+  plan_id: string;
+  lab_fixture: string;
+  roe_status: "unconfirmed" | "confirmed" | "expired";
+  state: "planned" | "running" | "halted" | "complete";
+  abilities: LabAbilityWire[];
+  started_at: string | null;
+  halted_reason: string | null;
+}
+
+export interface LabAssessmentWire {
+  assessment_id: string;
+  campaign_id: string;
+  operation_id: string;
+  created_at: string;
+}
+
+export interface LabReportFigureWire {
+  value: number | null;
+  status: LabFigureStatusWire;
+  source: string;
+  missing: string | null;
+}
+
+export interface LabReportWire {
+  report_id: string;
+  campaign_id: string;
+  generated_at: string;
+  figures: Record<string, LabReportFigureWire>;
+  limitations: string[];
+  provenance: string[];
+  redaction: string;
+  export_digest: string | null;
+}
+
+export interface LabExportWire {
+  format: string;
+  digest: string;
+  body: string;
+}
+
+export interface LabEngagementWire {
+  channel_funnel: { sent: number; opened: number; clicked: number; reported: number };
+  training: { assigned: number; completed: number };
+  subjects: number;
+  anonymized: boolean;
+}
+
+export interface LabAuditEventWire {
+  seq: number;
+  tenant_id: string;
+  actor: string;
+  action: string;
+  object_type: string;
+  object_id: string;
+  outcome: string;
+  at: string;
+  correlation_id: string;
+  detail: Record<string, unknown>;
+  prev_hash: string;
+  row_hash: string;
+}
+
+export interface LabIntegrityWire {
+  ok: boolean;
+  broken_seq: string | null;
+}
+
+export type LabOverviewWire = LabEnvelope<{
+  lab: LabStateWire;
+  readiness: LabReadinessWire;
+  campaigns: LabCampaignWire[];
+  templates: LabTemplateWire[];
+  senders: LabSenderWire[];
+  sessions: LabSessionWire[];
+  artifacts: LabArtifactWire[];
+  reports: LabReportWire[];
+  operations: LabOperationWire[];
+  engagement: LabEngagementWire;
+  audit: LabAuditEventWire[];
+}>;

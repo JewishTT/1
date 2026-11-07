@@ -37,6 +37,7 @@ Compose profiles (`apps/deploy/docker-compose.yml`) gate the stack by phase so t
 | `collectors` | browsertrix |
 | `core` | minio, minio-init, postgres, redis, redpanda, searxng, temporal |
 | `legacy-kafka` | kafka, schema-registry |
+| `phishingclub` | phishingclub |
 | `streaming` | flink-jobmanager, flink-taskmanager, nessie, redpanda, redpanda-console |
 | `tenzir` | tenzir-node |
 
