@@ -17,6 +17,8 @@ import asyncio
 import json
 import os
 import sys
+import tempfile
+from shutil import copyfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -36,12 +38,17 @@ IMAGE = os.environ.get(
     "airbyte/source-postgres@sha256:e445ee1f7261a50c9b211ccac0cff306"
     "71d026336a4438f9f72021a68c5b602a",
 )
-MOUNT = Path(os.environ.get("COGNITIVE_AIRBYTE_CFG", r"C:\Users\tim\AppData\Local\Temp\ab"))
+_CONFIG_ROOT = os.environ.get("COGNITIVE_AIRBYTE_CFG", "").strip()
+MOUNT = Path(_CONFIG_ROOT).expanduser() if _CONFIG_ROOT else Path(tempfile.mkdtemp(prefix="cognitive-airbyte-"))
 BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-airbyte-smoke"
 GROUP = f"airbyte-proof-{os.getpid()}"
+
+
+
+from airbyte_acceptance import write_configured_catalog, write_source_config
 
 
 async def main() -> int:
@@ -52,6 +59,7 @@ async def main() -> int:
     print(f"image      : {IMAGE[:60]}")
     print(f"config dir : {MOUNT}")
 
+    MOUNT.mkdir(parents=True, exist_ok=True)
     runtime = AirbyteRuntime(image=IMAGE, mount_dir=str(MOUNT), task_timeout=240.0)
     cfg, cat = "/cfg/config.json", "/cfg/catalog.json"
 
@@ -59,8 +67,10 @@ async def main() -> int:
     print("\n1. SPEC (§25)")
     try:
         spec_run = await runtime.spec()
+        write_source_config(MOUNT, spec_run.spec)
         print("   SPEC message   : yes")
         print(f"   connector      : {spec_run.connector_ref}")
+        print("   config         : generated from connector SPEC / environment")
     except Exception as exc:  # noqa: BLE001
         print(f"   spec FAILED    : {type(exc).__name__}: {exc}")
         return 2
@@ -76,10 +86,15 @@ async def main() -> int:
     print("\n3. DISCOVER (§114: catalog is source metadata)")
     try:
         disc_run = await runtime.discover(cfg)
-        streams = [s["name"] for s in disc_run.catalog.get("streams", [])]
+        streams = [
+            (s.get("stream") or s).get("name")
+            for s in disc_run.catalog.get("streams", [])
+            if isinstance(s, dict)
+        ]
         print(f"   streams found  : {len(streams)}")
-        print(f"   smoke stream   : {'airbyte_smoke' in streams}")
-        configured = json.loads((MOUNT / "catalog.json").read_text(encoding="utf-8"))
+        cat_path, selected = write_configured_catalog(MOUNT, disc_run.catalog, stream_name=os.environ.get('COGNITIVE_AIRBYTE_STREAM', 'airbyte_smoke'))
+        configured = json.loads(cat_path.read_text(encoding="utf-8"))
+        print(f"   selected stream: {selected[0]}")
         print(f"   configured     : {len(configured.get('streams', []))} stream(s)")
     except Exception as exc:  # noqa: BLE001
         print(f"   discover FAILED: {type(exc).__name__}: {exc}")
@@ -188,7 +203,7 @@ async def main() -> int:
         "derived_ref": derived,
     }
 
-    out = Path("artifacts/acquisition-integration")
+    out = Path(os.environ.get("COGNITIVE_PROOF_OUTPUT", "artifacts/acquisition-integration"))
     out.mkdir(parents=True, exist_ok=True)
     (out / "airbyte.json").write_text(
         json.dumps(

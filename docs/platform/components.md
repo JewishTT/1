@@ -6,7 +6,7 @@ One row per deployable unit / package root.
 
 Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.
 
-Python modules: **105** · TypeScript modules: **0**
+Python modules: **110** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -15,6 +15,9 @@ apps.acquisition._measure_coverage
 apps.acquisition._probe_catalogue
 apps.acquisition._prove_airbyte
 apps.acquisition._prove_backbone
+apps.acquisition._prove_blockchain_sources
+apps.acquisition._prove_commoncrawl
+apps.acquisition._prove_public_source_matrix
 apps.acquisition._prove_readback
 apps.acquisition._prove_searxng
 apps.acquisition._prove_tools
@@ -45,12 +48,9 @@ apps.acquisition.adapters.stormcrawler
 apps.acquisition.adapters.stormcrawler.collect
 apps.acquisition.adapters.warc
 apps.acquisition.adapters.warc.collect
+apps.acquisition.airbyte_acceptance
 apps.acquisition.artifact_sink
 apps.acquisition.case_execution_guard
-apps.acquisition.cc_extract
-apps.acquisition.cc_plan
-apps.acquisition.dispatcher
-apps.acquisition.dispatcher.kafka_producer
 ```
 
 </details>
@@ -187,14 +187,28 @@ apps.control-plane.api.routes.science_temporal
 apps.control-plane.api.routes.search
 apps.control-plane.api.routes.search_rebuild
 apps.control-plane.api.routes.specops_counterintel
-apps.control-plane.api.routes.specops_cryptotx
 apps.control-plane.api.routes.specops_emulation
 apps.control-plane.api.routes.specops_engagement
 apps.control-plane.api.routes.specops_forensics
 apps.control-plane.api.routes.specops_ghostline
-apps.control-plane.api.routes.specops_lab
 apps.control-plane.api.routes.specops_phishing
 apps.control-plane.api.routes.specops_roe
+apps.control-plane.api.routes.specops_social
+apps.control-plane.api.routes.temporal_materializations
+```
+
+</details>
+
+## `deploy`
+
+Docker Compose dev topology, Grafana, k8s configs.
+
+Python modules: **1** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.deploy.minio-init.init-buckets
 ```
 
 </details>
@@ -227,7 +241,7 @@ apps.feedback.tests.test_frontier_loop
 
 Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.
 
-Python modules: **112** · TypeScript modules: **0**
+Python modules: **115** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -479,36 +493,13 @@ apps.shared.domain.relation_participant
 
 Isolated spec-ops lab profile (never in the routine path).
 
-Python modules: **68** · TypeScript modules: **0**
+Python modules: **30** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
 ```
 apps.specops
 apps.specops.counterintel
-apps.specops.cryptotx
-apps.specops.cryptotx.approvals
-apps.specops.cryptotx.chains
-apps.specops.cryptotx.chains.base
-apps.specops.cryptotx.chains.bitcoin
-apps.specops.cryptotx.chains.ethereum
-apps.specops.cryptotx.chains.registry
-apps.specops.cryptotx.chains.tron
-apps.specops.cryptotx.cli
-apps.specops.cryptotx.config
-apps.specops.cryptotx.errors
-apps.specops.cryptotx.executor
-apps.specops.cryptotx.hd
-apps.specops.cryptotx.models
-apps.specops.cryptotx.planner
-apps.specops.cryptotx.store
-apps.specops.cryptotx.swaps
-apps.specops.cryptotx.swaps.base
-apps.specops.cryptotx.swaps.evm
-apps.specops.cryptotx.swaps.router
-apps.specops.cryptotx.swaps.thorchain
-apps.specops.cryptotx.swaps.tron
-apps.specops.cryptotx.vault
 apps.specops.emulation
 apps.specops.engagement
 apps.specops.engagement.config
@@ -524,6 +515,19 @@ apps.specops.ghostline.ledger
 apps.specops.ghostline.loader
 apps.specops.ghostline.redaction
 apps.specops.ghostline.runtime
+apps.specops.ghostline.service
+apps.specops.ghostline.telephony
+apps.specops.ghostline.voices
+apps.specops.phishing
+apps.specops.roe
+apps.specops.roe.gate
+apps.specops.social
+apps.specops.tests.conftest
+apps.specops.tests.test_engagement
+apps.specops.tests.test_ghostline
+apps.specops.tests.test_roe_gate
+apps.specops.tests.test_specops_ghostline_routers
+apps.specops.tests.test_specops_routers
 ```
 
 </details>
@@ -556,14 +560,14 @@ tools.strip_zero_inventory
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **280**
+Python modules: **0** · TypeScript modules: **267**
 
 
 ## `zero`
 
 Zero-layer contact harvesting from arbitrary seeds.
 
-Python modules: **30** · TypeScript modules: **0**
+Python modules: **40** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -571,15 +575,23 @@ Python modules: **30** · TypeScript modules: **0**
 apps.zero.tests.conftest
 apps.zero.tests.test_cc_capture
 apps.zero.tests.test_enrichment
+apps.zero.tests.test_evidence
+apps.zero.tests.test_harvest_concurrency
 apps.zero.tests.test_harvest_wave
 apps.zero.tests.test_harvesters
+apps.zero.tests.test_public_acquisition_policy
+apps.zero.tests.test_public_document
+apps.zero.tests.test_public_wave_persistence
 apps.zero.tests.test_resolution
+apps.zero.tests.test_secure_public_transport
 apps.zero.tests.test_type_detector
 apps.zero.zero
 apps.zero.zero.cc_capture
 apps.zero.zero.enrichment
 apps.zero.zero.enrichment.feedback
 apps.zero.zero.enrichment.modules
+apps.zero.zero.evidence
+apps.zero.zero.evidence_sink
 apps.zero.zero.harvest_wave
 apps.zero.zero.harvesters
 apps.zero.zero.harvesters.contracts
@@ -588,11 +600,13 @@ apps.zero.zero.harvesters.git
 apps.zero.zero.harvesters.image
 apps.zero.zero.harvesters.modules
 apps.zero.zero.harvesters.phone
+apps.zero.zero.harvesters.public_document
 apps.zero.zero.harvesters.registry
 apps.zero.zero.harvesters.transport
 apps.zero.zero.harvesters.url
 apps.zero.zero.harvesters.username
 apps.zero.zero.observation_gate
+apps.zero.zero.public_policy
 apps.zero.zero.resolution
 apps.zero.zero.resolution.fellegi_sunter
 apps.zero.zero.resolution.graph

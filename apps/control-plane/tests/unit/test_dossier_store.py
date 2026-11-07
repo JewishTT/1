@@ -18,6 +18,9 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
+from fastapi import HTTPException
+
+from api.routes.dossier import _require_infrastructure_asset
 from context.enrichment import CapabilityOffer
 from context_engine.dossier_store import DossierReader, PostgresEnrichmentSink
 
@@ -295,3 +298,48 @@ def test_offers_turn_a_read_into_a_coverage_statement() -> None:
     assert "registrar" in [gap.attribute for gap in dossier.gaps], (
         "an attribute nobody fetched is a gap, and stays visible"
     )
+
+
+def test_quick_dossier_only_accepts_domain_and_ip_assets() -> None:
+    assert _require_infrastructure_asset("example.com", "") == "domain"
+    assert _require_infrastructure_asset("8.8.8.8", "") == "ipv4"
+    assert _require_infrastructure_asset("2001:4860:4860::8888", "") == "ipv6"
+
+
+def test_quick_dossier_rejects_a_public_figure_name() -> None:
+    import pytest
+
+    with pytest.raises(HTTPException) as caught:
+        _require_infrastructure_asset("Vladimir Putin", "")
+
+    assert caught.value.status_code == 409
+    assert caught.value.detail["code"] == "GOVERNED_RESEARCH_CASE_REQUIRED"
+    assert caught.value.detail["next_step"] == "/research-cases/new"
+
+
+def test_quick_dossier_rejects_person_kind_even_for_domain_input() -> None:
+    import pytest
+
+    with pytest.raises(HTTPException) as caught:
+        _require_infrastructure_asset("example.com", "person")
+
+    assert caught.value.status_code == 409
+
+
+def test_quick_dossier_rejects_a_mismatched_asset_kind() -> None:
+    import pytest
+
+    with pytest.raises(HTTPException) as caught:
+        _require_infrastructure_asset("example.com", "ipv4")
+
+    assert caught.value.status_code == 409
+
+
+def test_quick_dossier_rejects_a_single_token_person_name() -> None:
+    import pytest
+
+    with pytest.raises(HTTPException) as caught:
+        _require_infrastructure_asset("Putin", "")
+
+    assert caught.value.status_code == 409
+    assert caught.value.detail["code"] == "GOVERNED_RESEARCH_CASE_REQUIRED"

@@ -8,7 +8,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from evidence_writer import EvidenceWriteError, PostgresAcquisitionEvidenceWriter
+from evidence_writer import (
+    EvidenceWriteError,
+    PostgresAcquisitionEvidenceWriter,
+    _artifact_kind_for_media_type,
+)
 
 
 class _AsyncContext:
@@ -52,7 +56,7 @@ class _Session:
     async def execute(self, statement, params):
         sql = str(statement).lower()
         p = dict(params)
-        if "insert into captures" in sql:
+        if "insert into public.captures" in sql:
             if p["capture_id"] not in self.captures and not any(
                 row["tenant_id"] == p["tenant_id"]
                 and row["capture_fingerprint"] == p["capture_fingerprint"]
@@ -75,7 +79,7 @@ class _Session:
                         "content_digest": row["content_digest"],
                     })
             return _Result()
-        if "insert into observations" in sql:
+        if "insert into public.observations" in sql:
             p["provenance"] = json.loads(p["provenance"])
             self.observations.setdefault(p["observation_id"], p)
             return _Result()
@@ -142,8 +146,43 @@ async def test_capture_and_observation_are_committed_idempotently():
     stored = session.observations[observation["observation_id"]]
     assert stored["raw_ref"] == raw_ref
     assert stored["content_hash"] == observation["record_digest"]
+    assert stored["content_type"] == "structured"
+    assert stored["provenance"]["media_type"] == "application/json"
     assert stored["provenance"]["capture_id"] == capture.capture_id
     assert stored["provenance"]["parser_hint"] == "structured_fields"
+
+
+@pytest.mark.parametrize(
+    ("media_type", "expected_kind"),
+    [
+        ("text/html", "markup"),
+        ("application/json; charset=utf-8", "structured"),
+        ("text/plain; charset=utf-8", "text"),
+        ("image/jpeg", "photo"),
+        ("application/pdf", "document"),
+        ("application/octet-stream", "binary"),
+        ("application/x-unrecognised-format", "unknown"),
+        ("markup", "markup"),
+    ],
+)
+def test_media_type_maps_to_the_declared_static_artifact_kind(media_type, expected_kind):
+    assert _artifact_kind_for_media_type(media_type) == expected_kind
+
+
+@pytest.mark.asyncio
+async def test_html_mime_is_stored_as_markup_while_capture_keeps_real_mime():
+    session = _Session()
+    writer = PostgresAcquisitionEvidenceWriter(lambda: session)
+    capture, observation, raw_ref = _evidence()
+    capture = SimpleNamespace(**{**vars(capture), "media_type": "text/html; charset=utf-8"})
+    observation = {**observation, "content_type": "text/html; charset=utf-8"}
+
+    await writer.persist(capture=capture, observation=observation, raw_ref=raw_ref)
+
+    stored = session.observations[observation["observation_id"]]
+    assert stored["content_type"] == "markup"
+    assert stored["provenance"]["media_type"] == "text/html; charset=utf-8"
+    assert session.captures[capture.capture_id]["media_type"] == "text/html; charset=utf-8"
 
 
 @pytest.mark.asyncio

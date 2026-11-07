@@ -1,4 +1,7 @@
 name: urlscan_public
+source_family: urlscan_index
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 03. Web Intelligence
 description: urlscan.io public search — page tech, screenshots, requests

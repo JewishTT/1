@@ -132,7 +132,7 @@ class FrontierSink(Protocol):
         method: str,
         priority: int = 0,
         provenance: dict[str, Any] | None = None,
-    ) -> None: ...
+    ) -> bool | None: ...
 
 
 @dataclass
@@ -151,9 +151,9 @@ class InMemoryFrontierSink:
         method: str,
         priority: int = 0,
         provenance: dict[str, Any] | None = None,
-    ) -> None:
+    ) -> bool:
         if uri in self.items:
-            return  # idempotent by canonical URL (FR-006)
+            return False  # idempotent by canonical URL (FR-006)
         self.items[uri] = {
             "uri": uri,
             "tenant_id": tenant_id,
@@ -163,6 +163,7 @@ class InMemoryFrontierSink:
             "priority": priority,
             "provenance": dict(provenance or {}),
         }
+        return True
 
     def uris(self) -> list[str]:
         return sorted(self.items)
@@ -178,6 +179,7 @@ class DiscoveryReport:
     candidates_found: int
     enqueued: int
     empty_sources: list[str]
+    candidates_enqueue_capped: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -187,6 +189,7 @@ class DiscoveryReport:
             "candidates_found": self.candidates_found,
             "enqueued": self.enqueued,
             "empty_sources": self.empty_sources,
+            "candidates_enqueue_capped": self.candidates_enqueue_capped,
         }
 
 
@@ -231,6 +234,7 @@ class DiscoveryRegistry:
         tenant_id: str = "default",
         investigation_id: str = "",
         priority: int = 0,
+        max_enqueues: int | None = None,
     ) -> DiscoveryReport:
         """Run sources for ``query``; coalesce; enqueue once per canonical URL."""
         selected = list(sources) if sources is not None else self.names()
@@ -255,15 +259,17 @@ class DiscoveryRegistry:
         coalesced = coalesce(collected)
 
         enqueued = 0
+        queue_candidates = coalesced if max_enqueues is None else coalesced[: max(0, max_enqueues)]
         if frontier is not None:
             before = len(getattr(frontier, "items", {}))
-            for cand in coalesced:
+            reported: list[bool] = []
+            for cand in queue_candidates:
                 provenance = dict(cand.provenance)
                 provenance.setdefault("discovery", {})
                 provenance["discovery"].update(
                     {"source": cand.source, "method": cand.method, "query": cand.query}
                 )
-                frontier.enqueue(
+                inserted = frontier.enqueue(
                     uri=cand.canonical_url,
                     tenant_id=tenant_id,
                     investigation_id=investigation_id,
@@ -272,12 +278,13 @@ class DiscoveryRegistry:
                     priority=priority,
                     provenance=provenance,
                 )
+                if isinstance(inserted, bool):
+                    reported.append(inserted)
             after = len(getattr(frontier, "items", {}))
-            if after > before:
-                enqueued = after - before
+            if len(reported) == len(queue_candidates):
+                enqueued = sum(reported)
             else:
-                # Sink without introspection: count unique canonical candidates.
-                enqueued = len(coalesced)
+                enqueued = after - before if after > before else len(queue_candidates)
 
         return DiscoveryReport(
             query=query,
@@ -286,4 +293,5 @@ class DiscoveryRegistry:
             candidates_found=len(coalesced),
             enqueued=enqueued,
             empty_sources=empty,
+            candidates_enqueue_capped=len(queue_candidates) < len(coalesced),
         )

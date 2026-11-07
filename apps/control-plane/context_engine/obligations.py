@@ -773,6 +773,7 @@ class ResearchAction:
     parent_action_id: str = ""
     scope_digest: str = ""
     policy_digest: str = ""
+    result_role: str = "EVIDENCE"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "capability_requirements", tuple(self.capability_requirements))
@@ -784,6 +785,8 @@ class ResearchAction:
             raise ContextEngineError("action_gain_out_of_range", f"{self.expected_information_gain}")
         if not 0.0 <= self.estimated_cost <= 1.0:
             raise ContextEngineError("action_cost_out_of_range", f"{self.estimated_cost}")
+        if self.result_role not in {"EVIDENCE", "DISCOVERY_ONLY"}:
+            raise ContextEngineError("action_result_role_invalid", self.result_role)
         addressed = self.address()
         if not self.action_id:
             object.__setattr__(self, "action_id", addressed)
@@ -821,6 +824,8 @@ class ResearchAction:
             material["scope_digest"] = self.scope_digest
         if self.policy_digest:
             material["policy_digest"] = self.policy_digest
+        if self.result_role != "EVIDENCE":
+            material["result_role"] = self.result_role
         return material
 
     def address(self) -> str:
@@ -853,6 +858,7 @@ class ResearchAction:
             parent_action_id=str(data.get("parent_action_id", "")),
             scope_digest=str(data.get("scope_digest", "")),
             policy_digest=str(data.get("policy_digest", "")),
+            result_role=str(data.get("result_role", "EVIDENCE")),
         )
 
     def to_dict(self) -> dict[str, Any]:

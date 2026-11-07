@@ -8,12 +8,14 @@ The request path is:
 
 1. The control plane creates a draft case, an append-only scope revision, and obligations without network I/O.
 2. A user with the appropriate role approves the exact scope digest/revision.
-3. The planner produces source-bound actions against the policy and source catalogue. Actions require their own review/approval.
-4. The durable budget reservation and dispatch intent are committed; the existing planner publishes the canonical `acquisition.request` envelope.
-5. The host-run acquisition worker revalidates tenant, context state, approval, scope/policy revisions, approved action, source allowlist, dispatch intent, and budget immediately before I/O.
+3. The planner separately proposes evidence actions (which name a supported claim family) and bounded discovery-only actions (two query variants, up to five SearXNG pages each). They remain distinct action roles and require their own review/approval.
+4. The durable budget reservation and dispatch intent are committed; the existing planner publishes the canonical `acquisition.request` envelope, including the result role.
+5. The host-run acquisition worker revalidates tenant, context state, approval, scope/policy revisions, approved action, result role, source allowlist, dispatch intent, and budget immediately before I/O.
 6. The source connector stores original response bytes in the content-addressed ObjectStore. `ArtifactSink` registers `captures` + `observations` in PostgreSQL in one transaction, then publishes `observation.created`.
-7. The interpretation consumer reads the same raw bytes, runs the declared parser and optional Tenzir normalization, stores immutable derived manifests, runs the existing `InterpretationBridge`, and persists the processing result before committing its Kafka offset.
-8. The workspace reads PostgreSQL-backed claims/relations, coverage and bitemporal projections. Missing projections are reported as unavailable, not replaced with fabricated data.
+7. The interpretation consumer parses the captured bytes and stores the immutable parser manifest. For `DISCOVERY_ONLY`, it deliberately creates no mentions and never invokes `InterpretationBridge`; the Observation remains a lead, not a claim.
+8. The workspace reads a separate PostgreSQL-backed discovery-lead projection (title/URL/engine/raw Observation ref). Evidence coverage excludes discovery actions. A discovered URL can support a claim only after a separate enabled, attested evidence source captures and verifies it.
+
+A discovery lead does not count as source coverage, a corroborating source, or a negative result. The current default evidence slice is still Crossref scholarly metadata; official-role/official-action evidence remains blocked until a primary source is attested and installed.
 
 ## Local development setup
 

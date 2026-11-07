@@ -15,14 +15,15 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| POST | `/run` | 286 |
+| POST | `/run` | 307 |
+| POST | `/harvest` | 462 |
 
 ## `dossier` — `apps/control-plane/api/routes/dossier.py`
 
 | Method | Path | Line |
 |---|---|---|
-| POST | `/enrich` | 87 |
-| GET | `/{entity_ref}` | 160 |
+| POST | `/enrich` | 116 |
+| GET | `/{entity_ref}` | 190 |
 
 ## `entities` — `apps/control-plane/api/routes/entities.py`
 
@@ -157,30 +158,32 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| GET | `/{case_id}` | 188 |
-| PATCH | `/{case_id}/scope` | 201 |
-| POST | `/{case_id}/context/amendments` | 234 |
-| POST | `/{case_id}/invariants` | 258 |
-| POST | `/{case_id}/approve` | 283 |
-| POST | `/{case_id}/plan` | 306 |
-| GET | `/{case_id}/actions` | 325 |
-| POST | `/{case_id}/actions/approve` | 338 |
-| POST | `/{case_id}/run` | 362 |
-| POST | `/{case_id}/pause` | 388 |
-| POST | `/{case_id}/artifacts` | 404 |
-| GET | `/{case_id}/artifacts` | 453 |
-| GET | `/{case_id}/artifacts/{artifact_id}/download` | 470 |
-| GET | `/{case_id}/obligations` | 501 |
-| GET | `/{case_id}/coverage` | 568 |
-| GET | `/{case_id}/claims` | 583 |
-| GET | `/{case_id}/timeline` | 600 |
-| GET | `/{case_id}/graph` | 621 |
-| POST | `/{case_id}/identity-reviews` | 641 |
-| POST | `/{case_id}/claim-disputes` | 665 |
-| POST | `/{case_id}/report` | 689 |
-| GET | `/{case_id}/reports/{report_id}` | 712 |
-| POST | `/{case_id}/close` | 732 |
-| POST | `/{case_id}/retention-action` | 789 |
+| GET | `/{case_id}` | 198 |
+| PATCH | `/{case_id}/scope` | 211 |
+| POST | `/{case_id}/context/amendments` | 244 |
+| POST | `/{case_id}/invariants` | 268 |
+| POST | `/{case_id}/approve` | 293 |
+| POST | `/{case_id}/plan` | 316 |
+| GET | `/{case_id}/actions` | 335 |
+| POST | `/{case_id}/actions/approve` | 348 |
+| POST | `/{case_id}/run` | 372 |
+| POST | `/{case_id}/pause` | 398 |
+| POST | `/{case_id}/artifacts` | 414 |
+| GET | `/{case_id}/artifacts` | 463 |
+| GET | `/{case_id}/artifacts/{artifact_id}/download` | 480 |
+| GET | `/{case_id}/obligations` | 511 |
+| GET | `/{case_id}/coverage` | 578 |
+| GET | `/{case_id}/discovery-leads` | 593 |
+| POST | `/{case_id}/zero-layer/harvest` | 608 |
+| GET | `/{case_id}/claims` | 643 |
+| GET | `/{case_id}/timeline` | 660 |
+| GET | `/{case_id}/graph` | 681 |
+| POST | `/{case_id}/identity-reviews` | 701 |
+| POST | `/{case_id}/claim-disputes` | 725 |
+| POST | `/{case_id}/report` | 749 |
+| GET | `/{case_id}/reports/{report_id}` | 772 |
+| POST | `/{case_id}/close` | 792 |
+| POST | `/{case_id}/retention-action` | 849 |
 
 ## `resolutions` — `apps/control-plane/api/routes/resolutions.py`
 

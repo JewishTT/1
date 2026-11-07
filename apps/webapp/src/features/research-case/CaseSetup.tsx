@@ -11,6 +11,7 @@ import {
   ResearchCase,
   SubjectAnchor,
 } from "./api";
+import styles from "./ResearchCase.module.css";
 
 const LAUNCH_PROFILES: LaunchProfile[] = [
   "PUBLIC_PROFESSIONAL",
@@ -42,7 +43,7 @@ export function CaseSetup() {
   const [validUntil, setValidUntil] = useState("");
   const [precision, setPrecision] = useState<"instant" | "day" | "month" | "year" | "unknown">("unknown");
   const [claimFamiliesText, setClaimFamiliesText] = useState("public_authorship_or_publication");
-  const [sourceIdsText, setSourceIdsText] = useState("crossref_works");
+  const [sourceIdsText, setSourceIdsText] = useState("crossref_works, searxng_public_search, public_web_document_fetch");
   const [deniedFamiliesText, setDeniedFamiliesText] = useState("");
   const [budgetRef, setBudgetRef] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
@@ -142,7 +143,7 @@ export function CaseSetup() {
   </div>;
 
   return (
-    <main className="mx-auto max-w-4xl space-y-5 p-6">
+    <main className={styles.setupShell}>
       <header>
         <h1 className="text-xl font-semibold">{isEditing ? "Review case scope" : "Create research case"}</h1>
         <p className="mt-1 text-sm text-slate-600">
@@ -154,6 +155,12 @@ export function CaseSetup() {
           </p>
         )}
       </header>
+
+      <section className={styles.capabilityPanel} data-testid="research-case-capability-status" aria-labelledby="research-case-capability-title">
+        <div id="research-case-capability-title" className={styles.capabilityHeading}>CURRENT SOURCE POSTURE</div>
+        <p>Crossref is the currently attested scholarly-metadata evidence path. SearXNG now runs as a separately approved, bounded discovery pass (two query variants, up to five pages each); its URLs and titles remain unverified leads, never evidence or claim support.</p>
+        <p>OpenAlex, Common Crawl and generic official-page capture remain disabled until the source owner attests terms, licences, parser support and egress hosts. Public-office and official-action questions therefore surface a capability gap until an eligible primary source is enabled.</p>
+      </section>
 
       <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border border-slate-200 bg-white p-5">
         <section className="space-y-3">

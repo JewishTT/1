@@ -4,14 +4,14 @@ Generated from the scanner's per-body flags. This separates *the symbol exists* 
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 572 |
+| IMPLEMENTED | 554 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
-| PACKAGE_INIT | 95 |
+| PACKAGE_INIT | 91 |
 | MIGRATION | 19 |
-| TEST | 346 |
+| TEST | 349 |
 
 **0** modules are present but not really built (STUB / NOT_IMPLEMENTED / PRIMITIVE).
 
@@ -27,7 +27,7 @@ A non-``__init__`` module with no callables is either a data/declaration module 
 |---|---|---|
 | `apps/acquisition/source_query_set.py` | 0 | — |
 | `apps/shared/conftest.py` | 2 | — |
-| `apps/zero/zero/harvesters/modules.py` | 16 | — |
+| `apps/zero/zero/harvesters/modules.py` | 18 | — |
 | `apps/projection/path_shim.py` | 20 | — |
 | `tools/strip_zero_inventory.py` | 22 | — |
 | `apps/projection/search/tantivy_backend.py` | 23 | — |

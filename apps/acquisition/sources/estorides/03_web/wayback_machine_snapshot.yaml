@@ -1,4 +1,7 @@
 name: wayback_machine_snapshot
+source_family: internet_archive_availability
+contact: archive
+time_basis: fetch
 enabled: true
 category: 03. Web Intelligence
 description: Wayback availability endpoint (single latest snapshot)

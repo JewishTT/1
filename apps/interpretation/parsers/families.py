@@ -1,7 +1,7 @@
-"""Declarative source parsing: six families, 145 definitions (spec 025 §33).
+"""Declarative source parsing: seven response-shape families, 152 definitions (spec 025 §33).
 
 The catalogue declares 92 distinct ``parser:`` names and implements two. This module closes
-that gap without writing 145 parsers, by noticing that a parser's job is determined by the
+that gap without writing 151 parsers, by noticing that a parser's job is determined by the
 *shape of the response*, not by the endpoint: Shodan's ``hostnames`` and OpenAlex's
 ``authorships`` are both "walk a list, read named fields".
 
@@ -9,7 +9,7 @@ So a source names a **family** plus the paths it cares about, and this module do
 
 **A family is a shape, not a vendor.** ``json_rows`` covers 84 sources across feeds, search
 APIs, blockchain explorers and threat intel, because they all return a list of records under
-some path. Keying on the shape is what keeps 145 integrations from becoming 145 code paths
+some path. Keying on the shape is what keeps 151 integrations from becoming 151 code paths
 that drift apart.
 
 **An undeclared field is unresolved, never guessed.** ``resolve_path`` distinguishes a
@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import re
+import xml.etree.ElementTree as ET
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -386,6 +387,7 @@ FAMILIES: tuple[str, ...] = (
     "html_scrape",
     "cali_text",
     "binary_json",
+    "atom_feed",
 )
 
 
@@ -559,6 +561,8 @@ def parse_body(
 
     if family == "text_lines" or family == "cali_text":
         return _parse_text(body, family=family, fields=fields)
+    if family == "atom_feed":
+        return _parse_atom(body, fields=fields)
 
     document, error = _decode(body)
     if error:
@@ -641,6 +645,91 @@ def parse_source(
 
 
 
+
+
+def _parse_atom(body: bytes, *, fields: Sequence[FieldSpec]) -> ParseOutcome:
+    """Parse an Atom 1.0 feed without enabling external XML entities or DTDs.
+
+    The adapter is intentionally schema-shaped rather than vendor-shaped. Field names in
+    the declaration map to Atom's stable vocabulary (id/title/summary/published/author)
+    and the arXiv DOI extension. It retains every entry and every author rather than
+    flattening the feed into one synthetic record.
+    """
+    family = "atom_feed"
+    if not body:
+        return ParseOutcome(status="empty", detail="empty Atom body", family=family)
+    upper = body[:4096].upper()
+    if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
+        return ParseOutcome(status="parse_failed", detail="DTD/entity declarations are not allowed", family=family)
+    try:
+        root = ET.fromstring(body)
+    except (ET.ParseError, ValueError) as exc:
+        return ParseOutcome(status="parse_failed", detail=f"invalid XML: {type(exc).__name__}", family=family)
+
+    def local_name(tag: str) -> str:
+        return str(tag).rsplit("}", 1)[-1].lower()
+
+    def child_text(parent: ET.Element, wanted: str) -> str:
+        for child in list(parent):
+            if local_name(child.tag) == wanted.lower():
+                return " ".join("".join(child.itertext()).split())
+        return ""
+
+    entries = [node for node in root.iter() if local_name(node.tag) == "entry"]
+    if not entries and local_name(root.tag) == "entry":
+        entries = [root]
+    if not entries:
+        return ParseOutcome(status="empty", detail="Atom feed contains no entries", family=family)
+
+    aliases = {
+        "id": "id", "article_id": "id", "title": "title", "summary": "summary",
+        "abstract": "summary", "published": "published", "updated": "updated",
+        "doi": "doi", "url": "id", "link": "id",
+    }
+    records: list[ParsedRecord] = []
+    unresolved: set[str] = set()
+    for entry in entries:
+        values: dict[str, Any] = {}
+        kinds: dict[str, str] = {}
+        for spec in fields:
+            key = spec.name.strip().lower()
+            if key in {"author", "authors"}:
+                picked = tuple(
+                    " ".join("".join(name.itertext()).split())
+                    for author in entry.iter()
+                    if local_name(author.tag) == "author"
+                    for name in author.iter()
+                    if local_name(name.tag) == "name" and "".join(name.itertext()).strip()
+                )
+                if picked:
+                    values[spec.name] = tuple(dict.fromkeys(picked)) if spec.many else picked[0]
+                    kinds[spec.name] = spec.kind
+                elif spec.required:
+                    unresolved.add(spec.name)
+                continue
+            source_name = aliases.get(key)
+            value = ""
+            if source_name == "id":
+                value = child_text(entry, "id")
+            elif source_name in {"title", "summary", "published", "updated"}:
+                value = child_text(entry, source_name)
+            elif source_name == "doi":
+                for node in entry.iter():
+                    if local_name(node.tag) == "doi" and str(node.tag).lower().startswith("{http://arxiv.org/schemas/atom}"):
+                        value = "".join(node.itertext()).strip()
+                        break
+            if value:
+                values[spec.name] = value
+                kinds[spec.name] = spec.kind
+            elif spec.required:
+                unresolved.add(spec.name)
+        if values:
+            records.append(ParsedRecord(values, kinds))
+
+    if not records:
+        return ParseOutcome(status="empty", detail=f"{len(entries)} Atom entries carried no declared fields", family=family,
+                            unresolved=tuple(sorted(unresolved)))
+    return ParseOutcome(status="ok", records=tuple(records), unresolved=tuple(sorted(unresolved)), family=family)
 
 
 def _parse_text(body: bytes, *, family: str, fields: Sequence[FieldSpec]) -> ParseOutcome:

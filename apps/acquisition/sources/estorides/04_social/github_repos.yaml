@@ -1,4 +1,7 @@
 name: github_repos
+source_family: github_public_repositories
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 04. Social Media
 description: GitHub repository search (org or topic)

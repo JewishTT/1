@@ -4,6 +4,7 @@ import {
   api,
   createCase,
   proposeScopeRevision,
+  harvestPublicLeads,
   type CreateCaseRequest,
 } from "./api";
 
@@ -86,5 +87,30 @@ describe("Feature 034 API client", () => {
       status: 503,
       message: "coverage projection is not composed",
     });
+  });
+});
+
+
+describe("Layer-0 public document acquisition API", () => {
+  it("posts only selected lead references and a stable idempotency key", async () => {
+    const response = {
+      case_id: "case-1", run_id: "ZLR-1", scope_digest: "sha256:scope", scope_revision: 2,
+      budget_reservation_id: "RBR-1", selected_leads: 2, captured_pages: 2, failed_pages: 0,
+      failures: [], waves: [], observation_refs: ["OBS-1"], result_role: "DISCOVERY_ONLY",
+      claim_admission_allowed: false, replayed: false, notice: "analyst review only",
+    };
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(response), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const body = { lead_ids: ["lead-1", "lead-2"], idempotency_key: "zl-test-idem-key" };
+
+    await expect(harvestPublicLeads("case/1", body)).resolves.toEqual(response);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy.mock.calls[0][0]).toBe("/api/v1/research-cases/case%2F1/zero-layer/harvest");
+    expect(fetchSpy.mock.calls[0][1]?.method).toBe("POST");
+    expect(JSON.parse(String(fetchSpy.mock.calls[0][1]?.body))).toEqual(body);
   });
 });

@@ -1,0 +1,52 @@
+name: blockscout_eth_transactions
+enabled: true
+category: 10. Blockchain
+description: Blockscout Ethereum mainnet address transaction page (source cursor retained in raw response)
+os: any
+requires_key: false
+contact: public_api
+parser: blockscout
+applies_to:
+- crypto
+entity_hints:
+- crypto
+- identifier
+tool:
+  method: GET
+  url: https://eth.blockscout.com/api/v2/addresses/{query}/transactions
+  headers:
+    Accept: application/json
+    User-Agent: cognitive-substrate/034 (read-only evidence)
+  params: {}
+parse:
+  family: json_rows
+  list_path: items
+  fields:
+    tx_hash:
+      path: hash
+      kind: identifier
+      required: true
+    from_address:
+      path: from.hash
+      kind: crypto
+    to_address:
+      path: to.hash
+      kind: crypto
+    value_wei:
+      path: value
+      kind: identifier
+    block_number:
+      path: block
+      kind: identifier
+    timestamp:
+      path: timestamp
+      kind: identifier
+    gas_used:
+      path: gas_used
+      kind: identifier
+    gas_price:
+      path: gas_price
+      kind: identifier
+    result:
+      path: result
+      kind: identifier

@@ -33,12 +33,9 @@
  * explosion, no shadow-as-hierarchy, no decorative borders. Hierarchy comes
  * from size, weight, contrast, spacing, position and selection.
  *
- * CONTRAST NOTE, stated rather than hidden. The mandated values were accepted
- * as given; `--text-muted` (#6E7873) measures ≈4.2:1 against `--bg-1`
- * (#0B0E0D) and ≈4.0:1 against `--surface-0`, which is below the 4.5:1 that
- * §12 requires of body text. It is therefore used only for the tertiary
- * metadata role §3.2 assigns it, never for a value the analyst has to read.
- * Changing it would contradict FR-102, so it is reported, not silently fixed.
+ * CONTRAST CONTRACT. Muted steel is tuned to remain AA-readable on the primary
+ * dark and light panel surfaces; the token contract tests calculate contrast
+ * from the shipped palette rather than relying on a visual estimate.
  */
 
 /* ── Dark (default) ─────────────────────────────────────────────────── */
@@ -47,32 +44,32 @@
   color-scheme: dark;
 
   /* ── Layer 1: the normative palette (ui-upgrade §3.2) ─────────────── */
-  --bg-0: #070909;                /* app background                     */
-  --bg-1: #0b0e0d;                /* panel background                   */
-  --surface-0: #121715;           /* raised surface, cards              */
-  --surface-1: #161b18;           /* hover / secondary surface          */
-  --surface-2: #1c221e;           /* active / selected surface          */
-  --border-0: #252c28;            /* default border                     */
-  --border-1: #323b35;            /* strong border, focus               */
-  --text-primary: #e5eae7;        /* primary text                       */
-  --text-secondary: #a5aea9;      /* secondary text                     */
-  --text-muted: #6e7873;          /* tertiary, metadata, axis labels    */
-  --accent-green: #8fcb64;        /* primary accent, semantic state     */
-  --accent-green-bright: #a7e477; /* active accent, focus ring          */
-  --accent-amber: #b99a66;        /* warning, provenance, metadata      */
-  --accent-red: #bf5b57;          /* semantic failure only              */
-  --accent-blue: #718d9b;         /* informational, secondary series    */
+  --bg-0: #080b0c;                /* app background                     */
+  --bg-1: #0d1214;                /* panel background                   */
+  --surface-0: #141b1e;           /* raised surface, cards              */
+  --surface-1: #1a2327;           /* hover / secondary surface          */
+  --surface-2: #222e32;           /* active / selected surface          */
+  --border-0: #2a383d;            /* default border                     */
+  --border-1: #40545a;            /* strong border, focus               */
+  --text-primary: #e6eef0;        /* primary text                       */
+  --text-secondary: #adbdc2;      /* secondary text                     */
+  --text-muted: #7b8f95;          /* tertiary, metadata, axis labels    */
+  --accent-green: #a6d85e;        /* primary accent, semantic state     */
+  --accent-green-bright: #c2ef70; /* active accent, focus ring          */
+  --accent-amber: #d1a45b;        /* warning, provenance, metadata      */
+  --accent-red: #c65f59;          /* semantic failure only              */
+  --accent-blue: #70aabb;         /* informational, secondary series    */
 
   /* Alpha variants. Derived from layer 1, never authored as new colours. */
-  --accent-green-wash: rgba(143, 203, 100, 0.12);
-  --accent-green-line: rgba(143, 203, 100, 0.42);
-  --accent-amber-wash: rgba(185, 154, 102, 0.12);
-  --accent-amber-line: rgba(185, 154, 102, 0.38);
-  --accent-red-wash: rgba(191, 91, 87, 0.12);
-  --accent-red-line: rgba(191, 91, 87, 0.45);
-  --accent-blue-wash: rgba(113, 141, 155, 0.12);
-  --accent-green-muted: #3d5a2c;
-  --on-accent: #070909;
+  --accent-green-wash: rgba(166, 216, 94, 0.12);
+  --accent-green-line: rgba(166, 216, 94, 0.42);
+  --accent-amber-wash: rgba(209, 164, 91, 0.12);
+  --accent-amber-line: rgba(209, 164, 91, 0.38);
+  --accent-red-wash: rgba(198, 95, 89, 0.12);
+  --accent-red-line: rgba(198, 95, 89, 0.45);
+  --accent-blue-wash: rgba(112, 170, 187, 0.12);
+  --accent-green-muted: #435a2c;
+  --on-accent: #080b0c;
 
   /* ── Layer 2: semantic aliases over layer 1 ───────────────────────── */
   --ui-bg: var(--bg-1);
@@ -144,33 +141,33 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  --bg-0: #e9ede9;
-  --bg-1: #f2f5f1;
+  --bg-0: #e8efef;
+  --bg-1: #f3f7f6;
   --surface-0: #ffffff;
-  --surface-1: #f5f8f4;
-  --surface-2: #e7ede6;
-  --border-0: #d2dad2;
-  --border-1: #b2beb4;
-  --text-primary: #121714;
-  --text-secondary: #3c463f;
-  --text-muted: #5f6a63;
+  --surface-1: #f2f6f6;
+  --surface-2: #e4ecec;
+  --border-0: #cbd7d8;
+  --border-1: #9eafb2;
+  --text-primary: #11191b;
+  --text-secondary: #3c4c51;
+  --text-muted: #56676c;
   /* A light ground needs more luminance contrast before the accent reaches
      AA, so the light theme does not reuse the dark hex. */
-  --accent-green: #1c7a4c;
-  --accent-green-bright: #145f3a;
-  --accent-amber: #7d5a12;
-  --accent-red: #a8291f;
-  --accent-blue: #1c6480;
+  --accent-green: #2a753f;
+  --accent-green-bright: #1e6031;
+  --accent-amber: #77551a;
+  --accent-red: #a72d26;
+  --accent-blue: #225f77;
 
-  --accent-green-wash: rgba(28, 122, 76, 0.1);
-  --accent-green-line: rgba(28, 122, 76, 0.4);
-  --accent-amber-wash: rgba(125, 90, 18, 0.1);
-  --accent-amber-line: rgba(125, 90, 18, 0.34);
-  --accent-red-wash: rgba(168, 41, 31, 0.09);
-  --accent-red-line: rgba(168, 41, 31, 0.4);
-  --accent-blue-wash: rgba(28, 100, 128, 0.1);
-  --accent-green-muted: #a8d8bd;
-  --on-accent: #f2f5f1;
+  --accent-green-wash: rgba(42, 117, 63, 0.1);
+  --accent-green-line: rgba(42, 117, 63, 0.4);
+  --accent-amber-wash: rgba(119, 85, 26, 0.1);
+  --accent-amber-line: rgba(119, 85, 26, 0.34);
+  --accent-red-wash: rgba(167, 45, 38, 0.09);
+  --accent-red-line: rgba(167, 45, 38, 0.4);
+  --accent-blue-wash: rgba(34, 95, 119, 0.1);
+  --accent-green-muted: #bad5c0;
+  --on-accent: #f3f7f6;
 
   --ui-bg: var(--bg-1);
   --ui-bg-sunken: var(--bg-0);
@@ -222,6 +219,6 @@
   --ui-status-blocked: var(--ui-danger);
   --ui-status-unknown: var(--ui-steel-dim);
 
-  --ui-scrim-drawer: rgba(18, 23, 20, 0.18);
-  --ui-scrim-modal: rgba(18, 23, 20, 0.24);
+  --ui-scrim-drawer: rgba(17, 25, 27, 0.18);
+  --ui-scrim-modal: rgba(17, 25, 27, 0.24);
 }

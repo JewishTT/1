@@ -29,6 +29,7 @@ _service: ResearchCaseService | None = None
 _policy: PersonCasePolicy | None = None
 _artifact_service: Any = None
 _report_service: Any = None
+_zero_layer_service: Any = None
 
 
 def configure(
@@ -37,12 +38,14 @@ def configure(
     *,
     artifact_service: Any = None,
     report_service: Any = None,
+    zero_layer_service: Any = None,
 ) -> None:
-    global _service, _policy, _artifact_service, _report_service
+    global _service, _policy, _artifact_service, _report_service, _zero_layer_service
     _service = service
     _policy = policy
     _artifact_service = artifact_service
     _report_service = report_service
+    _zero_layer_service = zero_layer_service
 
 
 def _get_service() -> ResearchCaseService:
@@ -98,6 +101,11 @@ class CreateCaseRequest(BaseModel):
     questions: list[str] = Field(default_factory=list)
 
 
+class ZeroLayerHarvestRequest(BaseModel):
+    lead_ids: list[str] = Field(..., min_length=1, max_length=25)
+    idempotency_key: str = Field(..., min_length=8, max_length=160)
+
+
 class ApproveCaseRequest(BaseModel):
     scope_digest: str = Field(..., pattern="^sha256:[0-9a-f]{64}$")
     scope_revision: int = Field(default=1, ge=1)
@@ -127,6 +135,8 @@ class PlanCaseResponse(BaseModel):
     required_capabilities: list[str] = Field(default_factory=list)
     capabilities_preview: list[str]
     capability_gaps: list[dict] = Field(default_factory=list)
+    discovery_action_refs: list[str] = Field(default_factory=list)
+    evidence_coverage_ready: bool = False
     actions: list[dict] = Field(default_factory=list)
     policy_digest: str = ""
     rejected_catalogue_definitions: dict = Field(default_factory=dict)
@@ -580,6 +590,56 @@ async def get_coverage(
         reader(case_id=case_id, tenant_id=ctx.tenant_id)
     )
     return coverage
+
+
+@router.get("/{case_id}/discovery-leads")
+async def get_discovery_leads(
+    case_id: str,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """Return unverified discovery leads, never admitted claims."""
+    ctx.require_role(Role.VIEWER, Role.ANALYST, Role.ADMIN)
+    svc = _get_service()
+    await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    reader = _require_projection(svc, "discovery_leads")
+    return await _read_projection(
+        reader(case_id=case_id, tenant_id=ctx.tenant_id)
+    )
+
+
+@router.post("/{case_id}/zero-layer/harvest")
+async def run_zero_layer_harvest(
+    case_id: str,
+    body: ZeroLayerHarvestRequest,
+    ctx: Annotated[TenantContext, Depends(resolve_tenant)],
+) -> dict:
+    """Fetch selected, current case discovery leads as bounded public documents."""
+    ctx.require_role(Role.ANALYST, Role.ADMIN)
+    svc = _get_service()
+    await svc.get_case(case_id=case_id, tenant_id=ctx.tenant_id)
+    if _zero_layer_service is None:
+        raise HTTPException(status_code=503, detail="zero-layer public-document service not configured")
+    try:
+        return await _zero_layer_service.harvest(
+            case_id=case_id,
+            tenant_id=ctx.tenant_id,
+            actor_id=ctx.user_id,
+            lead_ids=body.lead_ids,
+            idempotency_key=body.idempotency_key,
+        )
+    except CaseNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except CaseNotApproved as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except CaseServiceError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        from services.zero_layer import ZeroLayerCaseError
+        from services.research_case_runtime import CaseRuntimeBlocked
+
+        if isinstance(exc, (ZeroLayerCaseError, CaseRuntimeBlocked)):
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise
 
 
 @router.get("/{case_id}/claims")

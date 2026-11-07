@@ -1,0 +1,41 @@
+name: trongrid_account
+enabled: true
+category: 10. Blockchain
+description: TronGrid TRON mainnet account metadata and balance (read-only public API)
+os: any
+requires_key: true
+key_env: TRONGRID_API_KEY
+contact: public_api
+parser: trongrid
+applies_to:
+- crypto
+entity_hints:
+- crypto
+- identifier
+tool:
+  method: GET
+  url: https://api.trongrid.io/v1/accounts/{query}?only_confirmed=true
+  headers:
+    TRON-PRO-API-KEY: '{api_key}'
+    Accept: application/json
+    User-Agent: cognitive-substrate/034 (read-only evidence)
+  params: {}
+parse:
+  family: json_object
+  fields:
+    address:
+      path: data[0].address
+      kind: crypto
+      required: true
+    balance_sun:
+      path: data[0].balance
+      kind: identifier
+    create_time:
+      path: data[0].create_time
+      kind: identifier
+    latest_operation_time:
+      path: data[0].latest_operation_time
+      kind: identifier
+    account_resource:
+      path: data[0].account_resource
+      kind: identifier

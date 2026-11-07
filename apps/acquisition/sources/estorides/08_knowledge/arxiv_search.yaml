@@ -1,10 +1,13 @@
 name: arxiv_search
+source_family: arxiv_atom
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: arXiv — preprints (CS, physics, math, security)
 os: any
 requires_key: false
-parser: arxiv
+parser: atom_feed
 entity_hints:
 - paper
 - author
@@ -14,14 +17,14 @@ applies_to:
 - keyword
 tool:
   method: GET
-  url: http://export.arxiv.org/api/query
+  url: https://export.arxiv.org/api/query
   headers:
     User-Agent: Estorides/1.0
   params:
     search_query: all:{query}
     max_results: 15
 parse:
-  family: json_object
+  family: atom_feed
   fields:
     total:
       path: "opensearch:totalResults"

@@ -9,9 +9,9 @@ of them.
 
 Three shapes of question, three endpoints, because they have genuinely different costs:
 
-* ``POST /enrich`` runs the outside world. It calls real sources, so it is slow, it is not
-  idempotent, and it appends to the stream. ``max_sources`` is capped for that reason: a
-  sweep over 145 definitions can run for minutes, and an unbounded request is a way to hold
+* ``POST /enrich`` runs a bounded infrastructure-asset sweep (domain/IP only). It calls real
+  sources, so it is slow, it is not idempotent, and it appends to the stream. ``max_sources`` is capped for that reason: a
+  sweep over 146 definitions can run for minutes, and an unbounded request is a way to hold
   a worker open.
 * ``GET /{entity_ref}`` is a pure read. It re-folds the invariant from the rows every time,
   which is cheap and is the point of an append-only stream: there is no second copy of the
@@ -35,26 +35,55 @@ from api.auth import TenantContext, resolve_tenant
 
 router = APIRouter(prefix="/dossier", tags=["dossier"])
 
-#: Hard ceiling on sources per sweep. The catalogue holds 145 definitions; asking for all of
+#: Hard ceiling on sources per sweep. The catalogue holds 151 definitions; asking for all of
 #: them from a web request is a request that can outlive its connection. The cap is a
 #: throughput guard, not a coverage claim -- the plan reports what was *not* attempted.
 MAX_SOURCES = 60
 
 
 class EnrichRequest(BaseModel):
-    """One subject to sweep.
-
-    ``kind`` is the caller's assertion about what the subject is and is used for labelling
-    only. Which sources run is decided by the shape of ``subject`` itself -- see
-    ``enrichment_service._query_shapes`` -- because no source in the catalogue accepts a
-    "person" or a "domain"; they accept domains, names, addresses and free text.
-    """
+    """A bounded infrastructure-asset sweep; public-person research uses Feature 034."""
 
     subject: str = Field(min_length=1, max_length=512)
     kind: str = Field(default="", max_length=64)
     max_sources: int | None = Field(default=None, ge=1, le=MAX_SOURCES)
     depth: int = Field(default=0, ge=0, le=2)
 
+
+def _require_infrastructure_asset(subject: str, kind: str) -> str:
+    """Restrict the quick dossier sweep to domains and IP addresses.
+
+    Public-person research goes through Feature 034, which binds the request to
+    purpose, authority, source policy, budget and explicit action approval.
+    """
+    from context_engine.enrichment_service import _query_shapes
+
+    requested_kind = kind.strip().lower()
+    if requested_kind and requested_kind not in {"domain", "ipv4", "ipv6"}:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "GOVERNED_RESEARCH_CASE_REQUIRED",
+                "message": "Use a governed Research Case for public people; this route does not accept other entity or free-text research.",
+                "next_step": "/research-cases/new",
+            },
+        )
+    shapes = set(_query_shapes(subject, requested_kind or "unknown")) - {"any"}
+    if (
+        len(shapes) != 1
+        or not shapes.issubset({"domain", "ipv4", "ipv6"})
+        or (requested_kind and requested_kind not in shapes)
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "GOVERNED_RESEARCH_CASE_REQUIRED",
+                "message": "The dossier sweep accepts domain/IP identifiers only. Public-person research requires a governed Research Case; other entity types need a typed Investigation scope.",
+                "next_step": "/research-cases/new",
+            },
+        )
+
+    return next(iter(shapes))
 
 def _source_names() -> dict[str, str]:
     """Source id -> human name, from the live catalogue.
@@ -92,6 +121,7 @@ async def enrich(
     ctx: Annotated[TenantContext, Depends(resolve_tenant)],
 ) -> dict[str, Any]:
     """Run a sweep, persist it, and return the dossier it produced."""
+    asset_kind = _require_infrastructure_asset(body.subject, body.kind)
     from context_engine.dossier_store import PostgresEnrichmentSink
     from context_engine.enrichment_service import EnrichmentService
 
@@ -102,7 +132,7 @@ async def enrich(
     )
     report = await service.enrich(
         body.subject,
-        kind=body.kind or "unknown",
+        kind=asset_kind,
         depth=body.depth,
         max_sources=body.max_sources,
     )

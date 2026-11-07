@@ -122,7 +122,7 @@
 
 **Entry**: Phases 5, 2. **Exit**: obligation routes to a concrete runtime and executes; `runtime/__init__.py:10-14` invariant intact.
 
-- [ ] **T078** `[P]` Build the catalogue bridge: `sources/estorides/` (146 definitions, 20 categories) → Context Planner → Runtime Dispatcher, via existing `GET /api/v1/connectors` and `/api/v1/tools`. FR-068, FR-069
+- [ ] **T078** `[P]` Build the catalogue bridge: `sources/estorides/` (151 definitions, 20 categories) → Context Planner → Runtime Dispatcher, via existing `GET /api/v1/connectors` and `/api/v1/tools`. FR-068, FR-069
 - [ ] **T079** `[P]` Declarative capability model over the catalogue, replacing the source ТЗ's demand that capabilities come from runtime method returns. FR-068
 - [ ] **T080** `[S]` Routing stays `runtime_ref`-first; capabilities remain compatibility check only. Do NOT amend `runtime/__init__.py`. FR-067
 - [ ] **T081** `[P]` Reuse all five live-proven runtimes unchanged: SearXNG, Airbyte, BBOT, Maigret, SpiderFoot. No replacement. FR-070

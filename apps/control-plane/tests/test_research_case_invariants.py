@@ -282,3 +282,79 @@ async def test_context_amendment_and_dynamic_anchor_append_scope_revision(servic
     revisions = await store.revisions(case_id)
     assert [revision.revision for revision in revisions] == [1, 2, 3]
     assert all(revision.is_auditable for revision in revisions)
+
+def test_discovery_policy_is_separate_from_evidence_eligibility(loaded_policy: PersonCasePolicy) -> None:
+    source_ids = ["crossref_works", "searxng_public_search"]
+    assert loaded_policy.eligible_evidence_sources(
+        claim_family="public_authorship_or_publication", source_ids=source_ids,
+        launch_profile=PUBLIC_PROFESSIONAL,
+    ) == ("crossref_works",)
+    assert loaded_policy.eligible_discovery_sources(
+        source_ids=source_ids, launch_profile=PUBLIC_PROFESSIONAL,
+    ) == ("searxng_public_search",)
+
+
+@pytest.mark.asyncio
+async def test_planner_proposes_bounded_discovery_actions_without_satisfying_evidence(service) -> None:
+    from context_engine.obligations import ResearchAction
+
+    svc, _store = service
+    created = await svc.create_case(**_create_args(
+        allowed_source_ids=["crossref_works", "searxng_public_search"],
+        claim_families=["public_authorship_or_publication"], questions=[],
+    ))
+    approved = await svc.approve_case(
+        case_id=created["case_id"], tenant_id="tenant-test-034", approver_id="admin-test",
+        scope_digest=created["scope_digest"], scope_revision=1,
+    )
+    assert approved["state"] == "APPROVED"
+    plan = await svc.plan_case(case_id=created["case_id"], tenant_id="tenant-test-034")
+    discovery = [a for a in plan["actions"] if a.get("result_role") == "DISCOVERY_ONLY"]
+    evidence = [a for a in plan["actions"] if a.get("result_role", "EVIDENCE") == "EVIDENCE"]
+    assert len(discovery) == 2
+    assert {a["source_id"] for a in discovery} == {"searxng_public_search"}
+    assert all(a.get("claim_family") is None for a in discovery)
+    assert all(a["requires_operator_approval"] for a in discovery)
+    assert all("claim_family=" not in a["proposed_method"] for a in discovery)
+    assert evidence
+    assert plan["evidence_coverage_ready"] is True
+    assert plan["ready_to_dispatch"] is False
+    restored = [ResearchAction.from_dict(a) for a in discovery]
+    assert all(a.result_role == "DISCOVERY_ONLY" for a in restored)
+
+
+def test_research_action_result_role_preserves_legacy_evidence_addresses() -> None:
+    from context_engine.obligations import ResearchAction
+
+    legacy = ResearchAction(obligation_id="OBL-legacy", proposed_method="existing evidence action", source_id="crossref_works")
+    round_tripped = ResearchAction.from_dict(legacy.to_dict())
+    assert round_tripped.action_id == legacy.action_id
+    assert round_tripped.result_role == "EVIDENCE"
+    discovery = ResearchAction(
+        obligation_id="OBL-discovery", proposed_method="Bounded public web discovery; result_role=DISCOVERY_ONLY",
+        source_id="searxng_public_search", result_role="DISCOVERY_ONLY",
+    )
+    restored = ResearchAction.from_dict(discovery.to_dict())
+    assert restored.action_id == discovery.action_id
+    assert restored.result_role == "DISCOVERY_ONLY"
+
+
+
+def test_public_page_capture_source_is_enabled_but_never_evidence(
+    loaded_policy: PersonCasePolicy,
+) -> None:
+    source_id = "public_web_document_fetch"
+    eligibility = loaded_policy.source_eligible(
+        source_id=source_id,
+        launch_profile=PUBLIC_PROFESSIONAL,
+    )
+    assert eligibility.eligible is True
+    assert loaded_policy.eligible_evidence_sources(
+        claim_family="public_professional_role",
+        source_ids=[source_id],
+        launch_profile=PUBLIC_PROFESSIONAL,
+    ) == ()
+    assert loaded_policy.eligible_discovery_sources(
+        source_ids=[source_id],
+        launch_profile=PUBLIC_PROFESSIONAL,
+    ) == ()

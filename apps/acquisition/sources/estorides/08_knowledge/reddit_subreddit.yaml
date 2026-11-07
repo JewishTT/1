@@ -1,4 +1,7 @@
 name: reddit_subreddit
+source_family: reddit_public_communities
+contact: search_engine
+time_basis: fetch
 enabled: true
 category: 08. Knowledge
 description: Reddit subreddit search (community intel)

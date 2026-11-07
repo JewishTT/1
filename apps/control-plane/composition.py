@@ -71,6 +71,7 @@ class Health:
     model_gateway: str = "absent"
     person_case_policy: str = "absent"
     research_case_service: str = "absent"
+    zero_layer: str = "absent"
     notes: list[str] = field(default_factory=list)
 
     @property
@@ -99,6 +100,7 @@ class Health:
             "model_gateway": self.model_gateway,
             "person_case_policy": self.person_case_policy,
             "research_case_service": self.research_case_service,
+            "zero_layer": self.zero_layer,
             "ready": self.ready,
             "cycles": self.cycles,
             "notes": list(self.notes),
@@ -131,6 +133,7 @@ class Platform:
     research_case_service: Any = None
     research_case_artifact_service: Any = None
     research_case_report_service: Any = None
+    zero_layer_service: Any = None
     #: Reader class for the return path. Held as a class rather than an instance because the
     #: instance is per-call (one session per read), and ``slots=True`` rejects attributes
     #: that were not declared as fields.
@@ -371,6 +374,31 @@ class Platform:
                 dispatch_executor=dispatch_executor,
                 projection_provider=projection_provider,
             )
+
+            if (
+                self.session_factory is not None
+                and self.store is not None
+                and budget_service is not None
+                and projection_provider is not None
+                and self.person_case_policy is not None
+            ):
+                from services.zero_layer import ZeroLayerCaseService
+
+                self.zero_layer_service = ZeroLayerCaseService(
+                    case_service=self.research_case_service,
+                    projection_provider=projection_provider,
+                    budget_service=budget_service,
+                    policy=self.person_case_policy,
+                    context_store=self.store,
+                    session_factory=self.session_factory,
+                )
+                self.health.zero_layer = "composed"
+            else:
+                self.health.zero_layer = "degraded"
+                self.health.notes.append(
+                    "zero-layer public-document service composed; object-store and broker capture path require live acceptance: "
+                    "source policy, discovery projection and budget service"
+                )
             if self.session_factory is not None and self.store is not None and projection_provider is not None:
                 self.research_case_artifact_service = ResearchCaseArtifactService(
                     context_store=self.store,
@@ -407,6 +435,7 @@ class Platform:
                 )
         except Exception as exc:  # noqa: BLE001
             self.health.research_case_service = "absent"
+            self.health.zero_layer = "absent"
             self.health.notes.append(f"research case service unavailable: {exc}")
             log.warning("research case service unavailable: %s", exc)
 

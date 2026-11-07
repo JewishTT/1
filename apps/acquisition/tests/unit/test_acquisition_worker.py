@@ -202,6 +202,7 @@ def envelope_for(t: AcquisitionTask):
             "case_policy_source_id": t.case_policy_source_id,
             "approved_action_ref": t.approved_action_ref,
             "action_id": t.action_id,
+            "result_role": t.result_role,
             "verdict": "dispatch",
         },
         sort_keys=True,
@@ -650,4 +651,22 @@ class TestCaseExecutionPreflight:
         assert result.failures[0].code == "case_dispatch_binding_missing"
         assert transport.requests == []
         assert sink.failures
+
+def test_case_request_parser_preserves_discovery_result_role() -> None:
+    task_bound = task(
+        case_id="case-034",
+        scope_digest="sha256:" + "a" * 64,
+        policy_digest="sha256:" + "b" * 64,
+        policy_revision="1:sha256:" + "c" * 64,
+        scope_revision=1,
+        budget_reservation_id="RBR-034",
+        idempotency_key="idem-discovery",
+        run_id="RUN-034",
+        case_policy_source_id="searxng_public_search",
+        approved_action_ref="ACT-034",
+        action_id="ACT-034",
+        result_role="DISCOVERY_ONLY",
+    )
+    parsed = RequestParser().parse(envelope_for(task_bound))
+    assert parsed.result_role == "DISCOVERY_ONLY"
 

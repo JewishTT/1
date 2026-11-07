@@ -1,5 +1,5 @@
 {
-  "generated_from": "C:\\Users\\tim\\Desktop\\COGNITIVE\\1",
+  "generated_from": "/home/runner/work/1/1",
   "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
   "bounded_contexts": {
     "contexts": [
@@ -92,6 +92,9 @@
           "apps/acquisition/_probe_catalogue.py",
           "apps/acquisition/_prove_airbyte.py",
           "apps/acquisition/_prove_backbone.py",
+          "apps/acquisition/_prove_blockchain_sources.py",
+          "apps/acquisition/_prove_commoncrawl.py",
+          "apps/acquisition/_prove_public_source_matrix.py",
           "apps/acquisition/_prove_readback.py",
           "apps/acquisition/_prove_searxng.py",
           "apps/acquisition/_prove_tools.py",
@@ -122,6 +125,7 @@
           "apps/acquisition/adapters/stormcrawler/collect.py",
           "apps/acquisition/adapters/warc/__init__.py",
           "apps/acquisition/adapters/warc/collect.py",
+          "apps/acquisition/airbyte_acceptance.py",
           "apps/acquisition/artifact_sink.py",
           "apps/acquisition/case_execution_guard.py",
           "apps/acquisition/cc_extract.py",
@@ -173,6 +177,7 @@
           "apps/acquisition/tests/unit/test_cc_extract.py",
           "apps/acquisition/tests/unit/test_cc_index.py",
           "apps/acquisition/tests/unit/test_cc_plan.py",
+          "apps/acquisition/tests/unit/test_discovery_registry.py",
           "apps/acquisition/tests/unit/test_engine_adapters.py",
           "apps/acquisition/tests/unit/test_entity_search.py",
           "apps/acquisition/tests/unit/test_evidence_writer.py",
@@ -202,15 +207,23 @@
           "apps/zero/tests/conftest.py",
           "apps/zero/tests/test_cc_capture.py",
           "apps/zero/tests/test_enrichment.py",
+          "apps/zero/tests/test_evidence.py",
+          "apps/zero/tests/test_harvest_concurrency.py",
           "apps/zero/tests/test_harvest_wave.py",
           "apps/zero/tests/test_harvesters.py",
+          "apps/zero/tests/test_public_acquisition_policy.py",
+          "apps/zero/tests/test_public_document.py",
+          "apps/zero/tests/test_public_wave_persistence.py",
           "apps/zero/tests/test_resolution.py",
+          "apps/zero/tests/test_secure_public_transport.py",
           "apps/zero/tests/test_type_detector.py",
           "apps/zero/zero/__init__.py",
           "apps/zero/zero/cc_capture.py",
           "apps/zero/zero/enrichment/__init__.py",
           "apps/zero/zero/enrichment/feedback.py",
           "apps/zero/zero/enrichment/modules.py",
+          "apps/zero/zero/evidence.py",
+          "apps/zero/zero/evidence_sink.py",
           "apps/zero/zero/harvest_wave.py",
           "apps/zero/zero/harvesters/__init__.py",
           "apps/zero/zero/harvesters/contracts.py",
@@ -219,18 +232,20 @@
           "apps/zero/zero/harvesters/image.py",
           "apps/zero/zero/harvesters/modules.py",
           "apps/zero/zero/harvesters/phone.py",
+          "apps/zero/zero/harvesters/public_document.py",
           "apps/zero/zero/harvesters/registry.py",
           "apps/zero/zero/harvesters/transport.py",
           "apps/zero/zero/harvesters/url.py",
           "apps/zero/zero/harvesters/username.py",
           "apps/zero/zero/observation_gate.py",
+          "apps/zero/zero/public_policy.py",
           "apps/zero/zero/resolution/__init__.py",
           "apps/zero/zero/resolution/fellegi_sunter.py",
           "apps/zero/zero/resolution/graph.py",
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 141
+        "module_count": 156
       },
       {
         "id": "interpretation",
@@ -330,6 +345,7 @@
           "apps/interpretation/tests/test_evidence_manifest.py",
           "apps/interpretation/tests/test_mention_binding_seam.py",
           "apps/interpretation/tests/test_observation_consumer.py",
+          "apps/interpretation/tests/test_onchain_source_parsers.py",
           "apps/interpretation/tests/test_parser_adapter.py",
           "apps/interpretation/tests/test_payload_binding.py",
           "apps/interpretation/tests/test_payload_detection.py",
@@ -350,9 +366,11 @@
           "apps/interpretation/tests/test_syntactic_producer.py",
           "apps/interpretation/tests/test_tenzir_live.py",
           "apps/interpretation/tests/test_tenzir_normalization.py",
-          "apps/interpretation/tests/test_warc_reader.py"
+          "apps/interpretation/tests/test_transaction_lineage.py",
+          "apps/interpretation/tests/test_warc_reader.py",
+          "apps/interpretation/transaction_lineage.py"
         ],
-        "module_count": 112
+        "module_count": 115
       },
       {
         "id": "investigations",
@@ -527,31 +545,9 @@
           "specops"
         ],
         "modules": [
+          "apps/deploy/minio-init/init-buckets.py",
           "apps/specops/__init__.py",
           "apps/specops/counterintel.py",
-          "apps/specops/cryptotx/__init__.py",
-          "apps/specops/cryptotx/approvals.py",
-          "apps/specops/cryptotx/chains/__init__.py",
-          "apps/specops/cryptotx/chains/base.py",
-          "apps/specops/cryptotx/chains/bitcoin.py",
-          "apps/specops/cryptotx/chains/ethereum.py",
-          "apps/specops/cryptotx/chains/registry.py",
-          "apps/specops/cryptotx/chains/tron.py",
-          "apps/specops/cryptotx/cli.py",
-          "apps/specops/cryptotx/config.py",
-          "apps/specops/cryptotx/errors.py",
-          "apps/specops/cryptotx/executor.py",
-          "apps/specops/cryptotx/hd.py",
-          "apps/specops/cryptotx/models.py",
-          "apps/specops/cryptotx/planner.py",
-          "apps/specops/cryptotx/store.py",
-          "apps/specops/cryptotx/swaps/__init__.py",
-          "apps/specops/cryptotx/swaps/base.py",
-          "apps/specops/cryptotx/swaps/evm.py",
-          "apps/specops/cryptotx/swaps/router.py",
-          "apps/specops/cryptotx/swaps/thorchain.py",
-          "apps/specops/cryptotx/swaps/tron.py",
-          "apps/specops/cryptotx/vault.py",
           "apps/specops/emulation.py",
           "apps/specops/engagement/__init__.py",
           "apps/specops/engagement/config.py",
@@ -570,30 +566,15 @@
           "apps/specops/ghostline/service.py",
           "apps/specops/ghostline/telephony.py",
           "apps/specops/ghostline/voices.py",
-          "apps/specops/lab/__init__.py",
-          "apps/specops/lab/artifacts.py",
-          "apps/specops/lab/audit.py",
-          "apps/specops/lab/boundary.py",
-          "apps/specops/lab/engine.py",
-          "apps/specops/lab/models.py",
-          "apps/specops/lab/phishingclub.py",
-          "apps/specops/lab/readiness.py",
           "apps/specops/phishing.py",
           "apps/specops/roe/__init__.py",
           "apps/specops/roe/gate.py",
           "apps/specops/social.py",
           "apps/specops/tests/conftest.py",
-          "apps/specops/tests/test_cryptotx_api.py",
-          "apps/specops/tests/test_cryptotx_core.py",
-          "apps/specops/tests/test_cryptotx_executor.py",
-          "apps/specops/tests/test_cryptotx_swaps.py",
           "apps/specops/tests/test_engagement.py",
           "apps/specops/tests/test_ghostline.py",
-          "apps/specops/tests/test_lab_engine.py",
-          "apps/specops/tests/test_lab_phishingclub.py",
           "apps/specops/tests/test_roe_gate.py",
           "apps/specops/tests/test_specops_ghostline_routers.py",
-          "apps/specops/tests/test_specops_lab_router.py",
           "apps/specops/tests/test_specops_routers.py",
           "bench/bench/__init__.py",
           "bench/bench/harness.py",
@@ -636,7 +617,7 @@
           "tools/specs/build_owner_map.py",
           "tools/strip_zero_inventory.py"
         ],
-        "module_count": 108
+        "module_count": 71
       },
       {
         "id": "orchestration-temporal",
@@ -893,12 +874,10 @@
           "apps/control-plane/api/routes/search.py",
           "apps/control-plane/api/routes/search_rebuild.py",
           "apps/control-plane/api/routes/specops_counterintel.py",
-          "apps/control-plane/api/routes/specops_cryptotx.py",
           "apps/control-plane/api/routes/specops_emulation.py",
           "apps/control-plane/api/routes/specops_engagement.py",
           "apps/control-plane/api/routes/specops_forensics.py",
           "apps/control-plane/api/routes/specops_ghostline.py",
-          "apps/control-plane/api/routes/specops_lab.py",
           "apps/control-plane/api/routes/specops_phishing.py",
           "apps/control-plane/api/routes/specops_roe.py",
           "apps/control-plane/api/routes/specops_social.py",
@@ -1012,6 +991,7 @@
           "apps/control-plane/services/throttle.py",
           "apps/control-plane/services/tool_catalog.py",
           "apps/control-plane/services/worker_pools.py",
+          "apps/control-plane/services/zero_layer.py",
           "apps/control-plane/tests/contract/test_context_graph_contract.py",
           "apps/control-plane/tests/integration/__init__.py",
           "apps/control-plane/tests/integration/test_cc_temporality_api.py",
@@ -1042,6 +1022,7 @@
           "apps/control-plane/tests/test_research_case_invariants.py",
           "apps/control-plane/tests/test_research_case_projection.py",
           "apps/control-plane/tests/test_research_case_reports.py",
+          "apps/control-plane/tests/test_zero_layer_service.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
           "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
@@ -1299,20 +1280,6 @@
           "apps/webapp/src/graph/types.ts",
           "apps/webapp/src/graph/useGraphFacets.ts",
           "apps/webapp/src/graph/useGraphModel.ts",
-          "apps/webapp/src/lab/LabCanvas.test.tsx",
-          "apps/webapp/src/lab/LabCanvas.tsx",
-          "apps/webapp/src/lab/model.ts",
-          "apps/webapp/src/lab/panels/AitmPanel.tsx",
-          "apps/webapp/src/lab/panels/AuditPanel.tsx",
-          "apps/webapp/src/lab/panels/CampaignsPanel.tsx",
-          "apps/webapp/src/lab/panels/CatalogPanel.tsx",
-          "apps/webapp/src/lab/panels/EngagementLabPanel.tsx",
-          "apps/webapp/src/lab/panels/LabControlPanel.tsx",
-          "apps/webapp/src/lab/panels/OperationsLabPanel.tsx",
-          "apps/webapp/src/lab/panels/ReportsPanel.tsx",
-          "apps/webapp/src/lab/panels/labParts.tsx",
-          "apps/webapp/src/lab/useLabAction.ts",
-          "apps/webapp/src/lab/useLabOverview.ts",
           "apps/webapp/src/lib/api.ts",
           "apps/webapp/src/lib/donor/confidence.test.ts",
           "apps/webapp/src/lib/donor/confidence.ts",
@@ -1405,6 +1372,7 @@
           "apps/webapp/src/shell/TopNav.test.tsx",
           "apps/webapp/src/shell/TopNav.tsx",
           "apps/webapp/src/shell/nav.ts",
+          "apps/webapp/src/styles/tokens/command_tactical.contract.test.ts",
           "apps/webapp/src/styles/tokens/tokens.contract.test.ts",
           "apps/webapp/src/test-setup.ts",
           "apps/webapp/src/test-support/cytoscape-test-double.ts",
@@ -1456,7 +1424,7 @@
           "apps/webapp/src/workspace/useWorkState.ts",
           "apps/webapp/vite.config.ts"
         ],
-        "module_count": 280
+        "module_count": 267
       }
     ],
     "event_names_sample": [
@@ -1498,6 +1466,7 @@
       "amazon.com",
       "analytics.projected",
       "api.example.com",
+      "api.example.org",
       "api.md",
       "api.routes.search_rebuild",
       "api.tavily.com",
@@ -1506,18 +1475,13 @@
       "architecture.json",
       "archive.org",
       "argumentation.rank",
-      "artifact.accessed",
       "artifact.bin",
       "artifact.capture_register",
-      "artifact.captured",
-      "artifact.expired",
       "artifact.observation_ingest",
       "artifact.publish",
       "artifact.raw_store",
-      "artifact.revealed",
       "assembly.py",
       "assertion.created",
-      "assessment.linked",
       "atrium.example",
       "attachment.bin",
       "attr.name",
@@ -1544,8 +1508,6 @@
       "c.example",
       "calibration.assess",
       "calls.jsonl",
-      "campaign.created",
-      "campaign.launched",
       "candidate.created",
       "capabilities.md",
       "capture.pcapng",
@@ -1579,6 +1541,7 @@
       "components.md",
       "composition.py",
       "compression.type",
+      "config.json",
       "conftest.py",
       "connection.asn",
       "connection.isp",
@@ -1632,6 +1595,7 @@
       "data.url",
       "database.name",
       "datetime.now",
+      "db.example",
       "db.schema",
       "dc.creator",
       "dc.description",
@@ -1658,8 +1622,12 @@
       "domain.statement",
       "donors.md",
       "downstream.json",
-      "egress.denied",
-      "empty.txt"
+      "empty.txt",
+      "enable.auto.commit",
+      "enable.auto.offset.store",
+      "enable.idempotence",
+      "engine.py",
+      "entities.entity_id"
     ]
   },
   "context_map": {
@@ -1674,7 +1642,7 @@
         "from": "ingestion",
         "to": "interpretation",
         "type": "direct",
-        "via_import": "parsers.primproc"
+        "via_import": "parsers.families"
       },
       {
         "from": "ingestion",
@@ -1707,6 +1675,12 @@
         "via_import": "adapters.discovery"
       },
       {
+        "from": "projection-query",
+        "to": "platform-shared",
+        "type": "direct",
+        "via_import": "security"
+      },
+      {
         "from": "identity-entities",
         "to": "ingestion",
         "type": "direct",
@@ -1729,12 +1703,6 @@
         "to": "investigations",
         "type": "direct",
         "via_import": "db.investigation_store"
-      },
-      {
-        "from": "projection-query",
-        "to": "platform-shared",
-        "type": "direct",
-        "via_import": "ids"
       },
       {
         "from": "investigations",
@@ -1907,7 +1875,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\001-global-osint-platform\\spec.md",
+        "spec_path": "specs/001-global-osint-platform/spec.md",
         "tasks_checked": 138,
         "tasks_total": 139,
         "modules": [],
@@ -1919,7 +1887,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\002-donor-pattern-integration\\spec.md",
+        "spec_path": "specs/002-donor-pattern-integration/spec.md",
         "tasks_checked": 36,
         "tasks_total": 36,
         "modules": [],
@@ -1931,7 +1899,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\003-donor-code-integration\\spec.md",
+        "spec_path": "specs/003-donor-code-integration/spec.md",
         "tasks_checked": 10,
         "tasks_total": 10,
         "modules": [
@@ -1945,7 +1913,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\004-donor-coverage-complete\\spec.md",
+        "spec_path": "specs/004-donor-coverage-complete/spec.md",
         "tasks_checked": 13,
         "tasks_total": 13,
         "modules": [
@@ -1962,7 +1930,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\005-donor-core-subsystems\\spec.md",
+        "spec_path": "specs/005-donor-core-subsystems/spec.md",
         "tasks_checked": 31,
         "tasks_total": 35,
         "modules": [
@@ -1992,7 +1960,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\006-scientific-intelligence-fabric\\spec.md",
+        "spec_path": "specs/006-scientific-intelligence-fabric/spec.md",
         "tasks_checked": 10,
         "tasks_total": 64,
         "modules": [],
@@ -2004,7 +1972,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\007-deterministic-entity-extraction-stack\\spec.md",
+        "spec_path": "specs/007-deterministic-entity-extraction-stack/spec.md",
         "tasks_checked": 32,
         "tasks_total": 32,
         "modules": [
@@ -2057,7 +2025,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\008-discovery-search-fabric\\spec.md",
+        "spec_path": "specs/008-discovery-search-fabric/spec.md",
         "tasks_checked": 0,
         "tasks_total": 40,
         "modules": [
@@ -2072,7 +2040,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\009-donor-full-catalogue\\spec.md",
+        "spec_path": "specs/009-donor-full-catalogue/spec.md",
         "tasks_checked": 12,
         "tasks_total": 75,
         "modules": [
@@ -2090,9 +2058,9 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\010-zero-layer-contact-harvesting\\spec.md",
-        "tasks_checked": 16,
-        "tasks_total": 39,
+        "spec_path": "specs/010-zero-layer-contact-harvesting/spec.md",
+        "tasks_checked": 20,
+        "tasks_total": 47,
         "modules": [
           "apps/control-plane/services/layer0_pipeline.py",
           "apps/control-plane/tests/integration/test_layer0_direct_pipeline.py",
@@ -2147,7 +2115,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\011-atomic-entity-commoncrawl-tda\\spec.md",
+        "spec_path": "specs/011-atomic-entity-commoncrawl-tda/spec.md",
         "tasks_checked": 14,
         "tasks_total": 18,
         "modules": [],
@@ -2159,7 +2127,7 @@
         "has_spec": true,
         "has_tasks": false,
         "has_plan": false,
-        "spec_path": "specs\\012-dynamic-entity-invariant\\spec.md",
+        "spec_path": "specs/012-dynamic-entity-invariant/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [
@@ -2176,7 +2144,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\014-temporal-materialization\\spec.md",
+        "spec_path": "specs/014-temporal-materialization/spec.md",
         "tasks_checked": 30,
         "tasks_total": 30,
         "modules": [
@@ -2191,7 +2159,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\015-worldline-reconstruction\\spec.md",
+        "spec_path": "specs/015-worldline-reconstruction/spec.md",
         "tasks_checked": 11,
         "tasks_total": 104,
         "modules": [
@@ -2207,7 +2175,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\016-relation-evidence-graph-fabric\\spec.md",
+        "spec_path": "specs/016-relation-evidence-graph-fabric/spec.md",
         "tasks_checked": 32,
         "tasks_total": 93,
         "modules": [
@@ -2230,7 +2198,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\017-semantic-fabric\\spec.md",
+        "spec_path": "specs/017-semantic-fabric/spec.md",
         "tasks_checked": 0,
         "tasks_total": 30,
         "modules": [
@@ -2244,7 +2212,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\018-world-substrate\\spec.md",
+        "spec_path": "specs/018-world-substrate/spec.md",
         "tasks_checked": 0,
         "tasks_total": 30,
         "modules": [
@@ -2261,7 +2229,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\019-universal-relation-extraction\\spec.md",
+        "spec_path": "specs/019-universal-relation-extraction/spec.md",
         "tasks_checked": 44,
         "tasks_total": 44,
         "modules": [
@@ -2277,7 +2245,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\021-entity-relation-extraction-finalization\\spec.md",
+        "spec_path": "specs/021-entity-relation-extraction-finalization/spec.md",
         "tasks_checked": 0,
         "tasks_total": 94,
         "modules": [
@@ -2291,7 +2259,7 @@
         "has_spec": true,
         "has_tasks": false,
         "has_plan": false,
-        "spec_path": "specs\\022-estorides-donor-mining\\spec.md",
+        "spec_path": "specs/022-estorides-donor-mining/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
@@ -2303,7 +2271,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\023-acquisition-integration-searxng\\spec.md",
+        "spec_path": "specs/023-acquisition-integration-searxng/spec.md",
         "tasks_checked": 0,
         "tasks_total": 214,
         "modules": [
@@ -2319,7 +2287,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\024-context-driven-continuous-intelligence\\spec.md",
+        "spec_path": "specs/024-context-driven-continuous-intelligence/spec.md",
         "tasks_checked": 0,
         "tasks_total": 168,
         "modules": [
@@ -2359,7 +2327,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\025-context-reality-approximation-engine\\spec.md",
+        "spec_path": "specs/025-context-reality-approximation-engine/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [
@@ -2403,7 +2371,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\026-universal-context-engine\\spec.md",
+        "spec_path": "specs/026-universal-context-engine/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [
@@ -2421,7 +2389,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\027-ci-specops-fabric\\spec.md",
+        "spec_path": "specs/027-ci-specops-fabric/spec.md",
         "tasks_checked": 37,
         "tasks_total": 58,
         "modules": [
@@ -2442,7 +2410,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\028-closed-research-loop\\spec.md",
+        "spec_path": "specs/028-closed-research-loop/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
@@ -2454,7 +2422,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\029-research-closed-loop-upgrade\\spec.md",
+        "spec_path": "specs/029-research-closed-loop-upgrade/spec.md",
         "tasks_checked": 0,
         "tasks_total": 0,
         "modules": [],
@@ -2466,7 +2434,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\030-global-platform-upgrade\\spec.md",
+        "spec_path": "specs/030-global-platform-upgrade/spec.md",
         "tasks_checked": 0,
         "tasks_total": 152,
         "modules": [
@@ -2505,7 +2473,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\031-ghostline-vishing-fabric\\spec.md",
+        "spec_path": "specs/031-ghostline-vishing-fabric/spec.md",
         "tasks_checked": 53,
         "tasks_total": 53,
         "modules": [
@@ -2522,7 +2490,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\032-global-upgrade-execution\\spec.md",
+        "spec_path": "specs/032-global-upgrade-execution/spec.md",
         "tasks_checked": 0,
         "tasks_total": 84,
         "modules": [
@@ -2543,7 +2511,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\033-universal-context-runtime\\spec.md",
+        "spec_path": "specs/033-universal-context-runtime/spec.md",
         "tasks_checked": 0,
         "tasks_total": 84,
         "modules": [],
@@ -2555,7 +2523,7 @@
         "has_spec": true,
         "has_tasks": true,
         "has_plan": true,
-        "spec_path": "specs\\034-person-research-case\\spec.md",
+        "spec_path": "specs/034-person-research-case/spec.md",
         "tasks_checked": 0,
         "tasks_total": 76,
         "modules": [
@@ -2579,24 +2547,6 @@
           "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
         ],
         "module_count": 18,
-        "capabilities": []
-      },
-      {
-        "id": "036-phishingclub-specops-department",
-        "has_spec": true,
-        "has_tasks": true,
-        "has_plan": true,
-        "spec_path": "specs\\036-phishingclub-specops-department\\spec.md",
-        "tasks_checked": 0,
-        "tasks_total": 60,
-        "modules": [
-          "apps/control-plane/api/routes/specops_lab.py",
-          "apps/specops/lab/__init__.py",
-          "apps/specops/lab/models.py",
-          "apps/specops/tests/test_lab_engine.py",
-          "apps/specops/tests/test_specops_lab_router.py"
-        ],
-        "module_count": 5,
         "capabilities": []
       }
     ]
@@ -2840,7 +2790,7 @@
   "summary": {
     "contexts": 12,
     "context_edges": 39,
-    "specs": 33,
+    "specs": 32,
     "flows": 1,
     "rule_violations": 14
   }

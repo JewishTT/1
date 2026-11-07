@@ -2,7 +2,7 @@
 
 Feature 021 brief §25; constitution IV (fail-closed) and VI (determinism, Domain Invariant 12).
 
-**Who arrives here, and why that is a fact rather than a fallback.** 23 of the catalogue's 146
+**Who arrives here, and why that is a fact rather than a fallback.** 22 of the catalogue's 151
 definitions declare a parser whose upstream implementation is the identity function — the
 payload comes back unparsed — and :attr:`sources.catalogue.SourceDefinition.parser_is_identity`
 is where that is recorded. Those definitions have a **declared parser that parses nothing**,

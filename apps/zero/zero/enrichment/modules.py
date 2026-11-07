@@ -1,6 +1,9 @@
 """Enricher modules (spec/010 §0.9 table, T131) — 10+ deterministic transforms.
 
 Every enricher is a pure function ``(SeedInput, context-dict) → candidates``.
+Mock breach/geo tables and synthetic phone-to-messenger projections are explicitly
+fixture-only and excluded from the production registry. Phone-to-messenger presence
+checks are not registered as production harvesters.
 Network-dependent steps (DNS, HTML) consume context injected by the caller
 (transport result / resolver), never make a bare socket call, so the whole
 layer is testable offline. Breach / geo / influence lookups are deterministic
@@ -78,6 +81,8 @@ class Enricher:
     attribution: str
     method: str
     enrich: Callable[[SeedInput, dict], tuple[ObservationCandidate, ...]]
+    #: Synthetic fixture data is never eligible for a normal collection run.
+    fixture_only: bool = False
 
 
 # -- enricher bodies ---------------------------------------------------------
@@ -300,7 +305,7 @@ ENRICHERS: tuple[Enricher, ...] = (
     Enricher(
         "email_to_breach", frozenset({InputType.EMAIL}), "MIT",
         "donors/user-scanner, donors/Holehe", "breach check (mock index)",
-        _email_to_breach,
+        _email_to_breach, fixture_only=True,
     ),
     Enricher(
         "domain_to_dns", frozenset({InputType.DOMAIN}), "MIT",
@@ -315,7 +320,7 @@ ENRICHERS: tuple[Enricher, ...] = (
     Enricher(
         "phone_to_whatsapp", frozenset({InputType.PHONE}), "MIT",
         "donors/PhoneInfoga, donors/ignorant", "WhatsApp ID projection",
-        _phone_to_whatsapp,
+        _phone_to_whatsapp, fixture_only=True,
     ),
     Enricher(
         "username_to_github", frozenset({InputType.USERNAME}), "MIT",
@@ -335,7 +340,7 @@ ENRICHERS: tuple[Enricher, ...] = (
     Enricher(
         "ip_to_geo", frozenset({InputType.UNKNOWN, InputType.URL}), "MIT",
         "MaxMind-style stub (method only)", "IP → geo stub",
-        _ip_to_geo,
+        _ip_to_geo, fixture_only=True,
     ),
     Enricher(
         "domain_to_technologies", frozenset({InputType.DOMAIN}), "MIT",
@@ -350,11 +355,29 @@ ENRICHERS: tuple[Enricher, ...] = (
 )
 
 
-def run_enrichers(seed: SeedInput, ctx: dict | None = None) -> list[ObservationCandidate]:
-    """Run every enricher whose input type matches the seed (name-sorted)."""
+PRODUCTION_ENRICHERS: tuple[Enricher, ...] = tuple(
+    enricher for enricher in ENRICHERS if not enricher.fixture_only
+)
+FIXTURE_ONLY_ENRICHERS: tuple[Enricher, ...] = tuple(
+    enricher for enricher in ENRICHERS if enricher.fixture_only
+)
+
+
+def run_enrichers(
+    seed: SeedInput,
+    ctx: dict | None = None,
+    *,
+    include_fixtures: bool = False,
+) -> list[ObservationCandidate]:
+    """Run matching enrichers in stable order.
+
+    Fixture-only lookup data is excluded from every normal execution path. Tests
+    and demos must opt into it explicitly with ``include_fixtures=True``.
+    """
     ctx = ctx or {}
+    registry = ENRICHERS if include_fixtures else PRODUCTION_ENRICHERS
     matched = sorted(
-        (enricher for enricher in ENRICHERS if seed.detected_type in enricher.input_types),
+        (enricher for enricher in registry if seed.detected_type in enricher.input_types),
         key=lambda e: e.name,
     )
     candidates: list[ObservationCandidate] = []

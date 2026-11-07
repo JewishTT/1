@@ -75,6 +75,7 @@ class AcquisitionTask:
     case_policy_source_id: str = ""
     approved_action_ref: str = ""
     action_id: str = ""
+    result_role: str = "EVIDENCE"
 
     def to_task(self) -> dict[str, Any]:
         return {
@@ -99,6 +100,7 @@ class AcquisitionTask:
             "case_policy_source_id": self.case_policy_source_id,
             "approved_action_ref": self.approved_action_ref,
             "action_id": self.action_id,
+            "result_role": self.result_role,
         }
 
 

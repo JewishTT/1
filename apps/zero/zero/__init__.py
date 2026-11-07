@@ -14,7 +14,8 @@ never calls an LLM (Layer 0 constitution, spec §0.1).
 
 from __future__ import annotations
 
-from .harvest_wave import HarvestWave, WaveSummary
+from .evidence import PersistedZeroLayerStage, ZeroLayerEvidenceSink
+from .harvest_wave import HarvestWave, WaveStageRecord, WaveSummary
 from .harvesters.contracts import CommandSpec, HarvestResult, ObservationCandidate
 from .observation_gate import ZeroLayerGate, ZeroLayerObservation
 from .resolution.fellegi_sunter import FellegiSunter
@@ -26,6 +27,9 @@ __all__ = [
     "FellegiSunter",
     "HarvestResult",
     "HarvestWave",
+    "WaveStageRecord",
+    "PersistedZeroLayerStage",
+    "ZeroLayerEvidenceSink",
     "InputType",
     "ObservationCandidate",
     "SeedInput",

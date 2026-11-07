@@ -1,0 +1,48 @@
+name: trongrid_account_transactions
+enabled: true
+category: 10. Blockchain
+description: TronGrid TRON mainnet account transaction feed, bounded first page
+os: any
+requires_key: true
+key_env: TRONGRID_API_KEY
+contact: public_api
+parser: trongrid
+applies_to:
+- crypto
+entity_hints:
+- crypto
+- identifier
+tool:
+  method: GET
+  url: https://api.trongrid.io/v1/accounts/{query}/transactions?only_confirmed=true&limit=50&order_by=block_timestamp,desc
+  headers:
+    TRON-PRO-API-KEY: '{api_key}'
+    Accept: application/json
+    User-Agent: cognitive-substrate/034 (read-only evidence)
+  params: {}
+parse:
+  family: json_rows
+  list_path: data
+  fields:
+    tx_id:
+      path: txID
+      kind: identifier
+      required: true
+    owner_address:
+      path: raw_data.contract[0].parameter.value.owner_address
+      kind: crypto
+    to_address:
+      path: raw_data.contract[0].parameter.value.to_address
+      kind: crypto
+    amount_sun:
+      path: raw_data.contract[0].parameter.value.amount
+      kind: identifier
+    block_timestamp:
+      path: block_timestamp
+      kind: identifier
+    block_number:
+      path: blockNumber
+      kind: identifier
+    result:
+      path: ret[0].contractRet
+      kind: identifier

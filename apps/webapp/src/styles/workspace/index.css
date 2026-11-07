@@ -26,6 +26,7 @@
 
 .ui-canvas-head {
   display: flex;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: var(--ui-space-5);
@@ -39,7 +40,8 @@
   display: flex;
   align-items: center;
   gap: var(--ui-space-4);
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .ui-canvas-next {

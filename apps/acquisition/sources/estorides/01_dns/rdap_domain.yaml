@@ -1,4 +1,7 @@
 name: rdap_domain
+source_family: rdap_registry
+contact: public_api
+time_basis: fetch
 enabled: true
 category: 01. DNS Intelligence
 description: RDAP (Registration Data Access Protocol) lookup — returns registrar, registry domain id, status flags, and event dates for the queried domain. Public, no API key, standard IETF protocol.

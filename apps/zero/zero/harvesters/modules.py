@@ -9,8 +9,10 @@ from __future__ import annotations
 from .domain import MODULES as _DOMAIN
 from .git import MODULES as _GIT
 from .image import MODULES as _IMAGE
-from .phone import MODULES as _PHONE
 from .url import MODULES as _URL
 from .username import MODULES as _USERNAME
 
-MODULES = _DOMAIN + _URL + _GIT + _IMAGE + _USERNAME + _PHONE
+# Phone-to-messenger account probing is deliberately not registered in the
+# production module table. Those adapters remain importable for isolated tests,
+# but a phone number must not be used to test private messaging-account presence.
+MODULES = _DOMAIN + _URL + _GIT + _IMAGE + _USERNAME
