@@ -17,25 +17,6 @@ const API_BASE = "/api/v1";
 // dropped `Content-Type` whenever a caller passed its own headers. See lib/http.ts.
 const request = clientFor(API_BASE);
 
-const phishingClubRequest = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const res = await fetch(`${API_BASE}/specops/lab/phishingclub/api/v1${path}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
-  const body = (await res.json().catch(() => null)) as
-    | { success?: boolean; data?: T; error?: string }
-    | null;
-  if (!res.ok || body?.success === false || !body) {
-    const detail = body?.error || body || res.statusText;
-    throw new ApiError(
-      res.status,
-      detail,
-      typeof detail === "string" ? detail : "Phishing Club request failed",
-    );
-  }
-  return body.data as T;
-};
-
 // ── Shared types ─────────────────────────────────────────────────
 
 export type ReviewDecision = "ACCEPT" | "REJECT" | "UNCERTAIN";
