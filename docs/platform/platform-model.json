@@ -6279,6 +6279,11 @@
       },
       {
         "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/shared/contracts/evidence_span.py",
+        "via": "contracts.evidence_span"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
         "to": "apps/shared/domain/ontology.py",
         "via": "domain.ontology"
       },
@@ -6311,11 +6316,6 @@
         "from": "apps/control-plane/services/interpretation_bridge.py",
         "to": "apps/control-plane/db/schema.py",
         "via": "db.schema"
-      },
-      {
-        "from": "apps/control-plane/services/interpretation_bridge.py",
-        "to": "apps/shared/contracts/evidence_span.py",
-        "via": "contracts.evidence_span"
       },
       {
         "from": "apps/control-plane/services/interpretation_bridge.py",
@@ -10909,13 +10909,13 @@
       },
       {
         "from": "apps/interpretation/tools/gliner_relex_smoke.py",
-        "to": "apps/interpretation/extractors/signals/ml.py",
-        "via": "extractors.signals.ml"
+        "to": "apps/interpretation/extractors/signals/mentions.py",
+        "via": "extractors.signals.mentions"
       },
       {
         "from": "apps/interpretation/tools/gliner_relex_smoke.py",
-        "to": "apps/interpretation/extractors/signals/mentions.py",
-        "via": "extractors.signals.mentions"
+        "to": "apps/interpretation/extractors/signals/ml.py",
+        "via": "extractors.signals.ml"
       },
       {
         "from": "apps/interpretation/tools/gliner_relex_smoke.py",
@@ -37135,7 +37135,7 @@
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
         "status": "IMPLEMENTED",
-        "loc": 1168,
+        "loc": 1164,
         "callables": 20,
         "stubs": 0,
         "not_implemented": 0,
@@ -38721,7 +38721,7 @@
       {
         "path": "apps/interpretation/extractors/signals/ml.py",
         "status": "IMPLEMENTED",
-        "loc": 415,
+        "loc": 422,
         "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
@@ -39229,7 +39229,7 @@
       {
         "path": "apps/interpretation/tests/test_ml_relation_producers.py",
         "status": "TEST",
-        "loc": 131,
+        "loc": 132,
         "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
@@ -42271,7 +42271,7 @@
       {
         "path": "apps/shared/semantic/type_signal.py",
         "status": "IMPLEMENTED",
-        "loc": 197,
+        "loc": 211,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
