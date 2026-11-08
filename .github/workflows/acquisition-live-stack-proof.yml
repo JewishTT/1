@@ -317,13 +317,10 @@ jobs:
           COGNITIVE_LOG_LEVEL: INFO
         run: |
           mkdir -p apps/control-plane/artifacts
-          if [[ -n "${COGNITIVE_CROSSREF_MAILTO:-}" ]]; then
-            .venv/bin/python apps/control-plane/_prove_person_research_case.py \
-              apps/control-plane/artifacts/person-research-case-e2e.json
-          else
-            printf '%s\n' '{"schema_version":1,"status":"BLOCKED_MISSING_OPERATOR_CONTACT","blocker":"Set a real monitored COGNITIVE_CROSSREF_MAILTO Actions secret to execute Crossref-backed person-case acceptance."}' > apps/control-plane/artifacts/person-research-case-e2e.json
-            echo "::warning::Person Research Case live acceptance skipped: COGNITIVE_CROSSREF_MAILTO is not configured."
-          fi
+          # The proof writes a typed BLOCKED report and exits non-zero when the real,
+          # monitored Crossref contact secret is absent. Never report a skipped E2E as green.
+          .venv/bin/python apps/control-plane/_prove_person_research_case.py \
+            apps/control-plane/artifacts/person-research-case-e2e.json
       - name: Upload live Person Research Case evidence and worker logs
         if: always()
         uses: actions/upload-artifact@v4
