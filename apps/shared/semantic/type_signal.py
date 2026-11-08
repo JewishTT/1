@@ -111,7 +111,7 @@ class TypeSignal:
     def __post_init__(self) -> None:
         source_vocab = normalize_type_ref(self.source_vocab) if self.source_vocab else None
         if source_vocab and source_vocab.casefold() in {"local", "internal", "regex", "ner"}:
-            raise ValueError("source_vocab must be an external vocabulary or None; detector identity belongs in producer_ref")
+            raise ValueError("source_vocab must name an external vocabulary or be None; detector identity belongs in producer_ref")
         surface = str(self.surface or "")
         if not surface.strip():
             raise ValueError("TypeSignal surface must preserve a non-empty source term")

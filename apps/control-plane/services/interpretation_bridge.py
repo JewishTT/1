@@ -224,7 +224,8 @@ class InterpretationBridge:
             entities=tuple(entity.entity_id for entity in resolved),
             relations=len(document.relations),
             unresolved=sum(
-                1 for candidate in batch.candidates if candidate.verdict.value == "UNRESOLVED"
+                1 for decision in batch.decisions
+                if decision.verdict.value == "UNRESOLVED"
             ),
             dropped_kinds=document.dropped_unknown_kinds,
             reason="" if resolved else "every mention was refused an identity",
