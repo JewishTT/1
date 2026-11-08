@@ -37,6 +37,7 @@ about the source, not a success.
 from __future__ import annotations
 
 import hashlib
+import re
 import logging
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
@@ -1039,12 +1040,28 @@ def _structured_type_signal_report(
     # Never bind it to the first mention encountered: that can attach a source type to the
     # wrong same-name person. One unique existing mention is required.
     mention_ids: dict[str, set[str]] = {}
+    # Generic text extraction may also inspect script contents. A duplicate name
+    # occurring inside JSON-LD is not an independent document-text mention and must
+    # not make an otherwise unique visible mention ambiguous (or win the binding).
+    script_ranges = [
+        (match.start(), match.end())
+        for match in re.finditer(
+            r"<script\b[^>]*>.*?</script\s*>", html,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+    ]
+
     if document is not None:
         canonical = getattr(document, "canonical_by_mention", {}) or {}
         for mention in getattr(document, "mentions", ()):
             mention_id = str(getattr(mention, "mention_id", "") or "")
             if not mention_id:
                 continue
+            span = getattr(mention, "span", None)
+            if span is not None and len(span) == 2:
+                start, end = int(span[0]), int(span[1])
+                if any(start >= left and end <= right for left, right in script_ranges):
+                    continue
             for surface in (
                 str(getattr(mention, "surface", "") or ""),
                 str(canonical.get(mention_id, "") or ""),
