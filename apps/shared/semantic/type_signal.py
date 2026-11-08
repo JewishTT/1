@@ -18,7 +18,15 @@ TYPE_SIGNAL_ID_PREFIX = "TS-"
 
 
 def _canonical_refs(values: tuple[str, ...] | list[str]) -> tuple[str, ...]:
-    return tuple(sorted({normalize_type_ref(value) for value in values if normalize_type_ref(value)}))
+    return tuple(
+        sorted(
+            {
+                normalize_type_ref(value)
+                for value in values
+                if normalize_type_ref(value)
+            }
+        )
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,7 +119,10 @@ class TypeSignal:
     def __post_init__(self) -> None:
         source_vocab = normalize_type_ref(self.source_vocab) if self.source_vocab else None
         if source_vocab and source_vocab.casefold() in {"local", "internal", "regex", "ner"}:
-            raise ValueError("source_vocab must name an external vocabulary or be None; detector identity belongs in producer_ref")
+            raise ValueError(
+                "source_vocab must name an external vocabulary or be None; "
+                "detector identity belongs in producer_ref"
+            )
         surface = str(self.surface or "")
         if not surface.strip():
             raise ValueError("TypeSignal surface must preserve a non-empty source term")
@@ -140,7 +151,10 @@ class TypeSignal:
                            tuple(sorted(candidates, key=lambda item: item.content_key)))
         derived = self.derived_signal_id()
         if self.signal_id and self.signal_id != derived:
-            raise ValueError(f"TypeSignal signal_id {self.signal_id!r} disagrees with derived {derived!r}")
+            raise ValueError(
+                f"TypeSignal signal_id {self.signal_id!r} "
+                f"disagrees with derived {derived!r}"
+            )
         object.__setattr__(self, "signal_id", derived)
 
     def identity_material(self) -> dict[str, Any]:

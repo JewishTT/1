@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from domain.signal_basis import SignalBasis
+
 from extractors.signals.ml import (
     GLiNERRelexExtractor,
     StanfordOpenIEExtractor,

@@ -16,6 +16,7 @@ from typing import Any
 from domain.predicate_signature import ArgumentSlot
 from domain.relation_participant import RelationParticipant
 from domain.signal_basis import SignalBasis
+
 from extractors.signals.mentions import deferred_occurrence
 from extractors.signals.protocol import ExtractionScope, ProducerDeclaration, run_producer
 from extractors.signals.signal import DirectionHypothesis, Neighbourhood, RelationSignal, SignalKind
@@ -407,8 +408,14 @@ def stanford_openie_signals(records: Sequence[object], *, scope: ExtractionScope
 
 
 __all__ = [
-    "ExtractionRefusal", "GLiNERRelexExtractor", "MAX_DOCUMENT_CHARS",
-    "MAX_RELATION_PAIRS", "OPENIE_PRODUCER_REF", "OPENIE_PRODUCER_VERSION",
-    "RelationProducerReport", "StanfordOpenIEExtractor", "gliner_relex_signals",
+    "MAX_DOCUMENT_CHARS",
+    "MAX_RELATION_PAIRS",
+    "OPENIE_PRODUCER_REF",
+    "OPENIE_PRODUCER_VERSION",
+    "ExtractionRefusal",
+    "GLiNERRelexExtractor",
+    "RelationProducerReport",
+    "StanfordOpenIEExtractor",
+    "gliner_relex_signals",
     "stanford_openie_signals",
 ]

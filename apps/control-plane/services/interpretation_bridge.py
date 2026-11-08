@@ -259,6 +259,7 @@ class InterpretationBridge:
         Every write shares one transaction. A committed observation with no entities is a row
         that looks like evidence and is not, and it is the state this platform was in.
         """
+        from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
         from domain.ontology import coerce_entity_type
         from sqlalchemy import select
 
@@ -269,7 +270,6 @@ class InterpretationBridge:
         from db.schema import Observation as ObservationRow
         from db.schema import TypeSignalRow
         from sqlalchemy.dialects.postgresql import insert as pg_insert
-        from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
 
         session = self._store.session_factory()
         try:
@@ -441,7 +441,6 @@ class InterpretationBridge:
                     scope_id=investigation_id or "default",
                 )
                 verdict = str(getattr(entity, "verdict", "") or "")
-                anchor_mention_id = str(getattr(entity, "anchor_mention_id", "") or "")
                 row = await session.execute(
                     select(EntityRow).where(
                         EntityRow.entity_id == entity_id,
@@ -524,6 +523,7 @@ class InterpretationBridge:
                 from domain.relation_claim import RelationRoleBinding
                 from domain.relation_identity import RelationArityMode
                 from semantic.regime import SemanticCommitment, SemanticRegime
+
                 from db.relation_candidate_store import SqlRelationCandidateStore
 
                 observed_moment = _coerce_datetime(observed_at)
@@ -698,7 +698,7 @@ class InterpretationBridge:
 
             await session.commit()
             return True
-        except Exception as exc:  # noqa: BLE001 - caller chooses fail-closed retry semantics
+        except Exception as exc:
             await session.rollback()
             log.warning("persist failed for %s: %s", result.observation_id, exc)
             if raise_on_failure:
@@ -798,15 +798,11 @@ class InterpretationBridge:
                     observation_id=result.observation_id,
                 )
                 source_event_id = hashlib.sha256(
-                    "\x1f".join(
-                        (
-                            record.tenant_id,
-                            record.entity_id,
-                            record.observation_id,
-                            "interpretation-bridge-v1",
-                            record.kind,
-                        )
-                    ).encode("utf-8")
+                    (
+                        f"{record.tenant_id}\x1f{record.entity_id}\x1f"
+                        f"{record.observation_id}\x1finterpretation-bridge-v1\x1f"
+                        f"{record.kind}"
+                    ).encode()
                 ).hexdigest()
                 session.add(
                     EntityStreamRow(
@@ -824,7 +820,7 @@ class InterpretationBridge:
                 )
                 written += 1
             await session.commit()
-        except Exception as exc:  # noqa: BLE001 - fail closed when the caller requires the stream
+        except Exception as exc:
             await session.rollback()
             log.warning("stream append failed for %s: %s", result.observation_id, exc)
             if raise_on_failure:
@@ -990,13 +986,13 @@ def _coerce_datetime(value: str | datetime | None) -> datetime | None:
     """Normalise supplied event/source time without inventing a replay-time clock."""
     if value is None or value == "":
         return None
-    moment = value if isinstance(value, datetime) else datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    moment = value if isinstance(value, datetime) else datetime.fromisoformat(str(value))
     return moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
 
 
 def _evidence_segment_ref(capture_ref: str) -> str:
     """Stable whole-document segment address used by extracted relation spans."""
-    digest = hashlib.sha256(f"{capture_ref}|whole-document".encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(f"{capture_ref}|whole-document".encode()).hexdigest()
     return f"SEG-{digest[:32]}"
 
 

@@ -9,8 +9,8 @@ import json
 import sys
 from pathlib import Path
 
-from extractors.signals.ml import GLiNERRelexExtractor, gliner_relex_signals
 from extractors.signals.mentions import read_occurrence
+from extractors.signals.ml import GLiNERRelexExtractor, gliner_relex_signals
 from extractors.signals.protocol import ExtractionScope
 
 TEXT = (
