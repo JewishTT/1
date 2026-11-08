@@ -35715,7 +35715,7 @@
       {
         "path": "apps/acquisition/worker_service.py",
         "status": "IMPLEMENTED",
-        "loc": 201,
+        "loc": 213,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
