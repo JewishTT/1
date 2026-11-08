@@ -1,0 +1,28 @@
+name: platform-model-export
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Regenerate source-derived platform documentation
+        run: .venv/bin/python -m platform_model.build
+      - name: Export generated platform documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-platform-docs
+          path: |
+            docs/platform/
+            README.md
+            docs/README.md
+          if-no-files-found: error
+          retention-days: 1
