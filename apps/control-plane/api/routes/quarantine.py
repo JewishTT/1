@@ -43,9 +43,9 @@ def _require_operator(ctx: TenantContext) -> None:
 
 @router.get("")
 async def list_quarantine(
-    topic: str | None = Query(default=None, max_length=200),
-    limit: int = Query(default=50, ge=1, le=100),
-    cursor: str | None = Query(default=None, max_length=4096),
+    topic: Annotated[str | None, Query(max_length=200)] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    cursor: Annotated[str | None, Query(max_length=4096)] = None,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
 ) -> dict:
     _require_reader(ctx)

@@ -51,13 +51,6 @@ GAPS: list[dict] = [
         "claim": "The metrics API explicitly reports unavailable because tenant-scoped telemetry and time-windowed aggregates are not connected.",
         "evidence": [_ev("apps/control-plane/api/routes/metrics.py", r'"availability": "unavailable"')],
     },
-    {
-        "id": "dlq-tenant-store-not-wired",
-        "layer": "x",
-        "severity": "critical",
-        "claim": "The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane.",
-        "evidence": [_ev("apps/control-plane/api/routes/quarantine.py", r"tenant-scoped durable quarantine storage is not configured")],
-    },
 # -- cross-cutting: schema ownership -------------------------------------
     {
         "id": "alembic-head-is-not-a-base",
@@ -167,6 +160,14 @@ RESOLVED_CLAIMS: list[dict] = [
         "id": "dlq-re-evaluation-does-not-delete-payload",
         "claim": "The API no longer purges a quarantined payload as part of re-evaluation.",
         "evidence": [_ev("apps/control-plane/api/routes/quarantine.py", r"store\.purge\(", expect="absent")],
+    },
+    {
+        "id": "dlq-tenant-scoped-storage-is-wired",
+        "claim": "The quarantine API and acquisition failure sink use the same tenant-scoped durable object-store adapter.",
+        "evidence": [
+            _ev("apps/control-plane/api/routes/quarantine.py", r"ObjectStoreSink\(store=ObjectStore\(\), tenant_id=ctx\.tenant_id\)"),
+            _ev("apps/acquisition/worker_acquisition.py", r"ObjectStoreSink\(store=object_store, tenant_id=tenant_id\)\.aput\(record\)"),
+        ],
     },
     {
         "id": "metrics-have-no-fabricated-operational-values",

@@ -125,8 +125,14 @@ async def test_named_runtime_uses_artifact_sink_and_does_not_publish_twice() -> 
 
 async def test_named_runtime_fails_closed_without_artifact_sink() -> None:
     runtime = _Runtime()
+    routed: list[tuple[object, object]] = []
+
+    def failure_sink(failure, envelope) -> None:
+        routed.append((failure, envelope))
+
     worker = AcquisitionWorker(
         connector=_Connector(sink=None),
+        sink=failure_sink,
         runtimes={"searxng": runtime},
     )
 
@@ -135,4 +141,7 @@ async def test_named_runtime_fails_closed_without_artifact_sink() -> None:
     assert not result.observations
     assert len(result.failures) == 1
     assert result.failures[0].code == "runtime_artifact_sink_unavailable"
+    assert len(routed) == 1
+    assert routed[0][0].code == "runtime_artifact_sink_unavailable"
+    assert routed[0][1].tenant_id == "tenant-a"
     assert runtime.calls == 0
