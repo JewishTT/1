@@ -31,7 +31,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/context_engine/worldline.py` | Control-plane side of the worldline anchor: load revisions, build the view. |
 | `apps/control-plane/db/correlation_store.py` | Durable persistence for possible_match correlation edges (FR-004, I-2). |
 | `apps/control-plane/db/investigation_store.py` | Durable persistence for investigations. |
-| `apps/control-plane/db/relation_candidate_store.py` | PostgreSQL persistence for relation hypotheses before claim admission. |
+| `apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py` | Put the durable investigation-context store under Alembic ownership. |
 
 ## Policy-first capability planning
 

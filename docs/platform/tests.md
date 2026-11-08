@@ -1,6 +1,6 @@
 # Tests
 
-375 test files, 5474 test functions. 288 platform modules are not targeted by any test.
+376 test files, 5476 test functions. 289 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -101,6 +101,7 @@
 | `apps/control-plane/tests/unit/test_cc_temporality.py` | 7 | `apps/control-plane/api/sse.py`, `apps/control-plane/services/cc_temporality.py`, `apps/shared/network/cc_session.py` |
 | `apps/control-plane/tests/unit/test_cognitive_loop.py` | 18 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/loop.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py` |
 | `apps/control-plane/tests/unit/test_context_engine.py` | 45 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/domain/investigation_context.py` |
+| `apps/control-plane/tests/unit/test_context_store_storage_contract.py` | 2 | — |
 | `apps/control-plane/tests/unit/test_context_termination_and_catalogue.py` | 30 | `apps/control-plane/context_engine/catalogue_bridge.py`, `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py` |
 | `apps/control-plane/tests/unit/test_digest_gated_revision.py` | 16 | `apps/control-plane/context_engine/invariant_reducer.py`, `apps/shared/domain/dynamics.py` |
 | `apps/control-plane/tests/unit/test_dispatcher_backpressure.py` | 11 | `apps/control-plane/services/dispatcher.py` |

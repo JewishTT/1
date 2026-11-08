@@ -218,7 +218,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 258,
+      "python_modules": 260,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -321,6 +321,7 @@
         "apps.control-plane.db.migrations.versions.031_relation_claim_projection_outbox",
         "apps.control-plane.db.migrations.versions.032_type_signals",
         "apps.control-plane.db.migrations.versions.033_durable_case_budgets",
+        "apps.control-plane.db.migrations.versions.034_durable_investigation_contexts",
         "apps.control-plane.db.relation_candidate_store",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
@@ -419,8 +420,7 @@
         "apps.control-plane.tests.test_type_signal_bridge",
         "apps.control-plane.tests.test_zero_layer_service",
         "apps.control-plane.tests.unit.test_action_memory",
-        "apps.control-plane.tests.unit.test_approval_gate",
-        "apps.control-plane.tests.unit.test_assembly_structural_conflict"
+        "apps.control-plane.tests.unit.test_approval_gate"
       ]
     },
     {
@@ -1194,11 +1194,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1100,
+    "module_count": 1102,
     "edge_count": 3177,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 964,
+      "stdlib:__future__": 966,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
@@ -1235,7 +1235,7 @@
       "stdlib:logging": 24,
       "stdlib:math": 42,
       "stdlib:os": 83,
-      "stdlib:pathlib": 338,
+      "stdlib:pathlib": 339,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 108,
@@ -1269,7 +1269,7 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 26,
+      "third-party:alembic": 27,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
@@ -1313,7 +1313,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 168,
+      "third-party:sqlalchemy": 170,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -19390,6 +19390,15 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_context_store_storage_contract.py",
+        "tests": 2,
+        "test_names": [
+          "test_context_store_tables_have_a_canonical_forward_only_migration",
+          "test_context_store_schema_contains_the_runtime_write_contract"
+        ],
+        "targets": []
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_context_termination_and_catalogue.py",
         "tests": 30,
         "test_names": [
@@ -26081,7 +26090,7 @@
         ]
       }
     ],
-    "total": 5474
+    "total": 5476
   },
   "contracts": {
     "python": [
@@ -31638,6 +31647,7 @@
     "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
     "apps/control-plane/db/migrations/versions/032_type_signals.py",
     "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
+    "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
     "apps/control-plane/semantic_path/corpus_cases.py",
@@ -31729,10 +31739,9 @@
     "apps/shared/contracts/__init__.py",
     "apps/shared/datasets/__init__.py",
     "apps/shared/datasets/build.py",
-    "apps/shared/domain/entity_identity.py",
-    "apps/shared/donor/__init__.py"
+    "apps/shared/domain/entity_identity.py"
   ],
-  "untested_count": 288,
+  "untested_count": 289,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -32728,6 +32737,7 @@
             "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
             "apps/control-plane/db/migrations/versions/032_type_signals.py",
             "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
+            "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
             "apps/control-plane/db/relation_candidate_store.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
@@ -32830,6 +32840,7 @@
             "apps/control-plane/tests/unit/test_cc_temporality.py",
             "apps/control-plane/tests/unit/test_cognitive_loop.py",
             "apps/control-plane/tests/unit/test_context_engine.py",
+            "apps/control-plane/tests/unit/test_context_store_storage_contract.py",
             "apps/control-plane/tests/unit/test_context_termination_and_catalogue.py",
             "apps/control-plane/tests/unit/test_digest_gated_revision.py",
             "apps/control-plane/tests/unit/test_dispatcher_backpressure.py",
@@ -32951,7 +32962,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 317
+          "module_count": 319
         },
         {
           "id": "webapp",
@@ -36932,6 +36943,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
+        "status": "MIGRATION",
+        "loc": 152,
+        "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "IMPLEMENTED",
         "loc": 229,
@@ -37892,6 +37912,15 @@
         "status": "TEST",
         "loc": 558,
         "callables": 51,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_context_store_storage_contract.py",
+        "status": "TEST",
+        "loc": 43,
+        "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -44646,9 +44675,9 @@
       "IMPLEMENTED": 592,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 97,
-      "TEST": 372,
-      "MIGRATION": 21,
-      "total": 1100
+      "TEST": 373,
+      "MIGRATION": 22,
+      "total": 1102
     }
   },
   "reachability": {
@@ -45662,6 +45691,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "PRODUCTION"
       },
@@ -46079,6 +46112,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_context_engine.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_context_store_storage_contract.py",
         "status": "TEST"
       },
       {
@@ -49104,9 +49141,9 @@
     "summary": {
       "PRODUCTION": 466,
       "TEST_ONLY": 134,
-      "ORPHAN": 128,
-      "TEST": 372,
-      "total": 1100
+      "ORPHAN": 129,
+      "TEST": 373,
+      "total": 1102
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -49292,6 +49329,7 @@
       "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
       "apps/control-plane/db/migrations/versions/032_type_signals.py",
       "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
+      "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
@@ -113204,14 +113242,14 @@
   },
   "counts": {
     "components": 17,
-    "python_modules": 1100,
+    "python_modules": 1102,
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 3177,
-    "test_files": 375,
-    "test_functions": 5474,
-    "untested_modules": 288,
+    "test_files": 376,
+    "test_functions": 5476,
+    "untested_modules": 289,
     "http_routes": 222
   },
   "evidence_stats": {
@@ -113224,16 +113262,16 @@
     "IMPLEMENTED": 592,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 97,
-    "TEST": 372,
-    "MIGRATION": 21,
-    "total": 1100
+    "TEST": 373,
+    "MIGRATION": 22,
+    "total": 1102
   },
   "reachability_summary": {
     "PRODUCTION": 466,
     "TEST_ONLY": 134,
-    "ORPHAN": 128,
-    "TEST": 372,
-    "total": 1100
+    "ORPHAN": 129,
+    "TEST": 373,
+    "total": 1102
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -113466,6 +113504,7 @@
     "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
     "apps/control-plane/db/migrations/versions/032_type_signals.py",
     "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
+    "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
