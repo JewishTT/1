@@ -349,6 +349,8 @@ class PostgresCaseBudgetService:
             "policy_digest": policy_digest,
             "state": "RESERVED",
             **requested,
+            # Match the durable reservation column consumed by CaseDispatchExecutor.
+            "request_count": requested["requests"],
             "limits": dict(ceilings),
             "source_refs": sorted(set(source_refs)),
             "created": True,
