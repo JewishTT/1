@@ -195,6 +195,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/acquisition/adapters/discovery/linkgraph.py` | Link-graph discovery source (FR-004, US3). |
 | `apps/acquisition/entity_search.py` | Deterministic entity search planning surface. |
 | `apps/acquisition/tests/unit/test_entity_search.py` | Deterministic entity search surface unit tests. |
+| `apps/control-plane/_prove_person_research_case.py` | Live Feature 034 person-case acceptance across PostgreSQL, Redpanda, S3 and report read-back. |
 | `apps/control-plane/api/routes/research_cases.py` | Person Research Case API routes (Feature 034). |
 | `apps/control-plane/api/routes/science_tda.py` | Topological invariant API (011, FR-008/FR-009; the "TDA in the corner"). |
 | `apps/control-plane/api/routes/search.py` | Search plane endpoints (T026/T051, US2). |
@@ -216,7 +217,6 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/services/research_case_service.py` | Person case application service (Feature 034). |
 | `apps/control-plane/services/search_backends.py` | Real query backends for the search plane (T026, US2). |
 | `apps/control-plane/services/temporal_materialization_dispatch.py` | Temporal launch seam for entity-created temporal materialization. |
-| `apps/control-plane/services/temporal_materialization_service.py` | Control-plane service facade for deterministic temporal materialization. |
 
 ## Closed loop / frontier
 

@@ -1,6 +1,6 @@
 # Tests
 
-374 test files, 5467 test functions. 287 platform modules are not targeted by any test.
+374 test files, 5467 test functions. 288 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -427,6 +427,7 @@
 | `apps/admission/resolution/__init__.py` |
 | `apps/bulk-ingestion/historical/__init__.py` |
 | `apps/control-plane/__init__.py` |
+| `apps/control-plane/_prove_person_research_case.py` |
 | `apps/control-plane/api/path_shim.py` |
 | `apps/control-plane/api/routes/connectors.py` |
 | `apps/control-plane/api/routes/discovery.py` |
@@ -446,4 +447,3 @@
 | `apps/control-plane/api/routes/science_hypotheses.py` |
 | `apps/control-plane/api/routes/science_review.py` |
 | `apps/control-plane/api/routes/science_robustness.py` |
-| `apps/control-plane/api/routes/science_structure.py` |

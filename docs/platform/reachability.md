@@ -6,7 +6,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 465 |
+| PRODUCTION | 466 |
 | TEST_ONLY | 134 |
 | ORPHAN | 127 |
 | TEST | 371 |
@@ -26,6 +26,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/sources/append_parse_blocks.py` |
 | `apps/acquisition/worker_acquisition.py` |
 | `apps/acquisition/worker_service.py` |
+| `apps/control-plane/_prove_person_research_case.py` |
 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/composition.py` |
 | `apps/control-plane/semantic_path/corpus.py` |

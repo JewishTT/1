@@ -899,6 +899,7 @@
         ],
         "modules": [
           "apps/control-plane/__init__.py",
+          "apps/control-plane/_prove_person_research_case.py",
           "apps/control-plane/api/__init__.py",
           "apps/control-plane/api/auth.py",
           "apps/control-plane/api/main.py",
@@ -1213,7 +1214,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 314
+        "module_count": 315
       },
       {
         "id": "webapp",
@@ -1738,6 +1739,12 @@
       },
       {
         "from": "projection-query",
+        "to": "platform-shared",
+        "type": "direct",
+        "via_import": "storage.s3"
+      },
+      {
+        "from": "projection-query",
         "to": "identity-entities",
         "type": "direct",
         "via_import": "api.routes.entities"
@@ -1753,12 +1760,6 @@
         "to": "ingestion",
         "type": "direct",
         "via_import": "adapters.discovery"
-      },
-      {
-        "from": "projection-query",
-        "to": "platform-shared",
-        "type": "direct",
-        "via_import": "security"
       },
       {
         "from": "identity-entities",
@@ -2609,6 +2610,7 @@
           "apps/acquisition/dispatcher/scheduler.py",
           "apps/acquisition/tests/unit/test_case_execution_guard.py",
           "apps/admission/resolution/blocking.py",
+          "apps/control-plane/_prove_person_research_case.py",
           "apps/control-plane/api/routes/research_cases.py",
           "apps/control-plane/context_engine/person_case_profile.py",
           "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
@@ -2624,7 +2626,7 @@
           "apps/control-plane/tests/test_research_case_reports.py",
           "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
         ],
-        "module_count": 18,
+        "module_count": 19,
         "capabilities": []
       },
       {

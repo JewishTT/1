@@ -218,10 +218,11 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 255,
+      "python_modules": 256,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
+        "apps.control-plane._prove_person_research_case",
         "apps.control-plane.api",
         "apps.control-plane.api.auth",
         "apps.control-plane.api.main",
@@ -419,8 +420,7 @@
         "apps.control-plane.tests.unit.test_action_memory",
         "apps.control-plane.tests.unit.test_approval_gate",
         "apps.control-plane.tests.unit.test_assembly_structural_conflict",
-        "apps.control-plane.tests.unit.test_badges_facade",
-        "apps.control-plane.tests.unit.test_cc_temporality"
+        "apps.control-plane.tests.unit.test_badges_facade"
       ]
     },
     {
@@ -1194,15 +1194,15 @@
     }
   ],
   "import_graph": {
-    "module_count": 1097,
-    "edge_count": 3169,
+    "module_count": 1098,
+    "edge_count": 3174,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 961,
+      "stdlib:__future__": 962,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
-      "stdlib:asyncio": 76,
+      "stdlib:asyncio": 77,
       "stdlib:base64": 11,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
@@ -1213,7 +1213,7 @@
       "stdlib:contextlib": 4,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 410,
-      "stdlib:datetime": 209,
+      "stdlib:datetime": 210,
       "stdlib:decimal": 14,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1221,7 +1221,7 @@
       "stdlib:functools": 10,
       "stdlib:getpass": 1,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 142,
+      "stdlib:hashlib": 143,
       "stdlib:heapq": 1,
       "stdlib:hmac": 4,
       "stdlib:html": 11,
@@ -1231,36 +1231,36 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 214,
+      "stdlib:json": 215,
       "stdlib:logging": 24,
       "stdlib:math": 42,
-      "stdlib:os": 82,
-      "stdlib:pathlib": 336,
+      "stdlib:os": 83,
+      "stdlib:pathlib": 337,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 107,
       "stdlib:secrets": 4,
       "stdlib:shlex": 1,
       "stdlib:shutil": 16,
-      "stdlib:signal": 2,
+      "stdlib:signal": 3,
       "stdlib:socket": 9,
       "stdlib:sqlite3": 1,
       "stdlib:stat": 3,
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
-      "stdlib:subprocess": 18,
-      "stdlib:sys": 267,
+      "stdlib:subprocess": 19,
+      "stdlib:sys": 268,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 23,
-      "stdlib:time": 39,
+      "stdlib:time": 40,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 41,
-      "stdlib:typing": 399,
+      "stdlib:typing": 400,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 62,
+      "stdlib:urllib": 63,
       "stdlib:uuid": 55,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -1313,7 +1313,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 164,
+      "third-party:sqlalchemy": 166,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -3416,6 +3416,31 @@
         "from": "apps/bulk-ingestion/tests/unit/test_historical_replay.py",
         "to": "apps/bulk-ingestion/historical/replay.py",
         "via": "historical.replay"
+      },
+      {
+        "from": "apps/control-plane/_prove_person_research_case.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/_prove_person_research_case.py",
+        "to": "apps/shared/storage/s3.py",
+        "via": "storage.s3"
+      },
+      {
+        "from": "apps/control-plane/_prove_person_research_case.py",
+        "to": "apps/control-plane/composition.py",
+        "via": "composition"
+      },
+      {
+        "from": "apps/control-plane/_prove_person_research_case.py",
+        "to": "apps/control-plane/context_engine/person_case_profile.py",
+        "via": "context_engine.person_case_profile"
+      },
+      {
+        "from": "apps/control-plane/_prove_person_research_case.py",
+        "to": "apps/shared/config/settings.py",
+        "via": "config.settings"
       },
       {
         "from": "apps/control-plane/api/main.py",
@@ -31513,6 +31538,7 @@
     "apps/admission/resolution/__init__.py",
     "apps/bulk-ingestion/historical/__init__.py",
     "apps/control-plane/__init__.py",
+    "apps/control-plane/_prove_person_research_case.py",
     "apps/control-plane/api/path_shim.py",
     "apps/control-plane/api/routes/connectors.py",
     "apps/control-plane/api/routes/discovery.py",
@@ -31671,10 +31697,9 @@
     "apps/shared/datasets/__init__.py",
     "apps/shared/datasets/build.py",
     "apps/shared/domain/entity_identity.py",
-    "apps/shared/donor/__init__.py",
-    "apps/shared/events/bus.py"
+    "apps/shared/donor/__init__.py"
   ],
-  "untested_count": 287,
+  "untested_count": 288,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -32576,6 +32601,7 @@
           ],
           "modules": [
             "apps/control-plane/__init__.py",
+            "apps/control-plane/_prove_person_research_case.py",
             "apps/control-plane/api/__init__.py",
             "apps/control-plane/api/auth.py",
             "apps/control-plane/api/main.py",
@@ -32890,7 +32916,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 314
+          "module_count": 315
         },
         {
           "id": "webapp",
@@ -33415,6 +33441,12 @@
         },
         {
           "from": "projection-query",
+          "to": "platform-shared",
+          "type": "direct",
+          "via_import": "storage.s3"
+        },
+        {
+          "from": "projection-query",
           "to": "identity-entities",
           "type": "direct",
           "via_import": "api.routes.entities"
@@ -33430,12 +33462,6 @@
           "to": "ingestion",
           "type": "direct",
           "via_import": "adapters.discovery"
-        },
-        {
-          "from": "projection-query",
-          "to": "platform-shared",
-          "type": "direct",
-          "via_import": "security"
         },
         {
           "from": "identity-entities",
@@ -34286,6 +34312,7 @@
             "apps/acquisition/dispatcher/scheduler.py",
             "apps/acquisition/tests/unit/test_case_execution_guard.py",
             "apps/admission/resolution/blocking.py",
+            "apps/control-plane/_prove_person_research_case.py",
             "apps/control-plane/api/routes/research_cases.py",
             "apps/control-plane/context_engine/person_case_profile.py",
             "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
@@ -34301,7 +34328,7 @@
             "apps/control-plane/tests/test_research_case_reports.py",
             "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
           ],
-          "module_count": 18,
+          "module_count": 19,
           "capabilities": []
         },
         {
@@ -35967,6 +35994,17 @@
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
+      },
+      {
+        "path": "apps/control-plane/_prove_person_research_case.py",
+        "status": "IMPLEMENTED",
+        "loc": 529,
+        "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": [
+          "placeholder"
+        ]
       },
       {
         "path": "apps/control-plane/api/__init__.py",
@@ -44552,12 +44590,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 591,
+      "IMPLEMENTED": 592,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 97,
       "TEST": 371,
       "MIGRATION": 20,
-      "total": 1097
+      "total": 1098
     }
   },
   "reachability": {
@@ -45173,6 +45211,10 @@
       {
         "path": "apps/control-plane/__init__.py",
         "status": "ORPHAN"
+      },
+      {
+        "path": "apps/control-plane/_prove_person_research_case.py",
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/api/__init__.py",
@@ -48963,6 +49005,7 @@
       "apps/acquisition/sources/append_parse_blocks.py",
       "apps/acquisition/worker_acquisition.py",
       "apps/acquisition/worker_service.py",
+      "apps/control-plane/_prove_person_research_case.py",
       "apps/control-plane/api/main.py",
       "apps/control-plane/composition.py",
       "apps/control-plane/semantic_path/corpus.py",
@@ -48998,11 +49041,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 465,
+      "PRODUCTION": 466,
       "TEST_ONLY": 134,
       "ORPHAN": 127,
       "TEST": 371,
-      "total": 1097
+      "total": 1098
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -51785,7 +51828,7 @@
         "status": "INFERRED",
         "method": "architecture_compiler:direct",
         "evidence": {
-          "via_import": "security",
+          "via_import": "storage.s3",
           "event": null
         },
         "confidence": 0.6
@@ -57195,6 +57238,71 @@
         "evidence": {
           "file": "apps/bulk-ingestion/tests/unit/test_historical_replay.py",
           "via": "network.commoncrawl"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "166584ed14f3a598",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/_prove_person_research_case.py",
+        "object": "apps/control-plane/composition.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/_prove_person_research_case.py",
+          "via": "composition"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "4bdd2e52eceb4519",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/_prove_person_research_case.py",
+        "object": "apps/control-plane/context_engine/person_case_profile.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/_prove_person_research_case.py",
+          "via": "context_engine.person_case_profile"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "546763bfe834dd4e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/_prove_person_research_case.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/_prove_person_research_case.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a34bd67f3e514fdd",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/_prove_person_research_case.py",
+        "object": "apps/shared/config/settings.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/_prove_person_research_case.py",
+          "via": "config.settings"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9f5e283acf4affbf",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/_prove_person_research_case.py",
+        "object": "apps/shared/storage/s3.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/_prove_person_research_case.py",
+          "via": "storage.s3"
         },
         "confidence": 1.0
       },
@@ -98754,6 +98862,18 @@
         "confidence": 0.7
       },
       {
+        "fact_id": "ccd89c027cec4d6a",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "034-person-research-case",
+        "object": "apps/control-plane/_prove_person_research_case.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/034-person-research-case/spec.md"
+        },
+        "confidence": 0.7
+      },
+      {
         "fact_id": "c58ebd883e7c3929",
         "kind": "SPEC_CITES_MODULE",
         "subject": "034-person-research-case",
@@ -112951,44 +113071,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4883,
-      "static_facts": 4585,
-      "inferred": 298,
+      "facts_total": 4889,
+      "static_facts": 4590,
+      "inferred": 299,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1097,
+    "python_modules": 1098,
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3169,
+    "import_edges": 3174,
     "test_files": 374,
     "test_functions": 5467,
-    "untested_modules": 287,
+    "untested_modules": 288,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4883,
-    "static_facts": 4585,
-    "inferred": 298,
+    "facts_total": 4889,
+    "static_facts": 4590,
+    "inferred": 299,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 591,
+    "IMPLEMENTED": 592,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 97,
     "TEST": 371,
     "MIGRATION": 20,
-    "total": 1097
+    "total": 1098
   },
   "reachability_summary": {
-    "PRODUCTION": 465,
+    "PRODUCTION": 466,
     "TEST_ONLY": 134,
     "ORPHAN": 127,
     "TEST": 371,
-    "total": 1097
+    "total": 1098
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -113002,6 +113122,7 @@
     "apps/acquisition/sources/append_parse_blocks.py",
     "apps/acquisition/worker_acquisition.py",
     "apps/acquisition/worker_service.py",
+    "apps/control-plane/_prove_person_research_case.py",
     "apps/control-plane/api/main.py",
     "apps/control-plane/composition.py",
     "apps/control-plane/semantic_path/corpus.py",

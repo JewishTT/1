@@ -13,14 +13,14 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python modules | 1097 |
+| Python modules | 1098 |
 | TypeScript modules | 281 |
 | Rust source files / crates | 16 / 9 |
-| Resolved local import edges | 3169 |
+| Resolved local import edges | 3174 |
 | HTTP routes / routers | 222 / 36 |
 | Event types / lanes | 99 / 29 |
 | Test files / test functions | 374 / 5467 |
-| Untested platform modules | 287 |
+| Untested platform modules | 288 |
 
 ## Components
 
@@ -30,7 +30,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 255 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 256 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
 | `interpretation` | 120 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |

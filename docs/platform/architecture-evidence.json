@@ -1,8 +1,8 @@
 {
   "stats": {
-    "facts_total": 4883,
-    "static_facts": 4585,
-    "inferred": 298,
+    "facts_total": 4889,
+    "static_facts": 4590,
+    "inferred": 299,
     "intended": 0
   },
   "facts": [
@@ -868,7 +868,7 @@
       "status": "INFERRED",
       "method": "architecture_compiler:direct",
       "evidence": {
-        "via_import": "security",
+        "via_import": "storage.s3",
         "event": null
       },
       "confidence": 0.6
@@ -6278,6 +6278,71 @@
       "evidence": {
         "file": "apps/bulk-ingestion/tests/unit/test_historical_replay.py",
         "via": "network.commoncrawl"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "166584ed14f3a598",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/_prove_person_research_case.py",
+      "object": "apps/control-plane/composition.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/_prove_person_research_case.py",
+        "via": "composition"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4bdd2e52eceb4519",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/_prove_person_research_case.py",
+      "object": "apps/control-plane/context_engine/person_case_profile.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/_prove_person_research_case.py",
+        "via": "context_engine.person_case_profile"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "546763bfe834dd4e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/_prove_person_research_case.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/_prove_person_research_case.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a34bd67f3e514fdd",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/_prove_person_research_case.py",
+      "object": "apps/shared/config/settings.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/_prove_person_research_case.py",
+        "via": "config.settings"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9f5e283acf4affbf",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/_prove_person_research_case.py",
+      "object": "apps/shared/storage/s3.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/_prove_person_research_case.py",
+        "via": "storage.s3"
       },
       "confidence": 1.0
     },
@@ -47829,6 +47894,18 @@
       "kind": "SPEC_CITES_MODULE",
       "subject": "034-person-research-case",
       "object": "apps/admission/resolution/blocking.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs/034-person-research-case/spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
+      "fact_id": "ccd89c027cec4d6a",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "034-person-research-case",
+      "object": "apps/control-plane/_prove_person_research_case.py",
       "status": "INFERRED",
       "method": "docstring_reference",
       "evidence": {

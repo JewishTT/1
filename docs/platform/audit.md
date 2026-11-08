@@ -7,17 +7,17 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1097 / 281 / 16 |
-| Resolved import edges | 3169 |
+| Python / TypeScript / Rust modules | 1098 / 281 / 16 |
+| Resolved import edges | 3174 |
 | HTTP routes / routers | 222 / 36 |
 | Test files / functions | 374 / 5467 |
-| Evidence facts (static) | 4883 |
+| Evidence facts (static) | 4889 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 591 |
+| IMPLEMENTED | 592 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
@@ -32,7 +32,7 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 465 |
+| PRODUCTION | 466 |
 | TEST_ONLY | 134 |
 | ORPHAN | 127 |
 | TEST | 371 |
@@ -128,5 +128,5 @@ Specs whose task list shows 0 checked but whose number is cited by real modules 
 | `024-context-driven-continuous-intelligence` | 0/168 | 22 |
 | `030-global-platform-upgrade` | 0/152 | 24 |
 | `032-global-upgrade-execution` | 0/84 | 8 |
-| `034-person-research-case` | 0/76 | 18 |
+| `034-person-research-case` | 0/76 | 19 |
 | `036-phishingclub-specops-department` | 0/60 | 5 |
