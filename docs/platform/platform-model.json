@@ -37723,7 +37723,7 @@
       {
         "path": "apps/control-plane/tests/test_type_signal_bridge.py",
         "status": "TEST",
-        "loc": 46,
+        "loc": 47,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
