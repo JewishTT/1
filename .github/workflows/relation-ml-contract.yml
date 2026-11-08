@@ -31,6 +31,7 @@ jobs:
           apps/shared/tests/unit/test_type_signal.py
           apps/control-plane/tests/test_type_signal_bridge.py
           apps/control-plane/tests/unit/test_type_signal_storage_contract.py
+          apps/control-plane/tests/test_research_case_invariants.py
           apps/interpretation/tests/test_signal_nary_contract.py
           -q
       - name: Install a CPU-only PyTorch runtime
