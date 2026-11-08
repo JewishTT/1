@@ -39,6 +39,23 @@ def _registry():
     REGISTRY._sources.update(saved)
 
 
+class AllowingLimits:
+    """Explicit test-only reservation provider; production defaults fail closed."""
+
+    def allows(
+        self,
+        execution_class,
+        region,
+        host_key,
+        required,
+        *,
+        tenant_id=None,
+        case_id=None,
+        policy_revision=None,
+    ):
+        return True, "reserved", "res-1"
+
+
 class AckedProducer:
     """A producer that acknowledges, like the broker does.
 
@@ -299,7 +316,7 @@ class TestRequestPayloadIsExecutable:
         producer = AckedProducer()
         dispatcher = dispatcher_with(
             producer,
-            limits=_allow(),
+            limits=AllowingLimits(),
             tenant_id=bound.tenant_id,
             case_id=bound.case_id,
             policy_revision=bound.policy_revision,
