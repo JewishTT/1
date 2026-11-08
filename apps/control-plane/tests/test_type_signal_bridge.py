@@ -47,3 +47,29 @@ def test_interpretation_bridge_refuses_invalid_structured_type_without_minting_m
     assert result.mentions == 0
     assert result.type_signals == ()
     assert any(item["code"] == "jsonld_invalid" for item in result.type_signal_refusals)
+
+
+def test_structured_type_binding_refuses_ambiguous_same_name_mentions():
+    from types import SimpleNamespace
+
+    from services.interpretation_bridge import _structured_type_signal_report
+
+    html = b'''<script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Person","name":"Alex Smith"}
+    </script>'''
+    document = SimpleNamespace(
+        mentions=(
+            SimpleNamespace(mention_id="MN-person-a", surface="Alex Smith"),
+            SimpleNamespace(mention_id="MN-person-b", surface="Alex Smith"),
+        ),
+        canonical_by_mention={},
+    )
+    report = _structured_type_signal_report(
+        html,
+        tenant_id="tenant-type-signal",
+        observation_id="OBS-ambiguous",
+        document=document,
+    )
+    assert report.signals == ()
+    assert report.refusals[0].code == "mention_unresolved"
+    assert "no existing mention was bound" in report.refusals[0].detail

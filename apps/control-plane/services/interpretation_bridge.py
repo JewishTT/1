@@ -1035,7 +1035,10 @@ def _structured_type_signal_report(
     if "<script" not in html.casefold() and "<meta" not in html.casefold():
         return TypeExtractionReport((), ())
 
-    mention_ids: dict[str, str] = {}
+    # A source surface that maps to multiple existing mention occurrences is ambiguous.
+    # Never bind it to the first mention encountered: that can attach a source type to the
+    # wrong same-name person. One unique existing mention is required.
+    mention_ids: dict[str, set[str]] = {}
     if document is not None:
         canonical = getattr(document, "canonical_by_mention", {}) or {}
         for mention in getattr(document, "mentions", ()):
@@ -1048,10 +1051,11 @@ def _structured_type_signal_report(
             ):
                 key = " ".join(surface.split()).casefold()
                 if key:
-                    mention_ids.setdefault(key, mention_id)
+                    mention_ids.setdefault(key, set()).add(mention_id)
 
     def resolve(surface: str) -> str | None:
-        return mention_ids.get(" ".join(str(surface).split()).casefold())
+        candidates = mention_ids.get(" ".join(str(surface).split()).casefold(), set())
+        return next(iter(candidates)) if len(candidates) == 1 else None
 
     return StructuredTypeSignalExtractor().extract(
         html, tenant_id=tenant_id, observation_ref=observation_id,
