@@ -232,7 +232,7 @@ jobs:
           SELECT 1 / CASE
             WHEN EXISTS (
               SELECT 1 FROM public.alembic_version
-              WHERE version_num = '033_durable_case_budgets'
+              WHERE version_num = '034_durable_investigation_contexts'
             )
             THEN 1
             ELSE 0
@@ -256,6 +256,30 @@ jobs:
             THEN 1
             ELSE 0
           END AS durable_budget_schema_assertion;
+          SQL
+      - name: Assert durable investigation context tables are installed
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN to_regclass('public.investigation_contexts') IS NOT NULL
+             AND to_regclass('public.context_revisions') IS NOT NULL
+             AND to_regclass('public.research_obligations') IS NOT NULL
+             AND to_regclass('public.research_actions') IS NOT NULL
+             AND to_regclass('public.context_frontiers') IS NOT NULL
+             AND to_regclass('public.context_action_memory') IS NOT NULL
+             AND (
+               SELECT COUNT(DISTINCT column_name) = 6
+               FROM information_schema.columns
+               WHERE table_schema = 'public'
+                 AND table_name = 'investigation_contexts'
+                 AND column_name IN (
+                   'context_id', 'tenant_id', 'investigation_id',
+                   'identity_schema', 'payload', 'created_at'
+                 )
+             )
+            THEN 1
+            ELSE 0
+          END AS durable_context_schema_assertion;
           SQL
       - name: Seed a controlled Postgres connector fixture
         run: |
