@@ -25270,14 +25270,16 @@
       },
       {
         "path": "apps/shared/tests/unit/test_type_signal.py",
-        "tests": 6,
+        "tests": 8,
         "test_names": [
           "test_type_signal_round_trips_and_preserves_source_surface",
           "test_type_signal_identity_excludes_mapping_candidates_and_evidence_revision",
           "test_detector_without_external_vocabulary_uses_none_not_synthetic_name",
           "test_signal_rejects_carried_id_that_disagrees_with_its_content",
           "test_mapping_candidate_refuses_missing_match_type",
-          "test_non_hierarchical_mapping_is_representable"
+          "test_non_hierarchical_mapping_is_representable",
+          "test_concept_exposes_related_match_as_a_cross_vocabulary_link",
+          "test_mapping_candidate_canonicalizes_identity_metadata_before_hashing"
         ],
         "targets": [
           "apps/shared/semantic/type_signal.py",
@@ -26054,7 +26056,7 @@
         ]
       }
     ],
-    "total": 5468
+    "total": 5470
   },
   "contracts": {
     "python": [
@@ -36004,8 +36006,8 @@
       {
         "path": "apps/control-plane/_prove_person_research_case.py",
         "status": "IMPLEMENTED",
-        "loc": 529,
-        "callables": 9,
+        "loc": 558,
+        "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
         "markers": [
@@ -38765,7 +38767,7 @@
       {
         "path": "apps/interpretation/extractors/signals/ml.py",
         "status": "IMPLEMENTED",
-        "loc": 422,
+        "loc": 423,
         "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
@@ -39273,7 +39275,7 @@
       {
         "path": "apps/interpretation/tests/test_ml_relation_producers.py",
         "status": "TEST",
-        "loc": 132,
+        "loc": 134,
         "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
@@ -42315,7 +42317,7 @@
       {
         "path": "apps/shared/semantic/type_signal.py",
         "status": "IMPLEMENTED",
-        "loc": 211,
+        "loc": 212,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -42333,7 +42335,7 @@
       {
         "path": "apps/shared/semantic/vocabularies.py",
         "status": "IMPLEMENTED",
-        "loc": 587,
+        "loc": 591,
         "callables": 37,
         "stubs": 0,
         "not_implemented": 0,
@@ -43104,8 +43106,8 @@
       {
         "path": "apps/shared/tests/unit/test_type_signal.py",
         "status": "TEST",
-        "loc": 72,
-        "callables": 7,
+        "loc": 93,
+        "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -50515,7 +50517,7 @@
       },
       "candidate.created": {
         "lane": "interpretation",
-        "files": 2,
+        "files": 3,
         "producer_files": 0
       },
       "cc.capture.series": {
@@ -113104,7 +113106,7 @@
     "rust_crates": 9,
     "import_edges": 3175,
     "test_files": 374,
-    "test_functions": 5468,
+    "test_functions": 5470,
     "untested_modules": 288,
     "http_routes": 222
   },

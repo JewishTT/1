@@ -1,6 +1,6 @@
 # Tests
 
-374 test files, 5468 test functions. 288 platform modules are not targeted by any test.
+374 test files, 5470 test functions. 288 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -347,7 +347,7 @@
 | `apps/shared/tests/unit/test_secure_fetch.py` | 20 | `apps/shared/net/secure_fetch.py`, `apps/shared/security.py` |
 | `apps/shared/tests/unit/test_security.py` | 19 | `apps/shared/security.py` |
 | `apps/shared/tests/unit/test_temporal_metrics.py` | 9 | `apps/shared/domain/temporal_metrics.py` |
-| `apps/shared/tests/unit/test_type_signal.py` | 6 | `apps/shared/semantic/type_signal.py`, `apps/shared/semantic/vocabularies.py` |
+| `apps/shared/tests/unit/test_type_signal.py` | 8 | `apps/shared/semantic/type_signal.py`, `apps/shared/semantic/vocabularies.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |
 | `apps/specops/tests/conftest.py` | 0 | `apps/specops/ghostline/config.py`, `apps/specops/ghostline/runtime.py` |
 | `apps/specops/tests/test_cryptotx_api.py` | 1 | `apps/control-plane/api/main.py`, `apps/specops/cryptotx/config.py` |
