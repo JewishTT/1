@@ -35319,7 +35319,7 @@
       {
         "path": "apps/acquisition/tests/contract/test_plan_driver.py",
         "status": "TEST",
-        "loc": 345,
+        "loc": 346,
         "callables": 31,
         "stubs": 0,
         "not_implemented": 0,
