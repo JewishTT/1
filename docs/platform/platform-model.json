@@ -37950,7 +37950,7 @@
       {
         "path": "apps/control-plane/tests/unit/test_context_store_storage_contract.py",
         "status": "TEST",
-        "loc": 43,
+        "loc": 42,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
