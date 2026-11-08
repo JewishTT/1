@@ -1306,7 +1306,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 289,
+      "third-party:pytest": 290,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -37919,7 +37919,7 @@
       {
         "path": "apps/control-plane/tests/unit/test_context_store_storage_contract.py",
         "status": "TEST",
-        "loc": 43,
+        "loc": 45,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
