@@ -33869,8 +33869,8 @@
       {
         "path": "apps/acquisition/tests/unit/test_runtime_artifact_sink.py",
         "status": "TEST",
-        "loc": 139,
-        "callables": 11,
+        "loc": 148,
+        "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -42270,7 +42270,7 @@
       {
         "path": "platform_model/gaps.py",
         "status": "IMPLEMENTED",
-        "loc": 221,
+        "loc": 222,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -47035,29 +47035,6 @@
         ]
       },
       {
-        "id": "dlq-tenant-store-not-wired",
-        "layer": "x",
-        "severity": "critical",
-        "claim": "The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane.",
-        "evidence": [
-          {
-            "path": "apps/control-plane/api/routes/quarantine.py",
-            "regex": "tenant-scoped durable quarantine storage is not configured",
-            "expect": "present",
-            "min_count": 1
-          }
-        ],
-        "status": "RESOLVED",
-        "checks": [
-          {
-            "path": "apps/control-plane/api/routes/quarantine.py",
-            "ok": false,
-            "reason": "evidence-mismatch",
-            "count": 0
-          }
-        ]
-      },
-      {
         "id": "alembic-head-is-not-a-base",
         "layer": "x",
         "severity": "high",
@@ -47461,6 +47438,39 @@
         ]
       },
       {
+        "id": "dlq-tenant-scoped-storage-is-wired",
+        "claim": "The quarantine API and acquisition failure sink use the same tenant-scoped durable object-store adapter.",
+        "evidence": [
+          {
+            "path": "apps/control-plane/api/routes/quarantine.py",
+            "regex": "ObjectStoreSink\\(store=ObjectStore\\(\\), tenant_id=ctx\\.tenant_id\\)",
+            "expect": "present",
+            "min_count": 1
+          },
+          {
+            "path": "apps/acquisition/worker_acquisition.py",
+            "regex": "ObjectStoreSink\\(store=object_store, tenant_id=tenant_id\\)\\.aput\\(record\\)",
+            "expect": "present",
+            "min_count": 1
+          }
+        ],
+        "status": "GUARDED",
+        "checks": [
+          {
+            "path": "apps/control-plane/api/routes/quarantine.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 1
+          },
+          {
+            "path": "apps/acquisition/worker_acquisition.py",
+            "ok": true,
+            "reason": "ok",
+            "count": 1
+          }
+        ]
+      },
+      {
         "id": "metrics-have-no-fabricated-operational-values",
         "claim": "The metrics API never returns hard-coded demonstration counters as operational measurements.",
         "evidence": [
@@ -47483,7 +47493,7 @@
       }
     ],
     "open": 5,
-    "stale_or_resolved": 1
+    "stale_or_resolved": 0
   },
   "golden_path": {
     "goal": "Full person-background analysis: Layer 0 (broad, efficient collection over Kafka + lakehouse + sources) -> Layer 1 (extraction, merge, resolution, normalization of entity-artifacts and entity-invariants, plus relation extraction) -> Layer 2 (full context engine), grounded in the platform philosophy (event-driven, evidence-first, immutable observations, rebuildable projections, no fabrication).",

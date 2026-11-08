@@ -2,7 +2,7 @@
 
 Every defect below is a claim tied to re-checkable evidence (a file and a regex). `platform_model/gaps.py` re-reads the tree and a contract test fails if any open gap's evidence no longer holds. This is the replacement for the old free-text `KNOWN_GAPS`.
 
-**5** open gaps; **1** stale/resolved (must be zero — the test fails otherwise).
+**5** open gaps; **0** stale/resolved (must be zero — the test fails otherwise).
 
 ## Layer 0 — collection
 
@@ -20,7 +20,6 @@ Every defect below is a claim tied to re-checkable evidence (a file and a regex)
 
 | ID | Severity | Status | Claim | Evidence |
 |---|---|---|---|---|
-| `dlq-tenant-store-not-wired` | critical | RESOLVED | The DLQ API fails closed because a durable tenant-scoped quarantine repository is not wired to the control plane. | `apps/control-plane/api/routes/quarantine.py` |
 | `roe-in-memory-registry` | critical | OPEN | Rules-of-Engagement sign-off is written to an in-process registry, not durable storage. | `apps/control-plane/api/routes/specops_roe.py` |
 | `alembic-head-is-not-a-base` | high | OPEN | The first Alembic revision has down_revision=None, so upgrade head builds no pre-014 table. | `apps/control-plane/db/migrations/versions/014_temporal_materialization.py` |
 | `metrics-not-connected-to-telemetry` | high | OPEN | The metrics API explicitly reports unavailable because tenant-scoped telemetry and time-windowed aggregates are not connected. | `apps/control-plane/api/routes/metrics.py` |
@@ -42,4 +41,5 @@ Formerly-recorded gaps whose fix must stay in place; a regression flips the guar
 | `control-plane-wheel-includes-runtime-packages` | GUARDED | The installed control-plane wheel includes context_engine and semantic_path package roots. |
 | `dlq-has-no-seeded-fictional-record` | GUARDED | The quarantine API no longer seeds a fictional rejection to make the dashboard look populated. |
 | `dlq-re-evaluation-does-not-delete-payload` | GUARDED | The API no longer purges a quarantined payload as part of re-evaluation. |
+| `dlq-tenant-scoped-storage-is-wired` | GUARDED | The quarantine API and acquisition failure sink use the same tenant-scoped durable object-store adapter. |
 | `metrics-have-no-fabricated-operational-values` | GUARDED | The metrics API never returns hard-coded demonstration counters as operational measurements. |
