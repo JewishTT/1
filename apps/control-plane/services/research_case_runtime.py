@@ -31,8 +31,9 @@ def estimate_case_reservation(
     launch_profile: str,
 ) -> dict[str, Any]:
     """Estimate finite worst-case limits from the enabled source definitions and policy."""
+    from urllib.parse import parse_qs, urlsplit
+
     from sources.catalogue import load_catalogue
-    from urllib.parse import urlsplit, parse_qs
 
     definitions, _rejected = load_catalogue()
     by_name = {definition.name: definition for definition in definitions}
@@ -158,8 +159,8 @@ class PostgresCaseBudgetService:
         if min(requests, raw_bytes, records, concurrency, wall_seconds) <= 0:
             raise CaseRuntimeBlocked("reservation quantities must be positive")
 
-        reservation_seed = "|".join(
-            (tenant_id, case_id, budget_ref, idempotency_key, scope_digest, policy_digest)
+        reservation_seed = (
+            f"{tenant_id}|{case_id}|{budget_ref}|{idempotency_key}|{scope_digest}|{policy_digest}"
         )
         reservation_id = "RBR-" + hashlib.sha256(reservation_seed.encode()).hexdigest()[:32]
         async with self._session_factory() as session:
