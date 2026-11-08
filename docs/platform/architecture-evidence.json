@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4892,
-    "static_facts": 4593,
+    "facts_total": 4894,
+    "static_facts": 4595,
     "inferred": 299,
     "intended": 0
   },
@@ -18173,6 +18173,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_badges_facade.py",
         "via": "badges"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "979310397baa5183",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
+        "via": "db.schema"
       },
       "confidence": 1.0
     },
@@ -53084,6 +53097,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_badges_facade.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b2a5938fcde01976",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_case_budget_storage_contract.py"
       },
       "confidence": 1.0
     },

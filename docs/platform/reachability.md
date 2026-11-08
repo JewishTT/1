@@ -8,8 +8,8 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 |---|---|
 | PRODUCTION | 466 |
 | TEST_ONLY | 134 |
-| ORPHAN | 127 |
-| TEST | 371 |
+| ORPHAN | 128 |
+| TEST | 372 |
 
 ## Entrypoints (production roots)
 
@@ -204,7 +204,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**127** modules are imported by neither production nor tests.
+**128** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -254,6 +254,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py` |
 | `apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py` |
 | `apps/control-plane/db/migrations/versions/032_type_signals.py` |
+| `apps/control-plane/db/migrations/versions/033_durable_case_budgets.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |
