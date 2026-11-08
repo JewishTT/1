@@ -163,7 +163,7 @@ async def _seed_budget(session_factory: Any, *, budget_id: str) -> None:
 
 
 async def _wait_for_processed_observation(
-    session_factory: Any, *, investigation_id: str, timeout_seconds: int = 300
+    session_factory: Any, *, investigation_id: str, task_id: str, timeout_seconds: int = 300
 ) -> tuple[Any, Any]:
     from db.schema import Observation, ProcessingResultRow
 
@@ -178,6 +178,7 @@ async def _wait_for_processed_observation(
                         .where(
                             Observation.tenant_id == TENANT_ID,
                             Observation.investigation_id == investigation_id,
+                            Observation.task_id == task_id,
                         )
                         .order_by(Observation.created_at.desc(), Observation.observation_id.asc())
                         .limit(20)
@@ -201,6 +202,7 @@ async def _wait_for_processed_observation(
             {
                 "observation_id": row.observation_id,
                 "status": row.status,
+                "interpretation": row.interpretation,
                 "record_count": row.record_count,
                 "mention_count": row.mention_count,
                 "failure_code": row.failure_code,
@@ -384,10 +386,12 @@ async def _run_case(output_path: Path) -> dict[str, Any]:
                 denied_claim_families=[],
                 budget_ref=budget_id,
                 expires_at=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
-                questions=[
-                    "Which publicly indexed scholarly works are attributed to the declared name?"
-                ],
             )
+            if int(created.get("obligation_count", 0)) != 1:
+                raise RuntimeError(
+                    "Crossref acceptance expects one profile obligation; duplicate explicit "
+                    f"question obligations are not allowed: {created!r}"
+                )
             case_id = str(created["case_id"])
             context = await platform.store.get_context(case_id)
             if context is None:
@@ -425,6 +429,11 @@ async def _run_case(output_path: Path) -> dict[str, Any]:
                     "source policy/catalogue did not produce an evidence action for the "
                     f"approved publication family: actions={actions!r}; plan={plan!r}"
                 )
+            if len(selected) != 1:
+                raise RuntimeError(
+                    "the scoped Crossref publication obligation must resolve to one evidence "
+                    f"action, got {len(selected)}: {selected!r}"
+                )
             proposed_refs = [str(action["action_id"]) for action in selected]
             result["plan"] = {
                 "plan_state": plan.get("plan_state"),
@@ -456,10 +465,39 @@ async def _run_case(output_path: Path) -> dict[str, Any]:
             if dispatch.get("state") not in {"QUEUED", "PUBLISHED", "ALREADY_REQUESTED"}:
                 raise RuntimeError(f"person-case dispatch did not reach the broker: {dispatch!r}")
 
+            dispatch_body = dispatch.get("dispatch") or {}
+            published_records = [
+                item
+                for item in (dispatch_body.get("records") or [])
+                if isinstance(item, dict) and item.get("published") is True
+            ]
+            task_ids = list(dict.fromkeys(
+                str(item.get("task_id") or "") for item in published_records
+                if str(item.get("task_id") or "")
+            ))
+            if len(task_ids) != 1 or int(dispatch_body.get("published_count", 0)) != 1:
+                raise RuntimeError(
+                    "Crossref acceptance must publish exactly one task after duplicate-obligation "
+                    f"collapse: dispatch={dispatch!r}"
+                )
+            result["dispatch"]["expected_task_ids"] = task_ids
             observation, processing = await _wait_for_processed_observation(
-                session_factory, investigation_id=investigation_id, timeout_seconds=300
+                session_factory,
+                investigation_id=investigation_id,
+                task_id=task_ids[0],
+                timeout_seconds=300,
             )
             raw = await _read_verified_raw(observation)
+            interpretation = (
+                processing.interpretation
+                if isinstance(processing.interpretation, dict)
+                else {}
+            )
+            if interpretation.get("status") != "persisted" or interpretation.get("persisted") is not True:
+                raise RuntimeError(
+                    "Observation parser ran but the canonical interpretation was not persisted: "
+                    f"{interpretation!r}"
+                )
             result["evidence"] = {
                 "observation_id": str(observation.observation_id),
                 "source_id": str(observation.source_id or ""),
@@ -472,6 +510,7 @@ async def _run_case(output_path: Path) -> dict[str, Any]:
                 "record_count": int(processing.record_count),
                 "mention_count": int(processing.mention_count),
                 "failure_code": str(processing.failure_code or ""),
+                "interpretation": interpretation,
                 "raw_readback": raw,
             }
             if not processing.derived_ref:
@@ -499,6 +538,11 @@ async def _run_case(output_path: Path) -> dict[str, Any]:
             )
             if readback.get("report_digest") != report.get("report_digest"):
                 raise RuntimeError("persisted person-case report read-back digest mismatch")
+            if report.get("status") != "COMPLETE":
+                raise RuntimeError(
+                    "person-case acceptance refuses PARTIAL/BLOCKED reports: "
+                    f"status={report.get('status')!r}; coverage={report.get('coverage')!r}"
+                )
             actual_obs = report.get("source_inventory", {}).get("actual_observations", [])
             if not any(
                 item.get("observation_id") == str(observation.observation_id)
@@ -507,6 +551,19 @@ async def _run_case(output_path: Path) -> dict[str, Any]:
                 raise RuntimeError(
                     "completion report does not include the Observation committed by the worker"
                 )
+            findings = list(report.get("findings") or [])
+            claims = list(report.get("relation_claims") or [])
+            if not claims or not findings:
+                raise RuntimeError(
+                    "COMPLETE person-case acceptance requires at least one admitted, grounded "
+                    f"relation claim and finding; claims={len(claims)} findings={len(findings)}"
+                )
+            for finding in findings:
+                spans = list(finding.get("evidence_spans") or [])
+                if not spans or any(span.get("status") != "grounded" for span in spans):
+                    raise RuntimeError(
+                        f"finding {finding.get('finding_id')!r} lacks fully grounded evidence spans"
+                    )
             result["report"] = {
                 "report_id": report_id,
                 "report_digest": report.get("report_digest"),
@@ -514,8 +571,9 @@ async def _run_case(output_path: Path) -> dict[str, Any]:
                 "coverage": report.get("coverage"),
                 "source_inventory": report.get("source_inventory"),
                 "processing": report.get("processing"),
-                "finding_count": len(report.get("findings") or []),
-                "claim_count": len(report.get("relation_claims") or []),
+                "finding_count": len(findings),
+                "claim_count": len(claims),
+                "all_findings_have_grounded_spans": True,
                 "readback_digest_verified": True,
             }
             result["status"] = "PASS"
