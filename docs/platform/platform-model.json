@@ -37135,7 +37135,7 @@
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
         "status": "IMPLEMENTED",
-        "loc": 1167,
+        "loc": 1168,
         "callables": 20,
         "stubs": 0,
         "not_implemented": 0,
