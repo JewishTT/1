@@ -178,9 +178,11 @@ class ObjectStoreSink:
         # Topic filtering is bounded to ten S3 pages; the returned continuation token
         # resumes exactly after the last scanned key rather than skipping filtered entries.
         while len(items) < limit and pages_scanned < 10:
+            # S3 tokens advance beyond the entire fetched page. Fetch only the
+            # remaining capacity so a full result page cannot discard unread keys.
             keys, next_token = await self.store.list_objects_page(
                 self.tenant_prefix,
-                limit=limit,
+                limit=limit - len(items),
                 continuation_token=token,
             )
             pages_scanned += 1

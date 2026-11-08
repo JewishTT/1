@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -121,6 +122,38 @@ async def test_topic_filter_keeps_continuation_cursor():
     assert len(page["items"]) == 2
     assert all(item["topic"] == "b" for item in page["items"])
     assert page["next_cursor"] is not None
+
+
+@pytest.mark.asyncio
+async def test_filtered_pagination_does_not_skip_keys_after_a_partial_page() -> None:
+    store = FakeObjectStore()
+    sink = ObjectStoreSink(store=store, tenant_id="tenant-a")
+    topics = ("wanted", "wanted", "other", "wanted", "other", "wanted")
+    expected: list[str] = []
+
+    for index, topic in enumerate(topics):
+        record_id = f"DLQ-{index:024x}"
+        metadata = {
+            "record_id": record_id,
+            "tenant_id": "tenant-a",
+            "topic": topic,
+            "reason": "transport_failed",
+            "preserved": True,
+        }
+        key = f"{RAW_BUCKET}/{sink._meta_key(record_id)}"
+        store.objects[key] = json.dumps(metadata).encode("utf-8")
+        if topic == "wanted":
+            expected.append(record_id)
+
+    first = await sink.alist_page(limit=3, topic="wanted")
+    second = await sink.alist_page(
+        limit=3, cursor=first["next_cursor"], topic="wanted"
+    )
+
+    observed = [item["record_id"] for item in first["items"] + second["items"]]
+    assert observed == expected
+    assert first["next_cursor"] is not None
+    assert second["next_cursor"] is None
 
 
 def test_durable_quarantine_cannot_purge():
