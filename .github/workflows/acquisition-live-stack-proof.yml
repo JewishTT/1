@@ -294,6 +294,43 @@ jobs:
           COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
           COGNITIVE_PUBLIC_SOURCE_MIN_PASSES: "6"
         run: .venv/bin/python apps/acquisition/_prove_public_source_matrix.py
+      - name: Execute live Feature 034 person research through Capture / Observation / Report
+        if: ${{ secrets.COGNITIVE_CROSSREF_MAILTO != '' }}
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DATABASE: cognitive
+          POSTGRES_USER: cognitive
+          POSTGRES_PASSWORD: cognitive
+          KAFKA_BOOTSTRAP_SERVERS: localhost:19092
+          COGNITIVE_KAFKA_BROKERS: localhost:19092
+          S3_ENDPOINT: http://localhost:9000
+          S3_ACCESS_KEY: demo
+          S3_SECRET_KEY: demopass
+          S3_RAW_BUCKET: knowledge-raw
+          COGNITIVE_CROSSREF_MAILTO: ${{ secrets.COGNITIVE_CROSSREF_MAILTO }}
+          COGNITIVE_SEARXNG_URL: http://127.0.0.1:18090
+          COGNITIVE_LOG_LEVEL: INFO
+        run: >-
+          .venv/bin/python apps/control-plane/_prove_person_research_case.py
+          apps/control-plane/artifacts/person-research-case-e2e.json
+      - name: Record blocked Person Research Case proof when operator contact is not configured
+        if: ${{ secrets.COGNITIVE_CROSSREF_MAILTO == '' }}
+        run: |
+          mkdir -p apps/control-plane/artifacts
+          printf '%s\n' '{"schema_version":1,"status":"BLOCKED_MISSING_OPERATOR_CONTACT","blocker":"Set a real monitored COGNITIVE_CROSSREF_MAILTO Actions secret to execute Crossref-backed person-case acceptance."}' > apps/control-plane/artifacts/person-research-case-e2e.json
+          echo "::warning::Person Research Case live acceptance skipped: COGNITIVE_CROSSREF_MAILTO is not configured."
+      - name: Upload live Person Research Case evidence and worker logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: person-research-case-e2e
+          path: |
+            apps/control-plane/artifacts/person-research-case-e2e.json
+            apps/control-plane/artifacts/acquisition-worker.log
+            apps/control-plane/artifacts/observation-consumer.log
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload end-to-end acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -304,6 +341,7 @@ jobs:
             apps/acquisition/artifacts/acquisition-integration/searxng.json
             apps/acquisition/artifacts/acquisition-integration/public-source-matrix.json
             apps/acquisition/artifacts/acquisition-integration/zero-layer-live.json
+          apps/control-plane/artifacts/person-research-case-e2e.json
           if-no-files-found: warn
           retention-days: 14
       - name: Show service logs on failure
