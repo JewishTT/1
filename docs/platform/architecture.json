@@ -301,6 +301,7 @@
           "apps/interpretation/extractors/signals/signal.py",
           "apps/interpretation/extractors/signals/syntactic.py",
           "apps/interpretation/extractors/signals/tables.py",
+          "apps/interpretation/extractors/structured_types.py",
           "apps/interpretation/extractors/translit.py",
           "apps/interpretation/extractors/types.py",
           "apps/interpretation/extractors/util.py",
@@ -380,7 +381,7 @@
           "apps/interpretation/tools/gliner_relex_smoke.py",
           "apps/interpretation/transaction_lineage.py"
         ],
-        "module_count": 119
+        "module_count": 120
       },
       {
         "id": "investigations",
@@ -2074,6 +2075,7 @@
           "apps/interpretation/extractors/persons.py",
           "apps/interpretation/extractors/places.py",
           "apps/interpretation/extractors/translit.py",
+          "apps/interpretation/extractors/types.py",
           "apps/interpretation/extractors/util.py",
           "apps/interpretation/parsers/documents.py",
           "apps/interpretation/parsers/html_full.py",
@@ -2093,7 +2095,7 @@
           "bench/extraction/bench_extract.py",
           "bench/fixtures/extraction/_generate.py"
         ],
-        "module_count": 37,
+        "module_count": 38,
         "capabilities": [
           "interpretation-lane"
         ]

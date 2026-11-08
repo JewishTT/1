@@ -241,7 +241,7 @@ apps.feedback.tests.test_frontier_loop
 
 Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.
 
-Python modules: **119** · TypeScript modules: **0**
+Python modules: **120** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 

@@ -185,7 +185,7 @@
 | `apps/interpretation/tests/test_search_retriever.py` | 7 | `apps/interpretation/retrieval/__init__.py` |
 | `apps/interpretation/tests/test_signal_kind_channels.py` | 11 | `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_signal_nary_contract.py` | 32 | `apps/interpretation/extractors/signals/signal.py`, `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/predicate_hypothesis.py`, `apps/shared/domain/predicate_signature.py` |
-| `apps/interpretation/tests/test_structured_type_extractor.py` | 4 | `apps/interpretation/extractors/types.py` |
+| `apps/interpretation/tests/test_structured_type_extractor.py` | 4 | `apps/interpretation/extractors/structured_types.py` |
 | `apps/interpretation/tests/test_syntactic_producer.py` | 58 | `apps/interpretation/extractors/signals/mentions.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_tenzir_live.py` | 1 | `apps/interpretation/normalization/tenzir.py` |
 | `apps/interpretation/tests/test_tenzir_normalization.py` | 15 | `apps/interpretation/normalization/tenzir.py` |

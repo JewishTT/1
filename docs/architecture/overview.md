@@ -25,7 +25,7 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `control-plane` | 255 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
-| `interpretation` | 119 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
+| `interpretation` | 120 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
@@ -36,7 +36,7 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `webapp` | 0 | 281 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 40 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
-1096 Python modules, 281 TypeScript modules, 16 Rust source files in 9 crates.
+1097 Python modules, 281 TypeScript modules, 16 Rust source files in 9 crates.
 
 ## Key properties (Constitution invariants)
 

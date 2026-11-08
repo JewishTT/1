@@ -454,7 +454,7 @@
     {
       "name": "interpretation",
       "description": "Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.",
-      "python_modules": 119,
+      "python_modules": 120,
       "typescript_modules": 0,
       "modules": [
         "apps.interpretation",
@@ -498,6 +498,7 @@
         "apps.interpretation.extractors.signals.signal",
         "apps.interpretation.extractors.signals.syntactic",
         "apps.interpretation.extractors.signals.tables",
+        "apps.interpretation.extractors.structured_types",
         "apps.interpretation.extractors.translit",
         "apps.interpretation.extractors.types",
         "apps.interpretation.extractors.util",
@@ -1193,11 +1194,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1096,
+    "module_count": 1097,
     "edge_count": 3169,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 960,
+      "stdlib:__future__": 961,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
@@ -1211,7 +1212,7 @@
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 4,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 408,
+      "stdlib:dataclasses": 410,
       "stdlib:datetime": 209,
       "stdlib:decimal": 14,
       "stdlib:difflib": 2,
@@ -1256,7 +1257,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 41,
-      "stdlib:typing": 398,
+      "stdlib:typing": 399,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 62,
@@ -6398,8 +6399,8 @@
       },
       {
         "from": "apps/control-plane/services/interpretation_bridge.py",
-        "to": "apps/interpretation/extractors/types.py",
-        "via": "extractors.types"
+        "to": "apps/interpretation/extractors/structured_types.py",
+        "via": "extractors.structured_types"
       },
       {
         "from": "apps/control-plane/services/investigation_scheduler.py",
@@ -9707,7 +9708,7 @@
         "via": "extractors.signals.protocol"
       },
       {
-        "from": "apps/interpretation/extractors/types.py",
+        "from": "apps/interpretation/extractors/structured_types.py",
         "to": "apps/shared/semantic/type_signal.py",
         "via": "semantic.type_signal"
       },
@@ -10808,8 +10809,8 @@
       },
       {
         "from": "apps/interpretation/tests/test_structured_type_extractor.py",
-        "to": "apps/interpretation/extractors/types.py",
-        "via": "extractors.types"
+        "to": "apps/interpretation/extractors/structured_types.py",
+        "via": "extractors.structured_types"
       },
       {
         "from": "apps/interpretation/tests/test_syntactic_producer.py",
@@ -21233,7 +21234,7 @@
           "test_inherited_schema_context_applies_to_nested_graph_items"
         ],
         "targets": [
-          "apps/interpretation/extractors/types.py"
+          "apps/interpretation/extractors/structured_types.py"
         ]
       },
       {
@@ -31977,6 +31978,7 @@
             "apps/interpretation/extractors/signals/signal.py",
             "apps/interpretation/extractors/signals/syntactic.py",
             "apps/interpretation/extractors/signals/tables.py",
+            "apps/interpretation/extractors/structured_types.py",
             "apps/interpretation/extractors/translit.py",
             "apps/interpretation/extractors/types.py",
             "apps/interpretation/extractors/util.py",
@@ -32056,7 +32058,7 @@
             "apps/interpretation/tools/gliner_relex_smoke.py",
             "apps/interpretation/transaction_lineage.py"
           ],
-          "module_count": 119
+          "module_count": 120
         },
         {
           "id": "investigations",
@@ -33750,6 +33752,7 @@
             "apps/interpretation/extractors/persons.py",
             "apps/interpretation/extractors/places.py",
             "apps/interpretation/extractors/translit.py",
+            "apps/interpretation/extractors/types.py",
             "apps/interpretation/extractors/util.py",
             "apps/interpretation/parsers/documents.py",
             "apps/interpretation/parsers/html_full.py",
@@ -33769,7 +33772,7 @@
             "bench/extraction/bench_extract.py",
             "bench/fixtures/extraction/_generate.py"
           ],
-          "module_count": 37,
+          "module_count": 38,
           "capabilities": [
             "interpretation-lane"
           ]
@@ -38761,6 +38764,15 @@
         "markers": []
       },
       {
+        "path": "apps/interpretation/extractors/structured_types.py",
+        "status": "IMPLEMENTED",
+        "loc": 180,
+        "callables": 7,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/interpretation/extractors/translit.py",
         "status": "IMPLEMENTED",
         "loc": 90,
@@ -38772,8 +38784,8 @@
       {
         "path": "apps/interpretation/extractors/types.py",
         "status": "IMPLEMENTED",
-        "loc": 180,
-        "callables": 7,
+        "loc": 156,
+        "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -44540,12 +44552,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 590,
+      "IMPLEMENTED": 591,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 97,
       "TEST": 371,
       "MIGRATION": 20,
-      "total": 1096
+      "total": 1097
     }
   },
   "reachability": {
@@ -46389,6 +46401,10 @@
       {
         "path": "apps/interpretation/extractors/signals/tables.py",
         "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/interpretation/extractors/structured_types.py",
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/interpretation/extractors/translit.py",
@@ -48982,11 +48998,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 464,
+      "PRODUCTION": 465,
       "TEST_ONLY": 134,
       "ORPHAN": 127,
       "TEST": 371,
-      "total": 1096
+      "total": 1097
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -64749,15 +64765,15 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "babce3dce5c58c85",
+        "fact_id": "fbd63fc27480af85",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/interpretation_bridge.py",
-        "object": "apps/interpretation/extractors/types.py",
+        "object": "apps/interpretation/extractors/structured_types.py",
         "status": "STATIC_FACT",
         "method": "python_ast+import_resolution",
         "evidence": {
           "file": "apps/control-plane/services/interpretation_bridge.py",
-          "via": "extractors.types"
+          "via": "extractors.structured_types"
         },
         "confidence": 1.0
       },
@@ -73537,14 +73553,14 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "3c4dea576eeab9ab",
+        "fact_id": "05ba60d76be8f53d",
         "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/interpretation/extractors/types.py",
+        "subject": "apps/interpretation/extractors/structured_types.py",
         "object": "apps/shared/semantic/type_signal.py",
         "status": "STATIC_FACT",
         "method": "python_ast+import_resolution",
         "evidence": {
-          "file": "apps/interpretation/extractors/types.py",
+          "file": "apps/interpretation/extractors/structured_types.py",
           "via": "semantic.type_signal"
         },
         "confidence": 1.0
@@ -76397,15 +76413,15 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "4adbf214779fb90c",
+        "fact_id": "abeece99f014681a",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/interpretation/tests/test_structured_type_extractor.py",
-        "object": "apps/interpretation/extractors/types.py",
+        "object": "apps/interpretation/extractors/structured_types.py",
         "status": "STATIC_FACT",
         "method": "python_ast+import_resolution",
         "evidence": {
           "file": "apps/interpretation/tests/test_structured_type_extractor.py",
-          "via": "extractors.types"
+          "via": "extractors.structured_types"
         },
         "confidence": 1.0
       },
@@ -96326,6 +96342,18 @@
         "confidence": 0.7
       },
       {
+        "fact_id": "4753921945402479",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "007-deterministic-entity-extraction-stack",
+        "object": "apps/interpretation/extractors/types.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+        },
+        "confidence": 0.7
+      },
+      {
         "fact_id": "8f378d0294bdd926",
         "kind": "SPEC_CITES_MODULE",
         "subject": "007-deterministic-entity-extraction-stack",
@@ -106814,10 +106842,10 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "8f323765fb88fd07",
+        "fact_id": "98b29d7082bd0e25",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/interpretation/tests/test_structured_type_extractor.py",
-        "object": "apps/interpretation/extractors/types.py",
+        "object": "apps/interpretation/extractors/structured_types.py",
         "status": "STATIC_FACT",
         "method": "import_and_name_scan",
         "evidence": {
@@ -112923,15 +112951,15 @@
       }
     ],
     "stats": {
-      "facts_total": 4882,
+      "facts_total": 4883,
       "static_facts": 4585,
-      "inferred": 297,
+      "inferred": 298,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1096,
+    "python_modules": 1097,
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
@@ -112942,25 +112970,25 @@
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4882,
+    "facts_total": 4883,
     "static_facts": 4585,
-    "inferred": 297,
+    "inferred": 298,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 590,
+    "IMPLEMENTED": 591,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 97,
     "TEST": 371,
     "MIGRATION": 20,
-    "total": 1096
+    "total": 1097
   },
   "reachability_summary": {
-    "PRODUCTION": 464,
+    "PRODUCTION": 465,
     "TEST_ONLY": 134,
     "ORPHAN": 127,
     "TEST": 371,
-    "total": 1096
+    "total": 1097
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",

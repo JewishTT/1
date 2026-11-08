@@ -1,8 +1,8 @@
 {
   "stats": {
-    "facts_total": 4882,
+    "facts_total": 4883,
     "static_facts": 4585,
-    "inferred": 297,
+    "inferred": 298,
     "intended": 0
   },
   "facts": [
@@ -13848,15 +13848,15 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "babce3dce5c58c85",
+      "fact_id": "fbd63fc27480af85",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/services/interpretation_bridge.py",
-      "object": "apps/interpretation/extractors/types.py",
+      "object": "apps/interpretation/extractors/structured_types.py",
       "status": "STATIC_FACT",
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/control-plane/services/interpretation_bridge.py",
-        "via": "extractors.types"
+        "via": "extractors.structured_types"
       },
       "confidence": 1.0
     },
@@ -22636,14 +22636,14 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "3c4dea576eeab9ab",
+      "fact_id": "05ba60d76be8f53d",
       "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/interpretation/extractors/types.py",
+      "subject": "apps/interpretation/extractors/structured_types.py",
       "object": "apps/shared/semantic/type_signal.py",
       "status": "STATIC_FACT",
       "method": "python_ast+import_resolution",
       "evidence": {
-        "file": "apps/interpretation/extractors/types.py",
+        "file": "apps/interpretation/extractors/structured_types.py",
         "via": "semantic.type_signal"
       },
       "confidence": 1.0
@@ -25496,15 +25496,15 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "4adbf214779fb90c",
+      "fact_id": "abeece99f014681a",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/interpretation/tests/test_structured_type_extractor.py",
-      "object": "apps/interpretation/extractors/types.py",
+      "object": "apps/interpretation/extractors/structured_types.py",
       "status": "STATIC_FACT",
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/interpretation/tests/test_structured_type_extractor.py",
-        "via": "extractors.types"
+        "via": "extractors.structured_types"
       },
       "confidence": 1.0
     },
@@ -45425,6 +45425,18 @@
       "confidence": 0.7
     },
     {
+      "fact_id": "4753921945402479",
+      "kind": "SPEC_CITES_MODULE",
+      "subject": "007-deterministic-entity-extraction-stack",
+      "object": "apps/interpretation/extractors/types.py",
+      "status": "INFERRED",
+      "method": "docstring_reference",
+      "evidence": {
+        "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
+      },
+      "confidence": 0.7
+    },
+    {
       "fact_id": "8f378d0294bdd926",
       "kind": "SPEC_CITES_MODULE",
       "subject": "007-deterministic-entity-extraction-stack",
@@ -55913,10 +55925,10 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "8f323765fb88fd07",
+      "fact_id": "98b29d7082bd0e25",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/interpretation/tests/test_structured_type_extractor.py",
-      "object": "apps/interpretation/extractors/types.py",
+      "object": "apps/interpretation/extractors/structured_types.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
