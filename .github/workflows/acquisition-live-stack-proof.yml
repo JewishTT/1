@@ -239,7 +239,7 @@ jobs:
           SELECT 1 / CASE
             WHEN EXISTS (
               SELECT 1 FROM public.alembic_version
-              WHERE version_num = '034_durable_investigation_contexts'
+              WHERE version_num = '035_interpretation_mentions_and_entity_versions'
             )
             THEN 1
             ELSE 0
@@ -287,6 +287,38 @@ jobs:
             THEN 1
             ELSE 0
           END AS durable_context_schema_assertion;
+          SQL
+      - name: Assert canonical interpretation lineage tables are installed
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN to_regclass('public.mentions') IS NOT NULL
+             AND to_regclass('public.entity_versions') IS NOT NULL
+             AND (
+               SELECT COUNT(DISTINCT column_name) = 13
+               FROM information_schema.columns
+               WHERE table_schema = 'public'
+                 AND table_name = 'mentions'
+                 AND column_name IN (
+                   'mention_id', 'observation_id', 'tenant_id', 'surface_form',
+                   'normalized_form', 'transliteration_variants', 'script', 'language',
+                   'normalization_version', 'type_hypothesis', 'extractor_version',
+                   'offsets', 'created_at'
+                 )
+             )
+             AND (
+               SELECT COUNT(DISTINCT column_name) = 7
+               FROM information_schema.columns
+               WHERE table_schema = 'public'
+                 AND table_name = 'entity_versions'
+                 AND column_name IN (
+                   'version_id', 'entity_id', 'tenant_id', 'version_number',
+                   'canonical_name', 'attributes', 'created_at'
+                 )
+             )
+            THEN 1
+            ELSE 0
+          END AS interpretation_lineage_schema_assertion;
           SQL
       - name: Seed a controlled Postgres connector fixture
         run: |

@@ -33,6 +33,7 @@ jobs:
           apps/control-plane/tests/unit/test_type_signal_storage_contract.py
           apps/control-plane/tests/unit/test_case_budget_storage_contract.py
           apps/control-plane/tests/unit/test_context_store_storage_contract.py
+          apps/control-plane/tests/unit/test_interpretation_storage_contract.py
           apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py
           apps/control-plane/tests/test_research_case_invariants.py
           apps/interpretation/tests/test_signal_nary_contract.py
@@ -76,6 +77,8 @@ jobs:
           apps/control-plane/db/migrations/versions/033_durable_case_budgets.py
           apps/control-plane/tests/unit/test_case_budget_storage_contract.py
           apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py
+          apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py
+          apps/control-plane/tests/unit/test_interpretation_storage_contract.py
           apps/control-plane/tests/unit/test_context_store_storage_contract.py
           apps/control-plane/services/research_case_runtime.py
           apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py
