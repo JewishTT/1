@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **252** · TypeScript modules: **0**
+Python modules: **255** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -241,7 +241,7 @@ apps.feedback.tests.test_frontier_loop
 
 Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.
 
-Python modules: **115** · TypeScript modules: **0**
+Python modules: **119** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -282,10 +282,10 @@ apps.interpretation.extractors.signals.lexical
 apps.interpretation.extractors.signals.links
 apps.interpretation.extractors.signals.mentions
 apps.interpretation.extractors.signals.metadata
+apps.interpretation.extractors.signals.ml
 apps.interpretation.extractors.signals.protocol
 apps.interpretation.extractors.signals.signal
 apps.interpretation.extractors.signals.syntactic
-apps.interpretation.extractors.signals.tables
 ```
 
 </details>
@@ -440,7 +440,7 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **198** · TypeScript modules: **0**
+Python modules: **200** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 

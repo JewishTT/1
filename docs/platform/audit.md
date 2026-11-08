@@ -7,24 +7,24 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1087 / 281 / 16 |
-| Resolved import edges | 3145 |
+| Python / TypeScript / Rust modules | 1096 / 281 / 16 |
+| Resolved import edges | 3169 |
 | HTTP routes / routers | 222 / 36 |
-| Test files / functions | 369 / 5446 |
-| Evidence facts (static) | 4848 |
+| Test files / functions | 374 / 5467 |
+| Evidence facts (static) | 4882 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 587 |
+| IMPLEMENTED | 590 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
 | PACKAGE_INIT | 97 |
-| MIGRATION | 19 |
-| TEST | 366 |
+| MIGRATION | 20 |
+| TEST | 371 |
 
 See [maturity.md](maturity.md).
 
@@ -32,10 +32,10 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 461 |
+| PRODUCTION | 464 |
 | TEST_ONLY | 134 |
-| ORPHAN | 126 |
-| TEST | 366 |
+| ORPHAN | 127 |
+| TEST | 371 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 
@@ -123,7 +123,7 @@ Specs whose task list shows 0 checked but whose number is cited by real modules 
 | `008-discovery-search-fabric` | 0/40 | 2 |
 | `017-semantic-fabric` | 0/30 | 1 |
 | `018-world-substrate` | 0/30 | 4 |
-| `021-entity-relation-extraction-finalization` | 0/94 | 1 |
+| `021-entity-relation-extraction-finalization` | 0/94 | 2 |
 | `023-acquisition-integration-searxng` | 0/214 | 3 |
 | `024-context-driven-continuous-intelligence` | 0/168 | 22 |
 | `030-global-platform-upgrade` | 0/152 | 24 |

@@ -1,6 +1,6 @@
 # Tests
 
-369 test files, 5446 test functions. 287 platform modules are not targeted by any test.
+374 test files, 5467 test functions. 287 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -91,6 +91,7 @@
 | `apps/control-plane/tests/test_research_case_projection.py` | 6 | `apps/control-plane/services/research_case_projection.py` |
 | `apps/control-plane/tests/test_research_case_reports.py` | 5 | `apps/control-plane/services/research_case_artifacts.py`, `apps/control-plane/services/research_case_reports.py`, `apps/shared/contracts/evidence_span.py` |
 | `apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/specops/roe/gate.py` |
+| `apps/control-plane/tests/test_type_signal_bridge.py` | 2 | `apps/control-plane/services/interpretation_bridge.py` |
 | `apps/control-plane/tests/test_zero_layer_service.py` | 3 | `apps/control-plane/services/zero_layer.py` |
 | `apps/control-plane/tests/unit/test_action_memory.py` | 19 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/contracts/stage_outcome.py` |
 | `apps/control-plane/tests/unit/test_approval_gate.py` | 7 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/loop.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/domain/investigation_context.py` |
@@ -142,6 +143,7 @@
 | `apps/control-plane/tests/unit/test_temporal_materialization_persistence.py` | 9 | `apps/control-plane/db/materialization_cursor.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/temporal_materialization.py`, `apps/shared/domain/dynamics.py` |
 | `apps/control-plane/tests/unit/test_temporal_port.py` | 7 | `apps/control-plane/services/temporal_port.py` |
 | `apps/control-plane/tests/unit/test_tool_catalog.py` | 8 | `apps/control-plane/services/tool_catalog.py` |
+| `apps/control-plane/tests/unit/test_type_signal_storage_contract.py` | 2 | `apps/control-plane/db/schema.py` |
 | `apps/control-plane/tests/unit/test_us1_core.py` | 15 | `apps/control-plane/cp_domain/investigation.py`, `apps/control-plane/cp_domain/policy.py`, `apps/control-plane/services/policy_service.py`, `apps/control-plane/services/source_registry.py` |
 | `apps/control-plane/tests/unit/test_us3_ops.py` | 7 | `apps/control-plane/services/audit.py`, `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/tests/unit/test_wheel_package_manifest.py` | 1 | — |
@@ -163,6 +165,7 @@
 | `apps/interpretation/tests/test_deterministic_extraction.py` | 16 | `apps/interpretation/dictionaries/__init__.py`, `apps/interpretation/dictionaries/build_mini.py`, `apps/interpretation/extractors/lane.py`, `apps/interpretation/extractors/language.py` |
 | `apps/interpretation/tests/test_evidence_manifest.py` | 14 | `apps/interpretation/evidence/manifest.py` |
 | `apps/interpretation/tests/test_mention_binding_seam.py` | 16 | `apps/interpretation/extractors/signals/__init__.py`, `apps/interpretation/extractors/signals/lexical.py`, `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/mentions.py` |
+| `apps/interpretation/tests/test_ml_relation_producers.py` | 7 | `apps/interpretation/extractors/signals/ml.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/shared/domain/signal_basis.py` |
 | `apps/interpretation/tests/test_observation_consumer.py` | 27 | `apps/interpretation/normalization/tenzir.py`, `apps/interpretation/observation_consumer/__init__.py`, `apps/shared/events/__init__.py` |
 | `apps/interpretation/tests/test_onchain_source_parsers.py` | 5 | `apps/acquisition/sources/catalogue.py`, `apps/interpretation/parsers/families.py` |
 | `apps/interpretation/tests/test_parser_adapter.py` | 17 | `apps/interpretation/parsers/registry.py` |
@@ -182,6 +185,7 @@
 | `apps/interpretation/tests/test_search_retriever.py` | 7 | `apps/interpretation/retrieval/__init__.py` |
 | `apps/interpretation/tests/test_signal_kind_channels.py` | 11 | `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_signal_nary_contract.py` | 32 | `apps/interpretation/extractors/signals/signal.py`, `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/predicate_hypothesis.py`, `apps/shared/domain/predicate_signature.py` |
+| `apps/interpretation/tests/test_structured_type_extractor.py` | 4 | `apps/interpretation/extractors/types.py` |
 | `apps/interpretation/tests/test_syntactic_producer.py` | 58 | `apps/interpretation/extractors/signals/mentions.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_tenzir_live.py` | 1 | `apps/interpretation/normalization/tenzir.py` |
 | `apps/interpretation/tests/test_tenzir_normalization.py` | 15 | `apps/interpretation/normalization/tenzir.py` |
@@ -343,6 +347,7 @@
 | `apps/shared/tests/unit/test_secure_fetch.py` | 20 | `apps/shared/net/secure_fetch.py`, `apps/shared/security.py` |
 | `apps/shared/tests/unit/test_security.py` | 19 | `apps/shared/security.py` |
 | `apps/shared/tests/unit/test_temporal_metrics.py` | 9 | `apps/shared/domain/temporal_metrics.py` |
+| `apps/shared/tests/unit/test_type_signal.py` | 6 | `apps/shared/semantic/type_signal.py`, `apps/shared/semantic/vocabularies.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |
 | `apps/specops/tests/conftest.py` | 0 | `apps/specops/ghostline/config.py`, `apps/specops/ghostline/runtime.py` |
 | `apps/specops/tests/test_cryptotx_api.py` | 1 | `apps/control-plane/api/main.py`, `apps/specops/cryptotx/config.py` |

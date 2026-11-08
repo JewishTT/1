@@ -218,7 +218,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 252,
+      "python_modules": 255,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -318,6 +318,7 @@
         "apps.control-plane.db.migrations.versions.029_person_case_artifacts_reports",
         "apps.control-plane.db.migrations.versions.030_observation_candidate_hardening",
         "apps.control-plane.db.migrations.versions.031_relation_claim_projection_outbox",
+        "apps.control-plane.db.migrations.versions.032_type_signals",
         "apps.control-plane.db.relation_candidate_store",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
@@ -413,14 +414,13 @@
         "apps.control-plane.tests.test_research_case_projection",
         "apps.control-plane.tests.test_research_case_reports",
         "apps.control-plane.tests.test_specops_roe_auth",
+        "apps.control-plane.tests.test_type_signal_bridge",
         "apps.control-plane.tests.test_zero_layer_service",
         "apps.control-plane.tests.unit.test_action_memory",
         "apps.control-plane.tests.unit.test_approval_gate",
         "apps.control-plane.tests.unit.test_assembly_structural_conflict",
         "apps.control-plane.tests.unit.test_badges_facade",
-        "apps.control-plane.tests.unit.test_cc_temporality",
-        "apps.control-plane.tests.unit.test_cognitive_loop",
-        "apps.control-plane.tests.unit.test_context_engine"
+        "apps.control-plane.tests.unit.test_cc_temporality"
       ]
     },
     {
@@ -454,7 +454,7 @@
     {
       "name": "interpretation",
       "description": "Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.",
-      "python_modules": 115,
+      "python_modules": 119,
       "typescript_modules": 0,
       "modules": [
         "apps.interpretation",
@@ -493,6 +493,7 @@
         "apps.interpretation.extractors.signals.links",
         "apps.interpretation.extractors.signals.mentions",
         "apps.interpretation.extractors.signals.metadata",
+        "apps.interpretation.extractors.signals.ml",
         "apps.interpretation.extractors.signals.protocol",
         "apps.interpretation.extractors.signals.signal",
         "apps.interpretation.extractors.signals.syntactic",
@@ -547,6 +548,7 @@
         "apps.interpretation.tests.test_deterministic_extraction",
         "apps.interpretation.tests.test_evidence_manifest",
         "apps.interpretation.tests.test_mention_binding_seam",
+        "apps.interpretation.tests.test_ml_relation_producers",
         "apps.interpretation.tests.test_observation_consumer",
         "apps.interpretation.tests.test_onchain_source_parsers",
         "apps.interpretation.tests.test_parser_adapter",
@@ -566,11 +568,13 @@
         "apps.interpretation.tests.test_search_retriever",
         "apps.interpretation.tests.test_signal_kind_channels",
         "apps.interpretation.tests.test_signal_nary_contract",
+        "apps.interpretation.tests.test_structured_type_extractor",
         "apps.interpretation.tests.test_syntactic_producer",
         "apps.interpretation.tests.test_tenzir_live",
         "apps.interpretation.tests.test_tenzir_normalization",
         "apps.interpretation.tests.test_transaction_lineage",
         "apps.interpretation.tests.test_warc_reader",
+        "apps.interpretation.tools.gliner_relex_smoke",
         "apps.interpretation.transaction_lineage"
       ]
     },
@@ -829,7 +833,7 @@
     {
       "name": "shared",
       "description": "Contracts, events, domain invariants, storage, security — the substrate every app imports.",
-      "python_modules": 198,
+      "python_modules": 200,
       "typescript_modules": 0,
       "modules": [
         "apps.shared.config",
@@ -934,6 +938,7 @@
         "apps.shared.semantic.registry",
         "apps.shared.semantic.resolution",
         "apps.shared.semantic.shacl",
+        "apps.shared.semantic.type_signal",
         "apps.shared.semantic.validation",
         "apps.shared.semantic.vocabularies",
         "apps.shared.storage",
@@ -1020,6 +1025,7 @@
         "apps.shared.tests.unit.test_secure_fetch",
         "apps.shared.tests.unit.test_security",
         "apps.shared.tests.unit.test_temporal_metrics",
+        "apps.shared.tests.unit.test_type_signal",
         "apps.shared.tests.unit.websearch.test_websearch",
         "apps.shared.tools.layer_boundaries",
         "apps.shared.websearch",
@@ -1187,11 +1193,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1087,
-    "edge_count": 3145,
+    "module_count": 1096,
+    "edge_count": 3169,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 951,
+      "stdlib:__future__": 960,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
@@ -1201,11 +1207,11 @@
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 248,
+      "stdlib:collections": 250,
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 4,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 407,
+      "stdlib:dataclasses": 408,
       "stdlib:datetime": 209,
       "stdlib:decimal": 14,
       "stdlib:difflib": 2,
@@ -1217,21 +1223,21 @@
       "stdlib:hashlib": 142,
       "stdlib:heapq": 1,
       "stdlib:hmac": 4,
-      "stdlib:html": 10,
+      "stdlib:html": 11,
       "stdlib:http": 5,
       "stdlib:importlib": 33,
       "stdlib:inspect": 22,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 212,
+      "stdlib:json": 214,
       "stdlib:logging": 24,
       "stdlib:math": 42,
       "stdlib:os": 82,
-      "stdlib:pathlib": 334,
+      "stdlib:pathlib": 336,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 105,
+      "stdlib:re": 107,
       "stdlib:secrets": 4,
       "stdlib:shlex": 1,
       "stdlib:shutil": 16,
@@ -1241,8 +1247,8 @@
       "stdlib:stat": 3,
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
-      "stdlib:subprocess": 17,
-      "stdlib:sys": 266,
+      "stdlib:subprocess": 18,
+      "stdlib:sys": 267,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 23,
@@ -1250,7 +1256,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 41,
-      "stdlib:typing": 396,
+      "stdlib:typing": 398,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 62,
@@ -1262,7 +1268,7 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 24,
+      "third-party:alembic": 25,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
@@ -1299,14 +1305,14 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 288,
+      "third-party:pytest": 289,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 162,
+      "third-party:sqlalchemy": 164,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -1316,6 +1322,7 @@
       "third-party:yaml": 11
     },
     "optional": {
+      "gliner": 1,
       "pyshacl": 1,
       "pyzbar": 1,
       "tantivy": 1
@@ -6301,6 +6308,11 @@
       },
       {
         "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
         "to": "apps/shared/contracts/evidence_span.py",
         "via": "contracts.evidence_span"
       },
@@ -6383,6 +6395,11 @@
         "from": "apps/control-plane/services/interpretation_bridge.py",
         "to": "apps/shared/domain/relation_candidate.py",
         "via": "domain.relation_candidate"
+      },
+      {
+        "from": "apps/control-plane/services/interpretation_bridge.py",
+        "to": "apps/interpretation/extractors/types.py",
+        "via": "extractors.types"
       },
       {
         "from": "apps/control-plane/services/investigation_scheduler.py",
@@ -7805,6 +7822,11 @@
         "via": "specops.roe.gate"
       },
       {
+        "from": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "to": "apps/control-plane/services/interpretation_bridge.py",
+        "via": "services.interpretation_bridge"
+      },
+      {
         "from": "apps/control-plane/tests/test_zero_layer_service.py",
         "to": "apps/control-plane/services/zero_layer.py",
         "via": "services.zero_layer"
@@ -8538,6 +8560,11 @@
         "from": "apps/control-plane/tests/unit/test_tool_catalog.py",
         "to": "apps/control-plane/services/tool_catalog.py",
         "via": "services.tool_catalog"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
       },
       {
         "from": "apps/control-plane/tests/unit/test_us1_core.py",
@@ -9520,6 +9547,36 @@
         "via": "extractors.signals.protocol"
       },
       {
+        "from": "apps/interpretation/extractors/signals/ml.py",
+        "to": "apps/shared/domain/predicate_signature.py",
+        "via": "domain.predicate_signature"
+      },
+      {
+        "from": "apps/interpretation/extractors/signals/ml.py",
+        "to": "apps/shared/domain/relation_participant.py",
+        "via": "domain.relation_participant"
+      },
+      {
+        "from": "apps/interpretation/extractors/signals/ml.py",
+        "to": "apps/shared/domain/signal_basis.py",
+        "via": "domain.signal_basis"
+      },
+      {
+        "from": "apps/interpretation/extractors/signals/ml.py",
+        "to": "apps/interpretation/extractors/signals/mentions.py",
+        "via": "extractors.signals.mentions"
+      },
+      {
+        "from": "apps/interpretation/extractors/signals/ml.py",
+        "to": "apps/interpretation/extractors/signals/protocol.py",
+        "via": "extractors.signals.protocol"
+      },
+      {
+        "from": "apps/interpretation/extractors/signals/ml.py",
+        "to": "apps/interpretation/extractors/signals/signal.py",
+        "via": "extractors.signals.signal"
+      },
+      {
         "from": "apps/interpretation/extractors/signals/protocol.py",
         "to": "apps/shared/domain/signal_basis.py",
         "via": "domain.signal_basis"
@@ -9648,6 +9705,11 @@
         "from": "apps/interpretation/extractors/signals/tables.py",
         "to": "apps/interpretation/extractors/signals/protocol.py",
         "via": "extractors.signals.protocol"
+      },
+      {
+        "from": "apps/interpretation/extractors/types.py",
+        "to": "apps/shared/semantic/type_signal.py",
+        "via": "semantic.type_signal"
       },
       {
         "from": "apps/interpretation/observation_consumer/__init__.py",
@@ -10310,6 +10372,26 @@
         "via": "extractors.signals.mentions"
       },
       {
+        "from": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "to": "apps/shared/domain/signal_basis.py",
+        "via": "domain.signal_basis"
+      },
+      {
+        "from": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "to": "apps/interpretation/extractors/signals/ml.py",
+        "via": "extractors.signals.ml"
+      },
+      {
+        "from": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "to": "apps/interpretation/extractors/signals/protocol.py",
+        "via": "extractors.signals.protocol"
+      },
+      {
+        "from": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "to": "apps/interpretation/extractors/signals/signal.py",
+        "via": "extractors.signals.signal"
+      },
+      {
         "from": "apps/interpretation/tests/test_observation_consumer.py",
         "to": "apps/shared/events/event_envelope_pb2.py",
         "via": "events.event_envelope_pb2"
@@ -10725,6 +10807,11 @@
         "via": "extractors.signals.signal"
       },
       {
+        "from": "apps/interpretation/tests/test_structured_type_extractor.py",
+        "to": "apps/interpretation/extractors/types.py",
+        "via": "extractors.types"
+      },
+      {
         "from": "apps/interpretation/tests/test_syntactic_producer.py",
         "to": "apps/shared/domain/mention_occurrence_index.py",
         "via": "domain.mention_occurrence_index"
@@ -10818,6 +10905,21 @@
         "from": "apps/interpretation/tests/test_warc_reader.py",
         "to": "apps/interpretation/parsers/warc.py",
         "via": "parsers.warc"
+      },
+      {
+        "from": "apps/interpretation/tools/gliner_relex_smoke.py",
+        "to": "apps/interpretation/extractors/signals/ml.py",
+        "via": "extractors.signals.ml"
+      },
+      {
+        "from": "apps/interpretation/tools/gliner_relex_smoke.py",
+        "to": "apps/interpretation/extractors/signals/mentions.py",
+        "via": "extractors.signals.mentions"
+      },
+      {
+        "from": "apps/interpretation/tools/gliner_relex_smoke.py",
+        "to": "apps/interpretation/extractors/signals/protocol.py",
+        "via": "extractors.signals.protocol"
       },
       {
         "from": "apps/projection/analytics/projector.py",
@@ -13855,6 +13957,21 @@
         "via": "semantic.regime"
       },
       {
+        "from": "apps/shared/semantic/type_signal.py",
+        "to": "apps/shared/domain/relation_identity.py",
+        "via": "domain.relation_identity"
+      },
+      {
+        "from": "apps/shared/semantic/type_signal.py",
+        "to": "apps/shared/semantic/contracts.py",
+        "via": "semantic.contracts"
+      },
+      {
+        "from": "apps/shared/semantic/type_signal.py",
+        "to": "apps/shared/semantic/vocabularies.py",
+        "via": "semantic.vocabularies"
+      },
+      {
         "from": "apps/shared/semantic/validation.py",
         "to": "apps/shared/domain/evidence_context.py",
         "via": "domain.evidence_context"
@@ -14878,6 +14995,16 @@
         "from": "apps/shared/tests/unit/test_temporal_metrics.py",
         "to": "apps/shared/domain/temporal_metrics.py",
         "via": "domain.temporal_metrics"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_type_signal.py",
+        "to": "apps/shared/semantic/type_signal.py",
+        "via": "semantic.type_signal"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_type_signal.py",
+        "to": "apps/shared/semantic/vocabularies.py",
+        "via": "semantic.vocabularies"
       },
       {
         "from": "apps/shared/tests/unit/websearch/test_websearch.py",
@@ -18981,6 +19108,17 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "tests": 2,
+        "test_names": [
+          "test_interpretation_bridge_extracts_type_signal_for_an_existing_mention",
+          "test_interpretation_bridge_reports_unresolved_source_type_instead_of_minting_entity"
+        ],
+        "targets": [
+          "apps/control-plane/services/interpretation_bridge.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/test_zero_layer_service.py",
         "tests": 3,
         "test_names": [
@@ -20019,6 +20157,17 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
+        "tests": 2,
+        "test_names": [
+          "test_type_signal_row_is_an_observation_shape_not_a_type_assertion",
+          "test_type_signal_migration_matches_the_orm_table"
+        ],
+        "targets": [
+          "apps/control-plane/db/schema.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_us1_core.py",
         "tests": 15,
         "test_names": [
@@ -20468,6 +20617,25 @@
           "apps/shared/domain/mention_occurrence_index.py",
           "apps/shared/domain/predicate_signature.py",
           "apps/shared/domain/relation_participant.py",
+          "apps/shared/domain/signal_basis.py"
+        ]
+      },
+      {
+        "path": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "tests": 7,
+        "test_names": [
+          "test_gliner_relex_emits_source_grounded_signal_through_registry",
+          "test_gliner_unverifiable_model_label_is_a_refusal_not_a_fabricated_quote",
+          "test_gliner_refuses_multiple_matching_predicate_spans_in_one_neighbourhood",
+          "test_gliner_refuses_oversized_text_before_model_call",
+          "test_stanford_openie_parses_tsv_and_emits_grounded_signal",
+          "test_stanford_openie_refuses_repeated_participant_occurrences",
+          "test_stanford_openie_never_promotes_unanchored_tuple"
+        ],
+        "targets": [
+          "apps/interpretation/extractors/signals/ml.py",
+          "apps/interpretation/extractors/signals/protocol.py",
+          "apps/interpretation/extractors/signals/signal.py",
           "apps/shared/domain/signal_basis.py"
         ]
       },
@@ -21053,6 +21221,19 @@
           "apps/shared/domain/relation_candidate.py",
           "apps/shared/domain/relation_participant.py",
           "apps/shared/domain/signal_basis.py"
+        ]
+      },
+      {
+        "path": "apps/interpretation/tests/test_structured_type_extractor.py",
+        "tests": 4,
+        "test_names": [
+          "test_jsonld_schema_person_becomes_type_signal_not_assertion",
+          "test_jsonld_unresolved_mention_is_a_typed_refusal",
+          "test_opengraph_page_type_is_not_misattached_to_a_person_mention",
+          "test_inherited_schema_context_applies_to_nested_graph_items"
+        ],
+        "targets": [
+          "apps/interpretation/extractors/types.py"
         ]
       },
       {
@@ -25056,6 +25237,22 @@
         ]
       },
       {
+        "path": "apps/shared/tests/unit/test_type_signal.py",
+        "tests": 6,
+        "test_names": [
+          "test_type_signal_round_trips_and_preserves_source_surface",
+          "test_type_signal_identity_excludes_mapping_candidates_and_evidence_revision",
+          "test_detector_without_external_vocabulary_uses_none_not_synthetic_name",
+          "test_signal_rejects_carried_id_that_disagrees_with_its_content",
+          "test_mapping_candidate_refuses_missing_match_type",
+          "test_non_hierarchical_mapping_is_representable"
+        ],
+        "targets": [
+          "apps/shared/semantic/type_signal.py",
+          "apps/shared/semantic/vocabularies.py"
+        ]
+      },
+      {
         "path": "apps/shared/tests/unit/websearch/test_websearch.py",
         "tests": 23,
         "test_names": [
@@ -25825,7 +26022,7 @@
         ]
       }
     ],
-    "total": 5446
+    "total": 5467
   },
   "contracts": {
     "python": [
@@ -31380,6 +31577,7 @@
     "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
     "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
     "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
+    "apps/control-plane/db/migrations/versions/032_type_signals.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
     "apps/control-plane/semantic_path/corpus_cases.py",
@@ -31392,7 +31590,6 @@
     "apps/control-plane/services/document_adapter.py",
     "apps/control-plane/services/entity_pipeline.py",
     "apps/control-plane/services/event_bus.py",
-    "apps/control-plane/services/interpretation_bridge.py",
     "apps/control-plane/services/investigation_scheduler.py",
     "apps/control-plane/services/materialization_outbox_relay.py",
     "apps/control-plane/services/model_gateway.py",
@@ -31432,6 +31629,7 @@
     "apps/interpretation/parsers/payload/text.py",
     "apps/interpretation/parsers/plaintext.py",
     "apps/interpretation/parsers/structured.py",
+    "apps/interpretation/tools/gliner_relex_smoke.py",
     "apps/projection/analytics/__init__.py",
     "apps/projection/analytics/store.py",
     "apps/projection/graph/__init__.py",
@@ -31473,8 +31671,7 @@
     "apps/shared/datasets/build.py",
     "apps/shared/domain/entity_identity.py",
     "apps/shared/donor/__init__.py",
-    "apps/shared/events/bus.py",
-    "apps/shared/events/coalesce.py"
+    "apps/shared/events/bus.py"
   ],
   "untested_count": 287,
   "architecture": {
@@ -31775,6 +31972,7 @@
             "apps/interpretation/extractors/signals/links.py",
             "apps/interpretation/extractors/signals/mentions.py",
             "apps/interpretation/extractors/signals/metadata.py",
+            "apps/interpretation/extractors/signals/ml.py",
             "apps/interpretation/extractors/signals/protocol.py",
             "apps/interpretation/extractors/signals/signal.py",
             "apps/interpretation/extractors/signals/syntactic.py",
@@ -31829,6 +32027,7 @@
             "apps/interpretation/tests/test_deterministic_extraction.py",
             "apps/interpretation/tests/test_evidence_manifest.py",
             "apps/interpretation/tests/test_mention_binding_seam.py",
+            "apps/interpretation/tests/test_ml_relation_producers.py",
             "apps/interpretation/tests/test_observation_consumer.py",
             "apps/interpretation/tests/test_onchain_source_parsers.py",
             "apps/interpretation/tests/test_parser_adapter.py",
@@ -31848,14 +32047,16 @@
             "apps/interpretation/tests/test_search_retriever.py",
             "apps/interpretation/tests/test_signal_kind_channels.py",
             "apps/interpretation/tests/test_signal_nary_contract.py",
+            "apps/interpretation/tests/test_structured_type_extractor.py",
             "apps/interpretation/tests/test_syntactic_producer.py",
             "apps/interpretation/tests/test_tenzir_live.py",
             "apps/interpretation/tests/test_tenzir_normalization.py",
             "apps/interpretation/tests/test_transaction_lineage.py",
             "apps/interpretation/tests/test_warc_reader.py",
+            "apps/interpretation/tools/gliner_relex_smoke.py",
             "apps/interpretation/transaction_lineage.py"
           ],
-          "module_count": 115
+          "module_count": 119
         },
         {
           "id": "investigations",
@@ -32263,6 +32464,7 @@
             "apps/shared/semantic/registry.py",
             "apps/shared/semantic/resolution.py",
             "apps/shared/semantic/shacl.py",
+            "apps/shared/semantic/type_signal.py",
             "apps/shared/semantic/validation.py",
             "apps/shared/semantic/vocabularies.py",
             "apps/shared/storage/__init__.py",
@@ -32349,6 +32551,7 @@
             "apps/shared/tests/unit/test_secure_fetch.py",
             "apps/shared/tests/unit/test_security.py",
             "apps/shared/tests/unit/test_temporal_metrics.py",
+            "apps/shared/tests/unit/test_type_signal.py",
             "apps/shared/tests/unit/websearch/test_websearch.py",
             "apps/shared/tools/layer_boundaries.py",
             "apps/shared/websearch/__init__.py",
@@ -32360,7 +32563,7 @@
             "apps/shared/workflow/__init__.py",
             "apps/shared/workflow/client.py"
           ],
-          "module_count": 198
+          "module_count": 200
         },
         {
           "id": "projection-query",
@@ -32462,6 +32665,7 @@
             "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
             "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
             "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
+            "apps/control-plane/db/migrations/versions/032_type_signals.py",
             "apps/control-plane/db/relation_candidate_store.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
@@ -32554,6 +32758,7 @@
             "apps/control-plane/tests/test_research_case_projection.py",
             "apps/control-plane/tests/test_research_case_reports.py",
             "apps/control-plane/tests/test_specops_roe_auth.py",
+            "apps/control-plane/tests/test_type_signal_bridge.py",
             "apps/control-plane/tests/test_zero_layer_service.py",
             "apps/control-plane/tests/unit/test_action_memory.py",
             "apps/control-plane/tests/unit/test_approval_gate.py",
@@ -32605,6 +32810,7 @@
             "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
             "apps/control-plane/tests/unit/test_temporal_port.py",
             "apps/control-plane/tests/unit/test_tool_catalog.py",
+            "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
             "apps/control-plane/tests/unit/test_us1_core.py",
             "apps/control-plane/tests/unit/test_us3_ops.py",
             "apps/control-plane/tests/unit/test_wheel_package_manifest.py",
@@ -32682,7 +32888,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 311
+          "module_count": 314
         },
         {
           "id": "webapp",
@@ -33544,7 +33750,6 @@
             "apps/interpretation/extractors/persons.py",
             "apps/interpretation/extractors/places.py",
             "apps/interpretation/extractors/translit.py",
-            "apps/interpretation/extractors/types.py",
             "apps/interpretation/extractors/util.py",
             "apps/interpretation/parsers/documents.py",
             "apps/interpretation/parsers/html_full.py",
@@ -33564,7 +33769,7 @@
             "bench/extraction/bench_extract.py",
             "bench/fixtures/extraction/_generate.py"
           ],
-          "module_count": 38,
+          "module_count": 37,
           "capabilities": [
             "interpretation-lane"
           ]
@@ -33798,9 +34003,10 @@
           "tasks_checked": 0,
           "tasks_total": 94,
           "modules": [
+            "apps/shared/semantic/type_signal.py",
             "apps/shared/tests/unit/test_schema_hierarchy.py"
           ],
-          "module_count": 1,
+          "module_count": 2,
           "capabilities": []
         },
         {
@@ -36632,6 +36838,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/032_type_signals.py",
+        "status": "MIGRATION",
+        "loc": 51,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "IMPLEMENTED",
         "loc": 229,
@@ -36652,7 +36867,7 @@
       {
         "path": "apps/control-plane/db/schema.py",
         "status": "IMPLEMENTED",
-        "loc": 3183,
+        "loc": 3210,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -36917,8 +37132,8 @@
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
         "status": "IMPLEMENTED",
-        "loc": 1087,
-        "callables": 18,
+        "loc": 1167,
+        "callables": 20,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -37503,6 +37718,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "status": "TEST",
+        "loc": 46,
+        "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/tests/test_zero_layer_service.py",
         "status": "TEST",
         "loc": 44,
@@ -37963,6 +38187,15 @@
         "status": "TEST",
         "loc": 92,
         "callables": 8,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
+        "status": "TEST",
+        "loc": 31,
+        "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -38483,6 +38716,15 @@
         "markers": []
       },
       {
+        "path": "apps/interpretation/extractors/signals/ml.py",
+        "status": "IMPLEMENTED",
+        "loc": 415,
+        "callables": 24,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/interpretation/extractors/signals/protocol.py",
         "status": "IMPLEMENTED",
         "loc": 438,
@@ -38530,8 +38772,8 @@
       {
         "path": "apps/interpretation/extractors/types.py",
         "status": "IMPLEMENTED",
-        "loc": 156,
-        "callables": 5,
+        "loc": 180,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -38973,6 +39215,15 @@
         ]
       },
       {
+        "path": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "status": "TEST",
+        "loc": 131,
+        "callables": 11,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/interpretation/tests/test_observation_consumer.py",
         "status": "TEST",
         "loc": 522,
@@ -39146,6 +39397,15 @@
         "markers": []
       },
       {
+        "path": "apps/interpretation/tests/test_structured_type_extractor.py",
+        "status": "TEST",
+        "loc": 65,
+        "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/interpretation/tests/test_syntactic_producer.py",
         "status": "TEST",
         "loc": 1698,
@@ -39186,6 +39446,15 @@
         "status": "TEST",
         "loc": 402,
         "callables": 48,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/interpretation/tools/gliner_relex_smoke.py",
+        "status": "IMPLEMENTED",
+        "loc": 81,
+        "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -41988,6 +42257,15 @@
         ]
       },
       {
+        "path": "apps/shared/semantic/type_signal.py",
+        "status": "IMPLEMENTED",
+        "loc": 197,
+        "callables": 10,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/shared/semantic/validation.py",
         "status": "IMPLEMENTED",
         "loc": 1348,
@@ -41999,7 +42277,7 @@
       {
         "path": "apps/shared/semantic/vocabularies.py",
         "status": "IMPLEMENTED",
-        "loc": 585,
+        "loc": 587,
         "callables": 37,
         "stubs": 0,
         "not_implemented": 0,
@@ -42763,6 +43041,15 @@
         "status": "TEST",
         "loc": 94,
         "callables": 10,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/shared/tests/unit/test_type_signal.py",
+        "status": "TEST",
+        "loc": 72,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -44253,12 +44540,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 587,
+      "IMPLEMENTED": 590,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 97,
-      "TEST": 366,
-      "MIGRATION": 19,
-      "total": 1087
+      "TEST": 371,
+      "MIGRATION": 20,
+      "total": 1096
     }
   },
   "reachability": {
@@ -45260,6 +45547,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/032_type_signals.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "PRODUCTION"
       },
@@ -45640,6 +45931,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/control-plane/tests/test_zero_layer_service.py",
         "status": "TEST"
       },
@@ -45841,6 +46136,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_tool_catalog.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
         "status": "TEST"
       },
       {
@@ -46072,6 +46371,10 @@
         "status": "TEST_ONLY"
       },
       {
+        "path": "apps/interpretation/extractors/signals/ml.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/interpretation/extractors/signals/protocol.py",
         "status": "PRODUCTION"
       },
@@ -46288,6 +46591,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/interpretation/tests/test_observation_consumer.py",
         "status": "TEST"
       },
@@ -46364,6 +46671,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/interpretation/tests/test_structured_type_extractor.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/interpretation/tests/test_syntactic_producer.py",
         "status": "TEST"
       },
@@ -46382,6 +46693,10 @@
       {
         "path": "apps/interpretation/tests/test_warc_reader.py",
         "status": "TEST"
+      },
+      {
+        "path": "apps/interpretation/tools/gliner_relex_smoke.py",
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/interpretation/transaction_lineage.py",
@@ -47620,6 +47935,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/shared/semantic/type_signal.py",
+        "status": "PRODUCTION"
+      },
+      {
         "path": "apps/shared/semantic/validation.py",
         "status": "PRODUCTION"
       },
@@ -47961,6 +48280,10 @@
       },
       {
         "path": "apps/shared/tests/unit/test_temporal_metrics.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/shared/tests/unit/test_type_signal.py",
         "status": "TEST"
       },
       {
@@ -48637,6 +48960,7 @@
       "apps/interpretation/_prove_primproc.py",
       "apps/interpretation/dictionaries/build_mini.py",
       "apps/interpretation/extract_demo.py",
+      "apps/interpretation/tools/gliner_relex_smoke.py",
       "apps/shared/datasets/build.py",
       "apps/shared/tools/layer_boundaries.py",
       "apps/specops/cryptotx/cli.py",
@@ -48658,11 +48982,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 461,
+      "PRODUCTION": 464,
       "TEST_ONLY": 134,
-      "ORPHAN": 126,
-      "TEST": 366,
-      "total": 1087
+      "ORPHAN": 127,
+      "TEST": 371,
+      "total": 1096
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -48846,6 +49170,7 @@
       "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
       "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
       "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
+      "apps/control-plane/db/migrations/versions/032_type_signals.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
@@ -64359,6 +64684,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "dfcbb839b52f582c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "b1593a0d8ce76e2d",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/services/interpretation_bridge.py",
@@ -64407,6 +64745,19 @@
         "evidence": {
           "file": "apps/control-plane/services/interpretation_bridge.py",
           "via": "extractors.lane"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "babce3dce5c58c85",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/interpretation_bridge.py",
+        "object": "apps/interpretation/extractors/types.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/interpretation_bridge.py",
+          "via": "extractors.types"
         },
         "confidence": 1.0
       },
@@ -68285,6 +68636,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "ee7dbf2e26830784",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "object": "apps/control-plane/services/interpretation_bridge.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_type_signal_bridge.py",
+          "via": "services.interpretation_bridge"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "a249f5f40fe4897d",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/tests/test_zero_layer_service.py",
@@ -70192,6 +70556,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_tool_catalog.py",
           "via": "services.tool_catalog"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "66cd5e2f569cee17",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
+          "via": "db.schema"
         },
         "confidence": 1.0
       },
@@ -72744,6 +73121,84 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "9d318f0370da0e0d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/extractors/signals/ml.py",
+        "object": "apps/interpretation/extractors/signals/mentions.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/extractors/signals/ml.py",
+          "via": "extractors.signals.mentions"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0f3398cab2606833",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/extractors/signals/ml.py",
+        "object": "apps/interpretation/extractors/signals/protocol.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/extractors/signals/ml.py",
+          "via": "extractors.signals.protocol"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "03173a1d2fbce491",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/extractors/signals/ml.py",
+        "object": "apps/interpretation/extractors/signals/signal.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/extractors/signals/ml.py",
+          "via": "extractors.signals.signal"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9bff8915240c4ca1",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/extractors/signals/ml.py",
+        "object": "apps/shared/domain/predicate_signature.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/extractors/signals/ml.py",
+          "via": "domain.predicate_signature"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e1e598d13844c99b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/extractors/signals/ml.py",
+        "object": "apps/shared/domain/relation_participant.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/extractors/signals/ml.py",
+          "via": "domain.relation_participant"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "51efdb1ce8b815d4",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/extractors/signals/ml.py",
+        "object": "apps/shared/domain/signal_basis.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/extractors/signals/ml.py",
+          "via": "domain.signal_basis"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "d30e12d23dbd9073",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/interpretation/extractors/signals/protocol.py",
@@ -73078,6 +73533,19 @@
         "evidence": {
           "file": "apps/interpretation/extractors/signals/tables.py",
           "via": "domain.signal_basis"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3c4dea576eeab9ab",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/extractors/types.py",
+        "object": "apps/shared/semantic/type_signal.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/extractors/types.py",
+          "via": "semantic.type_signal"
         },
         "confidence": 1.0
       },
@@ -74798,6 +75266,58 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "2911bbfc5f3ac076",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "object": "apps/interpretation/extractors/signals/ml.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_ml_relation_producers.py",
+          "via": "extractors.signals.ml"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "204ee26907fdc0dd",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "object": "apps/interpretation/extractors/signals/protocol.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_ml_relation_producers.py",
+          "via": "extractors.signals.protocol"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "eabf1c586cbbb48b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "object": "apps/interpretation/extractors/signals/signal.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_ml_relation_producers.py",
+          "via": "extractors.signals.signal"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a873f386ab6e41f3",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "object": "apps/shared/domain/signal_basis.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_ml_relation_producers.py",
+          "via": "domain.signal_basis"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "bde5c96ec7e325c8",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/interpretation/tests/test_observation_consumer.py",
@@ -75877,6 +76397,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "4adbf214779fb90c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tests/test_structured_type_extractor.py",
+        "object": "apps/interpretation/extractors/types.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_structured_type_extractor.py",
+          "via": "extractors.types"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "5bb36268d530f2ae",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/interpretation/tests/test_syntactic_producer.py",
@@ -76120,6 +76653,45 @@
         "evidence": {
           "file": "apps/interpretation/tests/test_warc_reader.py",
           "via": "parsers.warc"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ae52b4cf65711f2d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tools/gliner_relex_smoke.py",
+        "object": "apps/interpretation/extractors/signals/mentions.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tools/gliner_relex_smoke.py",
+          "via": "extractors.signals.mentions"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "59cff428a3287e2e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tools/gliner_relex_smoke.py",
+        "object": "apps/interpretation/extractors/signals/ml.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tools/gliner_relex_smoke.py",
+          "via": "extractors.signals.ml"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f84b09b9de23c771",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/interpretation/tools/gliner_relex_smoke.py",
+        "object": "apps/interpretation/extractors/signals/protocol.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/interpretation/tools/gliner_relex_smoke.py",
+          "via": "extractors.signals.protocol"
         },
         "confidence": 1.0
       },
@@ -84015,6 +84587,45 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "52467f23dac5250c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/semantic/type_signal.py",
+        "object": "apps/shared/domain/relation_identity.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/semantic/type_signal.py",
+          "via": "domain.relation_identity"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "28088627ba51dd52",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/semantic/type_signal.py",
+        "object": "apps/shared/semantic/contracts.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/semantic/type_signal.py",
+          "via": "semantic.contracts"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "135e882a237594f2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/semantic/type_signal.py",
+        "object": "apps/shared/semantic/vocabularies.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/semantic/type_signal.py",
+          "via": "semantic.vocabularies"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "37f6b8db26da9db7",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/shared/semantic/validation.py",
@@ -86676,6 +87287,32 @@
         "evidence": {
           "file": "apps/shared/tests/unit/test_temporal_metrics.py",
           "via": "domain.temporal_metrics"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a06933b23d3374b0",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_type_signal.py",
+        "object": "apps/shared/semantic/type_signal.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_type_signal.py",
+          "via": "semantic.type_signal"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "85e50abc2610c7f2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_type_signal.py",
+        "object": "apps/shared/semantic/vocabularies.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_type_signal.py",
+          "via": "semantic.vocabularies"
         },
         "confidence": 1.0
       },
@@ -95689,18 +96326,6 @@
         "confidence": 0.7
       },
       {
-        "fact_id": "4753921945402479",
-        "kind": "SPEC_CITES_MODULE",
-        "subject": "007-deterministic-entity-extraction-stack",
-        "object": "apps/interpretation/extractors/types.py",
-        "status": "INFERRED",
-        "method": "docstring_reference",
-        "evidence": {
-          "spec": "specs/007-deterministic-entity-extraction-stack/spec.md"
-        },
-        "confidence": 0.7
-      },
-      {
         "fact_id": "8f378d0294bdd926",
         "kind": "SPEC_CITES_MODULE",
         "subject": "007-deterministic-entity-extraction-stack",
@@ -96765,6 +97390,18 @@
         "method": "docstring_reference",
         "evidence": {
           "spec": "specs/019-universal-relation-extraction/spec.md"
+        },
+        "confidence": 0.7
+      },
+      {
+        "fact_id": "581b30b9d81825b6",
+        "kind": "SPEC_CITES_MODULE",
+        "subject": "021-entity-relation-extraction-finalization",
+        "object": "apps/shared/semantic/type_signal.py",
+        "status": "INFERRED",
+        "method": "docstring_reference",
+        "evidence": {
+          "spec": "specs/021-entity-relation-extraction-finalization/spec.md"
         },
         "confidence": 0.7
       },
@@ -99580,6 +100217,18 @@
         "fact_id": "6209cf1da26a6b0a",
         "kind": "TABLE_CLASS_DEFINED",
         "subject": "TypeAssertionRow",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "regex_class_base",
+        "evidence": {
+          "file": "apps/control-plane/db/schema.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3616d90953b826c3",
+        "kind": "TABLE_CLASS_DEFINED",
+        "subject": "TypeSignalRow",
         "object": "apps/control-plane/db/schema.py",
         "status": "STATIC_FACT",
         "method": "regex_class_base",
@@ -102937,6 +103586,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "4b11e266040f74cf",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "object": "apps/control-plane/services/interpretation_bridge.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_type_signal_bridge.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "0bddb196b0c7370a",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/test_zero_layer_service.py",
@@ -104413,6 +105074,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "bacf26781c3bd0f0",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_type_signal_storage_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "c23b67b708d679e1",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_us1_core.py",
@@ -105237,6 +105910,54 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/interpretation/tests/test_mention_binding_seam.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "1c7dbf6c53490466",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "object": "apps/interpretation/extractors/signals/ml.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_ml_relation_producers.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e7b85035a22586d5",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "object": "apps/interpretation/extractors/signals/protocol.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_ml_relation_producers.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c4053e9cdb1ca276",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "object": "apps/interpretation/extractors/signals/signal.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_ml_relation_producers.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "75ad1a7e57a25f8c",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_ml_relation_producers.py",
+        "object": "apps/shared/domain/signal_basis.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_ml_relation_producers.py"
         },
         "confidence": 1.0
       },
@@ -106089,6 +106810,18 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/interpretation/tests/test_signal_nary_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8f323765fb88fd07",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/interpretation/tests/test_structured_type_extractor.py",
+        "object": "apps/interpretation/extractors/types.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/interpretation/tests/test_structured_type_extractor.py"
         },
         "confidence": 1.0
       },
@@ -110713,6 +111446,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "77c392f4743a0e2e",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/shared/tests/unit/test_type_signal.py",
+        "object": "apps/shared/semantic/type_signal.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_type_signal.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "19fbd182b56fbced",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/shared/tests/unit/test_type_signal.py",
+        "object": "apps/shared/semantic/vocabularies.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_type_signal.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "f0c0c5b5c0a959b5",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/shared/tests/unit/websearch/test_websearch.py",
@@ -112166,44 +112923,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4848,
-      "static_facts": 4551,
+      "facts_total": 4882,
+      "static_facts": 4585,
       "inferred": 297,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1087,
+    "python_modules": 1096,
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3145,
-    "test_files": 369,
-    "test_functions": 5446,
+    "import_edges": 3169,
+    "test_files": 374,
+    "test_functions": 5467,
     "untested_modules": 287,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4848,
-    "static_facts": 4551,
+    "facts_total": 4882,
+    "static_facts": 4585,
     "inferred": 297,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 587,
+    "IMPLEMENTED": 590,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 97,
-    "TEST": 366,
-    "MIGRATION": 19,
-    "total": 1087
+    "TEST": 371,
+    "MIGRATION": 20,
+    "total": 1096
   },
   "reachability_summary": {
-    "PRODUCTION": 461,
+    "PRODUCTION": 464,
     "TEST_ONLY": 134,
-    "ORPHAN": 126,
-    "TEST": 366,
-    "total": 1087
+    "ORPHAN": 127,
+    "TEST": 371,
+    "total": 1096
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -112230,6 +112987,7 @@
     "apps/interpretation/_prove_primproc.py",
     "apps/interpretation/dictionaries/build_mini.py",
     "apps/interpretation/extract_demo.py",
+    "apps/interpretation/tools/gliner_relex_smoke.py",
     "apps/shared/datasets/build.py",
     "apps/shared/tools/layer_boundaries.py",
     "apps/specops/cryptotx/cli.py",
@@ -112432,6 +113190,7 @@
     "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
     "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
     "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
+    "apps/control-plane/db/migrations/versions/032_type_signals.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",

@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 461 |
+| PRODUCTION | 464 |
 | TEST_ONLY | 134 |
-| ORPHAN | 126 |
-| TEST | 366 |
+| ORPHAN | 127 |
+| TEST | 371 |
 
 ## Entrypoints (production roots)
 
@@ -39,6 +39,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/interpretation/_prove_primproc.py` |
 | `apps/interpretation/dictionaries/build_mini.py` |
 | `apps/interpretation/extract_demo.py` |
+| `apps/interpretation/tools/gliner_relex_smoke.py` |
 | `apps/shared/datasets/build.py` |
 | `apps/shared/tools/layer_boundaries.py` |
 | `apps/specops/cryptotx/cli.py` |
@@ -202,7 +203,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**126** modules are imported by neither production nor tests.
+**127** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -251,6 +252,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py` |
 | `apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py` |
 | `apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py` |
+| `apps/control-plane/db/migrations/versions/032_type_signals.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |

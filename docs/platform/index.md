@@ -9,19 +9,19 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python modules | 1087 |
+| Python modules | 1096 |
 | TypeScript modules | 281 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 3145 |
+| Import edges (local) | 3169 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 369 |
-| Test functions | 5446 |
+| Test files | 374 |
+| Test functions | 5467 |
 | Untested platform modules | 287 |
 | HTTP routes | 222 |
 | Contracts (python/docs/root) | 6 / 74 / 12 |
@@ -52,15 +52,15 @@ committed model no longer matches the tree.
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| control-plane | 252 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| control-plane | 255 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
-| interpretation | 115 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
+| interpretation | 119 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |
 | projection | 67 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| shared | 198 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| shared | 200 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops | 68 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | tools | 14 | 0 | Generators, capability/owner/donor tools, probes. |
 | webapp | 0 | 281 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |

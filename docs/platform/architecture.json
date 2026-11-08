@@ -296,6 +296,7 @@
           "apps/interpretation/extractors/signals/links.py",
           "apps/interpretation/extractors/signals/mentions.py",
           "apps/interpretation/extractors/signals/metadata.py",
+          "apps/interpretation/extractors/signals/ml.py",
           "apps/interpretation/extractors/signals/protocol.py",
           "apps/interpretation/extractors/signals/signal.py",
           "apps/interpretation/extractors/signals/syntactic.py",
@@ -350,6 +351,7 @@
           "apps/interpretation/tests/test_deterministic_extraction.py",
           "apps/interpretation/tests/test_evidence_manifest.py",
           "apps/interpretation/tests/test_mention_binding_seam.py",
+          "apps/interpretation/tests/test_ml_relation_producers.py",
           "apps/interpretation/tests/test_observation_consumer.py",
           "apps/interpretation/tests/test_onchain_source_parsers.py",
           "apps/interpretation/tests/test_parser_adapter.py",
@@ -369,14 +371,16 @@
           "apps/interpretation/tests/test_search_retriever.py",
           "apps/interpretation/tests/test_signal_kind_channels.py",
           "apps/interpretation/tests/test_signal_nary_contract.py",
+          "apps/interpretation/tests/test_structured_type_extractor.py",
           "apps/interpretation/tests/test_syntactic_producer.py",
           "apps/interpretation/tests/test_tenzir_live.py",
           "apps/interpretation/tests/test_tenzir_normalization.py",
           "apps/interpretation/tests/test_transaction_lineage.py",
           "apps/interpretation/tests/test_warc_reader.py",
+          "apps/interpretation/tools/gliner_relex_smoke.py",
           "apps/interpretation/transaction_lineage.py"
         ],
-        "module_count": 115
+        "module_count": 119
       },
       {
         "id": "investigations",
@@ -784,6 +788,7 @@
           "apps/shared/semantic/registry.py",
           "apps/shared/semantic/resolution.py",
           "apps/shared/semantic/shacl.py",
+          "apps/shared/semantic/type_signal.py",
           "apps/shared/semantic/validation.py",
           "apps/shared/semantic/vocabularies.py",
           "apps/shared/storage/__init__.py",
@@ -870,6 +875,7 @@
           "apps/shared/tests/unit/test_secure_fetch.py",
           "apps/shared/tests/unit/test_security.py",
           "apps/shared/tests/unit/test_temporal_metrics.py",
+          "apps/shared/tests/unit/test_type_signal.py",
           "apps/shared/tests/unit/websearch/test_websearch.py",
           "apps/shared/tools/layer_boundaries.py",
           "apps/shared/websearch/__init__.py",
@@ -881,7 +887,7 @@
           "apps/shared/workflow/__init__.py",
           "apps/shared/workflow/client.py"
         ],
-        "module_count": 198
+        "module_count": 200
       },
       {
         "id": "projection-query",
@@ -983,6 +989,7 @@
           "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
           "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
           "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
+          "apps/control-plane/db/migrations/versions/032_type_signals.py",
           "apps/control-plane/db/relation_candidate_store.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
@@ -1075,6 +1082,7 @@
           "apps/control-plane/tests/test_research_case_projection.py",
           "apps/control-plane/tests/test_research_case_reports.py",
           "apps/control-plane/tests/test_specops_roe_auth.py",
+          "apps/control-plane/tests/test_type_signal_bridge.py",
           "apps/control-plane/tests/test_zero_layer_service.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
@@ -1126,6 +1134,7 @@
           "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
           "apps/control-plane/tests/unit/test_temporal_port.py",
           "apps/control-plane/tests/unit/test_tool_catalog.py",
+          "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
           "apps/control-plane/tests/unit/test_us1_core.py",
           "apps/control-plane/tests/unit/test_us3_ops.py",
           "apps/control-plane/tests/unit/test_wheel_package_manifest.py",
@@ -1203,7 +1212,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 311
+        "module_count": 314
       },
       {
         "id": "webapp",
@@ -2065,7 +2074,6 @@
           "apps/interpretation/extractors/persons.py",
           "apps/interpretation/extractors/places.py",
           "apps/interpretation/extractors/translit.py",
-          "apps/interpretation/extractors/types.py",
           "apps/interpretation/extractors/util.py",
           "apps/interpretation/parsers/documents.py",
           "apps/interpretation/parsers/html_full.py",
@@ -2085,7 +2093,7 @@
           "bench/extraction/bench_extract.py",
           "bench/fixtures/extraction/_generate.py"
         ],
-        "module_count": 38,
+        "module_count": 37,
         "capabilities": [
           "interpretation-lane"
         ]
@@ -2319,9 +2327,10 @@
         "tasks_checked": 0,
         "tasks_total": 94,
         "modules": [
+          "apps/shared/semantic/type_signal.py",
           "apps/shared/tests/unit/test_schema_hierarchy.py"
         ],
-        "module_count": 1,
+        "module_count": 2,
         "capabilities": []
       },
       {

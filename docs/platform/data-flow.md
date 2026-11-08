@@ -127,9 +127,9 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/interpretation/extractors/signals/links.py` | The link producer: what a hyperlink says, and nothing it does not. |
 | `apps/interpretation/extractors/signals/mentions.py` | The **only** place a producer below the mention layer addresses a participant. |
 | `apps/interpretation/extractors/signals/metadata.py` | The metadata producer: what a document says about itself. |
+| `apps/interpretation/extractors/signals/ml.py` | Optional ML / OpenIE relation producers adapted to the canonical RelationSignal contract. |
 | `apps/interpretation/extractors/signals/protocol.py` | The one extraction contract every relation producer implements. |
 | `apps/interpretation/extractors/signals/signal.py` | The relation signal: what a producer saw, before anyone decided what it means. |
-| `apps/interpretation/extractors/signals/syntactic.py` | The syntactic producer: a parsed clause, as a relation signal. |
 
 ## Identity resolution & admission
 
