@@ -194,6 +194,7 @@
           "apps/acquisition/tests/unit/test_source_executor_contracts.py",
           "apps/acquisition/tests/unit/test_source_query_set.py",
           "apps/acquisition/tests/unit/test_warc_adapter.py",
+          "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
           "apps/acquisition/worker-dataset/__init__.py",
           "apps/acquisition/worker-dataset/acquire.py",
           "apps/acquisition/worker_acquisition.py",
@@ -250,7 +251,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 161
+        "module_count": 162
       },
       {
         "id": "interpretation",
@@ -610,19 +611,22 @@
           "platform_model/reachability.py",
           "platform_model/scanners.py",
           "platform_model/semantic.py",
+          "tools/__init__.py",
           "tools/append_zero_frontend_a.py",
           "tools/append_zero_frontend_b.py",
           "tools/append_zero_inventory.py",
           "tools/append_zero_sources_a.py",
           "tools/append_zero_sources_b.py",
           "tools/fix_zero_layer_doc.py",
+          "tools/repo_hygiene.py",
           "tools/semantic_docgraph.py",
           "tools/specs/build_capability_matrix.py",
           "tools/specs/build_donor_registry.py",
           "tools/specs/build_owner_map.py",
-          "tools/strip_zero_inventory.py"
+          "tools/strip_zero_inventory.py",
+          "tools/tests/test_repo_hygiene.py"
         ],
-        "module_count": 71
+        "module_count": 74
       },
       {
         "id": "orchestration-temporal",
@@ -1025,9 +1029,12 @@
           "apps/control-plane/tests/integration/test_tenancy.py",
           "apps/control-plane/tests/integration/test_tools_api.py",
           "apps/control-plane/tests/test_auth_security.py",
+          "apps/control-plane/tests/test_metrics_honesty.py",
+          "apps/control-plane/tests/test_quarantine_api.py",
           "apps/control-plane/tests/test_research_case_invariants.py",
           "apps/control-plane/tests/test_research_case_projection.py",
           "apps/control-plane/tests/test_research_case_reports.py",
+          "apps/control-plane/tests/test_specops_roe_auth.py",
           "apps/control-plane/tests/test_zero_layer_service.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
@@ -1058,6 +1065,7 @@
           "apps/control-plane/tests/unit/test_monitor.py",
           "apps/control-plane/tests/unit/test_network_analytics.py",
           "apps/control-plane/tests/unit/test_ontology_registry.py",
+          "apps/control-plane/tests/unit/test_operational_schema_ownership.py",
           "apps/control-plane/tests/unit/test_postgres_context_store.py",
           "apps/control-plane/tests/unit/test_producer_binding_golden_path.py",
           "apps/control-plane/tests/unit/test_query_degradation.py",
@@ -1074,11 +1082,13 @@
           "apps/control-plane/tests/unit/test_series_lifecycle.py",
           "apps/control-plane/tests/unit/test_source_query_store.py",
           "apps/control-plane/tests/unit/test_sse_stream.py",
+          "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
           "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
           "apps/control-plane/tests/unit/test_temporal_port.py",
           "apps/control-plane/tests/unit/test_tool_catalog.py",
           "apps/control-plane/tests/unit/test_us1_core.py",
           "apps/control-plane/tests/unit/test_us3_ops.py",
+          "apps/control-plane/tests/unit/test_wheel_package_manifest.py",
           "apps/control-plane/tests/unit/test_workflows.py",
           "apps/control-plane/workflows/__init__.py",
           "apps/control-plane/workflows/investigation.py",
@@ -1153,7 +1163,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 303
+        "module_count": 309
       },
       {
         "id": "webapp",
@@ -1539,6 +1549,7 @@
       "claim.timezone",
       "cloudflare.com",
       "cognitive.acquisition.worker",
+      "cognitive.dlq",
       "cognitive.investigation.activities",
       "cognitive.worker",
       "collections.abc",
@@ -1603,6 +1614,7 @@
       "datetime.now",
       "db.example",
       "db.schema",
+      "db.session",
       "dc.creator",
       "dc.description",
       "dc.publisher",
@@ -1631,9 +1643,7 @@
       "empty.txt",
       "enable.auto.commit",
       "enable.auto.offset.store",
-      "enable.idempotence",
-      "engine.py",
-      "entities.entity_id"
+      "enable.idempotence"
     ]
   },
   "context_map": {
@@ -2311,9 +2321,7 @@
           "apps/science/anchoring.py",
           "apps/science/tests/test_anchoring.py",
           "apps/shared/domain/investigation_context.py",
-          "apps/shared/events/dlq_durable.py",
           "apps/shared/net/secure_fetch.py",
-          "apps/shared/tests/unit/test_dlq_durable.py",
           "apps/shared/tests/unit/test_event_timestamps.py",
           "apps/shared/tests/unit/test_idempotent_consumer.py",
           "apps/shared/tests/unit/test_investigation_context.py",
@@ -2322,9 +2330,8 @@
           "apps/shared/tests/unit/test_secure_fetch.py",
           "apps/shared/tools/layer_boundaries.py"
         ],
-        "module_count": 24,
+        "module_count": 22,
         "capabilities": [
-          "durable-dlq",
           "layer-boundaries"
         ]
       },

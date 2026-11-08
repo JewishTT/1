@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 
 from db.materialization_outbox import SqlMaterializationOutbox
-from db.session import create_tables, make_session_factory
+from db.session import make_session_factory
 
 
 async def relay_materialization_outbox(*, limit: int = 20) -> dict[str, int]:
@@ -17,7 +17,7 @@ async def relay_materialization_outbox(*, limit: int = 20) -> dict[str, int]:
         TemporalEntityMaterializationWorkflow,
     )
 
-    await create_tables()
+
     counts = {"claimed": 0, "dispatched": 0, "failed": 0}
     async with make_session_factory()() as session:
         outbox = SqlMaterializationOutbox(session)

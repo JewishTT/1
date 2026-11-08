@@ -30,8 +30,8 @@ def _fingerprint(value: Any) -> str:
 
 async def _enqueue_durable(tenant_id: str, entity_id: str, run_id: str, workflow_id: str, identity: dict[str, Any]) -> None:
     from db.materialization_outbox import SqlMaterializationOutbox
-    from db.session import create_tables, make_session_factory
-    await create_tables()
+    from db.session import make_session_factory
+
     async with make_session_factory()() as session:
         await SqlMaterializationOutbox(session).enqueue(
             tenant_id=tenant_id, entity_id=entity_id, run_id=run_id,
@@ -47,19 +47,30 @@ async def start_entity_materialization(
 ) -> MaterializationLaunch:
     """Start one deterministic Temporal workflow for an entity.
 
-    The launch request is durably enqueued before the transport call when
-    PostgreSQL is reachable; a database outage never blocks Temporal.
+    The launch is sent to Temporal only after its tenant-scoped outbox record is
+    committed. A database outage returns DEFERRED without starting external work.
     """
     identity_dict = {str(k): str(v) for k, v in identity.items()}
     run_id = "run-" + _fingerprint({"tenant_id": tenant_id, "entity_id": entity_id, "identity": identity_dict})[:24]
     workflow_id = f"{entity_id}/temporal-materialization/{run_id}"
-    from workflow.client import connect_temporal
 
-    from db.session import make_session_factory
+    # Durable hand-off must commit before any external workflow start.
+    # A caller can safely retry because run_id is deterministic.
     try:
-        await asyncio.wait_for(_enqueue_durable(tenant_id, entity_id, run_id, workflow_id, identity_dict), timeout=5.0)
-    except Exception as exc:  # noqa: BLE001 - DB outage must not lose Temporal request
-        _outbox_reason = str(exc)
+        await asyncio.wait_for(
+            _enqueue_durable(tenant_id, entity_id, run_id, workflow_id, identity_dict),
+            timeout=5.0,
+        )
+    except Exception as exc:  # noqa: BLE001 - fail closed before external side effects
+        return MaterializationLaunch(
+            run_id=run_id,
+            workflow_id=workflow_id,
+            status="DEFERRED",
+            reason=f"durable outbox unavailable: {type(exc).__name__}",
+        )
+
+    from workflow.client import connect_temporal
+    from db.session import make_session_factory
 
     request_source_ids = ()
     request = MaterializationWorkflowInput(

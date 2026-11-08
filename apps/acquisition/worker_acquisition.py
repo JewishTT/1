@@ -50,7 +50,9 @@ recognised and not republished.
 
 from __future__ import annotations
 
+import inspect
 import json
+import os
 from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -282,9 +284,9 @@ class RequestParser:
 
 
 class FailureSink(Protocol):
-    """Where a named failure goes. Bind to a Kafka producer in production."""
+    """Durable destination for a named failure (sync test or async production sink)."""
 
-    def __call__(self, failure: Failure, envelope: Any) -> None: ...
+    def __call__(self, failure: Failure, envelope: Any) -> Any: ...
 
 
 @dataclass
@@ -362,7 +364,7 @@ class AcquisitionWorker:
         """
         runtime = self.runtimes.get(task.runtime_ref)
         if runtime is None:
-            return self._runtime_failure(
+            return await self._runtime_failure(
                 envelope,
                 task,
                 "runtime_unavailable",
@@ -373,7 +375,7 @@ class AcquisitionWorker:
         payload = task.to_task()
         if requires_config:
             if not self.config_dir:
-                return self._runtime_failure(
+                return await self._runtime_failure(
                     envelope,
                     task,
                     "runtime_unconfigured",
@@ -384,7 +386,7 @@ class AcquisitionWorker:
             catalog_path = str(Path(self.config_dir) / f"{stem}.catalog.json")
             missing = [path for path in (config_path, catalog_path) if not Path(path).exists()]
             if missing:
-                return self._runtime_failure(
+                return await self._runtime_failure(
                     envelope,
                     task,
                     "runtime_config_missing",
@@ -395,25 +397,25 @@ class AcquisitionWorker:
 
         definition_for = getattr(self.connector, "definition_for", None)
         if not callable(definition_for):
-            return self._runtime_failure(
+            return await self._runtime_failure(
                 envelope, task, "runtime_source_definition_unavailable",
                 "worker connector cannot resolve the runtime task's source definition",
             )
         definition = definition_for(task.source_id)
         if definition is None or not definition.enabled:
-            return self._runtime_failure(
+            return await self._runtime_failure(
                 envelope, task, "unknown_source",
                 f"no enabled catalogue definition for {task.source_id!r}",
             )
 
         sink_factory = getattr(self.connector, "artifact_sink_factory", None)
         if not callable(sink_factory):
-            return self._runtime_failure(
+            return await self._runtime_failure(
                 envelope, task, "runtime_artifact_sink_unavailable",
                 "runtime tasks require the canonical ArtifactSink factory; direct observation publication is refused",
             )
         if not str(getattr(definition, "source_family", "") or "").strip():
-            return self._runtime_failure(
+            return await self._runtime_failure(
                 envelope, task, "source_capture_provenance_missing",
                 f"{definition.name} has no source_family for canonical Capture persistence",
             )
@@ -423,14 +425,14 @@ class AcquisitionWorker:
         try:
             time_basis = CaptureTimeBasis(definition.time_basis)
         except (TypeError, ValueError):
-            return self._runtime_failure(
+            return await self._runtime_failure(
                 envelope, task, "source_time_basis_invalid",
                 f"{definition.name} declares invalid time_basis {definition.time_basis!r}",
             )
 
         sink = sink_factory(definition)
         if sink is None or not callable(getattr(sink, "accept", None)):
-            return self._runtime_failure(
+            return await self._runtime_failure(
                 envelope,
                 task,
                 "runtime_artifact_sink_unavailable",
@@ -461,7 +463,7 @@ class AcquisitionWorker:
                         task_id=task.task_id,
                     )
                     failures.append(failure)
-                    self._route(failure, envelope)
+                    await self._route(failure, envelope)
                     break
                 if observation_id in self.seen:
                     duplicates.append(observation_id)
@@ -492,7 +494,7 @@ class AcquisitionWorker:
                         task_id=task.task_id,
                     )
                     failures.append(failure)
-                    self._route(failure, envelope)
+                    await self._route(failure, envelope)
                     break
 
                 # ArtifactSink already committed and published the canonical
@@ -506,7 +508,7 @@ class AcquisitionWorker:
                 task_id=task.task_id,
             )
             failures.append(failure)
-            self._route(failure, envelope)
+            await self._route(failure, envelope)
 
         if not failures and not observations and not duplicates:
             failure = Failure(
@@ -517,7 +519,7 @@ class AcquisitionWorker:
                 task_id=task.task_id,
             )
             failures.append(failure)
-            self._route(failure, envelope)
+            await self._route(failure, envelope)
 
         if not failures:
             self.completed.add(marker)
@@ -530,7 +532,7 @@ class AcquisitionWorker:
             duplicates=tuple(duplicates),
         )
 
-    def _runtime_failure(
+    async def _runtime_failure(
         self, envelope: Any, task: AcquisitionTask, reason: str, detail: str
     ) -> ObservationResult:
         failure = classify_error(
@@ -538,7 +540,7 @@ class AcquisitionWorker:
             source_id=task.source_id,
             task_id=task.task_id,
         )
-        self._route(failure, envelope)
+        await self._route(failure, envelope)
         return ObservationResult(
             task_id=task.task_id,
             source_id=task.source_id,
@@ -553,7 +555,7 @@ class AcquisitionWorker:
             task = self.parser.parse(envelope)
         except AcquisitionError as exc:
             failure = classify_error(exc, source_id=source_id, task_id=envelope_task_id)
-            self._route(failure, envelope)
+            await self._route(failure, envelope)
             return ObservationResult(
                 task_id=envelope_task_id,
                 source_id=source_id,
@@ -568,7 +570,7 @@ class AcquisitionWorker:
                 await self.preflight(task)
             except AcquisitionError as exc:
                 failure = classify_error(exc, source_id=task.source_id, task_id=task.task_id)
-                self._route(failure, envelope)
+                await self._route(failure, envelope)
                 return ObservationResult(
                     task_id=task.task_id,
                     source_id=task.source_id,
@@ -609,7 +611,7 @@ class AcquisitionWorker:
                     # evidence of anything, and continuing would multiply one
                     # upstream outage into N dead letters.
                     failures.append(failure)
-                    self._route(failure, envelope)
+                    await self._route(failure, envelope)
                     break
 
                 observation_id = str(event.get("event_id", ""))
@@ -630,7 +632,7 @@ class AcquisitionWorker:
                             task_id=task.task_id,
                         )
                         failures.append(failure)
-                        self._route(failure, envelope)
+                        await self._route(failure, envelope)
                         break
                     try:
                         await require_stored_evidence(event, store=self.store)
@@ -644,7 +646,7 @@ class AcquisitionWorker:
                             task_id=task.task_id,
                         )
                         failures.append(failure)
-                        self._route(failure, envelope)
+                        await self._route(failure, envelope)
                         break
                     observations.append(event)
                     self.seen.add(observation_id)
@@ -669,7 +671,7 @@ class AcquisitionWorker:
         except AcquisitionError as exc:
             failure = classify_error(exc, source_id=task.source_id, task_id=task.task_id)
             failures.append(failure)
-            self._route(failure, envelope)
+            await self._route(failure, envelope)
 
         if not failures:
             # Only a request that produced every page it could is marked done.
@@ -703,13 +705,13 @@ class AcquisitionWorker:
             # Counted and routed, never dropped. A refusal that disappears is the
             # same defect as a publication that should not have happened.
             self.unstored_observations.append(refusal)
-            self._route(
+            await self._route(
                 classify_error(
                     AcquisitionError(refusal.code, str(refusal.detail)),
                     source_id=str(event.get("source_id", "") or ""),
                     task_id=str(event.get("task_id", "") or ""),
                 ),
-                {},
+                event,
             )
             return
 
@@ -719,40 +721,82 @@ class AcquisitionWorker:
             key=str(event.get("event_id", "")),
         )
 
-    def _route(self, failure: Failure, envelope: Any) -> None:
-        if self.sink is not None:
-            self.sink(failure, envelope)
+    async def _route(self, failure: Failure, envelope: Any) -> None:
+        if self.sink is None:
+            raise RuntimeError(
+                f"failure sink is not configured; refusing to drop {failure.code}"
+            )
+        result = self.sink(failure, envelope)
+        if inspect.isawaitable(result):
+            await result
 
     async def aclose(self) -> None:
         await self.connector.aclose()
 
 
-def kafka_failure_sink(producer: Any) -> FailureSink:
-    """Bind a :class:`Failure` to its named topic on a real producer.
+def kafka_failure_sink(producer: Any, object_store: Any) -> FailureSink:
+    """Persist the original request before publishing a small failure marker.
 
-    Returns the broker's acknowledgement so a caller can prove the refusal was
-    durably recorded rather than merely offered to a producer.
+    The object-store write is awaited before broker acknowledgement. The consumer
+    commits the input offset only after this sink succeeds.
     """
 
-    def sink(failure: Failure, envelope: Any) -> Any:
-        record = {
-            "code": failure.code,
-            "reason": failure.reason,
-            "source_id": failure.source_id,
-            "task_id": failure.task_id,
-            "status": failure.status,
-            "detail": failure.detail,
-            "original_event_type": str(getattr(envelope, "event_type", "") or ""),
+    async def sink(failure: Failure, envelope: Any) -> Any:
+        from events.dlq import DLQRecord
+        from events.dlq_durable import ObjectStoreSink
+
+        def field(name: str, default: str = "") -> str:
+            value = envelope.get(name, default) if isinstance(envelope, dict) else getattr(envelope, name, default)
+            return str(value or "")
+
+        tenant_id = field("tenant_id").strip()
+        if not tenant_id:
+            raise RuntimeError("refusing to persist a failure without tenant_id")
+
+        serializer = getattr(envelope, "SerializeToString", None)
+        if callable(serializer):
+            payload = serializer()
+        elif isinstance(envelope, dict):
+            payload = json.dumps(envelope, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")
+        else:
+            raise TypeError("failure envelope must be an EventEnvelope or event mapping")
+        if not isinstance(payload, bytes) or not payload:
+            raise ValueError("failure envelope serialization returned no bytes")
+        max_bytes = int(os.environ.get("COGNITIVE_DLQ_MAX_PAYLOAD_BYTES", str(5 * 1024 * 1024)))
+        if len(payload) > max_bytes:
+            raise ValueError("failure envelope exceeds configured quarantine payload limit")
+
+        record = DLQRecord(
+            reason=failure.code,
+            payload=payload,
+            topic=failure.topic,
+            tenant_id=tenant_id,
+            investigation_id=field("investigation_id"),
+            source_id=str(failure.source_id or field("source_id")),
+            task_id=str(failure.task_id or field("work_id") or field("task_id")),
+            original_event_id=field("event_id"),
+            original_event_type=field("event_type"),
+            status=int(failure.status or 0),
+            detail={"reason": failure.reason, **dict(failure.detail or {})},
+        )
+        receipt = await ObjectStoreSink(store=object_store, tenant_id=tenant_id).aput(record)
+        marker = {
+            **record.to_dict(),
+            "payload_ref": receipt["payload_ref"],
+            "metadata_ref": receipt["metadata_ref"],
+            "payload_size": receipt["payload_size"],
         }
-        return producer.publish_sync(
+        acknowledgement = producer.publish_sync(
             failure.topic,
-            json.dumps(record, sort_keys=True).encode("utf-8"),
-            key=failure.task_id or failure.source_id or failure.code,
+            json.dumps(marker, sort_keys=True, ensure_ascii=False).encode("utf-8"),
+            key=record.record_id,
             event_type=failure.code,
         )
+        if acknowledgement is None or getattr(acknowledgement, "topic", "") != failure.topic:
+            raise RuntimeError("broker did not acknowledge the quarantine marker")
+        return acknowledgement
 
     return sink
-
 
 def observation_publisher(producer: Any) -> Any:
     """Bind the connector's event to `topic_for('observation.created')`."""

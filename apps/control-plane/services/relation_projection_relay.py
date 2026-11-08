@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from db.relation_claim_store import SqlRelationClaimStore
 from db.schema import RelationClaim as RelationClaimRow
 from db.schema import RelationClaimProjectionOutbox
-from db.session import create_tables, make_session_factory
+from db.session import make_session_factory
 
 LEASE = timedelta(minutes=10)
 
@@ -229,7 +229,7 @@ async def run_relation_projection_relay_forever(*, interval_seconds: float = 5.0
     factory = make_session_factory()
     graph = Neo4jGraphStore.from_settings()
     try:
-        await create_tables()
+
         while True:
             await relay_relation_projection_outbox(
                 graph_store=graph,

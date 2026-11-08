@@ -1,3 +1,0 @@
-ERROR: usage: python -m pytest [options] [file_or_dir] [file_or_dir] [...]
-python -m pytest: error: argument --tb: invalid choice: 'json' (choose from 'auto', 'long', 'short', 'no', 'line', 'native')
-
