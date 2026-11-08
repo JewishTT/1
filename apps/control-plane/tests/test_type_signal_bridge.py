@@ -15,7 +15,7 @@ def test_interpretation_bridge_extracts_type_signal_for_an_existing_mention():
       </script>
     </head><body>
       <h1>Ada Lovelace</h1>
-      <p>Ada Lovelace works for Analytical Engines Ltd.</p>
+      <p>public scholarly biography and source metadata</p>
     </body></html>"""
     result = _bridge().interpret(
         html, capture_ref="CAP-type-signal", content_type="text/html",
