@@ -37,8 +37,8 @@ about the source, not a success.
 from __future__ import annotations
 
 import hashlib
-import re
 import logging
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
