@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 TABLES = (
     "investigation_contexts",
     "context_revisions",
