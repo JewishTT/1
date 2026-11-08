@@ -27,10 +27,10 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `asyncio` | stdlib | 77 |
 | `fastapi` | third-party | 74 |
 | `urllib` | stdlib | 63 |
-| `uuid` | stdlib | 55 |
+| `uuid` | stdlib | 54 |
 | `math` | stdlib | 42 |
 | `types` | stdlib | 42 |
-| `time` | stdlib | 40 |
+| `time` | stdlib | 39 |
 | `pydantic` | third-party | 36 |
 | `importlib` | stdlib | 33 |
 | `httpx` | third-party | 30 |
