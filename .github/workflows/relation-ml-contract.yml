@@ -23,7 +23,7 @@ jobs:
           enable-cache: true
       - name: Install the locked workspace
         run: uv sync --locked --all-packages --all-groups
-      - name: Run ML relation producer, TypeSignal and bridge contracts
+      - name: Run extraction, TypeSignal, research-case and budget contracts
         run: >-
           .venv/bin/python -m pytest
           apps/interpretation/tests/test_ml_relation_producers.py
@@ -31,6 +31,7 @@ jobs:
           apps/shared/tests/unit/test_type_signal.py
           apps/control-plane/tests/test_type_signal_bridge.py
           apps/control-plane/tests/unit/test_type_signal_storage_contract.py
+          apps/control-plane/tests/unit/test_case_budget_storage_contract.py
           apps/control-plane/tests/test_research_case_invariants.py
           apps/interpretation/tests/test_signal_nary_contract.py
           -q
@@ -70,3 +71,5 @@ jobs:
           apps/control-plane/db/schema.py
           apps/control-plane/tests/test_type_signal_bridge.py
           apps/control-plane/tests/unit/test_type_signal_storage_contract.py
+          apps/control-plane/db/migrations/versions/033_durable_case_budgets.py
+          apps/control-plane/tests/unit/test_case_budget_storage_contract.py

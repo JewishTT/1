@@ -232,11 +232,30 @@ jobs:
           SELECT 1 / CASE
             WHEN EXISTS (
               SELECT 1 FROM public.alembic_version
-              WHERE version_num = '032_type_signals'
+              WHERE version_num = '033_durable_case_budgets'
             )
             THEN 1
             ELSE 0
           END AS alembic_head_commit_assertion;
+          SQL
+      - name: Assert the durable budget ledger matches the ORM contract
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN to_regclass('public.budgets') IS NOT NULL
+             AND (
+               SELECT COUNT(DISTINCT column_name) = 6
+               FROM information_schema.columns
+               WHERE table_schema = 'public'
+                 AND table_name = 'budgets'
+                 AND column_name IN (
+                   'budget_id', 'tenant_id', 'investigation_id',
+                   'limits', 'current_usage', 'created_at'
+                 )
+             )
+            THEN 1
+            ELSE 0
+          END AS durable_budget_schema_assertion;
           SQL
       - name: Seed a controlled Postgres connector fixture
         run: |
