@@ -279,6 +279,43 @@ class TestRequestPayloadIsExecutable:
         assert parsed.tenant_id == "ten-1"
         assert parsed.investigation_id == "INV-1"
 
+    def test_case_bound_request_serializes_investigation_binding_into_payload(self) -> None:
+        from worker_acquisition import RequestParser
+
+        bound = task(
+            investigation_id="INV-PERSON-034",
+            case_id="CXI-034",
+            scope_digest="sha256:" + "a" * 64,
+            policy_digest="sha256:" + "b" * 64,
+            policy_revision="policy-rev-1",
+            scope_revision=1,
+            budget_reservation_id="RBR-034",
+            idempotency_key="idem-034",
+            run_id="RUN-034",
+            case_policy_source_id="crossref_works",
+            approved_action_ref="ACT-034",
+            action_id="ACT-034",
+        )
+        producer = AckedProducer()
+        dispatcher = dispatcher_with(
+            producer,
+            tenant_id=bound.tenant_id,
+            case_id=bound.case_id,
+            policy_revision=bound.policy_revision,
+            budget_reservation_id=bound.budget_reservation_id,
+        )
+        driver = PlanDispatcher(dispatcher=dispatcher, producer=producer)
+        record = driver.dispatch([bound])[0]
+
+        assert record.published is True
+        _topic, envelope, _key = producer.published[0]
+        payload = json.loads(envelope.payload)
+        assert payload["investigation_id"] == "INV-PERSON-034"
+        parsed = RequestParser().parse(envelope)
+        assert parsed.investigation_id == "INV-PERSON-034"
+        assert parsed.case_id == "CXI-034"
+        assert parsed.action_id == "ACT-034"
+
 
 class TestDeterminism:
     def test_task_mapping_is_order_independent(self) -> None:

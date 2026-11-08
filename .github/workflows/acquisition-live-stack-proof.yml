@@ -29,6 +29,13 @@ jobs:
         run: .venv/bin/pytest apps/acquisition/tests/unit/test_context_discovery.py -q
       - name: Test runtime evidence persistence contract
         run: .venv/bin/pytest apps/acquisition/tests/unit/test_runtime_artifact_sink.py -q
+      - name: Test dispatcher-to-worker case binding serialization
+        run: .venv/bin/pytest apps/acquisition/tests/contract/test_plan_driver.py -q
+      - name: Lint the dispatcher request contract
+        run: >-
+          .venv/bin/ruff check
+          apps/acquisition/dispatcher/scheduler.py
+          apps/acquisition/tests/contract/test_plan_driver.py
       - name: Start the real core acquisition stack
         run: |
           docker compose -f apps/deploy/docker-compose.yml --profile core up -d minio postgres redpanda searxng

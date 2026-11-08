@@ -231,6 +231,7 @@ class Dispatcher:
                     "query_ref": task.get("query_ref") or "",
                     "constraints": task.get("constraints") or [],
                     "tenant_id": task.get("tenant_id") or self._tenant_id,
+                    "investigation_id": task.get("investigation_id") or "",
                     "case_id": task.get("case_id") or self._case_id,
                     "scope_revision": task.get("scope_revision"),
                     "scope_digest": task.get("scope_digest") or "",
