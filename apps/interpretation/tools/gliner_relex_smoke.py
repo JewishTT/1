@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from extractors.signals.mentions import read_occurrence
-from extractors.signals.ml import GLiNERRelexExtractor, gliner_relex_signals
+from extractors.signals.ml import GLiNERRelexExtractor
 from extractors.signals.protocol import ExtractionScope
 
 TEXT = (
@@ -41,7 +41,7 @@ def main() -> int:
         relation_threshold=0.55,
     )
     report = extractor.report(TEXT, scope=scope)
-    signals = gliner_relex_signals([TEXT], scope=scope, extractor=extractor)
+    signals = report.signals
     grounded = []
     for signal in signals:
         ends = []

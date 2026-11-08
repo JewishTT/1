@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from semantic.type_signal import TypeMappingCandidate, TypeSignal
-from semantic.vocabularies import MatchPredicate
+from semantic.vocabularies import Concept, MatchPredicate
 
 
 def _signal(**overrides):
@@ -69,3 +69,24 @@ def test_non_hierarchical_mapping_is_representable():
     )
     assert candidate.match_type is MatchPredicate.RELATED_MATCH
     assert candidate.to_dict()["match_type"] == "related_match"
+
+
+def test_concept_exposes_related_match_as_a_cross_vocabulary_link():
+    concept = Concept(concept_id="research-group", related_match=("provider:ResearchGroup",))
+    links = concept.matches(MatchPredicate.RELATED_MATCH)
+    assert len(links) == 1
+    assert links[0].target_ref == "provider:ResearchGroup"
+    assert Concept(concept_id="research-group").content_key() != concept.content_key()
+
+
+def test_mapping_candidate_canonicalizes_identity_metadata_before_hashing():
+    candidate = TypeMappingCandidate(
+        source="schema:Person", target="core:Person",
+        match_type=MatchPredicate.EXACT_MATCH,
+        mapping_version=" 1 ", created_by=" reviewer ",
+        mapping_set_id=" map-set ", mapping_set_version=" 2 ",
+    )
+    assert candidate.mapping_version == "1"
+    assert candidate.created_by == "reviewer"
+    assert candidate.mapping_set_id == "map-set"
+    assert candidate.mapping_set_version == "2"

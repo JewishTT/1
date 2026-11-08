@@ -245,6 +245,7 @@ class GLiNERRelexExtractor:
         output = self.model.inference(
             [text], labels=list(self.entity_labels), relations=list(self.relation_labels),
             threshold=self.entity_threshold, relation_threshold=self.relation_threshold,
+            return_relations=True, flat_ner=False,
         )
         if not isinstance(output, (tuple, list)) or len(output) != 2:
             return RelationProducerReport((), (ExtractionRefusal(

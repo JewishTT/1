@@ -223,6 +223,32 @@ async def _wait_for_processed_observation(
     )
 
 
+def _has_declared_author_name(item: dict[str, Any]) -> bool:
+    """Match the declared public name only against Crossref's author fields.
+
+    A keyword hit elsewhere in a DOI record (title, publisher, references, etc.) is not
+    evidence that the named person appears in its author list.
+    """
+    parts = " ".join(PUBLIC_SUBJECT.casefold().split()).split(" ")
+    if len(parts) < 2:
+        return False
+    given_anchor, family_anchor = parts[0], parts[-1]
+    authors = item.get("author") or []
+    if not isinstance(authors, list):
+        return False
+    for author in authors:
+        if not isinstance(author, dict):
+            continue
+        given = " ".join(str(author.get("given") or "").casefold().split())
+        family = " ".join(str(author.get("family") or "").casefold().split())
+        if family == family_anchor and given.split(" ")[:1] == [given_anchor]:
+            return True
+        name = " ".join(str(author.get("name") or "").casefold().split())
+        if name == " ".join(parts):
+            return True
+    return False
+
+
 async def _read_verified_raw(observation: Any) -> dict[str, Any]:
     from storage.s3 import ObjectStore
 
@@ -260,9 +286,7 @@ async def _read_verified_raw(observation: Any) -> dict[str, Any]:
         "crossref_items": len(items) if isinstance(items, list) else 0,
         "doi_title_records": len(valid_items),
         "anchor_exact_match_records": sum(
-            1
-            for item in valid_items
-            if PUBLIC_SUBJECT.casefold() in json.dumps(item, ensure_ascii=False).casefold()
+            1 for item in valid_items if _has_declared_author_name(item)
         ),
         "sample_records": [
             {
@@ -455,6 +479,11 @@ async def _run_case(output_path: Path) -> dict[str, Any]:
             if int(processing.record_count) <= 0 or int(raw["doi_title_records"]) <= 0:
                 raise RuntimeError(
                     "Crossref returned no DOI/title records accepted by the observation parser"
+                )
+            if int(raw["anchor_exact_match_records"]) <= 0:
+                raise RuntimeError(
+                    "Crossref raw records contain no matching given/family author entry for "
+                    f"the declared public name {PUBLIC_SUBJECT!r}"
                 )
 
             report = await reports.generate(

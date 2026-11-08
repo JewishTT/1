@@ -49,6 +49,8 @@ def test_gliner_relex_emits_source_grounded_signal_through_registry():
     assert signal.capture_ref == "CAP-test"
     assert signal.relation_ref is None
     assert model.calls[0][1]["relation_threshold"] == 0.65
+    assert model.calls[0][1]["return_relations"] is True
+    assert model.calls[0][1]["flat_ner"] is False
     assert extractor.declares().independence_family == "relation-ml-producers"
     stamped = gliner_relex_signals([text], scope=_scope(), extractor=extractor)
     assert len(stamped) == 1

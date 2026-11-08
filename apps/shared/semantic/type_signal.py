@@ -67,6 +67,7 @@ class TypeMappingCandidate:
             value = str(getattr(self, name) or "").strip()
             if not value:
                 raise ValueError(f"{name} is required on a type mapping candidate")
+            object.__setattr__(self, name, value)
         derived_ref = self.content_key
         if self.mapping_candidate_ref and self.mapping_candidate_ref != derived_ref:
             raise ValueError("mapping_candidate_ref disagrees with the candidate content")

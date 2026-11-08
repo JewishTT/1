@@ -345,7 +345,7 @@ jobs:
             apps/acquisition/artifacts/acquisition-integration/searxng.json
             apps/acquisition/artifacts/acquisition-integration/public-source-matrix.json
             apps/acquisition/artifacts/acquisition-integration/zero-layer-live.json
-          apps/control-plane/artifacts/person-research-case-e2e.json
+            apps/control-plane/artifacts/person-research-case-e2e.json
           if-no-files-found: warn
           retention-days: 14
       - name: Show service logs on failure
