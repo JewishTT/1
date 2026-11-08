@@ -55,6 +55,8 @@ class _Session:
         sql = str(statement)
         if "FROM budgets" in sql:
             return _Result(self._budget)
+        if "SELECT reservation_id, tenant_id, case_id, budget_id" in sql:
+            return _Result(None)
         if "SELECT COALESCE(SUM" in sql:
             return _Result(
                 {
