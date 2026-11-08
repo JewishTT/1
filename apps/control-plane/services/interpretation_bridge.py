@@ -262,6 +262,7 @@ class InterpretationBridge:
         from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
         from domain.ontology import coerce_entity_type
         from sqlalchemy import select
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
 
         from db.schema import Candidate as CandidateRow
         from db.schema import Entity as EntityRow
@@ -269,7 +270,6 @@ class InterpretationBridge:
         from db.schema import Mention as MentionRow
         from db.schema import Observation as ObservationRow
         from db.schema import TypeSignalRow
-        from sqlalchemy.dialects.postgresql import insert as pg_insert
 
         session = self._store.session_factory()
         try:
