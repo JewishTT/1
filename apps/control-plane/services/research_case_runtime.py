@@ -163,182 +163,181 @@ class PostgresCaseBudgetService:
             f"{tenant_id}|{case_id}|{budget_ref}|{idempotency_key}|{scope_digest}|{policy_digest}"
         )
         reservation_id = "RBR-" + hashlib.sha256(reservation_seed.encode()).hexdigest()[:32]
-        async with self._session_factory() as session:
-            async with session.begin():
-                result = await session.execute(
-                    text(
-                        "SELECT budget_id, tenant_id, investigation_id, limits, current_usage "
-                        "FROM budgets WHERE budget_id = :budget_id AND tenant_id = :tenant_id "
-                        "FOR UPDATE"
-                    ),
-                    {"budget_id": budget_ref, "tenant_id": tenant_id},
+        async with self._session_factory() as session, session.begin():
+            result = await session.execute(
+                text(
+                    "SELECT budget_id, tenant_id, investigation_id, limits, current_usage "
+                    "FROM budgets WHERE budget_id = :budget_id AND tenant_id = :tenant_id "
+                    "FOR UPDATE"
+                ),
+                {"budget_id": budget_ref, "tenant_id": tenant_id},
+            )
+            row = result.mappings().first()
+            if row is None:
+                raise CaseRuntimeBlocked(
+                    f"budget {budget_ref!r} does not exist for tenant {tenant_id}"
                 )
-                row = result.mappings().first()
-                if row is None:
+            if row.get("investigation_id") and row["investigation_id"] != investigation_id:
+                raise CaseRuntimeBlocked("budget is bound to a different investigation")
+            raw_limits = row.get("limits")
+            if isinstance(raw_limits, str):
+                raw_limits = json.loads(raw_limits)
+            if not isinstance(raw_limits, Mapping):
+                raise CaseRuntimeBlocked("budget limits are missing or malformed")
+            rc_limits = raw_limits.get("person_research_case")
+            if not isinstance(rc_limits, Mapping):
+                raise CaseRuntimeBlocked(
+                    "budget must declare limits.person_research_case "
+                    "(max_requests, max_raw_bytes, max_records, max_concurrency, max_wall_seconds)"
+                )
+            ceilings = {
+                "max_requests": self._positive_limit(rc_limits, "max_requests"),
+                "max_raw_bytes": self._positive_limit(rc_limits, "max_raw_bytes"),
+                "max_records": self._positive_limit(rc_limits, "max_records"),
+                "max_concurrency": self._positive_limit(rc_limits, "max_concurrency"),
+                "max_wall_seconds": self._positive_limit(rc_limits, "max_wall_seconds"),
+            }
+            requested = {
+                "requests": int(requests),
+                "raw_bytes": int(raw_bytes),
+                "records": int(records),
+                "concurrency": int(concurrency),
+                "wall_seconds": int(wall_seconds),
+            }
+            ceiling_names = {
+                "requests": "max_requests",
+                "raw_bytes": "max_raw_bytes",
+                "records": "max_records",
+                "concurrency": "max_concurrency",
+                "wall_seconds": "max_wall_seconds",
+            }
+            for quantity, limit_name in ceiling_names.items():
+                if requested[quantity] > ceilings[limit_name]:
                     raise CaseRuntimeBlocked(
-                        f"budget {budget_ref!r} does not exist for tenant {tenant_id}"
+                        f"budget {limit_name}={ceilings[limit_name]} is below "
+                        f"scope reservation {quantity}={requested[quantity]}"
                     )
-                if row.get("investigation_id") and row["investigation_id"] != investigation_id:
-                    raise CaseRuntimeBlocked("budget is bound to a different investigation")
-                raw_limits = row.get("limits")
-                if isinstance(raw_limits, str):
-                    raw_limits = json.loads(raw_limits)
-                if not isinstance(raw_limits, Mapping):
-                    raise CaseRuntimeBlocked("budget limits are missing or malformed")
-                rc_limits = raw_limits.get("person_research_case")
-                if not isinstance(rc_limits, Mapping):
+
+            prior = await session.execute(
+                text(
+                    "SELECT reservation_id, tenant_id, case_id, budget_id, investigation_id, "
+                    "idempotency_key, scope_digest, policy_digest, request_count, raw_bytes, "
+                    "record_count, concurrency, wall_seconds, state, payload "
+                    "FROM person_case_budget_reservations "
+                    "WHERE tenant_id = :tenant_id AND case_id = :case_id "
+                    "AND idempotency_key = :idempotency_key FOR UPDATE"
+                ),
+                {
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "idempotency_key": idempotency_key,
+                },
+            )
+            existing = prior.mappings().first()
+            if existing is not None:
+                invariant = {
+                    "budget_id": budget_ref,
+                    "scope_digest": scope_digest,
+                    "policy_digest": policy_digest,
+                    "request_count": requested["requests"],
+                    "raw_bytes": requested["raw_bytes"],
+                    "record_count": requested["records"],
+                    "concurrency": requested["concurrency"],
+                    "wall_seconds": requested["wall_seconds"],
+                }
+                for field, expected in invariant.items():
+                    if existing[field] != expected:
+                        raise CaseRuntimeBlocked(
+                            f"idempotency key reused with a different reservation {field}"
+                        )
+                if existing["state"] in {"RELEASED", "FAILED"}:
                     raise CaseRuntimeBlocked(
-                        "budget must declare limits.person_research_case "
-                        "(max_requests, max_raw_bytes, max_records, max_concurrency, max_wall_seconds)"
+                        "this idempotency key has a terminal reservation; use a new run key"
                     )
-                ceilings = {
-                    "max_requests": self._positive_limit(rc_limits, "max_requests"),
-                    "max_raw_bytes": self._positive_limit(rc_limits, "max_raw_bytes"),
-                    "max_records": self._positive_limit(rc_limits, "max_records"),
-                    "max_concurrency": self._positive_limit(rc_limits, "max_concurrency"),
-                    "max_wall_seconds": self._positive_limit(rc_limits, "max_wall_seconds"),
-                }
-                requested = {
-                    "requests": int(requests),
-                    "raw_bytes": int(raw_bytes),
-                    "records": int(records),
-                    "concurrency": int(concurrency),
-                    "wall_seconds": int(wall_seconds),
-                }
-                ceiling_names = {
-                    "requests": "max_requests",
-                    "raw_bytes": "max_raw_bytes",
-                    "records": "max_records",
-                    "concurrency": "max_concurrency",
-                    "wall_seconds": "max_wall_seconds",
-                }
-                for quantity, limit_name in ceiling_names.items():
-                    if requested[quantity] > ceilings[limit_name]:
-                        raise CaseRuntimeBlocked(
-                            f"budget {limit_name}={ceilings[limit_name]} is below "
-                            f"scope reservation {quantity}={requested[quantity]}"
-                        )
-
-                prior = await session.execute(
-                    text(
-                        "SELECT reservation_id, tenant_id, case_id, budget_id, investigation_id, "
-                        "idempotency_key, scope_digest, policy_digest, request_count, raw_bytes, "
-                        "record_count, concurrency, wall_seconds, state, payload "
-                        "FROM person_case_budget_reservations "
-                        "WHERE tenant_id = :tenant_id AND case_id = :case_id "
-                        "AND idempotency_key = :idempotency_key FOR UPDATE"
-                    ),
-                    {
-                        "tenant_id": tenant_id,
-                        "case_id": case_id,
-                        "idempotency_key": idempotency_key,
-                    },
-                )
-                existing = prior.mappings().first()
-                if existing is not None:
-                    invariant = {
-                        "budget_id": budget_ref,
-                        "scope_digest": scope_digest,
-                        "policy_digest": policy_digest,
-                        "request_count": requested["requests"],
-                        "raw_bytes": requested["raw_bytes"],
-                        "record_count": requested["records"],
-                        "concurrency": requested["concurrency"],
-                        "wall_seconds": requested["wall_seconds"],
-                    }
-                    for field, expected in invariant.items():
-                        if existing[field] != expected:
-                            raise CaseRuntimeBlocked(
-                                f"idempotency key reused with a different reservation {field}"
-                            )
-                    if existing["state"] in {"RELEASED", "FAILED"}:
-                        raise CaseRuntimeBlocked(
-                            "this idempotency key has a terminal reservation; use a new run key"
-                        )
-                    payload = existing.get("payload") or {}
-                    if isinstance(payload, str):
-                        payload = json.loads(payload)
-                    if request_digest is not None and payload.get("request_digest") != request_digest:
-                        raise CaseRuntimeBlocked(
-                            "idempotency key reused with a different case request payload"
-                        )
-                    return {
-                        **dict(existing),
-                        "limits": dict(ceilings),
-                        "source_refs": list(payload.get("source_refs") or source_refs),
-                        "created": False,
-                    }
-
-                active_result = await session.execute(
-                    text(
-                        "SELECT COALESCE(SUM(request_count), 0) AS requests, "
-                        "COALESCE(SUM(raw_bytes), 0) AS raw_bytes, "
-                        "COALESCE(SUM(record_count), 0) AS records, "
-                        "COALESCE(SUM(concurrency), 0) AS concurrency, "
-                        "COALESCE(SUM(wall_seconds), 0) AS wall_seconds "
-                        "FROM person_case_budget_reservations "
-                        "WHERE budget_id = :budget_id AND state IN ('RESERVED', 'PUBLISHED')"
-                    ),
-                    {"budget_id": budget_ref},
-                )
-                active = active_result.mappings().one()
-                usage = row.get("current_usage") or {}
-                if isinstance(usage, str):
-                    usage = json.loads(usage)
-                spent = usage.get("person_research_case", {}) if isinstance(usage, Mapping) else {}
-                if not isinstance(spent, Mapping):
-                    spent = {}
-                spent_keys = {
-                    "requests": "spent_requests",
-                    "raw_bytes": "spent_raw_bytes",
-                    "records": "spent_records",
-                    "concurrency": "spent_concurrency",
-                    "wall_seconds": "spent_wall_seconds",
-                }
-                for quantity, limit_name in ceiling_names.items():
-                    already = int(active[quantity] or 0) + int(spent.get(spent_keys[quantity], 0) or 0)
-                    if already + requested[quantity] > ceilings[limit_name]:
-                        raise CaseRuntimeBlocked(
-                            f"budget {limit_name} exhausted: {already}+{requested[quantity]}"
-                            f">{ceilings[limit_name]}"
-                        )
-
-                payload = {
-                    **requested,
+                payload = existing.get("payload") or {}
+                if isinstance(payload, str):
+                    payload = json.loads(payload)
+                if request_digest is not None and payload.get("request_digest") != request_digest:
+                    raise CaseRuntimeBlocked(
+                        "idempotency key reused with a different case request payload"
+                    )
+                return {
+                    **dict(existing),
                     "limits": dict(ceilings),
-                    "source_refs": sorted(set(source_refs)),
-                    "created_at": datetime.now(UTC).isoformat(),
+                    "source_refs": list(payload.get("source_refs") or source_refs),
+                    "created": False,
                 }
-                if request_digest is not None:
-                    payload["request_digest"] = str(request_digest)
-                await session.execute(
-                    text(
-                        "INSERT INTO person_case_budget_reservations "
-                        "(reservation_id, tenant_id, case_id, investigation_id, budget_id, "
-                        "idempotency_key, scope_digest, policy_digest, request_count, raw_bytes, "
-                        "record_count, concurrency, wall_seconds, state, payload) "
-                        "VALUES (:reservation_id, :tenant_id, :case_id, :investigation_id, "
-                        ":budget_id, :idempotency_key, :scope_digest, :policy_digest, "
-                        ":request_count, :raw_bytes, :record_count, :concurrency, :wall_seconds, "
-                        "'RESERVED', CAST(:payload AS jsonb))"
-                    ),
-                    {
-                        "reservation_id": reservation_id,
-                        "tenant_id": tenant_id,
-                        "case_id": case_id,
-                        "investigation_id": investigation_id,
-                        "budget_id": budget_ref,
-                        "idempotency_key": idempotency_key,
-                        "scope_digest": scope_digest,
-                        "policy_digest": policy_digest,
-                        "request_count": requested["requests"],
-                        "raw_bytes": requested["raw_bytes"],
-                        "record_count": requested["records"],
-                        "concurrency": requested["concurrency"],
-                        "wall_seconds": requested["wall_seconds"],
-                        "payload": json.dumps(payload, sort_keys=True),
-                    },
-                )
+
+            active_result = await session.execute(
+                text(
+                    "SELECT COALESCE(SUM(request_count), 0) AS requests, "
+                    "COALESCE(SUM(raw_bytes), 0) AS raw_bytes, "
+                    "COALESCE(SUM(record_count), 0) AS records, "
+                    "COALESCE(SUM(concurrency), 0) AS concurrency, "
+                    "COALESCE(SUM(wall_seconds), 0) AS wall_seconds "
+                    "FROM person_case_budget_reservations "
+                    "WHERE budget_id = :budget_id AND state IN ('RESERVED', 'PUBLISHED')"
+                ),
+                {"budget_id": budget_ref},
+            )
+            active = active_result.mappings().one()
+            usage = row.get("current_usage") or {}
+            if isinstance(usage, str):
+                usage = json.loads(usage)
+            spent = usage.get("person_research_case", {}) if isinstance(usage, Mapping) else {}
+            if not isinstance(spent, Mapping):
+                spent = {}
+            spent_keys = {
+                "requests": "spent_requests",
+                "raw_bytes": "spent_raw_bytes",
+                "records": "spent_records",
+                "concurrency": "spent_concurrency",
+                "wall_seconds": "spent_wall_seconds",
+            }
+            for quantity, limit_name in ceiling_names.items():
+                already = int(active[quantity] or 0) + int(spent.get(spent_keys[quantity], 0) or 0)
+                if already + requested[quantity] > ceilings[limit_name]:
+                    raise CaseRuntimeBlocked(
+                        f"budget {limit_name} exhausted: {already}+{requested[quantity]}"
+                        f">{ceilings[limit_name]}"
+                    )
+
+            payload = {
+                **requested,
+                "limits": dict(ceilings),
+                "source_refs": sorted(set(source_refs)),
+                "created_at": datetime.now(UTC).isoformat(),
+            }
+            if request_digest is not None:
+                payload["request_digest"] = str(request_digest)
+            await session.execute(
+                text(
+                    "INSERT INTO person_case_budget_reservations "
+                    "(reservation_id, tenant_id, case_id, investigation_id, budget_id, "
+                    "idempotency_key, scope_digest, policy_digest, request_count, raw_bytes, "
+                    "record_count, concurrency, wall_seconds, state, payload) "
+                    "VALUES (:reservation_id, :tenant_id, :case_id, :investigation_id, "
+                    ":budget_id, :idempotency_key, :scope_digest, :policy_digest, "
+                    ":request_count, :raw_bytes, :record_count, :concurrency, :wall_seconds, "
+                    "'RESERVED', CAST(:payload AS jsonb))"
+                ),
+                {
+                    "reservation_id": reservation_id,
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "investigation_id": investigation_id,
+                    "budget_id": budget_ref,
+                    "idempotency_key": idempotency_key,
+                    "scope_digest": scope_digest,
+                    "policy_digest": policy_digest,
+                    "request_count": requested["requests"],
+                    "raw_bytes": requested["raw_bytes"],
+                    "record_count": requested["records"],
+                    "concurrency": requested["concurrency"],
+                    "wall_seconds": requested["wall_seconds"],
+                    "payload": json.dumps(payload, sort_keys=True),
+                },
+            )
         return {
             "reservation_id": reservation_id,
             "tenant_id": tenant_id,
@@ -363,36 +362,35 @@ class PostgresCaseBudgetService:
         allowed = {"RESERVED", "PUBLISHED", "RELEASED", "FAILED"}
         if state not in allowed:
             raise ValueError(f"unsupported reservation state: {state}")
-        async with self._session_factory() as session:
-            async with session.begin():
-                result = await session.execute(
-                    text(
-                        "SELECT payload FROM person_case_budget_reservations "
-                        "WHERE reservation_id = :reservation_id FOR UPDATE"
-                    ),
-                    {"reservation_id": reservation_id},
-                )
-                row = result.mappings().first()
-                if row is None:
-                    raise CaseRuntimeBlocked("reservation record disappeared")
-                payload = row["payload"]
-                if isinstance(payload, str):
-                    payload = json.loads(payload)
-                payload = dict(payload or {})
-                payload["outcome"] = dict(outcome or {})
-                payload["updated_at"] = datetime.now(UTC).isoformat()
-                await session.execute(
-                    text(
-                        "UPDATE person_case_budget_reservations "
-                        "SET state = :state, payload = CAST(:payload AS jsonb), updated_at = now() "
-                        "WHERE reservation_id = :reservation_id"
-                    ),
-                    {
-                        "state": state,
-                        "payload": json.dumps(payload, sort_keys=True),
-                        "reservation_id": reservation_id,
-                    },
-                )
+        async with self._session_factory() as session, session.begin():
+            result = await session.execute(
+                text(
+                    "SELECT payload FROM person_case_budget_reservations "
+                    "WHERE reservation_id = :reservation_id FOR UPDATE"
+                ),
+                {"reservation_id": reservation_id},
+            )
+            row = result.mappings().first()
+            if row is None:
+                raise CaseRuntimeBlocked("reservation record disappeared")
+            payload = row["payload"]
+            if isinstance(payload, str):
+                payload = json.loads(payload)
+            payload = dict(payload or {})
+            payload["outcome"] = dict(outcome or {})
+            payload["updated_at"] = datetime.now(UTC).isoformat()
+            await session.execute(
+                text(
+                    "UPDATE person_case_budget_reservations "
+                    "SET state = :state, payload = CAST(:payload AS jsonb), updated_at = now() "
+                    "WHERE reservation_id = :reservation_id"
+                ),
+                {
+                    "state": state,
+                    "payload": json.dumps(payload, sort_keys=True),
+                    "reservation_id": reservation_id,
+                },
+            )
 
     async def has_reservation(
         self, *, case_id: str, tenant_id: str, scope_digest: str | None = None
@@ -506,18 +504,19 @@ class CaseDispatchExecutor:
         from sources.catalogue import load_catalogue
         definitions, _rejected = load_catalogue()
         by_catalogue_id = {definition.source_id: definition for definition in definitions}
-        from dispatcher.plan_driver import PlanDriver, PlanDispatcher
+        from adapters.registry import register as register_runtime
         from dispatcher.kafka_producer import KafkaProducer
+        from dispatcher.plan_driver import PlanDispatcher, PlanDriver
         from dispatcher.scheduler import Dispatcher
         from sources.connector import AcquisitionTask
-        from adapters.registry import register as register_runtime
 
         # SearXNG is an explicitly named runtime, not a generic HTTP fallback.
         # The case scheduler uses the bounded HTTP execution class; the acquisition
         # worker resolves the same runtime reference.
         register_runtime("searxng", execution_class="http", capabilities={"http"})
-        from domain.relation_identity import digest128
         from urllib.parse import urlsplit
+
+        from domain.relation_identity import digest128
 
         work: list[tuple[Any, ResearchAction, str, str]] = []
         allowed_hosts: set[str] = set()
@@ -567,18 +566,11 @@ class CaseDispatchExecutor:
                     f"catalogue host {host!r} is outside source policy egress allowlist"
                 )
             allowed_hosts.add(host)
-            task_id = "TSK-" + digest128(
-                "|".join(
-                    (
-                        tenant_id,
-                        case_id,
-                        scope_digest,
-                        idempotency_key,
-                        action.action_id,
-                        definition.source_id,
-                    )
-                )
+            task_identity = (
+                f"{tenant_id}|{case_id}|{scope_digest}|{idempotency_key}|"
+                f"{action.action_id}|{definition.source_id}"
             )
+            task_id = f"TSK-{digest128(task_identity)}"
             task = AcquisitionTask(
                 task_id=task_id,
                 source_id=definition.source_id,
