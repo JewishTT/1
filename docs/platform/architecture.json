@@ -994,6 +994,7 @@
           "apps/control-plane/db/migrations/versions/032_type_signals.py",
           "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
           "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
+          "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
           "apps/control-plane/db/relation_candidate_store.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
@@ -1107,6 +1108,7 @@
           "apps/control-plane/tests/unit/test_entity_stream_persistence.py",
           "apps/control-plane/tests/unit/test_fabric_anchor_guard.py",
           "apps/control-plane/tests/unit/test_fabric_endpoints.py",
+          "apps/control-plane/tests/unit/test_interpretation_storage_contract.py",
           "apps/control-plane/tests/unit/test_invariant_reducer.py",
           "apps/control-plane/tests/unit/test_migration_016_forward_only.py",
           "apps/control-plane/tests/unit/test_migration_017_forward_only.py",
@@ -1219,7 +1221,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 320
+        "module_count": 322
       },
       {
         "id": "webapp",
