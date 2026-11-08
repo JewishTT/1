@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4894,
-    "static_facts": 4595,
+    "facts_total": 4896,
+    "static_facts": 4597,
     "inferred": 299,
     "intended": 0
   },
@@ -18173,6 +18173,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_badges_facade.py",
         "via": "badges"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9f11d96060fca971",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+      "object": "apps/control-plane/services/research_case_runtime.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+        "via": "services.research_case_runtime"
       },
       "confidence": 1.0
     },
@@ -53097,6 +53110,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_badges_facade.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ca20ca8fe62f6aaf",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+      "object": "apps/control-plane/services/research_case_runtime.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py"
       },
       "confidence": 1.0
     },

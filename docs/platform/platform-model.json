@@ -218,7 +218,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 260,
+      "python_modules": 261,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -1194,11 +1194,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1102,
-    "edge_count": 3177,
+    "module_count": 1103,
+    "edge_count": 3178,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 966,
+      "stdlib:__future__": 967,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
@@ -1210,7 +1210,7 @@
       "stdlib:codecs": 2,
       "stdlib:collections": 250,
       "stdlib:concurrent": 4,
-      "stdlib:contextlib": 4,
+      "stdlib:contextlib": 5,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 410,
       "stdlib:datetime": 210,
@@ -1257,7 +1257,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 42,
-      "stdlib:typing": 400,
+      "stdlib:typing": 401,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 63,
@@ -1306,7 +1306,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 290,
+      "third-party:pytest": 291,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -7991,6 +7991,11 @@
         "from": "apps/control-plane/tests/unit/test_badges_facade.py",
         "to": "apps/control-plane/badges/__init__.py",
         "via": "badges"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+        "to": "apps/control-plane/services/research_case_runtime.py",
+        "via": "services.research_case_runtime"
       },
       {
         "from": "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
@@ -19288,6 +19293,16 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+        "tests": 1,
+        "test_names": [
+          "test_new_reservation_exposes_request_count_expected_by_dispatcher"
+        ],
+        "targets": [
+          "apps/control-plane/services/research_case_runtime.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
         "tests": 2,
         "test_names": [
@@ -26090,7 +26105,7 @@
         ]
       }
     ],
-    "total": 5476
+    "total": 5477
   },
   "contracts": {
     "python": [
@@ -31667,7 +31682,6 @@
     "apps/control-plane/services/pow_run.py",
     "apps/control-plane/services/processing_result_store.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
-    "apps/control-plane/services/research_case_runtime.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
@@ -31739,9 +31753,10 @@
     "apps/shared/contracts/__init__.py",
     "apps/shared/datasets/__init__.py",
     "apps/shared/datasets/build.py",
-    "apps/shared/domain/entity_identity.py"
+    "apps/shared/domain/entity_identity.py",
+    "apps/shared/donor/__init__.py"
   ],
-  "untested_count": 289,
+  "untested_count": 288,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -32836,6 +32851,7 @@
             "apps/control-plane/tests/unit/test_approval_gate.py",
             "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
             "apps/control-plane/tests/unit/test_badges_facade.py",
+            "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
             "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
             "apps/control-plane/tests/unit/test_cc_temporality.py",
             "apps/control-plane/tests/unit/test_cognitive_loop.py",
@@ -32962,7 +32978,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 319
+          "module_count": 320
         },
         {
           "id": "webapp",
@@ -37392,7 +37408,7 @@
       {
         "path": "apps/control-plane/services/research_case_runtime.py",
         "status": "IMPLEMENTED",
-        "loc": 706,
+        "loc": 708,
         "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
@@ -37876,6 +37892,15 @@
         "status": "TEST",
         "loc": 67,
         "callables": 8,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+        "status": "TEST",
+        "loc": 99,
+        "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -44675,9 +44700,9 @@
       "IMPLEMENTED": 592,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 97,
-      "TEST": 373,
+      "TEST": 374,
       "MIGRATION": 22,
-      "total": 1102
+      "total": 1103
     }
   },
   "reachability": {
@@ -46096,6 +46121,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_badges_facade.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
         "status": "TEST"
       },
       {
@@ -49142,8 +49171,8 @@
       "PRODUCTION": 466,
       "TEST_ONLY": 134,
       "ORPHAN": 129,
-      "TEST": 373,
-      "total": 1102
+      "TEST": 374,
+      "total": 1103
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -69233,6 +69262,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_badges_facade.py",
           "via": "badges"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9f11d96060fca971",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+        "object": "apps/control-plane/services/research_case_runtime.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+          "via": "services.research_case_runtime"
         },
         "confidence": 1.0
       },
@@ -104161,6 +104203,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "ca20ca8fe62f6aaf",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+        "object": "apps/control-plane/services/research_case_runtime.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "b2a5938fcde01976",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
@@ -113234,27 +113288,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4894,
-      "static_facts": 4595,
+      "facts_total": 4896,
+      "static_facts": 4597,
       "inferred": 299,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1102,
+    "python_modules": 1103,
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3177,
-    "test_files": 376,
-    "test_functions": 5476,
-    "untested_modules": 289,
+    "import_edges": 3178,
+    "test_files": 377,
+    "test_functions": 5477,
+    "untested_modules": 288,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4894,
-    "static_facts": 4595,
+    "facts_total": 4896,
+    "static_facts": 4597,
     "inferred": 299,
     "intended": 0
   },
@@ -113262,16 +113316,16 @@
     "IMPLEMENTED": 592,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 97,
-    "TEST": 373,
+    "TEST": 374,
     "MIGRATION": 22,
-    "total": 1102
+    "total": 1103
   },
   "reachability_summary": {
     "PRODUCTION": 466,
     "TEST_ONLY": 134,
     "ORPHAN": 129,
-    "TEST": 373,
-    "total": 1102
+    "TEST": 374,
+    "total": 1103
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",

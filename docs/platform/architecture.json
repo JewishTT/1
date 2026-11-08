@@ -1092,6 +1092,7 @@
           "apps/control-plane/tests/unit/test_approval_gate.py",
           "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
           "apps/control-plane/tests/unit/test_badges_facade.py",
+          "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
           "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
           "apps/control-plane/tests/unit/test_cc_temporality.py",
           "apps/control-plane/tests/unit/test_cognitive_loop.py",
@@ -1218,7 +1219,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 319
+        "module_count": 320
       },
       {
         "id": "webapp",

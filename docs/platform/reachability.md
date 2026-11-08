@@ -9,7 +9,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | PRODUCTION | 466 |
 | TEST_ONLY | 134 |
 | ORPHAN | 129 |
-| TEST | 373 |
+| TEST | 374 |
 
 ## Entrypoints (production roots)
 
