@@ -1195,7 +1195,7 @@
   ],
   "import_graph": {
     "module_count": 1098,
-    "edge_count": 3175,
+    "edge_count": 3176,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 962,
@@ -7771,6 +7771,11 @@
         "from": "apps/control-plane/tests/test_quarantine_api.py",
         "to": "apps/shared/events/dlq_durable.py",
         "via": "events.dlq_durable"
+      },
+      {
+        "from": "apps/control-plane/tests/test_research_case_invariants.py",
+        "to": "apps/control-plane/_prove_person_research_case.py",
+        "via": "_prove_person_research_case"
       },
       {
         "from": "apps/control-plane/tests/test_research_case_invariants.py",
@@ -17215,6 +17220,7 @@
     ],
     "roots": {
       "_events": "apps/science/_events.py",
+      "_prove_person_research_case": "apps/control-plane/_prove_person_research_case.py",
       "_prove_readback": "apps/acquisition/_prove_readback.py",
       "acquisition": "apps/acquisition",
       "adapters": "apps/acquisition/adapters/__init__.py",
@@ -19068,7 +19074,7 @@
       },
       {
         "path": "apps/control-plane/tests/test_research_case_invariants.py",
-        "tests": 11,
+        "tests": 13,
         "test_names": [
           "test_create_uses_canonical_context_id_and_structured_metadata",
           "test_approval_requires_exact_digest_and_policy_attestation",
@@ -19080,9 +19086,12 @@
           "test_discovery_policy_is_separate_from_evidence_eligibility",
           "test_planner_proposes_bounded_discovery_actions_without_satisfying_evidence",
           "test_research_action_result_role_preserves_legacy_evidence_addresses",
-          "test_public_page_capture_source_is_enabled_but_never_evidence"
+          "test_public_page_capture_source_is_enabled_but_never_evidence",
+          "test_crossref_person_anchor_matches_only_author_given_and_family_fields",
+          "test_crossref_person_anchor_rejects_non_author_or_partial_matches"
         ],
         "targets": [
+          "apps/control-plane/_prove_person_research_case.py",
           "apps/control-plane/api/auth.py",
           "apps/control-plane/api/routes/__init__.py",
           "apps/control-plane/context_engine/obligations.py",
@@ -26056,7 +26065,7 @@
         ]
       }
     ],
-    "total": 5470
+    "total": 5472
   },
   "contracts": {
     "python": [
@@ -31546,7 +31555,6 @@
     "apps/admission/resolution/__init__.py",
     "apps/bulk-ingestion/historical/__init__.py",
     "apps/control-plane/__init__.py",
-    "apps/control-plane/_prove_person_research_case.py",
     "apps/control-plane/api/path_shim.py",
     "apps/control-plane/api/routes/connectors.py",
     "apps/control-plane/api/routes/discovery.py",
@@ -31705,9 +31713,10 @@
     "apps/shared/datasets/__init__.py",
     "apps/shared/datasets/build.py",
     "apps/shared/domain/entity_identity.py",
-    "apps/shared/donor/__init__.py"
+    "apps/shared/donor/__init__.py",
+    "apps/shared/events/bus.py"
   ],
-  "untested_count": 288,
+  "untested_count": 287,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -37733,8 +37742,8 @@
       {
         "path": "apps/control-plane/tests/test_research_case_invariants.py",
         "status": "TEST",
-        "loc": 366,
-        "callables": 14,
+        "loc": 394,
+        "callables": 16,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -68569,6 +68578,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/test_quarantine_api.py",
           "via": "events.dlq_durable"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b89a23655692f95b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/_prove_person_research_case.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py",
+          "via": "_prove_person_research_case"
         },
         "confidence": 1.0
       },
@@ -103587,6 +103609,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "290e095fd227b034",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+        "object": "apps/control-plane/_prove_person_research_case.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_research_case_invariants.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "ff37f4c1b4512886",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/test_research_case_invariants.py",
@@ -113092,8 +113126,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4890,
-      "static_facts": 4591,
+      "facts_total": 4892,
+      "static_facts": 4593,
       "inferred": 299,
       "intended": 0
     }
@@ -113104,15 +113138,15 @@
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3175,
+    "import_edges": 3176,
     "test_files": 374,
-    "test_functions": 5470,
-    "untested_modules": 288,
+    "test_functions": 5472,
+    "untested_modules": 287,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4890,
-    "static_facts": 4591,
+    "facts_total": 4892,
+    "static_facts": 4593,
     "inferred": 299,
     "intended": 0
   },

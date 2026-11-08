@@ -1,6 +1,6 @@
 # Import graph
 
-1098 Python modules, 3175 resolved local edges.
+1098 Python modules, 3176 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -71,6 +71,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | Name | Directory |
 |---|---|
 | `_events` | `apps/science/_events.py` |
+| `_prove_person_research_case` | `apps/control-plane/_prove_person_research_case.py` |
 | `_prove_readback` | `apps/acquisition/_prove_readback.py` |
 | `acquisition` | `apps/acquisition` |
 | `adapters` | `apps/acquisition/adapters/__init__.py` |

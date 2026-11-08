@@ -1,6 +1,6 @@
 # Tests
 
-374 test files, 5470 test functions. 288 platform modules are not targeted by any test.
+374 test files, 5472 test functions. 287 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -87,7 +87,7 @@
 | `apps/control-plane/tests/test_auth_security.py` | 6 | `apps/control-plane/api/auth.py` |
 | `apps/control-plane/tests/test_metrics_honesty.py` | 2 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py` |
 | `apps/control-plane/tests/test_quarantine_api.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/shared/events/dlq.py`, `apps/shared/events/dlq_durable.py` |
-| `apps/control-plane/tests/test_research_case_invariants.py` | 11 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/person_case_profile.py` |
+| `apps/control-plane/tests/test_research_case_invariants.py` | 13 | `apps/control-plane/_prove_person_research_case.py`, `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/obligations.py` |
 | `apps/control-plane/tests/test_research_case_projection.py` | 6 | `apps/control-plane/services/research_case_projection.py` |
 | `apps/control-plane/tests/test_research_case_reports.py` | 5 | `apps/control-plane/services/research_case_artifacts.py`, `apps/control-plane/services/research_case_reports.py`, `apps/shared/contracts/evidence_span.py` |
 | `apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/specops/roe/gate.py` |
@@ -427,7 +427,6 @@
 | `apps/admission/resolution/__init__.py` |
 | `apps/bulk-ingestion/historical/__init__.py` |
 | `apps/control-plane/__init__.py` |
-| `apps/control-plane/_prove_person_research_case.py` |
 | `apps/control-plane/api/path_shim.py` |
 | `apps/control-plane/api/routes/connectors.py` |
 | `apps/control-plane/api/routes/discovery.py` |
@@ -447,3 +446,4 @@
 | `apps/control-plane/api/routes/science_hypotheses.py` |
 | `apps/control-plane/api/routes/science_review.py` |
 | `apps/control-plane/api/routes/science_robustness.py` |
+| `apps/control-plane/api/routes/science_structure.py` |

@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4890,
-    "static_facts": 4591,
+    "facts_total": 4892,
+    "static_facts": 4593,
     "inferred": 299,
     "intended": 0
   },
@@ -17601,6 +17601,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/test_quarantine_api.py",
         "via": "events.dlq_durable"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b89a23655692f95b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/_prove_person_research_case.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py",
+        "via": "_prove_person_research_case"
       },
       "confidence": 1.0
     },
@@ -52615,6 +52628,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/test_quarantine_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "290e095fd227b034",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/test_research_case_invariants.py",
+      "object": "apps/control-plane/_prove_person_research_case.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_research_case_invariants.py"
       },
       "confidence": 1.0
     },
