@@ -22,7 +22,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `sqlalchemy` | third-party | 166 |
 | `hashlib` | stdlib | 143 |
 | `enum` | stdlib | 121 |
-| `re` | stdlib | 107 |
+| `re` | stdlib | 108 |
 | `os` | stdlib | 83 |
 | `asyncio` | stdlib | 77 |
 | `fastapi` | third-party | 74 |
