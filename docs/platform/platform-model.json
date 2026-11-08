@@ -1185,7 +1185,7 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
-      "stdlib:json": 206,
+      "stdlib:json": 207,
       "stdlib:logging": 24,
       "stdlib:math": 41,
       "stdlib:os": 75,
@@ -23386,13 +23386,14 @@
       },
       {
         "path": "apps/shared/tests/unit/test_dlq_durable.py",
-        "tests": 7,
+        "tests": 8,
         "test_names": [
           "test_payload_uses_bare_object_key_and_survives_restart",
           "test_index_is_enumerable_and_paginates",
           "test_same_payload_isolated_between_tenants",
           "test_sink_rejects_cross_tenant_write_and_bad_uri",
           "test_topic_filter_keeps_continuation_cursor",
+          "test_filtered_pagination_does_not_skip_keys_after_a_partial_page",
           "test_durable_quarantine_cannot_purge",
           "test_memory_only_store_remains_explicitly_available_for_tests"
         ],
@@ -24771,7 +24772,7 @@
         ]
       }
     ],
-    "total": 5405
+    "total": 5406
   },
   "contracts": {
     "python": [
@@ -40196,7 +40197,7 @@
       {
         "path": "apps/shared/events/dlq_durable.py",
         "status": "IMPLEMENTED",
-        "loc": 261,
+        "loc": 263,
         "callables": 20,
         "stubs": 3,
         "not_implemented": 0,
@@ -41079,8 +41080,8 @@
       {
         "path": "apps/shared/tests/unit/test_dlq_durable.py",
         "status": "TEST",
-        "loc": 138,
-        "callables": 13,
+        "loc": 171,
+        "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -106932,7 +106933,7 @@
     "rust_crates": 9,
     "import_edges": 2971,
     "test_files": 362,
-    "test_functions": 5405,
+    "test_functions": 5406,
     "untested_modules": 274,
     "http_routes": 186
   },

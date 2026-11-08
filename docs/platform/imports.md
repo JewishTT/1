@@ -17,7 +17,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `pytest` | third-party | 282 |
 | `sys` | stdlib | 265 |
 | `collections` | stdlib | 248 |
-| `json` | stdlib | 206 |
+| `json` | stdlib | 207 |
 | `datetime` | stdlib | 199 |
 | `sqlalchemy` | third-party | 162 |
 | `hashlib` | stdlib | 136 |
