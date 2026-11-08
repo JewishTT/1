@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4889,
-    "static_facts": 4590,
+    "facts_total": 4890,
+    "static_facts": 4591,
     "inferred": 299,
     "intended": 0
   },
@@ -17796,6 +17796,19 @@
       "evidence": {
         "file": "apps/control-plane/tests/test_specops_roe_auth.py",
         "via": "specops.roe.gate"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ee7dbf2e26830784",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/test_type_signal_bridge.py",
+      "object": "apps/control-plane/services/interpretation_bridge.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "via": "services.interpretation_bridge"
       },
       "confidence": 1.0
     },

@@ -1195,7 +1195,7 @@
   ],
   "import_graph": {
     "module_count": 1098,
-    "edge_count": 3174,
+    "edge_count": 3175,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 962,
@@ -1256,7 +1256,7 @@
       "stdlib:time": 40,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
-      "stdlib:types": 41,
+      "stdlib:types": 42,
       "stdlib:typing": 400,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
@@ -7846,6 +7846,11 @@
         "from": "apps/control-plane/tests/test_specops_roe_auth.py",
         "to": "apps/specops/roe/gate.py",
         "via": "specops.roe.gate"
+      },
+      {
+        "from": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "to": "apps/control-plane/services/interpretation_bridge.py",
+        "via": "services.interpretation_bridge"
       },
       {
         "from": "apps/control-plane/tests/test_type_signal_bridge.py",
@@ -19135,10 +19140,11 @@
       },
       {
         "path": "apps/control-plane/tests/test_type_signal_bridge.py",
-        "tests": 2,
+        "tests": 3,
         "test_names": [
           "test_interpretation_bridge_extracts_type_signal_for_an_existing_mention",
-          "test_interpretation_bridge_refuses_invalid_structured_type_without_minting_mention"
+          "test_interpretation_bridge_refuses_invalid_structured_type_without_minting_mention",
+          "test_structured_type_binding_refuses_ambiguous_same_name_mentions"
         ],
         "targets": [
           "apps/control-plane/services/interpretation_bridge.py"
@@ -26048,7 +26054,7 @@
         ]
       }
     ],
-    "total": 5467
+    "total": 5468
   },
   "contracts": {
     "python": [
@@ -37173,7 +37179,7 @@
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
         "status": "IMPLEMENTED",
-        "loc": 1164,
+        "loc": 1168,
         "callables": 20,
         "stubs": 0,
         "not_implemented": 0,
@@ -37761,8 +37767,8 @@
       {
         "path": "apps/control-plane/tests/test_type_signal_bridge.py",
         "status": "TEST",
-        "loc": 50,
-        "callables": 3,
+        "loc": 76,
+        "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -68756,6 +68762,19 @@
         "evidence": {
           "file": "apps/control-plane/tests/test_specops_roe_auth.py",
           "via": "specops.roe.gate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ee7dbf2e26830784",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/test_type_signal_bridge.py",
+        "object": "apps/control-plane/services/interpretation_bridge.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/test_type_signal_bridge.py",
+          "via": "services.interpretation_bridge"
         },
         "confidence": 1.0
       },
@@ -113071,8 +113090,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4889,
-      "static_facts": 4590,
+      "facts_total": 4890,
+      "static_facts": 4591,
       "inferred": 299,
       "intended": 0
     }
@@ -113083,15 +113102,15 @@
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3174,
+    "import_edges": 3175,
     "test_files": 374,
-    "test_functions": 5467,
+    "test_functions": 5468,
     "untested_modules": 288,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4889,
-    "static_facts": 4590,
+    "facts_total": 4890,
+    "static_facts": 4591,
     "inferred": 299,
     "intended": 0
   },
