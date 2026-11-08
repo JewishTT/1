@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from extractors.types import StructuredTypeSignalExtractor
+from extractors.structured_types import StructuredTypeSignalExtractor
 
 
 def test_jsonld_schema_person_becomes_type_signal_not_assertion():

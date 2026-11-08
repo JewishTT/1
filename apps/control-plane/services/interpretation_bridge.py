@@ -1032,7 +1032,7 @@ def _structured_type_signal_report(
     body: bytes, *, tenant_id: str, observation_id: str, document: Any | None
 ) -> Any:
     """Extract source-published type statements only for existing mention-index entries."""
-    from extractors.types import StructuredTypeSignalExtractor, TypeExtractionReport
+    from extractors.structured_types import StructuredTypeSignalExtractor, TypeExtractionReport
 
     html = body.decode("utf-8", errors="replace")
     if "<script" not in html.casefold() and "<meta" not in html.casefold():

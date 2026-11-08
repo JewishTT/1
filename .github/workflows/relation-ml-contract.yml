@@ -58,7 +58,7 @@ jobs:
         run: >-
           .venv/bin/python -m ruff check
           apps/interpretation/extractors/signals/ml.py
-          apps/interpretation/extractors/types.py
+          apps/interpretation/extractors/structured_types.py
           apps/interpretation/tools/gliner_relex_smoke.py
           apps/interpretation/tests/test_ml_relation_producers.py
           apps/interpretation/tests/test_structured_type_extractor.py
