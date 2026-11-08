@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4896,
-    "static_facts": 4597,
+    "facts_total": 4897,
+    "static_facts": 4598,
     "inferred": 299,
     "intended": 0
   },
@@ -2963,6 +2963,19 @@
       "evidence": {
         "file": "apps/acquisition/tests/contract/test_plan_driver.py",
         "via": "sources.connector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "75d5c0dc1e9437e4",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
+      "object": "apps/acquisition/worker_acquisition.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "via": "worker_acquisition"
       },
       "confidence": 1.0
     },

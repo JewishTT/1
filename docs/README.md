@@ -26,7 +26,7 @@ Raw observations are immutable and content-addressed; every analytical result re
 | HTTP routes | 222 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 377 / 5477 |
+| Test files / functions | 377 / 5478 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 

@@ -1,6 +1,6 @@
 # Tests
 
-377 test files, 5477 test functions. 288 platform modules are not targeted by any test.
+377 test files, 5478 test functions. 288 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -8,7 +8,7 @@
 
 | File | Tests | Targets |
 |---|---|---|
-| `apps/acquisition/tests/contract/test_plan_driver.py` | 20 | `apps/acquisition/adapters/registry.py`, `apps/acquisition/dispatcher/plan_driver.py`, `apps/acquisition/dispatcher/scheduler.py`, `apps/acquisition/sources/connector.py` |
+| `apps/acquisition/tests/contract/test_plan_driver.py` | 21 | `apps/acquisition/adapters/registry.py`, `apps/acquisition/dispatcher/plan_driver.py`, `apps/acquisition/dispatcher/scheduler.py`, `apps/acquisition/sources/connector.py` |
 | `apps/acquisition/tests/contract/test_scheduler.py` | 11 | `apps/acquisition/adapters/registry.py`, `apps/acquisition/dispatcher/scheduler.py` |
 | `apps/acquisition/tests/integration/test_adapters_gate.py` | 5 | `apps/acquisition/adapters/commoncrawl/index.py`, `apps/acquisition/adapters/scrapy/stream.py`, `apps/acquisition/adapters/warc/collect.py`, `apps/shared/events/content_router.py` |
 | `apps/acquisition/tests/integration/test_backpressure.py` | 6 | `apps/control-plane/services/throttle.py` |
