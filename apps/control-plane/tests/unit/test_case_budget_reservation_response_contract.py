@@ -47,6 +47,10 @@ class _Session:
             "current_usage": {},
         }
 
+    @asynccontextmanager
+    async def begin(self):
+        yield self
+
     async def execute(self, statement: Any, params: dict[str, Any]) -> _Result:
         sql = str(statement)
         if "FROM budgets" in sql:
