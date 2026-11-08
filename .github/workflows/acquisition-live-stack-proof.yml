@@ -348,6 +348,8 @@ jobs:
           COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
           COGNITIVE_PUBLIC_SOURCE_MIN_PASSES: "6"
         run: .venv/bin/python apps/acquisition/_prove_public_source_matrix.py
+      - name: Build hermetic interpretation dictionaries for the production observation worker
+        run: uv run --project apps/interpretation python -m dictionaries.build_mini
       - name: Execute live Feature 034 person research through Capture / Observation / Report
         shell: bash
         env:
