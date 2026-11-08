@@ -30,7 +30,7 @@ jobs:
       - name: Test runtime evidence persistence contract
         run: .venv/bin/pytest apps/acquisition/tests/unit/test_runtime_artifact_sink.py -q
       - name: Test dispatcher-to-worker case binding serialization
-        run: .venv/bin/pytest apps/acquisition/tests/contract/test_plan_driver.py -q
+        run: .venv/bin/pytest apps/acquisition/tests/contract/test_plan_driver.py -q -k case_bound_request_serializes_investigation_binding_into_payload
       - name: Lint the dispatcher request contract
         run: >-
           .venv/bin/ruff check

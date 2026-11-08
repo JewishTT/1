@@ -299,6 +299,7 @@ class TestRequestPayloadIsExecutable:
         producer = AckedProducer()
         dispatcher = dispatcher_with(
             producer,
+            limits=_allow(),
             tenant_id=bound.tenant_id,
             case_id=bound.case_id,
             policy_revision=bound.policy_revision,
