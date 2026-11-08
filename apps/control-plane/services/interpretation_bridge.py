@@ -71,6 +71,8 @@ class InterpretationResult:
     dropped_kinds: tuple[str, ...] = ()
     persisted: bool = False
     reason: str = ""
+    type_signals: tuple[Any, ...] = ()
+    type_signal_refusals: tuple[dict[str, Any], ...] = ()
     document: Any = field(default=None, repr=False, compare=False)
     resolved_entities: tuple[Any, ...] = field(default=(), repr=False, compare=False)
 
@@ -89,6 +91,9 @@ class InterpretationResult:
             "relations": self.relations,
             "unresolved": self.unresolved,
             "dropped_kinds": list(self.dropped_kinds),
+            "type_signal_count": len(self.type_signals),
+            "type_signal_ids": [signal.signal_id for signal in self.type_signals],
+            "type_signal_refusals": list(self.type_signal_refusals),
             "persisted": self.persisted,
             "reason": self.reason,
         }
@@ -176,6 +181,13 @@ class InterpretationBridge:
                 content_type=content_type,
                 artifact_kind=artifact,
                 reason=extraction.reason or "no mentions extracted",
+                type_signal_refusals=tuple(
+                    item.to_dict()
+                    for item in _structured_type_signal_report(
+                        body, tenant_id=self._store.tenant_id,
+                        observation_id=stable_observation_id, document=None,
+                    ).refusals
+                ),
             )
 
         document = adapt_document(
@@ -187,6 +199,10 @@ class InterpretationBridge:
             source_id=source_id,
             source_family=self._source_family,
             observed_at=_coerce_datetime(observed_at),
+        )
+        type_signal_report = _structured_type_signal_report(
+            body, tenant_id=self._store.tenant_id,
+            observation_id=stable_observation_id, document=document,
         )
         universe = CandidateUniverse(
             tenant_id=self._store.tenant_id,
@@ -212,6 +228,8 @@ class InterpretationBridge:
             ),
             dropped_kinds=document.dropped_unknown_kinds,
             reason="" if resolved else "every mention was refused an identity",
+            type_signals=type_signal_report.signals,
+            type_signal_refusals=tuple(item.to_dict() for item in type_signal_report.refusals),
             document=document,
             resolved_entities=tuple(resolved),
         )
@@ -248,6 +266,7 @@ class InterpretationBridge:
         from db.schema import EntityVersion as EntityVersionRow
         from db.schema import Mention as MentionRow
         from db.schema import Observation as ObservationRow
+        from db.schema import TypeSignalRow
         from sqlalchemy.dialects.postgresql import insert as pg_insert
         from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
 
@@ -380,6 +399,32 @@ class InterpretationBridge:
                         .values(**mention_values)
                         .on_conflict_do_nothing(index_elements=[MentionRow.mention_id])
                     )
+
+            # TypeSignal records what a source vocabulary stated, not a TypeAssertion.
+            # It is committed beside its Mention and Observation in the same transaction.
+            for type_signal in result.type_signals:
+                if type_signal.tenant_id != self._store.tenant_id:
+                    raise ValueError(
+                        "TypeSignal tenant does not match the InterpretationBridge tenant"
+                    )
+                await session.execute(
+                    pg_insert(TypeSignalRow)
+                    .values(
+                        signal_id=type_signal.signal_id,
+                        tenant_id=type_signal.tenant_id,
+                        mention_ref=type_signal.mention_ref,
+                        source_vocab=type_signal.source_vocab,
+                        surface=type_signal.surface,
+                        structural_path=list(type_signal.structural_path),
+                        observation_refs=list(type_signal.observation_refs),
+                        evidence_refs=list(type_signal.evidence_refs),
+                        producer_ref=type_signal.producer_ref,
+                        mapping_candidates=[
+                            item.to_dict() for item in type_signal.mapping_candidates
+                        ],
+                    )
+                    .on_conflict_do_nothing(index_elements=[TypeSignalRow.signal_id])
+                )
 
             for entity in resolved:
                 # The canonical entity reference is what relation projections can resolve.
@@ -979,6 +1024,41 @@ def _grounded_span(
         start=int(start),
         end=int(end),
         mention_ref=str(mention_ref or ""),
+    )
+
+
+
+def _structured_type_signal_report(
+    body: bytes, *, tenant_id: str, observation_id: str, document: Any | None
+) -> Any:
+    """Extract source-published type statements only for existing mention-index entries."""
+    from extractors.types import StructuredTypeSignalExtractor, TypeExtractionReport
+
+    html = body.decode("utf-8", errors="replace")
+    if "<script" not in html.casefold() and "<meta" not in html.casefold():
+        return TypeExtractionReport((), ())
+
+    mention_ids: dict[str, str] = {}
+    if document is not None:
+        canonical = getattr(document, "canonical_by_mention", {}) or {}
+        for mention in getattr(document, "mentions", ()):
+            mention_id = str(getattr(mention, "mention_id", "") or "")
+            if not mention_id:
+                continue
+            for surface in (
+                str(getattr(mention, "surface", "") or ""),
+                str(canonical.get(mention_id, "") or ""),
+            ):
+                key = " ".join(surface.split()).casefold()
+                if key:
+                    mention_ids.setdefault(key, mention_id)
+
+    def resolve(surface: str) -> str | None:
+        return mention_ids.get(" ".join(str(surface).split()).casefold())
+
+    return StructuredTypeSignalExtractor().extract(
+        html, tenant_id=tenant_id, observation_ref=observation_id,
+        mention_id_for_surface=resolve,
     )
 
 

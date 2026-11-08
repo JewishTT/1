@@ -228,7 +228,7 @@ jobs:
           SELECT 1 / CASE
             WHEN EXISTS (
               SELECT 1 FROM public.alembic_version
-              WHERE version_num = '031_relation_claim_projection_outbox'
+              WHERE version_num = '032_type_signals'
             )
             THEN 1
             ELSE 0

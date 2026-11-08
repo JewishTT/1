@@ -1,155 +1,179 @@
-"""Typed mention + extraction result models (spec 007, data-model.md).
+"""Structured source type statements -> TypeSignal, never TypeAssertion.
 
-``TypedMention`` extends the registry's minimal ``Mention`` with the full
-deterministic-extraction contract: byte offsets, extractor id, language hint,
-honest ``source`` tier, `normalized` canonical form / transform chain,
-``evidence`` attributes (sameAs / profile_urls / contact_hashes / coords /
-co_occurrence) and the producing dictionary's version stamp (FR-8).
-
-Invariants (data-model.md): mentions are data+evidence only — never resolved
-entities (I-2); nothing here uses wall-clock time, randomness or the network.
+JSON-LD/schema.org is supported for mention-bound type observations. OpenGraph og:type is
+page-level metadata and is deliberately refused until the platform has a document mention;
+it must never be attached to the person named in og:title.
 """
-
 from __future__ import annotations
 
-import dataclasses
-from dataclasses import dataclass, field
+import json
+import re
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from html import unescape
 from typing import Any
 
-# Honest degradation tiers: structure > coords/context > morph > pattern (FR-4).
-# Higher value = more reliable source. Pattern-only matches keep ``source=pattern``
-# and a reduced confidence but are never dropped.
-SOURCE_ORDER: dict[str, int] = {
-    "structure": 4,
-    "coords": 3,
-    "context": 3,
-    "morph": 2,
-    "dictionary": 2,
-    "pattern": 1,
-}
+from semantic.type_signal import TypeSignal
+
+_JSON_LD = re.compile(r"<script\b(?P<attrs>[^>]*)>(?P<body>.*?)</script\s*>",
+                      flags=re.IGNORECASE | re.DOTALL)
+_META = re.compile(r"<meta\b(?P<attrs>[^>]*)>", flags=re.IGNORECASE | re.DOTALL)
+_ATTR = re.compile(r"""([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""",
+                   flags=re.IGNORECASE)
 
 
-@dataclass
-class NormalizedName:
-    """Canonical form + transform chain for name mentions (data-model.md)."""
+@dataclass(frozen=True, slots=True)
+class TypeExtractionRefusal:
+    code: str
+    detail: str
+    structural_path: tuple[str, ...] = ()
 
-    canonical: str
-    latin: str | None = None
-    given: str | None = None
-    family: str | None = None
-    patronymic: str | None = None
-    transforms: list[str] = field(default_factory=list)
-    hypothesis: bool = False
+    def to_dict(self) -> dict[str, Any]:
+        return {"code": self.code, "detail": self.detail,
+                "structural_path": list(self.structural_path)}
 
 
-@dataclass
-class TypedMention:
-    """A deterministic entity mention extracted from one artifact."""
-
-    kind: str
-    value: str
-    offset: int = 0
-    end_offset: int = 0
-    extractor: str = ""
-    lang: str | None = None
-    source: str = "pattern"
-    confidence: float = 1.0
-    normalized: NormalizedName | None = None
-    evidence: dict[str, Any] = field(default_factory=dict)
-    dictionary: str | None = None
-    lang_pack: str | None = None
-    span_semantics: str = ""
-    """What ``offset``/``end_offset`` count (spec 030 contract 02 R2).
-
-    ``document_char`` -- a real document-relative character position.
-    ``unresolved``    -- the producing segment never declared a document-absolute position, so
-                        no honest number exists. ``offset``/``end_offset`` are ``-1`` and
-                        ``span_reason`` says why. Downstream must render this mention as
-                        ungrounded rather than substituting 0.
-
-    Left empty here and derived in ``__post_init__``: a mention carrying a negative offset
-    must never be able to claim it is resolved.
-    """
-
-    span_reason: str | None = None
-    """Why the position is unresolved. ``None`` when it is resolved."""
+@dataclass(frozen=True, slots=True)
+class TypeExtractionReport:
+    signals: tuple[TypeSignal, ...]
+    refusals: tuple[TypeExtractionRefusal, ...]
 
     def __post_init__(self) -> None:
-        if not self.span_semantics:
-            self.span_semantics = "unresolved" if self.offset < 0 else "document_char"
-            if self.span_semantics == "unresolved" and self.span_reason is None:
-                self.span_reason = "negative offset without a declared position"
-
-    @property
-    def span_resolved(self) -> bool:
-        return self.span_semantics != "unresolved"
-
-    def to_dict(self) -> dict[str, Any]:
-        """Deterministic dict form: keys sorted, sub-models flattened."""
-        out: dict[str, Any] = {
-            "kind": self.kind,
-            "value": self.value,
-            "offset": self.offset,
-            "end_offset": self.end_offset,
-            "extractor": self.extractor,
-            "lang": self.lang,
-            "source": self.source,
-            "confidence": self.confidence,
-            "span_semantics": self.span_semantics,
-            "span_reason": self.span_reason,
-            "evidence": _sorted_dict(self.evidence if self.evidence else {}),
-        }
-        if self.dictionary is not None:
-            out["dictionary"] = self.dictionary
-        if self.lang_pack is not None:
-            out["lang_pack"] = self.lang_pack
-        if self.normalized is not None:
-            out["normalized"] = dataclasses.asdict(self.normalized)
-        return _sorted_dict(out)
+        object.__setattr__(self, "signals", tuple(self.signals))
+        object.__setattr__(self, "refusals", tuple(self.refusals))
 
 
-@dataclass
-class ExtractionResult:
-    """The output lane result for one artifact (data-model.md)."""
-
-    artifact_sha: str
-    content_type: str
-    segments: list[Any] = field(default_factory=list)
-    mentions: list[TypedMention] = field(default_factory=list)
-    #: Semantic relation readings -- (subject, relation_type, object) with spans.
-    #:
-    #: Added because the readings had nowhere to go. ``extractors.relations`` has
-    #: produced them for the whole life of this package and nothing carried them: the
-    #: result had no field for them, so the sentence "X is chairman of Y" reached the
-    #: graph only as a co-mention of X and Y. Typed as ``Any`` because the concrete
-    #: ``RelationalReading`` lives in ``extractors.relations`` and importing it here would
-    #: close a cycle; the shape is documented rather than asserted by a nominal type.
-    relations: list[Any] = field(default_factory=list)
-    quarantined: bool = False
-    reason: str | None = None
-
-    def to_dict(self) -> dict[str, Any]:
-        return _sorted_dict(
-            {
-                "artifact_sha": self.artifact_sha,
-                "content_type": self.content_type,
-                "quarantined": self.quarantined,
-                "reason": self.reason,
-                "segments": [
-                    {
-                        "text": getattr(s, "text", str(s)),
-                        "offset": getattr(s, "offset", 0),
-                        "kind": getattr(s, "kind", "text"),
-                        "lang": getattr(s, "lang_hint", None),
-                        "meta": _sorted_dict(getattr(s, "meta", {})),
-                    }
-                    for s in self.segments
-                ],
-                "mentions": [m.to_dict() for m in self.mentions],
-            }
+def _attrs(raw: str) -> dict[str, str]:
+    result = {}
+    for match in _ATTR.finditer(raw):
+        result[match.group(1).casefold()] = unescape(
+            next(value for value in match.groups()[1:] if value is not None)
         )
+    return result
 
 
-def _sorted_dict(data: dict[str, Any]) -> dict[str, Any]:
-    """Deterministic nested dict sort: sorted keys, no duplicate values."""
-    return {k: (_sorted_dict(v) if isinstance(v, dict) else v) for k, v in sorted(data.items())}
+def _context_has_schema(value: Any) -> bool:
+    if isinstance(value, str):
+        return "schema.org" in value.casefold()
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            if key == "@vocab" and isinstance(item, str) and "schema.org" in item.casefold():
+                return True
+            if key == "schema" and isinstance(item, str) and "schema.org" in item.casefold():
+                return True
+    if isinstance(value, (list, tuple)):
+        return any(_context_has_schema(item) for item in value)
+    return False
+
+
+def _walk_jsonld(value: Any, path: tuple[str, ...] = (),
+                 inherited_schema: bool = False) -> list[tuple[tuple[str, ...], str, str, bool]]:
+    found = []
+    if isinstance(value, Mapping):
+        schema_context = inherited_schema or _context_has_schema(value.get("@context"))
+        name = value.get("name")
+        if isinstance(name, str) and name.strip():
+            raw_types = value.get("@type")
+            raw_types = (raw_types,) if isinstance(raw_types, str) else tuple(raw_types or ())
+            for item in raw_types:
+                surface = str(item).strip()
+                if surface:
+                    is_schema = (schema_context or "schema.org/" in surface.casefold()
+                                 or surface.casefold().startswith("schema:"))
+                    found.append((path + ("@type",), surface, name, is_schema))
+        for key, child in value.items():
+            if isinstance(child, (Mapping, list, tuple)):
+                found.extend(_walk_jsonld(child, path + (str(key),), schema_context))
+    elif isinstance(value, (list, tuple)):
+        for index, child in enumerate(value):
+            found.extend(_walk_jsonld(child, path + (str(index),), inherited_schema))
+    return found
+
+
+def _json_name_offset(raw: str, name: str, cursor: int) -> tuple[int, int] | None:
+    encoded = json.dumps(name, ensure_ascii=False)
+    start = raw.find(encoded, cursor)
+    if start < 0 or encoded[1:-1] != name:
+        # A decoded string with JSON escapes must not be cited using guessed source offsets.
+        return None
+    return start + 1, start + len(encoded) - 1
+
+
+class StructuredTypeSignalExtractor:
+    """Extract JSON-LD/schema.org statements against existing mention references."""
+
+    producer_jsonld = "structured/json-ld"
+
+    def extract(
+        self, html: str, *, tenant_id: str, observation_ref: str,
+        mention_id_for_surface: Callable[[str], str | None] | Mapping[str, str],
+    ) -> TypeExtractionReport:
+        if not tenant_id.strip() or not observation_ref.strip():
+            raise ValueError("tenant_id and observation_ref are required")
+        if isinstance(mention_id_for_surface, Mapping):
+            mention_lookup = lambda surface: mention_id_for_surface.get(surface)
+        else:
+            mention_lookup = mention_id_for_surface
+        signals, refusals = [], []
+
+        for block_index, block in enumerate(_JSON_LD.finditer(html)):
+            raw = block.group("body")
+            try:
+                document = json.loads(raw)
+            except (TypeError, ValueError):
+                refusals.append(TypeExtractionRefusal(
+                    "jsonld_invalid", f"JSON-LD block {block_index} is invalid JSON"))
+                continue
+            cursor = 0
+            for path, type_surface, name, schema_vocab in _walk_jsonld(document):
+                mention_ref = mention_lookup(name)
+                if not mention_ref:
+                    refusals.append(TypeExtractionRefusal(
+                        "mention_unresolved",
+                        f"JSON-LD type {type_surface!r} names {name!r}, but no existing mention was bound",
+                        path))
+                    continue
+                if not schema_vocab:
+                    refusals.append(TypeExtractionRefusal(
+                        "unsupported_type_vocabulary",
+                        f"JSON-LD type {type_surface!r} is not explicitly bound to schema.org",
+                        path))
+                    continue
+                offset = _json_name_offset(raw, name, cursor)
+                if offset is None:
+                    refusals.append(TypeExtractionRefusal(
+                        "mention_surface_not_source_addressable",
+                        f"could not verify an unescaped source span for JSON-LD name {name!r}",
+                        path))
+                    continue
+                cursor = offset[1]
+                signals.append(TypeSignal(
+                    source_vocab="schema.org", surface=type_surface,
+                    mention_ref=str(mention_ref),
+                    structural_path=(f"jsonld[{block_index}]",) + path,
+                    observation_refs=(observation_ref,), evidence_refs=(observation_ref,),
+                    producer_ref=self.producer_jsonld, tenant_id=tenant_id,
+                ))
+
+        meta: dict[str, str] = {}
+        for tag in _META.finditer(html):
+            attrs = _attrs(tag.group("attrs"))
+            key = (attrs.get("property") or attrs.get("name") or "").casefold()
+            value = attrs.get("content", "").strip()
+            if key and value:
+                meta[key] = value
+        if meta.get("og:type"):
+            refusals.append(TypeExtractionRefusal(
+                "document_type_requires_document_mention",
+                "OpenGraph og:type describes the retrieved page, not the person named by "
+                "og:title; no document-level Mention exists for this TypeSignal",
+                ("meta", "og:type"),
+            ))
+
+        unique = {}
+        for signal in signals:
+            unique.setdefault(signal.signal_id, signal)
+        return TypeExtractionReport(tuple(unique.values()), tuple(refusals))
+
+
+__all__ = ["StructuredTypeSignalExtractor", "TypeExtractionRefusal", "TypeExtractionReport"]

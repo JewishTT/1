@@ -138,13 +138,15 @@ class MatchPredicate(StrEnum):
     certainly does not license collapsing them. Re-evaluating or withdrawing the mapping is
     expected and leaves both concepts exactly where they were. ``BROAD_MATCH`` and
     ``NARROW_MATCH`` are weaker still - the target is wider or narrower than the source -
-    and honouring them widens recall rather than recording identity.
+    and honouring them widens recall rather than recording identity. RELATED_MATCH records
+    correspondences that are neither narrower nor broader, without treating them as equal.
     """
 
     EXACT_MATCH = "exact_match"
     CLOSE_MATCH = "close_match"
     BROAD_MATCH = "broad_match"
     NARROW_MATCH = "narrow_match"
+    RELATED_MATCH = "related_match"
 
 
 @dataclass(frozen=True)
