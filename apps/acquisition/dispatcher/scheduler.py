@@ -15,9 +15,8 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any
 from enum import StrEnum
-from typing import Protocol
+from typing import Any, Protocol
 
 from adapters.registry import REGISTRY, CapabilityGap, SourceRegistration
 from scoring.scorer import HeuristicUtilityScorer, UtilityScore
