@@ -6,7 +6,7 @@
  * happens in the container components.
  */
 
-import { ApiError, clientFor } from "./http";
+import { clientFor } from "./http";
 
 const API_BASE = "/api/v1";
 

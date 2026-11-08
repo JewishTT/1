@@ -31,16 +31,19 @@ def test_interpretation_bridge_extracts_type_signal_for_an_existing_mention():
     assert result.type_signal_refusals == ()
 
 
-def test_interpretation_bridge_reports_unresolved_source_type_instead_of_minting_entity():
+def test_interpretation_bridge_refuses_invalid_structured_type_without_minting_mention():
+    # This is deliberately malformed JSON-LD and all visible prose is lowercase. No
+    # name/mention is supplied to the generic extractor, so the structured adapter must
+    # preserve a typed parse refusal rather than manufacturing a person from @type/name.
     html = b"""<html><head>
       <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"Person","name":"nobody"}
+      {"@context":"https://schema.org","@type":"person","name": }
       </script>
-    </head><body><p>ordinary source material contains no proper names</p></body></html>"""
+    </head><body><p>ordinary source material contains only lowercase words</p></body></html>"""
     result = _bridge().interpret(
-        html, capture_ref="CAP-unresolved-type", content_type="text/html",
+        html, capture_ref="CAP-invalid-type", content_type="text/html",
         investigation_id="CASE-type-signal", source_id="fixture:public-biography",
     )
     assert result.mentions == 0
     assert result.type_signals == ()
-    assert any(item["code"] == "mention_unresolved" for item in result.type_signal_refusals)
+    assert any(item["code"] == "jsonld_invalid" for item in result.type_signal_refusals)
