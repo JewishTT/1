@@ -7,24 +7,24 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1031 / 267 / 16 |
-| Resolved import edges | 2940 |
-| HTTP routes / routers | 185 / 33 |
-| Test files / functions | 352 / 5376 |
-| Evidence facts (static) | 4545 |
+| Python / TypeScript / Rust modules | 1047 / 267 / 16 |
+| Resolved import edges | 2971 |
+| HTTP routes / routers | 186 / 34 |
+| Test files / functions | 362 / 5406 |
+| Evidence facts (static) | 4591 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 554 |
+| IMPLEMENTED | 558 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
-| PACKAGE_INIT | 91 |
+| PACKAGE_INIT | 93 |
 | MIGRATION | 19 |
-| TEST | 349 |
+| TEST | 359 |
 
 See [maturity.md](maturity.md).
 
@@ -32,10 +32,10 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 426 |
-| TEST_ONLY | 134 |
-| ORPHAN | 122 |
-| TEST | 349 |
+| PRODUCTION | 432 |
+| TEST_ONLY | 133 |
+| ORPHAN | 123 |
+| TEST | 359 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 
@@ -54,7 +54,7 @@ See [golden-path.md](golden-path.md) for the capability map and the build plan.
 
 ## Gaps (machine-checked)
 
-**9** open, machine-checked gaps. See [gaps.md](gaps.md).
+**5** open, machine-checked gaps. See [gaps.md](gaps.md).
 
 ## Event coverage
 
@@ -95,7 +95,7 @@ Capabilities linked to a spec when the capability's module is cited by that spec
 | `010-zero-layer-contact-harvesting` | `websearch` |
 | `012-dynamic-entity-invariant` | `graph-invariant` |
 | `016-relation-evidence-graph-fabric` | `evidence-context`, `projection-graph` |
-| `024-context-driven-continuous-intelligence` | `durable-dlq`, `layer-boundaries` |
+| `024-context-driven-continuous-intelligence` | `layer-boundaries` |
 | `030-global-platform-upgrade` | `canonical-serialisation` |
 
 ## Test-only capabilities
@@ -125,7 +125,7 @@ Specs whose task list shows 0 checked but whose number is cited by real modules 
 | `018-world-substrate` | 0/30 | 4 |
 | `021-entity-relation-extraction-finalization` | 0/94 | 1 |
 | `023-acquisition-integration-searxng` | 0/214 | 3 |
-| `024-context-driven-continuous-intelligence` | 0/168 | 24 |
+| `024-context-driven-continuous-intelligence` | 0/168 | 22 |
 | `030-global-platform-upgrade` | 0/152 | 24 |
 | `032-global-upgrade-execution` | 0/84 | 8 |
 | `034-person-research-case` | 0/76 | 18 |

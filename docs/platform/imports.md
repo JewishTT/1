@@ -1,6 +1,6 @@
 # Import graph
 
-1031 Python modules, 2940 resolved local edges.
+1047 Python modules, 2971 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,46 +10,46 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 901 |
-| `dataclasses` | stdlib | 394 |
-| `typing` | stdlib | 373 |
-| `pathlib` | stdlib | 323 |
-| `pytest` | third-party | 275 |
-| `sys` | stdlib | 261 |
-| `collections` | stdlib | 247 |
-| `json` | stdlib | 203 |
-| `datetime` | stdlib | 197 |
-| `sqlalchemy` | third-party | 161 |
-| `hashlib` | stdlib | 133 |
-| `enum` | stdlib | 118 |
-| `re` | stdlib | 100 |
+| `__future__` | stdlib | 915 |
+| `dataclasses` | stdlib | 395 |
+| `typing` | stdlib | 377 |
+| `pathlib` | stdlib | 329 |
+| `pytest` | third-party | 282 |
+| `sys` | stdlib | 265 |
+| `collections` | stdlib | 248 |
+| `json` | stdlib | 207 |
+| `datetime` | stdlib | 199 |
+| `sqlalchemy` | third-party | 162 |
+| `hashlib` | stdlib | 136 |
+| `enum` | stdlib | 119 |
+| `re` | stdlib | 104 |
 | `asyncio` | stdlib | 76 |
-| `os` | stdlib | 74 |
-| `fastapi` | third-party | 67 |
-| `urllib` | stdlib | 59 |
-| `uuid` | stdlib | 49 |
+| `os` | stdlib | 75 |
+| `fastapi` | third-party | 70 |
+| `urllib` | stdlib | 60 |
+| `uuid` | stdlib | 48 |
 | `math` | stdlib | 41 |
-| `types` | stdlib | 36 |
+| `types` | stdlib | 40 |
 | `pydantic` | third-party | 34 |
 | `importlib` | stdlib | 33 |
 | `time` | stdlib | 33 |
-| `ast` | stdlib | 27 |
+| `ast` | stdlib | 28 |
 | `io` | stdlib | 25 |
+| `logging` | stdlib | 24 |
 | `alembic` | third-party | 24 |
-| `logging` | stdlib | 23 |
 | `numpy` | third-party | 23 |
-| `inspect` | stdlib | 21 |
+| `inspect` | stdlib | 22 |
+| `argparse` | stdlib | 21 |
 | `tempfile` | stdlib | 21 |
-| `argparse` | stdlib | 20 |
 | `httpx` | third-party | 20 |
 | `threading` | stdlib | 19 |
+| `subprocess` | stdlib | 17 |
 | `shutil` | stdlib | 16 |
-| `subprocess` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |
 | `warcio` | third-party | 15 |
 | `temporalio` | third-party | 13 |
 | `itertools` | stdlib | 11 |
-| `base64` | stdlib | 10 |
+| `html` | stdlib | 10 |
 
 ## Optional capability probes
 
@@ -94,6 +94,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `composition` | `apps/control-plane/composition.py` |
 | `config` | `apps/shared/config/__init__.py` |
 | `context` | `apps/science/context/__init__.py` |
+| `context_discovery` | `apps/acquisition/context_discovery/__init__.py` |
 | `context_engine` | `apps/control-plane/context_engine/__init__.py` |
 | `contracts` | `apps/shared/contracts/__init__.py` |
 | `cp_domain` | `apps/control-plane/cp_domain/__init__.py` |

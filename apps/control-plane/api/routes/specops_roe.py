@@ -1,42 +1,37 @@
-"""Rules-of-Engagement sign-off API for the CI/SpecOps department (027, T005).
+"""Rules-of-Engagement sign-off API.
 
-Records a supervisor sign-off and exposes the gate's verdict. The gate itself
-lives in ``apps/specops/roe/gate.py`` and is the single source of truth for
-"is this authorized" — this router only persists a sign-off and reads its status
-back, so the emulation/phishing routers can call the same gate before any send.
-
-Named-absence discipline (§99): a field the gate does not decide is not invented
-here. Tenant isolation comes from ``resolve_tenant`` (§VII); the in-memory
-registry is a wave-1 stand-in for a durable store (deferred, FR-003).
+The authenticated administrator is the approver. Caller-supplied identity is
+never accepted as authority. The current registry remains process-local and is
+explicitly tracked as an operational gap until a durable tenant-scoped store is wired.
 """
 
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from api.auth import TenantContext, resolve_tenant
+from api.auth import Role, TenantContext, resolve_tenant
 
-# The gate package (apps/specops). Import defensively so the control plane still
-# boots when the specops package is not yet on sys.path; the health note reports
-# the gap rather than the API failing to start.
 try:
-    from specops.roe.gate import REGISTRY, RoeStatus, RulesOfEngagement
+    from specops.roe.gate import REGISTRY, RulesOfEngagement
 except Exception:  # pragma: no cover - import boundary
-    REGISTRY = None  # type: ignore[assignment]
-    RulesOfEngagement = None  # type: ignore[assignment]
-    RoeStatus = None  # type: ignore[assignment]
+    REGISTRY = None
+    RulesOfEngagement = None
 
 router = APIRouter(prefix="/specops/roe", tags=["specops-roe"])
+
+# This ownership index prevents cross-tenant reads inside the process. It is not
+# durable; a process restart makes old RoE records unavailable rather than public.
+_TENANT_BY_ROE_ID: dict[str, str] = {}
 
 
 class RoeCreate(BaseModel):
     target_ref: str
     scope: str
-    approved_by: str
     expires_at: str | None = None
 
 
@@ -55,18 +50,21 @@ async def record_roe(
     body: RoeCreate,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
 ) -> RoeView:
-    """Record a supervisor sign-off. Returns its status (confirmed / unconfirmed)."""
-    if REGISTRY is None or RulesOfEngagement is None:  # pragma: no cover
+    ctx.require_role(Role.ADMIN)
+    if REGISTRY is None or RulesOfEngagement is None:
         raise HTTPException(status_code=503, detail="specops gate unavailable")
+
+    expires_at = _validated_expiry(body.expires_at)
     roe = RulesOfEngagement(
         roe_id=f"roe-{uuid.uuid4().hex[:12]}",
         target_ref=body.target_ref,
         scope=body.scope,
-        approved_by=body.approved_by,
+        approved_by=ctx.user_id,
         signed_at=_now_iso(),
-        expires_at=body.expires_at,
+        expires_at=expires_at,
     )
     REGISTRY.record(roe)
+    _TENANT_BY_ROE_ID[roe.roe_id] = ctx.tenant_id
     return _view(roe)
 
 
@@ -75,17 +73,31 @@ async def get_roe(
     roe_id: str,
     ctx: Annotated[TenantContext, Depends(resolve_tenant)] = None,
 ) -> RoeView:
-    if REGISTRY is None:  # pragma: no cover
+    if REGISTRY is None:
         raise HTTPException(status_code=503, detail="specops gate unavailable")
+    if _TENANT_BY_ROE_ID.get(roe_id) != ctx.tenant_id:
+        raise HTTPException(status_code=404, detail="rules-of-engagement not found")
     roe = REGISTRY.get(roe_id)
     if roe is None:
         raise HTTPException(status_code=404, detail="rules-of-engagement not found")
     return _view(roe)
 
 
-def _now_iso() -> str:
-    from datetime import datetime, timezone
+def _validated_expiry(value: str | None) -> str | None:
+    if value is None:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="expires_at must be a valid ISO-8601 timestamp") from None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise HTTPException(status_code=422, detail="expires_at must include a timezone")
+    if parsed <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=422, detail="expires_at must be in the future")
+    return parsed.astimezone(timezone.utc).isoformat()
 
+
+def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 

@@ -244,15 +244,18 @@ export interface ResolutionPair {
 }
 
 export interface OpsMetrics {
-  throughput_per_s: number;
-  useful_observations: number;
-  discovery_yield: number;
-  duplicate_ratio: number;
-  browser_utilization: number;
+  availability?: "available" | "unavailable";
+  throughput_per_s: number | null;
+  useful_observations: number | null;
+  discovery_yield: number | null;
+  duplicate_ratio: number | null;
+  browser_utilization: number | null;
   lags_s: Record<string, number>;
   queues: Record<string, number>;
   storage_growth_b: Record<string, number>;
-  cost_per_1m_obs: number;
+  cost_per_1m_obs: number | null;
+  metric_sources?: Record<string, string>;
+  reason?: string;
   pools?: Record<string, WorkerPoolStatus>;
 }
 

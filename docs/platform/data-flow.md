@@ -71,6 +71,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/acquisition/tests/unit/test_acquisition_artifact_sink.py` | The artifact seam and the sink: §5, §6, §9, §11, §12, §61, §69, §124. |
 | `apps/acquisition/tests/unit/test_cc_plan.py` | CC query planner unit tests (CC-TEMPORALITY v1, task_0006). |
 | `apps/acquisition/tests/unit/test_entity_search.py` | Deterministic entity search surface unit tests. |
+| `apps/acquisition/tests/unit/test_runtime_artifact_sink.py` | Runtime acquisition must persist raw-first evidence through ArtifactSink. |
 | `apps/control-plane/services/dispatcher.py` | Dispatcher/scheduler loop (T029, FR-003/FR-027/FR-028, R-11). |
 | `apps/control-plane/tests/unit/test_dispatcher_backpressure.py` | Feature 024 T021 -- backpressure must actually reduce the acquisition rate. |
 | `apps/interpretation/tests/integration/test_all_sources_parse.py` | Every source in the catalogue parses, and every failure has a name (spec 025 §33). |

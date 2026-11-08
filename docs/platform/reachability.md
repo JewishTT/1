@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 426 |
-| TEST_ONLY | 134 |
-| ORPHAN | 122 |
-| TEST | 349 |
+| PRODUCTION | 432 |
+| TEST_ONLY | 133 |
+| ORPHAN | 123 |
+| TEST | 359 |
 
 ## Entrypoints (production roots)
 
@@ -52,6 +52,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/run.py` |
 | `bench/science/bench_structural.py` |
 | `platform_model/build.py` |
+| `tools/repo_hygiene.py` |
 | `tools/semantic_docgraph.py` |
 | `tools/specs/build_capability_matrix.py` |
 | `tools/specs/build_donor_registry.py` |
@@ -59,7 +60,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**134** modules are reached only by tests.
+**133** modules are reached only by tests.
 
 | Module |
 |---|
@@ -181,7 +182,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/domain/research_lineage.py` |
 | `apps/shared/domain/stream_events.py` |
 | `apps/shared/domain/temporal_worldline_store.py` |
-| `apps/shared/events/dlq_durable.py` |
 | `apps/shared/events/ontology_pack.py` |
 | `apps/shared/events/timestamps.py` |
 | `apps/shared/isolation.py` |
@@ -200,7 +200,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**122** modules are imported by neither production nor tests.
+**123** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -319,6 +319,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/fixtures/extraction/_generate.py` |
 | `conftest.py` |
 | `platform_model/facts.py` |
+| `tools/__init__.py` |
 | `tools/append_zero_frontend_a.py` |
 | `tools/append_zero_frontend_b.py` |
 | `tools/append_zero_inventory.py` |

@@ -73,6 +73,7 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
     object_store = ObjectStore()
     producer = KafkaProducer()
     connector: SourceConnector | None = None
+    searxng_runtime: Any | None = None
     kafka_consumer = consumer or Consumer(_consumer_config())
     handled = 0
 
@@ -102,13 +103,21 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
             gate=gate,
             artifact_sink_factory=sink_factory,
         )
+        from runtime.searxng import SearXNGRuntime
+
+        searxng_runtime = SearXNGRuntime(
+            base_url=os.environ.get("COGNITIVE_SEARXNG_URL", "http://searxng:8080"),
+            hard_max_pages=int(os.environ.get("COGNITIVE_SEARXNG_MAX_PAGES", "5")),
+            hard_runtime_budget=float(os.environ.get("COGNITIVE_SEARXNG_BUDGET_SECONDS", "120")),
+        )
         worker = AcquisitionWorker(
             connector=connector,
-            sink=kafka_failure_sink(producer),
+            sink=kafka_failure_sink(producer, object_store),
             # The gate publishes the one canonical protobuf event, after the DB transaction.
             # The worker validates its evidence refs but must not publish a second JSON event.
             publish=None,
             store=object_store,
+            runtimes={"searxng": searxng_runtime},
             preflight=PostgresCaseExecutionGuard(session_factory),
         )
         topic = topic_for("acquisition.request")
@@ -156,6 +165,8 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
         try:
             if connector is not None:
                 await connector.aclose()
+            if searxng_runtime is not None:
+                await searxng_runtime.aclose()
         finally:
             try:
                 producer.flush(15.0)

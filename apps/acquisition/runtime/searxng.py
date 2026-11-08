@@ -90,7 +90,8 @@ class SearXNGRuntime:
     """One acquisition runtime for SearXNG (§15)."""
 
     runtime_ref = "searxng"
-    execution_class = "api/http"
+    execution_class = "http"
+    requires_connector_config = False
 
     def __init__(
         self,

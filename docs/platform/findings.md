@@ -60,7 +60,7 @@ _None: every declared capability has a module in the tree._
 
 ## Untested modules
 
-270 platform modules are not imported by any test. Sample:
+274 platform modules are not imported by any test. Sample:
 
 | Module |
 |---|
@@ -83,6 +83,8 @@ _None: every declared capability has a module in the tree._
 | `apps/acquisition/adapters/discovery/wayback_cdx.py` |
 | `apps/acquisition/adapters/scrapy/spider.py` |
 | `apps/acquisition/adapters/sec_edgar.py` |
+| `apps/acquisition/context_discovery/compiler.py` |
+| `apps/acquisition/context_discovery/models.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
 | `apps/acquisition/observation_gate/__init__.py` |
 | `apps/acquisition/policies/__init__.py` |
@@ -102,8 +104,6 @@ _None: every declared capability has a module in the tree._
 | `apps/admission/resolution/__init__.py` |
 | `apps/bulk-ingestion/historical/__init__.py` |
 | `apps/control-plane/__init__.py` |
-| `apps/control-plane/api/path_shim.py` |
-| `apps/control-plane/api/routes/connectors.py` |
 
 ## Unresolved imports (by evidence)
 

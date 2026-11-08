@@ -1,0 +1,16 @@
+---
+description: COGNITIVE platform architecture and engineering invariants
+globs:
+  - "apps/**/*"
+  - "platform_model/**/*"
+  - "tools/**/*"
+alwaysApply: false
+---
+
+Follow AGENTS.md and .specify/memory/constitution.md. Treat generated model documents as evidence about the current tree, not proof that every inventoried capability is on a live execution path.
+
+Before implementing, inspect the relevant service, policy, runtime, evidence sink, event consumer, and tests. Write the regression test first. Preserve tenant boundaries, immutable provenance, bounded execution, explicit authorization, and retry/idempotency guarantees.
+
+Never return synthetic operational metrics or seed production APIs with fictional records. Represent missing integrations explicitly as unavailable. Use Alembic for operational schema changes. Regenerate source-derived docs instead of editing them manually.
+
+Only build public or explicitly authorized source acquisition. Respect source policies, provider terms, rate limits, retention, and authorization.

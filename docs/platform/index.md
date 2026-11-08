@@ -9,21 +9,21 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python modules | 1031 |
+| Python modules | 1047 |
 | TypeScript modules | 267 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 2940 |
+| Import edges (local) | 2971 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 352 |
-| Test functions | 5376 |
-| Untested platform modules | 270 |
-| HTTP routes | 185 |
+| Test files | 362 |
+| Test functions | 5406 |
+| Untested platform modules | 274 |
+| HTTP routes | 186 |
 | Contracts (python/docs/root) | 6 / 73 / 12 |
 | Capabilities | 30 |
 
@@ -48,11 +48,11 @@ committed model no longer matches the tree.
 
 | Component | Python | TS | Description |
 |---|---|---|---|
-| acquisition | 110 | 0 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
+| acquisition | 116 | 0 | Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink. |
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| control-plane | 243 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| control-plane | 250 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
 | interpretation | 115 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
@@ -62,6 +62,6 @@ committed model no longer matches the tree.
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | shared | 198 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops | 30 | 0 | Isolated spec-ops lab profile (never in the routine path). |
-| tools | 11 | 0 | Generators, capability/owner/donor tools, probes. |
+| tools | 14 | 0 | Generators, capability/owner/donor tools, probes. |
 | webapp | 0 | 267 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | zero | 40 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
