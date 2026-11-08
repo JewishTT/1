@@ -14,7 +14,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `dataclasses` | stdlib | 410 |
 | `typing` | stdlib | 401 |
 | `pathlib` | stdlib | 339 |
-| `pytest` | third-party | 291 |
+| `pytest` | third-party | 290 |
 | `sys` | stdlib | 268 |
 | `collections` | stdlib | 250 |
 | `json` | stdlib | 215 |

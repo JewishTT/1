@@ -1306,7 +1306,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 291,
+      "third-party:pytest": 290,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -6854,13 +6854,18 @@
       },
       {
         "from": "apps/control-plane/services/research_case_runtime.py",
-        "to": "apps/acquisition/dispatcher/plan_driver.py",
-        "via": "dispatcher.plan_driver"
+        "to": "apps/acquisition/adapters/registry.py",
+        "via": "adapters.registry"
       },
       {
         "from": "apps/control-plane/services/research_case_runtime.py",
         "to": "apps/acquisition/dispatcher/kafka_producer.py",
         "via": "dispatcher.kafka_producer"
+      },
+      {
+        "from": "apps/control-plane/services/research_case_runtime.py",
+        "to": "apps/acquisition/dispatcher/plan_driver.py",
+        "via": "dispatcher.plan_driver"
       },
       {
         "from": "apps/control-plane/services/research_case_runtime.py",
@@ -6871,11 +6876,6 @@
         "from": "apps/control-plane/services/research_case_runtime.py",
         "to": "apps/acquisition/sources/connector.py",
         "via": "sources.connector"
-      },
-      {
-        "from": "apps/control-plane/services/research_case_runtime.py",
-        "to": "apps/acquisition/adapters/registry.py",
-        "via": "adapters.registry"
       },
       {
         "from": "apps/control-plane/services/research_case_runtime.py",
@@ -37414,7 +37414,7 @@
       {
         "path": "apps/control-plane/services/research_case_runtime.py",
         "status": "IMPLEMENTED",
-        "loc": 709,
+        "loc": 701,
         "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
@@ -37950,7 +37950,7 @@
       {
         "path": "apps/control-plane/tests/unit/test_context_store_storage_contract.py",
         "status": "TEST",
-        "loc": 45,
+        "loc": 43,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
