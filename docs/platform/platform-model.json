@@ -20787,8 +20787,8 @@
         "tests": 5,
         "test_names": [
           "test_blockstream_transaction_detail_preserves_explicit_utxo_parent_refs",
-          "test_blockscout_address_metadata_extracts_address_and_native_balance",
-          "test_blockscout_transactions_extracts_first_page_records",
+          "test_routescan_address_balance_extracts_the_native_balance",
+          "test_routescan_transactions_extracts_first_bounded_page_records",
           "test_trongrid_account_uses_explicit_data_array_index",
           "test_trongrid_transaction_feed_reads_nested_contract_fields_without_guessing"
         ],
@@ -39441,7 +39441,7 @@
       {
         "path": "apps/interpretation/tests/test_onchain_source_parsers.py",
         "status": "TEST",
-        "loc": 139,
+        "loc": 134,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
