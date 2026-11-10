@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
@@ -71,6 +72,8 @@ class InterpretationResult:
     dropped_kinds: tuple[str, ...] = ()
     persisted: bool = False
     reason: str = ""
+    type_signals: tuple[Any, ...] = ()
+    type_signal_refusals: tuple[dict[str, Any], ...] = ()
     document: Any = field(default=None, repr=False, compare=False)
     resolved_entities: tuple[Any, ...] = field(default=(), repr=False, compare=False)
 
@@ -89,6 +92,9 @@ class InterpretationResult:
             "relations": self.relations,
             "unresolved": self.unresolved,
             "dropped_kinds": list(self.dropped_kinds),
+            "type_signal_count": len(self.type_signals),
+            "type_signal_ids": [signal.signal_id for signal in self.type_signals],
+            "type_signal_refusals": list(self.type_signal_refusals),
             "persisted": self.persisted,
             "reason": self.reason,
         }
@@ -176,6 +182,13 @@ class InterpretationBridge:
                 content_type=content_type,
                 artifact_kind=artifact,
                 reason=extraction.reason or "no mentions extracted",
+                type_signal_refusals=tuple(
+                    item.to_dict()
+                    for item in _structured_type_signal_report(
+                        body, tenant_id=self._store.tenant_id,
+                        observation_id=stable_observation_id, document=None,
+                    ).refusals
+                ),
             )
 
         document = adapt_document(
@@ -187,6 +200,10 @@ class InterpretationBridge:
             source_id=source_id,
             source_family=self._source_family,
             observed_at=_coerce_datetime(observed_at),
+        )
+        type_signal_report = _structured_type_signal_report(
+            body, tenant_id=self._store.tenant_id,
+            observation_id=stable_observation_id, document=document,
         )
         universe = CandidateUniverse(
             tenant_id=self._store.tenant_id,
@@ -208,10 +225,13 @@ class InterpretationBridge:
             entities=tuple(entity.entity_id for entity in resolved),
             relations=len(document.relations),
             unresolved=sum(
-                1 for candidate in batch.candidates if candidate.verdict.value == "UNRESOLVED"
+                1 for decision in batch.decisions
+                if decision.verdict.value == "UNRESOLVED"
             ),
             dropped_kinds=document.dropped_unknown_kinds,
             reason="" if resolved else "every mention was refused an identity",
+            type_signals=type_signal_report.signals,
+            type_signal_refusals=tuple(item.to_dict() for item in type_signal_report.refusals),
             document=document,
             resolved_entities=tuple(resolved),
         )
@@ -240,16 +260,17 @@ class InterpretationBridge:
         Every write shares one transaction. A committed observation with no entities is a row
         that looks like evidence and is not, and it is the state this platform was in.
         """
+        from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
         from domain.ontology import coerce_entity_type
         from sqlalchemy import select
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
 
         from db.schema import Candidate as CandidateRow
         from db.schema import Entity as EntityRow
         from db.schema import EntityVersion as EntityVersionRow
         from db.schema import Mention as MentionRow
         from db.schema import Observation as ObservationRow
-        from sqlalchemy.dialects.postgresql import insert as pg_insert
-        from contracts.evidence_span import CharSpan, EvidenceSpanRef, SourceLocator
+        from db.schema import TypeSignalRow
 
         session = self._store.session_factory()
         try:
@@ -381,6 +402,32 @@ class InterpretationBridge:
                         .on_conflict_do_nothing(index_elements=[MentionRow.mention_id])
                     )
 
+            # TypeSignal records what a source vocabulary stated, not a TypeAssertion.
+            # It is committed beside its Mention and Observation in the same transaction.
+            for type_signal in result.type_signals:
+                if type_signal.tenant_id != self._store.tenant_id:
+                    raise ValueError(
+                        "TypeSignal tenant does not match the InterpretationBridge tenant"
+                    )
+                await session.execute(
+                    pg_insert(TypeSignalRow)
+                    .values(
+                        signal_id=type_signal.signal_id,
+                        tenant_id=type_signal.tenant_id,
+                        mention_ref=type_signal.mention_ref,
+                        source_vocab=type_signal.source_vocab,
+                        surface=type_signal.surface,
+                        structural_path=list(type_signal.structural_path),
+                        observation_refs=list(type_signal.observation_refs),
+                        evidence_refs=list(type_signal.evidence_refs),
+                        producer_ref=type_signal.producer_ref,
+                        mapping_candidates=[
+                            item.to_dict() for item in type_signal.mapping_candidates
+                        ],
+                    )
+                    .on_conflict_do_nothing(index_elements=[TypeSignalRow.signal_id])
+                )
+
             for entity in resolved:
                 # The canonical entity reference is what relation projections can resolve.
                 # Preserve the mention anchor independently for source-span lineage.
@@ -395,7 +442,6 @@ class InterpretationBridge:
                     scope_id=investigation_id or "default",
                 )
                 verdict = str(getattr(entity, "verdict", "") or "")
-                anchor_mention_id = str(getattr(entity, "anchor_mention_id", "") or "")
                 row = await session.execute(
                     select(EntityRow).where(
                         EntityRow.entity_id == entity_id,
@@ -478,6 +524,7 @@ class InterpretationBridge:
                 from domain.relation_claim import RelationRoleBinding
                 from domain.relation_identity import RelationArityMode
                 from semantic.regime import SemanticCommitment, SemanticRegime
+
                 from db.relation_candidate_store import SqlRelationCandidateStore
 
                 observed_moment = _coerce_datetime(observed_at)
@@ -652,7 +699,7 @@ class InterpretationBridge:
 
             await session.commit()
             return True
-        except Exception as exc:  # noqa: BLE001 - caller chooses fail-closed retry semantics
+        except Exception as exc:
             await session.rollback()
             log.warning("persist failed for %s: %s", result.observation_id, exc)
             if raise_on_failure:
@@ -723,7 +770,7 @@ class InterpretationBridge:
                         EntityStreamRow.entity_id == stream_id,
                         EntityStreamRow.observation_id == result.observation_id,
                         EntityStreamRow.extraction_version == "interpretation-bridge-v1",
-                        EntityStreamRow.kind == "extraction",
+                        EntityStreamRow.kind == "entity",
                     )
                     .order_by(EntityStreamRow.sequence)
                     .limit(1)
@@ -742,7 +789,7 @@ class InterpretationBridge:
                     entity_id=stream_id,
                     sequence=current + 1,
                     ts=datetime.now(UTC),
-                    kind="extraction",
+                    kind="entity",
                     payload={
                         "surface": getattr(entity, "surface", ""),
                         "kind": entity.kind,
@@ -752,15 +799,11 @@ class InterpretationBridge:
                     observation_id=result.observation_id,
                 )
                 source_event_id = hashlib.sha256(
-                    "\x1f".join(
-                        (
-                            record.tenant_id,
-                            record.entity_id,
-                            record.observation_id,
-                            "interpretation-bridge-v1",
-                            record.kind,
-                        )
-                    ).encode("utf-8")
+                    (
+                        f"{record.tenant_id}\x1f{record.entity_id}\x1f"
+                        f"{record.observation_id}\x1finterpretation-bridge-v1\x1f"
+                        f"{record.kind}"
+                    ).encode()
                 ).hexdigest()
                 session.add(
                     EntityStreamRow(
@@ -778,7 +821,7 @@ class InterpretationBridge:
                 )
                 written += 1
             await session.commit()
-        except Exception as exc:  # noqa: BLE001 - fail closed when the caller requires the stream
+        except Exception as exc:
             await session.rollback()
             log.warning("stream append failed for %s: %s", result.observation_id, exc)
             if raise_on_failure:
@@ -944,13 +987,13 @@ def _coerce_datetime(value: str | datetime | None) -> datetime | None:
     """Normalise supplied event/source time without inventing a replay-time clock."""
     if value is None or value == "":
         return None
-    moment = value if isinstance(value, datetime) else datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    moment = value if isinstance(value, datetime) else datetime.fromisoformat(str(value))
     return moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
 
 
 def _evidence_segment_ref(capture_ref: str) -> str:
     """Stable whole-document segment address used by extracted relation spans."""
-    digest = hashlib.sha256(f"{capture_ref}|whole-document".encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(f"{capture_ref}|whole-document".encode()).hexdigest()
     return f"SEG-{digest[:32]}"
 
 
@@ -979,6 +1022,61 @@ def _grounded_span(
         start=int(start),
         end=int(end),
         mention_ref=str(mention_ref or ""),
+    )
+
+
+
+def _structured_type_signal_report(
+    body: bytes, *, tenant_id: str, observation_id: str, document: Any | None
+) -> Any:
+    """Extract source-published type statements only for existing mention-index entries."""
+    from extractors.structured_types import StructuredTypeSignalExtractor, TypeExtractionReport
+
+    html = body.decode("utf-8", errors="replace")
+    if "<script" not in html.casefold() and "<meta" not in html.casefold():
+        return TypeExtractionReport((), ())
+
+    # A source surface that maps to multiple existing mention occurrences is ambiguous.
+    # Never bind it to the first mention encountered: that can attach a source type to the
+    # wrong same-name person. One unique existing mention is required.
+    mention_ids: dict[str, set[str]] = {}
+    # Generic text extraction may also inspect script contents. A duplicate name
+    # occurring inside JSON-LD is not an independent document-text mention and must
+    # not make an otherwise unique visible mention ambiguous (or win the binding).
+    script_ranges = [
+        (match.start(), match.end())
+        for match in re.finditer(
+            r"<script\b[^>]*>.*?</script\s*>", html,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+    ]
+
+    if document is not None:
+        canonical = getattr(document, "canonical_by_mention", {}) or {}
+        for mention in getattr(document, "mentions", ()):
+            mention_id = str(getattr(mention, "mention_id", "") or "")
+            if not mention_id:
+                continue
+            span = getattr(mention, "span", None)
+            if span is not None and len(span) == 2:
+                start, end = int(span[0]), int(span[1])
+                if any(start >= left and end <= right for left, right in script_ranges):
+                    continue
+            for surface in (
+                str(getattr(mention, "surface", "") or ""),
+                str(canonical.get(mention_id, "") or ""),
+            ):
+                key = " ".join(surface.split()).casefold()
+                if key:
+                    mention_ids.setdefault(key, set()).add(mention_id)
+
+    def resolve(surface: str) -> str | None:
+        candidates = mention_ids.get(" ".join(str(surface).split()).casefold(), set())
+        return next(iter(candidates)) if len(candidates) == 1 else None
+
+    return StructuredTypeSignalExtractor().extract(
+        html, tenant_id=tenant_id, observation_ref=observation_id,
+        mention_id_for_surface=resolve,
     )
 
 

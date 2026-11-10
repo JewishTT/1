@@ -11,8 +11,8 @@ route assets, or execute cross-chain swaps.
 
 - **Bitcoin:** Blockchain.com, Blockstream Esplora and mempool.space. The catalogue includes
   address summary, transaction lookup, address transaction feed and block-tip metadata.
-- **Ethereum mainnet:** the existing Ethplorer integration plus Blockscout API v2 address
-  and transaction records.
+- **Ethereum mainnet:** the existing Ethplorer integration plus Routescan's Etherscan-compatible
+  keyless address-balance and bounded normal-transaction endpoints.
 - **TRON mainnet:** TronGrid v1 account and transaction records.
 
 Provider credentials, where required, are named by environment variable, injected only into
@@ -67,10 +67,10 @@ current-run artifacts, not the historical checked-in examples:
 - **Common Crawl:** the live CDX/WARC proof selected `CC-MAIN-2026-43`, received 20 CDX
   rows and extracted a matching non-empty response from an exact HTTP 206 byte range
   (`payload_bytes=577`). Artifact: `commoncrawl-live.json`.
-- **Public-chain sources:** the live run verified Blockstream BTC and Blockscout ETH
-  endpoints. The two TRON sources correctly failed closed because `TRONGRID_API_KEY`
-  was not configured. They are not counted as production-verified until the operator
-  adds that Actions secret and the six-source proof passes.
+- **Public-chain sources (historical run):** that run verified Blockstream BTC and the then-configured
+  Blockscout ETH endpoints. The current Ethereum source definitions have since moved to Routescan;
+  TRON was not counted because `TRONGRID_API_KEY` was not configured. It remains unverified until
+  the operator adds that Actions secret and the six-source proof passes.
 
 GitHub Actions evidence:
 - `acquisition-live-stack-proof`: run `41204108569`, artifact

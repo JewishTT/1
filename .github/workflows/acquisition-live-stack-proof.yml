@@ -12,6 +12,10 @@ jobs:
   airbyte-and-searxng:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      # GitHub does not expose the secrets context inside step.if; surface this one
+      # operator-provided contact as a masked job environment variable instead.
+      COGNITIVE_CROSSREF_MAILTO: ${{ secrets.COGNITIVE_CROSSREF_MAILTO }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -25,6 +29,13 @@ jobs:
         run: .venv/bin/pytest apps/acquisition/tests/unit/test_context_discovery.py -q
       - name: Test runtime evidence persistence contract
         run: .venv/bin/pytest apps/acquisition/tests/unit/test_runtime_artifact_sink.py -q
+      - name: Test dispatcher-to-worker case binding serialization
+        run: .venv/bin/pytest apps/acquisition/tests/contract/test_plan_driver.py -q -k case_bound_request_serializes_investigation_binding_into_payload
+      - name: Lint the dispatcher request contract
+        run: >-
+          .venv/bin/ruff check
+          apps/acquisition/dispatcher/scheduler.py
+          apps/acquisition/tests/contract/test_plan_driver.py
       - name: Start the real core acquisition stack
         run: |
           docker compose -f apps/deploy/docker-compose.yml --profile core up -d minio postgres redpanda searxng
@@ -228,11 +239,120 @@ jobs:
           SELECT 1 / CASE
             WHEN EXISTS (
               SELECT 1 FROM public.alembic_version
-              WHERE version_num = '031_relation_claim_projection_outbox'
+              WHERE version_num = '036_candidate_resolution_enum_types'
             )
             THEN 1
             ELSE 0
           END AS alembic_head_commit_assertion;
+          SQL
+
+
+      - name: Assert candidate enum types match the ORM contract
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN (
+              SELECT array_agg(e.enumlabel::text ORDER BY e.enumsortorder)
+              FROM pg_type AS t
+              JOIN pg_enum AS e ON e.enumtypid = t.oid
+              JOIN pg_namespace AS n ON n.oid = t.typnamespace
+              WHERE n.nspname = 'public' AND t.typname = 'candidateresolutionstate'
+            ) = ARRAY['OPEN', 'MATCHED', 'SUPERSEDED', 'REJECTED', 'QUARANTINED']::text[]
+            AND (
+              SELECT array_agg(e.enumlabel::text ORDER BY e.enumsortorder)
+              FROM pg_type AS t
+              JOIN pg_enum AS e ON e.enumtypid = t.oid
+              JOIN pg_namespace AS n ON n.oid = t.typnamespace
+              WHERE n.nspname = 'public' AND t.typname = 'epistemicstatus'
+            ) = ARRAY['PROVISIONAL', 'DEFERRED', 'QUARANTINED', 'ACCEPTED', 'REJECTED']::text[]
+            AND EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_schema = 'public' AND table_name = 'candidates'
+                AND column_name = 'state' AND udt_name = 'candidateresolutionstate'
+            )
+            AND EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_schema = 'public' AND table_name = 'candidates'
+                AND column_name = 'epistemic_status' AND udt_name = 'epistemicstatus'
+            )
+            THEN 1
+            ELSE 0
+          END AS candidate_enum_schema_assertion;
+          SQL
+      - name: Assert the durable budget ledger matches the ORM contract
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN to_regclass('public.budgets') IS NOT NULL
+             AND (
+               SELECT COUNT(DISTINCT column_name) = 6
+               FROM information_schema.columns
+               WHERE table_schema = 'public'
+                 AND table_name = 'budgets'
+                 AND column_name IN (
+                   'budget_id', 'tenant_id', 'investigation_id',
+                   'limits', 'current_usage', 'created_at'
+                 )
+             )
+            THEN 1
+            ELSE 0
+          END AS durable_budget_schema_assertion;
+          SQL
+      - name: Assert durable investigation context tables are installed
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN to_regclass('public.investigation_contexts') IS NOT NULL
+             AND to_regclass('public.context_revisions') IS NOT NULL
+             AND to_regclass('public.research_obligations') IS NOT NULL
+             AND to_regclass('public.research_actions') IS NOT NULL
+             AND to_regclass('public.context_frontiers') IS NOT NULL
+             AND to_regclass('public.context_action_memory') IS NOT NULL
+             AND (
+               SELECT COUNT(DISTINCT column_name) = 6
+               FROM information_schema.columns
+               WHERE table_schema = 'public'
+                 AND table_name = 'investigation_contexts'
+                 AND column_name IN (
+                   'context_id', 'tenant_id', 'investigation_id',
+                   'identity_schema', 'payload', 'created_at'
+                 )
+             )
+            THEN 1
+            ELSE 0
+          END AS durable_context_schema_assertion;
+          SQL
+      - name: Assert canonical interpretation lineage tables are installed
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN to_regclass('public.mentions') IS NOT NULL
+             AND to_regclass('public.entity_versions') IS NOT NULL
+             AND (
+               SELECT COUNT(DISTINCT column_name) = 13
+               FROM information_schema.columns
+               WHERE table_schema = 'public'
+                 AND table_name = 'mentions'
+                 AND column_name IN (
+                   'mention_id', 'observation_id', 'tenant_id', 'surface_form',
+                   'normalized_form', 'transliteration_variants', 'script', 'language',
+                   'normalization_version', 'type_hypothesis', 'extractor_version',
+                   'offsets', 'created_at'
+                 )
+             )
+             AND (
+               SELECT COUNT(DISTINCT column_name) = 7
+               FROM information_schema.columns
+               WHERE table_schema = 'public'
+                 AND table_name = 'entity_versions'
+                 AND column_name IN (
+                   'version_id', 'entity_id', 'tenant_id', 'version_number',
+                   'canonical_name', 'attributes', 'created_at'
+                 )
+             )
+            THEN 1
+            ELSE 0
+          END AS interpretation_lineage_schema_assertion;
           SQL
       - name: Seed a controlled Postgres connector fixture
         run: |
@@ -294,6 +414,42 @@ jobs:
           COGNITIVE_PROOF_OUTPUT: apps/acquisition/artifacts/acquisition-integration
           COGNITIVE_PUBLIC_SOURCE_MIN_PASSES: "6"
         run: .venv/bin/python apps/acquisition/_prove_public_source_matrix.py
+      - name: Build hermetic interpretation dictionaries for the production observation worker
+        run: uv run --project apps/interpretation python -m dictionaries.build_mini
+      - name: Execute live Feature 034 person research through Capture / Observation / Report
+        shell: bash
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DATABASE: cognitive
+          POSTGRES_USER: cognitive
+          POSTGRES_PASSWORD: cognitive
+          KAFKA_BOOTSTRAP_SERVERS: localhost:19092
+          COGNITIVE_KAFKA_BROKERS: localhost:19092
+          S3_ENDPOINT: http://localhost:9000
+          S3_ACCESS_KEY: demo
+          S3_SECRET_KEY: demopass
+          S3_RAW_BUCKET: knowledge-raw
+          COGNITIVE_CROSSREF_MAILTO: ${{ secrets.COGNITIVE_CROSSREF_MAILTO }}
+          COGNITIVE_SEARXNG_URL: http://127.0.0.1:18090
+          COGNITIVE_LOG_LEVEL: INFO
+        run: |
+          mkdir -p apps/control-plane/artifacts
+          # The proof writes a typed BLOCKED report and exits non-zero when the real,
+          # monitored Crossref contact secret is absent. Never report a skipped E2E as green.
+          .venv/bin/python apps/control-plane/_prove_person_research_case.py \
+            apps/control-plane/artifacts/person-research-case-e2e.json
+      - name: Upload live Person Research Case evidence and worker logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: person-research-case-e2e
+          path: |
+            apps/control-plane/artifacts/person-research-case-e2e.json
+            apps/control-plane/artifacts/acquisition-worker.log
+            apps/control-plane/artifacts/observation-consumer.log
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload end-to-end acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -304,6 +460,7 @@ jobs:
             apps/acquisition/artifacts/acquisition-integration/searxng.json
             apps/acquisition/artifacts/acquisition-integration/public-source-matrix.json
             apps/acquisition/artifacts/acquisition-integration/zero-layer-live.json
+            apps/control-plane/artifacts/person-research-case-e2e.json
           if-no-files-found: warn
           retention-days: 14
       - name: Show service logs on failure

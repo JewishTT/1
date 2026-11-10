@@ -150,12 +150,13 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **250** · TypeScript modules: **0**
+Python modules: **265** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
 ```
 apps.control-plane
+apps.control-plane._prove_person_research_case
 apps.control-plane.api
 apps.control-plane.api.auth
 apps.control-plane.api.main
@@ -188,13 +189,12 @@ apps.control-plane.api.routes.science_temporal
 apps.control-plane.api.routes.search
 apps.control-plane.api.routes.search_rebuild
 apps.control-plane.api.routes.specops_counterintel
+apps.control-plane.api.routes.specops_cryptotx
 apps.control-plane.api.routes.specops_emulation
 apps.control-plane.api.routes.specops_engagement
 apps.control-plane.api.routes.specops_forensics
 apps.control-plane.api.routes.specops_ghostline
-apps.control-plane.api.routes.specops_phishing
-apps.control-plane.api.routes.specops_roe
-apps.control-plane.api.routes.specops_social
+apps.control-plane.api.routes.specops_lab
 ```
 
 </details>
@@ -241,7 +241,7 @@ apps.feedback.tests.test_frontier_loop
 
 Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation.
 
-Python modules: **115** · TypeScript modules: **0**
+Python modules: **120** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -282,10 +282,10 @@ apps.interpretation.extractors.signals.lexical
 apps.interpretation.extractors.signals.links
 apps.interpretation.extractors.signals.mentions
 apps.interpretation.extractors.signals.metadata
+apps.interpretation.extractors.signals.ml
 apps.interpretation.extractors.signals.protocol
 apps.interpretation.extractors.signals.signal
 apps.interpretation.extractors.signals.syntactic
-apps.interpretation.extractors.signals.tables
 ```
 
 </details>
@@ -440,7 +440,7 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **198** · TypeScript modules: **0**
+Python modules: **200** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -493,13 +493,36 @@ apps.shared.domain.relation_participant
 
 Isolated spec-ops lab profile (never in the routine path).
 
-Python modules: **30** · TypeScript modules: **0**
+Python modules: **68** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
 ```
 apps.specops
 apps.specops.counterintel
+apps.specops.cryptotx
+apps.specops.cryptotx.approvals
+apps.specops.cryptotx.chains
+apps.specops.cryptotx.chains.base
+apps.specops.cryptotx.chains.bitcoin
+apps.specops.cryptotx.chains.ethereum
+apps.specops.cryptotx.chains.registry
+apps.specops.cryptotx.chains.tron
+apps.specops.cryptotx.cli
+apps.specops.cryptotx.config
+apps.specops.cryptotx.errors
+apps.specops.cryptotx.executor
+apps.specops.cryptotx.hd
+apps.specops.cryptotx.models
+apps.specops.cryptotx.planner
+apps.specops.cryptotx.store
+apps.specops.cryptotx.swaps
+apps.specops.cryptotx.swaps.base
+apps.specops.cryptotx.swaps.evm
+apps.specops.cryptotx.swaps.router
+apps.specops.cryptotx.swaps.thorchain
+apps.specops.cryptotx.swaps.tron
+apps.specops.cryptotx.vault
 apps.specops.emulation
 apps.specops.engagement
 apps.specops.engagement.config
@@ -515,19 +538,6 @@ apps.specops.ghostline.ledger
 apps.specops.ghostline.loader
 apps.specops.ghostline.redaction
 apps.specops.ghostline.runtime
-apps.specops.ghostline.service
-apps.specops.ghostline.telephony
-apps.specops.ghostline.voices
-apps.specops.phishing
-apps.specops.roe
-apps.specops.roe.gate
-apps.specops.social
-apps.specops.tests.conftest
-apps.specops.tests.test_engagement
-apps.specops.tests.test_ghostline
-apps.specops.tests.test_roe_gate
-apps.specops.tests.test_specops_ghostline_routers
-apps.specops.tests.test_specops_routers
 ```
 
 </details>
@@ -563,7 +573,7 @@ tools.tests.test_repo_hygiene
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **267**
+Python modules: **0** · TypeScript modules: **281**
 
 
 ## `zero`

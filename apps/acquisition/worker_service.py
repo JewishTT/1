@@ -148,6 +148,18 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
             # handle routes source-level failures synchronously to DLQ/quarantine, and
             # returns only when that routing has succeeded. Unexpected exceptions bubble up.
             result = await worker.handle(envelope)
+            for failure in result.failures:
+                # Emit the typed refusal without logging request payloads, raw response
+                # bodies, or credential-bearing metadata. This keeps live acceptance
+                # diagnosable while preserving the raw-first/quarantine boundary.
+                log.error(
+                    "acquisition request failed task_id=%s source_id=%s code=%s topic=%s reason=%s",
+                    failure.task_id or result.task_id or envelope.work_id,
+                    failure.source_id or result.source_id or envelope.source_id,
+                    failure.code,
+                    failure.topic,
+                    str(failure.reason)[:500],
+                )
             producer.flush()
             kafka_consumer.commit(message=msg, asynchronous=False)
             handled += 1

@@ -73,3 +73,5 @@ apps/interpretation/artifacts/interpretation/
 apps/webapp/tmp/
 apps/webapp/probe*.mjs
 apps/webapp/shot[2-9].mjs
+# Generated CI evidence from live person-case acceptance.
+apps/control-plane/artifacts/

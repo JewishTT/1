@@ -31,7 +31,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/context_engine/worldline.py` | Control-plane side of the worldline anchor: load revisions, build the view. |
 | `apps/control-plane/db/correlation_store.py` | Durable persistence for possible_match correlation edges (FR-004, I-2). |
 | `apps/control-plane/db/investigation_store.py` | Durable persistence for investigations. |
-| `apps/control-plane/db/relation_candidate_store.py` | PostgreSQL persistence for relation hypotheses before claim admission. |
+| `apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py` | Put the durable investigation-context store under Alembic ownership. |
 
 ## Policy-first capability planning
 
@@ -127,9 +127,9 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/interpretation/extractors/signals/links.py` | The link producer: what a hyperlink says, and nothing it does not. |
 | `apps/interpretation/extractors/signals/mentions.py` | The **only** place a producer below the mention layer addresses a participant. |
 | `apps/interpretation/extractors/signals/metadata.py` | The metadata producer: what a document says about itself. |
+| `apps/interpretation/extractors/signals/ml.py` | Optional ML / OpenIE relation producers adapted to the canonical RelationSignal contract. |
 | `apps/interpretation/extractors/signals/protocol.py` | The one extraction contract every relation producer implements. |
 | `apps/interpretation/extractors/signals/signal.py` | The relation signal: what a producer saw, before anyone decided what it means. |
-| `apps/interpretation/extractors/signals/syntactic.py` | The syntactic producer: a parsed clause, as a relation signal. |
 
 ## Identity resolution & admission
 
@@ -148,6 +148,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/admission/tests/contract/test_resolution_history.py` | Split supersedes, never erases; corroboration counts roots (spec 030 T079, T080). |
 | `apps/admission/tests/unit/test_splink_adapter.py` | Splink proposes; it does not decide (spec 030 CE-001 §15.5, DON-ER-003, T105). |
 | `apps/control-plane/api/routes/resolutions.py` | Resolution review API (feature 005 US2): pair_candidates queue + decision endpoints. |
+| `apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py` | Install the native PostgreSQL enums used by the legacy candidates table. |
 | `apps/control-plane/tests/integration/test_resolution_api.py` | API integration test: resolution review endpoints (feature 005 US2). |
 | `apps/shared/semantic/blocking.py` | Type-hypothesis and relation-affordance candidate blocking (FR-016, T017, SC-10). |
 | `apps/shared/semantic/resolution.py` | Mention -> entity resolution: the machine, in the order the architect named it. |
@@ -195,6 +196,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/acquisition/adapters/discovery/linkgraph.py` | Link-graph discovery source (FR-004, US3). |
 | `apps/acquisition/entity_search.py` | Deterministic entity search planning surface. |
 | `apps/acquisition/tests/unit/test_entity_search.py` | Deterministic entity search surface unit tests. |
+| `apps/control-plane/_prove_person_research_case.py` | Live Feature 034 person-case acceptance across PostgreSQL, Redpanda, S3 and report read-back. |
 | `apps/control-plane/api/routes/research_cases.py` | Person Research Case API routes (Feature 034). |
 | `apps/control-plane/api/routes/science_tda.py` | Topological invariant API (011, FR-008/FR-009; the "TDA in the corner"). |
 | `apps/control-plane/api/routes/search.py` | Search plane endpoints (T026/T051, US2). |
@@ -216,7 +218,6 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/control-plane/services/research_case_service.py` | Person case application service (Feature 034). |
 | `apps/control-plane/services/search_backends.py` | Real query backends for the search plane (T026, US2). |
 | `apps/control-plane/services/temporal_materialization_dispatch.py` | Temporal launch seam for entity-created temporal materialization. |
-| `apps/control-plane/services/temporal_materialization_service.py` | Control-plane service facade for deterministic temporal materialization. |
 
 ## Closed loop / frontier
 

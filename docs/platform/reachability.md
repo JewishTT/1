@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 432 |
-| TEST_ONLY | 133 |
-| ORPHAN | 123 |
-| TEST | 359 |
+| PRODUCTION | 466 |
+| TEST_ONLY | 134 |
+| ORPHAN | 131 |
+| TEST | 376 |
 
 ## Entrypoints (production roots)
 
@@ -26,6 +26,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/sources/append_parse_blocks.py` |
 | `apps/acquisition/worker_acquisition.py` |
 | `apps/acquisition/worker_service.py` |
+| `apps/control-plane/_prove_person_research_case.py` |
 | `apps/control-plane/api/main.py` |
 | `apps/control-plane/composition.py` |
 | `apps/control-plane/semantic_path/corpus.py` |
@@ -39,8 +40,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/interpretation/_prove_primproc.py` |
 | `apps/interpretation/dictionaries/build_mini.py` |
 | `apps/interpretation/extract_demo.py` |
+| `apps/interpretation/tools/gliner_relex_smoke.py` |
 | `apps/shared/datasets/build.py` |
 | `apps/shared/tools/layer_boundaries.py` |
+| `apps/specops/cryptotx/cli.py` |
 | `bench/bench/harness.py` |
 | `bench/chaos/bench_replay.py` |
 | `bench/collection/bench_collection.py` |
@@ -60,7 +63,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**133** modules are reached only by tests.
+**134** modules are reached only by tests.
 
 | Module |
 |---|
@@ -191,6 +194,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/websearch/discovery.py` |
 | `apps/shared/websearch/providers.py` |
 | `apps/shared/websearch/relevance.py` |
+| `apps/specops/cryptotx/planner.py` |
 | `apps/zero/zero/harvesters/git.py` |
 | `apps/zero/zero/harvesters/image.py` |
 | `apps/zero/zero/harvesters/phone.py` |
@@ -200,7 +204,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**123** modules are imported by neither production nor tests.
+**131** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -249,6 +253,11 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py` |
 | `apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py` |
 | `apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py` |
+| `apps/control-plane/db/migrations/versions/032_type_signals.py` |
+| `apps/control-plane/db/migrations/versions/033_durable_case_budgets.py` |
+| `apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py` |
+| `apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py` |
+| `apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |
@@ -307,6 +316,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/storage/__init__.py` |
 | `apps/shared/workflow/__init__.py` |
 | `apps/specops/__init__.py` |
+| `apps/specops/cryptotx/__init__.py` |
+| `apps/specops/cryptotx/chains/__init__.py` |
+| `apps/specops/cryptotx/swaps/__init__.py` |
 | `apps/specops/ghostline/__init__.py` |
 | `apps/specops/roe/__init__.py` |
 | `apps/zero/zero/__init__.py` |

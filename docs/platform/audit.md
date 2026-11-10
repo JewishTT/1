@@ -7,24 +7,24 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Metric | Value |
 |---|---|
 | Components | 17 |
-| Python / TypeScript / Rust modules | 1047 / 267 / 16 |
-| Resolved import edges | 2971 |
-| HTTP routes / routers | 186 / 34 |
-| Test files / functions | 362 / 5406 |
-| Evidence facts (static) | 4591 |
+| Python / TypeScript / Rust modules | 1107 / 281 / 16 |
+| Resolved import edges | 3181 |
+| HTTP routes / routers | 222 / 36 |
+| Test files / functions | 379 / 5491 |
+| Evidence facts (static) | 4901 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 558 |
+| IMPLEMENTED | 592 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 18 |
-| PACKAGE_INIT | 93 |
-| MIGRATION | 19 |
-| TEST | 359 |
+| PACKAGE_INIT | 97 |
+| MIGRATION | 24 |
+| TEST | 376 |
 
 See [maturity.md](maturity.md).
 
@@ -32,10 +32,10 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 432 |
-| TEST_ONLY | 133 |
-| ORPHAN | 123 |
-| TEST | 359 |
+| PRODUCTION | 466 |
+| TEST_ONLY | 134 |
+| ORPHAN | 131 |
+| TEST | 376 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 
@@ -123,9 +123,10 @@ Specs whose task list shows 0 checked but whose number is cited by real modules 
 | `008-discovery-search-fabric` | 0/40 | 2 |
 | `017-semantic-fabric` | 0/30 | 1 |
 | `018-world-substrate` | 0/30 | 4 |
-| `021-entity-relation-extraction-finalization` | 0/94 | 1 |
+| `021-entity-relation-extraction-finalization` | 0/94 | 2 |
 | `023-acquisition-integration-searxng` | 0/214 | 3 |
 | `024-context-driven-continuous-intelligence` | 0/168 | 22 |
 | `030-global-platform-upgrade` | 0/152 | 24 |
 | `032-global-upgrade-execution` | 0/84 | 8 |
-| `034-person-research-case` | 0/76 | 18 |
+| `034-person-research-case` | 0/76 | 19 |
+| `036-phishingclub-specops-department` | 0/60 | 5 |

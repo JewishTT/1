@@ -296,10 +296,12 @@
           "apps/interpretation/extractors/signals/links.py",
           "apps/interpretation/extractors/signals/mentions.py",
           "apps/interpretation/extractors/signals/metadata.py",
+          "apps/interpretation/extractors/signals/ml.py",
           "apps/interpretation/extractors/signals/protocol.py",
           "apps/interpretation/extractors/signals/signal.py",
           "apps/interpretation/extractors/signals/syntactic.py",
           "apps/interpretation/extractors/signals/tables.py",
+          "apps/interpretation/extractors/structured_types.py",
           "apps/interpretation/extractors/translit.py",
           "apps/interpretation/extractors/types.py",
           "apps/interpretation/extractors/util.py",
@@ -350,6 +352,7 @@
           "apps/interpretation/tests/test_deterministic_extraction.py",
           "apps/interpretation/tests/test_evidence_manifest.py",
           "apps/interpretation/tests/test_mention_binding_seam.py",
+          "apps/interpretation/tests/test_ml_relation_producers.py",
           "apps/interpretation/tests/test_observation_consumer.py",
           "apps/interpretation/tests/test_onchain_source_parsers.py",
           "apps/interpretation/tests/test_parser_adapter.py",
@@ -369,14 +372,16 @@
           "apps/interpretation/tests/test_search_retriever.py",
           "apps/interpretation/tests/test_signal_kind_channels.py",
           "apps/interpretation/tests/test_signal_nary_contract.py",
+          "apps/interpretation/tests/test_structured_type_extractor.py",
           "apps/interpretation/tests/test_syntactic_producer.py",
           "apps/interpretation/tests/test_tenzir_live.py",
           "apps/interpretation/tests/test_tenzir_normalization.py",
           "apps/interpretation/tests/test_transaction_lineage.py",
           "apps/interpretation/tests/test_warc_reader.py",
+          "apps/interpretation/tools/gliner_relex_smoke.py",
           "apps/interpretation/transaction_lineage.py"
         ],
-        "module_count": 115
+        "module_count": 120
       },
       {
         "id": "investigations",
@@ -554,6 +559,29 @@
           "apps/deploy/minio-init/init-buckets.py",
           "apps/specops/__init__.py",
           "apps/specops/counterintel.py",
+          "apps/specops/cryptotx/__init__.py",
+          "apps/specops/cryptotx/approvals.py",
+          "apps/specops/cryptotx/chains/__init__.py",
+          "apps/specops/cryptotx/chains/base.py",
+          "apps/specops/cryptotx/chains/bitcoin.py",
+          "apps/specops/cryptotx/chains/ethereum.py",
+          "apps/specops/cryptotx/chains/registry.py",
+          "apps/specops/cryptotx/chains/tron.py",
+          "apps/specops/cryptotx/cli.py",
+          "apps/specops/cryptotx/config.py",
+          "apps/specops/cryptotx/errors.py",
+          "apps/specops/cryptotx/executor.py",
+          "apps/specops/cryptotx/hd.py",
+          "apps/specops/cryptotx/models.py",
+          "apps/specops/cryptotx/planner.py",
+          "apps/specops/cryptotx/store.py",
+          "apps/specops/cryptotx/swaps/__init__.py",
+          "apps/specops/cryptotx/swaps/base.py",
+          "apps/specops/cryptotx/swaps/evm.py",
+          "apps/specops/cryptotx/swaps/router.py",
+          "apps/specops/cryptotx/swaps/thorchain.py",
+          "apps/specops/cryptotx/swaps/tron.py",
+          "apps/specops/cryptotx/vault.py",
           "apps/specops/emulation.py",
           "apps/specops/engagement/__init__.py",
           "apps/specops/engagement/config.py",
@@ -572,15 +600,30 @@
           "apps/specops/ghostline/service.py",
           "apps/specops/ghostline/telephony.py",
           "apps/specops/ghostline/voices.py",
+          "apps/specops/lab/__init__.py",
+          "apps/specops/lab/artifacts.py",
+          "apps/specops/lab/audit.py",
+          "apps/specops/lab/boundary.py",
+          "apps/specops/lab/engine.py",
+          "apps/specops/lab/models.py",
+          "apps/specops/lab/phishingclub.py",
+          "apps/specops/lab/readiness.py",
           "apps/specops/phishing.py",
           "apps/specops/roe/__init__.py",
           "apps/specops/roe/gate.py",
           "apps/specops/social.py",
           "apps/specops/tests/conftest.py",
+          "apps/specops/tests/test_cryptotx_api.py",
+          "apps/specops/tests/test_cryptotx_core.py",
+          "apps/specops/tests/test_cryptotx_executor.py",
+          "apps/specops/tests/test_cryptotx_swaps.py",
           "apps/specops/tests/test_engagement.py",
           "apps/specops/tests/test_ghostline.py",
+          "apps/specops/tests/test_lab_engine.py",
+          "apps/specops/tests/test_lab_phishingclub.py",
           "apps/specops/tests/test_roe_gate.py",
           "apps/specops/tests/test_specops_ghostline_routers.py",
+          "apps/specops/tests/test_specops_lab_router.py",
           "apps/specops/tests/test_specops_routers.py",
           "bench/bench/__init__.py",
           "bench/bench/harness.py",
@@ -626,7 +669,7 @@
           "tools/strip_zero_inventory.py",
           "tools/tests/test_repo_hygiene.py"
         ],
-        "module_count": 74
+        "module_count": 112
       },
       {
         "id": "orchestration-temporal",
@@ -746,6 +789,7 @@
           "apps/shared/semantic/registry.py",
           "apps/shared/semantic/resolution.py",
           "apps/shared/semantic/shacl.py",
+          "apps/shared/semantic/type_signal.py",
           "apps/shared/semantic/validation.py",
           "apps/shared/semantic/vocabularies.py",
           "apps/shared/storage/__init__.py",
@@ -832,6 +876,7 @@
           "apps/shared/tests/unit/test_secure_fetch.py",
           "apps/shared/tests/unit/test_security.py",
           "apps/shared/tests/unit/test_temporal_metrics.py",
+          "apps/shared/tests/unit/test_type_signal.py",
           "apps/shared/tests/unit/websearch/test_websearch.py",
           "apps/shared/tools/layer_boundaries.py",
           "apps/shared/websearch/__init__.py",
@@ -843,7 +888,7 @@
           "apps/shared/workflow/__init__.py",
           "apps/shared/workflow/client.py"
         ],
-        "module_count": 198
+        "module_count": 200
       },
       {
         "id": "projection-query",
@@ -854,6 +899,7 @@
         ],
         "modules": [
           "apps/control-plane/__init__.py",
+          "apps/control-plane/_prove_person_research_case.py",
           "apps/control-plane/api/__init__.py",
           "apps/control-plane/api/auth.py",
           "apps/control-plane/api/main.py",
@@ -884,10 +930,12 @@
           "apps/control-plane/api/routes/search.py",
           "apps/control-plane/api/routes/search_rebuild.py",
           "apps/control-plane/api/routes/specops_counterintel.py",
+          "apps/control-plane/api/routes/specops_cryptotx.py",
           "apps/control-plane/api/routes/specops_emulation.py",
           "apps/control-plane/api/routes/specops_engagement.py",
           "apps/control-plane/api/routes/specops_forensics.py",
           "apps/control-plane/api/routes/specops_ghostline.py",
+          "apps/control-plane/api/routes/specops_lab.py",
           "apps/control-plane/api/routes/specops_phishing.py",
           "apps/control-plane/api/routes/specops_roe.py",
           "apps/control-plane/api/routes/specops_social.py",
@@ -943,6 +991,11 @@
           "apps/control-plane/db/migrations/versions/029_person_case_artifacts_reports.py",
           "apps/control-plane/db/migrations/versions/030_observation_candidate_hardening.py",
           "apps/control-plane/db/migrations/versions/031_relation_claim_projection_outbox.py",
+          "apps/control-plane/db/migrations/versions/032_type_signals.py",
+          "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
+          "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
+          "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
+          "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
           "apps/control-plane/db/relation_candidate_store.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
@@ -1035,14 +1088,18 @@
           "apps/control-plane/tests/test_research_case_projection.py",
           "apps/control-plane/tests/test_research_case_reports.py",
           "apps/control-plane/tests/test_specops_roe_auth.py",
+          "apps/control-plane/tests/test_type_signal_bridge.py",
           "apps/control-plane/tests/test_zero_layer_service.py",
           "apps/control-plane/tests/unit/test_action_memory.py",
           "apps/control-plane/tests/unit/test_approval_gate.py",
           "apps/control-plane/tests/unit/test_assembly_structural_conflict.py",
           "apps/control-plane/tests/unit/test_badges_facade.py",
+          "apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py",
+          "apps/control-plane/tests/unit/test_case_budget_storage_contract.py",
           "apps/control-plane/tests/unit/test_cc_temporality.py",
           "apps/control-plane/tests/unit/test_cognitive_loop.py",
           "apps/control-plane/tests/unit/test_context_engine.py",
+          "apps/control-plane/tests/unit/test_context_store_storage_contract.py",
           "apps/control-plane/tests/unit/test_context_termination_and_catalogue.py",
           "apps/control-plane/tests/unit/test_digest_gated_revision.py",
           "apps/control-plane/tests/unit/test_dispatcher_backpressure.py",
@@ -1052,6 +1109,7 @@
           "apps/control-plane/tests/unit/test_entity_stream_persistence.py",
           "apps/control-plane/tests/unit/test_fabric_anchor_guard.py",
           "apps/control-plane/tests/unit/test_fabric_endpoints.py",
+          "apps/control-plane/tests/unit/test_interpretation_storage_contract.py",
           "apps/control-plane/tests/unit/test_invariant_reducer.py",
           "apps/control-plane/tests/unit/test_migration_016_forward_only.py",
           "apps/control-plane/tests/unit/test_migration_017_forward_only.py",
@@ -1060,6 +1118,7 @@
           "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
           "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
           "apps/control-plane/tests/unit/test_migration_029_case_artifact_report_records.py",
+          "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
           "apps/control-plane/tests/unit/test_migration_forward_only.py",
           "apps/control-plane/tests/unit/test_modifier_mismatch.py",
           "apps/control-plane/tests/unit/test_monitor.py",
@@ -1086,6 +1145,7 @@
           "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
           "apps/control-plane/tests/unit/test_temporal_port.py",
           "apps/control-plane/tests/unit/test_tool_catalog.py",
+          "apps/control-plane/tests/unit/test_type_signal_storage_contract.py",
           "apps/control-plane/tests/unit/test_us1_core.py",
           "apps/control-plane/tests/unit/test_us3_ops.py",
           "apps/control-plane/tests/unit/test_wheel_package_manifest.py",
@@ -1163,7 +1223,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 309
+        "module_count": 324
       },
       {
         "id": "webapp",
@@ -1296,6 +1356,20 @@
           "apps/webapp/src/graph/types.ts",
           "apps/webapp/src/graph/useGraphFacets.ts",
           "apps/webapp/src/graph/useGraphModel.ts",
+          "apps/webapp/src/lab/LabCanvas.test.tsx",
+          "apps/webapp/src/lab/LabCanvas.tsx",
+          "apps/webapp/src/lab/model.ts",
+          "apps/webapp/src/lab/panels/AitmPanel.tsx",
+          "apps/webapp/src/lab/panels/AuditPanel.tsx",
+          "apps/webapp/src/lab/panels/CampaignsPanel.tsx",
+          "apps/webapp/src/lab/panels/CatalogPanel.tsx",
+          "apps/webapp/src/lab/panels/EngagementLabPanel.tsx",
+          "apps/webapp/src/lab/panels/LabControlPanel.tsx",
+          "apps/webapp/src/lab/panels/OperationsLabPanel.tsx",
+          "apps/webapp/src/lab/panels/ReportsPanel.tsx",
+          "apps/webapp/src/lab/panels/labParts.tsx",
+          "apps/webapp/src/lab/useLabAction.ts",
+          "apps/webapp/src/lab/useLabOverview.ts",
           "apps/webapp/src/lib/api.ts",
           "apps/webapp/src/lib/donor/confidence.test.ts",
           "apps/webapp/src/lib/donor/confidence.ts",
@@ -1440,7 +1514,7 @@
           "apps/webapp/src/workspace/useWorkState.ts",
           "apps/webapp/vite.config.ts"
         ],
-        "module_count": 267
+        "module_count": 281
       }
     ],
     "event_names_sample": [
@@ -1491,13 +1565,18 @@
       "architecture.json",
       "archive.org",
       "argumentation.rank",
+      "artifact.accessed",
       "artifact.bin",
       "artifact.capture_register",
+      "artifact.captured",
+      "artifact.expired",
       "artifact.observation_ingest",
       "artifact.publish",
       "artifact.raw_store",
+      "artifact.revealed",
       "assembly.py",
       "assertion.created",
+      "assessment.linked",
       "atrium.example",
       "attachment.bin",
       "attr.name",
@@ -1524,6 +1603,8 @@
       "c.example",
       "calibration.assess",
       "calls.jsonl",
+      "campaign.created",
+      "campaign.launched",
       "candidate.created",
       "capabilities.md",
       "capture.pcapng",
@@ -1636,14 +1717,7 @@
       "domain.mention_occurrence_index",
       "domain.predicate_signature",
       "domain.relation_claim_material",
-      "domain.relation_participant",
-      "domain.statement",
-      "donors.md",
-      "downstream.json",
-      "empty.txt",
-      "enable.auto.commit",
-      "enable.auto.offset.store",
-      "enable.idempotence"
+      "domain.relation_participant"
     ]
   },
   "context_map": {
@@ -1674,6 +1748,12 @@
       },
       {
         "from": "projection-query",
+        "to": "platform-shared",
+        "type": "direct",
+        "via_import": "storage.s3"
+      },
+      {
+        "from": "projection-query",
         "to": "identity-entities",
         "type": "direct",
         "via_import": "api.routes.entities"
@@ -1689,12 +1769,6 @@
         "to": "ingestion",
         "type": "direct",
         "via_import": "adapters.discovery"
-      },
-      {
-        "from": "projection-query",
-        "to": "platform-shared",
-        "type": "direct",
-        "via_import": "security"
       },
       {
         "from": "identity-entities",
@@ -2265,9 +2339,10 @@
         "tasks_checked": 0,
         "tasks_total": 94,
         "modules": [
+          "apps/shared/semantic/type_signal.py",
           "apps/shared/tests/unit/test_schema_hierarchy.py"
         ],
-        "module_count": 1,
+        "module_count": 2,
         "capabilities": []
       },
       {
@@ -2544,6 +2619,7 @@
           "apps/acquisition/dispatcher/scheduler.py",
           "apps/acquisition/tests/unit/test_case_execution_guard.py",
           "apps/admission/resolution/blocking.py",
+          "apps/control-plane/_prove_person_research_case.py",
           "apps/control-plane/api/routes/research_cases.py",
           "apps/control-plane/context_engine/person_case_profile.py",
           "apps/control-plane/db/migrations/versions/026_person_research_case_runtime.py",
@@ -2559,7 +2635,25 @@
           "apps/control-plane/tests/test_research_case_reports.py",
           "apps/control-plane/tests/unit/test_migration_027_person_case_records.py"
         ],
-        "module_count": 18,
+        "module_count": 19,
+        "capabilities": []
+      },
+      {
+        "id": "036-phishingclub-specops-department",
+        "has_spec": true,
+        "has_tasks": true,
+        "has_plan": true,
+        "spec_path": "specs/036-phishingclub-specops-department/spec.md",
+        "tasks_checked": 0,
+        "tasks_total": 60,
+        "modules": [
+          "apps/control-plane/api/routes/specops_lab.py",
+          "apps/specops/lab/__init__.py",
+          "apps/specops/lab/models.py",
+          "apps/specops/tests/test_lab_engine.py",
+          "apps/specops/tests/test_specops_lab_router.py"
+        ],
+        "module_count": 5,
         "capabilities": []
       }
     ]
@@ -2803,7 +2897,7 @@
   "summary": {
     "contexts": 12,
     "context_edges": 39,
-    "specs": 32,
+    "specs": 33,
     "flows": 1,
     "rule_violations": 14
   }

@@ -12,7 +12,7 @@ cross-chain swaps.
 | Bitcoin mainnet | Blockstream Esplora | Address transaction feed and transaction detail | Public endpoint |
 | Bitcoin mainnet | mempool.space | Existing block-tip metadata | Public endpoint |
 | Ethereum mainnet | Ethplorer | Existing address/token metadata | `ETHPLORER_API_KEY` |
-| Ethereum mainnet | Blockscout API v2 | Address metadata and recent transaction page | Public endpoint |
+| Ethereum mainnet | Routescan Etherscan-compatible API | Native balance and recent normal-transaction page | Free keyless tier (2 req/s; 10,000/day) |
 | TRON mainnet | TronGrid v1 | Account metadata and recent transaction page | `TRONGRID_API_KEY` |
 
 The six source definitions added or promoted in this vertical slice are validated through the
@@ -29,8 +29,8 @@ is not interpreted as an empty account or a successful no-result response.
 
 - Blockstream's address endpoint returns its recent transaction window. Transaction detail is
   a separate pivot and carries the explicit UTXO input references used by lineage.
-- Blockscout v2 returns opaque `next_page_params`; the current definition captures the first
-  page only. The executor does not convert an opaque provider cursor to a page number.
+- Routescan's Etherscan-compatible `txlist` endpoint uses explicit `page=1&offset=25`;
+  the current definition captures a bounded first page only. It does not claim exhaustive history.
 - TronGrid account transactions are deliberately bounded to the first 50 confirmed records.
   A deeper walk requires a provider-specific cursor contract and a source-level ceiling.
 - The live blockchain workflow queries and parses one page per source. It reports missing

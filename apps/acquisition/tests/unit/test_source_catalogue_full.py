@@ -248,8 +248,8 @@ def test_btc_eth_tron_read_only_sources_are_present_and_enabled() -> None:
     expected = {
         "blockstream_btc_address_transactions",
         "blockstream_btc_tx_detail",
-        "blockscout_eth_address",
-        "blockscout_eth_transactions",
+        "routescan_eth_address_balance",
+        "routescan_eth_transactions",
         "trongrid_account",
         "trongrid_account_transactions",
     }
