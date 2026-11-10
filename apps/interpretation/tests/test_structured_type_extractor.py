@@ -25,6 +25,33 @@ def test_jsonld_schema_person_becomes_type_signal_not_assertion():
     assert report.refusals == ()
 
 
+def test_non_jsonld_script_is_ignored_even_when_it_contains_schema_shaped_json():
+    source = '''<script type="text/javascript">
+    {"@context":"https://schema.org","@type":"Person","name":"Ada Lovelace"}
+    </script>'''
+    report = StructuredTypeSignalExtractor().extract(
+        source, tenant_id="tenant-test", observation_ref="OBS-js",
+        mention_id_for_surface={"Ada Lovelace": "MN-ada"},
+    )
+    assert report.signals == ()
+    assert report.refusals == ()
+
+
+def test_multiple_types_on_one_jsonld_node_reuse_the_same_existing_mention():
+    source = '''<script type="application/ld+json">
+    {"@context":"https://schema.org","@type":["Person","Thing"],"name":"Ada Lovelace"}
+    </script>'''
+    report = StructuredTypeSignalExtractor().extract(
+        source, tenant_id="tenant-test", observation_ref="OBS-multiple-types",
+        mention_id_for_surface={"Ada Lovelace": "MN-ada"},
+    )
+    assert {signal.surface for signal in report.signals} == {"Person", "Thing"}
+    assert len(report.signals) == 2
+    assert {signal.mention_ref for signal in report.signals} == {"MN-ada"}
+    assert len({signal.structural_path for signal in report.signals}) == 1
+    assert report.refusals == ()
+
+
 def test_jsonld_unresolved_mention_is_a_typed_refusal():
     source = '<script type="application/ld+json">{"@type":"Person","name":"Unknown Name"}</script>'
     report = StructuredTypeSignalExtractor().extract(

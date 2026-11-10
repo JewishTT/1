@@ -92,11 +92,16 @@ def _walk_jsonld(value: Any, path: tuple[str, ...] = (),
 
 def _json_name_offset(raw: str, name: str, cursor: int) -> tuple[int, int] | None:
     encoded = json.dumps(name, ensure_ascii=False)
-    start = raw.find(encoded, cursor)
-    if start < 0 or encoded[1:-1] != name:
+    if len(encoded) < 2 or encoded[1:-1] != name:
         # A decoded string with JSON escapes must not be cited using guessed source offsets.
         return None
-    return start + 1, start + len(encoded) - 1
+    # Anchor the exact JSON-LD "name" value, not an equal substring in description,
+    # script text, or another property. Escaped quote sequences are not JSON keys.
+    pattern = re.compile(r'(?<!\\)"name"\s*:\s*(' + re.escape(encoded) + r')')
+    match = pattern.search(raw, cursor)
+    if match is None:
+        return None
+    return match.start(1) + 1, match.end(1) - 1
 
 
 class StructuredTypeSignalExtractor:
@@ -117,6 +122,10 @@ class StructuredTypeSignalExtractor:
         signals, refusals = [], []
 
         for block_index, block in enumerate(_JSON_LD.finditer(html)):
+            script_type = _attrs(block.group("attrs")).get("type", "")
+            script_type = script_type.split(";", 1)[0].strip().casefold()
+            if script_type != "application/ld+json":
+                continue
             raw = block.group("body")
             try:
                 document = json.loads(raw)
@@ -125,6 +134,7 @@ class StructuredTypeSignalExtractor:
                     "jsonld_invalid", f"JSON-LD block {block_index} is invalid JSON"))
                 continue
             cursor = 0
+            node_offsets: dict[tuple[tuple[str, ...], str], tuple[int, int]] = {}
             for path, type_surface, name, schema_vocab in _walk_jsonld(document):
                 mention_ref = mention_lookup(name)
                 if not mention_ref:
@@ -139,14 +149,21 @@ class StructuredTypeSignalExtractor:
                         f"JSON-LD type {type_surface!r} is not explicitly bound to schema.org",
                         path))
                     continue
-                offset = _json_name_offset(raw, name, cursor)
+                # A single JSON-LD node may declare several @type values for the
+                # same name. Reuse that node's verified name span; advance the cursor
+                # only when binding a different node.
+                node_key = (path[:-1], name)
+                offset = node_offsets.get(node_key)
                 if offset is None:
-                    refusals.append(TypeExtractionRefusal(
-                        "mention_surface_not_source_addressable",
-                        f"could not verify an unescaped source span for JSON-LD name {name!r}",
-                        path))
-                    continue
-                cursor = offset[1]
+                    offset = _json_name_offset(raw, name, cursor)
+                    if offset is None:
+                        refusals.append(TypeExtractionRefusal(
+                            "mention_surface_not_source_addressable",
+                            f"could not verify an unescaped source span for JSON-LD name {name!r}",
+                            path))
+                        continue
+                    cursor = offset[1]
+                    node_offsets[node_key] = offset
                 signals.append(TypeSignal(
                     source_vocab="schema.org", surface=type_surface,
                     mention_ref=str(mention_ref),

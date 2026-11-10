@@ -85,6 +85,21 @@ def test_gliner_refuses_multiple_matching_predicate_spans_in_one_neighbourhood()
     assert report.signals == ()
     assert report.refusals[0].code == "prediction_not_source_grounded"
 
+def test_gliner_does_not_ground_a_predicate_inside_a_larger_word():
+    text = "Ada unannounced Beta"
+    entities = [[
+        {"start": 0, "end": 3, "text": "Ada", "label": "person", "score": 0.99},
+        {"start": 16, "end": 20, "text": "Beta", "label": "organization", "score": 0.99},
+    ]]
+    relations = [[{"head": {"entity_idx": 0}, "tail": {"entity_idx": 1},
+                   "relation": "announce", "score": 0.9}]]
+    report = GLiNERRelexExtractor(FakeGLiNER((entities, relations))).report(
+        text, scope=_scope()
+    )
+    assert report.signals == ()
+    assert report.refusals[0].code == "prediction_not_source_grounded"
+
+
 def test_gliner_refuses_oversized_text_before_model_call():
     model = FakeGLiNER(([[]], [[]]))
     report = GLiNERRelexExtractor(model, max_document_chars=4).report("too long", scope=_scope())

@@ -80,8 +80,10 @@ def _phrase_span(text: str, phrase: str, start: int, end: int) -> tuple[int, int
     if not expected:
         return None
     region = text[start:end]
-    pattern = re.compile(r"\s+".join(re.escape(token) for token in expected.split()),
-                         flags=re.IGNORECASE)
+    pattern = re.compile(
+        r"(?<!\w)" + r"\s+".join(re.escape(token) for token in expected.split()) + r"(?!\w)",
+        flags=re.IGNORECASE,
+    )
     matches = list(pattern.finditer(region))
     # More than one trigger in this inter-argument region is not a reason to take
     # the first: it is an ambiguous source locator and must be refused.
