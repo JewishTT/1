@@ -148,6 +148,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/admission/tests/contract/test_resolution_history.py` | Split supersedes, never erases; corroboration counts roots (spec 030 T079, T080). |
 | `apps/admission/tests/unit/test_splink_adapter.py` | Splink proposes; it does not decide (spec 030 CE-001 §15.5, DON-ER-003, T105). |
 | `apps/control-plane/api/routes/resolutions.py` | Resolution review API (feature 005 US2): pair_candidates queue + decision endpoints. |
+| `apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py` | Install the native PostgreSQL enums used by the legacy candidates table. |
 | `apps/control-plane/tests/integration/test_resolution_api.py` | API integration test: resolution review endpoints (feature 005 US2). |
 | `apps/shared/semantic/blocking.py` | Type-hypothesis and relation-affordance candidate blocking (FR-016, T017, SC-10). |
 | `apps/shared/semantic/resolution.py` | Mention -> entity resolution: the machine, in the order the architect named it. |

@@ -218,7 +218,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 263,
+      "python_modules": 265,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -323,6 +323,7 @@
         "apps.control-plane.db.migrations.versions.033_durable_case_budgets",
         "apps.control-plane.db.migrations.versions.034_durable_investigation_contexts",
         "apps.control-plane.db.migrations.versions.035_interpretation_mentions_and_entity_versions",
+        "apps.control-plane.db.migrations.versions.036_candidate_resolution_enum_types",
         "apps.control-plane.db.relation_candidate_store",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
@@ -419,8 +420,7 @@
         "apps.control-plane.tests.test_research_case_reports",
         "apps.control-plane.tests.test_specops_roe_auth",
         "apps.control-plane.tests.test_type_signal_bridge",
-        "apps.control-plane.tests.test_zero_layer_service",
-        "apps.control-plane.tests.unit.test_action_memory"
+        "apps.control-plane.tests.test_zero_layer_service"
       ]
     },
     {
@@ -1194,11 +1194,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1105,
+    "module_count": 1107,
     "edge_count": 3180,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 969,
+      "stdlib:__future__": 970,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
@@ -1269,7 +1269,7 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 28,
+      "third-party:alembic": 29,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
@@ -1313,7 +1313,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 172,
+      "third-party:sqlalchemy": 173,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -19829,6 +19829,18 @@
         "targets": []
       },
       {
+        "path": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
+        "tests": 3,
+        "test_names": [
+          "test_036_is_the_single_head_after_035",
+          "test_036_creates_both_native_types_idempotently_without_rewriting_legacy_rows",
+          "test_candidate_orm_native_enum_names_and_members_match_migration"
+        ],
+        "targets": [
+          "apps/control-plane/db/schema.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_migration_forward_only.py",
         "tests": 5,
         "test_names": [
@@ -26134,7 +26146,7 @@
         ]
       }
     ],
-    "total": 5487
+    "total": 5490
   },
   "contracts": {
     "python": [
@@ -31693,6 +31705,7 @@
     "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
     "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
     "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
+    "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
     "apps/control-plane/semantic_path/corpus_cases.py",
@@ -31782,10 +31795,9 @@
     "apps/shared/conftest.py",
     "apps/shared/contracts/__init__.py",
     "apps/shared/datasets/__init__.py",
-    "apps/shared/datasets/build.py",
-    "apps/shared/domain/entity_identity.py"
+    "apps/shared/datasets/build.py"
   ],
-  "untested_count": 289,
+  "untested_count": 290,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -32783,6 +32795,7 @@
             "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
             "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
             "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
+            "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
             "apps/control-plane/db/relation_candidate_store.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
@@ -32905,6 +32918,7 @@
             "apps/control-plane/tests/unit/test_migration_027_person_case_records.py",
             "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
             "apps/control-plane/tests/unit/test_migration_029_case_artifact_report_records.py",
+            "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
             "apps/control-plane/tests/unit/test_migration_forward_only.py",
             "apps/control-plane/tests/unit/test_modifier_mismatch.py",
             "apps/control-plane/tests/unit/test_monitor.py",
@@ -33009,7 +33023,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 322
+          "module_count": 324
         },
         {
           "id": "webapp",
@@ -37008,6 +37022,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+        "status": "MIGRATION",
+        "loc": 61,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "IMPLEMENTED",
         "loc": 229,
@@ -38148,6 +38171,15 @@
         "status": "TEST",
         "loc": 62,
         "callables": 5,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
+        "status": "TEST",
+        "loc": 0,
+        "callables": 0,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -44749,9 +44781,9 @@
       "IMPLEMENTED": 592,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 97,
-      "TEST": 375,
-      "MIGRATION": 23,
-      "total": 1105
+      "TEST": 376,
+      "MIGRATION": 24,
+      "total": 1107
     }
   },
   "reachability": {
@@ -45773,6 +45805,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "PRODUCTION"
       },
@@ -46270,6 +46306,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_migration_029_case_artifact_report_records.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
         "status": "TEST"
       },
       {
@@ -49227,9 +49267,9 @@
     "summary": {
       "PRODUCTION": 466,
       "TEST_ONLY": 134,
-      "ORPHAN": 130,
-      "TEST": 375,
-      "total": 1105
+      "ORPHAN": 131,
+      "TEST": 376,
+      "total": 1107
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -49417,6 +49457,7 @@
       "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
       "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
       "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
+      "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
@@ -104983,6 +105024,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "b8c02d62475683c6",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "48f25c59f7da78e6",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_modifier_mismatch.py",
@@ -113384,27 +113437,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4899,
-      "static_facts": 4600,
+      "facts_total": 4900,
+      "static_facts": 4601,
       "inferred": 299,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1105,
+    "python_modules": 1107,
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 3180,
-    "test_files": 378,
-    "test_functions": 5487,
-    "untested_modules": 289,
+    "test_files": 379,
+    "test_functions": 5490,
+    "untested_modules": 290,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4899,
-    "static_facts": 4600,
+    "facts_total": 4900,
+    "static_facts": 4601,
     "inferred": 299,
     "intended": 0
   },
@@ -113412,16 +113465,16 @@
     "IMPLEMENTED": 592,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 97,
-    "TEST": 375,
-    "MIGRATION": 23,
-    "total": 1105
+    "TEST": 376,
+    "MIGRATION": 24,
+    "total": 1107
   },
   "reachability_summary": {
     "PRODUCTION": 466,
     "TEST_ONLY": 134,
-    "ORPHAN": 130,
-    "TEST": 375,
-    "total": 1105
+    "ORPHAN": 131,
+    "TEST": 376,
+    "total": 1107
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -113656,6 +113709,7 @@
     "apps/control-plane/db/migrations/versions/033_durable_case_budgets.py",
     "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
     "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
+    "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
