@@ -1,0 +1,50 @@
+name: geospatial-upstream-contract
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - ".gitmodules"
+      - "apps/geospatial/**"
+      - "apps/webapp/src/features/geospatial/**"
+      - "apps/webapp/src/App.tsx"
+      - "apps/webapp/src/shell/nav.ts"
+  pull_request:
+    paths:
+      - ".gitmodules"
+      - "apps/geospatial/**"
+      - "apps/webapp/src/features/geospatial/**"
+      - "apps/webapp/src/App.tsx"
+      - "apps/webapp/src/shell/nav.ts"
+permissions:
+  contents: read
+concurrency:
+  group: geospatial-upstream-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  upstream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.2"
+          cache: npm
+          cache-dependency-path: apps/geospatial/gods-eye-view/package-lock.json
+      - name: Install upstream locked dependencies
+        working-directory: apps/geospatial/gods-eye-view
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "1"
+        run: npm ci
+      - name: Run upstream tests
+        working-directory: apps/geospatial/gods-eye-view
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "1"
+        run: npm test
+      - name: Build upstream application
+        working-directory: apps/geospatial/gods-eye-view
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "1"
+        run: npm run build
