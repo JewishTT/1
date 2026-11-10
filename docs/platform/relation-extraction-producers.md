@@ -55,3 +55,9 @@ Run uv sync --locked --all-packages --all-groups, then:
 The tests use deterministic fake inference and Java runners. They do not claim that model
 weights or a CoreNLP installation were downloaded. A real deployment proof must provision the
 selected model and Stanford runtime in its acceptance environment.
+
+## Source-addressing edge cases
+
+The structured adapter accepts only script elements whose declared media type is application/ld+json; ordinary JavaScript and unrelated script payloads are ignored. Every @type entry on one JSON-LD node is retained against that node's already-resolved mention, without consuming the same name locator twice. Name addressability is checked against the JSON name property itself, not an equal string in a description or another field.
+
+Relation predicate grounding is token-bounded as well as source-located: a model label that matches only a substring inside a larger word is refused. Repeated predicate occurrences between participants remain ambiguous and are refused rather than selecting the first span.
