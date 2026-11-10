@@ -252,14 +252,14 @@ jobs:
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
           SELECT 1 / CASE
             WHEN (
-              SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
+              SELECT array_agg(e.enumlabel::text ORDER BY e.enumsortorder)
               FROM pg_type AS t
               JOIN pg_enum AS e ON e.enumtypid = t.oid
               JOIN pg_namespace AS n ON n.oid = t.typnamespace
               WHERE n.nspname = 'public' AND t.typname = 'candidateresolutionstate'
             ) = ARRAY['OPEN', 'MATCHED', 'SUPERSEDED', 'REJECTED', 'QUARANTINED']::text[]
             AND (
-              SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
+              SELECT array_agg(e.enumlabel::text ORDER BY e.enumsortorder)
               FROM pg_type AS t
               JOIN pg_enum AS e ON e.enumtypid = t.oid
               JOIN pg_namespace AS n ON n.oid = t.typnamespace
