@@ -239,11 +239,34 @@ jobs:
           SELECT 1 / CASE
             WHEN EXISTS (
               SELECT 1 FROM public.alembic_version
-              WHERE version_num = '035_interpretation_mentions_and_entity_versions'
+              WHERE version_num = '036_candidate_resolution_enum_types'
             )
             THEN 1
             ELSE 0
           END AS alembic_head_commit_assertion;
+          SQL
+
+      - name: Assert candidate enum types match the ORM contract
+        run: |
+          docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
+          SELECT 1 / CASE
+            WHEN (
+              SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
+              FROM pg_type AS t
+              JOIN pg_enum AS e ON e.enumtypid = t.oid
+              JOIN pg_namespace AS n ON n.oid = t.typnamespace
+              WHERE n.nspname = 'public' AND t.typname = 'candidateresolutionstate'
+            ) = ARRAY['OPEN', 'MATCHED', 'SUPERSEDED', 'REJECTED', 'QUARANTINED']::text[]
+            AND (
+              SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
+              FROM pg_type AS t
+              JOIN pg_enum AS e ON e.enumtypid = t.oid
+              JOIN pg_namespace AS n ON n.oid = t.typnamespace
+              WHERE n.nspname = 'public' AND t.typname = 'epistemicstatus'
+            ) = ARRAY['PROVISIONAL', 'DEFERRED', 'QUARANTINED', 'ACCEPTED', 'REJECTED']::text[]
+            THEN 1
+            ELSE 0
+          END AS candidate_enum_schema_assertion;
           SQL
       - name: Assert the durable budget ledger matches the ORM contract
         run: |
