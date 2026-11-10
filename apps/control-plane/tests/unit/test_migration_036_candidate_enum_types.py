@@ -34,8 +34,8 @@ def test_036_is_the_single_head_after_035() -> None:
     assert module.down_revision == "035_interpretation_mentions_and_entity_versions"
 
     parents: dict[str, str | None] = {}
-    revision_re = re.compile(r'^revision\\s*=\\s*"([^"]+)"', re.MULTILINE)
-    parent_re = re.compile(r'^down_revision\\s*=\\s*(?:"([^"]+)"|(None))', re.MULTILINE)
+    revision_re = re.compile(r'^revision\s*=\s*"([^"]+)"', re.MULTILINE)
+    parent_re = re.compile(r'^down_revision\s*=\s*(?:"([^"]+)"|(None))', re.MULTILINE)
     for path in VERSIONS_DIR.glob("*.py"):
         if path.name == "__init__.py":
             continue
