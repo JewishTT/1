@@ -19650,11 +19650,12 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_interpretation_storage_contract.py",
-        "tests": 3,
+        "tests": 4,
         "test_names": [
           "test_mention_table_matches_the_interpretation_bridge_contract",
           "test_entity_version_table_matches_the_interpretation_bridge_contract",
-          "test_interpretation_storage_migration_follows_context_store_and_preserves_history"
+          "test_interpretation_storage_migration_follows_context_store_and_preserves_history",
+          "test_interpretation_stream_events_use_the_entity_stream_kind_vocabulary"
         ],
         "targets": [
           "apps/control-plane/db/schema.py"
@@ -26151,7 +26152,7 @@
         ]
       }
     ],
-    "total": 5490
+    "total": 5491
   },
   "contracts": {
     "python": [
@@ -38102,8 +38103,8 @@
       {
         "path": "apps/control-plane/tests/unit/test_interpretation_storage_contract.py",
         "status": "TEST",
-        "loc": 73,
-        "callables": 3,
+        "loc": 91,
+        "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -113469,7 +113470,7 @@
     "rust_crates": 9,
     "import_edges": 3181,
     "test_files": 379,
-    "test_functions": 5490,
+    "test_functions": 5491,
     "untested_modules": 290,
     "http_routes": 222
   },

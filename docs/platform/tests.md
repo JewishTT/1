@@ -1,6 +1,6 @@
 # Tests
 
-379 test files, 5490 test functions. 290 platform modules are not targeted by any test.
+379 test files, 5491 test functions. 290 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -112,7 +112,7 @@
 | `apps/control-plane/tests/unit/test_entity_stream_persistence.py` | 6 | `apps/control-plane/db/entity_stream.py`, `apps/control-plane/db/schema.py`, `apps/shared/domain/dynamics.py` |
 | `apps/control-plane/tests/unit/test_fabric_anchor_guard.py` | 7 | `apps/control-plane/context_engine/__init__.py`, `apps/control-plane/context_engine/fabric_bridge.py`, `apps/science/context/fabric.py` |
 | `apps/control-plane/tests/unit/test_fabric_endpoints.py` | 15 | `apps/control-plane/api/__init__.py`, `apps/control-plane/api/main.py` |
-| `apps/control-plane/tests/unit/test_interpretation_storage_contract.py` | 3 | `apps/control-plane/db/schema.py` |
+| `apps/control-plane/tests/unit/test_interpretation_storage_contract.py` | 4 | `apps/control-plane/db/schema.py` |
 | `apps/control-plane/tests/unit/test_invariant_reducer.py` | 34 | `apps/control-plane/context_engine/invariant_reducer.py`, `apps/science/context/worldline.py`, `apps/shared/domain/dynamics.py`, `apps/shared/domain/graph_invariant.py` |
 | `apps/control-plane/tests/unit/test_migration_016_forward_only.py` | 14 | `apps/control-plane/db/schema.py` |
 | `apps/control-plane/tests/unit/test_migration_017_forward_only.py` | 17 | `apps/control-plane/db/schema.py`, `apps/shared/config/settings.py` |
