@@ -62,6 +62,43 @@ def test_jsonld_unresolved_mention_is_a_typed_refusal():
     assert report.refusals[0].code == "mention_unresolved"
 
 
+def test_absolute_foreign_type_is_not_overridden_by_schema_default_vocab():
+    source = '''<script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"https://evil.example/Person","name":"Ada Lovelace"}
+    </script>'''
+    report = StructuredTypeSignalExtractor().extract(
+        source, tenant_id="tenant-test", observation_ref="OBS-foreign-type",
+        mention_id_for_surface={"Ada Lovelace": "MN-ada"},
+    )
+    assert report.signals == ()
+    assert [item.code for item in report.refusals] == ["unsupported_type_vocabulary"]
+
+
+def test_schema_lookalike_host_does_not_establish_the_schema_default_vocab():
+    source = '''<script type="application/ld+json">
+    {"@context":"https://schema.org.attacker.invalid/","@type":"Person","name":"Ada Lovelace"}
+    </script>'''
+    report = StructuredTypeSignalExtractor().extract(
+        source, tenant_id="tenant-test", observation_ref="OBS-lookalike-context",
+        mention_id_for_surface={"Ada Lovelace": "MN-ada"},
+    )
+    assert report.signals == ()
+    assert [item.code for item in report.refusals] == ["unsupported_type_vocabulary"]
+
+
+def test_schema_compact_iri_requires_an_explicit_schema_prefix_binding():
+    source = '''<script type="application/ld+json">
+    {"@context":{"schema":"https://schema.org/"},"@type":"schema:Person","name":"Ada Lovelace"}
+    </script>'''
+    report = StructuredTypeSignalExtractor().extract(
+        source, tenant_id="tenant-test", observation_ref="OBS-schema-prefix",
+        mention_id_for_surface={"Ada Lovelace": "MN-ada"},
+    )
+    assert len(report.signals) == 1
+    assert report.signals[0].source_vocab == "schema.org"
+    assert report.signals[0].surface == "schema:Person"
+
+
 def test_opengraph_page_type_is_not_misattached_to_a_person_mention():
     source = '''
     <meta property="og:type" content="profile">

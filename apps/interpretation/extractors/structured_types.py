@@ -12,6 +12,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from html import unescape
 from typing import Any
+from urllib.parse import urlsplit
 
 from semantic.type_signal import TypeSignal
 
@@ -52,25 +53,82 @@ def _attrs(raw: str) -> dict[str, str]:
     return result
 
 
-def _context_has_schema(value: Any) -> bool:
+def _is_schema_iri(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        parsed = urlsplit(value.strip())
+        hostname = (parsed.hostname or "").casefold()
+        port = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme.casefold() in {"http", "https"}
+        and hostname in {"schema.org", "www.schema.org"}
+        and parsed.username is None
+        and parsed.password is None
+        and port in {None, 80, 443}
+    )
+
+
+def _schema_context_bindings(
+    value: Any,
+) -> tuple[bool, frozenset[str]]:
+    """Return default-vocabulary and explicitly declared schema prefix bindings."""
     if isinstance(value, str):
-        return "schema.org" in value.casefold()
+        # A remote schema.org context establishes @vocab, not an implicit schema prefix.
+        return _is_schema_iri(value), frozenset()
     if isinstance(value, Mapping):
+        default_vocab = _is_schema_iri(value.get("@vocab"))
+        prefixes: set[str] = set()
         for key, item in value.items():
-            if key == "@vocab" and isinstance(item, str) and "schema.org" in item.casefold():
-                return True
-            if key == "schema" and isinstance(item, str) and "schema.org" in item.casefold():
-                return True
+            if not isinstance(key, str) or key.startswith("@"):
+                continue
+            target = item
+            explicit_prefix = False
+            if isinstance(item, Mapping):
+                target = item.get("@id")
+                explicit_prefix = item.get("@prefix") is True
+            if not _is_schema_iri(target):
+                continue
+            if explicit_prefix or (isinstance(target, str) and target.endswith(("/", "#"))):
+                prefixes.add(key)
+        return default_vocab, frozenset(prefixes)
     if isinstance(value, (list, tuple)):
-        return any(_context_has_schema(item) for item in value)
-    return False
+        contexts = [_schema_context_bindings(item) for item in value]
+        return (
+            any(default for default, _ in contexts),
+            frozenset(prefix for _, prefixes in contexts for prefix in prefixes),
+        )
+    return False, frozenset()
 
 
-def _walk_jsonld(value: Any, path: tuple[str, ...] = (),
-                 inherited_schema: bool = False) -> list[tuple[tuple[str, ...], str, str, bool]]:
+def _is_schema_type(
+    surface: str,
+    *,
+    default_vocab: bool,
+    prefixes: frozenset[str],
+) -> bool:
+    # An absolute IRI is fully scoped; a default @vocab cannot override it.
+    if _is_schema_iri(surface):
+        return True
+    if ":" in surface:
+        prefix = surface.split(":", 1)[0]
+        return prefix in prefixes
+    return default_vocab
+
+
+def _walk_jsonld(
+    value: Any,
+    path: tuple[str, ...] = (),
+    inherited_schema: bool = False,
+    inherited_prefixes: frozenset[str] = frozenset(),
+) -> list[tuple[tuple[str, ...], str, str, bool]]:
     found = []
     if isinstance(value, Mapping):
-        schema_context = inherited_schema or _context_has_schema(value.get("@context"))
+        own_default, own_prefixes = _schema_context_bindings(value.get("@context"))
+        schema_context = inherited_schema or own_default
+        schema_prefixes = inherited_prefixes | own_prefixes
         name = value.get("name")
         if isinstance(name, str) and name.strip():
             raw_types = value.get("@type")
@@ -78,15 +136,32 @@ def _walk_jsonld(value: Any, path: tuple[str, ...] = (),
             for item in raw_types:
                 surface = str(item).strip()
                 if surface:
-                    is_schema = (schema_context or "schema.org/" in surface.casefold()
-                                 or surface.casefold().startswith("schema:"))
+                    is_schema = _is_schema_type(
+                        surface,
+                        default_vocab=schema_context,
+                        prefixes=schema_prefixes,
+                    )
                     found.append((path + ("@type",), surface, name, is_schema))
         for key, child in value.items():
             if isinstance(child, (Mapping, list, tuple)):
-                found.extend(_walk_jsonld(child, path + (str(key),), schema_context))
+                found.extend(
+                    _walk_jsonld(
+                        child,
+                        path + (str(key),),
+                        schema_context,
+                        schema_prefixes,
+                    )
+                )
     elif isinstance(value, (list, tuple)):
         for index, child in enumerate(value):
-            found.extend(_walk_jsonld(child, path + (str(index),), inherited_schema))
+            found.extend(
+                _walk_jsonld(
+                    child,
+                    path + (str(index),),
+                    inherited_schema,
+                    inherited_prefixes,
+                )
+            )
     return found
 
 
