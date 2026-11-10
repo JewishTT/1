@@ -770,7 +770,7 @@ class InterpretationBridge:
                         EntityStreamRow.entity_id == stream_id,
                         EntityStreamRow.observation_id == result.observation_id,
                         EntityStreamRow.extraction_version == "interpretation-bridge-v1",
-                        EntityStreamRow.kind == "extraction",
+                        EntityStreamRow.kind == "entity",
                     )
                     .order_by(EntityStreamRow.sequence)
                     .limit(1)
@@ -789,7 +789,7 @@ class InterpretationBridge:
                     entity_id=stream_id,
                     sequence=current + 1,
                     ts=datetime.now(UTC),
-                    kind="extraction",
+                    kind="entity",
                     payload={
                         "surface": getattr(entity, "surface", ""),
                         "kind": entity.kind,

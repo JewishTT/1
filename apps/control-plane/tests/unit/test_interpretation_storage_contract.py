@@ -70,3 +70,21 @@ def test_interpretation_storage_migration_follows_context_store_and_preserves_hi
     assert "forward-only" in migration
     for table in ("mentions", "entity_versions"):
         assert f' table="{table}"' in migration
+
+def test_interpretation_stream_events_use_the_entity_stream_kind_vocabulary() -> None:
+    root = Path(__file__).resolve().parents[2]
+    bridge = (root / "services" / "interpretation_bridge.py").read_text(encoding="utf-8")
+    migration = (
+        root / "db" / "migrations" / "versions" / "023_derivation_enforcement.py"
+    ).read_text(encoding="utf-8")
+
+    start = bridge.index("    async def append_stream(")
+    end = bridge.index("    # -- the whole path", start)
+    append_stream = bridge[start:end]
+
+    assert 'EntityStreamRow.kind == "entity"' in append_stream
+    assert 'kind="entity",' in append_stream
+    assert 'EntityStreamRow.kind == "extraction"' not in append_stream
+    assert 'kind="extraction",' not in append_stream
+    assert "kind IN ('entity', 'relation', 'assertion', 'observation', 'unknown')" in migration
+
