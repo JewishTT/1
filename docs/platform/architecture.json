@@ -156,6 +156,7 @@
           "apps/acquisition/runtime/primproc.py",
           "apps/acquisition/runtime/record_stream.py",
           "apps/acquisition/runtime/searxng.py",
+          "apps/acquisition/runtime/theharvester.py",
           "apps/acquisition/source_query_set.py",
           "apps/acquisition/sources/__init__.py",
           "apps/acquisition/sources/append_parse_blocks.py",
@@ -199,6 +200,7 @@
           "apps/acquisition/tests/unit/test_source_catalogue_full.py",
           "apps/acquisition/tests/unit/test_source_executor_contracts.py",
           "apps/acquisition/tests/unit/test_source_query_set.py",
+          "apps/acquisition/tests/unit/test_theharvester_runtime.py",
           "apps/acquisition/tests/unit/test_warc_adapter.py",
           "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
           "apps/acquisition/worker-dataset/__init__.py",
@@ -257,7 +259,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 168
+        "module_count": 170
       },
       {
         "id": "interpretation",

@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4911,
-    "static_facts": 4612,
+    "facts_total": 4918,
+    "static_facts": 4619,
     "inferred": 299,
     "intended": 0
   },
@@ -2746,6 +2746,45 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "81d9491cee843a3c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/runtime/theharvester.py",
+      "object": "apps/acquisition/industry_adapters/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/runtime/theharvester.py",
+        "via": "industry_adapters.theharvester"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ec9c15da55aadc75",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/runtime/theharvester.py",
+      "object": "apps/acquisition/runtime/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/runtime/theharvester.py",
+        "via": "runtime"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2ebee08134e7015f",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/runtime/theharvester.py",
+      "object": "apps/shared/domain/acquisition_artifact.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/runtime/theharvester.py",
+        "via": "domain.acquisition_artifact"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "667008fc767755fd",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/sources/capabilities.py",
@@ -4770,6 +4809,32 @@
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_source_query_set.py",
         "via": "acquisition.source_query_set"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "1ef7996ee20d9ca7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+      "object": "apps/acquisition/industry_adapters/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "via": "industry_adapters.theharvester"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6970ad16ed708261",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+      "object": "apps/acquisition/runtime/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "via": "runtime.theharvester"
       },
       "confidence": 1.0
     },
@@ -50948,6 +51013,30 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_source_query_set.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "4c180f34efcddd99",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+      "object": "apps/acquisition/industry_adapters/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_theharvester_runtime.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ed73231d0629cefc",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+      "object": "apps/acquisition/runtime/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_theharvester_runtime.py"
       },
       "confidence": 1.0
     },

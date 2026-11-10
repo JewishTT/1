@@ -7,9 +7,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | Status | Modules |
 |---|---|
 | PRODUCTION | 466 |
-| TEST_ONLY | 137 |
+| TEST_ONLY | 138 |
 | ORPHAN | 133 |
-| TEST | 377 |
+| TEST | 378 |
 
 ## Entrypoints (production roots)
 
@@ -63,7 +63,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**137** modules are reached only by tests.
+**138** modules are reached only by tests.
 
 | Module |
 |---|
@@ -86,6 +86,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/industry_adapters/followthemoney.py` |
 | `apps/acquisition/industry_adapters/theharvester.py` |
 | `apps/acquisition/registry.py` |
+| `apps/acquisition/runtime/theharvester.py` |
 | `apps/acquisition/source_query_set.py` |
 | `apps/acquisition/worker_browser/fabric.py` |
 | `apps/acquisition/worker_browser/renderer.py` |

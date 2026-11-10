@@ -1,6 +1,6 @@
 # Tests
 
-380 test files, 5500 test functions. 292 platform modules are not targeted by any test.
+381 test files, 5503 test functions. 292 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -43,6 +43,7 @@
 | `apps/acquisition/tests/unit/test_source_catalogue_full.py` | 19 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_source_executor_contracts.py` | 11 | `apps/acquisition/sources/catalogue.py`, `apps/acquisition/sources/executor.py` |
 | `apps/acquisition/tests/unit/test_source_query_set.py` | 12 | `apps/acquisition/cc_plan.py`, `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py` |
+| `apps/acquisition/tests/unit/test_theharvester_runtime.py` | 3 | `apps/acquisition/industry_adapters/theharvester.py`, `apps/acquisition/runtime/theharvester.py` |
 | `apps/acquisition/tests/unit/test_warc_adapter.py` | 3 | `apps/acquisition/adapters/warc/collect.py` |
 | `apps/acquisition/tests/unit/test_worker_failure_persistence.py` | 2 | `apps/acquisition/worker_acquisition.py`, `apps/shared/events/topics.py` |
 | `apps/admission/tests/contract/test_no_auto_merge.py` | 25 | `apps/admission/engine/admission.py`, `apps/admission/engine/calibration.py`, `apps/admission/resolution/blocking.py`, `apps/admission/resolution/candidate.py` |

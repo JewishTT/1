@@ -18,7 +18,7 @@
     {
       "name": "acquisition",
       "description": "Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.",
-      "python_modules": 122,
+      "python_modules": 124,
       "typescript_modules": 0,
       "modules": [
         "apps.acquisition._measure_coverage",
@@ -89,6 +89,7 @@
         "apps.acquisition.runtime.primproc",
         "apps.acquisition.runtime.record_stream",
         "apps.acquisition.runtime.searxng",
+        "apps.acquisition.runtime.theharvester",
         "apps.acquisition.source_query_set",
         "apps.acquisition.sources",
         "apps.acquisition.sources.append_parse_blocks",
@@ -132,6 +133,7 @@
         "apps.acquisition.tests.unit.test_source_catalogue_full",
         "apps.acquisition.tests.unit.test_source_executor_contracts",
         "apps.acquisition.tests.unit.test_source_query_set",
+        "apps.acquisition.tests.unit.test_theharvester_runtime",
         "apps.acquisition.tests.unit.test_warc_adapter",
         "apps.acquisition.tests.unit.test_worker_failure_persistence",
         "apps.acquisition.worker-dataset",
@@ -1200,15 +1202,15 @@
     }
   ],
   "import_graph": {
-    "module_count": 1113,
-    "edge_count": 3188,
+    "module_count": 1115,
+    "edge_count": 3193,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 976,
+      "stdlib:__future__": 978,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
-      "stdlib:asyncio": 77,
+      "stdlib:asyncio": 78,
       "stdlib:base64": 11,
       "stdlib:binascii": 2,
       "stdlib:bisect": 1,
@@ -1220,7 +1222,7 @@
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 414,
-      "stdlib:datetime": 214,
+      "stdlib:datetime": 216,
       "stdlib:decimal": 14,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1238,11 +1240,11 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 8,
       "stdlib:itertools": 11,
-      "stdlib:json": 217,
+      "stdlib:json": 219,
       "stdlib:logging": 24,
       "stdlib:math": 42,
       "stdlib:os": 83,
-      "stdlib:pathlib": 342,
+      "stdlib:pathlib": 343,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 109,
@@ -1257,18 +1259,18 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 19,
-      "stdlib:sys": 270,
+      "stdlib:sys": 271,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
-      "stdlib:threading": 23,
+      "stdlib:threading": 24,
       "stdlib:time": 40,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 42,
-      "stdlib:typing": 404,
+      "stdlib:typing": 405,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 67,
+      "stdlib:urllib": 68,
       "stdlib:uuid": 54,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -1314,7 +1316,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 291,
+      "third-party:pytest": 292,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -2063,6 +2065,21 @@
       },
       {
         "from": "apps/acquisition/runtime/searxng.py",
+        "to": "apps/acquisition/runtime/__init__.py",
+        "via": "runtime"
+      },
+      {
+        "from": "apps/acquisition/runtime/theharvester.py",
+        "to": "apps/shared/domain/acquisition_artifact.py",
+        "via": "domain.acquisition_artifact"
+      },
+      {
+        "from": "apps/acquisition/runtime/theharvester.py",
+        "to": "apps/acquisition/industry_adapters/theharvester.py",
+        "via": "industry_adapters.theharvester"
+      },
+      {
+        "from": "apps/acquisition/runtime/theharvester.py",
         "to": "apps/acquisition/runtime/__init__.py",
         "via": "runtime"
       },
@@ -2845,6 +2862,16 @@
         "from": "apps/acquisition/tests/unit/test_source_query_set.py",
         "to": "apps/acquisition/source_query_set.py",
         "via": "acquisition.source_query_set"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "to": "apps/acquisition/industry_adapters/theharvester.py",
+        "via": "industry_adapters.theharvester"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "to": "apps/acquisition/runtime/theharvester.py",
+        "via": "runtime.theharvester"
       },
       {
         "from": "apps/acquisition/tests/unit/test_warc_adapter.py",
@@ -18173,6 +18200,19 @@
         ]
       },
       {
+        "path": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "tests": 3,
+        "test_names": [
+          "test_runtime_emits_capture_then_discovery_only_records",
+          "test_runtime_refuses_wrong_tenant_and_evidence_role_before_network",
+          "test_runtime_refuses_scope_expiry_before_calling_client"
+        ],
+        "targets": [
+          "apps/acquisition/industry_adapters/theharvester.py",
+          "apps/acquisition/runtime/theharvester.py"
+        ]
+      },
+      {
         "path": "apps/acquisition/tests/unit/test_warc_adapter.py",
         "tests": 3,
         "test_names": [
@@ -26217,7 +26257,7 @@
         ]
       }
     ],
-    "total": 5500
+    "total": 5503
   },
   "contracts": {
     "python": [
@@ -32027,6 +32067,7 @@
             "apps/acquisition/runtime/primproc.py",
             "apps/acquisition/runtime/record_stream.py",
             "apps/acquisition/runtime/searxng.py",
+            "apps/acquisition/runtime/theharvester.py",
             "apps/acquisition/source_query_set.py",
             "apps/acquisition/sources/__init__.py",
             "apps/acquisition/sources/append_parse_blocks.py",
@@ -32070,6 +32111,7 @@
             "apps/acquisition/tests/unit/test_source_catalogue_full.py",
             "apps/acquisition/tests/unit/test_source_executor_contracts.py",
             "apps/acquisition/tests/unit/test_source_query_set.py",
+            "apps/acquisition/tests/unit/test_theharvester_runtime.py",
             "apps/acquisition/tests/unit/test_warc_adapter.py",
             "apps/acquisition/tests/unit/test_worker_failure_persistence.py",
             "apps/acquisition/worker-dataset/__init__.py",
@@ -32128,7 +32170,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 168
+          "module_count": 170
         },
         {
           "id": "interpretation",
@@ -35404,6 +35446,15 @@
         "markers": []
       },
       {
+        "path": "apps/acquisition/runtime/theharvester.py",
+        "status": "IMPLEMENTED",
+        "loc": 257,
+        "callables": 8,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/acquisition/source_query_set.py",
         "status": "DECLARATION_ONLY",
         "loc": 0,
@@ -35794,6 +35845,15 @@
         "status": "TEST",
         "loc": 184,
         "callables": 13,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "status": "TEST",
+        "loc": 128,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -44911,12 +44971,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 596,
+      "IMPLEMENTED": 597,
       "DECLARATION_ONLY": 18,
       "PACKAGE_INIT": 98,
-      "TEST": 377,
+      "TEST": 378,
       "MIGRATION": 24,
-      "total": 1113
+      "total": 1115
     }
   },
   "reachability": {
@@ -45194,6 +45254,10 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/acquisition/runtime/theharvester.py",
+        "status": "TEST_ONLY"
+      },
+      {
         "path": "apps/acquisition/source_query_set.py",
         "status": "TEST_ONLY"
       },
@@ -45363,6 +45427,10 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_source_query_set.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
         "status": "TEST"
       },
       {
@@ -49423,10 +49491,10 @@
     ],
     "summary": {
       "PRODUCTION": 466,
-      "TEST_ONLY": 137,
+      "TEST_ONLY": 138,
       "ORPHAN": 133,
-      "TEST": 377,
-      "total": 1113
+      "TEST": 378,
+      "total": 1115
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -49448,6 +49516,7 @@
       "apps/acquisition/industry_adapters/followthemoney.py",
       "apps/acquisition/industry_adapters/theharvester.py",
       "apps/acquisition/registry.py",
+      "apps/acquisition/runtime/theharvester.py",
       "apps/acquisition/source_query_set.py",
       "apps/acquisition/worker_browser/fabric.py",
       "apps/acquisition/worker_browser/renderer.py",
@@ -54096,6 +54165,45 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "81d9491cee843a3c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/runtime/theharvester.py",
+        "object": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/runtime/theharvester.py",
+          "via": "industry_adapters.theharvester"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ec9c15da55aadc75",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/runtime/theharvester.py",
+        "object": "apps/acquisition/runtime/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/runtime/theharvester.py",
+          "via": "runtime"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2ebee08134e7015f",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/runtime/theharvester.py",
+        "object": "apps/shared/domain/acquisition_artifact.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/runtime/theharvester.py",
+          "via": "domain.acquisition_artifact"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "667008fc767755fd",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/sources/capabilities.py",
@@ -56120,6 +56228,32 @@
         "evidence": {
           "file": "apps/acquisition/tests/unit/test_source_query_set.py",
           "via": "acquisition.source_query_set"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "1ef7996ee20d9ca7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "object": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+          "via": "industry_adapters.theharvester"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "6970ad16ed708261",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "object": "apps/acquisition/runtime/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+          "via": "runtime.theharvester"
         },
         "confidence": 1.0
       },
@@ -102302,6 +102436,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "4c180f34efcddd99",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "object": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_theharvester_runtime.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ed73231d0629cefc",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
+        "object": "apps/acquisition/runtime/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_theharvester_runtime.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "0186688b436818f6",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/acquisition/tests/unit/test_warc_adapter.py",
@@ -113739,44 +113897,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4911,
-      "static_facts": 4612,
+      "facts_total": 4918,
+      "static_facts": 4619,
       "inferred": 299,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1113,
+    "python_modules": 1115,
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3188,
-    "test_files": 380,
-    "test_functions": 5500,
+    "import_edges": 3193,
+    "test_files": 381,
+    "test_functions": 5503,
     "untested_modules": 292,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4911,
-    "static_facts": 4612,
+    "facts_total": 4918,
+    "static_facts": 4619,
     "inferred": 299,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 596,
+    "IMPLEMENTED": 597,
     "DECLARATION_ONLY": 18,
     "PACKAGE_INIT": 98,
-    "TEST": 377,
+    "TEST": 378,
     "MIGRATION": 24,
-    "total": 1113
+    "total": 1115
   },
   "reachability_summary": {
     "PRODUCTION": 466,
-    "TEST_ONLY": 137,
+    "TEST_ONLY": 138,
     "ORPHAN": 133,
-    "TEST": 377,
-    "total": 1113
+    "TEST": 378,
+    "total": 1115
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -113845,6 +114003,7 @@
     "apps/acquisition/industry_adapters/followthemoney.py",
     "apps/acquisition/industry_adapters/theharvester.py",
     "apps/acquisition/registry.py",
+    "apps/acquisition/runtime/theharvester.py",
     "apps/acquisition/source_query_set.py",
     "apps/acquisition/worker_browser/fabric.py",
     "apps/acquisition/worker_browser/renderer.py",
