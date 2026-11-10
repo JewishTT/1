@@ -573,7 +573,7 @@ tools.tests.test_repo_hygiene
 
 React analyst surfaces: investigation, search, entity, finding, ops, lineage.
 
-Python modules: **0** · TypeScript modules: **281**
+Python modules: **0** · TypeScript modules: **283**
 
 
 ## `zero`

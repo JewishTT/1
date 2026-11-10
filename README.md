@@ -14,7 +14,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 |---|---|
 | Components | 17 |
 | Python modules | 1113 |
-| TypeScript modules | 281 |
+| TypeScript modules | 283 |
 | Rust source files / crates | 16 / 9 |
 | Resolved local import edges | 3188 |
 | HTTP routes / routers | 222 / 36 |
@@ -41,7 +41,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | `shared` | 200 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 68 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
-| `webapp` | 0 | 281 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| `webapp` | 0 | 283 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 40 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
 ## Quick start

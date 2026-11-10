@@ -10,7 +10,7 @@ committed model no longer matches the tree.
 |---|---|
 | Components | 17 |
 | Python modules | 1113 |
-| TypeScript modules | 281 |
+| TypeScript modules | 283 |
 | Rust crates | 9 |
 | Rust source files | 16 |
 | Import edges (local) | 3188 |
@@ -63,5 +63,5 @@ committed model no longer matches the tree.
 | shared | 200 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops | 68 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | tools | 14 | 0 | Generators, capability/owner/donor tools, probes. |
-| webapp | 0 | 281 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
+| webapp | 0 | 283 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | zero | 40 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
