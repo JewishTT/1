@@ -34,8 +34,8 @@ def test_036_is_the_single_head_after_035() -> None:
     assert module.down_revision == "035_interpretation_mentions_and_entity_versions"
 
     parents: dict[str, str | None] = {}
-    revision_re = re.compile(r'^revision\\s*=\\s*["\\']([^"\\']+)["\\']', re.MULTILINE)
-    parent_re = re.compile(r"^down_revision\\s*=\\s*(.+)$", re.MULTILINE)
+    revision_re = re.compile(r'^revision\\s*=\\s*"([^"]+)"', re.MULTILINE)
+    parent_re = re.compile(r'^down_revision\\s*=\\s*(?:"([^"]+)"|(None))', re.MULTILINE)
     for path in VERSIONS_DIR.glob("*.py"):
         if path.name == "__init__.py":
             continue
@@ -43,13 +43,7 @@ def test_036_is_the_single_head_after_035() -> None:
         revision = revision_re.search(source)
         parent = parent_re.search(source)
         assert revision and parent, path.name
-        raw_parent = parent.group(1).strip()
-        if raw_parent == "None":
-            parents[revision.group(1)] = None
-        else:
-            value = re.match(r'^[ "\']([^"\']+)[ "\']$', raw_parent)
-            assert value, f"unsupported migration parent syntax: {path.name}"
-            parents[revision.group(1)] = value.group(1)
+        parents[revision.group(1)] = parent.group(1)
 
     children: dict[str, list[str]] = {}
     for revision, parent in parents.items():
@@ -60,18 +54,18 @@ def test_036_is_the_single_head_after_035() -> None:
     assert len([revision for revision in parents if revision not in children]) == 1
 
 
-def test_036_creates_both_native_types_idempotently_without_rewriting_legacy_rows() -> None:
+def test_036_creates_and_binds_both_native_types_and_preserves_defaults() -> None:
     module = _load_module()
-    source = MIGRATION.read_text(encoding="utf-8")
     upgrade = inspect.getsource(module.upgrade)
     downgrade = inspect.getsource(module.downgrade)
 
-    assert 'name="candidateresolutionstate"' in source
-    assert 'name="epistemicstatus"' in source
-    assert ".create(bind, checkfirst=True)" in upgrade
-    assert upgrade.count(".create(bind, checkfirst=True)") == 2
-    assert "op.create_table" not in upgrade
-    assert "op.drop_table" not in upgrade
+    assert 'name="candidateresolutionstate"' in upgrade
+    assert 'name="epistemicstatus"' in upgrade
+    assert "candidate_state.create(bind, checkfirst=True)" in upgrade
+    assert "epistemic_status.create(bind, checkfirst=True)" in upgrade
+    assert upgrade.count('op.alter_column("candidates", column_name, server_default=None)') == 1
+    assert 'postgresql_using=f"{column_name}::text::{enum_type.name}"' in upgrade
+    assert "server_default=sa.text(f\"({default})::{enum_type.name}\")" in upgrade
     assert "forward-only" in downgrade
 
 
