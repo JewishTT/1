@@ -1260,7 +1260,7 @@
       "stdlib:typing": 401,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 63,
+      "stdlib:urllib": 64,
       "stdlib:uuid": 54,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -21330,12 +21330,15 @@
       },
       {
         "path": "apps/interpretation/tests/test_structured_type_extractor.py",
-        "tests": 6,
+        "tests": 9,
         "test_names": [
           "test_jsonld_schema_person_becomes_type_signal_not_assertion",
           "test_non_jsonld_script_is_ignored_even_when_it_contains_schema_shaped_json",
           "test_multiple_types_on_one_jsonld_node_reuse_the_same_existing_mention",
           "test_jsonld_unresolved_mention_is_a_typed_refusal",
+          "test_absolute_foreign_type_is_not_overridden_by_schema_default_vocab",
+          "test_schema_lookalike_host_does_not_establish_the_schema_default_vocab",
+          "test_schema_compact_iri_requires_an_explicit_schema_prefix_binding",
           "test_opengraph_page_type_is_not_misattached_to_a_person_mention",
           "test_inherited_schema_context_applies_to_nested_graph_items"
         ],
@@ -26131,7 +26134,7 @@
         ]
       }
     ],
-    "total": 5484
+    "total": 5487
   },
   "contracts": {
     "python": [
@@ -38957,8 +38960,8 @@
       {
         "path": "apps/interpretation/extractors/structured_types.py",
         "status": "IMPLEMENTED",
-        "loc": 197,
-        "callables": 7,
+        "loc": 272,
+        "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -39602,8 +39605,8 @@
       {
         "path": "apps/interpretation/tests/test_structured_type_extractor.py",
         "status": "TEST",
-        "loc": 92,
-        "callables": 6,
+        "loc": 129,
+        "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -113395,7 +113398,7 @@
     "rust_crates": 9,
     "import_edges": 3180,
     "test_files": 378,
-    "test_functions": 5484,
+    "test_functions": 5487,
     "untested_modules": 289,
     "http_routes": 222
   },

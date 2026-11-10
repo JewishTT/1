@@ -26,7 +26,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `os` | stdlib | 83 |
 | `asyncio` | stdlib | 77 |
 | `fastapi` | third-party | 74 |
-| `urllib` | stdlib | 63 |
+| `urllib` | stdlib | 64 |
 | `uuid` | stdlib | 54 |
 | `math` | stdlib | 42 |
 | `types` | stdlib | 42 |
