@@ -20726,11 +20726,12 @@
       },
       {
         "path": "apps/interpretation/tests/test_ml_relation_producers.py",
-        "tests": 7,
+        "tests": 8,
         "test_names": [
           "test_gliner_relex_emits_source_grounded_signal_through_registry",
           "test_gliner_unverifiable_model_label_is_a_refusal_not_a_fabricated_quote",
           "test_gliner_refuses_multiple_matching_predicate_spans_in_one_neighbourhood",
+          "test_gliner_does_not_ground_a_predicate_inside_a_larger_word",
           "test_gliner_refuses_oversized_text_before_model_call",
           "test_stanford_openie_parses_tsv_and_emits_grounded_signal",
           "test_stanford_openie_refuses_repeated_participant_occurrences",
@@ -21329,9 +21330,11 @@
       },
       {
         "path": "apps/interpretation/tests/test_structured_type_extractor.py",
-        "tests": 4,
+        "tests": 6,
         "test_names": [
           "test_jsonld_schema_person_becomes_type_signal_not_assertion",
+          "test_non_jsonld_script_is_ignored_even_when_it_contains_schema_shaped_json",
+          "test_multiple_types_on_one_jsonld_node_reuse_the_same_existing_mention",
           "test_jsonld_unresolved_mention_is_a_typed_refusal",
           "test_opengraph_page_type_is_not_misattached_to_a_person_mention",
           "test_inherited_schema_context_applies_to_nested_graph_items"
@@ -26128,7 +26131,7 @@
         ]
       }
     ],
-    "total": 5481
+    "total": 5484
   },
   "contracts": {
     "python": [
@@ -38909,7 +38912,7 @@
       {
         "path": "apps/interpretation/extractors/signals/ml.py",
         "status": "IMPLEMENTED",
-        "loc": 423,
+        "loc": 425,
         "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
@@ -38954,7 +38957,7 @@
       {
         "path": "apps/interpretation/extractors/structured_types.py",
         "status": "IMPLEMENTED",
-        "loc": 180,
+        "loc": 197,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
@@ -39417,8 +39420,8 @@
       {
         "path": "apps/interpretation/tests/test_ml_relation_producers.py",
         "status": "TEST",
-        "loc": 134,
-        "callables": 11,
+        "loc": 149,
+        "callables": 12,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -39599,8 +39602,8 @@
       {
         "path": "apps/interpretation/tests/test_structured_type_extractor.py",
         "status": "TEST",
-        "loc": 65,
-        "callables": 4,
+        "loc": 92,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -113392,7 +113395,7 @@
     "rust_crates": 9,
     "import_edges": 3180,
     "test_files": 378,
-    "test_functions": 5481,
+    "test_functions": 5484,
     "untested_modules": 289,
     "http_routes": 222
   },

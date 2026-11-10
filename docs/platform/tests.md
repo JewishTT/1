@@ -1,6 +1,6 @@
 # Tests
 
-378 test files, 5481 test functions. 289 platform modules are not targeted by any test.
+378 test files, 5484 test functions. 289 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -169,7 +169,7 @@
 | `apps/interpretation/tests/test_deterministic_extraction.py` | 16 | `apps/interpretation/dictionaries/__init__.py`, `apps/interpretation/dictionaries/build_mini.py`, `apps/interpretation/extractors/lane.py`, `apps/interpretation/extractors/language.py` |
 | `apps/interpretation/tests/test_evidence_manifest.py` | 14 | `apps/interpretation/evidence/manifest.py` |
 | `apps/interpretation/tests/test_mention_binding_seam.py` | 16 | `apps/interpretation/extractors/signals/__init__.py`, `apps/interpretation/extractors/signals/lexical.py`, `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/mentions.py` |
-| `apps/interpretation/tests/test_ml_relation_producers.py` | 7 | `apps/interpretation/extractors/signals/ml.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/shared/domain/signal_basis.py` |
+| `apps/interpretation/tests/test_ml_relation_producers.py` | 8 | `apps/interpretation/extractors/signals/ml.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/shared/domain/signal_basis.py` |
 | `apps/interpretation/tests/test_observation_consumer.py` | 27 | `apps/interpretation/normalization/tenzir.py`, `apps/interpretation/observation_consumer/__init__.py`, `apps/shared/events/__init__.py` |
 | `apps/interpretation/tests/test_onchain_source_parsers.py` | 5 | `apps/acquisition/sources/catalogue.py`, `apps/interpretation/parsers/families.py` |
 | `apps/interpretation/tests/test_parser_adapter.py` | 17 | `apps/interpretation/parsers/registry.py` |
@@ -189,7 +189,7 @@
 | `apps/interpretation/tests/test_search_retriever.py` | 7 | `apps/interpretation/retrieval/__init__.py` |
 | `apps/interpretation/tests/test_signal_kind_channels.py` | 11 | `apps/interpretation/extractors/signals/links.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_signal_nary_contract.py` | 32 | `apps/interpretation/extractors/signals/signal.py`, `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/predicate_hypothesis.py`, `apps/shared/domain/predicate_signature.py` |
-| `apps/interpretation/tests/test_structured_type_extractor.py` | 4 | `apps/interpretation/extractors/structured_types.py` |
+| `apps/interpretation/tests/test_structured_type_extractor.py` | 6 | `apps/interpretation/extractors/structured_types.py` |
 | `apps/interpretation/tests/test_syntactic_producer.py` | 58 | `apps/interpretation/extractors/signals/mentions.py`, `apps/interpretation/extractors/signals/protocol.py`, `apps/interpretation/extractors/signals/signal.py`, `apps/interpretation/extractors/signals/syntactic.py` |
 | `apps/interpretation/tests/test_tenzir_live.py` | 1 | `apps/interpretation/normalization/tenzir.py` |
 | `apps/interpretation/tests/test_tenzir_normalization.py` | 15 | `apps/interpretation/normalization/tenzir.py` |
