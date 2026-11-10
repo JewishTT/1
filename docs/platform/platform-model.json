@@ -1195,10 +1195,10 @@
   ],
   "import_graph": {
     "module_count": 1107,
-    "edge_count": 3180,
+    "edge_count": 3181,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 970,
+      "stdlib:__future__": 971,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
@@ -1226,8 +1226,8 @@
       "stdlib:hmac": 4,
       "stdlib:html": 11,
       "stdlib:http": 5,
-      "stdlib:importlib": 33,
-      "stdlib:inspect": 22,
+      "stdlib:importlib": 34,
+      "stdlib:inspect": 23,
       "stdlib:io": 25,
       "stdlib:ipaddress": 7,
       "stdlib:itertools": 11,
@@ -1235,10 +1235,10 @@
       "stdlib:logging": 24,
       "stdlib:math": 42,
       "stdlib:os": 83,
-      "stdlib:pathlib": 340,
+      "stdlib:pathlib": 341,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 108,
+      "stdlib:re": 109,
       "stdlib:secrets": 4,
       "stdlib:shlex": 1,
       "stdlib:shutil": 16,
@@ -1249,7 +1249,7 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 19,
-      "stdlib:sys": 268,
+      "stdlib:sys": 269,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 23,
@@ -1313,7 +1313,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 173,
+      "third-party:sqlalchemy": 174,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -8324,6 +8324,11 @@
       },
       {
         "from": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
         "to": "apps/control-plane/db/schema.py",
         "via": "db.schema"
       },
@@ -19833,7 +19838,7 @@
         "tests": 3,
         "test_names": [
           "test_036_is_the_single_head_after_035",
-          "test_036_creates_both_native_types_idempotently_without_rewriting_legacy_rows",
+          "test_036_creates_and_binds_both_native_types_and_preserves_defaults",
           "test_candidate_orm_native_enum_names_and_members_match_migration"
         ],
         "targets": [
@@ -37024,7 +37029,7 @@
       {
         "path": "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
         "status": "MIGRATION",
-        "loc": 61,
+        "loc": 98,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
@@ -38178,8 +38183,8 @@
       {
         "path": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
         "status": "TEST",
-        "loc": 0,
-        "callables": 0,
+        "loc": 84,
+        "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -70231,6 +70236,19 @@
         "method": "python_ast+import_resolution",
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "507e2f3a56cc4cb6",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
           "via": "db.schema"
         },
         "confidence": 1.0
@@ -113437,8 +113455,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4900,
-      "static_facts": 4601,
+      "facts_total": 4901,
+      "static_facts": 4602,
       "inferred": 299,
       "intended": 0
     }
@@ -113449,15 +113467,15 @@
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3180,
+    "import_edges": 3181,
     "test_files": 379,
     "test_functions": 5490,
     "untested_modules": 290,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4900,
-    "static_facts": 4601,
+    "facts_total": 4901,
+    "static_facts": 4602,
     "inferred": 299,
     "intended": 0
   },

@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4900,
-    "static_facts": 4601,
+    "facts_total": 4901,
+    "static_facts": 4602,
     "inferred": 299,
     "intended": 0
   },
@@ -19043,6 +19043,19 @@
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_migration_028_processing_results.py",
+        "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "507e2f3a56cc4cb6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_migration_036_candidate_enum_types.py",
         "via": "db.schema"
       },
       "confidence": 1.0
