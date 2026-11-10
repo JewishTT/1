@@ -18,11 +18,19 @@ describe("GeospatialWorkspace", () => {
     expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
     expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-pointer-lock");
     expect(frame).toHaveAttribute("allow", "fullscreen");
-    expect(frame).not.toHaveAttribute("allow", expect.stringMatching(/camera|microphone|geolocation/i));
   });
 
   it("does not render a remote HTTP service", () => {
     vi.stubEnv("VITE_GEV_EMBED_URL", "http://spatial.example.net");
+
+    render(<GeospatialWorkspace />);
+
+    expect(screen.queryByTestId("geospatial-frame")).not.toBeInTheDocument();
+    expect(screen.getByTestId("geospatial-unconfigured")).toBeInTheDocument();
+  });
+
+  it("refuses a same-origin URL so the sandbox cannot be escaped", () => {
+    vi.stubEnv("VITE_GEV_EMBED_URL", window.location.origin);
 
     render(<GeospatialWorkspace />);
 
