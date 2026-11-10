@@ -1,0 +1,31 @@
+name: routescan_eth_address_balance
+enabled: true
+category: 10. Blockchain
+description: Routescan Ethereum mainnet native balance (Powered by Routescan.io APIs)
+os: any
+requires_key: false
+contact: public_api
+parser: json_object
+applies_to:
+- crypto
+entity_hints:
+- crypto
+- identifier
+tool:
+  method: GET
+  url: https://api.routescan.io/v2/network/mainnet/evm/1/etherscan/api?module=account&action=balance&address={query}&tag=latest
+  headers:
+    Accept: application/json
+    User-Agent: cognitive-substrate/034 (read-only evidence; Powered by Routescan.io APIs)
+  params: {}
+parse:
+  family: json_object
+  fields:
+    provider_status:
+      path: status
+      kind: identifier
+      required: true
+    balance_wei:
+      path: result
+      kind: identifier
+      required: true

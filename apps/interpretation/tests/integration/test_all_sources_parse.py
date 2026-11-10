@@ -72,8 +72,8 @@ CONN = SourceConnector()
 
 SOURCE_QUERIES: dict[str, str] = {
     "blockstream_btc_tx_detail": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
-    "blockscout_eth_address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    "blockscout_eth_transactions": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "routescan_eth_address_balance": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "routescan_eth_transactions": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
     "trongrid_account": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
     "trongrid_account_transactions": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
 }

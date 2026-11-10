@@ -24,8 +24,8 @@ from sources.connector import SourceConnector, tasks_for
 QUERIES = {
     "blockstream_btc_address_transactions": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
     "blockstream_btc_tx_detail": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
-    "blockscout_eth_address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    "blockscout_eth_transactions": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "routescan_eth_address_balance": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "routescan_eth_transactions": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
     "trongrid_account": "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
     "trongrid_account_transactions": "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
 }

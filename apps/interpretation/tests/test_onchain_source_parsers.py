@@ -46,43 +46,37 @@ def test_blockstream_transaction_detail_preserves_explicit_utxo_parent_refs() ->
     assert outcome.records[0].all_of("output_addresses") == ("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",)
 
 
-def test_blockscout_address_metadata_extracts_address_and_native_balance() -> None:
-    address = "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"
+def test_routescan_address_balance_extracts_the_native_balance() -> None:
     outcome = parse(
-        "blockscout_eth_address",
-        {
-            "hash": address,
-            "coin_balance": "123456789",
-            "transactions_count": 42,
-            "is_contract": False,
-            "name": None,
-            "creation_transaction_hash": None,
-        },
+        "routescan_eth_address_balance",
+        {"status": "1", "message": "OK", "result": "123456789"},
     )
     assert outcome.status == "ok"
-    assert outcome.records[0].all_of("address") == (address,)
     assert outcome.records[0].all_of("balance_wei") == ("123456789",)
+    assert outcome.records[0].all_of("provider_status") == ("1",)
 
 
-def test_blockscout_transactions_extracts_first_page_records() -> None:
+def test_routescan_transactions_extracts_first_bounded_page_records() -> None:
     tx_hash = "0x" + "a" * 64
     from_address = "0x" + "b" * 40
     to_address = "0x" + "c" * 40
     outcome = parse(
-        "blockscout_eth_transactions",
+        "routescan_eth_transactions",
         {
-            "items": [{
+            "status": "1",
+            "message": "OK",
+            "result": [{
                 "hash": tx_hash,
-                "from": {"hash": from_address},
-                "to": {"hash": to_address},
+                "from": from_address,
+                "to": to_address,
                 "value": "5000",
-                "block": 21000000,
-                "timestamp": "2026-10-31T10:00:00.000000Z",
-                "gas_used": "21000",
-                "gas_price": "2000000000",
-                "result": "success",
+                "blockNumber": "21000000",
+                "timeStamp": "1793440800",
+                "gasUsed": "21000",
+                "gasPrice": "2000000000",
+                "txreceipt_status": "1",
+                "isError": "0",
             }],
-            "next_page_params": {"index": 21000000, "items_count": 50},
         },
     )
     assert outcome.status == "ok"
@@ -90,6 +84,7 @@ def test_blockscout_transactions_extracts_first_page_records() -> None:
     assert outcome.records[0].all_of("tx_hash") == (tx_hash,)
     assert outcome.records[0].all_of("from_address") == (from_address,)
     assert outcome.records[0].all_of("to_address") == (to_address,)
+    assert outcome.records[0].all_of("receipt_status") == ("1",)
 
 
 def test_trongrid_account_uses_explicit_data_array_index() -> None:
