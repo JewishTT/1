@@ -69,6 +69,7 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
       items: [
         { to: "/science", label: "Science Console", icon: "diagram" },
         { to: "/network", label: "Network Analysis", icon: "view-analysis" },
+        { to: "/geospatial", label: "Spatial Context", icon: "view-analysis" },
         { to: "/hypotheses", label: "Hypotheses", icon: "list" },
         // Per-subject dossier: what is known, what was refused, what was never asked.
         // Placed with the investigative surfaces because it is the readout of a sweep.
@@ -123,6 +124,7 @@ export const NAV_SECTIONS: Record<ModuleKey, NavSection[]> = {
 export const NAV_TITLES: ReadonlyArray<{ prefix: string; title: string }> = [
   { prefix: "/economic", title: "Intelligence Economy" },
   { prefix: "/network", title: "Network & TDA analysis" },
+  { prefix: "/geospatial", title: "Spatial context" },
   // Before "/investigations" so the department view is titled as itself, not as a
   // bare "Investigation": the department is a view within an investigation.
   { prefix: "/investigations/ci", title: "CI / SpecOps Department" },
