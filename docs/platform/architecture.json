@@ -140,6 +140,11 @@
           "apps/acquisition/dispatcher/scheduler.py",
           "apps/acquisition/entity_search.py",
           "apps/acquisition/evidence_writer.py",
+          "apps/acquisition/industry_adapters/__init__.py",
+          "apps/acquisition/industry_adapters/capabilities.py",
+          "apps/acquisition/industry_adapters/domain_posture.py",
+          "apps/acquisition/industry_adapters/followthemoney.py",
+          "apps/acquisition/industry_adapters/theharvester.py",
           "apps/acquisition/observation_gate/__init__.py",
           "apps/acquisition/observation_gate/replay.py",
           "apps/acquisition/policies/__init__.py",
@@ -185,6 +190,7 @@
           "apps/acquisition/tests/unit/test_engine_adapters.py",
           "apps/acquisition/tests/unit/test_entity_search.py",
           "apps/acquisition/tests/unit/test_evidence_writer.py",
+          "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
           "apps/acquisition/tests/unit/test_primproc_runtime.py",
           "apps/acquisition/tests/unit/test_region_backpressure.py",
           "apps/acquisition/tests/unit/test_render_pipeline.py",
@@ -251,7 +257,7 @@
           "apps/zero/zero/resolution/similarity.py",
           "apps/zero/zero/type_detector.py"
         ],
-        "module_count": 162
+        "module_count": 168
       },
       {
         "id": "interpretation",
@@ -1588,6 +1594,7 @@
       "b.example",
       "b.example.com",
       "b.json",
+      "bad..example.org",
       "bad.com",
       "bad.py",
       "bbot.event",
@@ -1716,8 +1723,7 @@
       "domain.context_validation",
       "domain.mention_occurrence_index",
       "domain.predicate_signature",
-      "domain.relation_claim_material",
-      "domain.relation_participant"
+      "domain.relation_claim_material"
     ]
   },
   "context_map": {

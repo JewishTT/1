@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4901,
-    "static_facts": 4602,
+    "facts_total": 4911,
+    "static_facts": 4612,
     "inferred": 299,
     "intended": 0
   },
@@ -2447,6 +2447,58 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "2375e50494a8b644",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/industry_adapters/__init__.py",
+      "object": "apps/acquisition/industry_adapters/capabilities.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/industry_adapters/__init__.py",
+        "via": "capabilities"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f138f638d837a041",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/industry_adapters/__init__.py",
+      "object": "apps/acquisition/industry_adapters/followthemoney.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/industry_adapters/__init__.py",
+        "via": "followthemoney"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "881b9c9d6fb16b33",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/industry_adapters/__init__.py",
+      "object": "apps/acquisition/industry_adapters/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/industry_adapters/__init__.py",
+        "via": "theharvester"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c0b5c8eb5af9ae6a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/industry_adapters/domain_posture.py",
+      "object": "apps/acquisition/industry_adapters/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/industry_adapters/domain_posture.py",
+        "via": "theharvester"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "72c0b49384ef9600",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/observation_gate/__init__.py",
@@ -4458,6 +4510,45 @@
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_evidence_writer.py",
         "via": "evidence_writer"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "53202e12001619f4",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+      "object": "apps/acquisition/industry_adapters/capabilities.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "via": "industry_adapters.capabilities"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "91f2c90763d8a046",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+      "object": "apps/acquisition/industry_adapters/followthemoney.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "via": "industry_adapters.followthemoney"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "218e599fb6eef6ad",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+      "object": "apps/acquisition/industry_adapters/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "via": "industry_adapters.theharvester"
       },
       "confidence": 1.0
     },
@@ -50641,6 +50732,42 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_evidence_writer.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "74ef3e1193f7895d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+      "object": "apps/acquisition/industry_adapters/capabilities.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7543912e636be6d0",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+      "object": "apps/acquisition/industry_adapters/followthemoney.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "26a2d4a059c0351b",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+      "object": "apps/acquisition/industry_adapters/theharvester.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py"
       },
       "confidence": 1.0
     },

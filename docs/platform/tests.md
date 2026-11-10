@@ -1,6 +1,6 @@
 # Tests
 
-379 test files, 5491 test functions. 290 platform modules are not targeted by any test.
+380 test files, 5500 test functions. 292 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -34,6 +34,7 @@
 | `apps/acquisition/tests/unit/test_engine_adapters.py` | 6 | `apps/acquisition/adapters/browsertrix/__init__.py`, `apps/acquisition/adapters/browsertrix/collect.py`, `apps/acquisition/adapters/heritrix/__init__.py`, `apps/acquisition/adapters/heritrix/collect.py` |
 | `apps/acquisition/tests/unit/test_entity_search.py` | 4 | `apps/acquisition/entity_search.py` |
 | `apps/acquisition/tests/unit/test_evidence_writer.py` | 4 | `apps/acquisition/evidence_writer.py` |
+| `apps/acquisition/tests/unit/test_industry_osint_adapters.py` | 9 | `apps/acquisition/industry_adapters/capabilities.py`, `apps/acquisition/industry_adapters/followthemoney.py`, `apps/acquisition/industry_adapters/theharvester.py` |
 | `apps/acquisition/tests/unit/test_primproc_runtime.py` | 32 | `apps/acquisition/runtime/__init__.py`, `apps/acquisition/runtime/primproc.py`, `apps/shared/domain/acquisition_artifact.py` |
 | `apps/acquisition/tests/unit/test_region_backpressure.py` | 7 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/tests/unit/test_render_pipeline.py` | 6 | `apps/acquisition/worker_browser/renderer.py` |
@@ -414,6 +415,8 @@
 | `apps/acquisition/context_discovery/compiler.py` |
 | `apps/acquisition/context_discovery/models.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
+| `apps/acquisition/industry_adapters/__init__.py` |
+| `apps/acquisition/industry_adapters/domain_posture.py` |
 | `apps/acquisition/observation_gate/__init__.py` |
 | `apps/acquisition/policies/__init__.py` |
 | `apps/acquisition/runtime/external_tool.py` |
@@ -450,5 +453,3 @@
 | `apps/control-plane/api/routes/science_claims.py` |
 | `apps/control-plane/api/routes/science_hypotheses.py` |
 | `apps/control-plane/api/routes/science_review.py` |
-| `apps/control-plane/api/routes/science_robustness.py` |
-| `apps/control-plane/api/routes/science_structure.py` |

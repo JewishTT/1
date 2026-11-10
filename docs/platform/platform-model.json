@@ -18,7 +18,7 @@
     {
       "name": "acquisition",
       "description": "Discovery, frontier, dispatcher, content router, HTTP/browser workers, ArtifactSink.",
-      "python_modules": 116,
+      "python_modules": 122,
       "typescript_modules": 0,
       "modules": [
         "apps.acquisition._measure_coverage",
@@ -73,6 +73,11 @@
         "apps.acquisition.dispatcher.scheduler",
         "apps.acquisition.entity_search",
         "apps.acquisition.evidence_writer",
+        "apps.acquisition.industry_adapters",
+        "apps.acquisition.industry_adapters.capabilities",
+        "apps.acquisition.industry_adapters.domain_posture",
+        "apps.acquisition.industry_adapters.followthemoney",
+        "apps.acquisition.industry_adapters.theharvester",
         "apps.acquisition.observation_gate",
         "apps.acquisition.observation_gate.replay",
         "apps.acquisition.policies",
@@ -118,6 +123,7 @@
         "apps.acquisition.tests.unit.test_engine_adapters",
         "apps.acquisition.tests.unit.test_entity_search",
         "apps.acquisition.tests.unit.test_evidence_writer",
+        "apps.acquisition.tests.unit.test_industry_osint_adapters",
         "apps.acquisition.tests.unit.test_primproc_runtime",
         "apps.acquisition.tests.unit.test_region_backpressure",
         "apps.acquisition.tests.unit.test_render_pipeline",
@@ -1194,11 +1200,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1107,
-    "edge_count": 3181,
+    "module_count": 1113,
+    "edge_count": 3188,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 971,
+      "stdlib:__future__": 976,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 28,
@@ -1211,9 +1217,10 @@
       "stdlib:collections": 250,
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 5,
+      "stdlib:copy": 1,
       "stdlib:csv": 4,
-      "stdlib:dataclasses": 410,
-      "stdlib:datetime": 210,
+      "stdlib:dataclasses": 414,
+      "stdlib:datetime": 214,
       "stdlib:decimal": 14,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1221,7 +1228,7 @@
       "stdlib:functools": 10,
       "stdlib:getpass": 1,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 143,
+      "stdlib:hashlib": 145,
       "stdlib:heapq": 1,
       "stdlib:hmac": 4,
       "stdlib:html": 11,
@@ -1229,13 +1236,13 @@
       "stdlib:importlib": 34,
       "stdlib:inspect": 23,
       "stdlib:io": 25,
-      "stdlib:ipaddress": 7,
+      "stdlib:ipaddress": 8,
       "stdlib:itertools": 11,
-      "stdlib:json": 215,
+      "stdlib:json": 217,
       "stdlib:logging": 24,
       "stdlib:math": 42,
       "stdlib:os": 83,
-      "stdlib:pathlib": 341,
+      "stdlib:pathlib": 342,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 109,
@@ -1243,24 +1250,25 @@
       "stdlib:shlex": 1,
       "stdlib:shutil": 16,
       "stdlib:signal": 3,
-      "stdlib:socket": 9,
+      "stdlib:socket": 10,
       "stdlib:sqlite3": 1,
+      "stdlib:ssl": 1,
       "stdlib:stat": 3,
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 19,
-      "stdlib:sys": 269,
+      "stdlib:sys": 270,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 23,
-      "stdlib:time": 39,
+      "stdlib:time": 40,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 42,
-      "stdlib:typing": 401,
+      "stdlib:typing": 404,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
-      "stdlib:urllib": 64,
+      "stdlib:urllib": 67,
       "stdlib:uuid": 54,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
@@ -1306,7 +1314,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 290,
+      "third-party:pytest": 291,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -1323,6 +1331,7 @@
       "third-party:yaml": 11
     },
     "optional": {
+      "followthemoney": 1,
       "gliner": 1,
       "pyshacl": 1,
       "pyzbar": 1,
@@ -1941,6 +1950,26 @@
         "from": "apps/acquisition/evidence_writer.py",
         "to": "apps/shared/domain/ontology.py",
         "via": "domain.ontology"
+      },
+      {
+        "from": "apps/acquisition/industry_adapters/__init__.py",
+        "to": "apps/acquisition/industry_adapters/capabilities.py",
+        "via": "capabilities"
+      },
+      {
+        "from": "apps/acquisition/industry_adapters/__init__.py",
+        "to": "apps/acquisition/industry_adapters/followthemoney.py",
+        "via": "followthemoney"
+      },
+      {
+        "from": "apps/acquisition/industry_adapters/__init__.py",
+        "to": "apps/acquisition/industry_adapters/theharvester.py",
+        "via": "theharvester"
+      },
+      {
+        "from": "apps/acquisition/industry_adapters/domain_posture.py",
+        "to": "apps/acquisition/industry_adapters/theharvester.py",
+        "via": "theharvester"
       },
       {
         "from": "apps/acquisition/observation_gate/__init__.py",
@@ -2716,6 +2745,21 @@
         "from": "apps/acquisition/tests/unit/test_evidence_writer.py",
         "to": "apps/acquisition/evidence_writer.py",
         "via": "evidence_writer"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "to": "apps/acquisition/industry_adapters/capabilities.py",
+        "via": "industry_adapters.capabilities"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "to": "apps/acquisition/industry_adapters/followthemoney.py",
+        "via": "industry_adapters.followthemoney"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "to": "apps/acquisition/industry_adapters/theharvester.py",
+        "via": "industry_adapters.theharvester"
       },
       {
         "from": "apps/acquisition/tests/unit/test_primproc_runtime.py",
@@ -17297,6 +17341,7 @@
       "hypotheses": "apps/science/hypotheses/__init__.py",
       "ids": "apps/shared/ids/__init__.py",
       "independence": "apps/admission/independence/__init__.py",
+      "industry_adapters": "apps/acquisition/industry_adapters/__init__.py",
       "interpretation": "apps/interpretation/__init__.py",
       "isolation": "apps/shared/isolation.py",
       "kinetics": "apps/science/kinetics/__init__.py",
@@ -17934,6 +17979,26 @@
         ],
         "targets": [
           "apps/acquisition/evidence_writer.py"
+        ]
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "tests": 9,
+        "test_names": [
+          "test_authorized_domain_uses_label_boundary_and_time_bound",
+          "test_authorization_expiry_fails_closed",
+          "test_only_bare_dns_domains_are_accepted",
+          "test_theharvester_request_selects_only_passive_subdomain_capability",
+          "test_export_normalization_filters_sensitive_and_out_of_scope_records",
+          "test_stable_ftm_id_is_tenant_scoped",
+          "test_ftm_export_is_curated_and_provenance_is_separate",
+          "test_ftm_rejects_unapproved_schema",
+          "test_bigbrother_reference_modules_are_not_executable_by_default"
+        ],
+        "targets": [
+          "apps/acquisition/industry_adapters/capabilities.py",
+          "apps/acquisition/industry_adapters/followthemoney.py",
+          "apps/acquisition/industry_adapters/theharvester.py"
         ]
       },
       {
@@ -26152,7 +26217,7 @@
         ]
       }
     ],
-    "total": 5491
+    "total": 5500
   },
   "contracts": {
     "python": [
@@ -31624,6 +31689,8 @@
     "apps/acquisition/context_discovery/compiler.py",
     "apps/acquisition/context_discovery/models.py",
     "apps/acquisition/dispatcher/__init__.py",
+    "apps/acquisition/industry_adapters/__init__.py",
+    "apps/acquisition/industry_adapters/domain_posture.py",
     "apps/acquisition/observation_gate/__init__.py",
     "apps/acquisition/policies/__init__.py",
     "apps/acquisition/runtime/external_tool.py",
@@ -31799,11 +31866,9 @@
     "apps/science/temporal/__init__.py",
     "apps/shared/config/__init__.py",
     "apps/shared/conftest.py",
-    "apps/shared/contracts/__init__.py",
-    "apps/shared/datasets/__init__.py",
-    "apps/shared/datasets/build.py"
+    "apps/shared/contracts/__init__.py"
   ],
-  "untested_count": 290,
+  "untested_count": 292,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -31946,6 +32011,11 @@
             "apps/acquisition/dispatcher/scheduler.py",
             "apps/acquisition/entity_search.py",
             "apps/acquisition/evidence_writer.py",
+            "apps/acquisition/industry_adapters/__init__.py",
+            "apps/acquisition/industry_adapters/capabilities.py",
+            "apps/acquisition/industry_adapters/domain_posture.py",
+            "apps/acquisition/industry_adapters/followthemoney.py",
+            "apps/acquisition/industry_adapters/theharvester.py",
             "apps/acquisition/observation_gate/__init__.py",
             "apps/acquisition/observation_gate/replay.py",
             "apps/acquisition/policies/__init__.py",
@@ -31991,6 +32061,7 @@
             "apps/acquisition/tests/unit/test_engine_adapters.py",
             "apps/acquisition/tests/unit/test_entity_search.py",
             "apps/acquisition/tests/unit/test_evidence_writer.py",
+            "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
             "apps/acquisition/tests/unit/test_primproc_runtime.py",
             "apps/acquisition/tests/unit/test_region_backpressure.py",
             "apps/acquisition/tests/unit/test_render_pipeline.py",
@@ -32057,7 +32128,7 @@
             "apps/zero/zero/resolution/similarity.py",
             "apps/zero/zero/type_detector.py"
           ],
-          "module_count": 162
+          "module_count": 168
         },
         {
           "id": "interpretation",
@@ -33394,6 +33465,7 @@
         "b.example",
         "b.example.com",
         "b.json",
+        "bad..example.org",
         "bad.com",
         "bad.py",
         "bbot.event",
@@ -33522,8 +33594,7 @@
         "domain.context_validation",
         "domain.mention_occurrence_index",
         "domain.predicate_signature",
-        "domain.relation_claim_material",
-        "domain.relation_participant"
+        "domain.relation_claim_material"
       ]
     },
     "context_map": {
@@ -35185,6 +35256,51 @@
         "markers": []
       },
       {
+        "path": "apps/acquisition/industry_adapters/__init__.py",
+        "status": "PACKAGE_INIT",
+        "loc": 10,
+        "callables": 0,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/industry_adapters/capabilities.py",
+        "status": "IMPLEMENTED",
+        "loc": 70,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/industry_adapters/domain_posture.py",
+        "status": "IMPLEMENTED",
+        "loc": 90,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/industry_adapters/followthemoney.py",
+        "status": "IMPLEMENTED",
+        "loc": 134,
+        "callables": 5,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "IMPLEMENTED",
+        "loc": 394,
+        "callables": 18,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/acquisition/observation_gate/__init__.py",
         "status": "PACKAGE_INIT",
         "loc": 19,
@@ -35593,6 +35709,15 @@
         "status": "TEST",
         "loc": 199,
         "callables": 16,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "status": "TEST",
+        "loc": 134,
+        "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -44784,12 +44909,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 592,
+      "IMPLEMENTED": 596,
       "DECLARATION_ONLY": 18,
-      "PACKAGE_INIT": 97,
-      "TEST": 376,
+      "PACKAGE_INIT": 98,
+      "TEST": 377,
       "MIGRATION": 24,
-      "total": 1107
+      "total": 1113
     }
   },
   "reachability": {
@@ -45003,6 +45128,26 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/acquisition/industry_adapters/__init__.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/acquisition/industry_adapters/capabilities.py",
+        "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/acquisition/industry_adapters/domain_posture.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/acquisition/industry_adapters/followthemoney.py",
+        "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "TEST_ONLY"
+      },
+      {
         "path": "apps/acquisition/observation_gate/__init__.py",
         "status": "ORPHAN"
       },
@@ -45180,6 +45325,10 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_evidence_writer.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
         "status": "TEST"
       },
       {
@@ -49272,10 +49421,10 @@
     ],
     "summary": {
       "PRODUCTION": 466,
-      "TEST_ONLY": 134,
-      "ORPHAN": 131,
-      "TEST": 376,
-      "total": 1107
+      "TEST_ONLY": 137,
+      "ORPHAN": 133,
+      "TEST": 377,
+      "total": 1113
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -49293,6 +49442,9 @@
       "apps/acquisition/adapters/stormcrawler/collect.py",
       "apps/acquisition/adapters/warc/__init__.py",
       "apps/acquisition/dispatcher/regional.py",
+      "apps/acquisition/industry_adapters/capabilities.py",
+      "apps/acquisition/industry_adapters/followthemoney.py",
+      "apps/acquisition/industry_adapters/theharvester.py",
       "apps/acquisition/registry.py",
       "apps/acquisition/source_query_set.py",
       "apps/acquisition/worker_browser/fabric.py",
@@ -49421,6 +49573,8 @@
       "apps/acquisition/adapters/discovery/wayback_cdx.py",
       "apps/acquisition/adapters/scrapy/spider.py",
       "apps/acquisition/dispatcher/__init__.py",
+      "apps/acquisition/industry_adapters/__init__.py",
+      "apps/acquisition/industry_adapters/domain_posture.py",
       "apps/acquisition/observation_gate/__init__.py",
       "apps/acquisition/policies/__init__.py",
       "apps/acquisition/sources/__init__.py",
@@ -53641,6 +53795,58 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "2375e50494a8b644",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/industry_adapters/__init__.py",
+        "object": "apps/acquisition/industry_adapters/capabilities.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/industry_adapters/__init__.py",
+          "via": "capabilities"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "f138f638d837a041",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/industry_adapters/__init__.py",
+        "object": "apps/acquisition/industry_adapters/followthemoney.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/industry_adapters/__init__.py",
+          "via": "followthemoney"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "881b9c9d6fb16b33",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/industry_adapters/__init__.py",
+        "object": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/industry_adapters/__init__.py",
+          "via": "theharvester"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c0b5c8eb5af9ae6a",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/industry_adapters/domain_posture.py",
+        "object": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/industry_adapters/domain_posture.py",
+          "via": "theharvester"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "72c0b49384ef9600",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/observation_gate/__init__.py",
@@ -55652,6 +55858,45 @@
         "evidence": {
           "file": "apps/acquisition/tests/unit/test_evidence_writer.py",
           "via": "evidence_writer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "53202e12001619f4",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "object": "apps/acquisition/industry_adapters/capabilities.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+          "via": "industry_adapters.capabilities"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "91f2c90763d8a046",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "object": "apps/acquisition/industry_adapters/followthemoney.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+          "via": "industry_adapters.followthemoney"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "218e599fb6eef6ad",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "object": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+          "via": "industry_adapters.theharvester"
         },
         "confidence": 1.0
       },
@@ -101839,6 +102084,42 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "74ef3e1193f7895d",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "object": "apps/acquisition/industry_adapters/capabilities.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "7543912e636be6d0",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "object": "apps/acquisition/industry_adapters/followthemoney.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "26a2d4a059c0351b",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
+        "object": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_industry_osint_adapters.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "f3228de3f429d6a4",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/acquisition/tests/unit/test_primproc_runtime.py",
@@ -113456,44 +113737,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4901,
-      "static_facts": 4602,
+      "facts_total": 4911,
+      "static_facts": 4612,
       "inferred": 299,
       "intended": 0
     }
   },
   "counts": {
     "components": 17,
-    "python_modules": 1107,
+    "python_modules": 1113,
     "typescript_modules": 281,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3181,
-    "test_files": 379,
-    "test_functions": 5491,
-    "untested_modules": 290,
+    "import_edges": 3188,
+    "test_files": 380,
+    "test_functions": 5500,
+    "untested_modules": 292,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4901,
-    "static_facts": 4602,
+    "facts_total": 4911,
+    "static_facts": 4612,
     "inferred": 299,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 592,
+    "IMPLEMENTED": 596,
     "DECLARATION_ONLY": 18,
-    "PACKAGE_INIT": 97,
-    "TEST": 376,
+    "PACKAGE_INIT": 98,
+    "TEST": 377,
     "MIGRATION": 24,
-    "total": 1107
+    "total": 1113
   },
   "reachability_summary": {
     "PRODUCTION": 466,
-    "TEST_ONLY": 134,
-    "ORPHAN": 131,
-    "TEST": 376,
-    "total": 1107
+    "TEST_ONLY": 137,
+    "ORPHAN": 133,
+    "TEST": 377,
+    "total": 1113
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -113558,6 +113839,9 @@
     "apps/acquisition/adapters/stormcrawler/collect.py",
     "apps/acquisition/adapters/warc/__init__.py",
     "apps/acquisition/dispatcher/regional.py",
+    "apps/acquisition/industry_adapters/capabilities.py",
+    "apps/acquisition/industry_adapters/followthemoney.py",
+    "apps/acquisition/industry_adapters/theharvester.py",
     "apps/acquisition/registry.py",
     "apps/acquisition/source_query_set.py",
     "apps/acquisition/worker_browser/fabric.py",
@@ -113686,6 +113970,8 @@
     "apps/acquisition/adapters/discovery/wayback_cdx.py",
     "apps/acquisition/adapters/scrapy/spider.py",
     "apps/acquisition/dispatcher/__init__.py",
+    "apps/acquisition/industry_adapters/__init__.py",
+    "apps/acquisition/industry_adapters/domain_posture.py",
     "apps/acquisition/observation_gate/__init__.py",
     "apps/acquisition/policies/__init__.py",
     "apps/acquisition/sources/__init__.py",

@@ -1,6 +1,6 @@
 # Import graph
 
-1107 Python modules, 3181 resolved local edges.
+1113 Python modules, 3188 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,27 +10,27 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 971 |
-| `dataclasses` | stdlib | 410 |
-| `typing` | stdlib | 401 |
-| `pathlib` | stdlib | 341 |
-| `pytest` | third-party | 290 |
-| `sys` | stdlib | 269 |
+| `__future__` | stdlib | 976 |
+| `dataclasses` | stdlib | 414 |
+| `typing` | stdlib | 404 |
+| `pathlib` | stdlib | 342 |
+| `pytest` | third-party | 291 |
+| `sys` | stdlib | 270 |
 | `collections` | stdlib | 250 |
-| `json` | stdlib | 215 |
-| `datetime` | stdlib | 210 |
+| `json` | stdlib | 217 |
+| `datetime` | stdlib | 214 |
 | `sqlalchemy` | third-party | 174 |
-| `hashlib` | stdlib | 143 |
+| `hashlib` | stdlib | 145 |
 | `enum` | stdlib | 121 |
 | `re` | stdlib | 109 |
 | `os` | stdlib | 83 |
 | `asyncio` | stdlib | 77 |
 | `fastapi` | third-party | 74 |
-| `urllib` | stdlib | 64 |
+| `urllib` | stdlib | 67 |
 | `uuid` | stdlib | 54 |
 | `math` | stdlib | 42 |
 | `types` | stdlib | 42 |
-| `time` | stdlib | 39 |
+| `time` | stdlib | 40 |
 | `pydantic` | third-party | 36 |
 | `importlib` | stdlib | 34 |
 | `httpx` | third-party | 30 |
@@ -59,6 +59,7 @@ that is switched off in this environment.
 
 | Package | Probe sites |
 |---|---|
+| `followthemoney` | 1 |
 | `gliner` | 1 |
 | `pyshacl` | 1 |
 | `pyzbar` | 1 |
@@ -123,6 +124,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `hypotheses` | `apps/science/hypotheses/__init__.py` |
 | `ids` | `apps/shared/ids/__init__.py` |
 | `independence` | `apps/admission/independence/__init__.py` |
+| `industry_adapters` | `apps/acquisition/industry_adapters/__init__.py` |
 | `interpretation` | `apps/interpretation/__init__.py` |
 | `isolation` | `apps/shared/isolation.py` |
 | `kinetics` | `apps/science/kinetics/__init__.py` |
