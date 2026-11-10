@@ -14,6 +14,9 @@ function resolveEmbedUrl(raw: string | undefined): string | null {
   try {
     const url = new URL(candidate);
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    // `allow-scripts` + `allow-same-origin` is only safe when the embedded
+    // document is a distinct origin; otherwise it can remove its own sandbox.
+    if (typeof window !== "undefined" && url.origin === window.location.origin) return null;
     const loopback = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(url.hostname);
     if (url.protocol === "http:" && !loopback) return null;
     url.searchParams.set("embed", "1");
