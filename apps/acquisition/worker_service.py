@@ -13,6 +13,7 @@ import asyncio
 import logging
 import os
 import signal
+from datetime import datetime
 from typing import Any
 
 from confluent_kafka import Consumer, KafkaError
@@ -74,6 +75,7 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
     producer = KafkaProducer()
     connector: SourceConnector | None = None
     searxng_runtime: Any | None = None
+    theharvester_runtime: Any | None = None
     kafka_consumer = consumer or Consumer(_consumer_config())
     handled = 0
 
@@ -110,6 +112,63 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
             hard_max_pages=int(os.environ.get("COGNITIVE_SEARXNG_MAX_PAGES", "5")),
             hard_runtime_budget=float(os.environ.get("COGNITIVE_SEARXNG_BUDGET_SECONDS", "120")),
         )
+
+        # Optional external theHarvester sidecar. It is registered only when a
+        # complete operator authorization is present; partial configuration is a
+        # startup error rather than a silently weakened or target-unscoped mode.
+        harvester_env = {
+            "url": os.environ.get("COGNITIVE_THEHARVESTER_URL", "").strip(),
+            "api_key": os.environ.get("COGNITIVE_THEHARVESTER_API_KEY", "").strip(),
+            "tenant_id": os.environ.get("COGNITIVE_THEHARVESTER_TENANT_ID", "").strip(),
+            "authorization_ref": os.environ.get("COGNITIVE_THEHARVESTER_AUTHORIZATION_REF", "").strip(),
+            "authorized_domains": os.environ.get("COGNITIVE_THEHARVESTER_AUTHORIZED_DOMAINS", "").strip(),
+            "scope_expires_at": os.environ.get("COGNITIVE_THEHARVESTER_SCOPE_EXPIRES_AT", "").strip(),
+        }
+        configured = any(harvester_env.values())
+        if configured:
+            missing = [name for name, value in harvester_env.items() if not value]
+            if missing:
+                raise RuntimeError(
+                    "incomplete COGNITIVE_THEHARVESTER authorization configuration: "
+                    + ", ".join(missing)
+                )
+            from industry_adapters.theharvester import AuthorizationScope, TheHarvesterApiClient
+            from runtime.theharvester import TheHarvesterRuntime
+
+            try:
+                scope_expiry = datetime.fromisoformat(
+                    harvester_env["scope_expires_at"].replace("Z", "+00:00")
+                )
+            except ValueError as exc:
+                raise RuntimeError("COGNITIVE_THEHARVESTER_SCOPE_EXPIRES_AT must be ISO-8601") from exc
+            if scope_expiry.tzinfo is None:
+                raise RuntimeError("COGNITIVE_THEHARVESTER_SCOPE_EXPIRES_AT must include a timezone")
+            allowed_domains = tuple(
+                value.strip()
+                for value in harvester_env["authorized_domains"].split(",")
+                if value.strip()
+            )
+            authorization = AuthorizationScope(
+                tenant_id=harvester_env["tenant_id"],
+                authorization_ref=harvester_env["authorization_ref"],
+                allowed_domains=allowed_domains,
+                expires_at=scope_expiry,
+            )
+            harvester_client = TheHarvesterApiClient(
+                base_url=harvester_env["url"],
+                api_key=harvester_env["api_key"],
+                timeout_seconds=10,
+                max_wait_seconds=float(os.environ.get("COGNITIVE_THEHARVESTER_BUDGET_SECONDS", "600")),
+            )
+            theharvester_runtime = TheHarvesterRuntime(
+                client=harvester_client,
+                authorization=authorization,
+                producer_version=os.environ.get("COGNITIVE_THEHARVESTER_VERSION", "rest-adapter-v1"),
+            )
+
+        runtimes = {"searxng": searxng_runtime}
+        if theharvester_runtime is not None:
+            runtimes["theharvester"] = theharvester_runtime
         worker = AcquisitionWorker(
             connector=connector,
             sink=kafka_failure_sink(producer, object_store),
@@ -117,7 +176,7 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
             # The worker validates its evidence refs but must not publish a second JSON event.
             publish=None,
             store=object_store,
-            runtimes={"searxng": searxng_runtime},
+            runtimes=runtimes,
             preflight=PostgresCaseExecutionGuard(session_factory),
         )
         topic = topic_for("acquisition.request")
@@ -179,6 +238,8 @@ async def run_worker(*, consumer: Any | None = None, max_messages: int | None = 
                 await connector.aclose()
             if searxng_runtime is not None:
                 await searxng_runtime.aclose()
+            if theharvester_runtime is not None:
+                await theharvester_runtime.aclose()
         finally:
             try:
                 producer.flush(15.0)
