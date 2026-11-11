@@ -104,7 +104,7 @@ def test_keyed_and_open_split_is_visible() -> None:
     the count of runnable-without-credentials sources cannot quietly collapse."""
     defs = all_definitions()
     keyed = [d for d in defs if d.requires_key]
-    assert len(keyed) == 26
+    assert len(keyed) == 27
     assert len(defs) - len(keyed) == 126  # runnable with no credential at all
 
 
@@ -161,6 +161,16 @@ def test_wigle_is_enabled_and_names_its_pair() -> None:
 def test_hunter_is_enabled() -> None:
     defs = {d.name: d for d in all_definitions()}
     assert defs["hunter_email"].enabled
+
+
+def test_theharvester_is_explicitly_keyed_and_discovery_only() -> None:
+    definitions = {item.name: item for item in all_definitions()}
+    source = definitions["theharvester_authorized_subdomains"]
+    assert source.enabled
+    assert source.requires_key
+    assert source.key_env == "COGNITIVE_THEHARVESTER_API_KEY"
+    assert source.runtime_ref == "theharvester"
+    assert source.applies_to == ("domain",)
 
 
 
