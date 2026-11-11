@@ -108,6 +108,10 @@ class TheHarvesterRuntime:
         target = str(task.get("query") or "").strip()
         if not target:
             raise RuntimeError_("theharvester_domain_missing", "task.query must contain an authorized DNS domain")
+        try:
+            target = self._authorization.assert_domain(target)
+        except AuthorizationError as exc:
+            raise RuntimeError_("authorization_scope_refused", str(exc)) from exc
         task_id = str(task.get("task_id") or "")
         source_id = str(task.get("source_id") or "")
         if not task_id or not source_id:
