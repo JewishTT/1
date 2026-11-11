@@ -21,7 +21,7 @@ committed model no longer matches the tree.
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
 | Test files | 381 |
-| Test functions | 5503 |
+| Test functions | 5504 |
 | Untested platform modules | 292 |
 | HTTP routes | 222 |
 | Contracts (python/docs/root) | 6 / 74 / 12 |

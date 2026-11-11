@@ -18138,7 +18138,7 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
-        "tests": 19,
+        "tests": 20,
         "test_names": [
           "test_every_definition_loads",
           "test_all_sources_are_enabled",
@@ -18155,6 +18155,7 @@
           "test_basic_auth_rejects_wrong_arity",
           "test_wigle_is_enabled_and_names_its_pair",
           "test_hunter_is_enabled",
+          "test_theharvester_is_explicitly_keyed_and_discovery_only",
           "test_blockstream_address_feed_is_in_the_live_catalogue",
           "test_explicit_provider_offset_pagination_uses_declared_parameter",
           "test_explicit_cursor_pagination_is_rejected_until_runtime_support_exists",
@@ -26267,7 +26268,7 @@
         ]
       }
     ],
-    "total": 5503
+    "total": 5504
   },
   "contracts": {
     "python": [
@@ -35833,8 +35834,8 @@
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "status": "TEST",
-        "loc": 265,
-        "callables": 21,
+        "loc": 275,
+        "callables": 22,
         "stubs": 0,
         "not_implemented": 0,
         "markers": [
@@ -113945,7 +113946,7 @@
     "rust_crates": 9,
     "import_edges": 3195,
     "test_files": 381,
-    "test_functions": 5503,
+    "test_functions": 5504,
     "untested_modules": 292,
     "http_routes": 222
   },
