@@ -127,7 +127,11 @@ class RunEvidence:
 
     @property
     def may_support_qualified_absence(self) -> bool:
-        return self.evidence_status == "complete" and bool(self.source_outcomes)
+        return (
+            self.evidence_status == "complete"
+            and bool(self.source_outcomes)
+            and all(str(item.get("status", "")).lower() in {"complete", "completed"} for item in self.source_outcomes)
+        )
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -173,6 +177,11 @@ class TheHarvesterApiClient:
         self._poll_interval = float(poll_interval_seconds)
         self._max_response_bytes = int(max_response_bytes)
         self._opener = opener or build_opener(_NoRedirect())
+
+    @property
+    def base_url(self) -> str:
+        """Configured API origin without credentials or query parameters."""
+        return self._base_url
 
     @staticmethod
     def safe_run_request(target: str, *, limit: int = 500, source_workers: int = 3) -> dict[str, Any]:
@@ -387,7 +396,8 @@ def normalize_findings(
             continue
         seen.add(key)
         sources = item.get("sources") or item.get("actions") or []
-        source_ids = tuple(sorted({str(source)[:120] for source in sources if str(source).strip()}))
+        source_values = sources if isinstance(sources, (list, tuple, set)) else [sources]
+        source_ids = tuple(sorted({str(source)[:120] for source in source_values if str(source).strip()}))
         output.append(HarvestedRecord(canonical_kind, canonical_value, source_ids, scope_class, expandable))
     output.sort(key=lambda item: (item.kind, item.value))
     return output, filtered
