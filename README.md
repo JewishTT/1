@@ -72,3 +72,40 @@ Full validation: `uv run python -m bench.run --scenario smoke-val` walks the clo
 ## Governance
 
 See `specs/` for the constitution-bound specs, plans, and task lists. Architecture decisions require an ADR (`docs/adr/`).
+
+
+## Industry adapters and spatial context
+
+The acquisition fabric includes an optional, separately deployed theHarvester
+runtime for authorized passive subdomain discovery. It is not part of keyless
+source plans and emits only DISCOVERY_ONLY records. Configure the sidecar URL,
+API key, tenant ID, authorization reference, comma-separated domain allowlist,
+and timezone-aware scope expiry in the acquisition worker environment. The
+worker refuses partial configuration, expired scopes, cross-tenant requests,
+and non-discovery result roles. IP and ASN results are context references only;
+they are never promoted into new scan targets.
+
+FollowTheMoney is available as an optional entity-interchange validator with a
+curated property allowlist and a separate provenance JSONL sidecar. It does not
+replace the platform's entity identity or claim-admission lifecycle. Selected
+TheBigBrother capabilities (not its unbounded runtime) are reimplemented behind
+the same authorization and evidence contracts; biometric, breach/stealer,
+subscriber, account-enumeration, camera-surveillance and covert-tracking modules
+are excluded.
+
+God's Eye View is pinned as a Git submodule and runs only in an optional,
+loopback-only service. Initialize and run it separately:
+
+\`\`\`bash
+git submodule update --init --recursive apps/geospatial/gods-eye-view
+docker compose -f apps/deploy/docker-compose.yml \\
+  -f apps/deploy/compose.geospatial.yml --profile geospatial up -d gods-eye-view
+\`\`\`
+
+Set VITE_GEV_EMBED_URL to http://127.0.0.1:14173 in the webapp environment to
+enable the Spatial Context workspace. The embedded view receives no entity,
+person, investigation or case identifiers. Upstream source code is MIT, but
+runtime datasets retain individual provider licenses, attribution and
+non-commercial terms; do not copy those datasets into platform storage by
+default. See docs/architecture/industry-osint-and-geospatial.md and
+apps/geospatial/README.md.
