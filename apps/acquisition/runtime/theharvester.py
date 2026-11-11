@@ -158,6 +158,19 @@ class TheHarvesterRuntime:
             "evidence_status": evidence.evidence_status,
             "may_support_qualified_absence": evidence.may_support_qualified_absence,
             "record_count": len(evidence.records),
+            # Keep the normalized record array inside the durable parent capture so
+            # json:records[N] remains resolvable during parser replay.
+            "records": [
+                {
+                    "kind": record.kind,
+                    "value": record.value,
+                    "source_ids": list(record.source_ids),
+                    "scope_class": record.scope_class,
+                    "expandable": record.expandable,
+                    "result_role": "DISCOVERY_ONLY",
+                }
+                for record in evidence.records
+            ],
             "filtered_counts": dict(sorted(evidence.filtered_counts.items())),
             "source_outcomes": list(evidence.source_outcomes),
             "submitted_at": evidence.submitted_at,
