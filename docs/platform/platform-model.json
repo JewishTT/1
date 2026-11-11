@@ -35338,8 +35338,8 @@
       {
         "path": "apps/acquisition/industry_adapters/theharvester.py",
         "status": "IMPLEMENTED",
-        "loc": 394,
-        "callables": 18,
+        "loc": 404,
+        "callables": 19,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
