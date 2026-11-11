@@ -502,8 +502,12 @@ class AcquisitionWorker:
                 self.seen.add(observation_id)
                 observations.append(event)
         except Exception as exc:  # noqa: BLE001 - runtime/storage failures are routed
+            # Preserve a runtime's typed refusal code (e.g. authorization_scope_refused)
+            # instead of flattening every domain-specific refusal into one opaque error.
+            code = str(getattr(exc, "code", "") or "runtime_execution_failed")
+            reason = str(getattr(exc, "message", "") or f"{type(exc).__name__}: {exc}")
             failure = classify_error(
-                AcquisitionError("runtime_execution_failed", f"{type(exc).__name__}: {exc}"),
+                AcquisitionError(code, reason),
                 source_id=task.source_id,
                 task_id=task.task_id,
             )
