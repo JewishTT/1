@@ -28,7 +28,7 @@ from sources.executor import HttpSourceExecutor, _basic_auth  # noqa: E402
 
 ESTORIDES = APP / "sources" / "estorides"
 
-EXPECTED_TOTAL = 152  # 153 files, minus the duplicate hunter_email
+EXPECTED_TOTAL = 153  # 154 files, minus the duplicate hunter_email
 EXPECTED_CATEGORIES = 20
 
 
