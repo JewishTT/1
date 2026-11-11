@@ -35458,7 +35458,7 @@
       {
         "path": "apps/acquisition/runtime/theharvester.py",
         "status": "IMPLEMENTED",
-        "loc": 261,
+        "loc": 274,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
@@ -35862,7 +35862,7 @@
       {
         "path": "apps/acquisition/tests/unit/test_theharvester_runtime.py",
         "status": "TEST",
-        "loc": 128,
+        "loc": 130,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
@@ -35907,7 +35907,7 @@
       {
         "path": "apps/acquisition/worker_acquisition.py",
         "status": "IMPLEMENTED",
-        "loc": 823,
+        "loc": 827,
         "callables": 20,
         "stubs": 1,
         "not_implemented": 0,
