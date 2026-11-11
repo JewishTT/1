@@ -1203,7 +1203,7 @@
   ],
   "import_graph": {
     "module_count": 1115,
-    "edge_count": 3193,
+    "edge_count": 3195,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 978,
@@ -1222,7 +1222,7 @@
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 414,
-      "stdlib:datetime": 216,
+      "stdlib:datetime": 217,
       "stdlib:decimal": 14,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -3017,6 +3017,16 @@
         "from": "apps/acquisition/worker_service.py",
         "to": "apps/acquisition/runtime/searxng.py",
         "via": "runtime.searxng"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/acquisition/industry_adapters/theharvester.py",
+        "via": "industry_adapters.theharvester"
+      },
+      {
+        "from": "apps/acquisition/worker_service.py",
+        "to": "apps/acquisition/runtime/theharvester.py",
+        "via": "runtime.theharvester"
       },
       {
         "from": "apps/admission/engine/admission.py",
@@ -35448,7 +35458,7 @@
       {
         "path": "apps/acquisition/runtime/theharvester.py",
         "status": "IMPLEMENTED",
-        "loc": 257,
+        "loc": 261,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
@@ -35953,7 +35963,7 @@
       {
         "path": "apps/acquisition/worker_service.py",
         "status": "IMPLEMENTED",
-        "loc": 213,
+        "loc": 274,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
@@ -45207,7 +45217,7 @@
       },
       {
         "path": "apps/acquisition/industry_adapters/theharvester.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/acquisition/observation_gate/__init__.py",
@@ -45255,7 +45265,7 @@
       },
       {
         "path": "apps/acquisition/runtime/theharvester.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/acquisition/source_query_set.py",
@@ -49490,8 +49500,8 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 466,
-      "TEST_ONLY": 138,
+      "PRODUCTION": 468,
+      "TEST_ONLY": 136,
       "ORPHAN": 133,
       "TEST": 378,
       "total": 1115
@@ -49514,9 +49524,7 @@
       "apps/acquisition/dispatcher/regional.py",
       "apps/acquisition/industry_adapters/capabilities.py",
       "apps/acquisition/industry_adapters/followthemoney.py",
-      "apps/acquisition/industry_adapters/theharvester.py",
       "apps/acquisition/registry.py",
-      "apps/acquisition/runtime/theharvester.py",
       "apps/acquisition/source_query_set.py",
       "apps/acquisition/worker_browser/fabric.py",
       "apps/acquisition/worker_browser/renderer.py",
@@ -56505,6 +56513,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "d150da4227b9278c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/acquisition/industry_adapters/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "industry_adapters.theharvester"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "dbfe685f1595b609",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/acquisition/worker_service.py",
@@ -56514,6 +56535,19 @@
         "evidence": {
           "file": "apps/acquisition/worker_service.py",
           "via": "runtime.searxng"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "44df2c2a6bba894d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/worker_service.py",
+        "object": "apps/acquisition/runtime/theharvester.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/worker_service.py",
+          "via": "runtime.theharvester"
         },
         "confidence": 1.0
       },
@@ -113897,8 +113931,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4918,
-      "static_facts": 4619,
+      "facts_total": 4920,
+      "static_facts": 4621,
       "inferred": 299,
       "intended": 0
     }
@@ -113909,15 +113943,15 @@
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3193,
+    "import_edges": 3195,
     "test_files": 381,
     "test_functions": 5503,
     "untested_modules": 292,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4918,
-    "static_facts": 4619,
+    "facts_total": 4920,
+    "static_facts": 4621,
     "inferred": 299,
     "intended": 0
   },
@@ -113930,8 +113964,8 @@
     "total": 1115
   },
   "reachability_summary": {
-    "PRODUCTION": 466,
-    "TEST_ONLY": 138,
+    "PRODUCTION": 468,
+    "TEST_ONLY": 136,
     "ORPHAN": 133,
     "TEST": 378,
     "total": 1115
@@ -114001,9 +114035,7 @@
     "apps/acquisition/dispatcher/regional.py",
     "apps/acquisition/industry_adapters/capabilities.py",
     "apps/acquisition/industry_adapters/followthemoney.py",
-    "apps/acquisition/industry_adapters/theharvester.py",
     "apps/acquisition/registry.py",
-    "apps/acquisition/runtime/theharvester.py",
     "apps/acquisition/source_query_set.py",
     "apps/acquisition/worker_browser/fabric.py",
     "apps/acquisition/worker_browser/renderer.py",
