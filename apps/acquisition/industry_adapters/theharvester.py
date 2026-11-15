@@ -353,7 +353,11 @@ def _source_outcomes(summary: dict[str, Any], terminal: dict[str, Any]) -> list[
                 item.get("reported_count") or item.get("result_count")
             ),
             "stop_reason": str(item.get("stop_reason") or "")[:300],
-            "detection_power": item.get("detection_power") if isinstance(item.get("detection_power"), (int, float)) else None,
+            "detection_power": (
+                item.get("detection_power")
+                if isinstance(item.get("detection_power"), (int, float))
+                else None
+            ),
             "detection_power_method": str(item.get("detection_power_method") or "")[:300],
         })
     return result
@@ -420,6 +424,8 @@ def normalize_findings(
         source_ids = tuple(
             sorted({str(source)[:120] for source in source_values if str(source).strip()})
         )
-        output.append(HarvestedRecord(canonical_kind, canonical_value, source_ids, scope_class, expandable))
+        output.append(
+            HarvestedRecord(canonical_kind, canonical_value, source_ids, scope_class, expandable)
+        )
     output.sort(key=lambda item: (item.kind, item.value))
     return output, filtered
