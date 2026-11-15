@@ -8,23 +8,23 @@ committed model no longer matches the tree.
 
 | Metric | Value |
 |---|---|
-| Components | 17 |
-| Python modules | 1048 |
+| Components | 20 |
+| Python modules | 1060 |
 | TypeScript modules | 283 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 2934 |
+| Import edges (local) | 2949 |
 | Unresolved imports (no local target) | 35 |
 | Unresolved: local | 4 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 30 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 381 |
-| Test functions | 5514 |
-| Untested platform modules | 268 |
+| Test files | 384 |
+| Test functions | 5523 |
+| Untested platform modules | 274 |
 | HTTP routes | 222 |
-| Contracts (python/docs/root) | 6 / 74 / 12 |
+| Contracts (python/docs/root) | 7 / 74 / 12 |
 | Capabilities | 30 |
 
 ## Pages
@@ -54,14 +54,17 @@ committed model no longer matches the tree.
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
 | control-plane | 265 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
+| economics | 4 | 0 |  |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
+| intelligence | 3 | 0 |  |
 | interpretation | 120 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |
 | projection | 67 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| shared | 200 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| shared | 201 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops | 1 | 0 | Isolated spec-ops lab profile (never in the routine path). |
+| specops_ci | 4 | 0 |  |
 | tools | 14 | 0 | Generators, capability/owner/donor tools, probes. |
 | webapp | 0 | 283 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | zero | 40 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

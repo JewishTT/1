@@ -12,15 +12,15 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 
 | Metric | Value |
 |---|---|
-| Components | 17 |
-| Python modules | 1048 |
+| Components | 20 |
+| Python modules | 1060 |
 | TypeScript modules | 283 |
 | Rust source files / crates | 16 / 9 |
-| Resolved local import edges | 2934 |
+| Resolved local import edges | 2949 |
 | HTTP routes / routers | 222 / 36 |
 | Event types / lanes | 99 / 29 |
-| Test files / test functions | 381 / 5514 |
-| Untested platform modules | 268 |
+| Test files / test functions | 384 / 5523 |
+| Untested platform modules | 274 |
 
 ## Components
 
@@ -32,14 +32,17 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
 | `control-plane` | 265 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
+| `economics` | 4 | 0 | 0 |  |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
+| `intelligence` | 3 | 0 | 0 |  |
 | `interpretation` | 120 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| `shared` | 200 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| `shared` | 201 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 1 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
+| `specops_ci` | 4 | 0 | 0 |  |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 283 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 40 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

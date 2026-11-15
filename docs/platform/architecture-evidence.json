@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4587,
-    "static_facts": 4311,
+    "facts_total": 4607,
+    "static_facts": 4331,
     "inferred": 276,
     "intended": 0
   },
@@ -20062,6 +20062,84 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "e4a901a66f3f4df7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/economics/__init__.py",
+      "object": "apps/economics/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/economics/__init__.py",
+        "via": "domain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "228e6bbef74ac100",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/economics/domain.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/economics/domain.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ddb115c6fc3a51d7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/economics/service.py",
+      "object": "apps/economics/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/economics/service.py",
+        "via": "domain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "46f29d86d34ff2f2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/economics/service.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/economics/service.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "917c27d2db6aeb8b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/economics/tests/test_domain.py",
+      "object": "apps/economics/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/economics/tests/test_domain.py",
+        "via": "economics.domain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ecc3d1b6469d4334",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/economics/tests/test_domain.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/economics/tests/test_domain.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "ba7cb33153f8dc7a",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/feedback/feedback/__init__.py",
@@ -20474,6 +20552,45 @@
       "evidence": {
         "file": "apps/feedback/tests/test_frontier_loop.py",
         "via": "scoring.scorer"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c4ea17b717ae4b50",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/intelligence/__init__.py",
+      "object": "apps/intelligence/ports.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/intelligence/__init__.py",
+        "via": "ports"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "87d656d4283f4013",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/intelligence/ports.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/intelligence/ports.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8c2947d1745c1a38",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/intelligence/tests/test_feed_contract.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/intelligence/tests/test_feed_contract.py",
+        "via": "shared.contracts.intelligence_feed"
       },
       "confidence": 1.0
     },
@@ -36715,6 +36832,84 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "bf5ab2dbc9a46ffb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/__init__.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/__init__.py",
+        "via": "domain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "be9062fe52cb6e63",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/domain.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/domain.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "07595899b3bb5ed5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/service.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/service.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ee3caeed8e0e71b8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/service.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/service.py",
+        "via": "domain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "797cecb28a0c0cc7",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/tests/test_scope.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/tests/test_scope.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "8c752b0a4d334f12",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/tests/test_scope.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/tests/test_scope.py",
+        "via": "specops_ci.domain"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "870ea50df5d50383",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/zero/tests/conftest.py",
@@ -51140,6 +51335,30 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "faff09d889e95ea7",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/economics/tests/test_domain.py",
+      "object": "apps/economics/domain.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/economics/tests/test_domain.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "30709f4b2080cdb0",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/economics/tests/test_domain.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/economics/tests/test_domain.py"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "b7db0022af45acb6",
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/feedback/tests/test_branches.py",
@@ -51304,6 +51523,18 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/feedback/tests/test_frontier_loop.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "51382378da9367e6",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/intelligence/tests/test_feed_contract.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/intelligence/tests/test_feed_contract.py"
       },
       "confidence": 1.0
     },
@@ -57472,6 +57703,30 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/shared/tests/unit/websearch/test_websearch.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "deab02bb89118382",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops_ci/tests/test_scope.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops_ci/tests/test_scope.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b796eb68abe907f4",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops_ci/tests/test_scope.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops_ci/tests/test_scope.py"
       },
       "confidence": 1.0
     },

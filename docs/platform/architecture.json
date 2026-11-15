@@ -636,6 +636,7 @@
           "apps/shared/contracts/canonical.py",
           "apps/shared/contracts/error_codes.py",
           "apps/shared/contracts/evidence_span.py",
+          "apps/shared/contracts/intelligence_feed.py",
           "apps/shared/contracts/operator_result.py",
           "apps/shared/contracts/projection_manifest.py",
           "apps/shared/contracts/stage_outcome.py",
@@ -829,7 +830,7 @@
           "apps/shared/workflow/__init__.py",
           "apps/shared/workflow/client.py"
         ],
-        "module_count": 200
+        "module_count": 201
       },
       {
         "id": "projection-query",

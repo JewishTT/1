@@ -441,6 +441,18 @@
       ]
     },
     {
+      "name": "economics",
+      "description": "",
+      "python_modules": 4,
+      "typescript_modules": 0,
+      "modules": [
+        "apps.economics",
+        "apps.economics.domain",
+        "apps.economics.service",
+        "apps.economics.tests.test_domain"
+      ]
+    },
+    {
       "name": "feedback",
       "description": "Recrawl/priority feedback, stopping policy.",
       "python_modules": 11,
@@ -457,6 +469,17 @@
         "apps.feedback.tests.test_branches",
         "apps.feedback.tests.test_feedback",
         "apps.feedback.tests.test_frontier_loop"
+      ]
+    },
+    {
+      "name": "intelligence",
+      "description": "",
+      "python_modules": 3,
+      "typescript_modules": 0,
+      "modules": [
+        "apps.intelligence",
+        "apps.intelligence.ports",
+        "apps.intelligence.tests.test_feed_contract"
       ]
     },
     {
@@ -842,7 +865,7 @@
     {
       "name": "shared",
       "description": "Contracts, events, domain invariants, storage, security — the substrate every app imports.",
-      "python_modules": 200,
+      "python_modules": 201,
       "typescript_modules": 0,
       "modules": [
         "apps.shared.config",
@@ -853,6 +876,7 @@
         "apps.shared.contracts.canonical",
         "apps.shared.contracts.error_codes",
         "apps.shared.contracts.evidence_span",
+        "apps.shared.contracts.intelligence_feed",
         "apps.shared.contracts.operator_result",
         "apps.shared.contracts.projection_manifest",
         "apps.shared.contracts.stage_outcome",
@@ -1043,8 +1067,7 @@
         "apps.shared.websearch.providers",
         "apps.shared.websearch.queries",
         "apps.shared.websearch.relevance",
-        "apps.shared.workflow",
-        "apps.shared.workflow.client"
+        "apps.shared.workflow"
       ]
     },
     {
@@ -1054,6 +1077,18 @@
       "typescript_modules": 0,
       "modules": [
         "apps.specops"
+      ]
+    },
+    {
+      "name": "specops_ci",
+      "description": "",
+      "python_modules": 4,
+      "typescript_modules": 0,
+      "modules": [
+        "apps.specops_ci",
+        "apps.specops_ci.domain",
+        "apps.specops_ci.service",
+        "apps.specops_ci.tests.test_scope"
       ]
     },
     {
@@ -1135,11 +1170,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1048,
-    "edge_count": 2934,
+    "module_count": 1060,
+    "edge_count": 2949,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 918,
+      "stdlib:__future__": 923,
       "stdlib:abc": 3,
       "stdlib:argparse": 21,
       "stdlib:ast": 28,
@@ -1154,12 +1189,12 @@
       "stdlib:contextlib": 4,
       "stdlib:copy": 1,
       "stdlib:csv": 3,
-      "stdlib:dataclasses": 384,
-      "stdlib:datetime": 200,
-      "stdlib:decimal": 1,
+      "stdlib:dataclasses": 387,
+      "stdlib:datetime": 207,
+      "stdlib:decimal": 3,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
-      "stdlib:enum": 117,
+      "stdlib:enum": 118,
       "stdlib:functools": 7,
       "stdlib:gzip": 2,
       "stdlib:hashlib": 136,
@@ -1179,7 +1214,7 @@
       "stdlib:pathlib": 331,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 105,
+      "stdlib:re": 107,
       "stdlib:secrets": 2,
       "stdlib:shlex": 1,
       "stdlib:shutil": 16,
@@ -1198,7 +1233,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 41,
-      "stdlib:typing": 377,
+      "stdlib:typing": 381,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 66,
@@ -1242,7 +1277,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 281,
+      "third-party:pytest": 284,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -8833,6 +8868,36 @@
         "via": "services.materialization_outbox_relay"
       },
       {
+        "from": "apps/economics/__init__.py",
+        "to": "apps/economics/domain.py",
+        "via": "domain"
+      },
+      {
+        "from": "apps/economics/domain.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
+        "from": "apps/economics/service.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
+        "from": "apps/economics/service.py",
+        "to": "apps/economics/domain.py",
+        "via": "domain"
+      },
+      {
+        "from": "apps/economics/tests/test_domain.py",
+        "to": "apps/economics/domain.py",
+        "via": "economics.domain"
+      },
+      {
+        "from": "apps/economics/tests/test_domain.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
         "from": "apps/feedback/feedback/__init__.py",
         "to": "apps/feedback/feedback/branch/__init__.py",
         "via": "branch"
@@ -8991,6 +9056,21 @@
         "from": "apps/feedback/tests/test_frontier_loop.py",
         "to": "apps/control-plane/db/schema.py",
         "via": "db.schema"
+      },
+      {
+        "from": "apps/intelligence/__init__.py",
+        "to": "apps/intelligence/ports.py",
+        "via": "ports"
+      },
+      {
+        "from": "apps/intelligence/ports.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
+        "from": "apps/intelligence/tests/test_feed_contract.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
       },
       {
         "from": "apps/interpretation/_consume_searxng.py",
@@ -15238,6 +15318,36 @@
         "via": "config.settings"
       },
       {
+        "from": "apps/specops_ci/__init__.py",
+        "to": "apps/specops_ci/domain.py",
+        "via": "domain"
+      },
+      {
+        "from": "apps/specops_ci/domain.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
+        "from": "apps/specops_ci/service.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
+        "from": "apps/specops_ci/service.py",
+        "to": "apps/specops_ci/domain.py",
+        "via": "domain"
+      },
+      {
+        "from": "apps/specops_ci/tests/test_scope.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
+        "from": "apps/specops_ci/tests/test_scope.py",
+        "to": "apps/specops_ci/domain.py",
+        "via": "specops_ci.domain"
+      },
+      {
         "from": "apps/zero/tests/conftest.py",
         "to": "apps/zero/zero/type_detector.py",
         "via": "zero.type_detector"
@@ -16151,6 +16261,7 @@
       "domain": "apps/shared/domain/__init__.py",
       "donor": "apps/shared/donor/__init__.py",
       "econ": "apps/science/econ/__init__.py",
+      "economics": "apps/economics/__init__.py",
       "engine": "apps/admission/engine/__init__.py",
       "errors": "apps/science/errors.py",
       "events": "apps/shared/events/__init__.py",
@@ -16201,10 +16312,12 @@
       "semantic": "apps/shared/semantic/__init__.py",
       "semantic_path": "apps/control-plane/semantic_path/__init__.py",
       "services": "apps/control-plane/services/__init__.py",
+      "shared": "apps/shared",
       "sims": "apps/science/sims/__init__.py",
       "sources": "apps/acquisition/sources/__init__.py",
       "spatial": "apps/projection/spatial",
       "specops": "apps/specops/__init__.py",
+      "specops_ci": "apps/specops_ci/__init__.py",
       "stopping": "apps/feedback/stopping.py",
       "storage": "apps/shared/storage/__init__.py",
       "store": "apps/science/store.py",
@@ -19287,6 +19400,19 @@
         ]
       },
       {
+        "path": "apps/economics/tests/test_domain.py",
+        "tests": 3,
+        "test_names": [
+          "test_economic_subjects_are_derived_from_intelligence",
+          "test_flow_aggregation_is_per_entity_and_currency",
+          "test_flows_cannot_escape_snapshot_scope"
+        ],
+        "targets": [
+          "apps/economics/domain.py",
+          "apps/shared/contracts/intelligence_feed.py"
+        ]
+      },
+      {
         "path": "apps/feedback/tests/test_branches.py",
         "tests": 10,
         "test_names": [
@@ -19342,6 +19468,18 @@
           "apps/feedback/feedback/__init__.py",
           "apps/feedback/feedback/frontier.py",
           "apps/shared/scoring/scorer.py"
+        ]
+      },
+      {
+        "path": "apps/intelligence/tests/test_feed_contract.py",
+        "tests": 3,
+        "test_names": [
+          "test_snapshot_is_tenant_scoped_and_keeps_evidence_references",
+          "test_snapshot_rejects_cross_tenant_evidence",
+          "test_query_bounds_recon_expansion_and_requires_purpose"
+        ],
+        "targets": [
+          "apps/shared/contracts/intelligence_feed.py"
         ]
       },
       {
@@ -24337,6 +24475,19 @@
         ]
       },
       {
+        "path": "apps/specops_ci/tests/test_scope.py",
+        "tests": 3,
+        "test_names": [
+          "test_assessment_context_uses_only_previously_discovered_entities",
+          "test_recon_cannot_expand_the_approved_roster",
+          "test_expired_authorization_is_rejected"
+        ],
+        "targets": [
+          "apps/shared/contracts/intelligence_feed.py",
+          "apps/specops_ci/domain.py"
+        ]
+      },
+      {
         "path": "apps/zero/tests/conftest.py",
         "tests": 0,
         "test_names": [],
@@ -25009,7 +25160,7 @@
         ]
       }
     ],
-    "total": 5514
+    "total": 5523
   },
   "contracts": {
     "python": [
@@ -25090,6 +25241,24 @@
           "_interval_overlaps",
           "_selector_form",
           "_selector_fields"
+        ]
+      },
+      {
+        "name": "intelligence_feed",
+        "path": "apps/shared/contracts/intelligence_feed.py",
+        "docstring": "Read-only Intelligence Silo contract shared by every domain consumer.",
+        "classes": [
+          "IntelligenceContractError",
+          "EvidenceReference",
+          "IntelligenceEntity",
+          "IntelligenceRelation",
+          "IntelligenceSnapshot",
+          "IntelligenceQuery",
+          "IntelligenceReadPort"
+        ],
+        "functions": [
+          "_required",
+          "_aware"
         ]
       },
       {
@@ -30593,7 +30762,11 @@
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
     "apps/deploy/minio-init/init-buckets.py",
+    "apps/economics/__init__.py",
+    "apps/economics/service.py",
     "apps/feedback/feedback/branch/__init__.py",
+    "apps/intelligence/__init__.py",
+    "apps/intelligence/ports.py",
     "apps/interpretation/__init__.py",
     "apps/interpretation/_consume_searxng.py",
     "apps/interpretation/_prove_primproc.py",
@@ -30654,13 +30827,9 @@
     "apps/science/scitda/__init__.py",
     "apps/science/sims/__init__.py",
     "apps/science/structure/__init__.py",
-    "apps/science/temporal/__init__.py",
-    "apps/shared/config/__init__.py",
-    "apps/shared/conftest.py",
-    "apps/shared/contracts/__init__.py",
-    "apps/shared/datasets/__init__.py"
+    "apps/science/temporal/__init__.py"
   ],
-  "untested_count": 268,
+  "untested_count": 274,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -31299,6 +31468,7 @@
             "apps/shared/contracts/canonical.py",
             "apps/shared/contracts/error_codes.py",
             "apps/shared/contracts/evidence_span.py",
+            "apps/shared/contracts/intelligence_feed.py",
             "apps/shared/contracts/operator_result.py",
             "apps/shared/contracts/projection_manifest.py",
             "apps/shared/contracts/stage_outcome.py",
@@ -31492,7 +31662,7 @@
             "apps/shared/workflow/__init__.py",
             "apps/shared/workflow/client.py"
           ],
-          "module_count": 200
+          "module_count": 201
         },
         {
           "id": "projection-query",
@@ -37568,6 +37738,42 @@
         "markers": []
       },
       {
+        "path": "apps/economics/__init__.py",
+        "status": "PACKAGE_INIT",
+        "loc": 17,
+        "callables": 0,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/economics/domain.py",
+        "status": "IMPLEMENTED",
+        "loc": 166,
+        "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/economics/service.py",
+        "status": "IMPLEMENTED",
+        "loc": 19,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/economics/tests/test_domain.py",
+        "status": "TEST",
+        "loc": 76,
+        "callables": 6,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/feedback/feedback/__init__.py",
         "status": "PACKAGE_INIT",
         "loc": 34,
@@ -37662,6 +37868,33 @@
         "status": "TEST",
         "loc": 138,
         "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/intelligence/__init__.py",
+        "status": "PACKAGE_INIT",
+        "loc": 11,
+        "callables": 0,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/intelligence/ports.py",
+        "status": "DECLARATION_ONLY",
+        "loc": 19,
+        "callables": 0,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/intelligence/tests/test_feed_contract.py",
+        "status": "TEST",
+        "loc": 66,
+        "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -40687,6 +40920,15 @@
         "markers": []
       },
       {
+        "path": "apps/shared/contracts/intelligence_feed.py",
+        "status": "IMPLEMENTED",
+        "loc": 172,
+        "callables": 8,
+        "stubs": 1,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/shared/contracts/operator_result.py",
         "status": "IMPLEMENTED",
         "loc": 671,
@@ -42440,6 +42682,42 @@
         "markers": []
       },
       {
+        "path": "apps/specops_ci/__init__.py",
+        "status": "PACKAGE_INIT",
+        "loc": 19,
+        "callables": 0,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/specops_ci/domain.py",
+        "status": "IMPLEMENTED",
+        "loc": 116,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/specops_ci/service.py",
+        "status": "IMPLEMENTED",
+        "loc": 42,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/specops_ci/tests/test_scope.py",
+        "status": "TEST",
+        "loc": 92,
+        "callables": 5,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/zero/tests/conftest.py",
         "status": "TEST",
         "loc": 35,
@@ -43219,12 +43497,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 550,
-      "DECLARATION_ONLY": 18,
-      "PACKAGE_INIT": 91,
-      "TEST": 365,
+      "IMPLEMENTED": 555,
+      "DECLARATION_ONLY": 19,
+      "PACKAGE_INIT": 94,
+      "TEST": 368,
       "MIGRATION": 24,
-      "total": 1048
+      "total": 1060
     }
   },
   "reachability": {
@@ -44934,6 +45212,22 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/economics/__init__.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/economics/domain.py",
+        "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/economics/service.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/economics/tests/test_domain.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/feedback/feedback/__init__.py",
         "status": "TEST_ONLY"
       },
@@ -44975,6 +45269,18 @@
       },
       {
         "path": "apps/feedback/tests/test_frontier_loop.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/intelligence/__init__.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/intelligence/ports.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/intelligence/tests/test_feed_contract.py",
         "status": "TEST"
       },
       {
@@ -46314,6 +46620,10 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/shared/contracts/intelligence_feed.py",
+        "status": "TEST_ONLY"
+      },
+      {
         "path": "apps/shared/contracts/operator_result.py",
         "status": "TEST_ONLY"
       },
@@ -47086,6 +47396,22 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/specops_ci/__init__.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/specops_ci/domain.py",
+        "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/specops_ci/service.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/specops_ci/tests/test_scope.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/zero/tests/conftest.py",
         "status": "TEST"
       },
@@ -47470,10 +47796,10 @@
     ],
     "summary": {
       "PRODUCTION": 420,
-      "TEST_ONLY": 136,
-      "ORPHAN": 127,
-      "TEST": 365,
-      "total": 1048
+      "TEST_ONLY": 139,
+      "ORPHAN": 133,
+      "TEST": 368,
+      "total": 1060
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -47520,6 +47846,7 @@
       "apps/control-plane/services/dispatcher.py",
       "apps/control-plane/services/layer0_pipeline.py",
       "apps/control-plane/services/relation_projection_relay.py",
+      "apps/economics/domain.py",
       "apps/feedback/feedback/__init__.py",
       "apps/feedback/feedback/branch/__init__.py",
       "apps/feedback/feedback/branch/entity.py",
@@ -47586,6 +47913,7 @@
       "apps/science/operators/phase.py",
       "apps/science/sims/gnca.py",
       "apps/science/streaming/river_operator.py",
+      "apps/shared/contracts/intelligence_feed.py",
       "apps/shared/contracts/operator_result.py",
       "apps/shared/contracts/projection_manifest.py",
       "apps/shared/domain/access_mode.py",
@@ -47606,6 +47934,7 @@
       "apps/shared/websearch/discovery.py",
       "apps/shared/websearch/providers.py",
       "apps/shared/websearch/relevance.py",
+      "apps/specops_ci/domain.py",
       "apps/zero/zero/harvesters/git.py",
       "apps/zero/zero/harvesters/image.py",
       "apps/zero/zero/harvesters/phone.py",
@@ -47673,6 +48002,10 @@
       "apps/control-plane/services/relation_projection_rebuild.py",
       "apps/control-plane/services/specops_catalog.py",
       "apps/control-plane/workflows/__init__.py",
+      "apps/economics/__init__.py",
+      "apps/economics/service.py",
+      "apps/intelligence/__init__.py",
+      "apps/intelligence/ports.py",
       "apps/interpretation/__init__.py",
       "apps/interpretation/evidence/__init__.py",
       "apps/interpretation/extractors/__init__.py",
@@ -47723,6 +48056,8 @@
       "apps/shared/storage/__init__.py",
       "apps/shared/workflow/__init__.py",
       "apps/specops/__init__.py",
+      "apps/specops_ci/__init__.py",
+      "apps/specops_ci/service.py",
       "apps/zero/zero/__init__.py",
       "apps/zero/zero/enrichment/__init__.py",
       "apps/zero/zero/harvesters/__init__.py",
@@ -69452,6 +69787,84 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "e4a901a66f3f4df7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/economics/__init__.py",
+        "object": "apps/economics/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/economics/__init__.py",
+          "via": "domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "228e6bbef74ac100",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/economics/domain.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/economics/domain.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ddb115c6fc3a51d7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/economics/service.py",
+        "object": "apps/economics/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/economics/service.py",
+          "via": "domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "46f29d86d34ff2f2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/economics/service.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/economics/service.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "917c27d2db6aeb8b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/economics/tests/test_domain.py",
+        "object": "apps/economics/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/economics/tests/test_domain.py",
+          "via": "economics.domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ecc3d1b6469d4334",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/economics/tests/test_domain.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/economics/tests/test_domain.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "ba7cb33153f8dc7a",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/feedback/feedback/__init__.py",
@@ -69864,6 +70277,45 @@
         "evidence": {
           "file": "apps/feedback/tests/test_frontier_loop.py",
           "via": "scoring.scorer"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c4ea17b717ae4b50",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/intelligence/__init__.py",
+        "object": "apps/intelligence/ports.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/intelligence/__init__.py",
+          "via": "ports"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "87d656d4283f4013",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/intelligence/ports.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/intelligence/ports.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8c2947d1745c1a38",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/intelligence/tests/test_feed_contract.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/intelligence/tests/test_feed_contract.py",
+          "via": "shared.contracts.intelligence_feed"
         },
         "confidence": 1.0
       },
@@ -86105,6 +86557,84 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "bf5ab2dbc9a46ffb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/__init__.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/__init__.py",
+          "via": "domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "be9062fe52cb6e63",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/domain.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/domain.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "07595899b3bb5ed5",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/service.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/service.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ee3caeed8e0e71b8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/service.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/service.py",
+          "via": "domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "797cecb28a0c0cc7",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/tests/test_scope.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/tests/test_scope.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8c752b0a4d334f12",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/tests/test_scope.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/tests/test_scope.py",
+          "via": "specops_ci.domain"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "870ea50df5d50383",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/zero/tests/conftest.py",
@@ -100530,6 +101060,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "faff09d889e95ea7",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/economics/tests/test_domain.py",
+        "object": "apps/economics/domain.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/economics/tests/test_domain.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "30709f4b2080cdb0",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/economics/tests/test_domain.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/economics/tests/test_domain.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "b7db0022af45acb6",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/feedback/tests/test_branches.py",
@@ -100694,6 +101248,18 @@
         "method": "import_and_name_scan",
         "evidence": {
           "file": "apps/feedback/tests/test_frontier_loop.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "51382378da9367e6",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/intelligence/tests/test_feed_contract.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/intelligence/tests/test_feed_contract.py"
         },
         "confidence": 1.0
       },
@@ -106866,6 +107432,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "deab02bb89118382",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/specops_ci/tests/test_scope.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/specops_ci/tests/test_scope.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b796eb68abe907f4",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/specops_ci/tests/test_scope.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/specops_ci/tests/test_scope.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "a78718509cd9273e",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/zero/tests/conftest.py",
@@ -107635,44 +108225,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4587,
-      "static_facts": 4311,
+      "facts_total": 4607,
+      "static_facts": 4331,
       "inferred": 276,
       "intended": 0
     }
   },
   "counts": {
-    "components": 17,
-    "python_modules": 1048,
+    "components": 20,
+    "python_modules": 1060,
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2934,
-    "test_files": 381,
-    "test_functions": 5514,
-    "untested_modules": 268,
+    "import_edges": 2949,
+    "test_files": 384,
+    "test_functions": 5523,
+    "untested_modules": 274,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4587,
-    "static_facts": 4311,
+    "facts_total": 4607,
+    "static_facts": 4331,
     "inferred": 276,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 550,
-    "DECLARATION_ONLY": 18,
-    "PACKAGE_INIT": 91,
-    "TEST": 365,
+    "IMPLEMENTED": 555,
+    "DECLARATION_ONLY": 19,
+    "PACKAGE_INIT": 94,
+    "TEST": 368,
     "MIGRATION": 24,
-    "total": 1048
+    "total": 1060
   },
   "reachability_summary": {
     "PRODUCTION": 420,
-    "TEST_ONLY": 136,
-    "ORPHAN": 127,
-    "TEST": 365,
-    "total": 1048
+    "TEST_ONLY": 139,
+    "ORPHAN": 133,
+    "TEST": 368,
+    "total": 1060
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -107765,6 +108355,7 @@
     "apps/control-plane/services/dispatcher.py",
     "apps/control-plane/services/layer0_pipeline.py",
     "apps/control-plane/services/relation_projection_relay.py",
+    "apps/economics/domain.py",
     "apps/feedback/feedback/__init__.py",
     "apps/feedback/feedback/branch/__init__.py",
     "apps/feedback/feedback/branch/entity.py",
@@ -107831,6 +108422,7 @@
     "apps/science/operators/phase.py",
     "apps/science/sims/gnca.py",
     "apps/science/streaming/river_operator.py",
+    "apps/shared/contracts/intelligence_feed.py",
     "apps/shared/contracts/operator_result.py",
     "apps/shared/contracts/projection_manifest.py",
     "apps/shared/domain/access_mode.py",
@@ -107851,6 +108443,7 @@
     "apps/shared/websearch/discovery.py",
     "apps/shared/websearch/providers.py",
     "apps/shared/websearch/relevance.py",
+    "apps/specops_ci/domain.py",
     "apps/zero/zero/harvesters/git.py",
     "apps/zero/zero/harvesters/image.py",
     "apps/zero/zero/harvesters/phone.py",
@@ -107918,6 +108511,10 @@
     "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/workflows/__init__.py",
+    "apps/economics/__init__.py",
+    "apps/economics/service.py",
+    "apps/intelligence/__init__.py",
+    "apps/intelligence/ports.py",
     "apps/interpretation/__init__.py",
     "apps/interpretation/evidence/__init__.py",
     "apps/interpretation/extractors/__init__.py",
@@ -107968,6 +108565,8 @@
     "apps/shared/storage/__init__.py",
     "apps/shared/workflow/__init__.py",
     "apps/specops/__init__.py",
+    "apps/specops_ci/__init__.py",
+    "apps/specops_ci/service.py",
     "apps/zero/zero/__init__.py",
     "apps/zero/zero/enrichment/__init__.py",
     "apps/zero/zero/harvesters/__init__.py",

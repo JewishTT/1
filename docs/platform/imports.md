@@ -1,6 +1,6 @@
 # Import graph
 
-1048 Python modules, 2934 resolved local edges.
+1060 Python modules, 2949 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,19 +10,19 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 918 |
-| `dataclasses` | stdlib | 384 |
-| `typing` | stdlib | 377 |
+| `__future__` | stdlib | 923 |
+| `dataclasses` | stdlib | 387 |
+| `typing` | stdlib | 381 |
 | `pathlib` | stdlib | 331 |
-| `pytest` | third-party | 281 |
+| `pytest` | third-party | 284 |
 | `sys` | stdlib | 269 |
 | `collections` | stdlib | 248 |
 | `json` | stdlib | 210 |
-| `datetime` | stdlib | 200 |
+| `datetime` | stdlib | 207 |
 | `sqlalchemy` | third-party | 174 |
 | `hashlib` | stdlib | 136 |
-| `enum` | stdlib | 117 |
-| `re` | stdlib | 105 |
+| `enum` | stdlib | 118 |
+| `re` | stdlib | 107 |
 | `asyncio` | stdlib | 77 |
 | `os` | stdlib | 71 |
 | `fastapi` | third-party | 70 |
@@ -152,6 +152,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `domain` | `apps/shared/domain/__init__.py` |
 | `donor` | `apps/shared/donor/__init__.py` |
 | `econ` | `apps/science/econ/__init__.py` |
+| `economics` | `apps/economics/__init__.py` |
 | `engine` | `apps/admission/engine/__init__.py` |
 | `errors` | `apps/science/errors.py` |
 | `events` | `apps/shared/events/__init__.py` |
@@ -202,10 +203,12 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `semantic` | `apps/shared/semantic/__init__.py` |
 | `semantic_path` | `apps/control-plane/semantic_path/__init__.py` |
 | `services` | `apps/control-plane/services/__init__.py` |
+| `shared` | `apps/shared` |
 | `sims` | `apps/science/sims/__init__.py` |
 | `sources` | `apps/acquisition/sources/__init__.py` |
 | `spatial` | `apps/projection/spatial` |
 | `specops` | `apps/specops/__init__.py` |
+| `specops_ci` | `apps/specops_ci/__init__.py` |
 | `stopping` | `apps/feedback/stopping.py` |
 | `storage` | `apps/shared/storage/__init__.py` |
 | `store` | `apps/science/store.py` |

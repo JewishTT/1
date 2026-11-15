@@ -213,6 +213,23 @@ apps.deploy.minio-init.init-buckets
 
 </details>
 
+## `economics`
+
+
+
+Python modules: **4** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.economics
+apps.economics.domain
+apps.economics.service
+apps.economics.tests.test_domain
+```
+
+</details>
+
 ## `feedback`
 
 Recrawl/priority feedback, stopping policy.
@@ -233,6 +250,22 @@ apps.feedback.stopping
 apps.feedback.tests.test_branches
 apps.feedback.tests.test_feedback
 apps.feedback.tests.test_frontier_loop
+```
+
+</details>
+
+## `intelligence`
+
+
+
+Python modules: **3** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.intelligence
+apps.intelligence.ports
+apps.intelligence.tests.test_feed_contract
 ```
 
 </details>
@@ -440,7 +473,7 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **200** · TypeScript modules: **0**
+Python modules: **201** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -453,6 +486,7 @@ apps.shared.contracts
 apps.shared.contracts.canonical
 apps.shared.contracts.error_codes
 apps.shared.contracts.evidence_span
+apps.shared.contracts.intelligence_feed
 apps.shared.contracts.operator_result
 apps.shared.contracts.projection_manifest
 apps.shared.contracts.stage_outcome
@@ -484,7 +518,6 @@ apps.shared.domain.relation_candidate
 apps.shared.domain.relation_claim
 apps.shared.domain.relation_claim_material
 apps.shared.domain.relation_identity
-apps.shared.domain.relation_participant
 ```
 
 </details>
@@ -499,6 +532,23 @@ Python modules: **1** · TypeScript modules: **0**
 
 ```
 apps.specops
+```
+
+</details>
+
+## `specops_ci`
+
+
+
+Python modules: **4** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.specops_ci
+apps.specops_ci.domain
+apps.specops_ci.service
+apps.specops_ci.tests.test_scope
 ```
 
 </details>

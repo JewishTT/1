@@ -1,6 +1,6 @@
 # Tests
 
-381 test files, 5514 test functions. 268 platform modules are not targeted by any test.
+384 test files, 5523 test functions. 274 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -155,9 +155,11 @@
 | `apps/control-plane/tests/unit/test_us3_ops.py` | 7 | `apps/control-plane/services/audit.py`, `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/tests/unit/test_wheel_package_manifest.py` | 1 | — |
 | `apps/control-plane/tests/unit/test_workflows.py` | 16 | `apps/control-plane/services/__init__.py`, `apps/control-plane/workflows/__init__.py`, `apps/control-plane/workflows/investigation.py`, `apps/control-plane/workflows/temporal_materialization.py` |
+| `apps/economics/tests/test_domain.py` | 3 | `apps/economics/domain.py`, `apps/shared/contracts/intelligence_feed.py` |
 | `apps/feedback/tests/test_branches.py` | 10 | `apps/feedback/feedback/__init__.py`, `apps/feedback/feedback/branch/entity.py`, `apps/feedback/feedback/branch/finding.py`, `apps/feedback/feedback/branch/source.py` |
 | `apps/feedback/tests/test_feedback.py` | 8 | `apps/feedback/feedback_engine.py`, `apps/feedback/stopping.py` |
 | `apps/feedback/tests/test_frontier_loop.py` | 2 | `apps/control-plane/db/schema.py`, `apps/control-plane/db/session.py`, `apps/control-plane/services/frontier.py`, `apps/feedback/feedback/__init__.py` |
+| `apps/intelligence/tests/test_feed_contract.py` | 3 | `apps/shared/contracts/intelligence_feed.py` |
 | `apps/interpretation/tests/conftest.py` | 0 | `apps/interpretation/dictionaries/build_mini.py` |
 | `apps/interpretation/tests/contract/__init__.py` | 0 | — |
 | `apps/interpretation/tests/contract/test_dictionary_entities.py` | 7 | `apps/interpretation/dictionaries/__init__.py`, `apps/interpretation/extractors/dictionary_entities.py`, `apps/interpretation/extractors/orgs.py`, `apps/interpretation/extractors/places.py` |
@@ -356,6 +358,7 @@
 | `apps/shared/tests/unit/test_temporal_metrics.py` | 9 | `apps/shared/domain/temporal_metrics.py` |
 | `apps/shared/tests/unit/test_type_signal.py` | 8 | `apps/shared/semantic/type_signal.py`, `apps/shared/semantic/vocabularies.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |
+| `apps/specops_ci/tests/test_scope.py` | 3 | `apps/shared/contracts/intelligence_feed.py`, `apps/specops_ci/domain.py` |
 | `apps/zero/tests/conftest.py` | 0 | `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_cc_capture.py` | 14 | `apps/shared/network/cc_session.py`, `apps/zero/zero/cc_capture.py` |
 | `apps/zero/tests/test_enrichment.py` | 26 | `apps/zero/zero/enrichment/feedback.py`, `apps/zero/zero/enrichment/modules.py`, `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/type_detector.py` |
