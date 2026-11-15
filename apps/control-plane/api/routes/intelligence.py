@@ -44,9 +44,15 @@ async def get_snapshot(
     except IntelligenceSubjectNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except IntelligenceEvidenceUnavailable as exc:
-        raise HTTPException(status_code=409, detail={"code": "EVIDENCE_UNAVAILABLE", "message": str(exc)}) from exc
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "EVIDENCE_UNAVAILABLE", "message": str(exc)},
+        ) from exc
     except IntelligenceSnapshotBudgetExceeded as exc:
-        raise HTTPException(status_code=413, detail={"code": "SNAPSHOT_BUDGET_EXCEEDED", "message": str(exc)}) from exc
+        raise HTTPException(
+            status_code=413,
+            detail={"code": "SNAPSHOT_BUDGET_EXCEEDED", "message": str(exc)},
+        ) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return jsonable_encoder(asdict(snapshot))
