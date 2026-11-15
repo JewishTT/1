@@ -20127,7 +20127,7 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "917c27d2db6aeb8b",
+      "fact_id": "3f20497e7a1d06ca",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/economics/tests/test_domain.py",
       "object": "apps/economics/domain.py",
@@ -20135,7 +20135,7 @@
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/economics/tests/test_domain.py",
-        "via": "economics.domain"
+        "via": "apps.economics.domain"
       },
       "confidence": 1.0
     },
@@ -36910,7 +36910,7 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "8c752b0a4d334f12",
+      "fact_id": "7f65dbbabc389cf9",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/specops_ci/tests/test_scope.py",
       "object": "apps/specops_ci/domain.py",
@@ -36918,7 +36918,7 @@
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/specops_ci/tests/test_scope.py",
-        "via": "specops_ci.domain"
+        "via": "apps.specops_ci.domain"
       },
       "confidence": 1.0
     },

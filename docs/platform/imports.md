@@ -152,7 +152,6 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `domain` | `apps/shared/domain/__init__.py` |
 | `donor` | `apps/shared/donor/__init__.py` |
 | `econ` | `apps/science/econ/__init__.py` |
-| `economics` | `apps/economics/__init__.py` |
 | `engine` | `apps/admission/engine/__init__.py` |
 | `errors` | `apps/science/errors.py` |
 | `events` | `apps/shared/events/__init__.py` |
@@ -208,7 +207,6 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `sources` | `apps/acquisition/sources/__init__.py` |
 | `spatial` | `apps/projection/spatial` |
 | `specops` | `apps/specops/__init__.py` |
-| `specops_ci` | `apps/specops_ci/__init__.py` |
 | `stopping` | `apps/feedback/stopping.py` |
 | `storage` | `apps/shared/storage/__init__.py` |
 | `store` | `apps/science/store.py` |

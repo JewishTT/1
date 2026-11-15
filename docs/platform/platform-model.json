@@ -8895,7 +8895,7 @@
       {
         "from": "apps/economics/tests/test_domain.py",
         "to": "apps/economics/domain.py",
-        "via": "economics.domain"
+        "via": "apps.economics.domain"
       },
       {
         "from": "apps/economics/tests/test_domain.py",
@@ -15350,7 +15350,7 @@
       {
         "from": "apps/specops_ci/tests/test_scope.py",
         "to": "apps/specops_ci/domain.py",
-        "via": "specops_ci.domain"
+        "via": "apps.specops_ci.domain"
       },
       {
         "from": "apps/zero/tests/conftest.py",
@@ -16266,7 +16266,6 @@
       "domain": "apps/shared/domain/__init__.py",
       "donor": "apps/shared/donor/__init__.py",
       "econ": "apps/science/econ/__init__.py",
-      "economics": "apps/economics/__init__.py",
       "engine": "apps/admission/engine/__init__.py",
       "errors": "apps/science/errors.py",
       "events": "apps/shared/events/__init__.py",
@@ -16322,7 +16321,6 @@
       "sources": "apps/acquisition/sources/__init__.py",
       "spatial": "apps/projection/spatial",
       "specops": "apps/specops/__init__.py",
-      "specops_ci": "apps/specops_ci/__init__.py",
       "stopping": "apps/feedback/stopping.py",
       "storage": "apps/shared/storage/__init__.py",
       "store": "apps/science/store.py",
@@ -36584,7 +36582,7 @@
       {
         "path": "apps/control-plane/services/intelligence_reader.py",
         "status": "IMPLEMENTED",
-        "loc": 471,
+        "loc": 480,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -69929,7 +69927,7 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "917c27d2db6aeb8b",
+        "fact_id": "3f20497e7a1d06ca",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/economics/tests/test_domain.py",
         "object": "apps/economics/domain.py",
@@ -69937,7 +69935,7 @@
         "method": "python_ast+import_resolution",
         "evidence": {
           "file": "apps/economics/tests/test_domain.py",
-          "via": "economics.domain"
+          "via": "apps.economics.domain"
         },
         "confidence": 1.0
       },
@@ -86712,7 +86710,7 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "8c752b0a4d334f12",
+        "fact_id": "7f65dbbabc389cf9",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/specops_ci/tests/test_scope.py",
         "object": "apps/specops_ci/domain.py",
@@ -86720,7 +86718,7 @@
         "method": "python_ast+import_resolution",
         "evidence": {
           "file": "apps/specops_ci/tests/test_scope.py",
-          "via": "specops_ci.domain"
+          "via": "apps.specops_ci.domain"
         },
         "confidence": 1.0
       },
