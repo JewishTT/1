@@ -145,9 +145,14 @@ class PostgresIntelligenceReadPort:
             entity_observations, relation_contexts = await self._evidence_edges(
                 conn, entity_ids, tuple(relation_rows.values())
             )
-            observation_ids = set(relation_contexts)
+            observation_ids: set[str] = set()
             for refs in entity_observations.values():
                 observation_ids.update(refs)
+            for claim in relation_rows.values():
+                observation_ids.update(_as_string_list(claim.get("observation_refs")))
+                context_ref = str(claim.get("context_ref") or "")
+                if context_ref:
+                    observation_ids.update(relation_contexts.get(context_ref, ()))
 
             observations = await self._observations(conn, query, observation_ids)
             evidence_by_id = self._evidence_refs(observations)
@@ -232,6 +237,10 @@ class PostgresIntelligenceReadPort:
                     "predicate": relation.predicate,
                     "target": relation.target_entity_id,
                     "status": relation.status,
+                    "confidence": relation.confidence,
+                    "evidence_grade": relation.evidence_grade,
+                    "valid_from": relation.valid_from.isoformat() if relation.valid_from else None,
+                    "valid_to": relation.valid_to.isoformat() if relation.valid_to else None,
                     "evidence": [ref.observation_id for ref in relation.evidence],
                 }
                 for relation in sorted(
