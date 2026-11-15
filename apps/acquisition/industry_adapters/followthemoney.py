@@ -105,11 +105,17 @@ def build_ftm_export(
 
 def validate_with_followthemoney(record: Mapping[str, Any]) -> dict[str, Any]:
     """Validate against the installed FtM model; import remains optional at runtime."""
+    # Deliberately dynamic: the exporter can run in an isolated FtM-enabled
+    # process without turning FollowTheMoney into a core workspace dependency
+    # or an import-graph capability probe.
+    import importlib
+
     try:
-        from followthemoney import model
-    except ImportError as exc:
+        ftm = importlib.import_module("followthemoney")
+        model = getattr(ftm, "model")
+    except (ImportError, AttributeError) as exc:
         raise FtMExportError(
-            "optional dependency followthemoney is not installed; install the documented adapter extra"
+            "optional package followthemoney is not installed in this exporter process"
         ) from exc
     try:
         proxy = model.get_proxy(copy.deepcopy(dict(record)), cleaned=False)
