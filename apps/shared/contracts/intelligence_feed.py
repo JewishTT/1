@@ -101,7 +101,9 @@ class IntelligenceRelation:
         ):
             _required(value, name)
         if self.source_entity_id == self.target_entity_id:
-            raise IntelligenceContractError("self-relations must be modelled explicitly, not implied")
+            raise IntelligenceContractError(
+                "self-relations must be modelled explicitly, not implied"
+            )
         if not self.evidence:
             raise IntelligenceContractError("an IntelligenceRelation requires evidence")
         _required(self.status, "status")
@@ -110,7 +112,11 @@ class IntelligenceRelation:
         for value, name in ((self.valid_from, "valid_from"), (self.valid_to, "valid_to")):
             if value is not None:
                 _aware(value, name)
-        if self.valid_from is not None and self.valid_to is not None and self.valid_to < self.valid_from:
+        if (
+            self.valid_from is not None
+            and self.valid_to is not None
+            and self.valid_to < self.valid_from
+        ):
             raise IntelligenceContractError("valid_to precedes valid_from")
 
 
