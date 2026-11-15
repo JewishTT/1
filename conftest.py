@@ -26,6 +26,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 APPS = ROOT / "apps"
+LEGACY_APPS = ROOT / "spec-ops legacy" / "apps"
 
 #: Priority order, most specific first. Earlier wins a name collision.
 #:
@@ -86,6 +87,15 @@ def _apply_import_order() -> None:
     if apps_root in sys.path:
         sys.path.remove(apps_root)
     sys.path.append(apps_root)
+
+    # Preserve the legacy Python import name while keeping its implementation only
+    # under the explicit legacy archive. This path wins over the now-empty
+    # apps/specops compatibility location.
+    legacy_apps = str(LEGACY_APPS)
+    if LEGACY_APPS.is_dir():
+        if legacy_apps in sys.path:
+            sys.path.remove(legacy_apps)
+        sys.path.insert(0, legacy_apps)
 
 
 _apply_import_order()
