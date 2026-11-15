@@ -24,6 +24,7 @@ sys.path.insert(0, str(APP))
 sys.path.insert(0, str(REPO / "apps" / "shared"))
 
 from sources.catalogue import load_catalogue, load_source  # noqa: E402
+from sources.connector import tasks_for  # noqa: E402
 from sources.executor import HttpSourceExecutor, _basic_auth  # noqa: E402
 
 ESTORIDES = APP / "sources" / "estorides"
@@ -286,3 +287,12 @@ def test_theharvester_catalogue_entry_uses_authorized_runtime_not_kali_binary() 
     assert definition.source_family == "passive-domain-discovery"
     assert definition.time_basis == "FETCH"
     assert not definition.tool.get("binary")
+
+
+def test_theharvester_task_is_planned_as_discovery_only() -> None:
+    definition = load_source(ESTORIDES / "20_system_tools" / "kali_theharvester.yaml")
+    task = tasks_for(definition, "example.org")
+    payload = task.to_task()
+    assert task.runtime_ref == "theharvester"
+    assert payload["runtime_ref"] == "theharvester"
+    assert payload["result_role"] == "DISCOVERY_ONLY"
