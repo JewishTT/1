@@ -42,8 +42,8 @@ Do not copy or link its implementation into this workspace.
 
 ## FollowTheMoney
 
-Install followthemoney==4.11.3 only in an export/import worker that needs FtM
-validation. It is optional and is not a dependency of the core worker. The
+Install followthemoney==4.11.3 into an isolated export/import worker only when
+FtM validation is needed. It is not a dependency of the core worker. The
 interchange allowlist intentionally excludes sensitive fields such as dates of
 birth, private addresses, personal email/phone, passport and national identifiers.
 FtM entities are accompanied by a separate provenance JSONL sidecar containing
