@@ -24,6 +24,8 @@ from api.routes import (
     discovery,
     discovery_strategy,
     dossier,
+    economics,
+    intelligence,
     entities,
     fabric,
     findings,
@@ -56,6 +58,7 @@ from api.routes import (
     specops_phishing,
     specops_roe,
     specops_social,
+    specops_ci,
     temporal_materializations,
     tools,
 )
@@ -139,6 +142,9 @@ for _router in (
 ):
     app.include_router(_router, prefix="/api/v1")
 app.include_router(temporal_materializations.router, prefix="/api/v1")
+app.include_router(intelligence.router, prefix="/api/v1")
+app.include_router(economics.router, prefix="/api/v1")
+app.include_router(specops_ci.router, prefix="/api/v1")
 # The CI/SpecOps department's rules-of-engagement sign-off (027, T005). Mounted
 # with the control plane because the emulation/phishing routers share this gate;
 # it is the safety precondition for any live spec-ops step.
