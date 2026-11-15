@@ -6,9 +6,9 @@ discover targets, crawl sources, or own a second recon/acquisition pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Iterable
 from datetime import datetime
 from decimal import Decimal
-from typing import Iterable
 import re
 
 from shared.contracts.intelligence_feed import (
