@@ -2566,6 +2566,18 @@
         ],
         "module_count": 1,
         "capabilities": []
+      },
+      {
+        "id": "041-domain-silo-boundaries",
+        "has_spec": true,
+        "has_tasks": true,
+        "has_plan": true,
+        "spec_path": "specs/041-domain-silo-boundaries/spec.md",
+        "tasks_checked": 15,
+        "tasks_total": 30,
+        "modules": [],
+        "module_count": 0,
+        "capabilities": []
       }
     ]
   },
@@ -3012,7 +3024,7 @@
   "summary": {
     "contexts": 12,
     "context_edges": 37,
-    "specs": 33,
+    "specs": 34,
     "flows": 1,
     "rule_violations": 48
   }

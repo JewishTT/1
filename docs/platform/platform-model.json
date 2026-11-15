@@ -33407,6 +33407,18 @@
           ],
           "module_count": 1,
           "capabilities": []
+        },
+        {
+          "id": "041-domain-silo-boundaries",
+          "has_spec": true,
+          "has_tasks": true,
+          "has_plan": true,
+          "spec_path": "specs/041-domain-silo-boundaries/spec.md",
+          "tasks_checked": 15,
+          "tasks_total": 30,
+          "modules": [],
+          "module_count": 0,
+          "capabilities": []
         }
       ]
     },
@@ -33853,7 +33865,7 @@
     "summary": {
       "contexts": 12,
       "context_edges": 37,
-      "specs": 33,
+      "specs": 34,
       "flows": 1,
       "rule_violations": 48
     }
@@ -95083,6 +95095,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "0d87ea5be76238be",
+        "kind": "SPEC_EXISTS",
+        "subject": "041-domain-silo-boundaries",
+        "object": "specs/041-domain-silo-boundaries/spec.md",
+        "status": "STATIC_FACT",
+        "method": "filesystem",
+        "evidence": {
+          "file": "specs/041-domain-silo-boundaries/spec.md"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "b82428d1da3543cc",
         "kind": "TABLE_CLASS_DEFINED",
         "subject": "AcquisitionTask",
@@ -108248,8 +108272,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4607,
-      "static_facts": 4331,
+      "facts_total": 4608,
+      "static_facts": 4332,
       "inferred": 276,
       "intended": 0
     }
@@ -108267,8 +108291,8 @@
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4607,
-    "static_facts": 4331,
+    "facts_total": 4608,
+    "static_facts": 4332,
     "inferred": 276,
     "intended": 0
   },

@@ -11,7 +11,7 @@ A verified snapshot of the platform's true state. Every number is derived from t
 | Resolved import edges | 2949 |
 | HTTP routes / routers | 222 / 36 |
 | Test files / functions | 385 / 5525 |
-| Evidence facts (static) | 4607 |
+| Evidence facts (static) | 4608 |
 
 ## Implementation maturity
 
