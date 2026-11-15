@@ -23,3 +23,18 @@ Do not extend the archived package. New functionality requires a migration task,
 an explicit Intelligence consumer contract, and tests proving tenant and authorization
 boundaries. Remove the compatibility bridge only after all API adapters and callers
 have moved and the legacy import tests have been retired or relocated.
+
+## Preserved integration snapshot
+
+To make the legacy department recoverable as a whole, a source mirror is also retained
+under mirror/ with the former control-plane SpecOps routers and catalog service,
+React CI/SpecOps, Lab and GhostLine surfaces, their component tests, screenshot
+harness, isolated lab compose file, donor dossier, and feature specifications for
+CI/SpecOps (027) and the Phishing Club lab (036).
+
+These mirrored integration files are historical copies. The corresponding active
+routes and UI files remain mounted at their original paths until the new consumer
+services have been wired and verified end-to-end. The feature 031 GhostLine spec
+remains in its source location because the repository connector did not allow that
+archive copy in this change; its live UI and route sources are mirrored under
+mirror/apps/ as listed by the platform source inventory.
