@@ -22,6 +22,7 @@ from adapters.registry import REGISTRY, register
 from dispatcher.plan_driver import (
     ContractViolation,
     PlanDispatcher,
+    PlanDriver,
     assert_request_contract,
 )
 from dispatcher.scheduler import Dispatcher
@@ -360,3 +361,33 @@ class TestDeterminism:
         assert "uuid1" not in src
         assert "datetime.now" not in src
         assert "time.time" not in src
+
+
+class TestIndustryRuntimeRegistration:
+    def test_theharvester_is_registered_as_an_explicit_runtime(self) -> None:
+        producer = AckedProducer()
+        PlanDriver(dispatcher=dispatcher_with(producer), producer=producer)
+
+        registration = next(
+            item for item in REGISTRY if item.source_type == "theharvester"
+        )
+        assert registration.execution_class == "custom"
+        assert registration.capabilities == frozenset()
+
+    def test_theharvester_is_opt_in_and_planned_only_when_keyed_sources_are_enabled(self) -> None:
+        from sources.connector import load_catalogue
+
+        definitions, rejected = load_catalogue()
+        assert "kali_theharvester" not in rejected
+        definition = next(item for item in definitions if item.name == "kali_theharvester")
+
+        from sources.connector import tasks_for
+
+        task = tasks_for(definition, "example.org")
+        assert task.runtime_ref == "theharvester"
+        assert task.to_task()["result_role"] == "DISCOVERY_ONLY"
+
+        keyless = plan("example.org", categories=[definition.category])
+        opted_in = plan("example.org", only_keyless=False, categories=[definition.category])
+        assert all(item.runtime_ref != "theharvester" for item in keyless)
+        assert any(item.runtime_ref == "theharvester" for item in opted_in)
