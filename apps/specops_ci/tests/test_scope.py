@@ -21,7 +21,7 @@ def snapshot() -> IntelligenceSnapshot:
         source_ref="source:asset-register",
         object_uri="s3://knowledge/raw/tenant-a/2026/11/obs-host",
         sha256="c" * 64,
-        observed_at=NOW,
+        recorded_at=NOW,
     )
     return IntelligenceSnapshot(
         tenant_id="tenant-a",
