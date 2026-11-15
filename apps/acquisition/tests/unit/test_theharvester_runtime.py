@@ -86,7 +86,7 @@ async def test_runtime_emits_capture_then_discovery_only_records():
     manifest = json.loads(capture.body)
     assert capture.locator == "blob"
     assert manifest["evidence_status"] == "complete"
-    assert manifest["may_support_qualified_absence"] is True
+    assert manifest["may_support_qualified_absence"] is False
     assert manifest["filtered_counts"] == {"email": 1}
     assert manifest["records"][0]["value"] == "mail.example.org"
     assert manifest["records"][1]["expandable"] is False
