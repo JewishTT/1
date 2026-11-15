@@ -28389,7 +28389,7 @@
         {
           "method": "POST",
           "path": "/authorizations/{authorization_id}/revoke",
-          "lineno": 253
+          "lineno": 261
         }
       ]
     },
@@ -35971,7 +35971,7 @@
       {
         "path": "apps/acquisition/industry_adapters/theharvester.py",
         "status": "IMPLEMENTED",
-        "loc": 426,
+        "loc": 432,
         "callables": 19,
         "stubs": 0,
         "not_implemented": 0,
@@ -37241,7 +37241,7 @@
       {
         "path": "apps/control-plane/api/routes/specops_ci.py",
         "status": "IMPLEMENTED",
-        "loc": 286,
+        "loc": 294,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -97551,7 +97551,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 255
+          "line": 263
         },
         "confidence": 1.0
       },
