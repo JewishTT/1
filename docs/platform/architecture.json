@@ -566,73 +566,6 @@
         "modules": [
           "apps/deploy/minio-init/init-buckets.py",
           "apps/specops/__init__.py",
-          "apps/specops/counterintel.py",
-          "apps/specops/cryptotx/__init__.py",
-          "apps/specops/cryptotx/approvals.py",
-          "apps/specops/cryptotx/chains/__init__.py",
-          "apps/specops/cryptotx/chains/base.py",
-          "apps/specops/cryptotx/chains/bitcoin.py",
-          "apps/specops/cryptotx/chains/ethereum.py",
-          "apps/specops/cryptotx/chains/registry.py",
-          "apps/specops/cryptotx/chains/tron.py",
-          "apps/specops/cryptotx/cli.py",
-          "apps/specops/cryptotx/config.py",
-          "apps/specops/cryptotx/errors.py",
-          "apps/specops/cryptotx/executor.py",
-          "apps/specops/cryptotx/hd.py",
-          "apps/specops/cryptotx/models.py",
-          "apps/specops/cryptotx/planner.py",
-          "apps/specops/cryptotx/store.py",
-          "apps/specops/cryptotx/swaps/__init__.py",
-          "apps/specops/cryptotx/swaps/base.py",
-          "apps/specops/cryptotx/swaps/evm.py",
-          "apps/specops/cryptotx/swaps/router.py",
-          "apps/specops/cryptotx/swaps/thorchain.py",
-          "apps/specops/cryptotx/swaps/tron.py",
-          "apps/specops/cryptotx/vault.py",
-          "apps/specops/emulation.py",
-          "apps/specops/engagement/__init__.py",
-          "apps/specops/engagement/config.py",
-          "apps/specops/engagement/fabric.py",
-          "apps/specops/engagement/funnel.py",
-          "apps/specops/engagement/taxonomy.py",
-          "apps/specops/forensics.py",
-          "apps/specops/ghostline/__init__.py",
-          "apps/specops/ghostline/catalog.py",
-          "apps/specops/ghostline/config.py",
-          "apps/specops/ghostline/engine.py",
-          "apps/specops/ghostline/ledger.py",
-          "apps/specops/ghostline/loader.py",
-          "apps/specops/ghostline/redaction.py",
-          "apps/specops/ghostline/runtime.py",
-          "apps/specops/ghostline/service.py",
-          "apps/specops/ghostline/telephony.py",
-          "apps/specops/ghostline/voices.py",
-          "apps/specops/lab/__init__.py",
-          "apps/specops/lab/artifacts.py",
-          "apps/specops/lab/audit.py",
-          "apps/specops/lab/boundary.py",
-          "apps/specops/lab/engine.py",
-          "apps/specops/lab/models.py",
-          "apps/specops/lab/phishingclub.py",
-          "apps/specops/lab/readiness.py",
-          "apps/specops/phishing.py",
-          "apps/specops/roe/__init__.py",
-          "apps/specops/roe/gate.py",
-          "apps/specops/social.py",
-          "apps/specops/tests/conftest.py",
-          "apps/specops/tests/test_cryptotx_api.py",
-          "apps/specops/tests/test_cryptotx_core.py",
-          "apps/specops/tests/test_cryptotx_executor.py",
-          "apps/specops/tests/test_cryptotx_swaps.py",
-          "apps/specops/tests/test_engagement.py",
-          "apps/specops/tests/test_ghostline.py",
-          "apps/specops/tests/test_lab_engine.py",
-          "apps/specops/tests/test_lab_phishingclub.py",
-          "apps/specops/tests/test_roe_gate.py",
-          "apps/specops/tests/test_specops_ghostline_routers.py",
-          "apps/specops/tests/test_specops_lab_router.py",
-          "apps/specops/tests/test_specops_routers.py",
           "bench/bench/__init__.py",
           "bench/bench/harness.py",
           "bench/chaos/__init__.py",
@@ -677,7 +610,7 @@
           "tools/strip_zero_inventory.py",
           "tools/tests/test_repo_hygiene.py"
         ],
-        "module_count": 112
+        "module_count": 45
       },
       {
         "id": "orchestration-temporal",
@@ -1575,18 +1508,13 @@
       "architecture.json",
       "archive.org",
       "argumentation.rank",
-      "artifact.accessed",
       "artifact.bin",
       "artifact.capture_register",
-      "artifact.captured",
-      "artifact.expired",
       "artifact.observation_ingest",
       "artifact.publish",
       "artifact.raw_store",
-      "artifact.revealed",
       "assembly.py",
       "assertion.created",
-      "assessment.linked",
       "atrium.example",
       "attachment.bin",
       "attr.name",
@@ -1605,7 +1533,6 @@
       "bbot.recon",
       "bench.json",
       "big.bin",
-      "big.wav",
       "blog.example.org",
       "bom.py",
       "bootstrap.servers",
@@ -1613,9 +1540,6 @@
       "c.d",
       "c.example",
       "calibration.assess",
-      "calls.jsonl",
-      "campaign.created",
-      "campaign.launched",
       "candidate.created",
       "capabilities.md",
       "capture.pcapng",
@@ -1727,7 +1651,16 @@
       "domain.context_validation",
       "domain.mention_occurrence_index",
       "domain.predicate_signature",
-      "domain.relation_claim_material"
+      "domain.relation_claim_material",
+      "domain.relation_participant",
+      "domain.statement",
+      "donors.md",
+      "downstream.json",
+      "elsewhere.invalid",
+      "empty.txt",
+      "enable.auto.commit",
+      "enable.auto.offset.store",
+      "enable.idempotence"
     ]
   },
   "context_map": {
@@ -1824,12 +1757,6 @@
       },
       {
         "from": "projection-query",
-        "to": "ops-deploy",
-        "type": "direct",
-        "via_import": "specops.counterintel"
-      },
-      {
-        "from": "projection-query",
         "to": "interpretation",
         "type": "direct",
         "via_import": "parsers.families"
@@ -1905,12 +1832,6 @@
         "to": "ops-deploy",
         "type": "direct",
         "via_import": "platform_model.gaps"
-      },
-      {
-        "from": "ops-deploy",
-        "to": "projection-query",
-        "type": "direct",
-        "via_import": "api.main"
       },
       {
         "from": "ops-deploy",
@@ -2490,17 +2411,8 @@
         "spec_path": "specs/027-ci-specops-fabric/spec.md",
         "tasks_checked": 37,
         "tasks_total": 58,
-        "modules": [
-          "apps/specops/__init__.py",
-          "apps/specops/emulation.py",
-          "apps/specops/forensics.py",
-          "apps/specops/phishing.py",
-          "apps/specops/roe/__init__.py",
-          "apps/specops/roe/gate.py",
-          "apps/specops/tests/conftest.py",
-          "apps/specops/tests/test_roe_gate.py"
-        ],
-        "module_count": 8,
+        "modules": [],
+        "module_count": 0,
         "capabilities": []
       },
       {
@@ -2575,12 +2487,9 @@
         "tasks_checked": 53,
         "tasks_total": 53,
         "modules": [
-          "apps/control-plane/api/routes/specops_ghostline.py",
-          "apps/specops/ghostline/__init__.py",
-          "apps/specops/tests/test_ghostline.py",
-          "apps/specops/tests/test_specops_ghostline_routers.py"
+          "apps/control-plane/api/routes/specops_ghostline.py"
         ],
-        "module_count": 4,
+        "module_count": 1,
         "capabilities": []
       },
       {
@@ -2593,15 +2502,9 @@
         "tasks_total": 84,
         "modules": [
           "apps/control-plane/api/routes/specops_engagement.py",
-          "apps/shared/tests/contract/test_single_publication_path.py",
-          "apps/specops/engagement/__init__.py",
-          "apps/specops/engagement/config.py",
-          "apps/specops/engagement/fabric.py",
-          "apps/specops/engagement/funnel.py",
-          "apps/specops/engagement/taxonomy.py",
-          "apps/specops/tests/test_engagement.py"
+          "apps/shared/tests/contract/test_single_publication_path.py"
         ],
-        "module_count": 8,
+        "module_count": 2,
         "capabilities": []
       },
       {
@@ -2657,13 +2560,9 @@
         "tasks_checked": 0,
         "tasks_total": 60,
         "modules": [
-          "apps/control-plane/api/routes/specops_lab.py",
-          "apps/specops/lab/__init__.py",
-          "apps/specops/lab/models.py",
-          "apps/specops/tests/test_lab_engine.py",
-          "apps/specops/tests/test_specops_lab_router.py"
+          "apps/control-plane/api/routes/specops_lab.py"
         ],
-        "module_count": 5,
+        "module_count": 1,
         "capabilities": []
       }
     ]
@@ -2833,6 +2732,210 @@
     ],
     "violations": [
       {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_counterintel.py",
+        "import": "specops.counterintel",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_counterintel.py",
+        "import": "specops.counterintel",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "import": "specops.cryptotx.approvals",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "import": "specops.cryptotx.config",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "import": "specops.cryptotx.errors",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "import": "specops.cryptotx.executor",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "import": "specops.cryptotx.models",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "import": "specops.cryptotx.store",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_cryptotx.py",
+        "import": "specops.cryptotx.vault",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_emulation.py",
+        "import": "specops.emulation",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_emulation.py",
+        "import": "specops.roe.gate",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_emulation.py",
+        "import": "specops.roe.gate",
+        "kind": "local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_engagement.py",
+        "import": "specops.engagement",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_engagement.py",
+        "import": "specops.engagement.config",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_engagement.py",
+        "import": "specops.engagement",
+        "kind": "local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_forensics.py",
+        "import": "specops.emulation",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_forensics.py",
+        "import": "specops.forensics",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_forensics.py",
+        "import": "specops.forensics",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_ghostline.py",
+        "import": "specops.ghostline.engine",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_ghostline.py",
+        "import": "specops.ghostline.service",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_ghostline.py",
+        "import": "specops.ghostline.telephony",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_ghostline.py",
+        "import": "specops.ghostline.voices",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_lab.py",
+        "import": "specops.lab.phishingclub",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_lab.py",
+        "import": "specops.lab.phishingclub",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_lab.py",
+        "import": "specops.lab",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_lab.py",
+        "import": "specops.roe.gate",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_phishing.py",
+        "import": "specops.phishing",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_phishing.py",
+        "import": "specops.phishing",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_phishing.py",
+        "import": "specops.roe.gate",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_roe.py",
+        "import": "specops.roe.gate",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_social.py",
+        "import": "specops.social",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/api/routes/specops_social.py",
+        "import": "specops.social",
+        "kind": "guarded-local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/control-plane/tests/test_specops_roe_auth.py",
+        "import": "specops.roe.gate",
+        "kind": "local"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/specops/__init__.py",
+        "import": "specops.roe.gate",
+        "kind": "local"
+      },
+      {
         "type": "competing-writers",
         "object": "observation",
         "table": "observations"
@@ -2906,9 +3009,9 @@
   },
   "summary": {
     "contexts": 12,
-    "context_edges": 39,
+    "context_edges": 37,
     "specs": 33,
     "flows": 1,
-    "rule_violations": 14
+    "rule_violations": 48
   }
 }

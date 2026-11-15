@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 468 |
-| TEST_ONLY | 137 |
-| ORPHAN | 132 |
-| TEST | 378 |
+| PRODUCTION | 420 |
+| TEST_ONLY | 136 |
+| ORPHAN | 127 |
+| TEST | 365 |
 
 ## Entrypoints (production roots)
 
@@ -43,7 +43,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/interpretation/tools/gliner_relex_smoke.py` |
 | `apps/shared/datasets/build.py` |
 | `apps/shared/tools/layer_boundaries.py` |
-| `apps/specops/cryptotx/cli.py` |
 | `bench/bench/harness.py` |
 | `bench/chaos/bench_replay.py` |
 | `bench/collection/bench_collection.py` |
@@ -63,7 +62,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**137** modules are reached only by tests.
+**136** modules are reached only by tests.
 
 | Module |
 |---|
@@ -197,7 +196,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/websearch/discovery.py` |
 | `apps/shared/websearch/providers.py` |
 | `apps/shared/websearch/relevance.py` |
-| `apps/specops/cryptotx/planner.py` |
 | `apps/zero/zero/harvesters/git.py` |
 | `apps/zero/zero/harvesters/image.py` |
 | `apps/zero/zero/harvesters/phone.py` |
@@ -207,7 +205,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**132** modules are imported by neither production nor tests.
+**127** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -320,11 +318,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/storage/__init__.py` |
 | `apps/shared/workflow/__init__.py` |
 | `apps/specops/__init__.py` |
-| `apps/specops/cryptotx/__init__.py` |
-| `apps/specops/cryptotx/chains/__init__.py` |
-| `apps/specops/cryptotx/swaps/__init__.py` |
-| `apps/specops/ghostline/__init__.py` |
-| `apps/specops/roe/__init__.py` |
 | `apps/zero/zero/__init__.py` |
 | `apps/zero/zero/enrichment/__init__.py` |
 | `apps/zero/zero/harvesters/__init__.py` |

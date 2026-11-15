@@ -493,51 +493,12 @@ apps.shared.domain.relation_participant
 
 Isolated spec-ops lab profile (never in the routine path).
 
-Python modules: **68** · TypeScript modules: **0**
+Python modules: **1** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
 ```
 apps.specops
-apps.specops.counterintel
-apps.specops.cryptotx
-apps.specops.cryptotx.approvals
-apps.specops.cryptotx.chains
-apps.specops.cryptotx.chains.base
-apps.specops.cryptotx.chains.bitcoin
-apps.specops.cryptotx.chains.ethereum
-apps.specops.cryptotx.chains.registry
-apps.specops.cryptotx.chains.tron
-apps.specops.cryptotx.cli
-apps.specops.cryptotx.config
-apps.specops.cryptotx.errors
-apps.specops.cryptotx.executor
-apps.specops.cryptotx.hd
-apps.specops.cryptotx.models
-apps.specops.cryptotx.planner
-apps.specops.cryptotx.store
-apps.specops.cryptotx.swaps
-apps.specops.cryptotx.swaps.base
-apps.specops.cryptotx.swaps.evm
-apps.specops.cryptotx.swaps.router
-apps.specops.cryptotx.swaps.thorchain
-apps.specops.cryptotx.swaps.tron
-apps.specops.cryptotx.vault
-apps.specops.emulation
-apps.specops.engagement
-apps.specops.engagement.config
-apps.specops.engagement.fabric
-apps.specops.engagement.funnel
-apps.specops.engagement.taxonomy
-apps.specops.forensics
-apps.specops.ghostline
-apps.specops.ghostline.catalog
-apps.specops.ghostline.config
-apps.specops.ghostline.engine
-apps.specops.ghostline.ledger
-apps.specops.ghostline.loader
-apps.specops.ghostline.redaction
-apps.specops.ghostline.runtime
 ```
 
 </details>

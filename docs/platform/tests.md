@@ -1,6 +1,6 @@
 # Tests
 
-381 test files, 5514 test functions. 291 platform modules are not targeted by any test.
+381 test files, 5514 test functions. 268 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -92,7 +92,7 @@
 | `apps/control-plane/tests/test_research_case_invariants.py` | 13 | `apps/control-plane/_prove_person_research_case.py`, `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/obligations.py` |
 | `apps/control-plane/tests/test_research_case_projection.py` | 6 | `apps/control-plane/services/research_case_projection.py` |
 | `apps/control-plane/tests/test_research_case_reports.py` | 5 | `apps/control-plane/services/research_case_artifacts.py`, `apps/control-plane/services/research_case_reports.py`, `apps/shared/contracts/evidence_span.py` |
-| `apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/specops/roe/gate.py` |
+| `apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py` |
 | `apps/control-plane/tests/test_type_signal_bridge.py` | 3 | `apps/control-plane/services/interpretation_bridge.py` |
 | `apps/control-plane/tests/test_zero_layer_service.py` | 3 | `apps/control-plane/services/zero_layer.py` |
 | `apps/control-plane/tests/unit/test_action_memory.py` | 19 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/contracts/stage_outcome.py` |
@@ -356,19 +356,6 @@
 | `apps/shared/tests/unit/test_temporal_metrics.py` | 9 | `apps/shared/domain/temporal_metrics.py` |
 | `apps/shared/tests/unit/test_type_signal.py` | 8 | `apps/shared/semantic/type_signal.py`, `apps/shared/semantic/vocabularies.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |
-| `apps/specops/tests/conftest.py` | 0 | `apps/specops/ghostline/config.py`, `apps/specops/ghostline/runtime.py` |
-| `apps/specops/tests/test_cryptotx_api.py` | 1 | `apps/control-plane/api/main.py`, `apps/specops/cryptotx/config.py` |
-| `apps/specops/tests/test_cryptotx_core.py` | 7 | `apps/specops/cryptotx/__init__.py`, `apps/specops/cryptotx/approvals.py`, `apps/specops/cryptotx/errors.py`, `apps/specops/cryptotx/models.py` |
-| `apps/specops/tests/test_cryptotx_executor.py` | 6 | `apps/specops/cryptotx/approvals.py`, `apps/specops/cryptotx/chains/base.py`, `apps/specops/cryptotx/config.py`, `apps/specops/cryptotx/errors.py` |
-| `apps/specops/tests/test_cryptotx_swaps.py` | 8 | `apps/specops/cryptotx/config.py`, `apps/specops/cryptotx/errors.py`, `apps/specops/cryptotx/models.py`, `apps/specops/cryptotx/swaps/base.py` |
-| `apps/specops/tests/test_engagement.py` | 26 | `apps/specops/engagement/__init__.py`, `apps/specops/engagement/config.py`, `apps/specops/engagement/fabric.py` |
-| `apps/specops/tests/test_ghostline.py` | 36 | `apps/specops/ghostline/catalog.py`, `apps/specops/ghostline/config.py`, `apps/specops/ghostline/engine.py`, `apps/specops/ghostline/ledger.py` |
-| `apps/specops/tests/test_lab_engine.py` | 7 | `apps/specops/engagement/config.py`, `apps/specops/engagement/fabric.py`, `apps/specops/lab/audit.py`, `apps/specops/lab/boundary.py` |
-| `apps/specops/tests/test_lab_phishingclub.py` | 3 | `apps/specops/lab/__init__.py` |
-| `apps/specops/tests/test_roe_gate.py` | 11 | `apps/specops/roe/gate.py` |
-| `apps/specops/tests/test_specops_ghostline_routers.py` | 26 | `apps/control-plane/api/main.py` |
-| `apps/specops/tests/test_specops_lab_router.py` | 8 | `apps/control-plane/api/main.py`, `apps/control-plane/api/routes/specops_lab.py`, `apps/specops/engagement/config.py`, `apps/specops/engagement/fabric.py` |
-| `apps/specops/tests/test_specops_routers.py` | 10 | `apps/control-plane/api/main.py` |
 | `apps/zero/tests/conftest.py` | 0 | `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_cc_capture.py` | 14 | `apps/shared/network/cc_session.py`, `apps/zero/zero/cc_capture.py` |
 | `apps/zero/tests/test_enrichment.py` | 26 | `apps/zero/zero/enrichment/feedback.py`, `apps/zero/zero/enrichment/modules.py`, `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/type_detector.py` |
@@ -387,6 +374,19 @@
 | `bench/tests/test_scale_scale.py` | 3 | — |
 | `implementation/tests/test_contract_files.py` | 4 | — |
 | `implementation/tests/test_person_case_lark.py` | 2 | — |
+| `spec-ops legacy/apps/specops/tests/conftest.py` | 0 | — |
+| `spec-ops legacy/apps/specops/tests/test_cryptotx_api.py` | 1 | `apps/control-plane/api/main.py` |
+| `spec-ops legacy/apps/specops/tests/test_cryptotx_core.py` | 7 | — |
+| `spec-ops legacy/apps/specops/tests/test_cryptotx_executor.py` | 6 | — |
+| `spec-ops legacy/apps/specops/tests/test_cryptotx_swaps.py` | 8 | — |
+| `spec-ops legacy/apps/specops/tests/test_engagement.py` | 26 | — |
+| `spec-ops legacy/apps/specops/tests/test_ghostline.py` | 36 | — |
+| `spec-ops legacy/apps/specops/tests/test_lab_engine.py` | 7 | — |
+| `spec-ops legacy/apps/specops/tests/test_lab_phishingclub.py` | 3 | — |
+| `spec-ops legacy/apps/specops/tests/test_roe_gate.py` | 11 | — |
+| `spec-ops legacy/apps/specops/tests/test_specops_ghostline_routers.py` | 26 | `apps/control-plane/api/main.py` |
+| `spec-ops legacy/apps/specops/tests/test_specops_lab_router.py` | 8 | `apps/control-plane/api/main.py`, `apps/control-plane/api/routes/specops_lab.py` |
+| `spec-ops legacy/apps/specops/tests/test_specops_routers.py` | 10 | `apps/control-plane/api/main.py` |
 | `specs/021-entity-relation-extraction-finalization/repair/tools/test_reference_check.py` | 200 | — |
 | `tools/tests/test_repo_hygiene.py` | 2 | `tools/repo_hygiene.py` |
 
