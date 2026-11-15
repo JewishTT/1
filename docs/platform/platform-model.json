@@ -28379,17 +28379,17 @@
         {
           "method": "POST",
           "path": "/authorizations",
-          "lineno": 85
+          "lineno": 94
         },
         {
           "method": "POST",
           "path": "/assessments/prepare",
-          "lineno": 170
+          "lineno": 187
         },
         {
           "method": "POST",
           "path": "/authorizations/{authorization_id}/revoke",
-          "lineno": 233
+          "lineno": 253
         }
       ]
     },
@@ -35204,7 +35204,7 @@
           "has_tasks": true,
           "has_plan": true,
           "spec_path": "specs/041-domain-silo-boundaries/spec.md",
-          "tasks_checked": 15,
+          "tasks_checked": 16,
           "tasks_total": 30,
           "modules": [],
           "module_count": 0,
@@ -37025,7 +37025,7 @@
       {
         "path": "apps/control-plane/api/routes/economics.py",
         "status": "IMPLEMENTED",
-        "loc": 60,
+        "loc": 66,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -37061,7 +37061,7 @@
       {
         "path": "apps/control-plane/api/routes/intelligence.py",
         "status": "IMPLEMENTED",
-        "loc": 54,
+        "loc": 60,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -37241,7 +37241,7 @@
       {
         "path": "apps/control-plane/api/routes/specops_ci.py",
         "status": "IMPLEMENTED",
-        "loc": 266,
+        "loc": 286,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -38187,7 +38187,7 @@
       {
         "path": "apps/control-plane/services/intelligence_reader.py",
         "status": "IMPLEMENTED",
-        "loc": 480,
+        "loc": 482,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -39411,7 +39411,7 @@
       {
         "path": "apps/economics/domain.py",
         "status": "IMPLEMENTED",
-        "loc": 166,
+        "loc": 168,
         "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
@@ -39420,7 +39420,7 @@
       {
         "path": "apps/economics/service.py",
         "status": "IMPLEMENTED",
-        "loc": 19,
+        "loc": 23,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -39429,7 +39429,7 @@
       {
         "path": "apps/economics/tests/test_domain.py",
         "status": "TEST",
-        "loc": 76,
+        "loc": 85,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
@@ -39564,7 +39564,7 @@
       {
         "path": "apps/intelligence/tests/test_postgres_reader.py",
         "status": "TEST",
-        "loc": 221,
+        "loc": 225,
         "callables": 16,
         "stubs": 0,
         "not_implemented": 0,
@@ -42593,7 +42593,7 @@
       {
         "path": "apps/shared/contracts/intelligence_feed.py",
         "status": "IMPLEMENTED",
-        "loc": 188,
+        "loc": 194,
         "callables": 8,
         "stubs": 1,
         "not_implemented": 0,
@@ -44382,7 +44382,7 @@
       {
         "path": "apps/specops_ci/tests/test_scope.py",
         "status": "TEST",
-        "loc": 92,
+        "loc": 96,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -44897,7 +44897,7 @@
       {
         "path": "conftest.py",
         "status": "IMPLEMENTED",
-        "loc": 110,
+        "loc": 112,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
@@ -97525,7 +97525,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 172
+          "line": 189
         },
         "confidence": 1.0
       },
@@ -97538,7 +97538,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 87
+          "line": 96
         },
         "confidence": 1.0
       },
@@ -97551,7 +97551,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 235
+          "line": 255
         },
         "confidence": 1.0
       },

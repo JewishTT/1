@@ -284,9 +284,9 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| POST | `/authorizations` | 85 |
-| POST | `/assessments/prepare` | 170 |
-| POST | `/authorizations/{authorization_id}/revoke` | 233 |
+| POST | `/authorizations` | 94 |
+| POST | `/assessments/prepare` | 187 |
+| POST | `/authorizations/{authorization_id}/revoke` | 253 |
 
 ## `specops_counterintel` — `apps/control-plane/api/routes/specops_counterintel.py`
 

@@ -2603,7 +2603,7 @@
         "has_tasks": true,
         "has_plan": true,
         "spec_path": "specs/041-domain-silo-boundaries/spec.md",
-        "tasks_checked": 15,
+        "tasks_checked": 16,
         "tasks_total": 30,
         "modules": [],
         "module_count": 0,
