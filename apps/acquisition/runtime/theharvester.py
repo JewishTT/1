@@ -132,6 +132,13 @@ class TheHarvesterRuntime:
             evidence = await run
         except asyncio.CancelledError:
             stop_event.set()
+            # The HTTP client runs in a thread and cannot be force-cancelled.
+            # Let its bounded poll loop observe the stop flag and send the
+            # upstream cancellation request before the worker task disappears.
+            try:
+                await asyncio.shield(run)
+            except Exception:
+                pass
             raise
         except AuthorizationError as exc:
             raise RuntimeError_("authorization_scope_refused", str(exc)) from exc
@@ -139,6 +146,11 @@ class TheHarvesterRuntime:
             raise RuntimeError_("theharvester_upstream_error", str(exc)) from exc
         except ValueError as exc:
             raise RuntimeError_("theharvester_input_invalid", str(exc)) from exc
+
+        try:
+            self._authorization.assert_active()
+        except AuthorizationError as exc:
+            raise RuntimeError_("authorization_scope_expired", str(exc)) from exc
 
         if len(evidence.records) > self._max_records:
             raise RuntimeError_(
