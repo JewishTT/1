@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4929,
-    "static_facts": 4630,
+    "facts_total": 4930,
+    "static_facts": 4631,
     "inferred": 299,
     "intended": 0
   },
@@ -3058,15 +3058,15 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "67d76a4d21057e46",
+      "fact_id": "3f82daa116163ae0",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
-      "object": "apps/acquisition/sources/connector.py",
+      "object": "apps/acquisition/sources/catalogue.py",
       "status": "STATIC_FACT",
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/acquisition/tests/contract/test_plan_driver.py",
-        "via": "sources.connector"
+        "via": "sources.catalogue"
       },
       "confidence": 1.0
     },
@@ -49830,6 +49830,18 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
       "object": "apps/acquisition/dispatcher/scheduler.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/contract/test_plan_driver.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "da8c72d270e7a2a3",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
+      "object": "apps/acquisition/sources/catalogue.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
