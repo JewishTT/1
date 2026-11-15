@@ -8,10 +8,10 @@ A verified snapshot of the platform's true state. Every number is derived from t
 |---|---|
 | Components | 17 |
 | Python / TypeScript / Rust modules | 1115 / 283 / 16 |
-| Resolved import edges | 3195 |
+| Resolved import edges | 3198 |
 | HTTP routes / routers | 222 / 36 |
-| Test files / functions | 381 / 5504 |
-| Evidence facts (static) | 4920 |
+| Test files / functions | 381 / 5507 |
+| Evidence facts (static) | 4924 |
 
 ## Implementation maturity
 
@@ -33,8 +33,8 @@ See [maturity.md](maturity.md).
 | Status | Modules |
 |---|---|
 | PRODUCTION | 468 |
-| TEST_ONLY | 136 |
-| ORPHAN | 133 |
+| TEST_ONLY | 137 |
+| ORPHAN | 132 |
 | TEST | 378 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.

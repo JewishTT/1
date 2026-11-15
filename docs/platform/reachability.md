@@ -7,8 +7,8 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | Status | Modules |
 |---|---|
 | PRODUCTION | 468 |
-| TEST_ONLY | 136 |
-| ORPHAN | 133 |
+| TEST_ONLY | 137 |
+| ORPHAN | 132 |
 | TEST | 378 |
 
 ## Entrypoints (production roots)
@@ -63,7 +63,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**136** modules are reached only by tests.
+**137** modules are reached only by tests.
 
 | Module |
 |---|
@@ -83,6 +83,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/adapters/warc/__init__.py` |
 | `apps/acquisition/dispatcher/regional.py` |
 | `apps/acquisition/industry_adapters/capabilities.py` |
+| `apps/acquisition/industry_adapters/domain_posture.py` |
 | `apps/acquisition/industry_adapters/followthemoney.py` |
 | `apps/acquisition/registry.py` |
 | `apps/acquisition/source_query_set.py` |
@@ -206,7 +207,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**133** modules are imported by neither production nor tests.
+**132** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -218,7 +219,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/acquisition/adapters/scrapy/spider.py` |
 | `apps/acquisition/dispatcher/__init__.py` |
 | `apps/acquisition/industry_adapters/__init__.py` |
-| `apps/acquisition/industry_adapters/domain_posture.py` |
 | `apps/acquisition/observation_gate/__init__.py` |
 | `apps/acquisition/policies/__init__.py` |
 | `apps/acquisition/sources/__init__.py` |
