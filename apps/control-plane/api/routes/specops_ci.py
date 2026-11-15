@@ -194,7 +194,10 @@ async def prepare_authorized_assessment(
     """Prepare a context from an existing snapshot and a durable, unrevoked approval."""
     platform = await get_platform(tenant_id=ctx.tenant_id)
     if platform.session_factory is None:
-        raise HTTPException(status_code=503, detail="durable PostgreSQL session factory is unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="durable PostgreSQL session factory is unavailable",
+        )
     async with platform.session_factory() as session:
         result = await session.execute(select(AuthorizationRow).where(
             AuthorizationRow.authorization_id == body.authorization_id,
@@ -228,7 +231,12 @@ async def prepare_authorized_assessment(
             assessment_kind=body.assessment_kind,
             at=now,
         )
-    except (IntelligenceReadDenied, IntelligenceSubjectNotFound, IntelligenceEvidenceUnavailable, IntelligenceSnapshotBudgetExceeded) as exc:
+    except (
+        IntelligenceReadDenied,
+        IntelligenceSubjectNotFound,
+        IntelligenceEvidenceUnavailable,
+        IntelligenceSnapshotBudgetExceeded,
+    ) as exc:
         _raise_read_error(exc)
     except AssessmentScopeError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
