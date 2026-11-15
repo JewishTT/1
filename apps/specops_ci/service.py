@@ -1,8 +1,8 @@
 """SpecOps & CI application service: consume an Intelligence snapshot, never recon it."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Iterable
 
 from shared.contracts.intelligence_feed import IntelligenceQuery, IntelligenceReadPort
 from .domain import (
