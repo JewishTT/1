@@ -35911,7 +35911,7 @@
       {
         "path": "apps/acquisition/industry_adapters/__init__.py",
         "status": "PACKAGE_INIT",
-        "loc": 11,
+        "loc": 12,
         "callables": 0,
         "stubs": 0,
         "not_implemented": 0,
@@ -35920,7 +35920,7 @@
       {
         "path": "apps/acquisition/industry_adapters/capabilities.py",
         "status": "IMPLEMENTED",
-        "loc": 70,
+        "loc": 74,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
