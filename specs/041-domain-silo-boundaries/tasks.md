@@ -7,16 +7,16 @@ implied complete by the existence of a package or interface.
 ## Archived SpecOps foundation
 - [x] T001 Inventory all paths under the former apps/specops component.
 - [x] T002 Preserve all 68 source and test files under spec-ops legacy/apps/specops.
-- [x] T003 Replace the active package body with a temporary import bridge.
+- [x] T003 Remove the active package body and resolve the historical `specops` namespace directly from `spec-ops legacy/apps`.
 - [ ] T004 Migrate mounted API routers and tests to the new domain package.
 - [ ] T005 Migrate React canvases, related UI tests and deploy wiring.
-- [ ] T006 Retire compatibility bridge after runtime import graph is clear.
+- [ ] T006 Retire the temporary legacy import root after all mounted adapters have migrated to `apps/specops_ci/`.
 
 ## Intelligence contract
 - [x] T010 Define evidence reference, entity, relation, snapshot, query and read-port types.
 - [x] T011 Enforce tenant/evidence consistency and bounded query depth.
-- [ ] T012 Implement production-backed read adapter against authoritative platform stores.
-- [ ] T013 Add API authentication, purpose authorization, tenant ACL, budget and audit.
+- [x] T012 Implement the PostgreSQL-backed read adapter over authoritative `entities`, `relation_claim`, `entity_stream`, `evidence_context`, `observations` and `sources` tables.
+- [ ] T013 Add durable caller/purpose authorization policy, audit events, freshness controls and query observability; the current API binds a verified tenant and purpose allowlist but does not yet persist access audit events.
 - [ ] T014 Add versioned transport schemas and compatibility tests.
 
 ## Economics
