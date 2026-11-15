@@ -272,3 +272,17 @@ def test_btc_eth_tron_read_only_sources_are_present_and_enabled() -> None:
         assert definition.tool.get("method", "GET").upper() == "GET"
     assert definitions["trongrid_account"].key_env == "TRONGRID_API_KEY"
     assert definitions["trongrid_account_transactions"].key_env == "TRONGRID_API_KEY"
+
+
+def test_theharvester_catalogue_entry_uses_authorized_runtime_not_kali_binary() -> None:
+    definition = load_source(ESTORIDES / "20_system_tools" / "kali_theharvester.yaml")
+    assert definition.enabled is True
+    assert definition.kind == "runtime"
+    assert definition.runtime_ref == "theharvester"
+    assert definition.runtime_config["result_role"] == "DISCOVERY_ONLY"
+    assert definition.runtime_config["capability"] == "subdomains"
+    assert definition.requires_key is True
+    assert definition.key_env == "COGNITIVE_THEHARVESTER_API_KEY"
+    assert definition.source_family == "passive-domain-discovery"
+    assert definition.time_basis == "FETCH"
+    assert not definition.tool.get("binary")
