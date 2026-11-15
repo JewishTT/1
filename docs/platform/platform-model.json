@@ -1149,7 +1149,7 @@
       "name": "webapp",
       "description": "React analyst surfaces: investigation, search, entity, finding, ops, lineage.",
       "python_modules": 0,
-      "typescript_modules": 283,
+      "typescript_modules": 284,
       "modules": []
     },
     {
@@ -33241,6 +33241,7 @@
             "apps/webapp/src/evidence/rawPayload.ts",
             "apps/webapp/src/evidence/types.ts",
             "apps/webapp/src/evidence/useEvidenceRecords.ts",
+            "apps/webapp/src/features/geospatial/GeospatialContext.tsx",
             "apps/webapp/src/features/geospatial/GeospatialWorkspace.test.tsx",
             "apps/webapp/src/features/geospatial/GeospatialWorkspace.tsx",
             "apps/webapp/src/features/research-case/CaseAnalyticsPanel.tsx",
@@ -33446,7 +33447,7 @@
             "apps/webapp/src/workspace/useWorkState.ts",
             "apps/webapp/vite.config.ts"
           ],
-          "module_count": 283
+          "module_count": 284
         }
       ],
       "event_names_sample": [
@@ -113941,7 +113942,7 @@
   "counts": {
     "components": 17,
     "python_modules": 1115,
-    "typescript_modules": 283,
+    "typescript_modules": 284,
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 3195,
