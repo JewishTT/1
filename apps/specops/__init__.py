@@ -1,8 +1,17 @@
-"""Spec-ops donor integration + shared gates (Feature 027).
+"""Compatibility bridge for the archived SpecOps implementation.
 
-`roe/gate.py` holds the rules-of-engagement gate that every live spec-ops step
-(kill-chain emulation, phishing/SAT) passes through before it reaches a donor.
+The former package lives under spec-ops legacy/apps/specops. New domain
+work belongs in specops_ci and must consume the Intelligence read contract;
+this bridge exists only for still-mounted legacy API adapters during migration.
 """
+
+from pathlib import Path
+
+_legacy_package = Path(__file__).resolve().parents[2] / "spec-ops legacy" / "apps" / "specops"
+if not _legacy_package.is_dir():
+    raise ImportError(f"Archived SpecOps package is missing: {_legacy_package}")
+if str(_legacy_package) not in __path__:
+    __path__.append(str(_legacy_package))
 
 from specops.roe.gate import (
     CAPTURE_PASSWORDS,
