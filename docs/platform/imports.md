@@ -11,12 +11,12 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | Package | Kind | Import sites |
 |---|---|---|
 | `__future__` | stdlib | 1004 |
-| `typing` | stdlib | 424 |
+| `typing` | stdlib | 421 |
 | `dataclasses` | stdlib | 420 |
 | `pathlib` | stdlib | 345 |
 | `pytest` | third-party | 299 |
 | `sys` | stdlib | 271 |
-| `collections` | stdlib | 253 |
+| `collections` | stdlib | 256 |
 | `datetime` | stdlib | 230 |
 | `json` | stdlib | 221 |
 | `sqlalchemy` | third-party | 178 |
