@@ -5,7 +5,7 @@
 - [x] Create an isolated feature branch.
 - [x] Inventory the former apps/specops package from the generated platform model.
 - [x] Copy the complete 68-file package and tests to spec-ops legacy/apps/specops.
-- [x] Keep a temporary import bridge for the still-mounted API adapters.
+- [x] Resolve legacy `specops.*` imports directly from `spec-ops legacy/apps`; remove the active `apps/specops/__init__.py` shim.
 - [ ] Archive/migrate remaining API, UI, deployment and feature-spec surfaces in
       separately reviewable slices.
 
