@@ -9,9 +9,22 @@ import pytest
 APP = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(APP))
 
-from industry_adapters.capabilities import blocked_capability_reason, require_approved_capability  # noqa: E402
-from industry_adapters.followthemoney import FtMExportError, build_ftm_export, stable_ftm_id  # noqa: E402
-from industry_adapters.theharvester import AuthorizationError, AuthorizationScope, TheHarvesterApiClient, normalize_findings  # noqa: E402
+from industry_adapters.capabilities import (  # noqa: E402
+    blocked_capability_reason,
+    require_approved_capability,
+)
+from industry_adapters.domain_posture import probe_authorized_tls  # noqa: E402
+from industry_adapters.followthemoney import (  # noqa: E402
+    FtMExportError,
+    build_ftm_export,
+    stable_ftm_id,
+)
+from industry_adapters.theharvester import (  # noqa: E402
+    AuthorizationError,
+    AuthorizationScope,
+    TheHarvesterApiClient,
+    normalize_findings,
+)
 
 
 def scope(**kwargs):
@@ -131,3 +144,40 @@ def test_bigbrother_reference_modules_are_not_executable_by_default():
         require_approved_capability("face_matcher", registered=frozenset())
     with pytest.raises(LookupError):
         require_approved_capability("domain_oracle", registered=frozenset())
+
+
+def test_external_results_never_become_qualified_absence_without_coverage_measurement():
+    from industry_adapters.theharvester import RunEvidence
+
+    evidence = RunEvidence(
+        run_id="RUN-1",
+        lifecycle_status="completed",
+        evidence_status="complete",
+        records=(),
+        source_outcomes=({"source": "crtsh", "status": "completed"},),
+        filtered_counts={},
+        submitted_at="2026-11-15T00:00:00Z",
+        completed_at="2026-11-15T00:01:00Z",
+    )
+    assert evidence.may_support_qualified_absence is False
+
+
+def test_tls_probe_requires_an_explicit_tls_authorization_before_network_io():
+    allowed = scope()
+    touched = False
+
+    def socket_factory(*args, **kwargs):
+        nonlocal touched
+        touched = True
+        raise AssertionError("network must not be touched without TLS authorization")
+
+    with pytest.raises(AuthorizationError):
+        probe_authorized_tls("example.org", allowed, socket_factory=socket_factory)
+    assert touched is False
+
+
+def test_tls_authorization_is_domain_bound():
+    allowed = scope(allow_tls_probe=True)
+    assert allowed.assert_tls_probe("mail.example.org") == "mail.example.org"
+    with pytest.raises(AuthorizationError):
+        allowed.assert_tls_probe("elsewhere.invalid")
