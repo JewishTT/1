@@ -136,7 +136,11 @@ async def test_postgres_read_port_builds_evidenced_graph_from_existing_tables():
     assert relation.status == "admitted"
     assert relation.evidence_grade == "A"
     assert {ref.observation_id for ref in relation.evidence} == {"obs-rel"}
-    assert all(ref.object_uri.startswith("s3://") for entity in snapshot.entities for ref in entity.evidence)
+    assert all(
+        ref.object_uri.startswith("s3://")
+        for entity in snapshot.entities
+        for ref in entity.evidence
+    )
     assert any("FROM observations AS o" in sql for sql in factory.connection.calls)
 
 
