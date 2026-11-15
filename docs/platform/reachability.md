@@ -8,7 +8,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 |---|---|
 | PRODUCTION | 430 |
 | TEST_ONLY | 136 |
-| ORPHAN | 132 |
+| ORPHAN | 131 |
 | TEST | 369 |
 
 ## Entrypoints (production roots)
@@ -205,7 +205,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**132** modules are imported by neither production nor tests.
+**131** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -321,7 +321,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/semantic/shacl.py` |
 | `apps/shared/storage/__init__.py` |
 | `apps/shared/workflow/__init__.py` |
-| `apps/specops/__init__.py` |
 | `apps/specops_ci/__init__.py` |
 | `apps/zero/zero/__init__.py` |
 | `apps/zero/zero/enrichment/__init__.py` |

@@ -1,6 +1,6 @@
 # Import graph
 
-1067 Python modules, 2974 resolved local edges.
+1066 Python modules, 2974 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -13,7 +13,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `__future__` | stdlib | 930 |
 | `dataclasses` | stdlib | 389 |
 | `typing` | stdlib | 385 |
-| `pathlib` | stdlib | 332 |
+| `pathlib` | stdlib | 331 |
 | `pytest` | third-party | 285 |
 | `sys` | stdlib | 269 |
 | `collections` | stdlib | 249 |
@@ -77,7 +77,6 @@ The import names a platform package that does not exist at the resolved target. 
 | `apps/control-plane/api/routes/specops_emulation.py` | `specops.roe.gate` | local |
 | `apps/control-plane/api/routes/specops_engagement.py` | `specops.engagement` | local |
 | `apps/control-plane/tests/test_specops_roe_auth.py` | `specops.roe.gate` | local |
-| `apps/specops/__init__.py` | `specops.roe.gate` | local |
 | `apps/control-plane/api/routes/specops_counterintel.py` | `specops.counterintel` | guarded-local |
 | `apps/control-plane/api/routes/specops_counterintel.py` | `specops.counterintel` | guarded-local |
 | `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.approvals` | guarded-local |
@@ -207,7 +206,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `sims` | `apps/science/sims/__init__.py` |
 | `sources` | `apps/acquisition/sources/__init__.py` |
 | `spatial` | `apps/projection/spatial` |
-| `specops` | `apps/specops/__init__.py` |
+| `specops` | `spec-ops legacy/apps/specops/__init__.py` |
 | `specops_ci` | `apps/specops_ci/__init__.py` |
 | `stopping` | `apps/feedback/stopping.py` |
 | `storage` | `apps/shared/storage/__init__.py` |

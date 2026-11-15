@@ -21,8 +21,8 @@ Raw observations are immutable and content-addressed; every analytical result re
 
 | Metric | Value |
 |---|---|
-| Components | 20 |
-| Python / TypeScript / Rust modules | 1067 / 283 / 16 |
+| Components | 19 |
+| Python / TypeScript / Rust modules | 1066 / 283 / 16 |
 | HTTP routes | 227 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
@@ -73,7 +73,6 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | `shared` | 202 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
-| `specops` | 1 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `specops_ci` | 4 | 0 | 0 |  |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 283 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |

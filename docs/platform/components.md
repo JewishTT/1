@@ -522,20 +522,6 @@ apps.shared.domain.relation_identity
 
 </details>
 
-## `specops`
-
-Isolated spec-ops lab profile (never in the routine path).
-
-Python modules: **1** · TypeScript modules: **0**
-
-<details><summary>module sample</summary>
-
-```
-apps.specops
-```
-
-</details>
-
 ## `specops_ci`
 
 

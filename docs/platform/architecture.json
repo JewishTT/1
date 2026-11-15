@@ -565,7 +565,6 @@
         ],
         "modules": [
           "apps/deploy/minio-init/init-buckets.py",
-          "apps/specops/__init__.py",
           "bench/bench/__init__.py",
           "bench/bench/harness.py",
           "bench/chaos/__init__.py",
@@ -610,7 +609,7 @@
           "tools/strip_zero_inventory.py",
           "tools/tests/test_repo_hygiene.py"
         ],
-        "module_count": 45
+        "module_count": 44
       },
       {
         "id": "orchestration-temporal",
@@ -2950,12 +2949,6 @@
         "kind": "local"
       },
       {
-        "type": "broken-import",
-        "from": "apps/specops/__init__.py",
-        "import": "specops.roe.gate",
-        "kind": "local"
-      },
-      {
         "type": "competing-writers",
         "object": "observation",
         "table": "observations"
@@ -3032,6 +3025,6 @@
     "context_edges": 37,
     "specs": 34,
     "flows": 1,
-    "rule_violations": 48
+    "rule_violations": 47
   }
 }

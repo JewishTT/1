@@ -60,7 +60,7 @@ _None: every declared capability has a module in the tree._
 
 ## Untested modules
 
-280 platform modules are not imported by any test. Sample:
+279 platform modules are not imported by any test. Sample:
 
 | Module |
 |---|
@@ -107,7 +107,7 @@ _None: every declared capability has a module in the tree._
 
 ## Unresolved imports (by evidence)
 
-34 platform imports have no resolved target (local/stale/guarded-local); 1 tracked guarded gaps; 0 undeclared (not platform/stdlib/installed/declared).
+33 platform imports have no resolved target (local/stale/guarded-local); 1 tracked guarded gaps; 0 undeclared (not platform/stdlib/installed/declared).
 
 | From | Import | Kind |
 |---|---|---|
@@ -145,4 +145,3 @@ _None: every declared capability has a module in the tree._
 | `apps/control-plane/api/routes/specops_social.py` | `specops.social` | guarded-local |
 | `apps/control-plane/tests/test_specops_roe_auth.py` | `specops.roe.gate` | local |
 | `apps/shared/tests/unit/test_relation_schema.py` | `domain.context_validation` | guarded-gap |
-| `apps/specops/__init__.py` | `specops.roe.gate` | local |

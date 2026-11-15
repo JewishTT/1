@@ -1071,15 +1071,6 @@
       ]
     },
     {
-      "name": "specops",
-      "description": "Isolated spec-ops lab profile (never in the routine path).",
-      "python_modules": 1,
-      "typescript_modules": 0,
-      "modules": [
-        "apps.specops"
-      ]
-    },
-    {
       "name": "specops_ci",
       "description": "",
       "python_modules": 4,
@@ -1170,7 +1161,7 @@
     }
   ],
   "import_graph": {
-    "module_count": 1067,
+    "module_count": 1066,
     "edge_count": 2974,
     "external": {
       "declared-not-installed:ahocorasick": 1,
@@ -1211,7 +1202,7 @@
       "stdlib:logging": 15,
       "stdlib:math": 41,
       "stdlib:os": 71,
-      "stdlib:pathlib": 332,
+      "stdlib:pathlib": 331,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 108,
@@ -1469,11 +1460,6 @@
         "from": "apps/shared/tests/unit/test_relation_schema.py",
         "import": "domain.context_validation",
         "kind": "guarded-gap"
-      },
-      {
-        "from": "apps/specops/__init__.py",
-        "import": "specops.roe.gate",
-        "kind": "local"
       }
     ],
     "edges": [
@@ -16441,7 +16427,7 @@
       "sims": "apps/science/sims/__init__.py",
       "sources": "apps/acquisition/sources/__init__.py",
       "spatial": "apps/projection/spatial",
-      "specops": "apps/specops/__init__.py",
+      "specops": "spec-ops legacy/apps/specops/__init__.py",
       "specops_ci": "apps/specops_ci/__init__.py",
       "stopping": "apps/feedback/stopping.py",
       "storage": "apps/shared/storage/__init__.py",
@@ -31028,7 +31014,7 @@
     "apps/science/kinetics/__init__.py",
     "apps/science/operators/__init__.py"
   ],
-  "untested_count": 280,
+  "untested_count": 279,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -31596,7 +31582,6 @@
           ],
           "modules": [
             "apps/deploy/minio-init/init-buckets.py",
-            "apps/specops/__init__.py",
             "bench/bench/__init__.py",
             "bench/bench/harness.py",
             "bench/chaos/__init__.py",
@@ -31641,7 +31626,7 @@
             "tools/strip_zero_inventory.py",
             "tools/tests/test_repo_hygiene.py"
           ],
-          "module_count": 45
+          "module_count": 44
         },
         {
           "id": "orchestration-temporal",
@@ -33981,12 +33966,6 @@
           "kind": "local"
         },
         {
-          "type": "broken-import",
-          "from": "apps/specops/__init__.py",
-          "import": "specops.roe.gate",
-          "kind": "local"
-        },
-        {
           "type": "competing-writers",
           "object": "observation",
           "table": "observations"
@@ -34063,7 +34042,7 @@
       "context_edges": 37,
       "specs": 34,
       "flows": 1,
-      "rule_violations": 48
+      "rule_violations": 47
     }
   },
   "maturity": {
@@ -35581,7 +35560,7 @@
       {
         "path": "apps/control-plane/api/path_shim.py",
         "status": "DECLARATION_ONLY",
-        "loc": 60,
+        "loc": 69,
         "callables": 0,
         "stubs": 0,
         "not_implemented": 0,
@@ -42954,15 +42933,6 @@
         "markers": []
       },
       {
-        "path": "apps/specops/__init__.py",
-        "status": "PACKAGE_INIT",
-        "loc": 45,
-        "callables": 0,
-        "stubs": 0,
-        "not_implemented": 0,
-        "markers": []
-      },
-      {
         "path": "apps/specops_ci/__init__.py",
         "status": "PACKAGE_INIT",
         "loc": 19,
@@ -43507,7 +43477,7 @@
       {
         "path": "conftest.py",
         "status": "IMPLEMENTED",
-        "loc": 100,
+        "loc": 110,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
@@ -43780,10 +43750,10 @@
     "summary": {
       "IMPLEMENTED": 560,
       "DECLARATION_ONLY": 19,
-      "PACKAGE_INIT": 94,
+      "PACKAGE_INIT": 93,
       "TEST": 369,
       "MIGRATION": 25,
-      "total": 1067
+      "total": 1066
     }
   },
   "reachability": {
@@ -47701,10 +47671,6 @@
         "status": "PRODUCTION"
       },
       {
-        "path": "apps/specops/__init__.py",
-        "status": "ORPHAN"
-      },
-      {
         "path": "apps/specops_ci/__init__.py",
         "status": "ORPHAN"
       },
@@ -48106,9 +48072,9 @@
     "summary": {
       "PRODUCTION": 430,
       "TEST_ONLY": 136,
-      "ORPHAN": 132,
+      "ORPHAN": 131,
       "TEST": 369,
-      "total": 1067
+      "total": 1066
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -48361,7 +48327,6 @@
       "apps/shared/semantic/shacl.py",
       "apps/shared/storage/__init__.py",
       "apps/shared/workflow/__init__.py",
-      "apps/specops/__init__.py",
       "apps/specops_ci/__init__.py",
       "apps/zero/zero/__init__.py",
       "apps/zero/zero/enrichment/__init__.py",
@@ -108975,15 +108940,15 @@
     }
   },
   "counts": {
-    "components": 20,
-    "python_modules": 1067,
+    "components": 19,
+    "python_modules": 1066,
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 2974,
     "test_files": 387,
     "test_functions": 5530,
-    "untested_modules": 280,
+    "untested_modules": 279,
     "http_routes": 227
   },
   "evidence_stats": {
@@ -108995,17 +108960,17 @@
   "maturity_summary": {
     "IMPLEMENTED": 560,
     "DECLARATION_ONLY": 19,
-    "PACKAGE_INIT": 94,
+    "PACKAGE_INIT": 93,
     "TEST": 369,
     "MIGRATION": 25,
-    "total": 1067
+    "total": 1066
   },
   "reachability_summary": {
     "PRODUCTION": 430,
     "TEST_ONLY": 136,
-    "ORPHAN": 132,
+    "ORPHAN": 131,
     "TEST": 369,
-    "total": 1067
+    "total": 1066
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -109304,7 +109269,6 @@
     "apps/shared/semantic/shacl.py",
     "apps/shared/storage/__init__.py",
     "apps/shared/workflow/__init__.py",
-    "apps/specops/__init__.py",
     "apps/specops_ci/__init__.py",
     "apps/zero/zero/__init__.py",
     "apps/zero/zero/enrichment/__init__.py",
