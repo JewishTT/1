@@ -58,9 +58,15 @@ def _raise_read_error(exc: Exception) -> None:
     if isinstance(exc, IntelligenceSubjectNotFound):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     if isinstance(exc, IntelligenceEvidenceUnavailable):
-        raise HTTPException(status_code=409, detail={"code": "EVIDENCE_UNAVAILABLE", "message": str(exc)}) from exc
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "EVIDENCE_UNAVAILABLE", "message": str(exc)},
+        ) from exc
     if isinstance(exc, IntelligenceSnapshotBudgetExceeded):
-        raise HTTPException(status_code=413, detail={"code": "SNAPSHOT_BUDGET_EXCEEDED", "message": str(exc)}) from exc
+        raise HTTPException(
+            status_code=413,
+            detail={"code": "SNAPSHOT_BUDGET_EXCEEDED", "message": str(exc)},
+        ) from exc
     if isinstance(exc, RuntimeError):
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     raise exc
@@ -70,7 +76,10 @@ def _to_domain(row: AuthorizationRow) -> EngagementAuthorization:
     try:
         kinds = frozenset(AssessmentKind(value) for value in (row.allowed_assessments or []))
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail="stored authorization has an unknown assessment type") from exc
+        raise HTTPException(
+            status_code=500,
+            detail="stored authorization has an unknown assessment type",
+        ) from exc
     return EngagementAuthorization(
         authorization_id=row.authorization_id,
         tenant_id=row.tenant_id,
@@ -130,14 +139,22 @@ async def create_authorization(
             assessment_kind=body.assessment_kinds[0],
             at=now,
         )
-    except (IntelligenceReadDenied, IntelligenceSubjectNotFound, IntelligenceEvidenceUnavailable, IntelligenceSnapshotBudgetExceeded) as exc:
+    except (
+        IntelligenceReadDenied,
+        IntelligenceSubjectNotFound,
+        IntelligenceEvidenceUnavailable,
+        IntelligenceSnapshotBudgetExceeded,
+    ) as exc:
         _raise_read_error(exc)
     except AssessmentScopeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     platform = await get_platform(tenant_id=ctx.tenant_id)
     if platform.session_factory is None:
-        raise HTTPException(status_code=503, detail="durable PostgreSQL session factory is unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="durable PostgreSQL session factory is unavailable",
+        )
     row = AuthorizationRow(
         authorization_id=authorization.authorization_id,
         tenant_id=authorization.tenant_id,
@@ -190,7 +207,10 @@ async def prepare_authorized_assessment(
     if row.revoked_at is not None:
         raise HTTPException(status_code=409, detail="SpecOps&CI authorization has been revoked")
     if not row.issued_at <= now < row.expires_at:
-        raise HTTPException(status_code=409, detail="SpecOps&CI authorization is not currently valid")
+        raise HTTPException(
+            status_code=409,
+            detail="SpecOps&CI authorization is not currently valid",
+        )
 
     authorization = _to_domain(row)
     try:
