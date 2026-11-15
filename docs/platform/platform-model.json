@@ -1203,7 +1203,7 @@
   ],
   "import_graph": {
     "module_count": 1115,
-    "edge_count": 3200,
+    "edge_count": 3202,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 978,
@@ -2207,6 +2207,16 @@
         "from": "apps/acquisition/tests/contract/test_plan_driver.py",
         "to": "apps/acquisition/dispatcher/plan_driver.py",
         "via": "dispatcher.plan_driver"
+      },
+      {
+        "from": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "to": "apps/acquisition/sources/connector.py",
+        "via": "sources.connector"
+      },
+      {
+        "from": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "to": "apps/acquisition/sources/connector.py",
+        "via": "sources.connector"
       },
       {
         "from": "apps/acquisition/tests/contract/test_scheduler.py",
@@ -17465,7 +17475,7 @@
     "by_file": [
       {
         "path": "apps/acquisition/tests/contract/test_plan_driver.py",
-        "tests": 21,
+        "tests": 23,
         "test_names": [
           "test_dispatched_task_is_published_with_acked_offset",
           "test_topic_is_the_catalog_topic_for_the_event",
@@ -17487,7 +17497,9 @@
           "test_case_bound_request_serializes_investigation_binding_into_payload",
           "test_task_mapping_is_order_independent",
           "test_plan_is_stable_across_calls",
-          "test_no_uuid_or_wallclock_in_the_driver"
+          "test_no_uuid_or_wallclock_in_the_driver",
+          "test_theharvester_is_registered_as_an_explicit_runtime",
+          "test_theharvester_is_opt_in_and_planned_only_when_keyed_sources_are_enabled"
         ],
         "targets": [
           "apps/acquisition/adapters/registry.py",
@@ -26303,7 +26315,7 @@
         ]
       }
     ],
-    "total": 5512
+    "total": 5514
   },
   "contracts": {
     "python": [
@@ -35303,7 +35315,7 @@
       {
         "path": "apps/acquisition/dispatcher/plan_driver.py",
         "status": "IMPLEMENTED",
-        "loc": 349,
+        "loc": 352,
         "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
@@ -35579,8 +35591,8 @@
       {
         "path": "apps/acquisition/tests/contract/test_plan_driver.py",
         "status": "TEST",
-        "loc": 363,
-        "callables": 32,
+        "loc": 394,
+        "callables": 34,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -54517,6 +54529,32 @@
         "evidence": {
           "file": "apps/acquisition/tests/contract/test_plan_driver.py",
           "via": "dispatcher.scheduler"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "67d76a4d21057e46",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "object": "apps/acquisition/sources/connector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/contract/test_plan_driver.py",
+          "via": "sources.connector"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "67d76a4d21057e46",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "object": "apps/acquisition/sources/connector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/contract/test_plan_driver.py",
+          "via": "sources.connector"
         },
         "confidence": 1.0
       },
@@ -114056,8 +114094,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4927,
-      "static_facts": 4628,
+      "facts_total": 4929,
+      "static_facts": 4630,
       "inferred": 299,
       "intended": 0
     }
@@ -114068,15 +114106,15 @@
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3200,
+    "import_edges": 3202,
     "test_files": 381,
-    "test_functions": 5512,
+    "test_functions": 5514,
     "untested_modules": 291,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4927,
-    "static_facts": 4628,
+    "facts_total": 4929,
+    "static_facts": 4630,
     "inferred": 299,
     "intended": 0
   },

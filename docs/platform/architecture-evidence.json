@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4927,
-    "static_facts": 4628,
+    "facts_total": 4929,
+    "static_facts": 4630,
     "inferred": 299,
     "intended": 0
   },
@@ -3054,6 +3054,32 @@
       "evidence": {
         "file": "apps/acquisition/tests/contract/test_plan_driver.py",
         "via": "dispatcher.scheduler"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "67d76a4d21057e46",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
+      "object": "apps/acquisition/sources/connector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "via": "sources.connector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "67d76a4d21057e46",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
+      "object": "apps/acquisition/sources/connector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "via": "sources.connector"
       },
       "confidence": 1.0
     },
