@@ -93,10 +93,11 @@ def build_assessment_context(
         raise AssessmentScopeError("engagement authorization is not currently valid")
     if assessment_kind not in authorization.allowed_assessments:
         raise AssessmentScopeError("assessment kind is outside the approved engagement")
-    requested = tuple(dict.fromkeys(target_entity_ids))
+    supplied_targets = tuple(target_entity_ids)
+    requested = tuple(dict.fromkeys(supplied_targets))
     if not requested:
         raise AssessmentScopeError("at least one explicit target entity is required")
-    if len(requested) != len(tuple(target_entity_ids)):
+    if len(requested) != len(supplied_targets):
         raise AssessmentScopeError("duplicate target entity ids are not accepted")
     if not set(requested).issubset(authorization.allowed_entity_ids):
         raise AssessmentScopeError("requested targets exceed the approved entity roster")
