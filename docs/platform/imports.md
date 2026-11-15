@@ -1,6 +1,6 @@
 # Import graph
 
-1061 Python modules, 2949 resolved local edges.
+1062 Python modules, 2950 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,19 +10,19 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 924 |
+| `__future__` | stdlib | 925 |
 | `dataclasses` | stdlib | 387 |
-| `typing` | stdlib | 381 |
+| `typing` | stdlib | 382 |
 | `pathlib` | stdlib | 332 |
 | `pytest` | third-party | 285 |
 | `sys` | stdlib | 269 |
-| `collections` | stdlib | 248 |
-| `json` | stdlib | 210 |
-| `datetime` | stdlib | 207 |
-| `sqlalchemy` | third-party | 174 |
-| `hashlib` | stdlib | 136 |
+| `collections` | stdlib | 249 |
+| `json` | stdlib | 211 |
+| `datetime` | stdlib | 208 |
+| `sqlalchemy` | third-party | 175 |
+| `hashlib` | stdlib | 137 |
 | `enum` | stdlib | 118 |
-| `re` | stdlib | 107 |
+| `re` | stdlib | 108 |
 | `asyncio` | stdlib | 77 |
 | `os` | stdlib | 71 |
 | `fastapi` | third-party | 70 |

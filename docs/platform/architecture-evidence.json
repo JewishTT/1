@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4610,
-    "static_facts": 4334,
+    "facts_total": 4611,
+    "static_facts": 4335,
     "inferred": 276,
     "intended": 0
   },
@@ -13545,6 +13545,19 @@
       "evidence": {
         "file": "apps/control-plane/services/frontier.py",
         "via": "db.schema"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "359e7649402bbca5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/services/intelligence_reader.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/services/intelligence_reader.py",
+        "via": "shared.contracts.intelligence_feed"
       },
       "confidence": 1.0
     },

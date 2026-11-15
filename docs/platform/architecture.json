@@ -969,6 +969,7 @@
           "apps/control-plane/services/entity_pipeline.py",
           "apps/control-plane/services/event_bus.py",
           "apps/control-plane/services/frontier.py",
+          "apps/control-plane/services/intelligence_reader.py",
           "apps/control-plane/services/interpretation_bridge.py",
           "apps/control-plane/services/layer0_pipeline.py",
           "apps/control-plane/services/materialization_outbox_relay.py",
@@ -1166,7 +1167,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 324
+        "module_count": 325
       },
       {
         "id": "webapp",

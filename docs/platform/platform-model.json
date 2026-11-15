@@ -226,7 +226,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 265,
+      "python_modules": 266,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -363,6 +363,7 @@
         "apps.control-plane.services.entity_pipeline",
         "apps.control-plane.services.event_bus",
         "apps.control-plane.services.frontier",
+        "apps.control-plane.services.intelligence_reader",
         "apps.control-plane.services.interpretation_bridge",
         "apps.control-plane.services.investigation_scheduler",
         "apps.control-plane.services.layer0_pipeline",
@@ -427,8 +428,7 @@
         "apps.control-plane.tests.test_research_case_projection",
         "apps.control-plane.tests.test_research_case_reports",
         "apps.control-plane.tests.test_specops_roe_auth",
-        "apps.control-plane.tests.test_type_signal_bridge",
-        "apps.control-plane.tests.test_zero_layer_service"
+        "apps.control-plane.tests.test_type_signal_bridge"
       ]
     },
     {
@@ -1170,11 +1170,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1061,
-    "edge_count": 2949,
+    "module_count": 1062,
+    "edge_count": 2950,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 924,
+      "stdlib:__future__": 925,
       "stdlib:abc": 3,
       "stdlib:argparse": 21,
       "stdlib:ast": 29,
@@ -1184,20 +1184,20 @@
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 248,
+      "stdlib:collections": 249,
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 4,
       "stdlib:copy": 1,
       "stdlib:csv": 3,
       "stdlib:dataclasses": 387,
-      "stdlib:datetime": 207,
+      "stdlib:datetime": 208,
       "stdlib:decimal": 3,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
       "stdlib:enum": 118,
       "stdlib:functools": 7,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 136,
+      "stdlib:hashlib": 137,
       "stdlib:heapq": 1,
       "stdlib:hmac": 2,
       "stdlib:html": 11,
@@ -1207,14 +1207,14 @@
       "stdlib:io": 24,
       "stdlib:ipaddress": 8,
       "stdlib:itertools": 11,
-      "stdlib:json": 210,
+      "stdlib:json": 211,
       "stdlib:logging": 15,
       "stdlib:math": 41,
       "stdlib:os": 71,
       "stdlib:pathlib": 332,
       "stdlib:queue": 1,
       "stdlib:random": 6,
-      "stdlib:re": 107,
+      "stdlib:re": 108,
       "stdlib:secrets": 2,
       "stdlib:shlex": 1,
       "stdlib:shutil": 16,
@@ -1233,7 +1233,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 41,
-      "stdlib:typing": 381,
+      "stdlib:typing": 382,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 66,
@@ -1284,7 +1284,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 174,
+      "third-party:sqlalchemy": 175,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -6361,6 +6361,11 @@
         "from": "apps/control-plane/services/frontier.py",
         "to": "apps/control-plane/db/schema.py",
         "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/services/intelligence_reader.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
       },
       {
         "from": "apps/control-plane/services/interpretation_bridge.py",
@@ -30782,6 +30787,7 @@
     "apps/control-plane/services/document_adapter.py",
     "apps/control-plane/services/entity_pipeline.py",
     "apps/control-plane/services/event_bus.py",
+    "apps/control-plane/services/intelligence_reader.py",
     "apps/control-plane/services/investigation_scheduler.py",
     "apps/control-plane/services/materialization_outbox_relay.py",
     "apps/control-plane/services/model_gateway.py",
@@ -30857,10 +30863,9 @@
     "apps/science/robustness/__init__.py",
     "apps/science/scitda/__init__.py",
     "apps/science/sims/__init__.py",
-    "apps/science/structure/__init__.py",
-    "apps/science/temporal/__init__.py"
+    "apps/science/structure/__init__.py"
   ],
-  "untested_count": 274,
+  "untested_count": 275,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -31832,6 +31837,7 @@
             "apps/control-plane/services/entity_pipeline.py",
             "apps/control-plane/services/event_bus.py",
             "apps/control-plane/services/frontier.py",
+            "apps/control-plane/services/intelligence_reader.py",
             "apps/control-plane/services/interpretation_bridge.py",
             "apps/control-plane/services/layer0_pipeline.py",
             "apps/control-plane/services/materialization_outbox_relay.py",
@@ -32029,7 +32035,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 324
+          "module_count": 325
         },
         {
           "id": "webapp",
@@ -36571,6 +36577,15 @@
         "status": "IMPLEMENTED",
         "loc": 514,
         "callables": 29,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/services/intelligence_reader.py",
+        "status": "IMPLEMENTED",
+        "loc": 471,
+        "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -43550,12 +43565,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 555,
+      "IMPLEMENTED": 556,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 94,
       "TEST": 369,
       "MIGRATION": 24,
-      "total": 1061
+      "total": 1062
     }
   },
   "reachability": {
@@ -44735,6 +44750,10 @@
       {
         "path": "apps/control-plane/services/frontier.py",
         "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/control-plane/services/intelligence_reader.py",
+        "status": "ORPHAN"
       },
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
@@ -47854,9 +47873,9 @@
     "summary": {
       "PRODUCTION": 420,
       "TEST_ONLY": 139,
-      "ORPHAN": 133,
+      "ORPHAN": 134,
       "TEST": 369,
-      "total": 1061
+      "total": 1062
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -48056,6 +48075,7 @@
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
       "apps/control-plane/services/__init__.py",
       "apps/control-plane/services/acquisition_evidence.py",
+      "apps/control-plane/services/intelligence_reader.py",
       "apps/control-plane/services/relation_projection_rebuild.py",
       "apps/control-plane/services/specops_catalog.py",
       "apps/control-plane/workflows/__init__.py",
@@ -63327,6 +63347,19 @@
         "evidence": {
           "file": "apps/control-plane/services/frontier.py",
           "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "359e7649402bbca5",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/intelligence_reader.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/intelligence_reader.py",
+          "via": "shared.contracts.intelligence_feed"
         },
         "confidence": 1.0
       },
@@ -108318,44 +108351,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4610,
-      "static_facts": 4334,
+      "facts_total": 4611,
+      "static_facts": 4335,
       "inferred": 276,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1061,
+    "python_modules": 1062,
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2949,
+    "import_edges": 2950,
     "test_files": 387,
     "test_functions": 5530,
-    "untested_modules": 274,
+    "untested_modules": 275,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4610,
-    "static_facts": 4334,
+    "facts_total": 4611,
+    "static_facts": 4335,
     "inferred": 276,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 555,
+    "IMPLEMENTED": 556,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 94,
     "TEST": 369,
     "MIGRATION": 24,
-    "total": 1061
+    "total": 1062
   },
   "reachability_summary": {
     "PRODUCTION": 420,
     "TEST_ONLY": 139,
-    "ORPHAN": 133,
+    "ORPHAN": 134,
     "TEST": 369,
-    "total": 1061
+    "total": 1062
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -108601,6 +108634,7 @@
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
     "apps/control-plane/services/__init__.py",
     "apps/control-plane/services/acquisition_evidence.py",
+    "apps/control-plane/services/intelligence_reader.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/workflows/__init__.py",
