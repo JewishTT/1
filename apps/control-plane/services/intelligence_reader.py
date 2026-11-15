@@ -122,7 +122,9 @@ class PostgresIntelligenceReadPort:
                     source_id = str(claim.get("subject_ref") or "")
                     target_id = str(claim.get("object_ref") or "")
                     candidates.update(
-                        value for value in (source_id, target_id) if value and value not in entity_rows
+                        value
+                        for value in (source_id, target_id)
+                        if value and value not in entity_rows
                     )
 
                 if not candidates:
