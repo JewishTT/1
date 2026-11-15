@@ -1203,7 +1203,7 @@
   ],
   "import_graph": {
     "module_count": 1115,
-    "edge_count": 3199,
+    "edge_count": 3200,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 978,
@@ -2842,6 +2842,11 @@
         "from": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "to": "apps/acquisition/sources/catalogue.py",
         "via": "sources.catalogue"
+      },
+      {
+        "from": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+        "to": "apps/acquisition/sources/connector.py",
+        "via": "sources.connector"
       },
       {
         "from": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
@@ -18165,7 +18170,7 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
-        "tests": 21,
+        "tests": 22,
         "test_names": [
           "test_every_definition_loads",
           "test_all_sources_are_enabled",
@@ -18187,10 +18192,12 @@
           "test_explicit_provider_offset_pagination_uses_declared_parameter",
           "test_explicit_cursor_pagination_is_rejected_until_runtime_support_exists",
           "test_btc_eth_tron_read_only_sources_are_present_and_enabled",
-          "test_theharvester_catalogue_entry_uses_authorized_runtime_not_kali_binary"
+          "test_theharvester_catalogue_entry_uses_authorized_runtime_not_kali_binary",
+          "test_theharvester_task_is_planned_as_discovery_only"
         ],
         "targets": [
           "apps/acquisition/sources/catalogue.py",
+          "apps/acquisition/sources/connector.py",
           "apps/acquisition/sources/executor.py"
         ]
       },
@@ -26296,7 +26303,7 @@
         ]
       }
     ],
-    "total": 5511
+    "total": 5512
   },
   "contracts": {
     "python": [
@@ -35487,7 +35494,7 @@
       {
         "path": "apps/acquisition/runtime/theharvester.py",
         "status": "IMPLEMENTED",
-        "loc": 274,
+        "loc": 286,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
@@ -35862,8 +35869,8 @@
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "status": "TEST",
-        "loc": 289,
-        "callables": 23,
+        "loc": 299,
+        "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
         "markers": [
@@ -56239,6 +56246,19 @@
         "evidence": {
           "file": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
           "via": "sources.catalogue"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ee70d20d2cf197ef",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+        "object": "apps/acquisition/sources/connector.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+          "via": "sources.connector"
         },
         "confidence": 1.0
       },
@@ -102491,6 +102511,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "7e82f5ae0b83a3a4",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+        "object": "apps/acquisition/sources/connector.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/acquisition/tests/unit/test_source_catalogue_full.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "fc69a6aca3ee3ea8",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
@@ -114024,8 +114056,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4925,
-      "static_facts": 4626,
+      "facts_total": 4927,
+      "static_facts": 4628,
       "inferred": 299,
       "intended": 0
     }
@@ -114036,15 +114068,15 @@
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3199,
+    "import_edges": 3200,
     "test_files": 381,
-    "test_functions": 5511,
+    "test_functions": 5512,
     "untested_modules": 291,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4925,
-    "static_facts": 4626,
+    "facts_total": 4927,
+    "static_facts": 4628,
     "inferred": 299,
     "intended": 0
   },

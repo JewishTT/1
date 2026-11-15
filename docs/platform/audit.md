@@ -8,10 +8,10 @@ A verified snapshot of the platform's true state. Every number is derived from t
 |---|---|
 | Components | 17 |
 | Python / TypeScript / Rust modules | 1115 / 283 / 16 |
-| Resolved import edges | 3199 |
+| Resolved import edges | 3200 |
 | HTTP routes / routers | 222 / 36 |
-| Test files / functions | 381 / 5511 |
-| Evidence facts (static) | 4925 |
+| Test files / functions | 381 / 5512 |
+| Evidence facts (static) | 4927 |
 
 ## Implementation maturity
 

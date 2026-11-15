@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4925,
-    "static_facts": 4626,
+    "facts_total": 4927,
+    "static_facts": 4628,
     "inferred": 299,
     "intended": 0
   },
@@ -4783,6 +4783,19 @@
       "evidence": {
         "file": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "via": "sources.catalogue"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ee70d20d2cf197ef",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+      "object": "apps/acquisition/sources/connector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+        "via": "sources.connector"
       },
       "confidence": 1.0
     },
@@ -51027,6 +51040,18 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
       "object": "apps/acquisition/sources/catalogue.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/unit/test_source_catalogue_full.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "7e82f5ae0b83a3a4",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
+      "object": "apps/acquisition/sources/connector.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
