@@ -865,7 +865,7 @@
     {
       "name": "shared",
       "description": "Contracts, events, domain invariants, storage, security — the substrate every app imports.",
-      "python_modules": 201,
+      "python_modules": 202,
       "typescript_modules": 0,
       "modules": [
         "apps.shared.config",
@@ -986,6 +986,7 @@
         "apps.shared.tests.contract",
         "apps.shared.tests.contract.test_correlation",
         "apps.shared.tests.contract.test_domain_invariants",
+        "apps.shared.tests.contract.test_domain_silo_boundaries",
         "apps.shared.tests.contract.test_donor_registry",
         "apps.shared.tests.contract.test_entity_fabric",
         "apps.shared.tests.contract.test_error_codes",
@@ -1066,8 +1067,7 @@
         "apps.shared.websearch.discovery",
         "apps.shared.websearch.providers",
         "apps.shared.websearch.queries",
-        "apps.shared.websearch.relevance",
-        "apps.shared.workflow"
+        "apps.shared.websearch.relevance"
       ]
     },
     {
@@ -1170,14 +1170,14 @@
     }
   ],
   "import_graph": {
-    "module_count": 1060,
+    "module_count": 1061,
     "edge_count": 2949,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 923,
+      "stdlib:__future__": 924,
       "stdlib:abc": 3,
       "stdlib:argparse": 21,
-      "stdlib:ast": 28,
+      "stdlib:ast": 29,
       "stdlib:asyncio": 77,
       "stdlib:base64": 8,
       "stdlib:binascii": 2,
@@ -1211,7 +1211,7 @@
       "stdlib:logging": 15,
       "stdlib:math": 41,
       "stdlib:os": 71,
-      "stdlib:pathlib": 331,
+      "stdlib:pathlib": 332,
       "stdlib:queue": 1,
       "stdlib:random": 6,
       "stdlib:re": 107,
@@ -1277,7 +1277,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 284,
+      "third-party:pytest": 285,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -22685,6 +22685,15 @@
         ]
       },
       {
+        "path": "apps/shared/tests/contract/test_domain_silo_boundaries.py",
+        "tests": 2,
+        "test_names": [
+          "test_domain_consumers_do_not_import_recon_or_acquisition",
+          "test_both_consumers_use_the_shared_intelligence_read_contract"
+        ],
+        "targets": []
+      },
+      {
         "path": "apps/shared/tests/contract/test_donor_registry.py",
         "tests": 28,
         "test_names": [
@@ -25160,7 +25169,7 @@
         ]
       }
     ],
-    "total": 5523
+    "total": 5525
   },
   "contracts": {
     "python": [
@@ -31578,6 +31587,7 @@
             "apps/shared/tests/contract/__init__.py",
             "apps/shared/tests/contract/test_correlation.py",
             "apps/shared/tests/contract/test_domain_invariants.py",
+            "apps/shared/tests/contract/test_domain_silo_boundaries.py",
             "apps/shared/tests/contract/test_donor_registry.py",
             "apps/shared/tests/contract/test_entity_fabric.py",
             "apps/shared/tests/contract/test_error_codes.py",
@@ -31662,7 +31672,7 @@
             "apps/shared/workflow/__init__.py",
             "apps/shared/workflow/client.py"
           ],
-          "module_count": 201
+          "module_count": 202
         },
         {
           "id": "projection-query",
@@ -32334,6 +32344,7 @@
         "api.example.com",
         "api.example.org",
         "api.md",
+        "api.routes.connectors",
         "api.routes.search_rebuild",
         "api.tavily.com",
         "app.py",
@@ -32492,8 +32503,7 @@
         "elsewhere.invalid",
         "empty.txt",
         "enable.auto.commit",
-        "enable.auto.offset.store",
-        "enable.idempotence"
+        "enable.auto.offset.store"
       ]
     },
     "context_map": {
@@ -41920,6 +41930,15 @@
         "markers": []
       },
       {
+        "path": "apps/shared/tests/contract/test_domain_silo_boundaries.py",
+        "status": "TEST",
+        "loc": 70,
+        "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/shared/tests/contract/test_donor_registry.py",
         "status": "TEST",
         "loc": 786,
@@ -43500,9 +43519,9 @@
       "IMPLEMENTED": 555,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 94,
-      "TEST": 368,
+      "TEST": 369,
       "MIGRATION": 24,
-      "total": 1060
+      "total": 1061
     }
   },
   "reachability": {
@@ -47060,6 +47079,10 @@
         "status": "TEST"
       },
       {
+        "path": "apps/shared/tests/contract/test_domain_silo_boundaries.py",
+        "status": "TEST"
+      },
+      {
         "path": "apps/shared/tests/contract/test_donor_registry.py",
         "status": "TEST"
       },
@@ -47798,8 +47821,8 @@
       "PRODUCTION": 420,
       "TEST_ONLY": 139,
       "ORPHAN": 133,
-      "TEST": 368,
-      "total": 1060
+      "TEST": 369,
+      "total": 1061
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -108233,13 +108256,13 @@
   },
   "counts": {
     "components": 20,
-    "python_modules": 1060,
+    "python_modules": 1061,
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 2949,
-    "test_files": 384,
-    "test_functions": 5523,
+    "test_files": 385,
+    "test_functions": 5525,
     "untested_modules": 274,
     "http_routes": 222
   },
@@ -108253,16 +108276,16 @@
     "IMPLEMENTED": 555,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 94,
-    "TEST": 368,
+    "TEST": 369,
     "MIGRATION": 24,
-    "total": 1060
+    "total": 1061
   },
   "reachability_summary": {
     "PRODUCTION": 420,
     "TEST_ONLY": 139,
     "ORPHAN": 133,
-    "TEST": 368,
-    "total": 1060
+    "TEST": 369,
+    "total": 1061
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",

@@ -13,13 +13,13 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1060 |
+| Python modules | 1061 |
 | TypeScript modules | 283 |
 | Rust source files / crates | 16 / 9 |
 | Resolved local import edges | 2949 |
 | HTTP routes / routers | 222 / 36 |
 | Event types / lanes | 99 / 29 |
-| Test files / test functions | 384 / 5523 |
+| Test files / test functions | 385 / 5525 |
 | Untested platform modules | 274 |
 
 ## Components
@@ -40,7 +40,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| `shared` | 201 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| `shared` | 202 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops` | 1 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | `specops_ci` | 4 | 0 | 0 |  |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |

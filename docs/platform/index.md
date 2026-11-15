@@ -9,7 +9,7 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1060 |
+| Python modules | 1061 |
 | TypeScript modules | 283 |
 | Rust crates | 9 |
 | Rust source files | 16 |
@@ -20,8 +20,8 @@ committed model no longer matches the tree.
 | Unresolved: guarded-local | 30 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 384 |
-| Test functions | 5523 |
+| Test files | 385 |
+| Test functions | 5525 |
 | Untested platform modules | 274 |
 | HTTP routes | 222 |
 | Contracts (python/docs/root) | 7 / 74 / 12 |
@@ -62,7 +62,7 @@ committed model no longer matches the tree.
 | projection | 67 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| shared | 201 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| shared | 202 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops | 1 | 0 | Isolated spec-ops lab profile (never in the routine path). |
 | specops_ci | 4 | 0 |  |
 | tools | 14 | 0 | Generators, capability/owner/donor tools, probes. |

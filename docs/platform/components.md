@@ -473,7 +473,7 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **201** · TypeScript modules: **0**
+Python modules: **202** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 

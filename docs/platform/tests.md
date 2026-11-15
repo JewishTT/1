@@ -1,6 +1,6 @@
 # Tests
 
-384 test files, 5523 test functions. 274 platform modules are not targeted by any test.
+385 test files, 5525 test functions. 274 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -284,6 +284,7 @@
 | `apps/shared/tests/contract/__init__.py` | 0 | — |
 | `apps/shared/tests/contract/test_correlation.py` | 4 | `apps/shared/domain/__init__.py` |
 | `apps/shared/tests/contract/test_domain_invariants.py` | 12 | `apps/shared/domain/__init__.py` |
+| `apps/shared/tests/contract/test_domain_silo_boundaries.py` | 2 | — |
 | `apps/shared/tests/contract/test_donor_registry.py` | 28 | — |
 | `apps/shared/tests/contract/test_entity_fabric.py` | 46 | `apps/shared/domain/dynamics.py`, `apps/shared/domain/fabric.py`, `apps/shared/domain/hypergraph.py` |
 | `apps/shared/tests/contract/test_error_codes.py` | 54 | `apps/shared/contracts/canonical.py`, `apps/shared/contracts/error_codes.py` |

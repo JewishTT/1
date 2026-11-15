@@ -746,6 +746,7 @@
           "apps/shared/tests/contract/__init__.py",
           "apps/shared/tests/contract/test_correlation.py",
           "apps/shared/tests/contract/test_domain_invariants.py",
+          "apps/shared/tests/contract/test_domain_silo_boundaries.py",
           "apps/shared/tests/contract/test_donor_registry.py",
           "apps/shared/tests/contract/test_entity_fabric.py",
           "apps/shared/tests/contract/test_error_codes.py",
@@ -830,7 +831,7 @@
           "apps/shared/workflow/__init__.py",
           "apps/shared/workflow/client.py"
         ],
-        "module_count": 201
+        "module_count": 202
       },
       {
         "id": "projection-query",
@@ -1502,6 +1503,7 @@
       "api.example.com",
       "api.example.org",
       "api.md",
+      "api.routes.connectors",
       "api.routes.search_rebuild",
       "api.tavily.com",
       "app.py",
@@ -1660,8 +1662,7 @@
       "elsewhere.invalid",
       "empty.txt",
       "enable.auto.commit",
-      "enable.auto.offset.store",
-      "enable.idempotence"
+      "enable.auto.offset.store"
     ]
   },
   "context_map": {
