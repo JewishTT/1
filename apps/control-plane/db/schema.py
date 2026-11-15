@@ -691,6 +691,47 @@ class Finding(Base):
     )
 
 
+class SpecOpsEngagementAuthorization(Base):
+    """Durable, tenant-scoped approval bound to one Intelligence snapshot and roster."""
+
+    __tablename__ = "specops_ci_authorizations"
+
+    authorization_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    subject_entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_snapshot_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    approved_by: Mapped[str] = mapped_column(String(128), nullable=False)
+    approval_ref: Mapped[str] = mapped_column(String(256), nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    max_hops: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    allowed_entity_ids: Mapped[list] = mapped_column(JSONB, nullable=False)
+    allowed_assessments: Mapped[list] = mapped_column(JSONB, nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_by: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_specops_ci_auth_tenant"),
+        CheckConstraint("approved_by <> ''", name="ck_specops_ci_auth_approver"),
+        CheckConstraint("approval_ref <> ''", name="ck_specops_ci_auth_approval_ref"),
+        CheckConstraint("expires_at > issued_at", name="ck_specops_ci_auth_window"),
+        CheckConstraint("max_hops BETWEEN 0 AND 8", name="ck_specops_ci_auth_hops"),
+        CheckConstraint(
+            "jsonb_typeof(allowed_entity_ids) = 'array' AND jsonb_array_length(allowed_entity_ids) > 0",
+            name="ck_specops_ci_auth_entities",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(allowed_assessments) = 'array' AND jsonb_array_length(allowed_assessments) > 0",
+            name="ck_specops_ci_auth_assessments",
+        ),
+        Index("ix_specops_ci_auth_tenant_expiry", "tenant_id", "expires_at"),
+        Index("ix_specops_ci_auth_snapshot", "tenant_id", "source_snapshot_id"),
+    )
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
 
