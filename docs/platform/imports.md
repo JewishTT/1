@@ -32,7 +32,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `types` | stdlib | 42 |
 | `time` | stdlib | 40 |
 | `pydantic` | third-party | 36 |
-| `importlib` | stdlib | 34 |
+| `importlib` | stdlib | 35 |
 | `httpx` | third-party | 30 |
 | `alembic` | third-party | 29 |
 | `ast` | stdlib | 28 |
@@ -59,7 +59,6 @@ that is switched off in this environment.
 
 | Package | Probe sites |
 |---|---|
-| `followthemoney` | 1 |
 | `gliner` | 1 |
 | `pyshacl` | 1 |
 | `pyzbar` | 1 |

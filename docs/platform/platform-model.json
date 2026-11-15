@@ -1235,7 +1235,7 @@
       "stdlib:hmac": 4,
       "stdlib:html": 11,
       "stdlib:http": 5,
-      "stdlib:importlib": 34,
+      "stdlib:importlib": 35,
       "stdlib:inspect": 23,
       "stdlib:io": 25,
       "stdlib:ipaddress": 8,
@@ -1333,7 +1333,6 @@
       "third-party:yaml": 11
     },
     "optional": {
-      "followthemoney": 1,
       "gliner": 1,
       "pyshacl": 1,
       "pyzbar": 1,
@@ -18062,7 +18061,7 @@
         "test_names": [
           "test_authorized_domain_uses_label_boundary_and_time_bound",
           "test_authorization_expiry_fails_closed",
-          "test_only_bare_dns_domains_are_accepted",
+          "test_invalid_or_non_domain_hostname_results_are_filtered",
           "test_theharvester_request_selects_only_passive_subdomain_capability",
           "test_export_normalization_filters_sensitive_and_out_of_scope_records",
           "test_stable_ftm_id_is_tenant_scoped",
@@ -35388,7 +35387,7 @@
       {
         "path": "apps/acquisition/industry_adapters/followthemoney.py",
         "status": "IMPLEMENTED",
-        "loc": 134,
+        "loc": 140,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -35397,7 +35396,7 @@
       {
         "path": "apps/acquisition/industry_adapters/theharvester.py",
         "status": "IMPLEMENTED",
-        "loc": 412,
+        "loc": 418,
         "callables": 19,
         "stubs": 0,
         "not_implemented": 0,
@@ -35828,7 +35827,7 @@
       {
         "path": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
         "status": "TEST",
-        "loc": 295,
+        "loc": 300,
         "callables": 23,
         "stubs": 0,
         "not_implemented": 0,
