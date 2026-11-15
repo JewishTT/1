@@ -50,7 +50,7 @@ from pathlib import Path
 _APPS = Path(__file__).resolve().parents[2]  # apps/ (parents: api -> control-plane -> apps)
 # Inserted last-to-first: each is pushed to the front, so the list reads as the
 # intended precedence once applied.
-_SOURCES = ("shared", "science", "")
+_SOURCES = ("shared", "science", "", "economics", "specops_ci")
 
 for _name in _SOURCES:
     _DIR = str(_APPS / _name) if _name else str(_APPS)
