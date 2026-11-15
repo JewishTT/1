@@ -57,3 +57,12 @@ for _name in _SOURCES:
     while _DIR in sys.path:
         sys.path.remove(_DIR)
     sys.path.insert(0, _DIR)
+
+# The historical package name remains import-compatible for the mounted adapters,
+# but its implementation now lives exclusively in the explicitly named legacy tree.
+_LEGACY_APPS = _APPS.parent / "spec-ops legacy" / "apps"
+if _LEGACY_APPS.is_dir():
+    _LEGACY_DIR = str(_LEGACY_APPS)
+    while _LEGACY_DIR in sys.path:
+        sys.path.remove(_LEGACY_DIR)
+    sys.path.insert(0, _LEGACY_DIR)
