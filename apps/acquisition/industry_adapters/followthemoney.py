@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import copy
 import hashlib
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
-from collections.abc import Mapping, Sequence
 
 
 SCHEMAS = frozenset({"Person", "Company", "Organization", "Payment", "Asset"})
