@@ -55,9 +55,14 @@ def test_authorization_expiry_fails_closed():
 
 
 @pytest.mark.parametrize("value", ["https://example.org", "192.0.2.1", "example.org/path", "bad..example.org"])
-def test_only_bare_dns_domains_are_accepted(value):
-    with pytest.raises(ValueError):
-        normalize_findings([{"type": "hostname", "value": value}], scope(), target="example.org")
+def test_invalid_or_non_domain_hostname_results_are_filtered(value):
+    records, filtered = normalize_findings(
+        [{"type": "hostname", "value": value}],
+        scope(),
+        target="example.org",
+    )
+    assert records == []
+    assert filtered == {"hostname": 1}
 
 
 def test_theharvester_request_selects_only_passive_subdomain_capability():
