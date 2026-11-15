@@ -6,7 +6,7 @@ actions are not exposed. The upstream is GPL-2.0-only and currently requires
 Python 3.14, so the Python 3.11-3.13 acquisition workspace uses its documented
 REST/JSONL boundary instead of linking or vendoring upstream implementation.
 """
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import ipaddress
 import json
@@ -190,7 +190,9 @@ class TheHarvesterApiClient:
         return self._base_url
 
     @staticmethod
-    def safe_run_request(target: str, *, limit: int = 500, source_workers: int = 3) -> dict[str, Any]:
+    def safe_run_request(
+        target: str, *, limit: int = 500, source_workers: int = 3
+    ) -> dict[str, Any]:
         if not 1 <= limit <= MAX_RESULTS:
             raise ValueError(f"limit must be in [1, {MAX_RESULTS}]")
         if not 1 <= source_workers <= 5:
@@ -270,7 +272,9 @@ class TheHarvesterApiClient:
         except AdapterError:
             return
 
-    def _request_json(self, method: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _request_json(
+        self, method: str, path: str, body: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         raw = self._request_text(method, path, body)
         try:
             decoded = json.loads(raw)
@@ -345,7 +349,9 @@ def _source_outcomes(summary: dict[str, Any], terminal: dict[str, Any]) -> list[
         result.append({
             "source": str(item.get("source") or item.get("name") or "")[:120],
             "status": str(item.get("status") or "unknown")[:40],
-            "reported_count": _nonnegative_int(item.get("reported_count") or item.get("result_count")),
+            "reported_count": _nonnegative_int(
+                item.get("reported_count") or item.get("result_count")
+            ),
             "stop_reason": str(item.get("stop_reason") or "")[:300],
             "detection_power": item.get("detection_power") if isinstance(item.get("detection_power"), (int, float)) else None,
             "detection_power_method": str(item.get("detection_power_method") or "")[:300],
@@ -411,7 +417,9 @@ def normalize_findings(
         seen.add(key)
         sources = item.get("sources") or item.get("actions") or []
         source_values = sources if isinstance(sources, (list, tuple, set)) else [sources]
-        source_ids = tuple(sorted({str(source)[:120] for source in source_values if str(source).strip()}))
+        source_ids = tuple(
+            sorted({str(source)[:120] for source in source_values if str(source).strip()})
+        )
         output.append(HarvestedRecord(canonical_kind, canonical_value, source_ids, scope_class, expandable))
     output.sort(key=lambda item: (item.kind, item.value))
     return output, filtered
