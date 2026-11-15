@@ -11,7 +11,8 @@ import socket
 import ssl
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .theharvester import AuthorizationScope
 
