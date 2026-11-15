@@ -215,19 +215,25 @@ class TheHarvesterApiClient:
             raise AdapterError("theHarvester did not return a valid run identifier")
         deadline = time.monotonic() + self._max_wait
         terminal: dict[str, Any] | None = None
-        while time.monotonic() < deadline:
-            if stop_event is not None and stop_event.is_set():
-                self._cancel(run_id)
-                raise AdapterError("run cancelled by operator")
-            state = self._request_json("GET", f"/api/v1/runs/{quote(run_id, safe='')}")
-            lifecycle = str(state.get("status") or "").lower()
-            if lifecycle in TERMINAL_STATES:
-                terminal = state
-                break
-            time.sleep(min(self._poll_interval, max(0.0, deadline - time.monotonic())))
+        try:
+            while time.monotonic() < deadline:
+                scope.assert_domain(domain)
+                if stop_event is not None and stop_event.is_set():
+                    self._cancel(run_id)
+                    raise AdapterError("run cancelled by operator")
+                state = self._request_json("GET", f"/api/v1/runs/{quote(run_id, safe='')}")
+                lifecycle = str(state.get("status") or "").lower()
+                if lifecycle in TERMINAL_STATES:
+                    terminal = state
+                    break
+                time.sleep(min(self._poll_interval, max(0.0, deadline - time.monotonic())))
+        except Exception:
+            self._cancel(run_id)
+            raise
         if terminal is None:
             self._cancel(run_id)
             raise AdapterError("theHarvester run exceeded the configured deadline")
+        scope.assert_domain(domain)
         ndjson = self._request_text("GET", f"/api/v1/runs/{quote(run_id, safe='')}/export")
         summary, raw_records = _parse_export(ndjson)
         outcomes = _source_outcomes(summary, terminal)
@@ -335,6 +341,8 @@ def _source_outcomes(summary: dict[str, Any], terminal: dict[str, Any]) -> list[
             "status": str(item.get("status") or "unknown")[:40],
             "reported_count": _nonnegative_int(item.get("reported_count") or item.get("result_count")),
             "stop_reason": str(item.get("stop_reason") or "")[:300],
+            "detection_power": item.get("detection_power") if isinstance(item.get("detection_power"), (int, float)) else None,
+            "detection_power_method": str(item.get("detection_power_method") or "")[:300],
         })
     return result
 
