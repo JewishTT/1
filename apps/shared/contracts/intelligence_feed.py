@@ -34,7 +34,8 @@ class EvidenceReference:
     source_ref: str
     object_uri: str
     sha256: str
-    observed_at: datetime
+    recorded_at: datetime
+    observed_at: datetime | None = None
     selector: str | None = None
 
     def __post_init__(self) -> None:
@@ -49,7 +50,9 @@ class EvidenceReference:
             raise IntelligenceContractError("object_uri must be an immutable s3:// reference")
         if re.fullmatch(r"[0-9a-f]{64}", self.sha256) is None:
             raise IntelligenceContractError("sha256 must be 64 lowercase hexadecimal characters")
-        _aware(self.observed_at, "observed_at")
+        _aware(self.recorded_at, "recorded_at")
+        if self.observed_at is not None:
+            _aware(self.observed_at, "observed_at")
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +87,11 @@ class IntelligenceRelation:
     predicate: str
     target_entity_id: str
     evidence: tuple[EvidenceReference, ...]
+    status: str = "unreviewed"
+    confidence: float | None = None
+    evidence_grade: str | None = None
+    valid_from: datetime | None = None
+    valid_to: datetime | None = None
 
     def __post_init__(self) -> None:
         for value, name in (
@@ -96,6 +104,14 @@ class IntelligenceRelation:
             raise IntelligenceContractError("self-relations must be modelled explicitly, not implied")
         if not self.evidence:
             raise IntelligenceContractError("an IntelligenceRelation requires evidence")
+        _required(self.status, "status")
+        if self.confidence is not None and not 0.0 <= self.confidence <= 1.0:
+            raise IntelligenceContractError("confidence must be between 0 and 1")
+        for value, name in ((self.valid_from, "valid_from"), (self.valid_to, "valid_to")):
+            if value is not None:
+                _aware(value, name)
+        if self.valid_from is not None and self.valid_to is not None and self.valid_to < self.valid_from:
+            raise IntelligenceContractError("valid_to precedes valid_from")
 
 
 @dataclass(frozen=True, slots=True)
