@@ -1,6 +1,6 @@
 # Tests
 
-385 test files, 5525 test functions. 274 platform modules are not targeted by any test.
+387 test files, 5530 test functions. 274 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -391,6 +391,8 @@
 | `spec-ops legacy/apps/specops/tests/test_specops_ghostline_routers.py` | 26 | `apps/control-plane/api/main.py` |
 | `spec-ops legacy/apps/specops/tests/test_specops_lab_router.py` | 8 | `apps/control-plane/api/main.py`, `apps/control-plane/api/routes/specops_lab.py` |
 | `spec-ops legacy/apps/specops/tests/test_specops_routers.py` | 10 | `apps/control-plane/api/main.py` |
+| `spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py` |
+| `spec-ops legacy/mirror/apps/shared/tests/contract/test_specops_lab_boundary.py` | 1 | — |
 | `specs/021-entity-relation-extraction-finalization/repair/tools/test_reference_check.py` | 200 | — |
 | `tools/tests/test_repo_hygiene.py` | 2 | `tools/repo_hygiene.py` |
 

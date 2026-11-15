@@ -19,7 +19,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | Resolved local import edges | 2949 |
 | HTTP routes / routers | 222 / 36 |
 | Event types / lanes | 99 / 29 |
-| Test files / test functions | 385 / 5525 |
+| Test files / test functions | 387 / 5530 |
 | Untested platform modules | 274 |
 
 ## Components

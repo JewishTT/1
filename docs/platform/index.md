@@ -20,8 +20,8 @@ committed model no longer matches the tree.
 | Unresolved: guarded-local | 30 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 385 |
-| Test functions | 5525 |
+| Test files | 387 |
+| Test functions | 5530 |
 | Untested platform modules | 274 |
 | HTTP routes | 222 |
 | Contracts (python/docs/root) | 7 / 74 / 12 |

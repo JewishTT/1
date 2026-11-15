@@ -25121,6 +25121,28 @@
         ]
       },
       {
+        "path": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py",
+        "tests": 4,
+        "test_names": [
+          "test_roe_approver_is_verified_admin_not_request_input",
+          "test_analyst_cannot_create_rules_of_engagement",
+          "test_roe_read_is_tenant_scoped",
+          "test_roe_expiry_must_be_valid_zoned_and_future"
+        ],
+        "targets": [
+          "apps/control-plane/api/auth.py",
+          "apps/control-plane/api/routes/__init__.py"
+        ]
+      },
+      {
+        "path": "spec-ops legacy/mirror/apps/shared/tests/contract/test_specops_lab_boundary.py",
+        "tests": 1,
+        "test_names": [
+          "test_specops_lab_host_ports_are_loopback_bound_and_network_is_internal"
+        ],
+        "targets": []
+      },
+      {
         "path": "specs/021-entity-relation-extraction-finalization/repair/tools/test_reference_check.py",
         "tests": 200,
         "test_names": [
@@ -25169,7 +25191,7 @@
         ]
       }
     ],
-    "total": 5525
+    "total": 5530
   },
   "contracts": {
     "python": [
@@ -108259,6 +108281,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "2550b7f6c6cfc1c5",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3bcfe3c18bed5f6d",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py",
+        "object": "apps/control-plane/api/routes/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "087caa7e41573272",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "tools/tests/test_repo_hygiene.py",
@@ -108272,8 +108318,8 @@
       }
     ],
     "stats": {
-      "facts_total": 4608,
-      "static_facts": 4332,
+      "facts_total": 4610,
+      "static_facts": 4334,
       "inferred": 276,
       "intended": 0
     }
@@ -108285,14 +108331,14 @@
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 2949,
-    "test_files": 385,
-    "test_functions": 5525,
+    "test_files": 387,
+    "test_functions": 5530,
     "untested_modules": 274,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4608,
-    "static_facts": 4332,
+    "facts_total": 4610,
+    "static_facts": 4334,
     "inferred": 276,
     "intended": 0
   },

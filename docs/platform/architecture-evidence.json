@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4608,
-    "static_facts": 4332,
+    "facts_total": 4610,
+    "static_facts": 4334,
     "inferred": 276,
     "intended": 0
   },
@@ -58495,6 +58495,30 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "spec-ops legacy/apps/specops/tests/test_specops_routers.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2550b7f6c6cfc1c5",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "3bcfe3c18bed5f6d",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py",
+      "object": "apps/control-plane/api/routes/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py"
       },
       "confidence": 1.0
     },
