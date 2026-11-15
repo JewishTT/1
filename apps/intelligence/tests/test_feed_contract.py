@@ -22,7 +22,7 @@ def evidence(tenant_id: str = "tenant-a", observation_id: str = "obs-1") -> Evid
         source_ref="source:public-registry",
         object_uri=f"s3://knowledge/raw/{tenant_id}/2026/11/{observation_id}",
         sha256="a" * 64,
-        observed_at=NOW,
+        recorded_at=NOW,
     )
 
 
