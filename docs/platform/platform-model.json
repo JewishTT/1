@@ -1265,7 +1265,7 @@
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 251,
+      "stdlib:collections": 253,
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 5,
       "stdlib:copy": 1,
@@ -35929,7 +35929,7 @@
       {
         "path": "apps/acquisition/industry_adapters/domain_posture.py",
         "status": "IMPLEMENTED",
-        "loc": 90,
+        "loc": 91,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
@@ -35938,7 +35938,7 @@
       {
         "path": "apps/acquisition/industry_adapters/followthemoney.py",
         "status": "IMPLEMENTED",
-        "loc": 140,
+        "loc": 145,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -35947,7 +35947,7 @@
       {
         "path": "apps/acquisition/industry_adapters/theharvester.py",
         "status": "IMPLEMENTED",
-        "loc": 418,
+        "loc": 426,
         "callables": 19,
         "stubs": 0,
         "not_implemented": 0,
@@ -36378,7 +36378,7 @@
       {
         "path": "apps/acquisition/tests/unit/test_industry_osint_adapters.py",
         "status": "TEST",
-        "loc": 300,
+        "loc": 302,
         "callables": 23,
         "stubs": 0,
         "not_implemented": 0,
