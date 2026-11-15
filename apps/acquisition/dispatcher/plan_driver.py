@@ -308,6 +308,7 @@ class PlanDriver:
             ("runtime.bbot", "BbotRuntime"),
             ("runtime.airbyte", "AirbyteRuntime"),
             ("runtime.searxng", "SearXNGRuntime"),
+            ("runtime.theharvester", "TheHarvesterRuntime"),
         ):
             try:
                 runtime_cls = getattr(importlib.import_module(module_name), class_name)
@@ -331,6 +332,7 @@ class PlanDriver:
         tenant_id: str = "default-tenant",
         investigation_id: str = "",
         uris: dict[str, str] | None = None,
+        include_keyed: bool = False,
     ) -> tuple[DispatchRecord, ...]:
         """Plan ``query`` and publish a request for every task that dispatches."""
         from sources.connector import plan
@@ -339,6 +341,7 @@ class PlanDriver:
             query,
             tenant_id=tenant_id,
             investigation_id=investigation_id,
+            only_keyless=not include_keyed,
             categories=categories,
         )
         driver = PlanDispatcher(
