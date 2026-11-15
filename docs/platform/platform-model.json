@@ -40966,7 +40966,7 @@
       {
         "path": "apps/shared/contracts/intelligence_feed.py",
         "status": "IMPLEMENTED",
-        "loc": 172,
+        "loc": 188,
         "callables": 8,
         "stubs": 1,
         "not_implemented": 0,
