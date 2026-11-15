@@ -233,13 +233,13 @@ jobs:
             ELSE 0
           END AS migration_schema_assertion;
           SQL
-      - name: Assert the final Alembic revision is committed durably
+      - name: Assert the latest Alembic revision is committed durably
         run: |
           docker compose -f apps/deploy/docker-compose.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U cognitive -d cognitive <<'SQL'
           SELECT 1 / CASE
             WHEN EXISTS (
               SELECT 1 FROM public.alembic_version
-              WHERE version_num = '036_candidate_resolution_enum_types'
+              WHERE version_num = '037_specops_ci_authorizations'
             )
             THEN 1
             ELSE 0
