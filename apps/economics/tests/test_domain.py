@@ -3,8 +3,17 @@ from decimal import Decimal
 
 import pytest
 
-from apps.economics.domain import EconomicDomainError, FinancialFlow, aggregate_flows, subjects_from_snapshot
-from shared.contracts.intelligence_feed import EvidenceReference, IntelligenceEntity, IntelligenceSnapshot
+from apps.economics.domain import (
+    EconomicDomainError,
+    FinancialFlow,
+    aggregate_flows,
+    subjects_from_snapshot,
+)
+from shared.contracts.intelligence_feed import (
+    EvidenceReference,
+    IntelligenceEntity,
+    IntelligenceSnapshot,
+)
 
 
 NOW = datetime(2026, 11, 15, 12, 0, tzinfo=timezone.utc)
