@@ -130,7 +130,13 @@ class RunEvidence:
         return (
             self.evidence_status == "complete"
             and bool(self.source_outcomes)
-            and all(str(item.get("status", "")).lower() in {"complete", "completed"} for item in self.source_outcomes)
+            and all(
+                str(item.get("status", "")).lower() in {"complete", "completed"}
+                and isinstance(item.get("detection_power"), (int, float))
+                and 0.0 <= float(item["detection_power"]) <= 1.0
+                and bool(str(item.get("detection_power_method") or "").strip())
+                for item in self.source_outcomes
+            )
         )
 
 
