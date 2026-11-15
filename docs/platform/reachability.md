@@ -6,9 +6,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 420 |
-| TEST_ONLY | 139 |
-| ORPHAN | 138 |
+| PRODUCTION | 430 |
+| TEST_ONLY | 136 |
+| ORPHAN | 132 |
 | TEST | 369 |
 
 ## Entrypoints (production roots)
@@ -62,7 +62,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**139** modules are reached only by tests.
+**136** modules are reached only by tests.
 
 | Module |
 |---|
@@ -110,7 +110,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/services/dispatcher.py` |
 | `apps/control-plane/services/layer0_pipeline.py` |
 | `apps/control-plane/services/relation_projection_relay.py` |
-| `apps/economics/domain.py` |
 | `apps/feedback/feedback/__init__.py` |
 | `apps/feedback/feedback/branch/__init__.py` |
 | `apps/feedback/feedback/branch/entity.py` |
@@ -177,7 +176,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/science/operators/phase.py` |
 | `apps/science/sims/gnca.py` |
 | `apps/science/streaming/river_operator.py` |
-| `apps/shared/contracts/intelligence_feed.py` |
 | `apps/shared/contracts/operator_result.py` |
 | `apps/shared/contracts/projection_manifest.py` |
 | `apps/shared/domain/access_mode.py` |
@@ -198,7 +196,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/websearch/discovery.py` |
 | `apps/shared/websearch/providers.py` |
 | `apps/shared/websearch/relevance.py` |
-| `apps/specops_ci/domain.py` |
 | `apps/zero/zero/harvesters/git.py` |
 | `apps/zero/zero/harvesters/image.py` |
 | `apps/zero/zero/harvesters/phone.py` |
@@ -208,7 +205,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**138** modules are imported by neither production nor tests.
+**132** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -233,8 +230,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/bulk-ingestion/historical/__init__.py` |
 | `apps/control-plane/__init__.py` |
 | `apps/control-plane/api/__init__.py` |
-| `apps/control-plane/api/routes/economics.py` |
-| `apps/control-plane/api/routes/intelligence.py` |
 | `apps/control-plane/application/__init__.py` |
 | `apps/control-plane/context_engine/__init__.py` |
 | `apps/control-plane/context_engine/context_graph_store.py` |
@@ -271,13 +266,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |
 | `apps/control-plane/services/__init__.py` |
 | `apps/control-plane/services/acquisition_evidence.py` |
-| `apps/control-plane/services/intelligence_access.py` |
-| `apps/control-plane/services/intelligence_reader.py` |
 | `apps/control-plane/services/relation_projection_rebuild.py` |
 | `apps/control-plane/services/specops_catalog.py` |
 | `apps/control-plane/workflows/__init__.py` |
 | `apps/economics/__init__.py` |
-| `apps/economics/service.py` |
 | `apps/intelligence/__init__.py` |
 | `apps/intelligence/ports.py` |
 | `apps/interpretation/__init__.py` |
@@ -331,7 +323,6 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/workflow/__init__.py` |
 | `apps/specops/__init__.py` |
 | `apps/specops_ci/__init__.py` |
-| `apps/specops_ci/service.py` |
 | `apps/zero/zero/__init__.py` |
 | `apps/zero/zero/enrichment/__init__.py` |
 | `apps/zero/zero/harvesters/__init__.py` |

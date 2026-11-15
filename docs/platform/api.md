@@ -280,6 +280,14 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 |---|---|---|
 | POST | `/rebuild` | 206 |
 
+## `specops_ci` — `apps/control-plane/api/routes/specops_ci.py`
+
+| Method | Path | Line |
+|---|---|---|
+| POST | `/authorizations` | 85 |
+| POST | `/assessments/prepare` | 170 |
+| POST | `/authorizations/{authorization_id}/revoke` | 233 |
+
 ## `specops_counterintel` — `apps/control-plane/api/routes/specops_counterintel.py`
 
 | Method | Path | Line |

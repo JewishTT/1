@@ -226,7 +226,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 270,
+      "python_modules": 271,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -264,6 +264,7 @@
         "apps.control-plane.api.routes.science_temporal",
         "apps.control-plane.api.routes.search",
         "apps.control-plane.api.routes.search_rebuild",
+        "apps.control-plane.api.routes.specops_ci",
         "apps.control-plane.api.routes.specops_counterintel",
         "apps.control-plane.api.routes.specops_cryptotx",
         "apps.control-plane.api.routes.specops_emulation",
@@ -427,8 +428,7 @@
         "apps.control-plane.tests.integration.test_tools_api",
         "apps.control-plane.tests.test_auth_security",
         "apps.control-plane.tests.test_metrics_honesty",
-        "apps.control-plane.tests.test_quarantine_api",
-        "apps.control-plane.tests.test_research_case_invariants"
+        "apps.control-plane.tests.test_quarantine_api"
       ]
     },
     {
@@ -1170,11 +1170,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1066,
-    "edge_count": 2962,
+    "module_count": 1067,
+    "edge_count": 2974,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 929,
+      "stdlib:__future__": 930,
       "stdlib:abc": 3,
       "stdlib:argparse": 21,
       "stdlib:ast": 29,
@@ -1190,7 +1190,7 @@
       "stdlib:copy": 1,
       "stdlib:csv": 3,
       "stdlib:dataclasses": 389,
-      "stdlib:datetime": 209,
+      "stdlib:datetime": 210,
       "stdlib:decimal": 3,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1233,11 +1233,11 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 41,
-      "stdlib:typing": 384,
+      "stdlib:typing": 385,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 66,
-      "stdlib:uuid": 43,
+      "stdlib:uuid": 44,
       "stdlib:warnings": 1,
       "stdlib:weakref": 1,
       "stdlib:xml": 4,
@@ -1257,7 +1257,7 @@
       "third-party:docx": 2,
       "third-party:duckdb": 5,
       "third-party:extruct": 1,
-      "third-party:fastapi": 74,
+      "third-party:fastapi": 75,
       "third-party:google": 6,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
@@ -1273,7 +1273,7 @@
       "third-party:phonenumbers": 1,
       "third-party:prometheus_client": 4,
       "third-party:pyarrow": 3,
-      "third-party:pydantic": 36,
+      "third-party:pydantic": 37,
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
@@ -1284,7 +1284,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 177,
+      "third-party:sqlalchemy": 178,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -3719,6 +3719,16 @@
       },
       {
         "from": "apps/control-plane/api/main.py",
+        "to": "apps/control-plane/api/routes/economics.py",
+        "via": "api.routes.economics"
+      },
+      {
+        "from": "apps/control-plane/api/main.py",
+        "to": "apps/control-plane/api/routes/intelligence.py",
+        "via": "api.routes.intelligence"
+      },
+      {
+        "from": "apps/control-plane/api/main.py",
         "to": "apps/control-plane/api/routes/entities.py",
         "via": "api.routes.entities"
       },
@@ -3876,6 +3886,11 @@
         "from": "apps/control-plane/api/main.py",
         "to": "apps/control-plane/api/routes/specops_social.py",
         "via": "api.routes.specops_social"
+      },
+      {
+        "from": "apps/control-plane/api/main.py",
+        "to": "apps/control-plane/api/routes/specops_ci.py",
+        "via": "api.routes.specops_ci"
       },
       {
         "from": "apps/control-plane/api/main.py",
@@ -4876,6 +4891,51 @@
         "from": "apps/control-plane/api/routes/search_rebuild.py",
         "to": "apps/control-plane/services/search_backends.py",
         "via": "services.search_backends"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/control-plane/composition.py",
+        "via": "composition"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/control-plane/services/intelligence_access.py",
+        "via": "services.intelligence_access"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/control-plane/services/intelligence_reader.py",
+        "via": "services.intelligence_reader"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/specops_ci/domain.py",
+        "via": "specops_ci.domain"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/specops_ci/service.py",
+        "via": "specops_ci.service"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/specops_ci/domain.py",
+        "via": "specops_ci.domain"
       },
       {
         "from": "apps/control-plane/api/routes/specops_counterintel.py",
@@ -16382,6 +16442,7 @@
       "sources": "apps/acquisition/sources/__init__.py",
       "spatial": "apps/projection/spatial",
       "specops": "apps/specops/__init__.py",
+      "specops_ci": "apps/specops_ci/__init__.py",
       "stopping": "apps/feedback/stopping.py",
       "storage": "apps/shared/storage/__init__.py",
       "store": "apps/science/store.py",
@@ -26742,6 +26803,27 @@
       ]
     },
     {
+      "router": "specops_ci",
+      "path": "apps/control-plane/api/routes/specops_ci.py",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/authorizations",
+          "lineno": 85
+        },
+        {
+          "method": "POST",
+          "path": "/assessments/prepare",
+          "lineno": 170
+        },
+        {
+          "method": "POST",
+          "path": "/authorizations/{authorization_id}/revoke",
+          "lineno": 233
+        }
+      ]
+    },
+    {
       "router": "specops_counterintel",
       "path": "apps/control-plane/api/routes/specops_counterintel.py",
       "routes": [
@@ -30812,6 +30894,7 @@
     "apps/control-plane/api/routes/science_temporal.py",
     "apps/control-plane/api/routes/search.py",
     "apps/control-plane/api/routes/search_rebuild.py",
+    "apps/control-plane/api/routes/specops_ci.py",
     "apps/control-plane/api/routes/specops_counterintel.py",
     "apps/control-plane/api/routes/specops_cryptotx.py",
     "apps/control-plane/api/routes/specops_emulation.py",
@@ -30943,10 +31026,9 @@
     "apps/science/fixtures/__init__.py",
     "apps/science/hypotheses/__init__.py",
     "apps/science/kinetics/__init__.py",
-    "apps/science/operators/__init__.py",
-    "apps/science/review/__init__.py"
+    "apps/science/operators/__init__.py"
   ],
-  "untested_count": 279,
+  "untested_count": 280,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -31823,6 +31905,7 @@
             "apps/control-plane/api/routes/science_temporal.py",
             "apps/control-plane/api/routes/search.py",
             "apps/control-plane/api/routes/search_rebuild.py",
+            "apps/control-plane/api/routes/specops_ci.py",
             "apps/control-plane/api/routes/specops_counterintel.py",
             "apps/control-plane/api/routes/specops_cryptotx.py",
             "apps/control-plane/api/routes/specops_emulation.py",
@@ -32120,7 +32203,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 329
+          "module_count": 330
         },
         {
           "id": "webapp",
@@ -35487,7 +35570,7 @@
       {
         "path": "apps/control-plane/api/main.py",
         "status": "IMPLEMENTED",
-        "loc": 221,
+        "loc": 227,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -35761,6 +35844,15 @@
         "status": "IMPLEMENTED",
         "loc": 257,
         "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "IMPLEMENTED",
+        "loc": 266,
+        "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -43686,12 +43778,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 559,
+      "IMPLEMENTED": 560,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 94,
       "TEST": 369,
       "MIGRATION": 25,
-      "total": 1066
+      "total": 1067
     }
   },
   "reachability": {
@@ -44382,7 +44474,7 @@
       },
       {
         "path": "apps/control-plane/api/routes/economics.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/api/routes/entities.py",
@@ -44398,7 +44490,7 @@
       },
       {
         "path": "apps/control-plane/api/routes/intelligence.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/api/routes/investigation_context.py",
@@ -44474,6 +44566,10 @@
       },
       {
         "path": "apps/control-plane/api/routes/search_rebuild.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/control-plane/api/routes/specops_ci.py",
         "status": "PRODUCTION"
       },
       {
@@ -44886,11 +44982,11 @@
       },
       {
         "path": "apps/control-plane/services/intelligence_access.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/services/intelligence_reader.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/services/interpretation_bridge.py",
@@ -45426,11 +45522,11 @@
       },
       {
         "path": "apps/economics/domain.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/economics/service.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/economics/tests/test_domain.py",
@@ -46830,7 +46926,7 @@
       },
       {
         "path": "apps/shared/contracts/intelligence_feed.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/shared/contracts/operator_result.py",
@@ -47614,11 +47710,11 @@
       },
       {
         "path": "apps/specops_ci/domain.py",
-        "status": "TEST_ONLY"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/specops_ci/service.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/specops_ci/tests/test_scope.py",
@@ -48008,11 +48104,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 420,
-      "TEST_ONLY": 139,
-      "ORPHAN": 138,
+      "PRODUCTION": 430,
+      "TEST_ONLY": 136,
+      "ORPHAN": 132,
       "TEST": 369,
-      "total": 1066
+      "total": 1067
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -48059,7 +48155,6 @@
       "apps/control-plane/services/dispatcher.py",
       "apps/control-plane/services/layer0_pipeline.py",
       "apps/control-plane/services/relation_projection_relay.py",
-      "apps/economics/domain.py",
       "apps/feedback/feedback/__init__.py",
       "apps/feedback/feedback/branch/__init__.py",
       "apps/feedback/feedback/branch/entity.py",
@@ -48126,7 +48221,6 @@
       "apps/science/operators/phase.py",
       "apps/science/sims/gnca.py",
       "apps/science/streaming/river_operator.py",
-      "apps/shared/contracts/intelligence_feed.py",
       "apps/shared/contracts/operator_result.py",
       "apps/shared/contracts/projection_manifest.py",
       "apps/shared/domain/access_mode.py",
@@ -48147,7 +48241,6 @@
       "apps/shared/websearch/discovery.py",
       "apps/shared/websearch/providers.py",
       "apps/shared/websearch/relevance.py",
-      "apps/specops_ci/domain.py",
       "apps/zero/zero/harvesters/git.py",
       "apps/zero/zero/harvesters/image.py",
       "apps/zero/zero/harvesters/phone.py",
@@ -48177,8 +48270,6 @@
       "apps/bulk-ingestion/historical/__init__.py",
       "apps/control-plane/__init__.py",
       "apps/control-plane/api/__init__.py",
-      "apps/control-plane/api/routes/economics.py",
-      "apps/control-plane/api/routes/intelligence.py",
       "apps/control-plane/application/__init__.py",
       "apps/control-plane/context_engine/__init__.py",
       "apps/control-plane/context_engine/context_graph_store.py",
@@ -48215,13 +48306,10 @@
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
       "apps/control-plane/services/__init__.py",
       "apps/control-plane/services/acquisition_evidence.py",
-      "apps/control-plane/services/intelligence_access.py",
-      "apps/control-plane/services/intelligence_reader.py",
       "apps/control-plane/services/relation_projection_rebuild.py",
       "apps/control-plane/services/specops_catalog.py",
       "apps/control-plane/workflows/__init__.py",
       "apps/economics/__init__.py",
-      "apps/economics/service.py",
       "apps/intelligence/__init__.py",
       "apps/intelligence/ports.py",
       "apps/interpretation/__init__.py",
@@ -48275,7 +48363,6 @@
       "apps/shared/workflow/__init__.py",
       "apps/specops/__init__.py",
       "apps/specops_ci/__init__.py",
-      "apps/specops_ci/service.py",
       "apps/zero/zero/__init__.py",
       "apps/zero/zero/enrichment/__init__.py",
       "apps/zero/zero/harvesters/__init__.py",
@@ -56602,6 +56689,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "7333f7e0f5239c65",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/main.py",
+        "object": "apps/control-plane/api/routes/economics.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/main.py",
+          "via": "api.routes.economics"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "39d1b9c4fc23698f",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/main.py",
@@ -56637,6 +56737,19 @@
         "evidence": {
           "file": "apps/control-plane/api/main.py",
           "via": "api.routes.findings"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8925b692f8acef77",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/main.py",
+        "object": "apps/control-plane/api/routes/intelligence.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/main.py",
+          "via": "api.routes.intelligence"
         },
         "confidence": 1.0
       },
@@ -56884,6 +56997,19 @@
         "evidence": {
           "file": "apps/control-plane/api/main.py",
           "via": "api.routes.search_rebuild"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "07add80c497230dc",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/main.py",
+        "object": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/main.py",
+          "via": "api.routes.specops_ci"
         },
         "confidence": 1.0
       },
@@ -59627,6 +59753,123 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/search_rebuild.py",
           "via": "events.topics"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e08fb3e821000b7d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e474cfef66f299a6",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/control-plane/composition.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "composition"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "94282f6086329781",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "71f322289bb20aca",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/control-plane/services/intelligence_access.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "services.intelligence_access"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d57858e162e2319b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/control-plane/services/intelligence_reader.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "services.intelligence_reader"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c6ba1f180af772c5",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d7afea866bfc9175",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "specops_ci.domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d7afea866bfc9175",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "specops_ci.domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b488e82b646aa42d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/specops_ci/service.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "specops_ci.service"
         },
         "confidence": 1.0
       },
@@ -90714,6 +90957,45 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "e8e0f84fac4117d6",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "POST /assessments/prepare",
+        "object": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "line": 172
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "71fb881e575b8ef5",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "POST /authorizations",
+        "object": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "line": 87
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d19ed94def7a3625",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "POST /authorizations/{authorization_id}/revoke",
+        "object": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "line": 235
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3299604d4b94ab95",
         "kind": "ROUTE_DEFINED_IN",
         "subject": "POST /backpressure/verdict",
@@ -108686,44 +108968,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4626,
-      "static_facts": 4350,
+      "facts_total": 4641,
+      "static_facts": 4365,
       "inferred": 276,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1066,
+    "python_modules": 1067,
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2962,
+    "import_edges": 2974,
     "test_files": 387,
     "test_functions": 5530,
-    "untested_modules": 279,
-    "http_routes": 224
+    "untested_modules": 280,
+    "http_routes": 227
   },
   "evidence_stats": {
-    "facts_total": 4626,
-    "static_facts": 4350,
+    "facts_total": 4641,
+    "static_facts": 4365,
     "inferred": 276,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 559,
+    "IMPLEMENTED": 560,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 94,
     "TEST": 369,
     "MIGRATION": 25,
-    "total": 1066
+    "total": 1067
   },
   "reachability_summary": {
-    "PRODUCTION": 420,
-    "TEST_ONLY": 139,
-    "ORPHAN": 138,
+    "PRODUCTION": 430,
+    "TEST_ONLY": 136,
+    "ORPHAN": 132,
     "TEST": 369,
-    "total": 1066
+    "total": 1067
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -108816,7 +109098,6 @@
     "apps/control-plane/services/dispatcher.py",
     "apps/control-plane/services/layer0_pipeline.py",
     "apps/control-plane/services/relation_projection_relay.py",
-    "apps/economics/domain.py",
     "apps/feedback/feedback/__init__.py",
     "apps/feedback/feedback/branch/__init__.py",
     "apps/feedback/feedback/branch/entity.py",
@@ -108883,7 +109164,6 @@
     "apps/science/operators/phase.py",
     "apps/science/sims/gnca.py",
     "apps/science/streaming/river_operator.py",
-    "apps/shared/contracts/intelligence_feed.py",
     "apps/shared/contracts/operator_result.py",
     "apps/shared/contracts/projection_manifest.py",
     "apps/shared/domain/access_mode.py",
@@ -108904,7 +109184,6 @@
     "apps/shared/websearch/discovery.py",
     "apps/shared/websearch/providers.py",
     "apps/shared/websearch/relevance.py",
-    "apps/specops_ci/domain.py",
     "apps/zero/zero/harvesters/git.py",
     "apps/zero/zero/harvesters/image.py",
     "apps/zero/zero/harvesters/phone.py",
@@ -108934,8 +109213,6 @@
     "apps/bulk-ingestion/historical/__init__.py",
     "apps/control-plane/__init__.py",
     "apps/control-plane/api/__init__.py",
-    "apps/control-plane/api/routes/economics.py",
-    "apps/control-plane/api/routes/intelligence.py",
     "apps/control-plane/application/__init__.py",
     "apps/control-plane/context_engine/__init__.py",
     "apps/control-plane/context_engine/context_graph_store.py",
@@ -108972,13 +109249,10 @@
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
     "apps/control-plane/services/__init__.py",
     "apps/control-plane/services/acquisition_evidence.py",
-    "apps/control-plane/services/intelligence_access.py",
-    "apps/control-plane/services/intelligence_reader.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/specops_catalog.py",
     "apps/control-plane/workflows/__init__.py",
     "apps/economics/__init__.py",
-    "apps/economics/service.py",
     "apps/intelligence/__init__.py",
     "apps/intelligence/ports.py",
     "apps/interpretation/__init__.py",
@@ -109032,7 +109306,6 @@
     "apps/shared/workflow/__init__.py",
     "apps/specops/__init__.py",
     "apps/specops_ci/__init__.py",
-    "apps/specops_ci/service.py",
     "apps/zero/zero/__init__.py",
     "apps/zero/zero/enrichment/__init__.py",
     "apps/zero/zero/harvesters/__init__.py",

@@ -874,6 +874,7 @@
           "apps/control-plane/api/routes/science_temporal.py",
           "apps/control-plane/api/routes/search.py",
           "apps/control-plane/api/routes/search_rebuild.py",
+          "apps/control-plane/api/routes/specops_ci.py",
           "apps/control-plane/api/routes/specops_counterintel.py",
           "apps/control-plane/api/routes/specops_cryptotx.py",
           "apps/control-plane/api/routes/specops_emulation.py",
@@ -1171,7 +1172,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 329
+        "module_count": 330
       },
       {
         "id": "webapp",
