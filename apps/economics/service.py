@@ -1,7 +1,11 @@
 """Economics application service: read Intelligence, then apply economic analysis."""
 from __future__ import annotations
 
-from shared.contracts.intelligence_feed import IntelligenceQuery, IntelligenceReadPort, IntelligenceSnapshot
+from shared.contracts.intelligence_feed import (
+    IntelligenceQuery,
+    IntelligenceReadPort,
+    IntelligenceSnapshot,
+)
 from .domain import EconomicSubject, subjects_from_snapshot
 
 ECONOMIC_PURPOSE = "economic_analysis"
