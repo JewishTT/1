@@ -47,6 +47,8 @@ _ORDER = (
     "admission",
     "science",
     "zero",
+    "economics",
+    "specops_ci",
 )
 
 #: ``bench`` is a workspace member whose importable package is ``bench/bench/``, but
