@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from economics.domain import EconomicDomainError, FinancialFlow, aggregate_flows, subjects_from_snapshot
+from apps.economics.domain import EconomicDomainError, FinancialFlow, aggregate_flows, subjects_from_snapshot
 from shared.contracts.intelligence_feed import EvidenceReference, IntelligenceEntity, IntelligenceSnapshot
 
 
