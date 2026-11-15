@@ -19,6 +19,7 @@ import { CasePage } from "./features/research-case/CasePage";
 import { CaseSetup } from "./features/research-case/CaseSetup";
 import { DesignSystemPage } from "./ui/DesignSystemPage";
 import { LabCanvas } from "./lab/LabCanvas";
+import { GeospatialWorkspace } from "./features/geospatial/GeospatialWorkspace";
 
 /**
  * The shell is mounted here, at the root, rather than per-route.
@@ -73,6 +74,7 @@ export function App() {
         <Route path="intel" element={<Navigate to="/investigations" replace />} />
         <Route path="economic" element={<EconomicsContainer />} />
         <Route path="network" element={<NetworkAnalysisContainer />} />
+        <Route path="geospatial" element={<GeospatialWorkspace />} />
         <Route path="search" element={<SearchContainer />} />
         {/* The graph is the investigation. The canvas opens on every investigation at once
             and a chosen one narrows it in place; opening it as a workspace is a different

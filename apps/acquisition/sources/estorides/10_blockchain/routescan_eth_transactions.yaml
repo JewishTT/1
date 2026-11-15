@@ -1,0 +1,52 @@
+name: routescan_eth_transactions
+enabled: true
+category: 10. Blockchain
+description: Routescan Ethereum mainnet bounded normal-transaction page (Powered by Routescan.io APIs)
+os: any
+requires_key: false
+contact: public_api
+parser: json_rows
+applies_to:
+- crypto
+entity_hints:
+- crypto
+- identifier
+tool:
+  method: GET
+  url: https://api.routescan.io/v2/network/mainnet/evm/1/etherscan/api?module=account&action=txlist&address={query}&startblock=0&endblock=99999999&page=1&offset=25&sort=desc
+  headers:
+    Accept: application/json
+    User-Agent: cognitive-substrate/034 (read-only evidence; Powered by Routescan.io APIs)
+  params: {}
+parse:
+  family: json_rows
+  list_path: result
+  fields:
+    tx_hash:
+      path: hash
+      kind: identifier
+      required: true
+    from_address:
+      path: from
+      kind: crypto
+    to_address:
+      path: to
+      kind: crypto
+    value_wei:
+      path: value
+      kind: identifier
+    block_number:
+      path: blockNumber
+      kind: integer
+    timestamp:
+      path: timeStamp
+      kind: identifier
+    gas_used:
+      path: gasUsed
+      kind: identifier
+    gas_price:
+      path: gasPrice
+      kind: identifier
+    receipt_status:
+      path: txreceipt_status
+      kind: identifier

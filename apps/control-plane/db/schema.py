@@ -1623,6 +1623,33 @@ class TypeAssertionRow(Base):
     )
 
 
+class TypeSignalRow(Base):
+    """One source-originated type observation, never a type assertion (Feature 021, FR-035)."""
+
+    __tablename__ = "type_signals"
+
+    signal_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36))
+    mention_ref: Mapped[str] = mapped_column(String(36))
+    source_vocab: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    surface: Mapped[str] = mapped_column(Text)
+    structural_path: Mapped[list] = mapped_column(JSONB)
+    observation_refs: Mapped[list] = mapped_column(JSONB)
+    evidence_refs: Mapped[list] = mapped_column(JSONB)
+    producer_ref: Mapped[str] = mapped_column(String(128))
+    mapping_candidates: Mapped[list] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_type_signal_tenant"),
+        CheckConstraint("producer_ref <> ''", name="ck_type_signal_producer"),
+        Index("ix_type_signals_mention", "tenant_id", "mention_ref"),
+        Index("ix_type_signals_producer", "tenant_id", "producer_ref"),
+    )
+
+
 class SemanticProfileRow(Base):
     """One versioned, scoped bundle of semantic instruments (feature 017, US2).
 

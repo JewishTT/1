@@ -1,0 +1,25 @@
+name: theharvester_authorized_subdomains
+enabled: true
+source_family: domain_discovery
+time_basis: fetch
+category: 08. Knowledge
+description: Finite passive subdomain discovery through a separately deployed theHarvester API; discovery-only records restricted to operator-authorized domains
+os: any
+kind: runtime
+requires_key: true
+key_env: COGNITIVE_THEHARVESTER_API_KEY
+contact: search_engine
+logs_queries: true
+parser: structured_fields
+runtime_ref: theharvester
+runtime_config:
+  capability: subdomains
+  result_role: DISCOVERY_ONLY
+  max_results: 500
+entity_hints:
+  - hostname
+  - domain
+  - ip
+  - asn
+applies_to:
+  - domain

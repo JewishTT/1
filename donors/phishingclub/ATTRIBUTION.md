@@ -46,7 +46,9 @@ See the AGPL-3.0 text in `LICENSE`.
 
 ## Use restriction recorded by the platform
 
-This checkout is used only inside the isolated SpecOps Red-Team Lab defined by
-`docs/adr/ADR-0040-lab-only-red-team-exception.md`. It is not used against production
-targets, real personal data, real credentials or unauthorized brand assets, and it is
-not offered as a public network service by this platform.
+This checkout is governed by the current SpecOps authorization boundary in
+`specs/036-phishingclub-specops-department/spec.md`: every engagement requires a confirmed,
+unexpired Rules of Engagement (RoE), approved targets, encrypted artifacts, retention
+controls, an append-only audit trail, and a kill switch. The former ADR-0040 lab-only
+exception was withdrawn by Constitution 2.2.0 on 2026-11-02. This donor is not a public
+network service and must not be run without a confirmed engagement-specific RoE.

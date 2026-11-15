@@ -1,6 +1,6 @@
 # Import graph
 
-1047 Python modules, 2971 resolved local edges.
+1115 Python modules, 3202 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,46 +10,46 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 915 |
-| `dataclasses` | stdlib | 395 |
-| `typing` | stdlib | 377 |
-| `pathlib` | stdlib | 329 |
-| `pytest` | third-party | 282 |
-| `sys` | stdlib | 265 |
-| `collections` | stdlib | 248 |
-| `json` | stdlib | 207 |
-| `datetime` | stdlib | 199 |
-| `sqlalchemy` | third-party | 162 |
-| `hashlib` | stdlib | 136 |
-| `enum` | stdlib | 119 |
-| `re` | stdlib | 104 |
-| `asyncio` | stdlib | 76 |
-| `os` | stdlib | 75 |
-| `fastapi` | third-party | 70 |
-| `urllib` | stdlib | 60 |
-| `uuid` | stdlib | 48 |
-| `math` | stdlib | 41 |
-| `types` | stdlib | 40 |
-| `pydantic` | third-party | 34 |
-| `importlib` | stdlib | 33 |
-| `time` | stdlib | 33 |
+| `__future__` | stdlib | 978 |
+| `dataclasses` | stdlib | 414 |
+| `typing` | stdlib | 405 |
+| `pathlib` | stdlib | 343 |
+| `pytest` | third-party | 292 |
+| `sys` | stdlib | 271 |
+| `collections` | stdlib | 250 |
+| `json` | stdlib | 220 |
+| `datetime` | stdlib | 217 |
+| `sqlalchemy` | third-party | 174 |
+| `hashlib` | stdlib | 145 |
+| `enum` | stdlib | 121 |
+| `re` | stdlib | 109 |
+| `os` | stdlib | 83 |
+| `asyncio` | stdlib | 78 |
+| `fastapi` | third-party | 74 |
+| `urllib` | stdlib | 68 |
+| `uuid` | stdlib | 54 |
+| `math` | stdlib | 42 |
+| `types` | stdlib | 42 |
+| `time` | stdlib | 40 |
+| `pydantic` | third-party | 36 |
+| `importlib` | stdlib | 35 |
+| `httpx` | third-party | 30 |
+| `alembic` | third-party | 29 |
 | `ast` | stdlib | 28 |
 | `io` | stdlib | 25 |
 | `logging` | stdlib | 24 |
-| `alembic` | third-party | 24 |
+| `threading` | stdlib | 24 |
+| `inspect` | stdlib | 23 |
 | `numpy` | third-party | 23 |
-| `inspect` | stdlib | 22 |
-| `argparse` | stdlib | 21 |
+| `argparse` | stdlib | 22 |
 | `tempfile` | stdlib | 21 |
-| `httpx` | third-party | 20 |
-| `threading` | stdlib | 19 |
-| `subprocess` | stdlib | 17 |
+| `subprocess` | stdlib | 19 |
 | `shutil` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |
 | `warcio` | third-party | 15 |
+| `decimal` | stdlib | 14 |
 | `temporalio` | third-party | 13 |
-| `itertools` | stdlib | 11 |
-| `html` | stdlib | 10 |
+| `base64` | stdlib | 11 |
 
 ## Optional capability probes
 
@@ -59,6 +59,7 @@ that is switched off in this environment.
 
 | Package | Probe sites |
 |---|---|
+| `gliner` | 1 |
 | `pyshacl` | 1 |
 | `pyzbar` | 1 |
 | `tantivy` | 1 |
@@ -70,6 +71,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | Name | Directory |
 |---|---|
 | `_events` | `apps/science/_events.py` |
+| `_prove_person_research_case` | `apps/control-plane/_prove_person_research_case.py` |
 | `_prove_readback` | `apps/acquisition/_prove_readback.py` |
 | `acquisition` | `apps/acquisition` |
 | `adapters` | `apps/acquisition/adapters/__init__.py` |
@@ -121,6 +123,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `hypotheses` | `apps/science/hypotheses/__init__.py` |
 | `ids` | `apps/shared/ids/__init__.py` |
 | `independence` | `apps/admission/independence/__init__.py` |
+| `industry_adapters` | `apps/acquisition/industry_adapters/__init__.py` |
 | `interpretation` | `apps/interpretation/__init__.py` |
 | `isolation` | `apps/shared/isolation.py` |
 | `kinetics` | `apps/science/kinetics/__init__.py` |

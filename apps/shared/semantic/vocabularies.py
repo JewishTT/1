@@ -138,13 +138,15 @@ class MatchPredicate(StrEnum):
     certainly does not license collapsing them. Re-evaluating or withdrawing the mapping is
     expected and leaves both concepts exactly where they were. ``BROAD_MATCH`` and
     ``NARROW_MATCH`` are weaker still - the target is wider or narrower than the source -
-    and honouring them widens recall rather than recording identity.
+    and honouring them widens recall rather than recording identity. RELATED_MATCH records
+    correspondences that are neither narrower nor broader, without treating them as equal.
     """
 
     EXACT_MATCH = "exact_match"
     CLOSE_MATCH = "close_match"
     BROAD_MATCH = "broad_match"
     NARROW_MATCH = "narrow_match"
+    RELATED_MATCH = "related_match"
 
 
 @dataclass(frozen=True)
@@ -182,6 +184,7 @@ _LINK_FIELDS = (
     "close_match",
     "broad_match",
     "narrow_match",
+    "related_match",
 )
 
 _MATCH_FIELDS: dict[MatchPredicate, str] = {
@@ -189,6 +192,7 @@ _MATCH_FIELDS: dict[MatchPredicate, str] = {
     MatchPredicate.CLOSE_MATCH: "close_match",
     MatchPredicate.BROAD_MATCH: "broad_match",
     MatchPredicate.NARROW_MATCH: "narrow_match",
+    MatchPredicate.RELATED_MATCH: "related_match",
 }
 
 
@@ -205,7 +209,7 @@ class Concept:
 
     ``broader`` and ``narrower`` are two spellings of one relation and either may be left
     empty - :class:`ConceptScheme` completes the other from what other concepts declared.
-    ``related`` is unordered association. The four ``*_match`` fields hold references in
+    ``related`` is unordered association. The five ``*_match`` fields hold references in
     *other* vocabularies; see :class:`MatchPredicate` for what they do and emphatically do
     not claim. There is no field here able to express "these two concepts are equal", and
     that omission is the point (FR-008).
@@ -223,6 +227,7 @@ class Concept:
     close_match: tuple[str, ...] = ()
     broad_match: tuple[str, ...] = ()
     narrow_match: tuple[str, ...] = ()
+    related_match: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "concept_id", str(self.concept_id).strip())
@@ -309,6 +314,7 @@ class Concept:
                 "close_match": list(self.close_match),
                 "broad_match": list(self.broad_match),
                 "narrow_match": list(self.narrow_match),
+                "related_match": list(self.related_match),
             }
         )
 

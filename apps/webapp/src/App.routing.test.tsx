@@ -113,6 +113,13 @@ function mountAt(path: string) {
 }
 
 describe("routes are reachable and render something", () => {
+  it("reaches the optional geospatial workspace through the application router", async () => {
+    mountAt("/geospatial");
+    await waitFor(() => {
+      expect(screen.getByTestId("geospatial-workspace")).toBeInTheDocument();
+    });
+  });
+
   it("reaches the dossier surface through the router", async () => {
     mountAt("/dossier");
 

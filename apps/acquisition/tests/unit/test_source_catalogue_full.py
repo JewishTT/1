@@ -24,6 +24,7 @@ sys.path.insert(0, str(APP))
 sys.path.insert(0, str(REPO / "apps" / "shared"))
 
 from sources.catalogue import load_catalogue, load_source  # noqa: E402
+from sources.connector import tasks_for  # noqa: E402
 from sources.executor import HttpSourceExecutor, _basic_auth  # noqa: E402
 
 ESTORIDES = APP / "sources" / "estorides"
@@ -71,13 +72,14 @@ def test_source_ids_are_unique_across_files() -> None:
     assert len(ids) == len(set(ids))
 
 
-def test_every_source_declares_a_url_or_binary() -> None:
-    """19 definitions are local CLI tools (kali_amass, holehe, ...) and declare a
-    binary rather than an endpoint; the loader accepts either, so must this."""
+def test_every_source_declares_a_transport_or_explicit_runtime() -> None:
+    """A source uses HTTP, a bounded local tool, or a named runtime."""
     missing = [
         d.name
         for d in all_definitions()
-        if not (d.tool or {}).get("url") and not (d.tool or {}).get("binary")
+        if not (d.tool or {}).get("url")
+        and not (d.tool or {}).get("binary")
+        and not d.runtime_ref
     ]
     assert missing == []
 
@@ -85,7 +87,7 @@ def test_every_source_declares_a_url_or_binary() -> None:
 def test_local_tool_sources_are_present() -> None:
     """The system_tools category is real work, not a stub category."""
     binaries = [d for d in all_definitions() if (d.tool or {}).get("binary")]
-    assert len(binaries) == 19
+    assert len(binaries) == 18
 
 
 def test_keyed_sources_name_their_credential() -> None:
@@ -104,8 +106,8 @@ def test_keyed_and_open_split_is_visible() -> None:
     the count of runnable-without-credentials sources cannot quietly collapse."""
     defs = all_definitions()
     keyed = [d for d in defs if d.requires_key]
-    assert len(keyed) == 26
-    assert len(defs) - len(keyed) == 126  # runnable with no credential at all
+    assert len(keyed) == 27
+    assert len(defs) - len(keyed) == 125  # runnable with no credential at all
 
 
 # -- basic auth ---------------------------------------------------------------
@@ -161,6 +163,16 @@ def test_wigle_is_enabled_and_names_its_pair() -> None:
 def test_hunter_is_enabled() -> None:
     defs = {d.name: d for d in all_definitions()}
     assert defs["hunter_email"].enabled
+
+
+def test_theharvester_is_explicitly_keyed_and_discovery_only() -> None:
+    definitions = {item.name: item for item in all_definitions()}
+    source = definitions["theharvester_authorized_subdomains"]
+    assert source.enabled
+    assert source.requires_key
+    assert source.key_env == "COGNITIVE_THEHARVESTER_API_KEY"
+    assert source.runtime_ref == "theharvester"
+    assert source.applies_to == ("domain",)
 
 
 
@@ -248,8 +260,8 @@ def test_btc_eth_tron_read_only_sources_are_present_and_enabled() -> None:
     expected = {
         "blockstream_btc_address_transactions",
         "blockstream_btc_tx_detail",
-        "blockscout_eth_address",
-        "blockscout_eth_transactions",
+        "routescan_eth_address_balance",
+        "routescan_eth_transactions",
         "trongrid_account",
         "trongrid_account_transactions",
     }
@@ -262,3 +274,26 @@ def test_btc_eth_tron_read_only_sources_are_present_and_enabled() -> None:
         assert definition.tool.get("method", "GET").upper() == "GET"
     assert definitions["trongrid_account"].key_env == "TRONGRID_API_KEY"
     assert definitions["trongrid_account_transactions"].key_env == "TRONGRID_API_KEY"
+
+
+def test_theharvester_catalogue_entry_uses_authorized_runtime_not_kali_binary() -> None:
+    definition = load_source(ESTORIDES / "08_knowledge" / "theharvester_authorized_subdomains.yaml")
+    assert definition.enabled is True
+    assert definition.kind == "runtime"
+    assert definition.runtime_ref == "theharvester"
+    assert definition.runtime_config["result_role"] == "DISCOVERY_ONLY"
+    assert definition.runtime_config["capability"] == "subdomains"
+    assert definition.requires_key is True
+    assert definition.key_env == "COGNITIVE_THEHARVESTER_API_KEY"
+    assert definition.source_family == "domain_discovery"
+    assert definition.time_basis == "fetch"
+    assert not definition.tool.get("binary")
+
+
+def test_theharvester_task_is_planned_as_discovery_only() -> None:
+    definition = load_source(ESTORIDES / "08_knowledge" / "theharvester_authorized_subdomains.yaml")
+    task = tasks_for(definition, "example.org")
+    payload = task.to_task()
+    assert task.runtime_ref == "theharvester"
+    assert payload["runtime_ref"] == "theharvester"
+    assert payload["result_role"] == "DISCOVERY_ONLY"

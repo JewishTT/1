@@ -15,8 +15,8 @@ The gate has four halves, and they fail for different reasons:
   new one is a failure.
 * **Undeclared dependencies.** An import names a third-party package that is neither
   installed nor declared in any workspace manifest. It works on the machine that grew the
-  code and fails on every other machine. None exist today: the three that did
-  (``tantivy``, ``pyshacl``, ``pyzbar``) are capability probes -- imports guarded by
+  code and fails on every other machine. None exist today: the four that did
+  (``tantivy``, ``pyshacl``, ``pyzbar``, ``gliner``) are capability probes -- imports guarded by
   ``try/except ImportError`` -- and the platform is written to work without them, so they
   are counted as optional rather than as undeclared.
 * **Tracked gaps.** An import names a platform feature that is documented as not landed
@@ -101,7 +101,7 @@ KNOWN_UNDECLARED_DEPENDENCIES = frozenset()
 #: imported inside ``try/except ImportError``, so the platform works without them; they
 #: are listed here because "the platform can run without it" is a decision someone made,
 #: not an accident.
-KNOWN_OPTIONAL_PROBES = frozenset({"pyshacl", "pyzbar", "tantivy"})
+KNOWN_OPTIONAL_PROBES = frozenset({"pyshacl", "pyzbar", "tantivy", "gliner"})
 
 #: Generated narrative documents that live outside ``docs/platform/``. They are rendered
 #: from the model by ``platform_model/narrative.py`` and are part of the drift gate, so a

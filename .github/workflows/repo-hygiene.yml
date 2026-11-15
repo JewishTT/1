@@ -28,6 +28,10 @@ jobs:
         run: .venv/bin/python tools/repo_hygiene.py --check
       - name: Test repository hygiene policy
         run: .venv/bin/pytest tools/tests/test_repo_hygiene.py -q
+      - name: Test bounded industry OSINT adapters and FtM interoperability
+        run: |
+          .venv/bin/pytest apps/acquisition/tests/unit/test_industry_osint_adapters.py -q
+          .venv/bin/ruff check apps/acquisition/industry_adapters apps/acquisition/tests/unit/test_industry_osint_adapters.py
       - name: Test verified-identity RoE, honest metrics, and DLQ fail-closed contracts
         run: .venv/bin/pytest apps/control-plane/tests/test_specops_roe_auth.py apps/control-plane/tests/test_metrics_honesty.py apps/control-plane/tests/test_quarantine_api.py -q
       - name: Test installed wheel package manifest

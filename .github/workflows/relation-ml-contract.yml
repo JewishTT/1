@@ -1,0 +1,84 @@
+name: relation-ml-contract
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: relation-ml-contract-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  relation-ml-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install the locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Run extraction, TypeSignal, research-case and budget contracts
+        run: >-
+          .venv/bin/python -m pytest
+          apps/interpretation/tests/test_ml_relation_producers.py
+          apps/interpretation/tests/test_structured_type_extractor.py
+          apps/shared/tests/unit/test_type_signal.py
+          apps/control-plane/tests/test_type_signal_bridge.py
+          apps/control-plane/tests/unit/test_type_signal_storage_contract.py
+          apps/control-plane/tests/unit/test_case_budget_storage_contract.py
+          apps/control-plane/tests/unit/test_context_store_storage_contract.py
+          apps/control-plane/tests/unit/test_interpretation_storage_contract.py
+          apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py
+          apps/control-plane/tests/test_research_case_invariants.py
+          apps/interpretation/tests/test_signal_nary_contract.py
+          -q
+      - name: Install a CPU-only PyTorch runtime
+        run: >-
+          uv pip install --python .venv/bin/python
+          --index-url https://download.pytorch.org/whl/cpu
+          --extra-index-url https://pypi.org/simple
+          "torch>=2.2.0"
+      - name: Install the optional GLiNER runtime
+        run: uv pip install --python .venv/bin/python gliner
+      - name: Execute the public GLiNER ReLEx checkpoint and retain model output
+        env:
+          HF_HOME: ${{ runner.temp }}/hf-cache
+          HF_HUB_DISABLE_TELEMETRY: "1"
+        run: .venv/bin/python apps/interpretation/tools/gliner_relex_smoke.py artifacts/gliner-relex-smoke.json
+      - name: Upload actual GLiNER output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gliner-relex-model-smoke
+          path: artifacts/gliner-relex-smoke.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Lint extraction, persistence and semantic contracts
+        run: >-
+          .venv/bin/python -m ruff check
+          apps/interpretation/extractors/signals/ml.py
+          apps/interpretation/extractors/structured_types.py
+          apps/interpretation/tools/gliner_relex_smoke.py
+          apps/interpretation/tests/test_ml_relation_producers.py
+          apps/interpretation/tests/test_structured_type_extractor.py
+          apps/shared/semantic/type_signal.py
+          apps/shared/semantic/vocabularies.py
+          apps/shared/tests/unit/test_type_signal.py
+          apps/control-plane/services/interpretation_bridge.py
+          apps/control-plane/db/schema.py
+          apps/control-plane/tests/test_type_signal_bridge.py
+          apps/control-plane/tests/unit/test_type_signal_storage_contract.py
+          apps/control-plane/db/migrations/versions/033_durable_case_budgets.py
+          apps/control-plane/tests/unit/test_case_budget_storage_contract.py
+          apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py
+          apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py
+          apps/control-plane/tests/unit/test_interpretation_storage_contract.py
+          apps/control-plane/tests/unit/test_context_store_storage_contract.py
+          apps/control-plane/services/research_case_runtime.py
+          apps/control-plane/tests/unit/test_case_budget_reservation_response_contract.py

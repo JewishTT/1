@@ -51,4 +51,4 @@ Phase A → B → **2S Slice-0**.
 
 | ADR | Record | File | Status |
 |---|---|---|---|
-| `ADR-0040` | Lab-only red-team exception (Feature 036; scoped to `/specops/lab`, expires 2027-11-01) | [ADR-0040](ADR-0040-lab-only-red-team-exception.md) | Accepted |
+| `ADR-0040` | Lab-only red-team exception (Feature 036; withdrawn by Constitution 2.2.0 on 2026-11-02) | — (withdrawn; no active ADR record) | Superseded |

@@ -1,0 +1,15 @@
+services:
+  gods-eye-view:
+    profiles: ["geospatial"]
+    build:
+      context: ../geospatial/gods-eye-view
+      dockerfile: Dockerfile
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "4173"
+      GEV_ALLOWED_HOSTS: "127.0.0.1,localhost"
+      GEV_EMBED_FRAME_ANCESTORS: "${GEV_EMBED_FRAME_ANCESTORS:-http://127.0.0.1:5173 http://localhost:5173}"
+    ports:
+      - "127.0.0.1:14173:4173"
+    restart: unless-stopped

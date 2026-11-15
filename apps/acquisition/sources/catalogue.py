@@ -419,9 +419,15 @@ def load_source(path: Path) -> SourceDefinition:
     if not name:
         raise CatalogueError("source_without_name", f"{path.name} declares no name")
 
+    runtime_ref = str(raw.get("runtime_ref") or "").strip()
     tool = raw.get("tool")
-    if not isinstance(tool, Mapping) or not (tool.get("url") or tool.get("binary")):
-        raise CatalogueError("source_without_tool", f"{name} declares no url or binary")
+    if not isinstance(tool, Mapping):
+        if runtime_ref:
+            tool = {}
+        else:
+            raise CatalogueError("source_without_tool", f"{name} declares no url or binary")
+    if not (tool.get("url") or tool.get("binary")) and not runtime_ref:
+        raise CatalogueError("source_without_tool", f"{name} declares no url, binary, or runtime_ref")
 
     requires_key = bool(raw.get("requires_key"))
     key_env = str(raw.get("key_env") or "").strip()

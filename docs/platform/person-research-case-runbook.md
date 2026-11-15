@@ -86,6 +86,7 @@ After approval, plan the case and review every source-bound action. Start acquis
 In PostgreSQL, verify these records share the same tenant and case/investigation:
 - `captures` and `observations`, including the raw-object URI and SHA-256 digest;
 - `processing_results` with the same `observation_id` and concrete immutable `derived_ref`;
+- `type_signals` with the same tenant/observation/mention, producer ref, raw type surface, vocabulary and structural path. These are source observations, not `type_assertions`; unresolved or ungroundable type statements remain typed refusals;
 - `entities`, `entity_versions`, `relation_claims`, and `entity_stream` where deterministic extraction yielded those records;
 - `person_case_dispatch_intents` and `person_case_budget_reservations` for the run.
 

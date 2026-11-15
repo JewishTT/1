@@ -127,6 +127,9 @@ def tasks_for(
         # Carried from the definition so a runtime-backed source reaches the runtime that
         # can actually run it, instead of the HTTP executor that refuses it.
         runtime_ref=definition.runtime_ref,
+        # Runtime-backed sources may declare a non-claim role in their validated
+        # source definition; ordinary sources retain the EVIDENCE default.
+        result_role=str(definition.runtime_config.get("result_role") or "EVIDENCE").upper(),
     )
 
 

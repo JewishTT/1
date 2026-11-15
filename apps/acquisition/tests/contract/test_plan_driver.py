@@ -22,6 +22,7 @@ from adapters.registry import REGISTRY, register
 from dispatcher.plan_driver import (
     ContractViolation,
     PlanDispatcher,
+    PlanDriver,
     assert_request_contract,
 )
 from dispatcher.scheduler import Dispatcher
@@ -37,6 +38,23 @@ def _registry():
     yield
     REGISTRY._sources.clear()
     REGISTRY._sources.update(saved)
+
+
+class AllowingLimits:
+    """Explicit test-only reservation provider; production defaults fail closed."""
+
+    def allows(
+        self,
+        execution_class,
+        region,
+        host_key,
+        required,
+        *,
+        tenant_id=None,
+        case_id=None,
+        policy_revision=None,
+    ):
+        return True, "reserved", "res-1"
 
 
 class AckedProducer:
@@ -279,6 +297,44 @@ class TestRequestPayloadIsExecutable:
         assert parsed.tenant_id == "ten-1"
         assert parsed.investigation_id == "INV-1"
 
+    def test_case_bound_request_serializes_investigation_binding_into_payload(self) -> None:
+        from worker_acquisition import RequestParser
+
+        bound = task(
+            investigation_id="INV-PERSON-034",
+            case_id="CXI-034",
+            scope_digest="sha256:" + "a" * 64,
+            policy_digest="sha256:" + "b" * 64,
+            policy_revision="policy-rev-1",
+            scope_revision=1,
+            budget_reservation_id="RBR-034",
+            idempotency_key="idem-034",
+            run_id="RUN-034",
+            case_policy_source_id="crossref_works",
+            approved_action_ref="ACT-034",
+            action_id="ACT-034",
+        )
+        producer = AckedProducer()
+        dispatcher = dispatcher_with(
+            producer,
+            limits=AllowingLimits(),
+            tenant_id=bound.tenant_id,
+            case_id=bound.case_id,
+            policy_revision=bound.policy_revision,
+            budget_reservation_id=bound.budget_reservation_id,
+        )
+        driver = PlanDispatcher(dispatcher=dispatcher, producer=producer)
+        record = driver.dispatch([bound])[0]
+
+        assert record.published is True
+        _topic, envelope, _key = producer.published[0]
+        payload = json.loads(envelope.payload)
+        assert payload["investigation_id"] == "INV-PERSON-034"
+        parsed = RequestParser().parse(envelope)
+        assert parsed.investigation_id == "INV-PERSON-034"
+        assert parsed.case_id == "CXI-034"
+        assert parsed.action_id == "ACT-034"
+
 
 class TestDeterminism:
     def test_task_mapping_is_order_independent(self) -> None:
@@ -305,3 +361,33 @@ class TestDeterminism:
         assert "uuid1" not in src
         assert "datetime.now" not in src
         assert "time.time" not in src
+
+
+class TestIndustryRuntimeRegistration:
+    def test_theharvester_is_registered_as_an_explicit_runtime(self) -> None:
+        producer = AckedProducer()
+        PlanDriver(dispatcher=dispatcher_with(producer), producer=producer)
+
+        registration = next(
+            item for item in REGISTRY if item.source_type == "theharvester"
+        )
+        assert registration.execution_class == "custom"
+        assert registration.capabilities == frozenset()
+
+    def test_theharvester_is_opt_in_and_planned_only_when_keyed_sources_are_enabled(self) -> None:
+        from sources.catalogue import load_catalogue
+
+        definitions, rejected = load_catalogue()
+        assert "kali_theharvester" not in rejected
+        definition = next(item for item in definitions if item.name == "kali_theharvester")
+
+        from sources.connector import tasks_for
+
+        task = tasks_for(definition, "example.org")
+        assert task.runtime_ref == "theharvester"
+        assert task.to_task()["result_role"] == "DISCOVERY_ONLY"
+
+        keyless = plan("example.org", categories=[definition.category])
+        opted_in = plan("example.org", only_keyless=False, categories=[definition.category])
+        assert all(item.runtime_ref != "theharvester" for item in keyless)
+        assert any(item.runtime_ref == "theharvester" for item in opted_in)

@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from _prove_person_research_case import _has_declared_author_name
 from context_engine.person_case_profile import PUBLIC_PROFESSIONAL
 from context_engine.store import InMemoryContextStore
 from services.research_case_policy import PersonCasePolicy
@@ -363,3 +364,30 @@ def test_public_page_capture_source_is_enabled_but_never_evidence(
         source_ids=[source_id],
         launch_profile=PUBLIC_PROFESSIONAL,
     ) == ()
+
+
+
+def test_crossref_person_anchor_matches_only_author_given_and_family_fields() -> None:
+    assert _has_declared_author_name(
+        {"author": [{"given": "Geoffrey Andrew", "family": "Hinton"}]}
+    )
+    assert _has_declared_author_name(
+        {"author": [{"name": "  Geoffrey   Hinton  "}]}
+    )
+
+
+@pytest.mark.parametrize(
+    "record",
+    [
+        {
+            "title": ["Geoffrey Hinton"],
+            "publisher": "Geoffrey Hinton",
+            "author": [{"given": "Other", "family": "Hinton"}],
+        },
+        {"author": [{"given": "Geoffrey", "family": "Other"}]},
+        {"author": "Geoffrey Hinton"},
+        {"title": ["Geoffrey Hinton"], "author": []},
+    ],
+)
+def test_crossref_person_anchor_rejects_non_author_or_partial_matches(record: dict) -> None:
+    assert not _has_declared_author_name(record)
