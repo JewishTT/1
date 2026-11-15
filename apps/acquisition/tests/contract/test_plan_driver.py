@@ -375,7 +375,7 @@ class TestIndustryRuntimeRegistration:
         assert registration.capabilities == frozenset()
 
     def test_theharvester_is_opt_in_and_planned_only_when_keyed_sources_are_enabled(self) -> None:
-        from sources.connector import load_catalogue
+        from sources.catalogue import load_catalogue
 
         definitions, rejected = load_catalogue()
         assert "kali_theharvester" not in rejected
