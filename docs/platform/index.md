@@ -8,21 +8,21 @@ committed model no longer matches the tree.
 
 | Metric | Value |
 |---|---|
-| Components | 19 |
-| Python modules | 1066 |
-| TypeScript modules | 283 |
+| Components | 20 |
+| Python modules | 1147 |
+| TypeScript modules | 329 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 2974 |
-| Unresolved imports (no local target) | 34 |
-| Unresolved: local | 3 |
+| Import edges (local) | 3287 |
+| Unresolved imports (no local target) | 1 |
+| Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
-| Unresolved: guarded-local | 30 |
+| Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
 | Test files | 387 |
 | Test functions | 5530 |
-| Untested platform modules | 279 |
+| Untested platform modules | 314 |
 | HTTP routes | 227 |
 | Contracts (python/docs/root) | 7 / 74 / 12 |
 | Capabilities | 30 |
@@ -54,16 +54,17 @@ committed model no longer matches the tree.
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
 | control-plane | 271 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
-| economics | 4 | 0 |  |
+| economics | 4 | 0 | Economic subjects, financial flows and economic process analysis over Intelligence. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
-| intelligence | 3 | 0 |  |
+| intelligence | 3 | 0 | Foundational entity, relation and evidence intelligence read model. |
 | interpretation | 120 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |
 | projection | 67 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | root | 1 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | shared | 202 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
-| specops_ci | 4 | 0 |  |
+| specops-legacy | 81 | 46 | Archived former SpecOps implementation and transition adapters; not a new collection silo. |
+| specops_ci | 4 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
 | tools | 14 | 0 | Generators, capability/owner/donor tools, probes. |
 | webapp | 0 | 283 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | zero | 40 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

@@ -6,25 +6,25 @@ A verified snapshot of the platform's true state. Every number is derived from t
 
 | Metric | Value |
 |---|---|
-| Components | 19 |
-| Python / TypeScript / Rust modules | 1066 / 283 / 16 |
-| Resolved import edges | 2974 |
+| Components | 20 |
+| Python / TypeScript / Rust modules | 1147 / 329 / 16 |
+| Resolved import edges | 3287 |
 | HTTP routes / routers | 227 / 39 |
 | Test files / functions | 387 / 5530 |
-| Evidence facts (static) | 4641 |
+| Evidence facts (static) | 5031 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 560 |
+| IMPLEMENTED | 618 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 19 |
-| PACKAGE_INIT | 93 |
+| PACKAGE_INIT | 101 |
 | MIGRATION | 25 |
-| TEST | 369 |
+| TEST | 384 |
 
 See [maturity.md](maturity.md).
 
@@ -32,10 +32,10 @@ See [maturity.md](maturity.md).
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 430 |
-| TEST_ONLY | 136 |
-| ORPHAN | 131 |
-| TEST | 369 |
+| PRODUCTION | 478 |
+| TEST_ONLY | 137 |
+| ORPHAN | 148 |
+| TEST | 384 |
 
 See [reachability.md](reachability.md) for the entrypoints and the test-only/orphan lists.
 
@@ -127,6 +127,6 @@ Specs whose task list shows 0 checked but whose number is cited by real modules 
 | `023-acquisition-integration-searxng` | 0/214 | 3 |
 | `024-context-driven-continuous-intelligence` | 0/168 | 22 |
 | `030-global-platform-upgrade` | 0/152 | 24 |
-| `032-global-upgrade-execution` | 0/84 | 2 |
+| `032-global-upgrade-execution` | 0/84 | 9 |
 | `034-person-research-case` | 0/76 | 19 |
-| `036-phishingclub-specops-department` | 0/60 | 1 |
+| `036-phishingclub-specops-department` | 0/60 | 6 |

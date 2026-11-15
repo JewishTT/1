@@ -1,6 +1,6 @@
 # Import graph
 
-1066 Python modules, 2974 resolved local edges.
+1147 Python modules, 3287 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,46 +10,46 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 930 |
-| `dataclasses` | stdlib | 389 |
-| `typing` | stdlib | 385 |
-| `pathlib` | stdlib | 331 |
-| `pytest` | third-party | 285 |
-| `sys` | stdlib | 269 |
-| `collections` | stdlib | 249 |
-| `json` | stdlib | 211 |
-| `datetime` | stdlib | 210 |
+| `__future__` | stdlib | 1003 |
+| `typing` | stdlib | 423 |
+| `dataclasses` | stdlib | 420 |
+| `pathlib` | stdlib | 345 |
+| `pytest` | third-party | 298 |
+| `sys` | stdlib | 271 |
+| `collections` | stdlib | 251 |
+| `datetime` | stdlib | 229 |
+| `json` | stdlib | 221 |
 | `sqlalchemy` | third-party | 178 |
-| `hashlib` | stdlib | 137 |
-| `enum` | stdlib | 118 |
-| `re` | stdlib | 108 |
-| `asyncio` | stdlib | 77 |
-| `fastapi` | third-party | 75 |
-| `os` | stdlib | 71 |
-| `urllib` | stdlib | 66 |
-| `uuid` | stdlib | 44 |
-| `math` | stdlib | 41 |
-| `types` | stdlib | 41 |
-| `pydantic` | third-party | 37 |
-| `time` | stdlib | 34 |
-| `importlib` | stdlib | 33 |
+| `hashlib` | stdlib | 146 |
+| `enum` | stdlib | 123 |
+| `re` | stdlib | 112 |
+| `fastapi` | third-party | 91 |
+| `os` | stdlib | 83 |
+| `asyncio` | stdlib | 78 |
+| `urllib` | stdlib | 68 |
+| `uuid` | stdlib | 56 |
+| `pydantic` | third-party | 45 |
+| `math` | stdlib | 42 |
+| `types` | stdlib | 42 |
+| `time` | stdlib | 40 |
+| `importlib` | stdlib | 35 |
 | `alembic` | third-party | 30 |
+| `httpx` | third-party | 30 |
 | `ast` | stdlib | 29 |
-| `io` | stdlib | 24 |
+| `io` | stdlib | 25 |
+| `logging` | stdlib | 24 |
+| `threading` | stdlib | 24 |
 | `inspect` | stdlib | 23 |
 | `numpy` | third-party | 23 |
-| `argparse` | stdlib | 21 |
+| `argparse` | stdlib | 22 |
 | `tempfile` | stdlib | 21 |
-| `httpx` | third-party | 20 |
 | `subprocess` | stdlib | 19 |
-| `threading` | stdlib | 18 |
+| `decimal` | stdlib | 16 |
 | `shutil` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |
-| `logging` | stdlib | 15 |
 | `warcio` | third-party | 15 |
 | `temporalio` | third-party | 13 |
-| `html` | stdlib | 11 |
-| `itertools` | stdlib | 11 |
+| `base64` | stdlib | 12 |
 
 ## Optional capability probes
 
@@ -63,50 +63,6 @@ that is switched off in this environment.
 | `pyshacl` | 1 |
 | `pyzbar` | 1 |
 | `tantivy` | 1 |
-
-## Platform imports with no resolved target
-
-The import names a platform package that does not exist at the resolved target. Classified by proof:
-
-* `local` — no target found; treated as a potential defect until proven otherwise.
-* `stale-platform-path` — the module still exists under a different root; a rename that did not reach the importer.
-* `guarded-local` — the import is inside a `try`, so it does not crash, but the feature behind it is silently switched off.
-
-| From | Import | Kind |
-|---|---|---|
-| `apps/control-plane/api/routes/specops_emulation.py` | `specops.roe.gate` | local |
-| `apps/control-plane/api/routes/specops_engagement.py` | `specops.engagement` | local |
-| `apps/control-plane/tests/test_specops_roe_auth.py` | `specops.roe.gate` | local |
-| `apps/control-plane/api/routes/specops_counterintel.py` | `specops.counterintel` | guarded-local |
-| `apps/control-plane/api/routes/specops_counterintel.py` | `specops.counterintel` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.approvals` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.config` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.errors` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.executor` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.models` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.store` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.vault` | guarded-local |
-| `apps/control-plane/api/routes/specops_emulation.py` | `specops.emulation` | guarded-local |
-| `apps/control-plane/api/routes/specops_emulation.py` | `specops.roe.gate` | guarded-local |
-| `apps/control-plane/api/routes/specops_engagement.py` | `specops.engagement` | guarded-local |
-| `apps/control-plane/api/routes/specops_engagement.py` | `specops.engagement.config` | guarded-local |
-| `apps/control-plane/api/routes/specops_forensics.py` | `specops.emulation` | guarded-local |
-| `apps/control-plane/api/routes/specops_forensics.py` | `specops.forensics` | guarded-local |
-| `apps/control-plane/api/routes/specops_forensics.py` | `specops.forensics` | guarded-local |
-| `apps/control-plane/api/routes/specops_ghostline.py` | `specops.ghostline.engine` | guarded-local |
-| `apps/control-plane/api/routes/specops_ghostline.py` | `specops.ghostline.service` | guarded-local |
-| `apps/control-plane/api/routes/specops_ghostline.py` | `specops.ghostline.telephony` | guarded-local |
-| `apps/control-plane/api/routes/specops_ghostline.py` | `specops.ghostline.voices` | guarded-local |
-| `apps/control-plane/api/routes/specops_lab.py` | `specops.lab.phishingclub` | guarded-local |
-| `apps/control-plane/api/routes/specops_lab.py` | `specops.lab.phishingclub` | guarded-local |
-| `apps/control-plane/api/routes/specops_lab.py` | `specops.lab` | guarded-local |
-| `apps/control-plane/api/routes/specops_lab.py` | `specops.roe.gate` | guarded-local |
-| `apps/control-plane/api/routes/specops_phishing.py` | `specops.phishing` | guarded-local |
-| `apps/control-plane/api/routes/specops_phishing.py` | `specops.phishing` | guarded-local |
-| `apps/control-plane/api/routes/specops_phishing.py` | `specops.roe.gate` | guarded-local |
-| `apps/control-plane/api/routes/specops_roe.py` | `specops.roe.gate` | guarded-local |
-| `apps/control-plane/api/routes/specops_social.py` | `specops.social` | guarded-local |
-| `apps/control-plane/api/routes/specops_social.py` | `specops.social` | guarded-local |
 
 ## Import roots
 

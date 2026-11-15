@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 430 |
-| TEST_ONLY | 136 |
-| ORPHAN | 131 |
-| TEST | 369 |
+| PRODUCTION | 478 |
+| TEST_ONLY | 137 |
+| ORPHAN | 148 |
+| TEST | 384 |
 
 ## Entrypoints (production roots)
 
@@ -54,6 +54,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/run.py` |
 | `bench/science/bench_structural.py` |
 | `platform_model/build.py` |
+| `spec-ops legacy/apps/specops/cryptotx/cli.py` |
 | `tools/repo_hygiene.py` |
 | `tools/semantic_docgraph.py` |
 | `tools/specs/build_capability_matrix.py` |
@@ -62,7 +63,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**136** modules are reached only by tests.
+**137** modules are reached only by tests.
 
 | Module |
 |---|
@@ -202,10 +203,11 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/zero/zero/harvesters/url.py` |
 | `apps/zero/zero/harvesters/username.py` |
 | `apps/zero/zero/resolution/fellegi_sunter.py` |
+| `spec-ops legacy/apps/specops/cryptotx/planner.py` |
 
 ## Orphan modules (nothing imports them)
 
-**131** modules are imported by neither production nor tests.
+**148** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -332,6 +334,23 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/fixtures/extraction/_generate.py` |
 | `conftest.py` |
 | `platform_model/facts.py` |
+| `spec-ops legacy/apps/specops/__init__.py` |
+| `spec-ops legacy/apps/specops/cryptotx/__init__.py` |
+| `spec-ops legacy/apps/specops/cryptotx/chains/__init__.py` |
+| `spec-ops legacy/apps/specops/cryptotx/swaps/__init__.py` |
+| `spec-ops legacy/apps/specops/ghostline/__init__.py` |
+| `spec-ops legacy/apps/specops/roe/__init__.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_counterintel.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_cryptotx.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_emulation.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_engagement.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_forensics.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_ghostline.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_lab.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_phishing.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_roe.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_social.py` |
+| `spec-ops legacy/mirror/apps/control-plane/services/specops_catalog.py` |
 | `tools/__init__.py` |
 | `tools/append_zero_frontend_a.py` |
 | `tools/append_zero_frontend_b.py` |

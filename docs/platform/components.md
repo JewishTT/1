@@ -215,7 +215,7 @@ apps.deploy.minio-init.init-buckets
 
 ## `economics`
 
-
+Economic subjects, financial flows and economic process analysis over Intelligence.
 
 Python modules: **4** · TypeScript modules: **0**
 
@@ -256,7 +256,7 @@ apps.feedback.tests.test_frontier_loop
 
 ## `intelligence`
 
-
+Foundational entity, relation and evidence intelligence read model.
 
 Python modules: **3** · TypeScript modules: **0**
 
@@ -522,9 +522,62 @@ apps.shared.domain.relation_identity
 
 </details>
 
+## `specops-legacy`
+
+Archived former SpecOps implementation and transition adapters; not a new collection silo.
+
+Python modules: **81** · TypeScript modules: **46**
+
+<details><summary>module sample</summary>
+
+```
+spec-ops legacy.apps.specops
+spec-ops legacy.apps.specops.counterintel
+spec-ops legacy.apps.specops.cryptotx
+spec-ops legacy.apps.specops.cryptotx.approvals
+spec-ops legacy.apps.specops.cryptotx.chains
+spec-ops legacy.apps.specops.cryptotx.chains.base
+spec-ops legacy.apps.specops.cryptotx.chains.bitcoin
+spec-ops legacy.apps.specops.cryptotx.chains.ethereum
+spec-ops legacy.apps.specops.cryptotx.chains.registry
+spec-ops legacy.apps.specops.cryptotx.chains.tron
+spec-ops legacy.apps.specops.cryptotx.cli
+spec-ops legacy.apps.specops.cryptotx.config
+spec-ops legacy.apps.specops.cryptotx.errors
+spec-ops legacy.apps.specops.cryptotx.executor
+spec-ops legacy.apps.specops.cryptotx.hd
+spec-ops legacy.apps.specops.cryptotx.models
+spec-ops legacy.apps.specops.cryptotx.planner
+spec-ops legacy.apps.specops.cryptotx.store
+spec-ops legacy.apps.specops.cryptotx.swaps
+spec-ops legacy.apps.specops.cryptotx.swaps.base
+spec-ops legacy.apps.specops.cryptotx.swaps.evm
+spec-ops legacy.apps.specops.cryptotx.swaps.router
+spec-ops legacy.apps.specops.cryptotx.swaps.thorchain
+spec-ops legacy.apps.specops.cryptotx.swaps.tron
+spec-ops legacy.apps.specops.cryptotx.vault
+spec-ops legacy.apps.specops.emulation
+spec-ops legacy.apps.specops.engagement
+spec-ops legacy.apps.specops.engagement.config
+spec-ops legacy.apps.specops.engagement.fabric
+spec-ops legacy.apps.specops.engagement.funnel
+spec-ops legacy.apps.specops.engagement.taxonomy
+spec-ops legacy.apps.specops.forensics
+spec-ops legacy.apps.specops.ghostline
+spec-ops legacy.apps.specops.ghostline.catalog
+spec-ops legacy.apps.specops.ghostline.config
+spec-ops legacy.apps.specops.ghostline.engine
+spec-ops legacy.apps.specops.ghostline.ledger
+spec-ops legacy.apps.specops.ghostline.loader
+spec-ops legacy.apps.specops.ghostline.redaction
+spec-ops legacy.apps.specops.ghostline.runtime
+```
+
+</details>
+
 ## `specops_ci`
 
-
+Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots.
 
 Python modules: **4** · TypeScript modules: **0**
 

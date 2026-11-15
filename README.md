@@ -12,15 +12,15 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 
 | Metric | Value |
 |---|---|
-| Components | 19 |
-| Python modules | 1066 |
-| TypeScript modules | 283 |
+| Components | 20 |
+| Python modules | 1147 |
+| TypeScript modules | 329 |
 | Rust source files / crates | 16 / 9 |
-| Resolved local import edges | 2974 |
+| Resolved local import edges | 3287 |
 | HTTP routes / routers | 227 / 39 |
 | Event types / lanes | 99 / 29 |
 | Test files / test functions | 387 / 5530 |
-| Untested platform modules | 279 |
+| Untested platform modules | 314 |
 
 ## Components
 
@@ -32,16 +32,17 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
 | `control-plane` | 271 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
-| `economics` | 4 | 0 | 0 |  |
+| `economics` | 4 | 0 | 0 | Economic subjects, financial flows and economic process analysis over Intelligence. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
-| `intelligence` | 3 | 0 | 0 |  |
+| `intelligence` | 3 | 0 | 0 | Foundational entity, relation and evidence intelligence read model. |
 | `interpretation` | 120 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | `shared` | 202 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
-| `specops_ci` | 4 | 0 | 0 |  |
+| `specops-legacy` | 81 | 46 | 0 | Archived former SpecOps implementation and transition adapters; not a new collection silo. |
+| `specops_ci` | 4 | 0 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 283 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 40 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

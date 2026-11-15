@@ -60,7 +60,7 @@ _None: every declared capability has a module in the tree._
 
 ## Untested modules
 
-279 platform modules are not imported by any test. Sample:
+314 platform modules are not imported by any test. Sample:
 
 | Module |
 |---|
@@ -107,41 +107,8 @@ _None: every declared capability has a module in the tree._
 
 ## Unresolved imports (by evidence)
 
-33 platform imports have no resolved target (local/stale/guarded-local); 1 tracked guarded gaps; 0 undeclared (not platform/stdlib/installed/declared).
+0 platform imports have no resolved target (local/stale/guarded-local); 1 tracked guarded gaps; 0 undeclared (not platform/stdlib/installed/declared).
 
 | From | Import | Kind |
 |---|---|---|
-| `apps/control-plane/api/routes/specops_counterintel.py` | `specops.counterintel` | guarded-local |
-| `apps/control-plane/api/routes/specops_counterintel.py` | `specops.counterintel` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.approvals` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.config` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.errors` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.executor` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.models` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.store` | guarded-local |
-| `apps/control-plane/api/routes/specops_cryptotx.py` | `specops.cryptotx.vault` | guarded-local |
-| `apps/control-plane/api/routes/specops_emulation.py` | `specops.emulation` | guarded-local |
-| `apps/control-plane/api/routes/specops_emulation.py` | `specops.roe.gate` | guarded-local |
-| `apps/control-plane/api/routes/specops_emulation.py` | `specops.roe.gate` | local |
-| `apps/control-plane/api/routes/specops_engagement.py` | `specops.engagement` | guarded-local |
-| `apps/control-plane/api/routes/specops_engagement.py` | `specops.engagement.config` | guarded-local |
-| `apps/control-plane/api/routes/specops_engagement.py` | `specops.engagement` | local |
-| `apps/control-plane/api/routes/specops_forensics.py` | `specops.emulation` | guarded-local |
-| `apps/control-plane/api/routes/specops_forensics.py` | `specops.forensics` | guarded-local |
-| `apps/control-plane/api/routes/specops_forensics.py` | `specops.forensics` | guarded-local |
-| `apps/control-plane/api/routes/specops_ghostline.py` | `specops.ghostline.engine` | guarded-local |
-| `apps/control-plane/api/routes/specops_ghostline.py` | `specops.ghostline.service` | guarded-local |
-| `apps/control-plane/api/routes/specops_ghostline.py` | `specops.ghostline.telephony` | guarded-local |
-| `apps/control-plane/api/routes/specops_ghostline.py` | `specops.ghostline.voices` | guarded-local |
-| `apps/control-plane/api/routes/specops_lab.py` | `specops.lab.phishingclub` | guarded-local |
-| `apps/control-plane/api/routes/specops_lab.py` | `specops.lab.phishingclub` | guarded-local |
-| `apps/control-plane/api/routes/specops_lab.py` | `specops.lab` | guarded-local |
-| `apps/control-plane/api/routes/specops_lab.py` | `specops.roe.gate` | guarded-local |
-| `apps/control-plane/api/routes/specops_phishing.py` | `specops.phishing` | guarded-local |
-| `apps/control-plane/api/routes/specops_phishing.py` | `specops.phishing` | guarded-local |
-| `apps/control-plane/api/routes/specops_phishing.py` | `specops.roe.gate` | guarded-local |
-| `apps/control-plane/api/routes/specops_roe.py` | `specops.roe.gate` | guarded-local |
-| `apps/control-plane/api/routes/specops_social.py` | `specops.social` | guarded-local |
-| `apps/control-plane/api/routes/specops_social.py` | `specops.social` | guarded-local |
-| `apps/control-plane/tests/test_specops_roe_auth.py` | `specops.roe.gate` | local |
 | `apps/shared/tests/unit/test_relation_schema.py` | `domain.context_validation` | guarded-gap |

@@ -4,14 +4,14 @@ Generated from the scanner's per-body flags. This separates *the symbol exists* 
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 560 |
+| IMPLEMENTED | 618 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
 | DECLARATION_ONLY | 19 |
-| PACKAGE_INIT | 93 |
+| PACKAGE_INIT | 101 |
 | MIGRATION | 25 |
-| TEST | 369 |
+| TEST | 384 |
 
 **0** modules are present but not really built (STUB / NOT_IMPLEMENTED / PRIMITIVE).
 
