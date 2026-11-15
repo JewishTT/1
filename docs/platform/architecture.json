@@ -852,8 +852,10 @@
           "apps/control-plane/api/routes/discovery.py",
           "apps/control-plane/api/routes/discovery_strategy.py",
           "apps/control-plane/api/routes/dossier.py",
+          "apps/control-plane/api/routes/economics.py",
           "apps/control-plane/api/routes/fabric.py",
           "apps/control-plane/api/routes/findings.py",
+          "apps/control-plane/api/routes/intelligence.py",
           "apps/control-plane/api/routes/investigation_context.py",
           "apps/control-plane/api/routes/manual_assertions.py",
           "apps/control-plane/api/routes/metrics.py",
@@ -1169,7 +1171,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 327
+        "module_count": 329
       },
       {
         "id": "webapp",

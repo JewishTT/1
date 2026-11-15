@@ -8,7 +8,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 |---|---|
 | PRODUCTION | 420 |
 | TEST_ONLY | 139 |
-| ORPHAN | 136 |
+| ORPHAN | 138 |
 | TEST | 369 |
 
 ## Entrypoints (production roots)
@@ -208,7 +208,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**136** modules are imported by neither production nor tests.
+**138** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -233,6 +233,8 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/bulk-ingestion/historical/__init__.py` |
 | `apps/control-plane/__init__.py` |
 | `apps/control-plane/api/__init__.py` |
+| `apps/control-plane/api/routes/economics.py` |
+| `apps/control-plane/api/routes/intelligence.py` |
 | `apps/control-plane/application/__init__.py` |
 | `apps/control-plane/context_engine/__init__.py` |
 | `apps/control-plane/context_engine/context_graph_store.py` |

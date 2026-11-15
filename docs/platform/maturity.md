@@ -4,7 +4,7 @@ Generated from the scanner's per-body flags. This separates *the symbol exists* 
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 557 |
+| IMPLEMENTED | 559 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |

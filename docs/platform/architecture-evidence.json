@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4615,
-    "static_facts": 4339,
+    "facts_total": 4626,
+    "static_facts": 4350,
     "inferred": 276,
     "intended": 0
   },
@@ -7647,6 +7647,71 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "3010bdca85eb81e2",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/economics.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/economics.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b79d43889f5660fa",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/economics.py",
+      "object": "apps/control-plane/services/intelligence_access.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/economics.py",
+        "via": "services.intelligence_access"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d0d75641c105fd9c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/economics.py",
+      "object": "apps/control-plane/services/intelligence_reader.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/economics.py",
+        "via": "services.intelligence_reader"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "810f8013c8b6bb33",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/economics.py",
+      "object": "apps/economics/service.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/economics.py",
+        "via": "economics.service"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "624a37e351454326",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/economics.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/economics.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "5ed38ac2603ef76c",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/control-plane/api/routes/entities.py",
@@ -8163,6 +8228,58 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/findings.py",
         "via": "contracts.evidence_span"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "571f89ac925f01a6",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/intelligence.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/intelligence.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b70dae6ef7b9794c",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/intelligence.py",
+      "object": "apps/control-plane/services/intelligence_access.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/intelligence.py",
+        "via": "services.intelligence_access"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d85ab44e9031e9d3",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/intelligence.py",
+      "object": "apps/control-plane/services/intelligence_reader.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/intelligence.py",
+        "via": "services.intelligence_reader"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9cf3669b190b5f6a",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/api/routes/intelligence.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/intelligence.py",
+        "via": "shared.contracts.intelligence_feed"
       },
       "confidence": 1.0
     },
@@ -39887,6 +40004,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "6c6295bb79f7e4b3",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /snapshots/{subject_ref}",
+      "object": "apps/control-plane/api/routes/intelligence.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/intelligence.py",
+        "line": 25
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "477f2cb82f86fa70",
       "kind": "ROUTE_DEFINED_IN",
       "subject": "GET /sources",
@@ -39948,6 +40078,19 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_counterintel.py",
         "line": 27
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "831abbc03d896d38",
+      "kind": "ROUTE_DEFINED_IN",
+      "subject": "GET /subjects/{subject_ref}",
+      "object": "apps/control-plane/api/routes/economics.py",
+      "status": "STATIC_FACT",
+      "method": "regex_decorator",
+      "evidence": {
+        "file": "apps/control-plane/api/routes/economics.py",
+        "line": 24
       },
       "confidence": 1.0
     },

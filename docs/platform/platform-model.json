@@ -226,7 +226,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 268,
+      "python_modules": 270,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -240,9 +240,11 @@
         "apps.control-plane.api.routes.discovery",
         "apps.control-plane.api.routes.discovery_strategy",
         "apps.control-plane.api.routes.dossier",
+        "apps.control-plane.api.routes.economics",
         "apps.control-plane.api.routes.entities",
         "apps.control-plane.api.routes.fabric",
         "apps.control-plane.api.routes.findings",
+        "apps.control-plane.api.routes.intelligence",
         "apps.control-plane.api.routes.investigation_context",
         "apps.control-plane.api.routes.investigations",
         "apps.control-plane.api.routes.manual_assertions",
@@ -426,9 +428,7 @@
         "apps.control-plane.tests.test_auth_security",
         "apps.control-plane.tests.test_metrics_honesty",
         "apps.control-plane.tests.test_quarantine_api",
-        "apps.control-plane.tests.test_research_case_invariants",
-        "apps.control-plane.tests.test_research_case_projection",
-        "apps.control-plane.tests.test_research_case_reports"
+        "apps.control-plane.tests.test_research_case_invariants"
       ]
     },
     {
@@ -1170,11 +1170,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1064,
-    "edge_count": 2953,
+    "module_count": 1066,
+    "edge_count": 2962,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 927,
+      "stdlib:__future__": 929,
       "stdlib:abc": 3,
       "stdlib:argparse": 21,
       "stdlib:ast": 29,
@@ -1189,8 +1189,8 @@
       "stdlib:contextlib": 4,
       "stdlib:copy": 1,
       "stdlib:csv": 3,
-      "stdlib:dataclasses": 387,
-      "stdlib:datetime": 208,
+      "stdlib:dataclasses": 389,
+      "stdlib:datetime": 209,
       "stdlib:decimal": 3,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1233,7 +1233,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 41,
-      "stdlib:typing": 382,
+      "stdlib:typing": 384,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 66,
@@ -1257,7 +1257,7 @@
       "third-party:docx": 2,
       "third-party:duckdb": 5,
       "third-party:extruct": 1,
-      "third-party:fastapi": 70,
+      "third-party:fastapi": 74,
       "third-party:google": 6,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
@@ -4093,6 +4093,31 @@
         "via": "context_engine.dossier_store"
       },
       {
+        "from": "apps/control-plane/api/routes/economics.py",
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/api/routes/economics.py",
+        "to": "apps/economics/service.py",
+        "via": "economics.service"
+      },
+      {
+        "from": "apps/control-plane/api/routes/economics.py",
+        "to": "apps/control-plane/services/intelligence_access.py",
+        "via": "services.intelligence_access"
+      },
+      {
+        "from": "apps/control-plane/api/routes/economics.py",
+        "to": "apps/control-plane/services/intelligence_reader.py",
+        "via": "services.intelligence_reader"
+      },
+      {
+        "from": "apps/control-plane/api/routes/economics.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
         "from": "apps/control-plane/api/routes/entities.py",
         "to": "apps/acquisition/entity_search.py",
         "via": "acquisition.entity_search"
@@ -4291,6 +4316,26 @@
         "from": "apps/control-plane/api/routes/findings.py",
         "to": "apps/control-plane/services/catalog.py",
         "via": "services.catalog"
+      },
+      {
+        "from": "apps/control-plane/api/routes/intelligence.py",
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/api/routes/intelligence.py",
+        "to": "apps/control-plane/services/intelligence_access.py",
+        "via": "services.intelligence_access"
+      },
+      {
+        "from": "apps/control-plane/api/routes/intelligence.py",
+        "to": "apps/control-plane/services/intelligence_reader.py",
+        "via": "services.intelligence_reader"
+      },
+      {
+        "from": "apps/control-plane/api/routes/intelligence.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
       },
       {
         "from": "apps/control-plane/api/routes/investigation_context.py",
@@ -16281,6 +16326,7 @@
       "domain": "apps/shared/domain/__init__.py",
       "donor": "apps/shared/donor/__init__.py",
       "econ": "apps/science/econ/__init__.py",
+      "economics": "apps/economics/__init__.py",
       "engine": "apps/admission/engine/__init__.py",
       "errors": "apps/science/errors.py",
       "events": "apps/shared/events/__init__.py",
@@ -25869,6 +25915,17 @@
       ]
     },
     {
+      "router": "economics",
+      "path": "apps/control-plane/api/routes/economics.py",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/subjects/{subject_ref}",
+          "lineno": 22
+        }
+      ]
+    },
+    {
       "router": "entities",
       "path": "apps/control-plane/api/routes/entities.py",
       "routes": [
@@ -26128,6 +26185,17 @@
           "method": "GET",
           "path": "/{finding_id}/lineage",
           "lineno": 97
+        }
+      ]
+    },
+    {
+      "router": "intelligence",
+      "path": "apps/control-plane/api/routes/intelligence.py",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/snapshots/{subject_ref}",
+          "lineno": 23
         }
       ]
     },
@@ -30722,7 +30790,9 @@
     "apps/control-plane/api/routes/connectors.py",
     "apps/control-plane/api/routes/discovery.py",
     "apps/control-plane/api/routes/discovery_strategy.py",
+    "apps/control-plane/api/routes/economics.py",
     "apps/control-plane/api/routes/fabric.py",
+    "apps/control-plane/api/routes/intelligence.py",
     "apps/control-plane/api/routes/investigation_context.py",
     "apps/control-plane/api/routes/investigations.py",
     "apps/control-plane/api/routes/manual_assertions.py",
@@ -30874,11 +30944,9 @@
     "apps/science/hypotheses/__init__.py",
     "apps/science/kinetics/__init__.py",
     "apps/science/operators/__init__.py",
-    "apps/science/review/__init__.py",
-    "apps/science/robustness/__init__.py",
-    "apps/science/scitda/__init__.py"
+    "apps/science/review/__init__.py"
   ],
-  "untested_count": 277,
+  "untested_count": 279,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -31733,8 +31801,10 @@
             "apps/control-plane/api/routes/discovery.py",
             "apps/control-plane/api/routes/discovery_strategy.py",
             "apps/control-plane/api/routes/dossier.py",
+            "apps/control-plane/api/routes/economics.py",
             "apps/control-plane/api/routes/fabric.py",
             "apps/control-plane/api/routes/findings.py",
+            "apps/control-plane/api/routes/intelligence.py",
             "apps/control-plane/api/routes/investigation_context.py",
             "apps/control-plane/api/routes/manual_assertions.py",
             "apps/control-plane/api/routes/metrics.py",
@@ -32050,7 +32120,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 327
+          "module_count": 329
         },
         {
           "id": "webapp",
@@ -35480,6 +35550,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/api/routes/economics.py",
+        "status": "IMPLEMENTED",
+        "loc": 60,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/api/routes/entities.py",
         "status": "IMPLEMENTED",
         "loc": 1270,
@@ -35502,6 +35581,15 @@
         "status": "IMPLEMENTED",
         "loc": 109,
         "callables": 4,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/api/routes/intelligence.py",
+        "status": "IMPLEMENTED",
+        "loc": 54,
+        "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -43598,12 +43686,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 557,
+      "IMPLEMENTED": 559,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 94,
       "TEST": 369,
       "MIGRATION": 25,
-      "total": 1064
+      "total": 1066
     }
   },
   "reachability": {
@@ -44293,6 +44381,10 @@
         "status": "PRODUCTION"
       },
       {
+        "path": "apps/control-plane/api/routes/economics.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/api/routes/entities.py",
         "status": "PRODUCTION"
       },
@@ -44303,6 +44395,10 @@
       {
         "path": "apps/control-plane/api/routes/findings.py",
         "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/control-plane/api/routes/intelligence.py",
+        "status": "ORPHAN"
       },
       {
         "path": "apps/control-plane/api/routes/investigation_context.py",
@@ -47914,9 +48010,9 @@
     "summary": {
       "PRODUCTION": 420,
       "TEST_ONLY": 139,
-      "ORPHAN": 136,
+      "ORPHAN": 138,
       "TEST": 369,
-      "total": 1064
+      "total": 1066
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -48081,6 +48177,8 @@
       "apps/bulk-ingestion/historical/__init__.py",
       "apps/control-plane/__init__.py",
       "apps/control-plane/api/__init__.py",
+      "apps/control-plane/api/routes/economics.py",
+      "apps/control-plane/api/routes/intelligence.py",
       "apps/control-plane/application/__init__.py",
       "apps/control-plane/context_engine/__init__.py",
       "apps/control-plane/context_engine/context_graph_store.py",
@@ -57492,6 +57590,71 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "3010bdca85eb81e2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/economics.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/economics.py",
+          "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b79d43889f5660fa",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/economics.py",
+        "object": "apps/control-plane/services/intelligence_access.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/economics.py",
+          "via": "services.intelligence_access"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d0d75641c105fd9c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/economics.py",
+        "object": "apps/control-plane/services/intelligence_reader.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/economics.py",
+          "via": "services.intelligence_reader"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "810f8013c8b6bb33",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/economics.py",
+        "object": "apps/economics/service.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/economics.py",
+          "via": "economics.service"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "624a37e351454326",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/economics.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/economics.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "5ed38ac2603ef76c",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/entities.py",
@@ -58008,6 +58171,58 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/findings.py",
           "via": "contracts.evidence_span"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "571f89ac925f01a6",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/intelligence.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/intelligence.py",
+          "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b70dae6ef7b9794c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/intelligence.py",
+        "object": "apps/control-plane/services/intelligence_access.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/intelligence.py",
+          "via": "services.intelligence_access"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "d85ab44e9031e9d3",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/intelligence.py",
+        "object": "apps/control-plane/services/intelligence_reader.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/intelligence.py",
+          "via": "services.intelligence_reader"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "9cf3669b190b5f6a",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/intelligence.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/intelligence.py",
+          "via": "shared.contracts.intelligence_feed"
         },
         "confidence": 1.0
       },
@@ -89732,6 +89947,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "6c6295bb79f7e4b3",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "GET /snapshots/{subject_ref}",
+        "object": "apps/control-plane/api/routes/intelligence.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/intelligence.py",
+          "line": 25
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "477f2cb82f86fa70",
         "kind": "ROUTE_DEFINED_IN",
         "subject": "GET /sources",
@@ -89793,6 +90021,19 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_counterintel.py",
           "line": 27
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "831abbc03d896d38",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "GET /subjects/{subject_ref}",
+        "object": "apps/control-plane/api/routes/economics.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/economics.py",
+          "line": 24
         },
         "confidence": 1.0
       },
@@ -108445,44 +108686,44 @@
       }
     ],
     "stats": {
-      "facts_total": 4615,
-      "static_facts": 4339,
+      "facts_total": 4626,
+      "static_facts": 4350,
       "inferred": 276,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1064,
+    "python_modules": 1066,
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 2953,
+    "import_edges": 2962,
     "test_files": 387,
     "test_functions": 5530,
-    "untested_modules": 277,
-    "http_routes": 222
+    "untested_modules": 279,
+    "http_routes": 224
   },
   "evidence_stats": {
-    "facts_total": 4615,
-    "static_facts": 4339,
+    "facts_total": 4626,
+    "static_facts": 4350,
     "inferred": 276,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 557,
+    "IMPLEMENTED": 559,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 94,
     "TEST": 369,
     "MIGRATION": 25,
-    "total": 1064
+    "total": 1066
   },
   "reachability_summary": {
     "PRODUCTION": 420,
     "TEST_ONLY": 139,
-    "ORPHAN": 136,
+    "ORPHAN": 138,
     "TEST": 369,
-    "total": 1064
+    "total": 1066
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -108693,6 +108934,8 @@
     "apps/bulk-ingestion/historical/__init__.py",
     "apps/control-plane/__init__.py",
     "apps/control-plane/api/__init__.py",
+    "apps/control-plane/api/routes/economics.py",
+    "apps/control-plane/api/routes/intelligence.py",
     "apps/control-plane/application/__init__.py",
     "apps/control-plane/context_engine/__init__.py",
     "apps/control-plane/context_engine/context_graph_store.py",

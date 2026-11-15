@@ -1,6 +1,6 @@
 # Import graph
 
-1064 Python modules, 2953 resolved local edges.
+1066 Python modules, 2962 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,22 +10,22 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 927 |
-| `dataclasses` | stdlib | 387 |
-| `typing` | stdlib | 382 |
+| `__future__` | stdlib | 929 |
+| `dataclasses` | stdlib | 389 |
+| `typing` | stdlib | 384 |
 | `pathlib` | stdlib | 332 |
 | `pytest` | third-party | 285 |
 | `sys` | stdlib | 269 |
 | `collections` | stdlib | 249 |
 | `json` | stdlib | 211 |
-| `datetime` | stdlib | 208 |
+| `datetime` | stdlib | 209 |
 | `sqlalchemy` | third-party | 177 |
 | `hashlib` | stdlib | 137 |
 | `enum` | stdlib | 118 |
 | `re` | stdlib | 108 |
 | `asyncio` | stdlib | 77 |
+| `fastapi` | third-party | 74 |
 | `os` | stdlib | 71 |
-| `fastapi` | third-party | 70 |
 | `urllib` | stdlib | 66 |
 | `uuid` | stdlib | 43 |
 | `math` | stdlib | 41 |
@@ -152,6 +152,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `domain` | `apps/shared/domain/__init__.py` |
 | `donor` | `apps/shared/donor/__init__.py` |
 | `econ` | `apps/science/econ/__init__.py` |
+| `economics` | `apps/economics/__init__.py` |
 | `engine` | `apps/admission/engine/__init__.py` |
 | `errors` | `apps/science/errors.py` |
 | `events` | `apps/shared/events/__init__.py` |

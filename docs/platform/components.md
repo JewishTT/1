@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **268** · TypeScript modules: **0**
+Python modules: **270** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -166,9 +166,11 @@ apps.control-plane.api.routes.connectors
 apps.control-plane.api.routes.discovery
 apps.control-plane.api.routes.discovery_strategy
 apps.control-plane.api.routes.dossier
+apps.control-plane.api.routes.economics
 apps.control-plane.api.routes.entities
 apps.control-plane.api.routes.fabric
 apps.control-plane.api.routes.findings
+apps.control-plane.api.routes.intelligence
 apps.control-plane.api.routes.investigation_context
 apps.control-plane.api.routes.investigations
 apps.control-plane.api.routes.manual_assertions
@@ -193,8 +195,6 @@ apps.control-plane.api.routes.specops_cryptotx
 apps.control-plane.api.routes.specops_emulation
 apps.control-plane.api.routes.specops_engagement
 apps.control-plane.api.routes.specops_forensics
-apps.control-plane.api.routes.specops_ghostline
-apps.control-plane.api.routes.specops_lab
 ```
 
 </details>
