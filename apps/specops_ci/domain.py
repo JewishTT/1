@@ -7,9 +7,9 @@ time-bounded, explicitly approved engagement scope.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Iterable
 
 from shared.contracts.intelligence_feed import (
     IntelligenceEntity,
