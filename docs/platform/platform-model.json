@@ -18190,7 +18190,7 @@
           "test_all_twenty_categories_are_present",
           "test_catalogue_reports_no_rejections",
           "test_source_ids_are_unique_across_files",
-          "test_every_source_declares_a_url_or_binary",
+          "test_every_source_declares_a_transport_or_explicit_runtime",
           "test_local_tool_sources_are_present",
           "test_keyed_sources_name_their_credential",
           "test_keyed_and_open_split_is_visible",
@@ -35882,7 +35882,7 @@
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "status": "TEST",
-        "loc": 299,
+        "loc": 300,
         "callables": 24,
         "stubs": 0,
         "not_implemented": 0,
