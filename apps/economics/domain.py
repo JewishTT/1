@@ -33,7 +33,9 @@ class EconomicSubject:
     def from_intelligence(cls, snapshot: IntelligenceSnapshot, entity_id: str) -> "EconomicSubject":
         entity = next((item for item in snapshot.entities if item.entity_id == entity_id), None)
         if entity is None:
-            raise EconomicDomainError(f"entity {entity_id!r} is absent from the Intelligence snapshot")
+            raise EconomicDomainError(
+                f"entity {entity_id!r} is absent from the Intelligence snapshot"
+            )
         return cls(
             entity_id=entity.entity_id,
             kind=entity.entity_type,
