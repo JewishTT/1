@@ -17,7 +17,7 @@ def ref(observation_id: str) -> EvidenceReference:
         source_ref="source:filing",
         object_uri=f"s3://knowledge/raw/tenant-a/2026/11/{observation_id}",
         sha256="b" * 64,
-        observed_at=NOW,
+        recorded_at=NOW,
     )
 
 
