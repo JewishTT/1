@@ -54,7 +54,9 @@ def test_authorization_expiry_fails_closed():
         expired.assert_domain("example.org")
 
 
-@pytest.mark.parametrize("value", ["https://example.org", "192.0.2.1", "example.org/path", "bad..example.org"])
+@pytest.mark.parametrize(
+    "value", ["https://example.org", "192.0.2.1", "example.org/path", "bad..example.org"]
+)
 def test_invalid_or_non_domain_hostname_results_are_filtered(value):
     records, filtered = normalize_findings(
         [{"type": "hostname", "value": value}],
