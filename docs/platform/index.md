@@ -9,7 +9,7 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1062 |
+| Python modules | 1063 |
 | TypeScript modules | 283 |
 | Rust crates | 9 |
 | Rust source files | 16 |
@@ -22,7 +22,7 @@ committed model no longer matches the tree.
 | Unresolved: unknown (undeclared) | 0 |
 | Test files | 387 |
 | Test functions | 5530 |
-| Untested platform modules | 275 |
+| Untested platform modules | 276 |
 | HTTP routes | 222 |
 | Contracts (python/docs/root) | 7 / 74 / 12 |
 | Capabilities | 30 |
@@ -52,7 +52,7 @@ committed model no longer matches the tree.
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| control-plane | 266 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| control-plane | 267 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | economics | 4 | 0 |  |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |

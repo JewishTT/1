@@ -13,14 +13,14 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1062 |
+| Python modules | 1063 |
 | TypeScript modules | 283 |
 | Rust source files / crates | 16 / 9 |
 | Resolved local import edges | 2950 |
 | HTTP routes / routers | 222 / 36 |
 | Event types / lanes | 99 / 29 |
 | Test files / test functions | 387 / 5530 |
-| Untested platform modules | 275 |
+| Untested platform modules | 276 |
 
 ## Components
 
@@ -30,7 +30,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 266 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 267 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | `economics` | 4 | 0 | 0 |  |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |

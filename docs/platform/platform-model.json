@@ -226,7 +226,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 266,
+      "python_modules": 267,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -332,6 +332,7 @@
         "apps.control-plane.db.migrations.versions.034_durable_investigation_contexts",
         "apps.control-plane.db.migrations.versions.035_interpretation_mentions_and_entity_versions",
         "apps.control-plane.db.migrations.versions.036_candidate_resolution_enum_types",
+        "apps.control-plane.db.migrations.versions.037_specops_ci_authorizations",
         "apps.control-plane.db.relation_candidate_store",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
@@ -427,8 +428,7 @@
         "apps.control-plane.tests.test_research_case_invariants",
         "apps.control-plane.tests.test_research_case_projection",
         "apps.control-plane.tests.test_research_case_reports",
-        "apps.control-plane.tests.test_specops_roe_auth",
-        "apps.control-plane.tests.test_type_signal_bridge"
+        "apps.control-plane.tests.test_specops_roe_auth"
       ]
     },
     {
@@ -1170,11 +1170,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1062,
+    "module_count": 1063,
     "edge_count": 2950,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 925,
+      "stdlib:__future__": 926,
       "stdlib:abc": 3,
       "stdlib:argparse": 21,
       "stdlib:ast": 29,
@@ -1245,7 +1245,7 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 29,
+      "third-party:alembic": 30,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
@@ -1284,7 +1284,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 175,
+      "third-party:sqlalchemy": 177,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 13,
@@ -30773,6 +30773,7 @@
     "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
     "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
     "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+    "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
     "apps/control-plane/semantic_path/corpus_cases.py",
@@ -30860,10 +30861,9 @@
     "apps/science/review/__init__.py",
     "apps/science/robustness/__init__.py",
     "apps/science/scitda/__init__.py",
-    "apps/science/sims/__init__.py",
-    "apps/science/structure/__init__.py"
+    "apps/science/sims/__init__.py"
   ],
-  "untested_count": 275,
+  "untested_count": 276,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -31805,6 +31805,7 @@
             "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
             "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
             "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+            "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
             "apps/control-plane/db/relation_candidate_store.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
@@ -32033,7 +32034,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 325
+          "module_count": 326
         },
         {
           "id": "webapp",
@@ -36297,6 +36298,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
+        "status": "MIGRATION",
+        "loc": 88,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "IMPLEMENTED",
         "loc": 229,
@@ -36317,7 +36327,7 @@
       {
         "path": "apps/control-plane/db/schema.py",
         "status": "IMPLEMENTED",
-        "loc": 3210,
+        "loc": 3251,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -43567,8 +43577,8 @@
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 94,
       "TEST": 369,
-      "MIGRATION": 24,
-      "total": 1062
+      "MIGRATION": 25,
+      "total": 1063
     }
   },
   "reachability": {
@@ -44623,6 +44633,10 @@
       },
       {
         "path": "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+        "status": "ORPHAN"
+      },
+      {
+        "path": "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
         "status": "ORPHAN"
       },
       {
@@ -47871,9 +47885,9 @@
     "summary": {
       "PRODUCTION": 420,
       "TEST_ONLY": 139,
-      "ORPHAN": 134,
+      "ORPHAN": 135,
       "TEST": 369,
-      "total": 1062
+      "total": 1063
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -48068,6 +48082,7 @@
       "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
       "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
       "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+      "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
@@ -95940,6 +95955,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "45a0a74096ba67c4",
+        "kind": "TABLE_CLASS_DEFINED",
+        "subject": "SpecOpsEngagementAuthorization",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "regex_class_base",
+        "evidence": {
+          "file": "apps/control-plane/db/schema.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3c23d610105b93dd",
         "kind": "TABLE_CLASS_DEFINED",
         "subject": "Statement",
@@ -108349,27 +108376,27 @@
       }
     ],
     "stats": {
-      "facts_total": 4611,
-      "static_facts": 4335,
+      "facts_total": 4612,
+      "static_facts": 4336,
       "inferred": 276,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1062,
+    "python_modules": 1063,
     "typescript_modules": 283,
     "rust_modules": 16,
     "rust_crates": 9,
     "import_edges": 2950,
     "test_files": 387,
     "test_functions": 5530,
-    "untested_modules": 275,
+    "untested_modules": 276,
     "http_routes": 222
   },
   "evidence_stats": {
-    "facts_total": 4611,
-    "static_facts": 4335,
+    "facts_total": 4612,
+    "static_facts": 4336,
     "inferred": 276,
     "intended": 0
   },
@@ -108378,15 +108405,15 @@
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 94,
     "TEST": 369,
-    "MIGRATION": 24,
-    "total": 1062
+    "MIGRATION": 25,
+    "total": 1063
   },
   "reachability_summary": {
     "PRODUCTION": 420,
     "TEST_ONLY": 139,
-    "ORPHAN": 134,
+    "ORPHAN": 135,
     "TEST": 369,
-    "total": 1062
+    "total": 1063
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -108627,6 +108654,7 @@
     "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
     "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
     "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+    "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",

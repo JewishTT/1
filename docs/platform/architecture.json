@@ -939,6 +939,7 @@
           "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
           "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
           "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+          "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
           "apps/control-plane/db/relation_candidate_store.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
@@ -1167,7 +1168,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 325
+        "module_count": 326
       },
       {
         "id": "webapp",

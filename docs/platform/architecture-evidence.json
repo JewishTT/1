@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 4611,
-    "static_facts": 4335,
+    "facts_total": 4612,
+    "static_facts": 4336,
     "inferred": 276,
     "intended": 0
   },
@@ -46131,6 +46131,18 @@
       "fact_id": "8aa0649fa8676bd3",
       "kind": "TABLE_CLASS_DEFINED",
       "subject": "SourceTemporalObservationRow",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "regex_class_base",
+      "evidence": {
+        "file": "apps/control-plane/db/schema.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "45a0a74096ba67c4",
+      "kind": "TABLE_CLASS_DEFINED",
+      "subject": "SpecOpsEngagementAuthorization",
       "object": "apps/control-plane/db/schema.py",
       "status": "STATIC_FACT",
       "method": "regex_class_base",
