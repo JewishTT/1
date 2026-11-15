@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from shared.contracts.intelligence_feed import EvidenceReference, IntelligenceEntity, IntelligenceSnapshot
-from specops_ci.domain import (
+from apps.specops_ci.domain import (
     AssessmentKind,
     AssessmentScopeError,
     EngagementAuthorization,
