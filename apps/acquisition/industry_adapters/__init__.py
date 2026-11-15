@@ -6,5 +6,6 @@ from .theharvester import AuthorizationScope, HarvestedRecord, RunEvidence, TheH
 
 __all__ = [
     "AuthorizationScope", "CAPABILITY_REFERENCES", "FtMExport", "HarvestedRecord",
-    "RunEvidence", "TheHarvesterApiClient", "blocked_capability_reason", "build_ftm_export",
+    "RunEvidence", "TheHarvesterApiClient", "TlsPosture", "blocked_capability_reason",
+    "build_ftm_export", "probe_authorized_tls",
 ]
