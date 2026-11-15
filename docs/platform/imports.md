@@ -1,6 +1,6 @@
 # Import graph
 
-1063 Python modules, 2950 resolved local edges.
+1064 Python modules, 2953 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,7 +10,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 926 |
+| `__future__` | stdlib | 927 |
 | `dataclasses` | stdlib | 387 |
 | `typing` | stdlib | 382 |
 | `pathlib` | stdlib | 332 |
