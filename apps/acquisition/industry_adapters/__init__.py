@@ -1,5 +1,6 @@
 """Industry-derived, policy-bound acquisition adapters."""
 from .capabilities import CAPABILITY_REFERENCES, blocked_capability_reason
+from .domain_posture import TlsPosture, probe_authorized_tls
 from .followthemoney import FtMExport, build_ftm_export
 from .theharvester import AuthorizationScope, HarvestedRecord, RunEvidence, TheHarvesterApiClient
 
