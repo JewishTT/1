@@ -18157,7 +18157,7 @@
       },
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
-        "tests": 20,
+        "tests": 21,
         "test_names": [
           "test_every_definition_loads",
           "test_all_sources_are_enabled",
@@ -18178,7 +18178,8 @@
           "test_blockstream_address_feed_is_in_the_live_catalogue",
           "test_explicit_provider_offset_pagination_uses_declared_parameter",
           "test_explicit_cursor_pagination_is_rejected_until_runtime_support_exists",
-          "test_btc_eth_tron_read_only_sources_are_present_and_enabled"
+          "test_btc_eth_tron_read_only_sources_are_present_and_enabled",
+          "test_theharvester_catalogue_entry_uses_authorized_runtime_not_kali_binary"
         ],
         "targets": [
           "apps/acquisition/sources/catalogue.py",
@@ -26287,7 +26288,7 @@
         ]
       }
     ],
-    "total": 5507
+    "total": 5508
   },
   "contracts": {
     "python": [
@@ -35525,7 +35526,7 @@
       {
         "path": "apps/acquisition/sources/catalogue.py",
         "status": "IMPLEMENTED",
-        "loc": 537,
+        "loc": 543,
         "callables": 18,
         "stubs": 0,
         "not_implemented": 0,
@@ -35534,7 +35535,7 @@
       {
         "path": "apps/acquisition/sources/connector.py",
         "status": "IMPLEMENTED",
-        "loc": 378,
+        "loc": 381,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
@@ -35853,8 +35854,8 @@
       {
         "path": "apps/acquisition/tests/unit/test_source_catalogue_full.py",
         "status": "TEST",
-        "loc": 275,
-        "callables": 22,
+        "loc": 289,
+        "callables": 23,
         "stubs": 0,
         "not_implemented": 0,
         "markers": [
@@ -114016,7 +114017,7 @@
     "rust_crates": 9,
     "import_edges": 3198,
     "test_files": 381,
-    "test_functions": 5507,
+    "test_functions": 5508,
     "untested_modules": 291,
     "http_routes": 222
   },
