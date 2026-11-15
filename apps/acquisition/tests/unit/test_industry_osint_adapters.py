@@ -181,3 +181,114 @@ def test_tls_authorization_is_domain_bound():
     assert allowed.assert_tls_probe("mail.example.org") == "mail.example.org"
     with pytest.raises(AuthorizationError):
         allowed.assert_tls_probe("elsewhere.invalid")
+
+
+class _FakeResponse:
+    status = 200
+
+    def __init__(self, body: bytes):
+        self._body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return None
+
+    def read(self, size=-1):
+        return self._body if size < 0 else self._body[:size]
+
+
+class _FakeOpener:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.requests = []
+
+    def open(self, request, timeout):
+        self.requests.append((request, timeout))
+        return _FakeResponse(self.responses.pop(0))
+
+
+def test_theharvester_rest_run_is_finite_authenticated_and_passive():
+    import json
+
+    export = "\n".join([
+        json.dumps({"record_type": "summary", "evidence_status": "complete"}),
+        json.dumps({"type": "hostname", "value": "mail.example.org", "sources": ["crtsh"]}),
+        json.dumps({"type": "email", "value": "private@example.org", "sources": ["provider"]}),
+    ]).encode()
+    opener = _FakeOpener([
+        json.dumps({"run_id": "RUN-1"}).encode(),
+        json.dumps({
+            "status": "completed",
+            "evidence_status": "complete",
+            "completed_at": "2026-11-15T12:00:00Z",
+            "source_executions": [{"source": "crtsh", "status": "completed", "result_count": 1}],
+        }).encode(),
+        export,
+    ])
+    client = TheHarvesterApiClient(
+        base_url="http://127.0.0.1:5000",
+        api_key="local-service-secret",
+        max_wait_seconds=1,
+        poll_interval_seconds=0.1,
+        opener=opener,
+    )
+
+    evidence = client.run_authorized_domain("example.org", scope())
+
+    assert evidence.lifecycle_status == "completed"
+    assert evidence.evidence_status == "complete"
+    assert evidence.may_support_qualified_absence is False
+    assert [(record.kind, record.value) for record in evidence.records] == [
+        ("hostname", "mail.example.org")
+    ]
+    assert evidence.filtered_counts["email"] == 1
+    submitted = json.loads(opener.requests[0][0].data)
+    assert submitted["sources"] == ["subdomains"]
+    assert submitted["deadline_seconds"] == 600
+    assert all(
+        request.get_header("X-api-key") == "local-service-secret"
+        for request, _timeout in opener.requests
+    )
+    assert len(opener.requests) == 3
+
+
+def test_theharvester_never_accepts_plain_http_for_remote_service():
+    with pytest.raises(ValueError, match="HTTPS"):
+        TheHarvesterApiClient(
+            base_url="http://harvester.example.net",
+            api_key="local-service-secret",
+        )
+
+
+def test_source_outcomes_need_method_backed_coverage_to_qualify_absence():
+    from industry_adapters.theharvester import RunEvidence
+
+    unmeasured = RunEvidence(
+        run_id="RUN-2",
+        lifecycle_status="completed",
+        evidence_status="complete",
+        records=(),
+        source_outcomes=({"source": "crtsh", "status": "completed"},),
+        filtered_counts={},
+        submitted_at="2026-11-15T11:59:00Z",
+        completed_at="2026-11-15T12:00:00Z",
+    )
+    measured = RunEvidence(
+        run_id="RUN-3",
+        lifecycle_status="completed",
+        evidence_status="complete",
+        records=(),
+        source_outcomes=({
+            "source": "fixture",
+            "status": "completed",
+            "detection_power": 0.95,
+            "detection_power_method": "versioned completeness test",
+        },),
+        filtered_counts={},
+        submitted_at="2026-11-15T11:59:00Z",
+        completed_at="2026-11-15T12:00:00Z",
+    )
+    assert unmeasured.may_support_qualified_absence is False
+    assert measured.may_support_qualified_absence is True
