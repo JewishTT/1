@@ -10,13 +10,16 @@ import copy
 import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Mapping, Sequence
+from typing import Any
+from collections.abc import Mapping, Sequence
 
 
 SCHEMAS = frozenset({"Person", "Company", "Organization", "Payment", "Asset"})
 SAFE_PROPERTIES: dict[str, frozenset[str]] = {
     "Person": frozenset({"name", "position", "website"}),
-    "Company": frozenset({"name", "registrationNumber", "jurisdiction", "incorporationDate", "website"}),
+    "Company": frozenset({
+        "name", "registrationNumber", "jurisdiction", "incorporationDate", "website"
+    }),
     "Organization": frozenset({"name", "website", "jurisdiction"}),
     "Payment": frozenset({"payer", "beneficiary", "amount", "currency", "date", "description"}),
     "Asset": frozenset({"name", "assetType", "currency", "amount", "website"}),
@@ -38,7 +41,7 @@ class FtMExport:
 def stable_ftm_id(tenant_id: str, entity_id: str) -> str:
     if not tenant_id.strip() or not entity_id.strip():
         raise ValueError("tenant_id and entity_id are required")
-    material = f"{tenant_id.strip()}\x00{entity_id.strip()}".encode("utf-8")
+    material = f"{tenant_id.strip()}\x00{entity_id.strip()}".encode()
     return "cog-" + hashlib.sha256(material).hexdigest()[:32]
 
 
@@ -112,7 +115,7 @@ def validate_with_followthemoney(record: Mapping[str, Any]) -> dict[str, Any]:
 
     try:
         ftm = importlib.import_module("followthemoney")
-        model = getattr(ftm, "model")
+        model = ftm.model
     except (ImportError, AttributeError) as exc:
         raise FtMExportError(
             "optional package followthemoney is not installed in this exporter process"
@@ -121,7 +124,9 @@ def validate_with_followthemoney(record: Mapping[str, Any]) -> dict[str, Any]:
         proxy = model.get_proxy(copy.deepcopy(dict(record)), cleaned=False)
         return proxy.to_dict()
     except Exception as exc:  # noqa: BLE001 - normalize third-party model validation errors
-        raise FtMExportError(f"FollowTheMoney rejected the interchange record: {type(exc).__name__}") from exc
+        raise FtMExportError(
+            f"FollowTheMoney rejected the interchange record: {type(exc).__name__}"
+        ) from exc
 
 
 def jsonl_lines(exports: Sequence[FtMExport]) -> tuple[str, str]:
