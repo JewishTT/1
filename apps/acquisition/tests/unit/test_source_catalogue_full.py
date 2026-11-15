@@ -29,7 +29,7 @@ from sources.executor import HttpSourceExecutor, _basic_auth  # noqa: E402
 
 ESTORIDES = APP / "sources" / "estorides"
 
-EXPECTED_TOTAL = 153  # 154 files, minus the duplicate hunter_email
+EXPECTED_TOTAL = 152  # 153 files, minus the duplicate hunter_email
 EXPECTED_CATEGORIES = 20
 
 
@@ -72,13 +72,14 @@ def test_source_ids_are_unique_across_files() -> None:
     assert len(ids) == len(set(ids))
 
 
-def test_every_source_declares_a_url_or_binary() -> None:
-    """19 definitions are local CLI tools (kali_amass, holehe, ...) and declare a
-    binary rather than an endpoint; the loader accepts either, so must this."""
+def test_every_source_declares_a_transport_or_explicit_runtime() -> None:
+    """A source uses HTTP, a bounded local tool, or a named runtime."""
     missing = [
         d.name
         for d in all_definitions()
-        if not (d.tool or {}).get("url") and not (d.tool or {}).get("binary")
+        if not (d.tool or {}).get("url")
+        and not (d.tool or {}).get("binary")
+        and not d.runtime_ref
     ]
     assert missing == []
 
@@ -86,7 +87,7 @@ def test_every_source_declares_a_url_or_binary() -> None:
 def test_local_tool_sources_are_present() -> None:
     """The system_tools category is real work, not a stub category."""
     binaries = [d for d in all_definitions() if (d.tool or {}).get("binary")]
-    assert len(binaries) == 19
+    assert len(binaries) == 18
 
 
 def test_keyed_sources_name_their_credential() -> None:
@@ -106,7 +107,7 @@ def test_keyed_and_open_split_is_visible() -> None:
     defs = all_definitions()
     keyed = [d for d in defs if d.requires_key]
     assert len(keyed) == 27
-    assert len(defs) - len(keyed) == 126  # runnable with no credential at all
+    assert len(defs) - len(keyed) == 125  # runnable with no credential at all
 
 
 # -- basic auth ---------------------------------------------------------------
@@ -276,7 +277,7 @@ def test_btc_eth_tron_read_only_sources_are_present_and_enabled() -> None:
 
 
 def test_theharvester_catalogue_entry_uses_authorized_runtime_not_kali_binary() -> None:
-    definition = load_source(ESTORIDES / "20_system_tools" / "kali_theharvester.yaml")
+    definition = load_source(ESTORIDES / "08_knowledge" / "theharvester_authorized_subdomains.yaml")
     assert definition.enabled is True
     assert definition.kind == "runtime"
     assert definition.runtime_ref == "theharvester"
@@ -284,13 +285,13 @@ def test_theharvester_catalogue_entry_uses_authorized_runtime_not_kali_binary() 
     assert definition.runtime_config["capability"] == "subdomains"
     assert definition.requires_key is True
     assert definition.key_env == "COGNITIVE_THEHARVESTER_API_KEY"
-    assert definition.source_family == "passive-domain-discovery"
-    assert definition.time_basis == "FETCH"
+    assert definition.source_family == "domain_discovery"
+    assert definition.time_basis == "fetch"
     assert not definition.tool.get("binary")
 
 
 def test_theharvester_task_is_planned_as_discovery_only() -> None:
-    definition = load_source(ESTORIDES / "20_system_tools" / "kali_theharvester.yaml")
+    definition = load_source(ESTORIDES / "08_knowledge" / "theharvester_authorized_subdomains.yaml")
     task = tasks_for(definition, "example.org")
     payload = task.to_task()
     assert task.runtime_ref == "theharvester"
