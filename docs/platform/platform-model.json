@@ -475,12 +475,13 @@
     {
       "name": "intelligence",
       "description": "Foundational entity, relation and evidence intelligence read model.",
-      "python_modules": 3,
+      "python_modules": 4,
       "typescript_modules": 0,
       "modules": [
         "apps.intelligence",
         "apps.intelligence.ports",
-        "apps.intelligence.tests.test_feed_contract"
+        "apps.intelligence.tests.test_feed_contract",
+        "apps.intelligence.tests.test_postgres_reader"
       ]
     },
     {
@@ -1251,11 +1252,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1147,
-    "edge_count": 3287,
+    "module_count": 1148,
+    "edge_count": 3289,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 1003,
+      "stdlib:__future__": 1004,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 29,
@@ -1271,7 +1272,7 @@
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 420,
-      "stdlib:datetime": 229,
+      "stdlib:datetime": 230,
       "stdlib:decimal": 16,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1316,7 +1317,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 42,
-      "stdlib:typing": 423,
+      "stdlib:typing": 424,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 68,
@@ -1365,7 +1366,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 298,
+      "third-party:pytest": 299,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -9278,6 +9279,16 @@
       },
       {
         "from": "apps/intelligence/tests/test_feed_contract.py",
+        "to": "apps/shared/contracts/intelligence_feed.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      {
+        "from": "apps/intelligence/tests/test_postgres_reader.py",
+        "to": "apps/control-plane/services/intelligence_reader.py",
+        "via": "services.intelligence_reader"
+      },
+      {
+        "from": "apps/intelligence/tests/test_postgres_reader.py",
         "to": "apps/shared/contracts/intelligence_feed.py",
         "via": "shared.contracts.intelligence_feed"
       },
@@ -21093,6 +21104,19 @@
         ]
       },
       {
+        "path": "apps/intelligence/tests/test_postgres_reader.py",
+        "tests": 3,
+        "test_names": [
+          "test_postgres_read_port_builds_evidenced_graph_from_existing_tables",
+          "test_postgres_read_port_refuses_cross_tenant_and_unapproved_purpose_before_io",
+          "test_postgres_read_port_refuses_relationship_overflow_instead_of_truncating"
+        ],
+        "targets": [
+          "apps/control-plane/services/intelligence_reader.py",
+          "apps/shared/contracts/intelligence_feed.py"
+        ]
+      },
+      {
         "path": "apps/interpretation/tests/conftest.py",
         "tests": 0,
         "test_names": [],
@@ -26862,7 +26886,7 @@
         ]
       }
     ],
-    "total": 5530
+    "total": 5533
   },
   "contracts": {
     "python": [
@@ -32501,7 +32525,6 @@
     "apps/control-plane/services/entity_pipeline.py",
     "apps/control-plane/services/event_bus.py",
     "apps/control-plane/services/intelligence_access.py",
-    "apps/control-plane/services/intelligence_reader.py",
     "apps/control-plane/services/investigation_scheduler.py",
     "apps/control-plane/services/materialization_outbox_relay.py",
     "apps/control-plane/services/model_gateway.py",
@@ -32572,9 +32595,10 @@
     "apps/science/fixtures/__init__.py",
     "apps/science/hypotheses/__init__.py",
     "apps/science/kinetics/__init__.py",
-    "apps/science/operators/__init__.py"
+    "apps/science/operators/__init__.py",
+    "apps/science/review/__init__.py"
   ],
-  "untested_count": 314,
+  "untested_count": 313,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -39538,6 +39562,15 @@
         "markers": []
       },
       {
+        "path": "apps/intelligence/tests/test_postgres_reader.py",
+        "status": "TEST",
+        "loc": 221,
+        "callables": 16,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/interpretation/__init__.py",
         "status": "PACKAGE_INIT",
         "loc": 1,
@@ -45871,9 +45904,9 @@
       "IMPLEMENTED": 618,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 101,
-      "TEST": 384,
+      "TEST": 385,
       "MIGRATION": 25,
-      "total": 1147
+      "total": 1148
     }
   },
   "reachability": {
@@ -47676,6 +47709,10 @@
       },
       {
         "path": "apps/intelligence/tests/test_feed_contract.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/intelligence/tests/test_postgres_reader.py",
         "status": "TEST"
       },
       {
@@ -50518,8 +50555,8 @@
       "PRODUCTION": 478,
       "TEST_ONLY": 137,
       "ORPHAN": 148,
-      "TEST": 384,
-      "total": 1147
+      "TEST": 385,
+      "total": 1148
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -73802,6 +73839,32 @@
         "method": "python_ast+import_resolution",
         "evidence": {
           "file": "apps/intelligence/tests/test_feed_contract.py",
+          "via": "shared.contracts.intelligence_feed"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "33d14140e47b34f1",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/intelligence/tests/test_postgres_reader.py",
+        "object": "apps/control-plane/services/intelligence_reader.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/intelligence/tests/test_postgres_reader.py",
+          "via": "services.intelligence_reader"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2a774063fdc07f38",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/intelligence/tests/test_postgres_reader.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/intelligence/tests/test_postgres_reader.py",
           "via": "shared.contracts.intelligence_feed"
         },
         "confidence": 1.0
@@ -108780,6 +108843,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "f74d4e7f9748e6cf",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/intelligence/tests/test_postgres_reader.py",
+        "object": "apps/control-plane/services/intelligence_reader.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/intelligence/tests/test_postgres_reader.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "2c3923faac711b44",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/intelligence/tests/test_postgres_reader.py",
+        "object": "apps/shared/contracts/intelligence_feed.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/intelligence/tests/test_postgres_reader.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "a19afa1cbb843287",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/interpretation/tests/conftest.py",
@@ -116389,27 +116476,27 @@
       }
     ],
     "stats": {
-      "facts_total": 5031,
-      "static_facts": 4731,
+      "facts_total": 5035,
+      "static_facts": 4735,
       "inferred": 300,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1147,
+    "python_modules": 1148,
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3287,
-    "test_files": 387,
-    "test_functions": 5530,
-    "untested_modules": 314,
+    "import_edges": 3289,
+    "test_files": 388,
+    "test_functions": 5533,
+    "untested_modules": 313,
     "http_routes": 227
   },
   "evidence_stats": {
-    "facts_total": 5031,
-    "static_facts": 4731,
+    "facts_total": 5035,
+    "static_facts": 4735,
     "inferred": 300,
     "intended": 0
   },
@@ -116417,16 +116504,16 @@
     "IMPLEMENTED": 618,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 101,
-    "TEST": 384,
+    "TEST": 385,
     "MIGRATION": 25,
-    "total": 1147
+    "total": 1148
   },
   "reachability_summary": {
     "PRODUCTION": 478,
     "TEST_ONLY": 137,
     "ORPHAN": 148,
-    "TEST": 384,
-    "total": 1147
+    "TEST": 385,
+    "total": 1148
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",

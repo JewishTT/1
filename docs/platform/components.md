@@ -258,7 +258,7 @@ apps.feedback.tests.test_frontier_loop
 
 Foundational entity, relation and evidence intelligence read model.
 
-Python modules: **3** · TypeScript modules: **0**
+Python modules: **4** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -266,6 +266,7 @@ Python modules: **3** · TypeScript modules: **0**
 apps.intelligence
 apps.intelligence.ports
 apps.intelligence.tests.test_feed_contract
+apps.intelligence.tests.test_postgres_reader
 ```
 
 </details>

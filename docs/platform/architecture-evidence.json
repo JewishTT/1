@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5031,
-    "static_facts": 4731,
+    "facts_total": 5035,
+    "static_facts": 4735,
     "inferred": 300,
     "intended": 0
   },
@@ -21344,6 +21344,32 @@
       "method": "python_ast+import_resolution",
       "evidence": {
         "file": "apps/intelligence/tests/test_feed_contract.py",
+        "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "33d14140e47b34f1",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/intelligence/tests/test_postgres_reader.py",
+      "object": "apps/control-plane/services/intelligence_reader.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/intelligence/tests/test_postgres_reader.py",
+        "via": "services.intelligence_reader"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2a774063fdc07f38",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/intelligence/tests/test_postgres_reader.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/intelligence/tests/test_postgres_reader.py",
         "via": "shared.contracts.intelligence_feed"
       },
       "confidence": 1.0
@@ -56318,6 +56344,30 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/intelligence/tests/test_feed_contract.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "f74d4e7f9748e6cf",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/intelligence/tests/test_postgres_reader.py",
+      "object": "apps/control-plane/services/intelligence_reader.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/intelligence/tests/test_postgres_reader.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "2c3923faac711b44",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/intelligence/tests/test_postgres_reader.py",
+      "object": "apps/shared/contracts/intelligence_feed.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/intelligence/tests/test_postgres_reader.py"
       },
       "confidence": 1.0
     },

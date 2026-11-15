@@ -1,6 +1,6 @@
 # Tests
 
-387 test files, 5530 test functions. 314 platform modules are not targeted by any test.
+388 test files, 5533 test functions. 313 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -160,6 +160,7 @@
 | `apps/feedback/tests/test_feedback.py` | 8 | `apps/feedback/feedback_engine.py`, `apps/feedback/stopping.py` |
 | `apps/feedback/tests/test_frontier_loop.py` | 2 | `apps/control-plane/db/schema.py`, `apps/control-plane/db/session.py`, `apps/control-plane/services/frontier.py`, `apps/feedback/feedback/__init__.py` |
 | `apps/intelligence/tests/test_feed_contract.py` | 3 | `apps/shared/contracts/intelligence_feed.py` |
+| `apps/intelligence/tests/test_postgres_reader.py` | 3 | `apps/control-plane/services/intelligence_reader.py`, `apps/shared/contracts/intelligence_feed.py` |
 | `apps/interpretation/tests/conftest.py` | 0 | `apps/interpretation/dictionaries/build_mini.py` |
 | `apps/interpretation/tests/contract/__init__.py` | 0 | — |
 | `apps/interpretation/tests/contract/test_dictionary_entities.py` | 7 | `apps/interpretation/dictionaries/__init__.py`, `apps/interpretation/extractors/dictionary_entities.py`, `apps/interpretation/extractors/orgs.py`, `apps/interpretation/extractors/places.py` |

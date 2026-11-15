@@ -22,11 +22,11 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python / TypeScript / Rust modules | 1147 / 329 / 16 |
+| Python / TypeScript / Rust modules | 1148 / 329 / 16 |
 | HTTP routes | 227 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 387 / 5530 |
+| Test files / functions | 388 / 5533 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -66,7 +66,7 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | `economics` | 4 | 0 | 0 | Economic subjects, financial flows and economic process analysis over Intelligence. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
-| `intelligence` | 3 | 0 | 0 | Foundational entity, relation and evidence intelligence read model. |
+| `intelligence` | 4 | 0 | 0 | Foundational entity, relation and evidence intelligence read model. |
 | `interpretation` | 120 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |

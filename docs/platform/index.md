@@ -9,20 +9,20 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1147 |
+| Python modules | 1148 |
 | TypeScript modules | 329 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 3287 |
+| Import edges (local) | 3289 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
 | Unresolved: guarded-local | 0 |
 | Unresolved: guarded-gap | 1 |
 | Unresolved: unknown (undeclared) | 0 |
-| Test files | 387 |
-| Test functions | 5530 |
-| Untested platform modules | 314 |
+| Test files | 388 |
+| Test functions | 5533 |
+| Untested platform modules | 313 |
 | HTTP routes | 227 |
 | Contracts (python/docs/root) | 7 / 74 / 12 |
 | Capabilities | 30 |
@@ -56,7 +56,7 @@ committed model no longer matches the tree.
 | deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | economics | 4 | 0 | Economic subjects, financial flows and economic process analysis over Intelligence. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |
-| intelligence | 3 | 0 | Foundational entity, relation and evidence intelligence read model. |
+| intelligence | 4 | 0 | Foundational entity, relation and evidence intelligence read model. |
 | interpretation | 120 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | platform_model | 13 | 0 | The generator that produces docs/platform from the tree. |
 | projection | 67 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
