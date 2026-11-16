@@ -1,6 +1,6 @@
 # Tests
 
-391 test files, 5550 test functions. 318 platform modules are not targeted by any test.
+391 test files, 5551 test functions. 318 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -361,7 +361,7 @@
 | `apps/shared/tests/unit/test_type_signal.py` | 8 | `apps/shared/semantic/type_signal.py`, `apps/shared/semantic/vocabularies.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |
 | `apps/specops_ci/orchestration/tests/test_contracts.py` | 9 | `apps/specops_ci/domain.py`, `apps/specops_ci/orchestration/contracts.py` |
-| `apps/specops_ci/orchestration/tests/test_graph.py` | 4 | `apps/specops_ci/domain.py`, `apps/specops_ci/orchestration/contracts.py`, `apps/specops_ci/orchestration/graph.py`, `apps/specops_ci/orchestration/workflow.py` |
+| `apps/specops_ci/orchestration/tests/test_graph.py` | 5 | `apps/specops_ci/orchestration/contracts.py`, `apps/specops_ci/orchestration/graph.py`, `apps/specops_ci/orchestration/workflow.py` |
 | `apps/specops_ci/orchestration/tests/test_runtime_ports.py` | 4 | `apps/specops_ci/domain.py`, `apps/specops_ci/orchestration/contracts.py`, `apps/specops_ci/orchestration/runtime_ports.py` |
 | `apps/specops_ci/tests/test_scope.py` | 3 | `apps/shared/contracts/intelligence_feed.py`, `apps/specops_ci/domain.py` |
 | `apps/zero/tests/conftest.py` | 0 | `apps/zero/zero/type_detector.py` |

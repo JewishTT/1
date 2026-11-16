@@ -1263,7 +1263,7 @@
   ],
   "import_graph": {
     "module_count": 1160,
-    "edge_count": 3316,
+    "edge_count": 3315,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 1015,
@@ -15659,11 +15659,6 @@
       },
       {
         "from": "apps/specops_ci/orchestration/tests/test_graph.py",
-        "to": "apps/specops_ci/domain.py",
-        "via": "specops_ci.domain"
-      },
-      {
-        "from": "apps/specops_ci/orchestration/tests/test_graph.py",
         "to": "apps/specops_ci/orchestration/contracts.py",
         "via": "specops_ci.orchestration.contracts"
       },
@@ -26303,15 +26298,15 @@
       },
       {
         "path": "apps/specops_ci/orchestration/tests/test_graph.py",
-        "tests": 4,
+        "tests": 5,
         "test_names": [
           "test_langgraph_builds_the_declared_operation_state_machine",
           "test_spec_validation_node_accepts_only_the_matching_digest",
           "test_operator_rejection_is_verified_but_never_reaches_executor",
-          "test_temporal_workflow_exposes_query_and_signal_for_human_review"
+          "test_temporal_workflow_exposes_query_and_signal_for_human_review",
+          "test_assessment_needing_review_stops_before_the_next_step"
         ],
         "targets": [
-          "apps/specops_ci/domain.py",
           "apps/specops_ci/orchestration/contracts.py",
           "apps/specops_ci/orchestration/graph.py",
           "apps/specops_ci/orchestration/workflow.py"
@@ -27101,7 +27096,7 @@
         ]
       }
     ],
-    "total": 5550
+    "total": 5551
   },
   "contracts": {
     "python": [
@@ -44713,8 +44708,8 @@
       {
         "path": "apps/specops_ci/orchestration/tests/test_graph.py",
         "status": "TEST",
-        "loc": 99,
-        "callables": 6,
+        "loc": 104,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -90769,19 +90764,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "64343cffeba6e2f8",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
-        "object": "apps/specops_ci/domain.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/specops_ci/orchestration/tests/test_graph.py",
-          "via": "specops_ci.domain"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "c20a555609fb112e",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
@@ -115901,18 +115883,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "fa3684e8461ffa70",
-        "kind": "TEST_TARGETS_MODULE",
-        "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
-        "object": "apps/specops_ci/domain.py",
-        "status": "STATIC_FACT",
-        "method": "import_and_name_scan",
-        "evidence": {
-          "file": "apps/specops_ci/orchestration/tests/test_graph.py"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "d5984f3a6c9928dc",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
@@ -117426,8 +117396,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5076,
-      "static_facts": 4776,
+      "facts_total": 5074,
+      "static_facts": 4774,
       "inferred": 300,
       "intended": 0
     }
@@ -117438,15 +117408,15 @@
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3316,
+    "import_edges": 3315,
     "test_files": 391,
-    "test_functions": 5550,
+    "test_functions": 5551,
     "untested_modules": 318,
     "http_routes": 230
   },
   "evidence_stats": {
-    "facts_total": 5076,
-    "static_facts": 4776,
+    "facts_total": 5074,
+    "static_facts": 4774,
     "inferred": 300,
     "intended": 0
   },
