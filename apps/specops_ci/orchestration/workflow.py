@@ -15,8 +15,7 @@ with workflow.unsafe.imports_passed_through():
     from langgraph.checkpoint.memory import InMemorySaver
     from langgraph.types import Command
     from temporalio.langgraph import graph as temporal_graph
-
-from specops_ci.orchestration.graph import GRAPH_NAME
+    from specops_ci.orchestration.graph import GRAPH_NAME
 
 
 @workflow.defn(name=GRAPH_NAME)
