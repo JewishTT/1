@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
@@ -79,7 +80,7 @@ def test_runtime_revalidates_scope_and_records_idempotent_graph_result() -> None
         operation_id="operation-1",
         spec_digest="a" * 64,
         snapshot_id="snapshot-1",
-        operation_expires_at="2026-11-16T12:00:00+00:00",
+        operation_expires_at=(datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
         step=sample_step(),
     ))
 
