@@ -40,8 +40,9 @@ class FakeGraphs:
         self.calls.append(("exploration", kwargs))
         return {"operation_id": kwargs["operation_id"]}
 
-    async def append_exploration_result(self, **kwargs: Any) -> None:
+    async def append_exploration_result(self, **kwargs: Any) -> dict[str, Any]:
         self.calls.append(("append", kwargs))
+        return dict(kwargs["result"])
 
 
 class FakeEvaluator:
