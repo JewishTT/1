@@ -104,10 +104,6 @@ async def validate_operator_decision_node(state: OperationState) -> dict[str, An
     """Delegate reviewer identity, role and decision-reference checks to the trusted gate."""
     spec, step = _current_step(state)
     decision = state.get("operator_decision", {})
-    # A well-authenticated rejection is still a rejection; it must never flow into
-    # execute_step just because the reviewer's identity was valid.
-    if decision.get("approved") is not True:
-        return {"operator_decision_valid": False}
     valid = await get_runtime_ports().validate_operator_decision(
         tenant_id=spec.tenant_id,
         operation_id=spec.operation_id,
@@ -115,7 +111,10 @@ async def validate_operator_decision_node(state: OperationState) -> dict[str, An
         step_id=step["step_id"],
         decision=decision,
     )
-    return {"operator_decision_valid": valid}
+    return {
+        "operator_decision_valid": valid,
+        "operator_decision_approved": decision.get("approved") is True,
+    }
 
 
 async def execute_step_node(state: OperationState) -> dict[str, Any]:
@@ -172,7 +171,11 @@ async def _after_authorization(state: OperationState) -> str:
 
 
 async def _after_operator_decision(state: OperationState) -> str:
-    return "execute_step" if state.get("operator_decision_valid") else "rejected"
+    return (
+        "execute_step"
+        if state.get("operator_decision_valid") and state.get("operator_decision_approved")
+        else "rejected"
+    )
 
 
 async def _after_step(state: OperationState) -> str:
