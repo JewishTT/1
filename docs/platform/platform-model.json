@@ -38183,7 +38183,7 @@
       {
         "path": "apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py",
         "status": "MIGRATION",
-        "loc": 93,
+        "loc": 121,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
