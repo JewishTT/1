@@ -37529,7 +37529,7 @@
       {
         "path": "apps/control-plane/api/routes/specops_ci.py",
         "status": "IMPLEMENTED",
-        "loc": 571,
+        "loc": 573,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
@@ -44697,7 +44697,7 @@
       {
         "path": "apps/specops_ci/orchestration/client.py",
         "status": "IMPLEMENTED",
-        "loc": 66,
+        "loc": 88,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -44769,7 +44769,7 @@
       {
         "path": "apps/specops_ci/orchestration/workflow.py",
         "status": "IMPLEMENTED",
-        "loc": 153,
+        "loc": 152,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
