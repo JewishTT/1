@@ -33,7 +33,6 @@ from specops_ci.domain import (
     AssessmentScopeError,
     EngagementAuthorization,
 )
-from specops_ci.service import SPECOPS_CI_PURPOSE, prepare_assessment
 from specops_ci.orchestration.client import start_operation
 from specops_ci.orchestration.contracts import (
     OperationSpec,
@@ -41,6 +40,7 @@ from specops_ci.orchestration.contracts import (
     SpecStepKind,
     validate_operation_against_authorization,
 )
+from specops_ci.service import SPECOPS_CI_PURPOSE, prepare_assessment
 
 router = APIRouter(prefix="/specops-ci", tags=["specops-ci-silo"])
 MAX_AUTHORIZATION_WINDOW = timedelta(days=30)
@@ -561,7 +561,7 @@ async def submit_operator_decision(
     return {
         "operation_id": operation_id,
         "step_id": step_id,
-        "decision_id": decision_row.decision_id,
+        "decision_id": decision_id,
         "approved": body.approved,
         "status": "signal_sent",
     }
