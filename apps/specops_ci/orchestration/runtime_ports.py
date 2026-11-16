@@ -68,7 +68,7 @@ class ArtexGraphPort(Protocol):
         step_id: str,
         idempotency_key: str,
         result: Mapping[str, Any],
-    ) -> None: ...
+    ) -> Mapping[str, Any]: ...
 
 
 class ReadOnlyAssessmentEngine(Protocol):
@@ -218,14 +218,17 @@ class ArtexSpecOpsRuntime:
         )
         result = _bounded_result(raw_result)
         idempotency_key = f"{operation_id}:{step['step_id']}:{spec_digest}"
-        await self._graphs.append_exploration_result(
+        canonical_result = await self._graphs.append_exploration_result(
             tenant_id=tenant_id,
             operation_id=operation_id,
             step_id=str(step["step_id"]),
             idempotency_key=idempotency_key,
             result=result,
         )
-        return result
+        # The adapter must return the stored value for an existing idempotency key.
+        # Returning the freshly evaluated value would make Temporal replay disagree
+        # with the authoritative Exploration Graph after an ambiguous Activity retry.
+        return _bounded_result(canonical_result)
 
 
 def _bounded_result(value: Mapping[str, Any]) -> dict[str, Any]:
