@@ -9,11 +9,11 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1148 |
+| Python modules | 1150 |
 | TypeScript modules | 329 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 3289 |
+| Import edges (local) | 3291 |
 | Unresolved imports (no local target) | 1 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 0 |
@@ -22,7 +22,7 @@ committed model no longer matches the tree.
 | Unresolved: unknown (undeclared) | 0 |
 | Test files | 388 |
 | Test functions | 5533 |
-| Untested platform modules | 313 |
+| Untested platform modules | 315 |
 | HTTP routes | 227 |
 | Contracts (python/docs/root) | 7 / 74 / 12 |
 | Capabilities | 30 |
@@ -64,7 +64,7 @@ committed model no longer matches the tree.
 | science | 139 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | shared | 202 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | specops-legacy | 81 | 46 | Archived former SpecOps implementation and transition adapters; not a new collection silo. |
-| specops_ci | 4 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
+| specops_ci | 6 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
 | tools | 14 | 0 | Generators, capability/owner/donor tools, probes. |
 | webapp | 0 | 283 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | zero | 40 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

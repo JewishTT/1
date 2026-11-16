@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5035,
-    "static_facts": 4735,
+    "facts_total": 5037,
+    "static_facts": 4737,
     "inferred": 300,
     "intended": 0
   },
@@ -37634,6 +37634,32 @@
       "evidence": {
         "file": "apps/specops_ci/domain.py",
         "via": "shared.contracts.intelligence_feed"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9e3899ee365f4beb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/orchestration/__init__.py",
+      "object": "apps/specops_ci/orchestration/contracts.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/__init__.py",
+        "via": "contracts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6a3b271b6aa7c968",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/orchestration/contracts.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/contracts.py",
+        "via": "specops_ci.domain"
       },
       "confidence": 1.0
     },
