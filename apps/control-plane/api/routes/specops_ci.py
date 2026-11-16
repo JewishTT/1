@@ -479,21 +479,25 @@ async def submit_operator_decision(
         raise HTTPException(status_code=409, detail="approval challenge does not match operation step")
 
     now = datetime.now(timezone.utc)
+    approval_ref = body.approval_ref.strip()
     async with platform.session_factory() as session:
-        auth_result = await session.execute(select(AuthorizationRow).where(
-            AuthorizationRow.authorization_id == pending["authorization_id"],
-            AuthorizationRow.tenant_id == ctx.tenant_id,
-        ))
-        authorization_row = auth_result.scalar_one_or_none()
-        if (
-            authorization_row is None
-            or authorization_row.revoked_at is not None
-            or not authorization_row.issued_at <= now < authorization_row.expires_at
-            or authorization_row.source_snapshot_id != pending["snapshot_id"]
-        ):
-            raise HTTPException(status_code=409, detail="operation authorization is no longer valid")
-
         async with session.begin():
+            auth_result = await session.execute(select(AuthorizationRow).where(
+                AuthorizationRow.authorization_id == pending["authorization_id"],
+                AuthorizationRow.tenant_id == ctx.tenant_id,
+            ))
+            authorization_row = auth_result.scalar_one_or_none()
+            if (
+                authorization_row is None
+                or authorization_row.revoked_at is not None
+                or not authorization_row.issued_at <= now < authorization_row.expires_at
+                or authorization_row.source_snapshot_id != pending["snapshot_id"]
+            ):
+                raise HTTPException(
+                    status_code=409,
+                    detail="operation authorization is no longer valid",
+                )
+
             decision_result = await session.execute(select(DecisionRow).where(
                 DecisionRow.tenant_id == ctx.tenant_id,
                 DecisionRow.operation_id == operation_id,
@@ -501,7 +505,6 @@ async def submit_operator_decision(
                 DecisionRow.spec_digest == pending["spec_digest"],
             ).with_for_update())
             decision_row = decision_result.scalar_one_or_none()
-            approval_ref = body.approval_ref.strip()
             if decision_row is not None:
                 if (
                     decision_row.approved != body.approved
@@ -512,9 +515,11 @@ async def submit_operator_decision(
                         status_code=409,
                         detail="a different durable decision already exists for this step",
                     )
+                decision_id = decision_row.decision_id
             else:
-                decision_row = DecisionRow(
-                    decision_id="scid-" + uuid.uuid4().hex,
+                decision_id = "scid-" + uuid.uuid4().hex
+                session.add(DecisionRow(
+                    decision_id=decision_id,
                     tenant_id=ctx.tenant_id,
                     operation_id=operation_id,
                     authorization_id=pending["authorization_id"],
@@ -526,8 +531,7 @@ async def submit_operator_decision(
                     reviewer_role="admin",
                     approval_ref=approval_ref,
                     decided_at=now,
-                )
-                session.add(decision_row)
+                ))
 
     signal_payload = {
         "operation_id": operation_id,
@@ -536,10 +540,10 @@ async def submit_operator_decision(
         "snapshot_id": pending["snapshot_id"],
         "step_id": step_id,
         "spec_digest": pending["spec_digest"],
-        "decision_id": decision_row.decision_id,
+        "decision_id": decision_id,
         "approved": body.approved,
         "reviewer_id": ctx.user_id,
-        "approval_ref": body.approval_ref.strip(),
+        "approval_ref": approval_ref,
     }
     try:
         await handle.signal("provide_operator_decision", signal_payload)
@@ -550,7 +554,7 @@ async def submit_operator_decision(
             status_code=503,
             detail={
                 "code": "DECISION_PERSISTED_SIGNAL_PENDING",
-                "decision_id": decision_row.decision_id,
+                "decision_id": decision_id,
                 "message": "decision was saved; retry this request to re-send the workflow signal",
             },
         ) from exc
@@ -558,7 +562,7 @@ async def submit_operator_decision(
         "operation_id": operation_id,
         "step_id": step_id,
         "decision_id": decision_row.decision_id,
-        "approved": decision_row.approved,
+        "approved": body.approved,
         "status": "signal_sent",
     }
 
