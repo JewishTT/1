@@ -44672,7 +44672,7 @@
       {
         "path": "apps/specops_ci/orchestration/contracts.py",
         "status": "IMPLEMENTED",
-        "loc": 266,
+        "loc": 276,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
@@ -44690,7 +44690,7 @@
       {
         "path": "apps/specops_ci/orchestration/runtime_ports.py",
         "status": "IMPLEMENTED",
-        "loc": 279,
+        "loc": 282,
         "callables": 16,
         "stubs": 9,
         "not_implemented": 0,
@@ -44717,7 +44717,7 @@
       {
         "path": "apps/specops_ci/orchestration/tests/test_runtime_ports.py",
         "status": "TEST",
-        "loc": 147,
+        "loc": 148,
         "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
