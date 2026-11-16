@@ -36,6 +36,9 @@ class SpecOpsOperationWorkflow:
         # reviewer identity, role, approval reference and signature via the trusted gate.
         if (
             decision.get("operation_id") != pending.get("operation_id")
+            or decision.get("tenant_id") != pending.get("tenant_id")
+            or decision.get("authorization_id") != pending.get("authorization_id")
+            or decision.get("snapshot_id") != pending.get("snapshot_id")
             or decision.get("step_id") != pending.get("step_id")
             or decision.get("spec_digest") != pending.get("spec_digest")
             or not isinstance(decision.get("approved"), bool)
