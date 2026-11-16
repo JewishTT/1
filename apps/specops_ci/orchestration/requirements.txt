@@ -1,0 +1,5 @@
+# Isolated Temporal/LangGraph Worker environment. temporalio-langgraph 0.1.0
+# is currently a public-preview integration maintained by Temporal.
+temporalio==1.36.1
+langgraph==1.2.22
+temporalio-langgraph==0.1.0
