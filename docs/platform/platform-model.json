@@ -1282,7 +1282,7 @@
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 422,
-      "stdlib:datetime": 238,
+      "stdlib:datetime": 239,
       "stdlib:decimal": 16,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -26306,7 +26306,7 @@
         "test_names": [
           "test_langgraph_builds_the_declared_operation_state_machine",
           "test_spec_validation_node_accepts_only_the_matching_digest",
-          "test_operator_rejection_cannot_reach_executor",
+          "test_operator_rejection_is_verified_but_never_reaches_executor",
           "test_temporal_workflow_exposes_query_and_signal_for_human_review"
         ],
         "targets": [
@@ -44685,7 +44685,7 @@
       {
         "path": "apps/specops_ci/orchestration/graph.py",
         "status": "IMPLEMENTED",
-        "loc": 245,
+        "loc": 246,
         "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
@@ -44712,7 +44712,7 @@
       {
         "path": "apps/specops_ci/orchestration/tests/test_graph.py",
         "status": "TEST",
-        "loc": 94,
+        "loc": 99,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
@@ -44739,7 +44739,7 @@
       {
         "path": "apps/specops_ci/orchestration/workflow.py",
         "status": "IMPLEMENTED",
-        "loc": 122,
+        "loc": 153,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
