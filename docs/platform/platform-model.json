@@ -35440,6 +35440,18 @@
           "modules": [],
           "module_count": 0,
           "capabilities": []
+        },
+        {
+          "id": "042-specops-durable-orchestration",
+          "has_spec": true,
+          "has_tasks": true,
+          "has_plan": false,
+          "spec_path": "specs/042-specops-durable-orchestration/spec.md",
+          "tasks_checked": 18,
+          "tasks_total": 30,
+          "modules": [],
+          "module_count": 0,
+          "capabilities": []
         }
       ]
     },
@@ -35706,7 +35718,7 @@
     "summary": {
       "contexts": 12,
       "context_edges": 37,
-      "specs": 34,
+      "specs": 35,
       "flows": 1,
       "rule_violations": 18
     }
@@ -103420,6 +103432,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "04f49c68bfdf8186",
+        "kind": "SPEC_EXISTS",
+        "subject": "042-specops-durable-orchestration",
+        "object": "specs/042-specops-durable-orchestration/spec.md",
+        "status": "STATIC_FACT",
+        "method": "filesystem",
+        "evidence": {
+          "file": "specs/042-specops-durable-orchestration/spec.md"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "b82428d1da3543cc",
         "kind": "TABLE_CLASS_DEFINED",
         "subject": "AcquisitionTask",
@@ -117401,8 +117425,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5075,
-      "static_facts": 4775,
+      "facts_total": 5076,
+      "static_facts": 4776,
       "inferred": 300,
       "intended": 0
     }
@@ -117420,8 +117444,8 @@
     "http_routes": 230
   },
   "evidence_stats": {
-    "facts_total": 5075,
-    "static_facts": 4775,
+    "facts_total": 5076,
+    "static_facts": 4776,
     "inferred": 300,
     "intended": 0
   },

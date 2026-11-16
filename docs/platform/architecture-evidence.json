@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5075,
-    "static_facts": 4775,
+    "facts_total": 5076,
+    "static_facts": 4776,
     "inferred": 300,
     "intended": 0
   },
@@ -50506,6 +50506,18 @@
       "method": "filesystem",
       "evidence": {
         "file": "specs/041-domain-silo-boundaries/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "04f49c68bfdf8186",
+      "kind": "SPEC_EXISTS",
+      "subject": "042-specops-durable-orchestration",
+      "object": "specs/042-specops-durable-orchestration/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/042-specops-durable-orchestration/spec.md"
       },
       "confidence": 1.0
     },

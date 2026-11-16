@@ -2610,6 +2610,18 @@
         "modules": [],
         "module_count": 0,
         "capabilities": []
+      },
+      {
+        "id": "042-specops-durable-orchestration",
+        "has_spec": true,
+        "has_tasks": true,
+        "has_plan": false,
+        "spec_path": "specs/042-specops-durable-orchestration/spec.md",
+        "tasks_checked": 18,
+        "tasks_total": 30,
+        "modules": [],
+        "module_count": 0,
+        "capabilities": []
       }
     ]
   },
@@ -2876,7 +2888,7 @@
   "summary": {
     "contexts": 12,
     "context_edges": 37,
-    "specs": 34,
+    "specs": 35,
     "flows": 1,
     "rule_violations": 18
   }
