@@ -759,6 +759,7 @@ class SpecOpsOperationDecision(Base):
         CheckConstraint("reviewer_role = 'admin'", name="ck_specops_ci_decision_role"),
         CheckConstraint("approval_ref <> ''", name="ck_specops_ci_decision_approval_ref"),
         UniqueConstraint(
+            "tenant_id",
             "operation_id",
             "step_id",
             "spec_digest",
