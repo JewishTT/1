@@ -6,10 +6,10 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from specops_ci.domain import AssessmentScopeError
 from specops_ci.orchestration.contracts import OperationSpec, SpecStep, SpecStepKind
 from specops_ci.orchestration.graph import (
     GRAPH_NAME,
+    _after_execution,
     _after_operator_decision,
     build_operation_graph,
     validate_operator_decision_node,
@@ -96,3 +96,8 @@ def test_temporal_workflow_exposes_query_and_signal_for_human_review() -> None:
     assert callable(workflow.provide_operator_decision)
     assert callable(workflow.get_pending_approval)
     assert workflow.get_pending_approval() is None
+
+
+def test_assessment_needing_review_stops_before_the_next_step() -> None:
+    state = {"last_result": {"status": "needs_review"}}
+    assert asyncio.run(_after_execution(state)) == "needs_review"
