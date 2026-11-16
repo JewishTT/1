@@ -480,6 +480,8 @@ async def submit_operator_decision(
 
     now = datetime.now(timezone.utc)
     approval_ref = body.approval_ref.strip()
+    if not approval_ref:
+        raise HTTPException(status_code=422, detail="approval_ref must not be blank")
     async with platform.session_factory() as session:
         async with session.begin():
             auth_result = await session.execute(select(AuthorizationRow).where(
