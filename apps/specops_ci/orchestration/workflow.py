@@ -6,6 +6,7 @@ occupying an Activity worker.
 """
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from temporalio import workflow
@@ -104,7 +105,37 @@ class SpecOpsOperationWorkflow:
                 )
             self._summary["pending_step_id"] = str(interrupt_value["step_id"])
 
-            await workflow.wait_condition(lambda: self._operator_decision is not None)
+            expires_at = datetime.fromisoformat(str(self._pending_approval["expires_at"]))
+            remaining = expires_at - workflow.now()
+            if remaining.total_seconds() <= 0:
+                self._operator_decision = {
+                    "operation_id": self._pending_approval["operation_id"],
+                    "tenant_id": self._pending_approval["tenant_id"],
+                    "authorization_id": self._pending_approval["authorization_id"],
+                    "snapshot_id": self._pending_approval["snapshot_id"],
+                    "step_id": self._pending_approval["step_id"],
+                    "spec_digest": self._pending_approval["spec_digest"],
+                    "approved": False,
+                    "reason": "operation_expired",
+                }
+            else:
+                try:
+                    await workflow.wait_condition(
+                        lambda: self._operator_decision is not None,
+                        timeout=remaining,
+                    )
+                except TimeoutError:
+                    # Expiry is a deterministic terminal rejection, not an approval.
+                    self._operator_decision = {
+                        "operation_id": self._pending_approval["operation_id"],
+                        "tenant_id": self._pending_approval["tenant_id"],
+                        "authorization_id": self._pending_approval["authorization_id"],
+                        "snapshot_id": self._pending_approval["snapshot_id"],
+                        "step_id": self._pending_approval["step_id"],
+                        "spec_digest": self._pending_approval["spec_digest"],
+                        "approved": False,
+                        "reason": "operation_expired",
+                    }
             decision = dict(self._operator_decision or {})
             self._pending_approval = None
             self._operator_decision = None
