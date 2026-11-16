@@ -49,6 +49,7 @@ def upgrade() -> None:
         sa.CheckConstraint("approval_ref <> ''", name="ck_specops_ci_decision_approval_ref"),
         sa.PrimaryKeyConstraint("decision_id", name="pk_specops_ci_operation_decisions"),
         sa.UniqueConstraint(
+            "tenant_id",
             "operation_id",
             "step_id",
             "spec_digest",
