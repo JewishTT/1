@@ -92,6 +92,7 @@ async def operator_approval_node(state: OperationState) -> dict[str, Any]:
             "step_kind": step["kind"],
             "target_entity_ids": step["target_entity_ids"],
             "spec_digest": spec.digest(),
+            "expires_at": spec.expires_at.isoformat(),
             "approval_required": True,
         }
     )
