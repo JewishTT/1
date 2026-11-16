@@ -1270,7 +1270,7 @@
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 29,
-      "stdlib:asyncio": 81,
+      "stdlib:asyncio": 82,
       "stdlib:base64": 12,
       "stdlib:binascii": 3,
       "stdlib:bisect": 1,
@@ -39564,7 +39564,7 @@
       {
         "path": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
         "status": "TEST",
-        "loc": 152,
+        "loc": 153,
         "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
