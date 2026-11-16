@@ -732,6 +732,43 @@ class SpecOpsEngagementAuthorization(Base):
     )
 
 
+class SpecOpsOperationDecision(Base):
+    """Append-only, tenant-bound operator decision for one immutable operation step."""
+
+    __tablename__ = "specops_ci_operation_decisions"
+
+    decision_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    operation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    authorization_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    snapshot_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    spec_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    step_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    approved: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    reviewer_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    reviewer_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    approval_ref: Mapped[str] = mapped_column(String(256), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_specops_ci_decision_tenant"),
+        CheckConstraint("reviewer_id <> ''", name="ck_specops_ci_decision_reviewer"),
+        CheckConstraint("reviewer_role = 'admin'", name="ck_specops_ci_decision_role"),
+        CheckConstraint("approval_ref <> ''", name="ck_specops_ci_decision_approval_ref"),
+        UniqueConstraint(
+            "operation_id",
+            "step_id",
+            "spec_digest",
+            name="uq_specops_ci_operation_step_decision",
+        ),
+        Index("ix_specops_ci_decision_tenant_operation", "tenant_id", "operation_id"),
+        Index("ix_specops_ci_decision_authorization", "tenant_id", "authorization_id"),
+    )
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
 
