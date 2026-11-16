@@ -69,11 +69,11 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE FUNCTION reject_specops_ci_decision_mutation()
-        RETURNS trigger AS $
+        RETURNS trigger AS $specops_ci$
         BEGIN
             RAISE EXCEPTION 'SpecOps&CI operator decisions are immutable';
         END;
-        $ LANGUAGE plpgsql
+        $specops_ci$ LANGUAGE plpgsql
         """
     )
     op.execute(
