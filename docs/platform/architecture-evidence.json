@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5058,
-    "static_facts": 4758,
+    "facts_total": 5066,
+    "static_facts": 4766,
     "inferred": 300,
     "intended": 0
   },
@@ -37781,6 +37781,58 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "64343cffeba6e2f8",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/tests/test_graph.py",
+        "via": "specops_ci.domain"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c20a555609fb112e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
+      "object": "apps/specops_ci/orchestration/contracts.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/tests/test_graph.py",
+        "via": "specops_ci.orchestration.contracts"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c770f250c7fe9cc9",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
+      "object": "apps/specops_ci/orchestration/graph.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/tests/test_graph.py",
+        "via": "specops_ci.orchestration.graph"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "6a76cdca9c537986",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
+      "object": "apps/specops_ci/orchestration/workflow.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/tests/test_graph.py",
+        "via": "specops_ci.orchestration.workflow"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "0d5c5e58bbad5744",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/specops_ci/orchestration/tests/test_runtime_ports.py",
@@ -62794,6 +62846,54 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/specops_ci/orchestration/tests/test_contracts.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fa3684e8461ffa70",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/tests/test_graph.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d5984f3a6c9928dc",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
+      "object": "apps/specops_ci/orchestration/contracts.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/tests/test_graph.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "aa1be62aca48133c",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
+      "object": "apps/specops_ci/orchestration/graph.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/tests/test_graph.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c24b65d03970cfe8",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/specops_ci/orchestration/tests/test_graph.py",
+      "object": "apps/specops_ci/orchestration/workflow.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/specops_ci/orchestration/tests/test_graph.py"
       },
       "confidence": 1.0
     },

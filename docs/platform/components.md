@@ -580,7 +580,7 @@ spec-ops legacy.apps.specops.ghostline.runtime
 
 Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots.
 
-Python modules: **13** · TypeScript modules: **0**
+Python modules: **14** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -593,6 +593,7 @@ apps.specops_ci.orchestration.contracts
 apps.specops_ci.orchestration.graph
 apps.specops_ci.orchestration.runtime_ports
 apps.specops_ci.orchestration.tests.test_contracts
+apps.specops_ci.orchestration.tests.test_graph
 apps.specops_ci.orchestration.tests.test_runtime_ports
 apps.specops_ci.orchestration.worker
 apps.specops_ci.orchestration.workflow

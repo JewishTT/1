@@ -34,12 +34,12 @@ Investigation → seeds → discovery → frontier → acquisition → Observati
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | `shared` | 202 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops-legacy` | 81 | 46 | 0 | Archived former SpecOps implementation and transition adapters; not a new collection silo. |
-| `specops_ci` | 13 | 0 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
+| `specops_ci` | 14 | 0 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 283 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 40 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
 
-1157 Python modules, 329 TypeScript modules, 16 Rust source files in 9 crates.
+1158 Python modules, 329 TypeScript modules, 16 Rust source files in 9 crates.
 
 ## Key properties (Constitution invariants)
 
