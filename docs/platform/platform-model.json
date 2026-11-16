@@ -37496,7 +37496,7 @@
       {
         "path": "apps/control-plane/api/routes/specops_ci.py",
         "status": "IMPLEMENTED",
-        "loc": 567,
+        "loc": 571,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
