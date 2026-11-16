@@ -85,6 +85,9 @@ async def operator_approval_node(state: OperationState) -> dict[str, Any]:
         {
             "type": "specops_ci_step_approval",
             "operation_id": spec.operation_id,
+            "tenant_id": spec.tenant_id,
+            "authorization_id": spec.authorization_id,
+            "snapshot_id": spec.snapshot_id,
             "step_id": step["step_id"],
             "step_kind": step["kind"],
             "target_entity_ids": step["target_entity_ids"],
