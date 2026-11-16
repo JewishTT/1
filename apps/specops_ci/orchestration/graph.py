@@ -101,6 +101,10 @@ async def validate_operator_decision_node(state: OperationState) -> dict[str, An
     """Delegate reviewer identity, role and decision-reference checks to the trusted gate."""
     spec, step = _current_step(state)
     decision = state.get("operator_decision", {})
+    # A well-authenticated rejection is still a rejection; it must never flow into
+    # execute_step just because the reviewer's identity was valid.
+    if decision.get("approved") is not True:
+        return {"operator_decision_valid": False}
     valid = await get_runtime_ports().validate_operator_decision(
         tenant_id=spec.tenant_id,
         operation_id=spec.operation_id,
