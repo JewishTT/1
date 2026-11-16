@@ -26284,7 +26284,7 @@
       },
       {
         "path": "apps/specops_ci/orchestration/tests/test_contracts.py",
-        "tests": 8,
+        "tests": 9,
         "test_names": [
           "test_operation_spec_round_trips_and_has_stable_digest",
           "test_operation_must_be_bound_to_the_same_authorization_and_snapshot",
@@ -26293,7 +26293,8 @@
           "test_operation_expiry_must_fit_inside_authorization_window",
           "test_invalid_dependencies_and_missing_approval_are_rejected",
           "test_payload_does_not_accept_string_false_as_approval",
-          "test_unknown_step_kind_is_rejected"
+          "test_unknown_step_kind_is_rejected",
+          "test_unknown_operation_and_step_fields_are_rejected"
         ],
         "targets": [
           "apps/specops_ci/domain.py",
@@ -27100,7 +27101,7 @@
         ]
       }
     ],
-    "total": 5549
+    "total": 5550
   },
   "contracts": {
     "python": [
@@ -44676,7 +44677,7 @@
       {
         "path": "apps/specops_ci/orchestration/contracts.py",
         "status": "IMPLEMENTED",
-        "loc": 240,
+        "loc": 266,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
@@ -44685,8 +44686,8 @@
       {
         "path": "apps/specops_ci/orchestration/graph.py",
         "status": "IMPLEMENTED",
-        "loc": 246,
-        "callables": 14,
+        "loc": 263,
+        "callables": 16,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -44703,8 +44704,8 @@
       {
         "path": "apps/specops_ci/orchestration/tests/test_contracts.py",
         "status": "TEST",
-        "loc": 182,
-        "callables": 10,
+        "loc": 194,
+        "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -117439,7 +117440,7 @@
     "rust_crates": 9,
     "import_edges": 3316,
     "test_files": 391,
-    "test_functions": 5549,
+    "test_functions": 5550,
     "untested_modules": 318,
     "http_routes": 230
   },
