@@ -239,7 +239,7 @@ jobs:
           SELECT 1 / CASE
             WHEN EXISTS (
               SELECT 1 FROM public.alembic_version
-              WHERE version_num = '037_specops_ci_authorizations'
+              WHERE version_num = '038_specops_ci_operation_decisions'
             )
             THEN 1
             ELSE 0
