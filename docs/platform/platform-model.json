@@ -38150,7 +38150,7 @@
       {
         "path": "apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py",
         "status": "MIGRATION",
-        "loc": 75,
+        "loc": 76,
         "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
@@ -38177,7 +38177,7 @@
       {
         "path": "apps/control-plane/db/schema.py",
         "status": "IMPLEMENTED",
-        "loc": 3288,
+        "loc": 3289,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -38680,7 +38680,7 @@
       {
         "path": "apps/control-plane/services/specops_ci_authorization_gate.py",
         "status": "IMPLEMENTED",
-        "loc": 136,
+        "loc": 137,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -44673,7 +44673,7 @@
       {
         "path": "apps/specops_ci/orchestration/graph.py",
         "status": "IMPLEMENTED",
-        "loc": 242,
+        "loc": 245,
         "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
@@ -44727,7 +44727,7 @@
       {
         "path": "apps/specops_ci/orchestration/workflow.py",
         "status": "IMPLEMENTED",
-        "loc": 118,
+        "loc": 122,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
