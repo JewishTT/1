@@ -97,7 +97,11 @@ class SpecOpsOperationWorkflow:
             self._pending_approval = dict(interrupt_value)
             self._operator_decision = None
             self._summary["status"] = "awaiting_approval"
-            self._summary["current_step_index"] = int(initial_state.get("current_step_index", 0))
+            current_value = getattr(result, "value", {})
+            if isinstance(current_value, dict):
+                self._summary["current_step_index"] = int(
+                    current_value.get("current_step_index", self._summary["current_step_index"])
+                )
             self._summary["pending_step_id"] = str(interrupt_value["step_id"])
 
             await workflow.wait_condition(lambda: self._operator_decision is not None)
