@@ -2776,6 +2776,24 @@
     ],
     "violations": [
       {
+        "type": "broken-import",
+        "from": "apps/specops_ci/orchestration/graph.py",
+        "import": "langgraph.graph",
+        "kind": "stale-platform-path"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/specops_ci/orchestration/graph.py",
+        "import": "langgraph.types",
+        "kind": "stale-platform-path"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/specops_ci/orchestration/workflow.py",
+        "import": "langgraph.checkpoint.memory",
+        "kind": "stale-platform-path"
+      },
+      {
         "type": "competing-writers",
         "object": "observation",
         "table": "observations"
@@ -2852,6 +2870,6 @@
     "context_edges": 37,
     "specs": 34,
     "flows": 1,
-    "rule_violations": 14
+    "rule_violations": 17
   }
 }

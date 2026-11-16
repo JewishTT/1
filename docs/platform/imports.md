@@ -1,6 +1,6 @@
 # Import graph
 
-1150 Python modules, 3291 resolved local edges.
+1154 Python modules, 3299 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,29 +10,29 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 1005 |
-| `typing` | stdlib | 422 |
+| `__future__` | stdlib | 1009 |
+| `typing` | stdlib | 426 |
 | `dataclasses` | stdlib | 421 |
 | `pathlib` | stdlib | 345 |
 | `pytest` | third-party | 299 |
 | `sys` | stdlib | 271 |
-| `collections` | stdlib | 257 |
-| `datetime` | stdlib | 231 |
+| `collections` | stdlib | 258 |
+| `datetime` | stdlib | 232 |
 | `json` | stdlib | 222 |
 | `sqlalchemy` | third-party | 178 |
 | `hashlib` | stdlib | 147 |
 | `enum` | stdlib | 124 |
 | `re` | stdlib | 113 |
 | `fastapi` | third-party | 91 |
-| `os` | stdlib | 83 |
-| `asyncio` | stdlib | 78 |
+| `os` | stdlib | 84 |
+| `asyncio` | stdlib | 79 |
 | `urllib` | stdlib | 68 |
 | `uuid` | stdlib | 56 |
 | `pydantic` | third-party | 45 |
 | `math` | stdlib | 42 |
 | `types` | stdlib | 42 |
 | `time` | stdlib | 40 |
-| `importlib` | stdlib | 35 |
+| `importlib` | stdlib | 36 |
 | `alembic` | third-party | 30 |
 | `httpx` | third-party | 30 |
 | `ast` | stdlib | 29 |
@@ -44,11 +44,11 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `argparse` | stdlib | 22 |
 | `tempfile` | stdlib | 21 |
 | `subprocess` | stdlib | 19 |
+| `temporalio` | third-party | 19 |
 | `decimal` | stdlib | 16 |
 | `shutil` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |
 | `warcio` | third-party | 15 |
-| `temporalio` | third-party | 13 |
 | `base64` | stdlib | 12 |
 
 ## Optional capability probes
@@ -63,6 +63,20 @@ that is switched off in this environment.
 | `pyshacl` | 1 |
 | `pyzbar` | 1 |
 | `tantivy` | 1 |
+
+## Platform imports with no resolved target
+
+The import names a platform package that does not exist at the resolved target. Classified by proof:
+
+* `local` — no target found; treated as a potential defect until proven otherwise.
+* `stale-platform-path` — the module still exists under a different root; a rename that did not reach the importer.
+* `guarded-local` — the import is inside a `try`, so it does not crash, but the feature behind it is silently switched off.
+
+| From | Import | Kind |
+|---|---|---|
+| `apps/specops_ci/orchestration/graph.py` | `langgraph.graph` | stale-platform-path |
+| `apps/specops_ci/orchestration/graph.py` | `langgraph.types` | stale-platform-path |
+| `apps/specops_ci/orchestration/workflow.py` | `langgraph.checkpoint.memory` | stale-platform-path |
 
 ## Import roots
 

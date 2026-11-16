@@ -1164,13 +1164,17 @@
     {
       "name": "specops_ci",
       "description": "Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots.",
-      "python_modules": 6,
+      "python_modules": 10,
       "typescript_modules": 0,
       "modules": [
         "apps.specops_ci",
         "apps.specops_ci.domain",
         "apps.specops_ci.orchestration",
         "apps.specops_ci.orchestration.contracts",
+        "apps.specops_ci.orchestration.graph",
+        "apps.specops_ci.orchestration.runtime_ports",
+        "apps.specops_ci.orchestration.worker",
+        "apps.specops_ci.orchestration.workflow",
         "apps.specops_ci.service",
         "apps.specops_ci.tests.test_scope"
       ]
@@ -1254,27 +1258,27 @@
     }
   ],
   "import_graph": {
-    "module_count": 1150,
-    "edge_count": 3291,
+    "module_count": 1154,
+    "edge_count": 3299,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 1005,
+      "stdlib:__future__": 1009,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 29,
-      "stdlib:asyncio": 78,
+      "stdlib:asyncio": 79,
       "stdlib:base64": 12,
       "stdlib:binascii": 3,
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 257,
+      "stdlib:collections": 258,
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 5,
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 421,
-      "stdlib:datetime": 231,
+      "stdlib:datetime": 232,
       "stdlib:decimal": 16,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1287,7 +1291,7 @@
       "stdlib:hmac": 4,
       "stdlib:html": 11,
       "stdlib:http": 5,
-      "stdlib:importlib": 35,
+      "stdlib:importlib": 36,
       "stdlib:inspect": 23,
       "stdlib:io": 25,
       "stdlib:ipaddress": 8,
@@ -1295,7 +1299,7 @@
       "stdlib:json": 222,
       "stdlib:logging": 24,
       "stdlib:math": 42,
-      "stdlib:os": 83,
+      "stdlib:os": 84,
       "stdlib:pathlib": 345,
       "stdlib:queue": 1,
       "stdlib:random": 6,
@@ -1319,7 +1323,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 42,
-      "stdlib:typing": 422,
+      "stdlib:typing": 426,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 68,
@@ -1378,7 +1382,7 @@
       "third-party:sqlalchemy": 178,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
-      "third-party:temporalio": 13,
+      "third-party:temporalio": 19,
       "third-party:trafilatura": 1,
       "third-party:tronpy": 10,
       "third-party:warcio": 15,
@@ -1396,6 +1400,21 @@
         "from": "apps/shared/tests/unit/test_relation_schema.py",
         "import": "domain.context_validation",
         "kind": "guarded-gap"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/graph.py",
+        "import": "langgraph.graph",
+        "kind": "stale-platform-path"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/graph.py",
+        "import": "langgraph.types",
+        "kind": "stale-platform-path"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/workflow.py",
+        "import": "langgraph.checkpoint.memory",
+        "kind": "stale-platform-path"
       }
     ],
     "edges": [
@@ -15558,6 +15577,46 @@
         "from": "apps/specops_ci/orchestration/contracts.py",
         "to": "apps/specops_ci/domain.py",
         "via": "specops_ci.domain"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/graph.py",
+        "to": "apps/specops_ci/orchestration/contracts.py",
+        "via": "specops_ci.orchestration.contracts"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/graph.py",
+        "to": "apps/specops_ci/orchestration/runtime_ports.py",
+        "via": "specops_ci.orchestration.runtime_ports"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/runtime_ports.py",
+        "to": "apps/specops_ci/domain.py",
+        "via": "specops_ci.domain"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/runtime_ports.py",
+        "to": "apps/specops_ci/orchestration/contracts.py",
+        "via": "specops_ci.orchestration.contracts"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/worker.py",
+        "to": "apps/specops_ci/orchestration/graph.py",
+        "via": "specops_ci.orchestration.graph"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/worker.py",
+        "to": "apps/specops_ci/orchestration/runtime_ports.py",
+        "via": "specops_ci.orchestration.runtime_ports"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/worker.py",
+        "to": "apps/specops_ci/orchestration/workflow.py",
+        "via": "specops_ci.orchestration.workflow"
+      },
+      {
+        "from": "apps/specops_ci/orchestration/workflow.py",
+        "to": "apps/specops_ci/orchestration/graph.py",
+        "via": "specops_ci.orchestration.graph"
       },
       {
         "from": "apps/specops_ci/service.py",
@@ -32610,7 +32669,7 @@
     "apps/science/operators/__init__.py",
     "apps/science/review/__init__.py"
   ],
-  "untested_count": 315,
+  "untested_count": 319,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -35389,6 +35448,24 @@
       ],
       "violations": [
         {
+          "type": "broken-import",
+          "from": "apps/specops_ci/orchestration/graph.py",
+          "import": "langgraph.graph",
+          "kind": "stale-platform-path"
+        },
+        {
+          "type": "broken-import",
+          "from": "apps/specops_ci/orchestration/graph.py",
+          "import": "langgraph.types",
+          "kind": "stale-platform-path"
+        },
+        {
+          "type": "broken-import",
+          "from": "apps/specops_ci/orchestration/workflow.py",
+          "import": "langgraph.checkpoint.memory",
+          "kind": "stale-platform-path"
+        },
+        {
           "type": "competing-writers",
           "object": "observation",
           "table": "observations"
@@ -35465,7 +35542,7 @@
       "context_edges": 37,
       "specs": 34,
       "flows": 1,
-      "rule_violations": 14
+      "rule_violations": 17
     }
   },
   "maturity": {
@@ -44401,6 +44478,42 @@
         "markers": []
       },
       {
+        "path": "apps/specops_ci/orchestration/graph.py",
+        "status": "IMPLEMENTED",
+        "loc": 232,
+        "callables": 14,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/specops_ci/orchestration/runtime_ports.py",
+        "status": "IMPLEMENTED",
+        "loc": 260,
+        "callables": 16,
+        "stubs": 9,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/specops_ci/orchestration/worker.py",
+        "status": "IMPLEMENTED",
+        "loc": 71,
+        "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/specops_ci/orchestration/workflow.py",
+        "status": "IMPLEMENTED",
+        "loc": 30,
+        "callables": 1,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/specops_ci/service.py",
         "status": "IMPLEMENTED",
         "loc": 42,
@@ -45931,12 +46044,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 619,
+      "IMPLEMENTED": 623,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 102,
       "TEST": 385,
       "MIGRATION": 25,
-      "total": 1150
+      "total": 1154
     }
   },
   "reachability": {
@@ -49871,7 +49984,23 @@
       },
       {
         "path": "apps/specops_ci/orchestration/contracts.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/specops_ci/orchestration/graph.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/specops_ci/orchestration/runtime_ports.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/specops_ci/orchestration/worker.py",
+        "status": "PRODUCTION"
+      },
+      {
+        "path": "apps/specops_ci/orchestration/workflow.py",
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/specops_ci/service.py",
@@ -50571,6 +50700,7 @@
       "apps/interpretation/tools/gliner_relex_smoke.py",
       "apps/shared/datasets/build.py",
       "apps/shared/tools/layer_boundaries.py",
+      "apps/specops_ci/orchestration/worker.py",
       "bench/bench/harness.py",
       "bench/chaos/bench_replay.py",
       "bench/collection/bench_collection.py",
@@ -50590,11 +50720,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 478,
+      "PRODUCTION": 483,
       "TEST_ONLY": 137,
-      "ORPHAN": 150,
+      "ORPHAN": 149,
       "TEST": 385,
-      "total": 1150
+      "total": 1154
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -50850,7 +50980,6 @@
       "apps/shared/workflow/__init__.py",
       "apps/specops_ci/__init__.py",
       "apps/specops_ci/orchestration/__init__.py",
-      "apps/specops_ci/orchestration/contracts.py",
       "apps/zero/zero/__init__.py",
       "apps/zero/zero/enrichment/__init__.py",
       "apps/zero/zero/harvesters/__init__.py",
@@ -90199,6 +90328,110 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "ad5d483a71376d4b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/orchestration/graph.py",
+        "object": "apps/specops_ci/orchestration/contracts.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/orchestration/graph.py",
+          "via": "specops_ci.orchestration.contracts"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "accb85f522ffcd65",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/orchestration/graph.py",
+        "object": "apps/specops_ci/orchestration/runtime_ports.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/orchestration/graph.py",
+          "via": "specops_ci.orchestration.runtime_ports"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "3e31dd83f2548c49",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/orchestration/runtime_ports.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/orchestration/runtime_ports.py",
+          "via": "specops_ci.domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "222746456a44b06b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/orchestration/runtime_ports.py",
+        "object": "apps/specops_ci/orchestration/contracts.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/orchestration/runtime_ports.py",
+          "via": "specops_ci.orchestration.contracts"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b2ae785ac91ac218",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/orchestration/worker.py",
+        "object": "apps/specops_ci/orchestration/graph.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/orchestration/worker.py",
+          "via": "specops_ci.orchestration.graph"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "8510ff3b578e09f9",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/orchestration/worker.py",
+        "object": "apps/specops_ci/orchestration/runtime_ports.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/orchestration/worker.py",
+          "via": "specops_ci.orchestration.runtime_ports"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "28e6580671c47127",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/orchestration/worker.py",
+        "object": "apps/specops_ci/orchestration/workflow.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/orchestration/worker.py",
+          "via": "specops_ci.orchestration.workflow"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "59b9d46132b4c8fa",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/specops_ci/orchestration/workflow.py",
+        "object": "apps/specops_ci/orchestration/graph.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/specops_ci/orchestration/workflow.py",
+          "via": "specops_ci.orchestration.graph"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "07595899b3bb5ed5",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/specops_ci/service.py",
@@ -116542,44 +116775,44 @@
       }
     ],
     "stats": {
-      "facts_total": 5037,
-      "static_facts": 4737,
+      "facts_total": 5045,
+      "static_facts": 4745,
       "inferred": 300,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1150,
+    "python_modules": 1154,
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3291,
+    "import_edges": 3299,
     "test_files": 388,
     "test_functions": 5533,
-    "untested_modules": 315,
+    "untested_modules": 319,
     "http_routes": 227
   },
   "evidence_stats": {
-    "facts_total": 5037,
-    "static_facts": 4737,
+    "facts_total": 5045,
+    "static_facts": 4745,
     "inferred": 300,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 619,
+    "IMPLEMENTED": 623,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 102,
     "TEST": 385,
     "MIGRATION": 25,
-    "total": 1150
+    "total": 1154
   },
   "reachability_summary": {
-    "PRODUCTION": 478,
+    "PRODUCTION": 483,
     "TEST_ONLY": 137,
-    "ORPHAN": 150,
+    "ORPHAN": 149,
     "TEST": 385,
-    "total": 1150
+    "total": 1154
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -116610,6 +116843,7 @@
     "apps/interpretation/tools/gliner_relex_smoke.py",
     "apps/shared/datasets/build.py",
     "apps/shared/tools/layer_boundaries.py",
+    "apps/specops_ci/orchestration/worker.py",
     "bench/bench/harness.py",
     "bench/chaos/bench_replay.py",
     "bench/collection/bench_collection.py",
@@ -116882,7 +117116,6 @@
     "apps/shared/workflow/__init__.py",
     "apps/specops_ci/__init__.py",
     "apps/specops_ci/orchestration/__init__.py",
-    "apps/specops_ci/orchestration/contracts.py",
     "apps/zero/zero/__init__.py",
     "apps/zero/zero/enrichment/__init__.py",
     "apps/zero/zero/harvesters/__init__.py",

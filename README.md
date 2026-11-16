@@ -13,14 +13,14 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1150 |
+| Python modules | 1154 |
 | TypeScript modules | 329 |
 | Rust source files / crates | 16 / 9 |
-| Resolved local import edges | 3291 |
+| Resolved local import edges | 3299 |
 | HTTP routes / routers | 227 / 39 |
 | Event types / lanes | 99 / 29 |
 | Test files / test functions | 388 / 5533 |
-| Untested platform modules | 315 |
+| Untested platform modules | 319 |
 
 ## Components
 
@@ -42,7 +42,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | `shared` | 202 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops-legacy` | 81 | 46 | 0 | Archived former SpecOps implementation and transition adapters; not a new collection silo. |
-| `specops_ci` | 6 | 0 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
+| `specops_ci` | 10 | 0 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 283 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 40 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
