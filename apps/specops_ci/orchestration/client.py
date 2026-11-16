@@ -51,15 +51,37 @@ async def start_operation(
         "status": "submitted",
         "error_code": "",
     }
-    return await client.start_workflow(
-        SPECOPS_CI_WORKFLOW_TYPE,
-        initial_state,
-        id=spec.operation_id,
-        task_queue=task_queue or os.environ.get(
-            "SPECOPS_CI_TASK_QUEUE",
-            DEFAULT_TASK_QUEUE,
-        ),
-    )
+    try:
+        return await client.start_workflow(
+            SPECOPS_CI_WORKFLOW_TYPE,
+            initial_state,
+            id=spec.operation_id,
+            task_queue=task_queue or os.environ.get(
+                "SPECOPS_CI_TASK_QUEUE",
+                DEFAULT_TASK_QUEUE,
+            ),
+        )
+    except Exception as start_error:
+        # A retry after an ambiguous start must adopt the original workflow, not
+        # launch a second operation. The deterministic ID alone is insufficient:
+        # the existing run must carry the exact same tenant and immutable digest.
+        try:
+            existing = client.get_workflow_handle(spec.operation_id)
+            summary = await existing.query("get_operation_summary")
+        except Exception:
+            raise start_error
+        if (
+            isinstance(summary, dict)
+            and summary.get("operation_id") == spec.operation_id
+            and summary.get("tenant_id") == spec.tenant_id
+            and summary.get("authorization_id") == spec.authorization_id
+            and summary.get("snapshot_id") == spec.snapshot_id
+            and summary.get("spec_digest") == spec.digest()
+        ):
+            return existing
+        raise ValueError(
+            "operation_id already belongs to a different tenant or specification"
+        ) from start_error
 
 
 __all__ = ["SPECOPS_CI_WORKFLOW_TYPE", "start_operation"]
