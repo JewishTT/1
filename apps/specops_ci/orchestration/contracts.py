@@ -25,6 +25,8 @@ from specops_ci.domain import (
 SPEC_SCHEMA_VERSION = "1"
 MAX_OPERATION_TARGETS = 100
 MAX_OPERATION_STEPS = 32
+MAX_TARGET_ID_LENGTH = 128
+MAX_IDENTIFIER_LENGTH = 128
 _STEP_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 
 
@@ -75,8 +77,13 @@ class SpecStep:
             raise AssessmentScopeError(f"step {self.step_id} must name explicit targets")
         if len(set(self.target_entity_ids)) != len(self.target_entity_ids):
             raise AssessmentScopeError(f"step {self.step_id} has duplicate targets")
-        if any(not value or not value.strip() for value in self.target_entity_ids):
-            raise AssessmentScopeError(f"step {self.step_id} has an empty target id")
+        if any(
+            not value or not value.strip() or len(value) > MAX_TARGET_ID_LENGTH
+            for value in self.target_entity_ids
+        ):
+            raise AssessmentScopeError(
+                f"step {self.step_id} has an empty or oversized target id"
+            )
         if not self.requires_operator_approval:
             raise AssessmentScopeError("every operation step requires explicit operator approval")
         if len(set(self.depends_on)) != len(self.depends_on):
@@ -114,8 +121,11 @@ class OperationSpec:
             raise AssessmentScopeError("operation must contain between 1 and 100 targets")
         if len(set(self.target_entity_ids)) != len(self.target_entity_ids):
             raise AssessmentScopeError("operation target ids must be unique")
-        if any(not value or not value.strip() for value in self.target_entity_ids):
-            raise AssessmentScopeError("operation target ids must be non-empty")
+        if any(
+            not value or not value.strip() or len(value) > MAX_TARGET_ID_LENGTH
+            for value in self.target_entity_ids
+        ):
+            raise AssessmentScopeError("operation target ids must be non-empty and bounded")
         if not self.steps or len(self.steps) > MAX_OPERATION_STEPS:
             raise AssessmentScopeError("operation must contain between 1 and 32 steps")
 
