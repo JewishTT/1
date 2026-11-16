@@ -1,6 +1,7 @@
 """Contract tests for durable, approval-gated SpecOps operation specifications."""
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -82,12 +83,7 @@ def test_operation_must_be_bound_to_the_same_authorization_and_snapshot() -> Non
 
     with pytest.raises(AssessmentScopeError, match="different authorization"):
         validate_operation_against_authorization(
-            OperationSpec(
-                **{
-                    **spec.__dict__,
-                    "authorization_id": "other-auth",
-                }
-            ),
+            replace(spec, authorization_id="other-auth"),
             authorization,
             now=NOW,
         )
