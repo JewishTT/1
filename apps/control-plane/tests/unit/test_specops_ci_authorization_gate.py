@@ -74,7 +74,7 @@ def test_revalidate_requires_current_exact_roster_and_assessment() -> None:
     gate = PostgresSpecOpsAuthorizationGate(
         _SessionFactory([_authorization()])  # type: ignore[arg-type]
     )
-    outside_scope = __import__("asyncio").run(gate.revalidate(
+    outside_scope = asyncio.run(gate.revalidate(
         tenant_id="tenant-1",
         authorization_id="auth-1",
         snapshot_id="snapshot-1",
