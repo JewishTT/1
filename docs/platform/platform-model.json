@@ -1263,7 +1263,7 @@
   ],
   "import_graph": {
     "module_count": 1160,
-    "edge_count": 3312,
+    "edge_count": 3316,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 1015,
@@ -4884,8 +4884,28 @@
       },
       {
         "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/specops_ci/orchestration/client.py",
+        "via": "specops_ci.orchestration.client"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/specops_ci/orchestration/contracts.py",
+        "via": "specops_ci.orchestration.contracts"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
         "to": "apps/specops_ci/domain.py",
         "via": "specops_ci.domain"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/shared/workflow/client.py",
+        "via": "workflow.client"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/shared/workflow/client.py",
+        "via": "workflow.client"
       },
       {
         "from": "apps/control-plane/api/routes/specops_counterintel.py",
@@ -28573,17 +28593,32 @@
         {
           "method": "POST",
           "path": "/authorizations",
-          "lineno": 94
+          "lineno": 126
         },
         {
           "method": "POST",
           "path": "/assessments/prepare",
-          "lineno": 187
+          "lineno": 219
         },
         {
           "method": "POST",
           "path": "/authorizations/{authorization_id}/revoke",
-          "lineno": 261
+          "lineno": 293
+        },
+        {
+          "method": "POST",
+          "path": "/operations",
+          "lineno": 323
+        },
+        {
+          "method": "GET",
+          "path": "/operations/{operation_id}/approval",
+          "lineno": 421
+        },
+        {
+          "method": "POST",
+          "path": "/operations/{operation_id}/steps/{step_id}/decision",
+          "lineno": 448
         }
       ]
     },
@@ -37461,8 +37496,8 @@
       {
         "path": "apps/control-plane/api/routes/specops_ci.py",
         "status": "IMPLEMENTED",
-        "loc": 294,
-        "callables": 5,
+        "loc": 567,
+        "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -50177,7 +50212,7 @@
       },
       {
         "path": "apps/specops_ci/orchestration/client.py",
-        "status": "ORPHAN"
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/specops_ci/orchestration/contracts.py",
@@ -50929,9 +50964,9 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 483,
+      "PRODUCTION": 484,
       "TEST_ONLY": 137,
-      "ORPHAN": 152,
+      "ORPHAN": 151,
       "TEST": 388,
       "total": 1160
     },
@@ -51191,7 +51226,6 @@
       "apps/shared/workflow/__init__.py",
       "apps/specops_ci/__init__.py",
       "apps/specops_ci/orchestration/__init__.py",
-      "apps/specops_ci/orchestration/client.py",
       "apps/zero/zero/__init__.py",
       "apps/zero/zero/enrichment/__init__.py",
       "apps/zero/zero/harvesters/__init__.py",
@@ -62681,6 +62715,32 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "079b0fb936e872d2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/shared/workflow/client.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "workflow.client"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "079b0fb936e872d2",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/shared/workflow/client.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "workflow.client"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "d7afea866bfc9175",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/api/routes/specops_ci.py",
@@ -62703,6 +62763,32 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
           "via": "specops_ci.domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b9b1ee78611395e8",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/specops_ci/orchestration/client.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "specops_ci.orchestration.client"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a2fa544005d5967e",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/specops_ci/orchestration/contracts.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "specops_ci.orchestration.contracts"
         },
         "confidence": 1.0
       },
@@ -97183,6 +97269,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "00b85f4b5bfc79a4",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "GET /operations/{operation_id}/approval",
+        "object": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "line": 423
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "70ffaefe80768a7d",
         "kind": "ROUTE_DEFINED_IN",
         "subject": "GET /phishingclub/health",
@@ -98205,7 +98304,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 189
+          "line": 221
         },
         "confidence": 1.0
       },
@@ -98218,7 +98317,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 96
+          "line": 128
         },
         "confidence": 1.0
       },
@@ -98231,7 +98330,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 263
+          "line": 295
         },
         "confidence": 1.0
       },
@@ -98756,6 +98855,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "c46b4c90de71ad4f",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "POST /operations",
+        "object": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "line": 325
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "f63bf8ac9d0b2faf",
         "kind": "ROUTE_DEFINED_IN",
         "subject": "POST /operations",
@@ -98778,6 +98890,19 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_lab.py",
           "line": 343
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ed99357cbc5726d4",
+        "kind": "ROUTE_DEFINED_IN",
+        "subject": "POST /operations/{operation_id}/steps/{step_id}/decision",
+        "object": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "STATIC_FACT",
+        "method": "regex_decorator",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "line": 450
         },
         "confidence": 1.0
       },
@@ -117276,8 +117401,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5068,
-      "static_facts": 4768,
+      "facts_total": 5075,
+      "static_facts": 4775,
       "inferred": 300,
       "intended": 0
     }
@@ -117288,15 +117413,15 @@
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3312,
+    "import_edges": 3316,
     "test_files": 391,
     "test_functions": 5549,
     "untested_modules": 318,
-    "http_routes": 227
+    "http_routes": 230
   },
   "evidence_stats": {
-    "facts_total": 5068,
-    "static_facts": 4768,
+    "facts_total": 5075,
+    "static_facts": 4775,
     "inferred": 300,
     "intended": 0
   },
@@ -117309,9 +117434,9 @@
     "total": 1160
   },
   "reachability_summary": {
-    "PRODUCTION": 483,
+    "PRODUCTION": 484,
     "TEST_ONLY": 137,
-    "ORPHAN": 152,
+    "ORPHAN": 151,
     "TEST": 388,
     "total": 1160
   },
@@ -117619,7 +117744,6 @@
     "apps/shared/workflow/__init__.py",
     "apps/specops_ci/__init__.py",
     "apps/specops_ci/orchestration/__init__.py",
-    "apps/specops_ci/orchestration/client.py",
     "apps/zero/zero/__init__.py",
     "apps/zero/zero/enrichment/__init__.py",
     "apps/zero/zero/harvesters/__init__.py",

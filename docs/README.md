@@ -23,7 +23,7 @@ Raw observations are immutable and content-addressed; every analytical result re
 |---|---|
 | Components | 20 |
 | Python / TypeScript / Rust modules | 1160 / 329 / 16 |
-| HTTP routes | 227 |
+| HTTP routes | 230 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
 | Test files / functions | 391 / 5549 |

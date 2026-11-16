@@ -1,6 +1,6 @@
 # Import graph
 
-1160 Python modules, 3312 resolved local edges.
+1160 Python modules, 3316 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
