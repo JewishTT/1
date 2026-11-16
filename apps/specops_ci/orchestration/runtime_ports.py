@@ -7,10 +7,14 @@ concrete adapter and fail closed when none is configured.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import datetime, timezone
 from typing import Any, Protocol
 
 from specops_ci.domain import AssessmentKind
-from specops_ci.orchestration.contracts import SpecStepKind, assessment_for_step
+from specops_ci.orchestration.contracts import (
+    SpecStepKind,
+    assessment_for_step,
+)
 
 
 class AuthorizationGatePort(Protocol):
@@ -22,6 +26,7 @@ class AuthorizationGatePort(Protocol):
         tenant_id: str,
         authorization_id: str,
         snapshot_id: str,
+        operation_expires_at: str,
         target_entity_ids: Sequence[str],
         assessment_kind: AssessmentKind,
     ) -> bool: ...
@@ -88,6 +93,7 @@ class SpecOpsRuntimePorts(Protocol):
         tenant_id: str,
         authorization_id: str,
         snapshot_id: str,
+        operation_expires_at: str,
         target_entity_ids: Sequence[str],
         step_kind: SpecStepKind,
     ) -> bool: ...
@@ -109,6 +115,7 @@ class SpecOpsRuntimePorts(Protocol):
         operation_id: str,
         spec_digest: str,
         snapshot_id: str,
+        operation_expires_at: str,
         step: Mapping[str, Any],
     ) -> Mapping[str, Any]: ...
 
@@ -133,13 +140,23 @@ class ArtexSpecOpsRuntime:
         tenant_id: str,
         authorization_id: str,
         snapshot_id: str,
+        operation_expires_at: str,
         target_entity_ids: Sequence[str],
         step_kind: SpecStepKind,
     ) -> bool:
+        try:
+            expires_at = datetime.fromisoformat(operation_expires_at)
+        except ValueError:
+            return False
+        if expires_at.tzinfo is None or expires_at.utcoffset() is None:
+            return False
+        if not datetime.now(timezone.utc) < expires_at:
+            return False
         return await self._authorization.revalidate(
             tenant_id=tenant_id,
             authorization_id=authorization_id,
             snapshot_id=snapshot_id,
+            operation_expires_at=operation_expires_at,
             target_entity_ids=target_entity_ids,
             assessment_kind=assessment_for_step(step_kind),
         )
@@ -168,6 +185,7 @@ class ArtexSpecOpsRuntime:
         operation_id: str,
         spec_digest: str,
         snapshot_id: str,
+        operation_expires_at: str,
         step: Mapping[str, Any],
     ) -> Mapping[str, Any]:
         kind = SpecStepKind(str(step["kind"]))
@@ -177,6 +195,7 @@ class ArtexSpecOpsRuntime:
             tenant_id=tenant_id,
             authorization_id=authorization_id,
             snapshot_id=snapshot_id,
+            operation_expires_at=operation_expires_at,
             target_entity_ids=targets,
             step_kind=kind,
         ):
