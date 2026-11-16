@@ -8,8 +8,8 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 |---|---|
 | PRODUCTION | 483 |
 | TEST_ONLY | 137 |
-| ORPHAN | 149 |
-| TEST | 385 |
+| ORPHAN | 150 |
+| TEST | 387 |
 
 ## Entrypoints (production roots)
 
@@ -208,7 +208,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**149** modules are imported by neither production nor tests.
+**150** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -326,6 +326,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/workflow/__init__.py` |
 | `apps/specops_ci/__init__.py` |
 | `apps/specops_ci/orchestration/__init__.py` |
+| `apps/specops_ci/orchestration/client.py` |
 | `apps/zero/zero/__init__.py` |
 | `apps/zero/zero/enrichment/__init__.py` |
 | `apps/zero/zero/harvesters/__init__.py` |

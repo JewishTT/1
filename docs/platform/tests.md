@@ -1,6 +1,6 @@
 # Tests
 
-388 test files, 5533 test functions. 319 platform modules are not targeted by any test.
+390 test files, 5545 test functions. 318 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -360,6 +360,8 @@
 | `apps/shared/tests/unit/test_temporal_metrics.py` | 9 | `apps/shared/domain/temporal_metrics.py` |
 | `apps/shared/tests/unit/test_type_signal.py` | 8 | `apps/shared/semantic/type_signal.py`, `apps/shared/semantic/vocabularies.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |
+| `apps/specops_ci/orchestration/tests/test_contracts.py` | 8 | `apps/specops_ci/domain.py`, `apps/specops_ci/orchestration/contracts.py` |
+| `apps/specops_ci/orchestration/tests/test_runtime_ports.py` | 4 | `apps/specops_ci/domain.py`, `apps/specops_ci/orchestration/contracts.py`, `apps/specops_ci/orchestration/runtime_ports.py` |
 | `apps/specops_ci/tests/test_scope.py` | 3 | `apps/shared/contracts/intelligence_feed.py`, `apps/specops_ci/domain.py` |
 | `apps/zero/tests/conftest.py` | 0 | `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_cc_capture.py` | 14 | `apps/shared/network/cc_session.py`, `apps/zero/zero/cc_capture.py` |

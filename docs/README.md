@@ -22,11 +22,11 @@ Raw observations are immutable and content-addressed; every analytical result re
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python / TypeScript / Rust modules | 1154 / 329 / 16 |
+| Python / TypeScript / Rust modules | 1157 / 329 / 16 |
 | HTTP routes | 227 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 388 / 5533 |
+| Test files / functions | 390 / 5545 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -74,7 +74,7 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
 | `shared` | 202 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
 | `specops-legacy` | 81 | 46 | 0 | Archived former SpecOps implementation and transition adapters; not a new collection silo. |
-| `specops_ci` | 10 | 0 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
+| `specops_ci` | 13 | 0 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 283 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 40 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |
