@@ -45,6 +45,7 @@ def _current_step(state: OperationState) -> tuple[OperationSpec, dict[str, Any]]
         "depends_on": list(step.depends_on),
         "requires_operator_approval": step.requires_operator_approval,
         "authorization_id": spec.authorization_id,
+        "operation_expires_at": spec.expires_at.isoformat(),
     }
 
 
@@ -70,6 +71,7 @@ async def revalidate_authorization_node(state: OperationState) -> dict[str, Any]
         tenant_id=spec.tenant_id,
         authorization_id=spec.authorization_id,
         snapshot_id=spec.snapshot_id,
+        operation_expires_at=spec.expires_at.isoformat(),
         target_entity_ids=step["target_entity_ids"],
         step_kind=SpecStepKind(step["kind"]),
     )
@@ -121,6 +123,7 @@ async def execute_step_node(state: OperationState) -> dict[str, Any]:
         operation_id=spec.operation_id,
         spec_digest=spec.digest(),
         snapshot_id=spec.snapshot_id,
+        operation_expires_at=spec.expires_at.isoformat(),
         step=step,
     )
     return {"last_result": dict(result), "status": "step_completed"}
