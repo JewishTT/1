@@ -10,6 +10,7 @@ from specops_ci.domain import AssessmentScopeError
 from specops_ci.orchestration.contracts import OperationSpec, SpecStep, SpecStepKind
 from specops_ci.orchestration.graph import (
     GRAPH_NAME,
+    _after_operator_decision,
     build_operation_graph,
     validate_operator_decision_node,
     validate_spec_node,
@@ -60,14 +61,16 @@ def test_spec_validation_node_accepts_only_the_matching_digest() -> None:
         }))
 
 
-def test_operator_rejection_cannot_reach_executor(monkeypatch: pytest.MonkeyPatch) -> None:
-    class ForbiddenGate:
+def test_operator_rejection_is_verified_but_never_reaches_executor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class DecisionGate:
         async def validate_operator_decision(self, **kwargs: object) -> bool:
-            raise AssertionError("rejected decision must not call the approval gate")
+            return True
 
     monkeypatch.setattr(
         "specops_ci.orchestration.graph.get_runtime_ports",
-        lambda: ForbiddenGate(),
+        lambda: DecisionGate(),
     )
     spec = sample_spec()
     state = {
@@ -83,7 +86,9 @@ def test_operator_rejection_cannot_reach_executor(monkeypatch: pytest.MonkeyPatc
         },
     }
     result = asyncio.run(validate_operator_decision_node(state))
-    assert result["operator_decision_valid"] is False
+    assert result["operator_decision_valid"] is True
+    assert result["operator_decision_approved"] is False
+    assert asyncio.run(_after_operator_decision(result)) == "rejected"
 
 
 def test_temporal_workflow_exposes_query_and_signal_for_human_review() -> None:
