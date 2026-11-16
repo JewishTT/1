@@ -77,7 +77,8 @@ class PostgresSpecOpsAuthorizationGate:
         decision: dict[str, Any],
     ) -> bool:
         """Verify the signal maps to one append-only admin decision and live approval."""
-        if decision.get("approved") is not True:
+        approved = decision.get("approved")
+        if not isinstance(approved, bool):
             return False
         decision_id = decision.get("decision_id")
         authorization_id = decision.get("authorization_id")
@@ -107,7 +108,7 @@ class PostgresSpecOpsAuthorizationGate:
                     SpecOpsOperationDecision.snapshot_id == snapshot_id,
                     SpecOpsOperationDecision.spec_digest == spec_digest,
                     SpecOpsOperationDecision.step_id == step_id,
-                    SpecOpsOperationDecision.approved.is_(True),
+                    SpecOpsOperationDecision.approved.is_(approved),
                     SpecOpsOperationDecision.reviewer_id == reviewer_id,
                     SpecOpsOperationDecision.reviewer_role == "admin",
                     SpecOpsOperationDecision.approval_ref == approval_ref,
