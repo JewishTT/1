@@ -136,6 +136,12 @@ async def execute_step_node(state: OperationState) -> dict[str, Any]:
     return {"last_result": dict(result), "status": "step_completed"}
 
 
+async def needs_review_node(state: OperationState) -> dict[str, Any]:
+    """Stop safely when an assessment result requires additional human interpretation."""
+    del state
+    return {"status": "needs_review", "error_code": "MANUAL_REVIEW_REQUIRED"}
+
+
 async def advance_step_node(state: OperationState) -> dict[str, Any]:
     """Apply a deterministic state transition after an idempotently recorded step."""
     spec = OperationSpec.from_payload(state["spec"])
@@ -179,6 +185,11 @@ async def _after_operator_decision(state: OperationState) -> str:
     )
 
 
+async def _after_execution(state: OperationState) -> str:
+    result = state.get("last_result", {})
+    return "needs_review" if result.get("status") == "needs_review" else "advance_step"
+
+
 async def _after_step(state: OperationState) -> str:
     return "complete" if state.get("status") == "completed" else "revalidate_authorization"
 
@@ -216,6 +227,7 @@ def build_operation_graph() -> StateGraph:
         advance_step_node,
         metadata={"execute_in": "workflow"},
     )
+    graph.add_node("needs_review", needs_review_node, metadata={"execute_in": "workflow"})
     graph.add_node("blocked", blocked_node, metadata={"execute_in": "workflow"})
     graph.add_node("rejected", rejected_node, metadata={"execute_in": "workflow"})
     graph.add_node("complete", complete_node, metadata={"execute_in": "workflow"})
@@ -233,7 +245,12 @@ def build_operation_graph() -> StateGraph:
         _after_operator_decision,
         {"execute_step": "execute_step", "rejected": "rejected"},
     )
-    graph.add_edge("execute_step", "advance_step")
+    graph.add_conditional_edges(
+        "execute_step",
+        _after_execution,
+        {"needs_review": "needs_review", "advance_step": "advance_step"},
+    )
+    graph.add_edge("needs_review", END)
     graph.add_conditional_edges(
         "advance_step",
         _after_step,
