@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5074,
-    "static_facts": 4774,
+    "facts_total": 5078,
+    "static_facts": 4778,
     "inferred": 300,
     "intended": 0
   },
@@ -20240,6 +20240,32 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_source_query_store.py",
         "via": "db.source_query_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "5ff9cfe08e5975f0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+      "object": "apps/control-plane/services/specops_ci_authorization_gate.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "via": "services.specops_ci_authorization_gate"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "ad78db1636d8c675",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "via": "specops_ci.domain"
       },
       "confidence": 1.0
     },
@@ -56289,6 +56315,30 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_source_query_store.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d850d023632a8e5a",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+      "object": "apps/control-plane/services/specops_ci_authorization_gate.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b283c8561c04d3fe",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+      "object": "apps/specops_ci/domain.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py"
       },
       "confidence": 1.0
     },

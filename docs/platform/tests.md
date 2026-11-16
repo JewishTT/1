@@ -1,6 +1,6 @@
 # Tests
 
-391 test files, 5551 test functions. 318 platform modules are not targeted by any test.
+392 test files, 5555 test functions. 317 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -145,6 +145,7 @@
 | `apps/control-plane/tests/unit/test_search_fusion_api.py` | 5 | `apps/control-plane/api/main.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/services/query_planner.py` |
 | `apps/control-plane/tests/unit/test_series_lifecycle.py` | 10 | `apps/control-plane/services/series_lifecycle.py` |
 | `apps/control-plane/tests/unit/test_source_query_store.py` | 7 | `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/source_query_store.py` |
+| `apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py` | 4 | `apps/control-plane/services/specops_ci_authorization_gate.py`, `apps/specops_ci/domain.py` |
 | `apps/control-plane/tests/unit/test_sse_stream.py` | 8 | `apps/control-plane/api/main.py`, `apps/control-plane/api/sse.py` |
 | `apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py` | 2 | `apps/control-plane/services/__init__.py` |
 | `apps/control-plane/tests/unit/test_temporal_materialization_persistence.py` | 9 | `apps/control-plane/db/materialization_cursor.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/temporal_materialization.py`, `apps/shared/domain/dynamics.py` |

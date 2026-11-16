@@ -227,7 +227,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 273,
+      "python_modules": 274,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -1262,11 +1262,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1160,
-    "edge_count": 3315,
+    "module_count": 1161,
+    "edge_count": 3317,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 1015,
+      "stdlib:__future__": 1016,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 29,
@@ -1282,7 +1282,7 @@
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 422,
-      "stdlib:datetime": 239,
+      "stdlib:datetime": 240,
       "stdlib:decimal": 16,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1326,8 +1326,8 @@
       "stdlib:time": 40,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
-      "stdlib:types": 42,
-      "stdlib:typing": 429,
+      "stdlib:types": 43,
+      "stdlib:typing": 430,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 68,
@@ -8886,6 +8886,16 @@
         "from": "apps/control-plane/tests/unit/test_source_query_store.py",
         "to": "apps/control-plane/db/source_query_store.py",
         "via": "db.source_query_store"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "to": "apps/control-plane/services/specops_ci_authorization_gate.py",
+        "via": "services.specops_ci_authorization_gate"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "to": "apps/specops_ci/domain.py",
+        "via": "specops_ci.domain"
       },
       {
         "from": "apps/control-plane/tests/unit/test_sse_stream.py",
@@ -21006,6 +21016,20 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "tests": 4,
+        "test_names": [
+          "test_revalidate_requires_current_exact_roster_and_assessment",
+          "test_revalidate_rejects_revoked_and_expired_authorizations",
+          "test_operator_decision_must_match_the_durable_row_and_live_authorization",
+          "test_rejected_decision_is_validly_audited_but_never_approved"
+        ],
+        "targets": [
+          "apps/control-plane/services/specops_ci_authorization_gate.py",
+          "apps/specops_ci/domain.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_sse_stream.py",
         "tests": 8,
         "test_names": [
@@ -27096,7 +27120,7 @@
         ]
       }
     ],
-    "total": 5551
+    "total": 5555
   },
   "contracts": {
     "python": [
@@ -32759,7 +32783,6 @@
     "apps/control-plane/services/processing_result_store.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/specops_catalog.py",
-    "apps/control-plane/services/specops_ci_authorization_gate.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
     "apps/deploy/minio-init/init-buckets.py",
@@ -32821,9 +32844,10 @@
     "apps/science/experiments/context.py",
     "apps/science/fixtures/__init__.py",
     "apps/science/hypotheses/__init__.py",
-    "apps/science/kinetics/__init__.py"
+    "apps/science/kinetics/__init__.py",
+    "apps/science/operators/__init__.py"
   ],
-  "untested_count": 318,
+  "untested_count": 317,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -33916,6 +33940,7 @@
             "apps/control-plane/tests/unit/test_search_fusion_api.py",
             "apps/control-plane/tests/unit/test_series_lifecycle.py",
             "apps/control-plane/tests/unit/test_source_query_store.py",
+            "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
             "apps/control-plane/tests/unit/test_sse_stream.py",
             "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
             "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
@@ -33999,7 +34024,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 332
+          "module_count": 333
         },
         {
           "id": "webapp",
@@ -39532,6 +39557,15 @@
         "status": "TEST",
         "loc": 176,
         "callables": 18,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "status": "TEST",
+        "loc": 152,
+        "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -46275,9 +46309,9 @@
       "IMPLEMENTED": 625,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 102,
-      "TEST": 388,
+      "TEST": 389,
       "MIGRATION": 26,
-      "total": 1160
+      "total": 1161
     }
   },
   "reachability": {
@@ -47584,7 +47618,7 @@
       },
       {
         "path": "apps/control-plane/services/specops_ci_authorization_gate.py",
-        "status": "ORPHAN"
+        "status": "TEST_ONLY"
       },
       {
         "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
@@ -47952,6 +47986,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_source_query_store.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
         "status": "TEST"
       },
       {
@@ -50973,10 +51011,10 @@
     ],
     "summary": {
       "PRODUCTION": 484,
-      "TEST_ONLY": 137,
-      "ORPHAN": 151,
-      "TEST": 388,
-      "total": 1160
+      "TEST_ONLY": 138,
+      "ORPHAN": 150,
+      "TEST": 389,
+      "total": 1161
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -51023,6 +51061,7 @@
       "apps/control-plane/services/dispatcher.py",
       "apps/control-plane/services/layer0_pipeline.py",
       "apps/control-plane/services/relation_projection_relay.py",
+      "apps/control-plane/services/specops_ci_authorization_gate.py",
       "apps/feedback/feedback/__init__.py",
       "apps/feedback/feedback/branch/__init__.py",
       "apps/feedback/feedback/branch/entity.py",
@@ -51178,7 +51217,6 @@
       "apps/control-plane/services/acquisition_evidence.py",
       "apps/control-plane/services/relation_projection_rebuild.py",
       "apps/control-plane/services/specops_catalog.py",
-      "apps/control-plane/services/specops_ci_authorization_gate.py",
       "apps/control-plane/workflows/__init__.py",
       "apps/economics/__init__.py",
       "apps/intelligence/__init__.py",
@@ -73158,6 +73196,32 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_source_query_store.py",
           "via": "db.source_query_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "5ff9cfe08e5975f0",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "object": "apps/control-plane/services/specops_ci_authorization_gate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+          "via": "services.specops_ci_authorization_gate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "ad78db1636d8c675",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+          "via": "specops_ci.domain"
         },
         "confidence": 1.0
       },
@@ -109211,6 +109275,30 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "d850d023632a8e5a",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "object": "apps/control-plane/services/specops_ci_authorization_gate.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b283c8561c04d3fe",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+        "object": "apps/specops_ci/domain.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "3c5ddfc047944f91",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_sse_stream.py",
@@ -117396,27 +117484,27 @@
       }
     ],
     "stats": {
-      "facts_total": 5074,
-      "static_facts": 4774,
+      "facts_total": 5078,
+      "static_facts": 4778,
       "inferred": 300,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1160,
+    "python_modules": 1161,
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3315,
-    "test_files": 391,
-    "test_functions": 5551,
-    "untested_modules": 318,
+    "import_edges": 3317,
+    "test_files": 392,
+    "test_functions": 5555,
+    "untested_modules": 317,
     "http_routes": 230
   },
   "evidence_stats": {
-    "facts_total": 5074,
-    "static_facts": 4774,
+    "facts_total": 5078,
+    "static_facts": 4778,
     "inferred": 300,
     "intended": 0
   },
@@ -117424,16 +117512,16 @@
     "IMPLEMENTED": 625,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 102,
-    "TEST": 388,
+    "TEST": 389,
     "MIGRATION": 26,
-    "total": 1160
+    "total": 1161
   },
   "reachability_summary": {
     "PRODUCTION": 484,
-    "TEST_ONLY": 137,
-    "ORPHAN": 151,
-    "TEST": 388,
-    "total": 1160
+    "TEST_ONLY": 138,
+    "ORPHAN": 150,
+    "TEST": 389,
+    "total": 1161
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -117528,6 +117616,7 @@
     "apps/control-plane/services/dispatcher.py",
     "apps/control-plane/services/layer0_pipeline.py",
     "apps/control-plane/services/relation_projection_relay.py",
+    "apps/control-plane/services/specops_ci_authorization_gate.py",
     "apps/feedback/feedback/__init__.py",
     "apps/feedback/feedback/branch/__init__.py",
     "apps/feedback/feedback/branch/entity.py",
@@ -117683,7 +117772,6 @@
     "apps/control-plane/services/acquisition_evidence.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/specops_catalog.py",
-    "apps/control-plane/services/specops_ci_authorization_gate.py",
     "apps/control-plane/workflows/__init__.py",
     "apps/economics/__init__.py",
     "apps/intelligence/__init__.py",
