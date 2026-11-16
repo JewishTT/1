@@ -165,8 +165,34 @@ class OperationSpec:
     @classmethod
     def from_payload(cls, payload: Mapping[str, Any]) -> OperationSpec:
         """Parse an untrusted JSON-compatible specification and validate its shape."""
+        allowed_keys = {
+            "schema_version",
+            "operation_id",
+            "tenant_id",
+            "authorization_id",
+            "snapshot_id",
+            "title",
+            "expires_at",
+            "target_entity_ids",
+            "steps",
+        }
+        required_keys = allowed_keys
+        if set(payload) - allowed_keys or not required_keys.issubset(payload):
+            raise AssessmentScopeError("operation payload has missing or unknown fields")
         parsed_steps: list[SpecStep] = []
         for item in payload["steps"]:
+            if not isinstance(item, Mapping):
+                raise AssessmentScopeError("each operation step must be an object")
+            step_keys = {
+                "step_id",
+                "kind",
+                "target_entity_ids",
+                "depends_on",
+                "requires_operator_approval",
+            }
+            required_step_keys = {"step_id", "kind", "target_entity_ids"}
+            if set(item) - step_keys or not required_step_keys.issubset(item):
+                raise AssessmentScopeError("operation step has missing or unknown fields")
             approval_required = item.get("requires_operator_approval", True)
             if not isinstance(approval_required, bool):
                 raise AssessmentScopeError("requires_operator_approval must be a boolean")
