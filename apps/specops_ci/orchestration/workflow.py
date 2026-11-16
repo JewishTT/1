@@ -25,6 +25,7 @@ class SpecOpsOperationWorkflow:
     def __init__(self) -> None:
         self._pending_approval: dict[str, Any] | None = None
         self._operator_decision: dict[str, Any] | None = None
+        self._summary: dict[str, Any] = {}
 
     @workflow.signal
     async def provide_operator_decision(self, decision: dict[str, Any]) -> None:
@@ -51,9 +52,25 @@ class SpecOpsOperationWorkflow:
         """Expose the exact approval challenge for the operator UI."""
         return dict(self._pending_approval) if self._pending_approval is not None else None
 
+    @workflow.query
+    def get_operation_summary(self) -> dict[str, Any]:
+        """Expose a tenant-checkable operation status without leaking raw evidence."""
+        return dict(self._summary)
+
     @workflow.run
     async def run(self, initial_state: dict[str, Any]) -> dict[str, Any]:
         operation_id = str(initial_state["operation_id"])
+        spec_payload = initial_state["spec"]
+        self._summary = {
+            "operation_id": operation_id,
+            "tenant_id": str(spec_payload["tenant_id"]),
+            "authorization_id": str(spec_payload["authorization_id"]),
+            "snapshot_id": str(spec_payload["snapshot_id"]),
+            "spec_digest": str(initial_state["spec_digest"]),
+            "status": "running",
+            "current_step_index": 0,
+            "step_count": len(spec_payload["steps"]),
+        }
         app = temporal_graph(GRAPH_NAME).compile(checkpointer=InMemorySaver())
         config = {"configurable": {"thread_id": operation_id}}
 
@@ -68,6 +85,10 @@ class SpecOpsOperationWorkflow:
                     raise TypeError("LangGraph returned a non-object operation result")
                 self._pending_approval = None
                 self._operator_decision = None
+                self._summary["status"] = str(output.get("status", "completed"))
+                self._summary["current_step_index"] = int(
+                    output.get("current_step_index", self._summary["step_count"])
+                )
                 return output
 
             interrupt_value = interrupts[0].value
@@ -75,11 +96,16 @@ class SpecOpsOperationWorkflow:
                 raise TypeError("SpecOps&CI graph emitted an invalid approval challenge")
             self._pending_approval = dict(interrupt_value)
             self._operator_decision = None
+            self._summary["status"] = "awaiting_approval"
+            self._summary["current_step_index"] = int(initial_state.get("current_step_index", 0))
+            self._summary["pending_step_id"] = str(interrupt_value["step_id"])
 
             await workflow.wait_condition(lambda: self._operator_decision is not None)
             decision = dict(self._operator_decision or {})
             self._pending_approval = None
             self._operator_decision = None
+            self._summary["status"] = "running"
+            self._summary.pop("pending_step_id", None)
 
             result = await app.ainvoke(
                 Command(resume=decision),
