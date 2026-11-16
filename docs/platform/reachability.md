@@ -8,7 +8,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 |---|---|
 | PRODUCTION | 483 |
 | TEST_ONLY | 137 |
-| ORPHAN | 150 |
+| ORPHAN | 152 |
 | TEST | 388 |
 
 ## Entrypoints (production roots)
@@ -208,7 +208,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**150** modules are imported by neither production nor tests.
+**152** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -264,6 +264,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py` |
 | `apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py` |
 | `apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py` |
+| `apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |
@@ -271,6 +272,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/services/acquisition_evidence.py` |
 | `apps/control-plane/services/relation_projection_rebuild.py` |
 | `apps/control-plane/services/specops_catalog.py` |
+| `apps/control-plane/services/specops_ci_authorization_gate.py` |
 | `apps/control-plane/workflows/__init__.py` |
 | `apps/economics/__init__.py` |
 | `apps/intelligence/__init__.py` |

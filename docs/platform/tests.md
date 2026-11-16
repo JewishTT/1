@@ -1,6 +1,6 @@
 # Tests
 
-391 test files, 5549 test functions. 316 platform modules are not targeted by any test.
+391 test files, 5549 test functions. 318 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
