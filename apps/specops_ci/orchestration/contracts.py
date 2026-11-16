@@ -47,7 +47,10 @@ _ASSESSMENT_FOR_STEP: dict[SpecStepKind, AssessmentKind] = {
 
 def assessment_for_step(kind: SpecStepKind) -> AssessmentKind:
     """Return the narrow authorization capability required by a step."""
-    return _ASSESSMENT_FOR_STEP[kind]
+    try:
+        return _ASSESSMENT_FOR_STEP[kind]
+    except KeyError as exc:
+        raise AssessmentScopeError("operation contains an unsupported step kind") from exc
 
 
 def _require_aware(value: datetime, field_name: str) -> None:
@@ -66,6 +69,8 @@ class SpecStep:
     def validate_structure(self) -> None:
         if not _STEP_ID.fullmatch(self.step_id):
             raise AssessmentScopeError("step_id must be a short lowercase identifier")
+        if not isinstance(self.kind, SpecStepKind):
+            raise AssessmentScopeError("step kind is not part of the approved vocabulary")
         if not self.target_entity_ids:
             raise AssessmentScopeError(f"step {self.step_id} must name explicit targets")
         if len(set(self.target_entity_ids)) != len(self.target_entity_ids):
@@ -160,16 +165,22 @@ class OperationSpec:
     @classmethod
     def from_payload(cls, payload: Mapping[str, Any]) -> OperationSpec:
         """Parse an untrusted JSON-compatible specification and validate its shape."""
-        steps = tuple(
-            SpecStep(
-                step_id=str(item["step_id"]),
-                kind=SpecStepKind(item["kind"]),
-                target_entity_ids=tuple(str(value) for value in item["target_entity_ids"]),
-                depends_on=tuple(str(value) for value in item.get("depends_on", ())),
-                requires_operator_approval=bool(item.get("requires_operator_approval", True)),
+        parsed_steps: list[SpecStep] = []
+        for item in payload["steps"]:
+            approval_required = item.get("requires_operator_approval", True)
+            if not isinstance(approval_required, bool):
+                raise AssessmentScopeError("requires_operator_approval must be a boolean")
+            parsed_steps.append(
+                SpecStep(
+                    step_id=str(item["step_id"]),
+                    kind=SpecStepKind(item["kind"]),
+                    target_entity_ids=tuple(
+                        str(value) for value in item["target_entity_ids"]
+                    ),
+                    depends_on=tuple(str(value) for value in item.get("depends_on", ())),
+                    requires_operator_approval=approval_required,
+                )
             )
-            for item in payload["steps"]
-        )
         spec = cls(
             operation_id=str(payload["operation_id"]),
             tenant_id=str(payload["tenant_id"]),
@@ -178,7 +189,7 @@ class OperationSpec:
             title=str(payload["title"]),
             expires_at=datetime.fromisoformat(str(payload["expires_at"])),
             target_entity_ids=tuple(str(value) for value in payload["target_entity_ids"]),
-            steps=steps,
+            steps=tuple(parsed_steps),
             schema_version=str(payload.get("schema_version", "")),
         )
         spec.validate_structure()
