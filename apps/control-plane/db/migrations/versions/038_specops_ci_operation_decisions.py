@@ -66,6 +66,23 @@ def upgrade() -> None:
         "specops_ci_operation_decisions",
         ["tenant_id", "authorization_id"],
     )
+    op.execute(
+        """
+        CREATE FUNCTION reject_specops_ci_decision_mutation()
+        RETURNS trigger AS $
+        BEGIN
+            RAISE EXCEPTION 'SpecOps&CI operator decisions are immutable';
+        END;
+        $ LANGUAGE plpgsql
+        """
+    )
+    op.execute(
+        """
+        CREATE TRIGGER trg_specops_ci_decision_immutable
+        BEFORE UPDATE OR DELETE ON specops_ci_operation_decisions
+        FOR EACH ROW EXECUTE FUNCTION reject_specops_ci_decision_mutation()
+        """
+    )
 
 
 def downgrade() -> None:
