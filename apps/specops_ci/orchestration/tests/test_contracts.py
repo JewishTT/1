@@ -179,3 +179,15 @@ def test_unknown_step_kind_is_rejected() -> None:
     payload["steps"][0]["kind"] = "arbitrary_shell_command"
     with pytest.raises(ValueError):
         OperationSpec.from_payload(payload)
+
+
+def test_unknown_operation_and_step_fields_are_rejected() -> None:
+    payload = make_spec().to_payload()
+    payload["tool"] = "not-allowed"
+    with pytest.raises(AssessmentScopeError, match="missing or unknown fields"):
+        OperationSpec.from_payload(payload)
+
+    payload = make_spec().to_payload()
+    payload["steps"][0]["command"] = "not-allowed"
+    with pytest.raises(AssessmentScopeError, match="step has missing or unknown fields"):
+        OperationSpec.from_payload(payload)
