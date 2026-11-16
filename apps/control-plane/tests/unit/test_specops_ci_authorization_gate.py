@@ -1,6 +1,7 @@
 """Unit tests for the PostgreSQL authorization and decision gate."""
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from typing import Any
@@ -60,7 +61,7 @@ def test_revalidate_requires_current_exact_roster_and_assessment() -> None:
         _SessionFactory([_authorization()])  # type: ignore[arg-type]
     )
     now = datetime.now(timezone.utc)
-    valid = __import__("asyncio").run(gate.revalidate(
+    valid = asyncio.run(gate.revalidate(
         tenant_id="tenant-1",
         authorization_id="auth-1",
         snapshot_id="snapshot-1",
