@@ -16,7 +16,10 @@ from sqlalchemy import select
 
 from api.auth import TenantContext, require_admin, require_analyst
 from composition import get_platform
-from db.schema import SpecOpsEngagementAuthorization as AuthorizationRow
+from db.schema import (
+    SpecOpsEngagementAuthorization as AuthorizationRow,
+    SpecOpsOperationDecision as DecisionRow,
+)
 from services.intelligence_access import intelligence_port
 from services.intelligence_reader import (
     IntelligenceEvidenceUnavailable,
@@ -31,6 +34,13 @@ from specops_ci.domain import (
     EngagementAuthorization,
 )
 from specops_ci.service import SPECOPS_CI_PURPOSE, prepare_assessment
+from specops_ci.orchestration.client import start_operation
+from specops_ci.orchestration.contracts import (
+    OperationSpec,
+    SpecStep,
+    SpecStepKind,
+    validate_operation_against_authorization,
+)
 
 router = APIRouter(prefix="/specops-ci", tags=["specops-ci-silo"])
 MAX_AUTHORIZATION_WINDOW = timedelta(days=30)
@@ -50,6 +60,28 @@ class AssessmentPrepare(BaseModel):
     authorization_id: str = Field(min_length=1, max_length=64)
     target_entity_ids: list[str] = Field(min_length=1, max_length=MAX_AUTHORIZED_TARGETS)
     assessment_kind: AssessmentKind
+
+
+class OperationStepCreate(BaseModel):
+    step_id: str = Field(min_length=1, max_length=64)
+    kind: SpecStepKind
+    target_entity_ids: list[str] = Field(min_length=1, max_length=100)
+    depends_on: list[str] = Field(default_factory=list, max_length=32)
+    requires_operator_approval: bool = True
+
+
+class OperationCreate(BaseModel):
+    operation_id: str = Field(pattern=r"^sci-op-[a-f0-9]{32}$")
+    authorization_id: str = Field(min_length=1, max_length=64)
+    title: str = Field(min_length=1, max_length=200)
+    target_entity_ids: list[str] = Field(min_length=1, max_length=100)
+    expires_at: datetime
+    steps: list[OperationStepCreate] = Field(min_length=1, max_length=32)
+
+
+class OperatorDecisionCreate(BaseModel):
+    approved: bool
+    approval_ref: str = Field(min_length=3, max_length=256)
 
 
 def _raise_read_error(exc: Exception) -> None:
@@ -287,6 +319,247 @@ async def revoke_authorization(
         "revoked": True,
         "revoked_at": row.revoked_at.isoformat(),
         "revoked_by": row.revoked_by,
+    }
+
+
+@router.post("/operations", status_code=202)
+async def create_operation(
+    body: OperationCreate,
+    ctx: Annotated[TenantContext, Depends(require_analyst)],
+) -> dict:
+    """Submit a declarative, immutable operation bound to an existing authorization."""
+    platform = await get_platform(tenant_id=ctx.tenant_id)
+    if platform.session_factory is None:
+        raise HTTPException(
+            status_code=503,
+            detail="durable PostgreSQL session factory is unavailable",
+        )
+
+    async with platform.session_factory() as session:
+        result = await session.execute(select(AuthorizationRow).where(
+            AuthorizationRow.authorization_id == body.authorization_id,
+            AuthorizationRow.tenant_id == ctx.tenant_id,
+        ))
+        row = result.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="SpecOps&CI authorization not found")
+    if row.revoked_at is not None:
+        raise HTTPException(status_code=409, detail="SpecOps&CI authorization has been revoked")
+
+    authorization = _to_domain(row)
+    now = datetime.now(timezone.utc)
+    spec = OperationSpec(
+        operation_id=body.operation_id,
+        tenant_id=ctx.tenant_id,
+        authorization_id=authorization.authorization_id,
+        snapshot_id=authorization.source_snapshot_id,
+        title=body.title,
+        expires_at=body.expires_at,
+        target_entity_ids=tuple(body.target_entity_ids),
+        steps=tuple(
+            SpecStep(
+                step_id=step.step_id,
+                kind=step.kind,
+                target_entity_ids=tuple(step.target_entity_ids),
+                depends_on=tuple(step.depends_on),
+                requires_operator_approval=step.requires_operator_approval,
+            )
+            for step in body.steps
+        ),
+    )
+    try:
+        validate_operation_against_authorization(spec, authorization, now=now)
+    except AssessmentScopeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    try:
+        from workflow.client import connect_temporal
+
+        temporal = await connect_temporal()
+        await start_operation(temporal, spec, authorization, now=now)
+    except AssessmentScopeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "SPECOPS_TEMPORAL_UNAVAILABLE",
+                "message": f"operation was not confirmed as started ({type(exc).__name__})",
+            },
+        ) from exc
+
+    return {
+        "operation_id": spec.operation_id,
+        "tenant_id": spec.tenant_id,
+        "authorization_id": spec.authorization_id,
+        "snapshot_id": spec.snapshot_id,
+        "spec_digest": spec.digest(),
+        "status": "submitted",
+        "workflow_type": "specops-ci-operation-v1",
+        "task_queue": "specops-ci-operations",
+        "step_count": len(spec.steps),
+        "target_count": len(spec.target_entity_ids),
+    }
+
+
+async def _get_operation_handles(operation_id: str, tenant_id: str):
+    """Resolve and tenant-check the Temporal workflow before returning its handle."""
+    try:
+        from workflow.client import connect_temporal
+
+        temporal = await connect_temporal()
+        handle = temporal.get_workflow_handle(operation_id)
+        summary = await handle.query("get_operation_summary")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=404,
+            detail="SpecOps&CI operation not found or Temporal is unavailable",
+        ) from exc
+    if not isinstance(summary, dict) or summary.get("tenant_id") != tenant_id:
+        raise HTTPException(status_code=404, detail="SpecOps&CI operation not found")
+    return handle, summary
+
+
+@router.get("/operations/{operation_id}/approval")
+async def get_operation_approval(
+    operation_id: str,
+    ctx: Annotated[TenantContext, Depends(require_analyst)],
+) -> dict:
+    """Read the pending approval challenge for an operation in the current tenant."""
+    handle, summary = await _get_operation_handles(operation_id, ctx.tenant_id)
+    try:
+        pending = await handle.query("get_pending_approval")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Temporal operation query failed",
+        ) from exc
+    if pending is not None and (
+        not isinstance(pending, dict)
+        or pending.get("tenant_id") != ctx.tenant_id
+        or pending.get("operation_id") != operation_id
+    ):
+        raise HTTPException(status_code=404, detail="SpecOps&CI operation not found")
+    return {
+        "operation_id": operation_id,
+        "status": summary.get("status", "unknown"),
+        "pending_approval": pending,
+    }
+
+
+@router.post("/operations/{operation_id}/steps/{step_id}/decision")
+async def submit_operator_decision(
+    operation_id: str,
+    step_id: str,
+    body: OperatorDecisionCreate,
+    ctx: Annotated[TenantContext, Depends(require_admin)],
+) -> dict:
+    """Persist an admin decision first, then signal the waiting Temporal workflow."""
+    platform = await get_platform(tenant_id=ctx.tenant_id)
+    if platform.session_factory is None:
+        raise HTTPException(
+            status_code=503,
+            detail="durable PostgreSQL session factory is unavailable",
+        )
+    handle, summary = await _get_operation_handles(operation_id, ctx.tenant_id)
+    try:
+        pending = await handle.query("get_pending_approval")
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Temporal approval query failed") from exc
+    if not isinstance(pending, dict):
+        raise HTTPException(status_code=409, detail="operation has no pending operator approval")
+    if (
+        pending.get("operation_id") != operation_id
+        or pending.get("tenant_id") != ctx.tenant_id
+        or pending.get("step_id") != step_id
+        or pending.get("authorization_id") != summary.get("authorization_id")
+        or pending.get("snapshot_id") != summary.get("snapshot_id")
+        or pending.get("spec_digest") != summary.get("spec_digest")
+    ):
+        raise HTTPException(status_code=409, detail="approval challenge does not match operation step")
+
+    now = datetime.now(timezone.utc)
+    async with platform.session_factory() as session:
+        auth_result = await session.execute(select(AuthorizationRow).where(
+            AuthorizationRow.authorization_id == pending["authorization_id"],
+            AuthorizationRow.tenant_id == ctx.tenant_id,
+        ))
+        authorization_row = auth_result.scalar_one_or_none()
+        if (
+            authorization_row is None
+            or authorization_row.revoked_at is not None
+            or not authorization_row.issued_at <= now < authorization_row.expires_at
+            or authorization_row.source_snapshot_id != pending["snapshot_id"]
+        ):
+            raise HTTPException(status_code=409, detail="operation authorization is no longer valid")
+
+        async with session.begin():
+            decision_result = await session.execute(select(DecisionRow).where(
+                DecisionRow.tenant_id == ctx.tenant_id,
+                DecisionRow.operation_id == operation_id,
+                DecisionRow.step_id == step_id,
+                DecisionRow.spec_digest == pending["spec_digest"],
+            ).with_for_update())
+            decision_row = decision_result.scalar_one_or_none()
+            approval_ref = body.approval_ref.strip()
+            if decision_row is not None:
+                if (
+                    decision_row.approved != body.approved
+                    or decision_row.reviewer_id != ctx.user_id
+                    or decision_row.approval_ref != approval_ref
+                ):
+                    raise HTTPException(
+                        status_code=409,
+                        detail="a different durable decision already exists for this step",
+                    )
+            else:
+                decision_row = DecisionRow(
+                    decision_id="scid-" + uuid.uuid4().hex,
+                    tenant_id=ctx.tenant_id,
+                    operation_id=operation_id,
+                    authorization_id=pending["authorization_id"],
+                    snapshot_id=pending["snapshot_id"],
+                    spec_digest=pending["spec_digest"],
+                    step_id=step_id,
+                    approved=body.approved,
+                    reviewer_id=ctx.user_id,
+                    reviewer_role="admin",
+                    approval_ref=approval_ref,
+                    decided_at=now,
+                )
+                session.add(decision_row)
+
+    signal_payload = {
+        "operation_id": operation_id,
+        "tenant_id": ctx.tenant_id,
+        "authorization_id": pending["authorization_id"],
+        "snapshot_id": pending["snapshot_id"],
+        "step_id": step_id,
+        "spec_digest": pending["spec_digest"],
+        "decision_id": decision_row.decision_id,
+        "approved": body.approved,
+        "reviewer_id": ctx.user_id,
+        "approval_ref": body.approval_ref.strip(),
+    }
+    try:
+        await handle.signal("provide_operator_decision", signal_payload)
+    except Exception as exc:
+        # The durable decision row is retained. The same request can safely retry
+        # and re-send the signal because the unique decision key is idempotent.
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DECISION_PERSISTED_SIGNAL_PENDING",
+                "decision_id": decision_row.decision_id,
+                "message": "decision was saved; retry this request to re-send the workflow signal",
+            },
+        ) from exc
+    return {
+        "operation_id": operation_id,
+        "step_id": step_id,
+        "decision_id": decision_row.decision_id,
+        "approved": decision_row.approved,
+        "status": "signal_sent",
     }
 
 
