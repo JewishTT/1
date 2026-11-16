@@ -5,7 +5,7 @@
 - [x] T002 Validate spec digest, target roster, step vocabulary, approval requirement,
   topological dependencies and expiry window.
 - [x] T003 Build a versioned LangGraph StateGraph with deterministic routing and
-  conditional blocked/rejected/completed paths.
+  conditional blocked/rejected/completed/manual-review paths.
 - [x] T004 Add Temporal Workflow and dedicated Worker using the Temporal LangGraph
   plugin.
 - [x] T005 Implement Query/Signal/Command(resume) HITL pause and resume.
