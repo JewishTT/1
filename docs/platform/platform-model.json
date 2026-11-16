@@ -4879,11 +4879,6 @@
       },
       {
         "from": "apps/control-plane/api/routes/specops_ci.py",
-        "to": "apps/specops_ci/service.py",
-        "via": "specops_ci.service"
-      },
-      {
-        "from": "apps/control-plane/api/routes/specops_ci.py",
         "to": "apps/specops_ci/orchestration/client.py",
         "via": "specops_ci.orchestration.client"
       },
@@ -4891,6 +4886,11 @@
         "from": "apps/control-plane/api/routes/specops_ci.py",
         "to": "apps/specops_ci/orchestration/contracts.py",
         "via": "specops_ci.orchestration.contracts"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/specops_ci/service.py",
+        "via": "specops_ci.service"
       },
       {
         "from": "apps/control-plane/api/routes/specops_ci.py",
