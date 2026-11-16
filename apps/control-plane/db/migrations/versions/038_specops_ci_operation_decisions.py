@@ -20,10 +20,10 @@ depends_on = None
 
 def upgrade() -> None:
     inspector = sa.inspect(op.get_bind())
-    if inspector.has_table("specops_ci_operation_decisions"):
-        return
+    table_exists = inspector.has_table("specops_ci_operation_decisions")
 
-    op.create_table(
+    if not table_exists:
+        op.create_table(
         "specops_ci_operation_decisions",
         sa.Column("decision_id", sa.String(length=64), nullable=False),
         sa.Column("tenant_id", sa.String(length=36), nullable=False),
@@ -56,24 +56,52 @@ def upgrade() -> None:
             name="uq_specops_ci_operation_step_decision",
         ),
     )
-    op.create_index(
-        "ix_specops_ci_decision_tenant_operation",
-        "specops_ci_operation_decisions",
-        ["tenant_id", "operation_id"],
-    )
-    op.create_index(
-        "ix_specops_ci_decision_authorization",
-        "specops_ci_operation_decisions",
-        ["tenant_id", "authorization_id"],
-    )
+        op.create_index(
+            "ix_specops_ci_decision_tenant_operation",
+            "specops_ci_operation_decisions",
+            ["tenant_id", "operation_id"],
+        )
+        op.create_index(
+            "ix_specops_ci_decision_authorization",
+            "specops_ci_operation_decisions",
+            ["tenant_id", "authorization_id"],
+        )
+    else:
+        # Base.metadata.create_all may have prepared this table in a test/development
+        # environment before Alembic reaches this revision. Keep the DB-enforced
+        # immutability trigger in place even when the table already exists.
+        existing_indexes = {
+            item["name"]
+            for item in sa.inspect(op.get_bind()).get_indexes(
+                "specops_ci_operation_decisions"
+            )
+        }
+        if "ix_specops_ci_decision_tenant_operation" not in existing_indexes:
+            op.create_index(
+                "ix_specops_ci_decision_tenant_operation",
+                "specops_ci_operation_decisions",
+                ["tenant_id", "operation_id"],
+            )
+        if "ix_specops_ci_decision_authorization" not in existing_indexes:
+            op.create_index(
+                "ix_specops_ci_decision_authorization",
+                "specops_ci_operation_decisions",
+                ["tenant_id", "authorization_id"],
+            )
     op.execute(
         """
-        CREATE FUNCTION reject_specops_ci_decision_mutation()
+        CREATE OR REPLACE FUNCTION reject_specops_ci_decision_mutation()
         RETURNS trigger AS $specops_ci$
         BEGIN
             RAISE EXCEPTION 'SpecOps&CI operator decisions are immutable';
         END;
         $specops_ci$ LANGUAGE plpgsql
+        """
+    )
+    op.execute(
+        """
+        DROP TRIGGER IF EXISTS trg_specops_ci_decision_immutable
+        ON specops_ci_operation_decisions
         """
     )
     op.execute(
