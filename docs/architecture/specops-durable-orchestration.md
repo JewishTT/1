@@ -57,7 +57,9 @@ apps/specops_ci/orchestration/graph.py defines the versioned StateGraph. The gra
 is static trusted code. The operation payload selects from a narrow step enum:
 evidence_review, configuration_review, detection_coverage_review,
 lab_simulation and report_generation. Conditional edges stop on an invalid approval
-or authorization and re-check authorization between steps.
+or authorization and re-check authorization between steps. An assessment result marked needs_review
+terminates the workflow in a manual-review state rather than progressing to the next
+step automatically.
 
 ### Temporal
 
