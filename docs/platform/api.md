@@ -284,12 +284,13 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 
 | Method | Path | Line |
 |---|---|---|
-| POST | `/authorizations` | 131 |
-| POST | `/assessments/prepare` | 224 |
-| POST | `/authorizations/{authorization_id}/revoke` | 298 |
-| POST | `/operations` | 328 |
-| GET | `/operations/{operation_id}/approval` | 477 |
-| POST | `/operations/{operation_id}/steps/{step_id}/decision` | 504 |
+| POST | `/authorizations` | 132 |
+| POST | `/assessments/prepare` | 225 |
+| POST | `/authorizations/{authorization_id}/revoke` | 299 |
+| POST | `/operations` | 329 |
+| GET | `/operations/{operation_id}/approval` | 478 |
+| POST | `/operations/{operation_id}/steps/{step_id}/decision` | 505 |
+| GET | `/operations/{operation_id}/decisions/{decision_id}/delivery` | 626 |
 
 ## `specops_counterintel` — `apps/control-plane/api/routes/specops_counterintel.py`
 

@@ -17,7 +17,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | TypeScript modules | 329 |
 | Rust source files / crates | 16 / 9 |
 | Resolved local import edges | 3325 |
-| HTTP routes / routers | 230 / 39 |
+| HTTP routes / routers | 231 / 39 |
 | Event types / lanes | 99 / 29 |
 | Test files / test functions | 393 / 5558 |
 | Untested platform modules | 319 |

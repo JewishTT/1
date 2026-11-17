@@ -23,7 +23,7 @@ committed model no longer matches the tree.
 | Test files | 393 |
 | Test functions | 5558 |
 | Untested platform modules | 319 |
-| HTTP routes | 230 |
+| HTTP routes | 231 |
 | Contracts (python/docs/root) | 7 / 74 / 12 |
 | Capabilities | 30 |
 
