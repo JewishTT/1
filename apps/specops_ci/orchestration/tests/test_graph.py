@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+pytest.importorskip("langgraph.graph")
+
 from specops_ci.orchestration.contracts import OperationSpec, SpecStep, SpecStepKind
 from specops_ci.orchestration.graph import (
     GRAPH_NAME,
