@@ -40,6 +40,7 @@ dev = [ "pytest>=8.2", "pytest-asyncio>=0.23", "ruff>=0.5" ]
 cognitive-observation-consumer = "services.observation_consumer_runner:main"
 cognitive-relation-projection-relay = "services.relation_projection_relay:main"
 cognitive-relation-projection-rebuild = "services.relation_projection_rebuild:main"
+cognitive-specops-ci-signal-outbox = "services.specops_ci_signal_outbox:main"
 
 [tool.uv.sources]
 cognitive-shared = { workspace = true }
