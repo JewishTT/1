@@ -6,8 +6,8 @@ time-bounded, explicitly approved engagement scope.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 
