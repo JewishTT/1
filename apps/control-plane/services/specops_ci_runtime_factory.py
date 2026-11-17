@@ -38,6 +38,11 @@ def build_runtime() -> ArtexSpecOpsRuntime:
     evaluator = evaluator_factory()
     if graphs is None or evaluator is None:
         raise RuntimeError("ARTEX graph and assessment factories must return live adapters")
+    graph_methods = ("read_asset_graph", "read_exploration_graph", "append_exploration_result")
+    if any(not callable(getattr(graphs, name, None)) for name in graph_methods):
+        raise TypeError("ARTEX graph factory returned an incomplete ArtexGraphPort")
+    if not callable(getattr(evaluator, "evaluate", None)):
+        raise TypeError("assessment factory returned an incomplete ReadOnlyAssessmentEngine")
     return ArtexSpecOpsRuntime(
         authorization=PostgresSpecOpsAuthorizationGate(make_session_factory()),
         graphs=graphs,
