@@ -376,10 +376,61 @@ async def create_operation(
         from workflow.client import connect_temporal
 
         temporal = await connect_temporal()
+        try:
+            existing = temporal.get_workflow_handle(spec.operation_id)
+            await existing.describe()
+        except Exception:
+            existing = None
+
+        if existing is not None:
+            existing_summary = await existing.query("get_operation_summary")
+            if (
+                not isinstance(existing_summary, dict)
+                or existing_summary.get("tenant_id") != ctx.tenant_id
+                or existing_summary.get("authorization_id") != spec.authorization_id
+                or existing_summary.get("snapshot_id") != spec.snapshot_id
+                or existing_summary.get("spec_digest") != spec.digest()
+            ):
+                raise HTTPException(
+                    status_code=409,
+                    detail="operation_id is already bound to a different immutable spec",
+                )
+            return {
+                **existing_summary,
+                "reused": True,
+                "workflow_type": "specops-ci-operation-v1",
+                "task_queue": "specops-ci-operations",
+            }
+
         await start_operation(temporal, spec, authorization, now=now)
     except AssessmentScopeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except HTTPException:
+        raise
     except Exception as exc:
+        # A concurrent submitter may win after our initial describe. Adopt it only
+        # when the existing workflow proves it has the identical immutable digest.
+        try:
+            from workflow.client import connect_temporal
+
+            temporal = await connect_temporal()
+            existing = temporal.get_workflow_handle(spec.operation_id)
+            existing_summary = await existing.query("get_operation_summary")
+            if (
+                isinstance(existing_summary, dict)
+                and existing_summary.get("tenant_id") == ctx.tenant_id
+                and existing_summary.get("authorization_id") == spec.authorization_id
+                and existing_summary.get("snapshot_id") == spec.snapshot_id
+                and existing_summary.get("spec_digest") == spec.digest()
+            ):
+                return {
+                    **existing_summary,
+                    "reused": True,
+                    "workflow_type": "specops-ci-operation-v1",
+                    "task_queue": "specops-ci-operations",
+                }
+        except Exception:
+            pass
         raise HTTPException(
             status_code=503,
             detail={
