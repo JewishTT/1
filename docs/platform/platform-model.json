@@ -44864,7 +44864,7 @@
       {
         "path": "apps/specops_ci/orchestration/tests/test_graph.py",
         "status": "TEST",
-        "loc": 106,
+        "loc": 108,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
