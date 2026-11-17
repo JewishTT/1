@@ -28695,22 +28695,22 @@
         {
           "method": "POST",
           "path": "/operations",
-          "lineno": 329
+          "lineno": 332
         },
         {
           "method": "GET",
           "path": "/operations/{operation_id}/approval",
-          "lineno": 478
+          "lineno": 481
         },
         {
           "method": "POST",
           "path": "/operations/{operation_id}/steps/{step_id}/decision",
-          "lineno": 505
+          "lineno": 508
         },
         {
           "method": "GET",
           "path": "/operations/{operation_id}/decisions/{decision_id}/delivery",
-          "lineno": 626
+          "lineno": 635
         }
       ]
     },
@@ -37606,7 +37606,7 @@
       {
         "path": "apps/control-plane/api/routes/specops_ci.py",
         "status": "IMPLEMENTED",
-        "loc": 663,
+        "loc": 672,
         "callables": 10,
         "stubs": 0,
         "not_implemented": 0,
@@ -44864,7 +44864,7 @@
       {
         "path": "apps/specops_ci/orchestration/tests/test_graph.py",
         "status": "TEST",
-        "loc": 108,
+        "loc": 111,
         "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
@@ -97624,7 +97624,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 480
+          "line": 483
         },
         "confidence": 1.0
       },
@@ -97637,7 +97637,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 628
+          "line": 637
         },
         "confidence": 1.0
       },
@@ -99223,7 +99223,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 331
+          "line": 334
         },
         "confidence": 1.0
       },
@@ -99262,7 +99262,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 507
+          "line": 510
         },
         "confidence": 1.0
       },
