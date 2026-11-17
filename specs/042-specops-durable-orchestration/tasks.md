@@ -13,8 +13,8 @@
 - [x] T007 Add PostgreSQL-backed authorization/decision verification adapter.
 
 ## API and persistence
-- [x] T010 Add append-only operator decision ORM model.
-- [x] T011 Add Alembic revision 038 for durable step decisions.
+- [x] T010 Add append-only operator decision ORM model and immutable database trigger.
+- [x] T011 Add Alembic revisions 038 and 039 for durable step decisions and signal outbox.
 - [x] T012 Add API to submit immutable operations against existing authorizations.
 - [x] T013 Add API to query pending approval challenges.
 - [x] T014 Persist authenticated admin decisions before sending Temporal Signals.
@@ -22,6 +22,7 @@
 - [ ] T016 Add tests for PostgreSQL gate and HTTP tenant/admin authorization behavior.
 - [x] T017 Add transactional decision outbox and lease-based Signal relay for automatic
   recovery after Temporal outages.
+- [x] T018 Add tenant-scoped API endpoint for signal delivery status.
 
 ## ARTEX and production integration
 - [x] T020 Define Asset Graph and Exploration Graph adapter protocols.
