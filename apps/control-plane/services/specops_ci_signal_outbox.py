@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from functools import lru_cache
 
 from db.session import make_session_factory
 from db.specops_ci_signal_outbox import SpecOpsDecisionSignalOutboxRelay
@@ -11,9 +11,14 @@ from db.specops_ci_signal_outbox import SpecOpsDecisionSignalOutboxRelay
 log = logging.getLogger(__name__)
 
 
+@lru_cache(maxsize=1)
+def _session_factory():
+    return make_session_factory()
+
+
 async def relay_specops_ci_decision_signals(*, limit: int = 20) -> dict[str, int]:
     """Dispatch committed admin decisions to Temporal; duplicate delivery is safe."""
-    relay = SpecOpsDecisionSignalOutboxRelay(make_session_factory())
+    relay = SpecOpsDecisionSignalOutboxRelay(_session_factory())
     rows = await relay.claim_ready(limit=limit)
     counts = {"claimed": len(rows), "dispatched": 0, "failed": 0}
     if not rows:
