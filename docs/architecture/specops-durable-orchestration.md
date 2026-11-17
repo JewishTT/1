@@ -140,9 +140,12 @@ not implemented in this first slice.
 
 The repository currently contains no production ARTEX Asset Graph or Exploration Graph
 implementation that this feature can bind to. The protocols and composition class are
-implemented, but the actual adapter and assessment evaluator must be supplied by the
-deployment. SPECOPS_CI_RUNTIME_FACTORY is mandatory; an unset or incomplete factory
-causes worker startup to fail closed.
+implemented, and services.specops_ci_runtime_factory:build_runtime composes the
+PostgreSQL gate with deployment-supplied graph/evaluator factories. The actual ARTEX
+adapter and assessment evaluator must still be supplied by the deployment.
+SPECOPS_CI_RUNTIME_FACTORY, SPECOPS_CI_ARTEX_GRAPH_FACTORY and
+SPECOPS_CI_ASSESSMENT_ENGINE_FACTORY are mandatory; missing or incomplete factories
+cause worker startup to fail closed.
 
 The HTTP API can submit operations, query pending approvals and atomically persist
 admin decisions plus a Temporal Signal outbox entry. Run
