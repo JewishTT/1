@@ -38275,7 +38275,7 @@
       {
         "path": "apps/control-plane/db/schema.py",
         "status": "IMPLEMENTED",
-        "loc": 3342,
+        "loc": 3343,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
