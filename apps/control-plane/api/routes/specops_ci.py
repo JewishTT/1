@@ -510,7 +510,7 @@ async def submit_operator_decision(
     body: OperatorDecisionCreate,
     ctx: Annotated[TenantContext, Depends(require_admin)],
 ) -> dict:
-    """Persist an admin decision first, then signal the waiting Temporal workflow."""
+    """Persist an admin decision and its Temporal Signal intent in one transaction."""
     platform = await get_platform(tenant_id=ctx.tenant_id)
     if platform.session_factory is None:
         raise HTTPException(
@@ -543,7 +543,7 @@ async def submit_operator_decision(
             auth_result = await session.execute(select(AuthorizationRow).where(
                 AuthorizationRow.authorization_id == pending["authorization_id"],
                 AuthorizationRow.tenant_id == ctx.tenant_id,
-            ))
+            ).with_for_update())
             authorization_row = auth_result.scalar_one_or_none()
             if (
                 authorization_row is None
