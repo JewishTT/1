@@ -770,6 +770,59 @@ class SpecOpsOperationDecision(Base):
     )
 
 
+class SpecOpsDecisionSignalOutbox(Base):
+    """Durable delivery record for Temporal signals carrying immutable admin decisions."""
+
+    __tablename__ = "specops_ci_decision_signal_outbox"
+
+    outbox_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    operation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    step_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    spec_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    decision_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    signal_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="PENDING")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_specops_ci_outbox_tenant"),
+        CheckConstraint(
+            "status IN ('PENDING', 'DISPATCHING', 'FAILED', 'DISPATCHED')",
+            name="ck_specops_ci_outbox_status",
+        ),
+        CheckConstraint("attempts >= 0", name="ck_specops_ci_outbox_attempts"),
+        Index(
+            "ix_specops_ci_outbox_ready",
+            "status",
+            "available_at",
+            "lease_until",
+        ),
+        Index(
+            "ix_specops_ci_outbox_tenant_operation",
+            "tenant_id",
+            "operation_id",
+        ),
+        UniqueConstraint(
+            "tenant_id",
+            "operation_id",
+            "step_id",
+            "spec_digest",
+            name="uq_specops_ci_outbox_step_digest",
+        ),
+    )
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
 
