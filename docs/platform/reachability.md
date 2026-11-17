@@ -6,9 +6,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 484 |
+| PRODUCTION | 486 |
 | TEST_ONLY | 138 |
-| ORPHAN | 150 |
+| ORPHAN | 151 |
 | TEST | 389 |
 
 ## Entrypoints (production roots)
@@ -33,6 +33,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/semantic_path/record_corpus.py` |
 | `apps/control-plane/services/observation_consumer_runner.py` |
 | `apps/control-plane/services/pow_run.py` |
+| `apps/control-plane/services/specops_ci_signal_outbox.py` |
 | `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/workflows/worker.py` |
 | `apps/deploy/minio-init/init-buckets.py` |
@@ -209,7 +210,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**150** modules are imported by neither production nor tests.
+**151** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -266,6 +267,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py` |
 | `apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py` |
 | `apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py` |
+| `apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |

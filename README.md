@@ -13,14 +13,14 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1161 |
+| Python modules | 1164 |
 | TypeScript modules | 329 |
 | Rust source files / crates | 16 / 9 |
-| Resolved local import edges | 3318 |
+| Resolved local import edges | 3322 |
 | HTTP routes / routers | 230 / 39 |
 | Event types / lanes | 99 / 29 |
 | Test files / test functions | 392 / 5555 |
-| Untested platform modules | 317 |
+| Untested platform modules | 320 |
 
 ## Components
 
@@ -30,7 +30,7 @@ The OSINT core is complemented by a scientific reasoning layer and a policy-gove
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 274 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 277 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | `economics` | 4 | 0 | 0 | Economic subjects, financial flows and economic process analysis over Intelligence. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |

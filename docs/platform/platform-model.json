@@ -227,7 +227,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 274,
+      "python_modules": 277,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -338,11 +338,13 @@
         "apps.control-plane.db.migrations.versions.036_candidate_resolution_enum_types",
         "apps.control-plane.db.migrations.versions.037_specops_ci_authorizations",
         "apps.control-plane.db.migrations.versions.038_specops_ci_operation_decisions",
+        "apps.control-plane.db.migrations.versions.039_specops_ci_decision_signal_outbox",
         "apps.control-plane.db.relation_candidate_store",
         "apps.control-plane.db.relation_claim_store",
         "apps.control-plane.db.schema",
         "apps.control-plane.db.session",
         "apps.control-plane.db.source_query_store",
+        "apps.control-plane.db.specops_ci_signal_outbox",
         "apps.control-plane.db.temporal_materialization",
         "apps.control-plane.modifier",
         "apps.control-plane.modifier.mismatch",
@@ -396,6 +398,7 @@
         "apps.control-plane.services.source_registry",
         "apps.control-plane.services.specops_catalog",
         "apps.control-plane.services.specops_ci_authorization_gate",
+        "apps.control-plane.services.specops_ci_signal_outbox",
         "apps.control-plane.services.temporal_materialization_dispatch",
         "apps.control-plane.services.temporal_materialization_service",
         "apps.control-plane.services.temporal_port",
@@ -426,10 +429,7 @@
         "apps.control-plane.tests.integration.test_resolution_api",
         "apps.control-plane.tests.integration.test_science_api",
         "apps.control-plane.tests.integration.test_seed_security",
-        "apps.control-plane.tests.integration.test_temporal_materialization_api",
-        "apps.control-plane.tests.integration.test_tenancy",
-        "apps.control-plane.tests.integration.test_tools_api",
-        "apps.control-plane.tests.test_auth_security"
+        "apps.control-plane.tests.integration.test_temporal_materialization_api"
       ]
     },
     {
@@ -1262,15 +1262,15 @@
     }
   ],
   "import_graph": {
-    "module_count": 1161,
-    "edge_count": 3318,
+    "module_count": 1164,
+    "edge_count": 3322,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 1016,
+      "stdlib:__future__": 1019,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 29,
-      "stdlib:asyncio": 82,
+      "stdlib:asyncio": 83,
       "stdlib:base64": 12,
       "stdlib:binascii": 3,
       "stdlib:bisect": 1,
@@ -1282,7 +1282,7 @@
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 422,
-      "stdlib:datetime": 240,
+      "stdlib:datetime": 241,
       "stdlib:decimal": 16,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1290,7 +1290,7 @@
       "stdlib:functools": 10,
       "stdlib:getpass": 1,
       "stdlib:gzip": 2,
-      "stdlib:hashlib": 147,
+      "stdlib:hashlib": 148,
       "stdlib:heapq": 1,
       "stdlib:hmac": 4,
       "stdlib:html": 11,
@@ -1301,7 +1301,7 @@
       "stdlib:ipaddress": 8,
       "stdlib:itertools": 11,
       "stdlib:json": 222,
-      "stdlib:logging": 24,
+      "stdlib:logging": 25,
       "stdlib:math": 42,
       "stdlib:os": 85,
       "stdlib:pathlib": 345,
@@ -1327,7 +1327,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 43,
-      "stdlib:typing": 430,
+      "stdlib:typing": 432,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 68,
@@ -1339,7 +1339,7 @@
       "stdlib:zlib": 2,
       "third-party:PIL": 2,
       "third-party:aioboto3": 3,
-      "third-party:alembic": 31,
+      "third-party:alembic": 32,
       "third-party:anyascii": 1,
       "third-party:anyio": 3,
       "third-party:asyncpg": 1,
@@ -1383,7 +1383,7 @@
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
       "third-party:splink": 2,
-      "third-party:sqlalchemy": 181,
+      "third-party:sqlalchemy": 185,
       "third-party:sqlglot": 2,
       "third-party:starlette": 2,
       "third-party:temporalio": 20,
@@ -5768,6 +5768,11 @@
         "via": "db.schema"
       },
       {
+        "from": "apps/control-plane/db/specops_ci_signal_outbox.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
+      },
+      {
         "from": "apps/control-plane/db/temporal_materialization.py",
         "to": "apps/shared/domain/temporal_materialization.py",
         "via": "domain.temporal_materialization"
@@ -7311,6 +7316,21 @@
         "from": "apps/control-plane/services/specops_ci_authorization_gate.py",
         "to": "apps/specops_ci/domain.py",
         "via": "specops_ci.domain"
+      },
+      {
+        "from": "apps/control-plane/services/specops_ci_signal_outbox.py",
+        "to": "apps/control-plane/db/session.py",
+        "via": "db.session"
+      },
+      {
+        "from": "apps/control-plane/services/specops_ci_signal_outbox.py",
+        "to": "apps/control-plane/db/specops_ci_signal_outbox.py",
+        "via": "db.specops_ci_signal_outbox"
+      },
+      {
+        "from": "apps/control-plane/services/specops_ci_signal_outbox.py",
+        "to": "apps/shared/workflow/client.py",
+        "via": "workflow.client"
       },
       {
         "from": "apps/control-plane/services/temporal_materialization_dispatch.py",
@@ -32767,6 +32787,8 @@
     "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
     "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
     "apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py",
+    "apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py",
+    "apps/control-plane/db/specops_ci_signal_outbox.py",
     "apps/control-plane/modifier/mismatch.py",
     "apps/control-plane/semantic_path/corpus.py",
     "apps/control-plane/semantic_path/corpus_cases.py",
@@ -32788,6 +32810,7 @@
     "apps/control-plane/services/processing_result_store.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/specops_catalog.py",
+    "apps/control-plane/services/specops_ci_signal_outbox.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
     "apps/deploy/minio-init/init-buckets.py",
@@ -32847,12 +32870,9 @@
     "apps/science/econ/__init__.py",
     "apps/science/experiments/__init__.py",
     "apps/science/experiments/context.py",
-    "apps/science/fixtures/__init__.py",
-    "apps/science/hypotheses/__init__.py",
-    "apps/science/kinetics/__init__.py",
-    "apps/science/operators/__init__.py"
+    "apps/science/fixtures/__init__.py"
   ],
-  "untested_count": 317,
+  "untested_count": 320,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -33798,11 +33818,13 @@
             "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
             "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
             "apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py",
+            "apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py",
             "apps/control-plane/db/relation_candidate_store.py",
             "apps/control-plane/db/relation_claim_store.py",
             "apps/control-plane/db/schema.py",
             "apps/control-plane/db/session.py",
             "apps/control-plane/db/source_query_store.py",
+            "apps/control-plane/db/specops_ci_signal_outbox.py",
             "apps/control-plane/db/temporal_materialization.py",
             "apps/control-plane/modifier/__init__.py",
             "apps/control-plane/modifier/mismatch.py",
@@ -33853,6 +33875,7 @@
             "apps/control-plane/services/source_registry.py",
             "apps/control-plane/services/specops_catalog.py",
             "apps/control-plane/services/specops_ci_authorization_gate.py",
+            "apps/control-plane/services/specops_ci_signal_outbox.py",
             "apps/control-plane/services/temporal_materialization_dispatch.py",
             "apps/control-plane/services/temporal_materialization_service.py",
             "apps/control-plane/services/temporal_port.py",
@@ -34029,7 +34052,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 333
+          "module_count": 336
         },
         {
           "id": "webapp",
@@ -38195,6 +38218,15 @@
         "markers": []
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py",
+        "status": "MIGRATION",
+        "loc": 95,
+        "callables": 2,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "IMPLEMENTED",
         "loc": 229,
@@ -38215,7 +38247,7 @@
       {
         "path": "apps/control-plane/db/schema.py",
         "status": "IMPLEMENTED",
-        "loc": 3289,
+        "loc": 3342,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -38235,6 +38267,15 @@
         "status": "IMPLEMENTED",
         "loc": 157,
         "callables": 9,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/db/specops_ci_signal_outbox.py",
+        "status": "IMPLEMENTED",
+        "loc": 162,
+        "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -38719,6 +38760,15 @@
         "path": "apps/control-plane/services/specops_ci_authorization_gate.py",
         "status": "IMPLEMENTED",
         "loc": 137,
+        "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/services/specops_ci_signal_outbox.py",
+        "status": "IMPLEMENTED",
+        "loc": 73,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -46311,12 +46361,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 625,
+      "IMPLEMENTED": 627,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 102,
       "TEST": 389,
-      "MIGRATION": 26,
-      "total": 1161
+      "MIGRATION": 27,
+      "total": 1164
     }
   },
   "reachability": {
@@ -47394,6 +47444,10 @@
         "status": "ORPHAN"
       },
       {
+        "path": "apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py",
+        "status": "ORPHAN"
+      },
+      {
         "path": "apps/control-plane/db/relation_candidate_store.py",
         "status": "PRODUCTION"
       },
@@ -47412,6 +47466,10 @@
       {
         "path": "apps/control-plane/db/source_query_store.py",
         "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/control-plane/db/specops_ci_signal_outbox.py",
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/db/temporal_materialization.py",
@@ -47624,6 +47682,10 @@
       {
         "path": "apps/control-plane/services/specops_ci_authorization_gate.py",
         "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/control-plane/services/specops_ci_signal_outbox.py",
+        "status": "PRODUCTION"
       },
       {
         "path": "apps/control-plane/services/temporal_materialization_dispatch.py",
@@ -50985,6 +51047,7 @@
       "apps/control-plane/semantic_path/record_corpus.py",
       "apps/control-plane/services/observation_consumer_runner.py",
       "apps/control-plane/services/pow_run.py",
+      "apps/control-plane/services/specops_ci_signal_outbox.py",
       "apps/control-plane/services/worker_pools.py",
       "apps/control-plane/workflows/worker.py",
       "apps/deploy/minio-init/init-buckets.py",
@@ -51015,11 +51078,11 @@
       "tools/specs/build_owner_map.py"
     ],
     "summary": {
-      "PRODUCTION": 484,
+      "PRODUCTION": 486,
       "TEST_ONLY": 138,
-      "ORPHAN": 150,
+      "ORPHAN": 151,
       "TEST": 389,
-      "total": 1161
+      "total": 1164
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -51215,6 +51278,7 @@
       "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
       "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
       "apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py",
+      "apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py",
       "apps/control-plane/semantic_path/__init__.py",
       "apps/control-plane/semantic_path/signal_corpus.py",
       "apps/control-plane/semantic_path/signal_corpus_baseline.py",
@@ -65093,6 +65157,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "59c49c48bd07be3c",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/db/specops_ci_signal_outbox.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/db/specops_ci_signal_outbox.py",
+          "via": "db.schema"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "13cede82ca26f8a8",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/control-plane/db/temporal_materialization.py",
@@ -69106,6 +69183,45 @@
         "evidence": {
           "file": "apps/control-plane/services/specops_ci_authorization_gate.py",
           "via": "specops_ci.domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "534881ffa11eb7ef",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/specops_ci_signal_outbox.py",
+        "object": "apps/control-plane/db/session.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/specops_ci_signal_outbox.py",
+          "via": "db.session"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "dbc461edd5e8e299",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/specops_ci_signal_outbox.py",
+        "object": "apps/control-plane/db/specops_ci_signal_outbox.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/specops_ci_signal_outbox.py",
+          "via": "db.specops_ci_signal_outbox"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "0bbc5bda53cda0dc",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/specops_ci_signal_outbox.py",
+        "object": "apps/shared/workflow/client.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/specops_ci_signal_outbox.py",
+          "via": "workflow.client"
         },
         "confidence": 1.0
       },
@@ -104289,6 +104405,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "a75a596cd2b0b62d",
+        "kind": "TABLE_CLASS_DEFINED",
+        "subject": "SpecOpsDecisionSignalOutbox",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "regex_class_base",
+        "evidence": {
+          "file": "apps/control-plane/db/schema.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "45a0a74096ba67c4",
         "kind": "TABLE_CLASS_DEFINED",
         "subject": "SpecOpsEngagementAuthorization",
@@ -117502,44 +117630,44 @@
       }
     ],
     "stats": {
-      "facts_total": 5079,
-      "static_facts": 4779,
+      "facts_total": 5084,
+      "static_facts": 4784,
       "inferred": 300,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1161,
+    "python_modules": 1164,
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3318,
+    "import_edges": 3322,
     "test_files": 392,
     "test_functions": 5555,
-    "untested_modules": 317,
+    "untested_modules": 320,
     "http_routes": 230
   },
   "evidence_stats": {
-    "facts_total": 5079,
-    "static_facts": 4779,
+    "facts_total": 5084,
+    "static_facts": 4784,
     "inferred": 300,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 625,
+    "IMPLEMENTED": 627,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 102,
     "TEST": 389,
-    "MIGRATION": 26,
-    "total": 1161
+    "MIGRATION": 27,
+    "total": 1164
   },
   "reachability_summary": {
-    "PRODUCTION": 484,
+    "PRODUCTION": 486,
     "TEST_ONLY": 138,
-    "ORPHAN": 150,
+    "ORPHAN": 151,
     "TEST": 389,
-    "total": 1161
+    "total": 1164
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -117560,6 +117688,7 @@
     "apps/control-plane/semantic_path/record_corpus.py",
     "apps/control-plane/services/observation_consumer_runner.py",
     "apps/control-plane/services/pow_run.py",
+    "apps/control-plane/services/specops_ci_signal_outbox.py",
     "apps/control-plane/services/worker_pools.py",
     "apps/control-plane/workflows/worker.py",
     "apps/deploy/minio-init/init-buckets.py",
@@ -117783,6 +117912,7 @@
     "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
     "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
     "apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py",
+    "apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py",
     "apps/control-plane/semantic_path/__init__.py",
     "apps/control-plane/semantic_path/signal_corpus.py",
     "apps/control-plane/semantic_path/signal_corpus_baseline.py",
