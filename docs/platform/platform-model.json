@@ -1263,7 +1263,7 @@
   ],
   "import_graph": {
     "module_count": 1165,
-    "edge_count": 3324,
+    "edge_count": 3325,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 1020,
@@ -4891,6 +4891,11 @@
         "from": "apps/control-plane/api/routes/specops_ci.py",
         "to": "apps/specops_ci/orchestration/contracts.py",
         "via": "specops_ci.orchestration.contracts"
+      },
+      {
+        "from": "apps/control-plane/api/routes/specops_ci.py",
+        "to": "apps/specops_ci/service.py",
+        "via": "specops_ci.service"
       },
       {
         "from": "apps/control-plane/api/routes/specops_ci.py",
@@ -28660,32 +28665,32 @@
         {
           "method": "POST",
           "path": "/authorizations",
-          "lineno": 130
+          "lineno": 131
         },
         {
           "method": "POST",
           "path": "/assessments/prepare",
-          "lineno": 223
+          "lineno": 224
         },
         {
           "method": "POST",
           "path": "/authorizations/{authorization_id}/revoke",
-          "lineno": 297
+          "lineno": 298
         },
         {
           "method": "POST",
           "path": "/operations",
-          "lineno": 327
+          "lineno": 328
         },
         {
           "method": "GET",
           "path": "/operations/{operation_id}/approval",
-          "lineno": 476
+          "lineno": 477
         },
         {
           "method": "POST",
           "path": "/operations/{operation_id}/steps/{step_id}/decision",
-          "lineno": 503
+          "lineno": 504
         }
       ]
     },
@@ -35519,8 +35524,8 @@
           "has_tasks": true,
           "has_plan": false,
           "spec_path": "specs/042-specops-durable-orchestration/spec.md",
-          "tasks_checked": 19,
-          "tasks_total": 30,
+          "tasks_checked": 20,
+          "tasks_total": 31,
           "modules": [],
           "module_count": 0,
           "capabilities": []
@@ -37580,7 +37585,7 @@
       {
         "path": "apps/control-plane/api/routes/specops_ci.py",
         "status": "IMPLEMENTED",
-        "loc": 627,
+        "loc": 628,
         "callables": 9,
         "stubs": 0,
         "not_implemented": 0,
@@ -62966,6 +62971,19 @@
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
           "via": "specops_ci.orchestration.contracts"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "b488e82b646aa42d",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/api/routes/specops_ci.py",
+        "object": "apps/specops_ci/service.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/api/routes/specops_ci.py",
+          "via": "specops_ci.service"
         },
         "confidence": 1.0
       },
@@ -97532,7 +97550,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 478
+          "line": 479
         },
         "confidence": 1.0
       },
@@ -98559,7 +98577,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 225
+          "line": 226
         },
         "confidence": 1.0
       },
@@ -98572,7 +98590,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 132
+          "line": 133
         },
         "confidence": 1.0
       },
@@ -98585,7 +98603,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 299
+          "line": 300
         },
         "confidence": 1.0
       },
@@ -99118,7 +99136,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 329
+          "line": 330
         },
         "confidence": 1.0
       },
@@ -99157,7 +99175,7 @@
         "method": "regex_decorator",
         "evidence": {
           "file": "apps/control-plane/api/routes/specops_ci.py",
-          "line": 505
+          "line": 506
         },
         "confidence": 1.0
       },
@@ -117704,8 +117722,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5087,
-      "static_facts": 4787,
+      "facts_total": 5088,
+      "static_facts": 4788,
       "inferred": 300,
       "intended": 0
     }
@@ -117716,15 +117734,15 @@
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3324,
+    "import_edges": 3325,
     "test_files": 393,
     "test_functions": 5558,
     "untested_modules": 319,
     "http_routes": 230
   },
   "evidence_stats": {
-    "facts_total": 5087,
-    "static_facts": 4787,
+    "facts_total": 5088,
+    "static_facts": 4788,
     "inferred": 300,
     "intended": 0
   },

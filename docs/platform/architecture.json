@@ -2622,8 +2622,8 @@
         "has_tasks": true,
         "has_plan": false,
         "spec_path": "specs/042-specops-durable-orchestration/spec.md",
-        "tasks_checked": 19,
-        "tasks_total": 30,
+        "tasks_checked": 20,
+        "tasks_total": 31,
         "modules": [],
         "module_count": 0,
         "capabilities": []
