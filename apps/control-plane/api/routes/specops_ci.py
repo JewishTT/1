@@ -537,8 +537,8 @@ async def submit_operator_decision(
 
     now = datetime.now(timezone.utc)
     approval_ref = body.approval_ref.strip()
-    if not approval_ref:
-        raise HTTPException(status_code=422, detail="approval_ref must not be blank")
+    if len(approval_ref) < 3:
+        raise HTTPException(status_code=422, detail="approval_ref must contain at least 3 non-space characters")
     async with platform.session_factory() as session:
         async with session.begin():
             auth_result = await session.execute(select(AuthorizationRow).where(
@@ -655,7 +655,7 @@ async def get_operator_decision_delivery(
         "attempts": row.attempts,
         "available_at": row.available_at.isoformat(),
         "dispatched_at": row.dispatched_at.isoformat() if row.dispatched_at else None,
-        "last_error": row.last_error[:300] if row.status == "FAILED" else None,
+        "failure_code": "delivery_failed" if row.status == "FAILED" else None,
     }
 
 
