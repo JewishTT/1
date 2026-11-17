@@ -24,12 +24,13 @@ The exact worker dependencies are pinned:
 The worker will not poll a queue unless SPECOPS_CI_RUNTIME_FACTORY points to a
 synchronous Python factory that returns an implementation of SpecOpsRuntimePorts.
 
-The returned adapter must compose:
-- PostgresSpecOpsAuthorizationGate for current authorizations and durable admin
-  decisions;
-- a tenant-scoped ArtexGraphPort that reads only the supplied snapshot/roster and
-  deduplicates writes using the idempotency key;
-- a ReadOnlyAssessmentEngine for the closed step vocabulary.
+The default services.specops_ci_runtime_factory:build_runtime composition builds
+PostgresSpecOpsAuthorizationGate automatically and loads two deployment-owned
+zero-argument factories:
+- SPECOPS_CI_ARTEX_GRAPH_FACTORY: a tenant-scoped ArtexGraphPort that reads only the
+  supplied snapshot/roster and deduplicates writes using the idempotency key;
+- SPECOPS_CI_ASSESSMENT_ENGINE_FACTORY: a ReadOnlyAssessmentEngine for the closed step
+  vocabulary.
 
 No implementation is fabricated in this repository because the ARTEX Asset Graph,
 Exploration Graph and safe assessment engine services were not present in the source
@@ -42,7 +43,9 @@ export PYTHONPATH="$PWD/apps:$PWD/apps/control-plane"
 export TEMPORAL_ADDRESS="localhost:7233"
 export TEMPORAL_NAMESPACE="default"
 export SPECOPS_CI_TASK_QUEUE="specops-ci-operations"
-export SPECOPS_CI_RUNTIME_FACTORY="deployment.specops_runtime:build_runtime"
+export SPECOPS_CI_RUNTIME_FACTORY="services.specops_ci_runtime_factory:build_runtime"
+export SPECOPS_CI_ARTEX_GRAPH_FACTORY="deployment.artex:build_graph_adapter"
+export SPECOPS_CI_ASSESSMENT_ENGINE_FACTORY="deployment.artex:build_safe_evaluator"
 python -m specops_ci.orchestration.worker
 ~~~
 
@@ -52,7 +55,9 @@ python -m specops_ci.orchestration.worker
 - GET /api/v1/specops-ci/operations/{operation_id}/approval reads the pending
   challenge.
 - POST /api/v1/specops-ci/operations/{operation_id}/steps/{step_id}/decision records
-  an admin decision in PostgreSQL before sending the Temporal Signal.
+  an admin decision and signal intent in PostgreSQL atomically.
+- GET /api/v1/specops-ci/operations/{operation_id}/decisions/{decision_id}/delivery
+  reports signal delivery state without exposing the signal payload.
 
 The worker re-checks the engagement authorization before each step. A signal is not
 itself an approval; the Activity must find the matching durable decision row.
