@@ -6,17 +6,20 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-pytest.importorskip("langgraph.graph")
-
-from specops_ci.orchestration.contracts import OperationSpec, SpecStep, SpecStepKind
-from specops_ci.orchestration.graph import (
-    GRAPH_NAME,
-    _after_execution,
-    _after_operator_decision,
-    build_operation_graph,
-    validate_operator_decision_node,
-    validate_spec_node,
-)
+try:
+    from specops_ci.orchestration.contracts import OperationSpec, SpecStep, SpecStepKind
+    from specops_ci.orchestration.graph import (
+        GRAPH_NAME,
+        _after_execution,
+        _after_operator_decision,
+        build_operation_graph,
+        validate_operator_decision_node,
+        validate_spec_node,
+    )
+except ModuleNotFoundError as exc:
+    if exc.name and exc.name.startswith("langgraph"):
+        pytest.skip("LangGraph worker dependency is installed in the isolated workflow only", allow_module_level=True)
+    raise
 
 
 def sample_spec() -> OperationSpec:
