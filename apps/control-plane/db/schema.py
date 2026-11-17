@@ -796,6 +796,7 @@ class SpecOpsDecisionSignalOutbox(Base):
     dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
+        UniqueConstraint("decision_id", name="uq_specops_ci_outbox_decision"),
         CheckConstraint("tenant_id <> ''", name="ck_specops_ci_outbox_tenant"),
         CheckConstraint(
             "status IN ('PENDING', 'DISPATCHING', 'FAILED', 'DISPATCHED')",
