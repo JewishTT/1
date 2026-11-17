@@ -13,7 +13,7 @@ committed model no longer matches the tree.
 | TypeScript modules | 329 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 3322 |
+| Import edges (local) | 3323 |
 | Unresolved imports (no local target) | 5 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 4 |
