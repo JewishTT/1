@@ -57,6 +57,15 @@ python -m specops_ci.orchestration.worker
 The worker re-checks the engagement authorization before each step. A signal is not
 itself an approval; the Activity must find the matching durable decision row.
 
+Run the separate relay process with:
+
+~~~bash
+cognitive-specops-ci-signal-outbox
+~~~
+
+The API inserts the decision and its signal outbox record in one PostgreSQL transaction.
+The relay uses leases and backoff to recover from Temporal outages or process crashes.
+
 ## Production blockers
 
 The Payload Codec/KMS, continue-as-new, workflow version compatibility, concrete ARTEX
