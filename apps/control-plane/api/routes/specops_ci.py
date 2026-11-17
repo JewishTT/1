@@ -306,7 +306,10 @@ async def revoke_authorization(
     """Revoke a tenant-owned approval without deleting its audit record."""
     platform = await get_platform(tenant_id=ctx.tenant_id)
     if platform.session_factory is None:
-        raise HTTPException(status_code=503, detail="durable PostgreSQL session factory is unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="durable PostgreSQL session factory is unavailable",
+        )
     now = datetime.now(timezone.utc)
     async with platform.session_factory() as session:
         async with session.begin():
@@ -533,12 +536,18 @@ async def submit_operator_decision(
         or pending.get("snapshot_id") != summary.get("snapshot_id")
         or pending.get("spec_digest") != summary.get("spec_digest")
     ):
-        raise HTTPException(status_code=409, detail="approval challenge does not match operation step")
+        raise HTTPException(
+            status_code=409,
+            detail="approval challenge does not match operation step",
+        )
 
     now = datetime.now(timezone.utc)
     approval_ref = body.approval_ref.strip()
     if len(approval_ref) < 3:
-        raise HTTPException(status_code=422, detail="approval_ref must contain at least 3 non-space characters")
+        raise HTTPException(
+            status_code=422,
+            detail="approval_ref must contain at least 3 non-space characters",
+        )
     async with platform.session_factory() as session:
         async with session.begin():
             auth_result = await session.execute(select(AuthorizationRow).where(
