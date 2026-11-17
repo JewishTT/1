@@ -15,7 +15,6 @@ from specops_ci.orchestration.graph import (
     validate_operator_decision_node,
     validate_spec_node,
 )
-from specops_ci.orchestration.workflow import SpecOpsOperationWorkflow
 
 
 def sample_spec() -> OperationSpec:
@@ -92,6 +91,9 @@ def test_operator_rejection_is_verified_but_never_reaches_executor(
 
 
 def test_temporal_workflow_exposes_query_and_signal_for_human_review() -> None:
+    pytest.importorskip("temporalio.langgraph")
+    from specops_ci.orchestration.workflow import SpecOpsOperationWorkflow
+
     workflow = SpecOpsOperationWorkflow()
     assert callable(workflow.provide_operator_decision)
     assert callable(workflow.get_pending_approval)
