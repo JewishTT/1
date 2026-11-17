@@ -89,10 +89,10 @@ bodies, credentials and arbitrary tool output must never enter Temporal history.
 
 apps/control-plane/services/specops_ci_authorization_gate.py checks the current
 tenant-bound authorization at Activity time and verifies step decisions against
-specops_ci_operation_decisions. The decision is written in PostgreSQL before its
-Temporal Signal is sent. A retry can re-send the same signal using the unique
-(operation, step, digest) key. The signal is transport; the database row is the
-auditable decision.
+specops_ci_operation_decisions. The decision and a compact Signal intent are written in the same PostgreSQL
+transaction. The lease-based outbox relay sends the Signal and retries after Temporal
+outages or relay crashes. The unique decision and outbox keys make enqueue/delivery
+idempotent. The signal is transport; the database row is the auditable decision.
 
 ## Safety invariants
 
@@ -144,8 +144,10 @@ implemented, but the actual adapter and assessment evaluator must be supplied by
 deployment. SPECOPS_CI_RUNTIME_FACTORY is mandatory; an unset or incomplete factory
 causes worker startup to fail closed.
 
-The HTTP API can submit operations, query pending approvals and persist/send admin
-decisions. The API does not enable the legacy SpecOps execution routes. Those consumers
+The HTTP API can submit operations, query pending approvals and atomically persist
+admin decisions plus a Temporal Signal outbox entry. Run
+cognitive-specops-ci-signal-outbox as a separate control-plane process to deliver and
+retry the signals. The API does not enable the legacy SpecOps execution routes. Those consumers
 must be migrated separately and must not bypass the durable gate.
 
 The Temporal-LangGraph integration package temporalio-langgraph is version 0.1.0
