@@ -20,7 +20,8 @@
 - [x] T014 Persist authenticated admin decisions before sending Temporal Signals.
 - [x] T015 Make decision submission idempotent for the same operation/step/spec digest.
 - [ ] T016 Add tests for PostgreSQL gate and HTTP tenant/admin authorization behavior.
-- [ ] T017 Add decision outbox/relay for automatic Signal recovery after Temporal outages.
+- [x] T017 Add transactional decision outbox and lease-based Signal relay for automatic
+  recovery after Temporal outages.
 
 ## ARTEX and production integration
 - [x] T020 Define Asset Graph and Exploration Graph adapter protocols.
