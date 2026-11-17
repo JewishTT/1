@@ -6,13 +6,13 @@ set of read-only or synthetic validation activities.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime
-from enum import StrEnum
 import hashlib
 import json
 import re
 from collections.abc import Mapping
+from dataclasses import dataclass
+from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 from specops_ci.domain import (
