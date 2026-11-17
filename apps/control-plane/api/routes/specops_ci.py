@@ -17,6 +17,7 @@ from sqlalchemy import select
 from api.auth import TenantContext, require_admin, require_analyst
 from composition import get_platform
 from db.schema import (
+    SpecOpsDecisionSignalOutbox as SignalOutboxRow,
     SpecOpsEngagementAuthorization as AuthorizationRow,
     SpecOpsOperationDecision as DecisionRow,
 )
@@ -621,6 +622,40 @@ async def submit_operator_decision(
         "signal_name": SPECOPS_DECISION_SIGNAL,
         "outbox_id": outbox_row.outbox_id,
         "status": "queued_for_delivery",
+    }
+
+
+@router.get("/operations/{operation_id}/decisions/{decision_id}/delivery")
+async def get_operator_decision_delivery(
+    operation_id: str,
+    decision_id: str,
+    ctx: Annotated[TenantContext, Depends(require_analyst)],
+) -> dict:
+    """Read the tenant-scoped outbox delivery state without returning its signal payload."""
+    platform = await get_platform(tenant_id=ctx.tenant_id)
+    if platform.session_factory is None:
+        raise HTTPException(
+            status_code=503,
+            detail="durable PostgreSQL session factory is unavailable",
+        )
+    async with platform.session_factory() as session:
+        result = await session.execute(select(SignalOutboxRow).where(
+            SignalOutboxRow.tenant_id == ctx.tenant_id,
+            SignalOutboxRow.operation_id == operation_id,
+            SignalOutboxRow.decision_id == decision_id,
+        ))
+        row = result.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="decision delivery record not found")
+    return {
+        "operation_id": row.operation_id,
+        "decision_id": row.decision_id,
+        "outbox_id": row.outbox_id,
+        "status": row.status.lower(),
+        "attempts": row.attempts,
+        "available_at": row.available_at.isoformat(),
+        "dispatched_at": row.dispatched_at.isoformat() if row.dispatched_at else None,
+        "last_error": row.last_error[:300] if row.status == "FAILED" else None,
     }
 
 
