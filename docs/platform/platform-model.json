@@ -227,7 +227,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 278,
+      "python_modules": 279,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -398,6 +398,7 @@
         "apps.control-plane.services.source_registry",
         "apps.control-plane.services.specops_catalog",
         "apps.control-plane.services.specops_ci_authorization_gate",
+        "apps.control-plane.services.specops_ci_runtime_factory",
         "apps.control-plane.services.specops_ci_signal_outbox",
         "apps.control-plane.services.temporal_materialization_dispatch",
         "apps.control-plane.services.temporal_materialization_service",
@@ -428,8 +429,7 @@
         "apps.control-plane.tests.integration.test_query_planner",
         "apps.control-plane.tests.integration.test_resolution_api",
         "apps.control-plane.tests.integration.test_science_api",
-        "apps.control-plane.tests.integration.test_seed_security",
-        "apps.control-plane.tests.integration.test_temporal_materialization_api"
+        "apps.control-plane.tests.integration.test_seed_security"
       ]
     },
     {
@@ -1262,11 +1262,11 @@
     }
   ],
   "import_graph": {
-    "module_count": 1165,
-    "edge_count": 3325,
+    "module_count": 1166,
+    "edge_count": 3328,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 1020,
+      "stdlib:__future__": 1021,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 29,
@@ -1295,7 +1295,7 @@
       "stdlib:hmac": 4,
       "stdlib:html": 11,
       "stdlib:http": 5,
-      "stdlib:importlib": 36,
+      "stdlib:importlib": 37,
       "stdlib:inspect": 23,
       "stdlib:io": 25,
       "stdlib:ipaddress": 8,
@@ -1303,7 +1303,7 @@
       "stdlib:json": 222,
       "stdlib:logging": 25,
       "stdlib:math": 42,
-      "stdlib:os": 85,
+      "stdlib:os": 86,
       "stdlib:pathlib": 345,
       "stdlib:queue": 1,
       "stdlib:random": 6,
@@ -1327,7 +1327,7 @@
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 43,
-      "stdlib:typing": 433,
+      "stdlib:typing": 434,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 68,
@@ -7326,6 +7326,21 @@
         "from": "apps/control-plane/services/specops_ci_authorization_gate.py",
         "to": "apps/specops_ci/domain.py",
         "via": "specops_ci.domain"
+      },
+      {
+        "from": "apps/control-plane/services/specops_ci_runtime_factory.py",
+        "to": "apps/control-plane/db/session.py",
+        "via": "db.session"
+      },
+      {
+        "from": "apps/control-plane/services/specops_ci_runtime_factory.py",
+        "to": "apps/control-plane/services/specops_ci_authorization_gate.py",
+        "via": "services.specops_ci_authorization_gate"
+      },
+      {
+        "from": "apps/control-plane/services/specops_ci_runtime_factory.py",
+        "to": "apps/specops_ci/orchestration/runtime_ports.py",
+        "via": "specops_ci.orchestration.runtime_ports"
       },
       {
         "from": "apps/control-plane/services/specops_ci_signal_outbox.py",
@@ -32841,6 +32856,7 @@
     "apps/control-plane/services/processing_result_store.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/specops_catalog.py",
+    "apps/control-plane/services/specops_ci_runtime_factory.py",
     "apps/control-plane/services/specops_ci_signal_outbox.py",
     "apps/control-plane/services/temporal_materialization_dispatch.py",
     "apps/control-plane/services/temporal_materialization_service.py",
@@ -32901,10 +32917,9 @@
     "apps/science/econ/__init__.py",
     "apps/science/experiments/__init__.py",
     "apps/science/experiments/context.py",
-    "apps/science/fixtures/__init__.py",
-    "apps/science/hypotheses/__init__.py"
+    "apps/science/fixtures/__init__.py"
   ],
-  "untested_count": 319,
+  "untested_count": 320,
   "architecture": {
     "generated_from": "/home/runner/work/1/1",
     "purpose": "Machine-consumable architecture model for AI-agent navigation (self-navigable system).",
@@ -33907,6 +33922,7 @@
             "apps/control-plane/services/source_registry.py",
             "apps/control-plane/services/specops_catalog.py",
             "apps/control-plane/services/specops_ci_authorization_gate.py",
+            "apps/control-plane/services/specops_ci_runtime_factory.py",
             "apps/control-plane/services/specops_ci_signal_outbox.py",
             "apps/control-plane/services/temporal_materialization_dispatch.py",
             "apps/control-plane/services/temporal_materialization_service.py",
@@ -34085,7 +34101,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 337
+          "module_count": 338
         },
         {
           "id": "webapp",
@@ -38794,6 +38810,15 @@
         "status": "IMPLEMENTED",
         "loc": 137,
         "callables": 3,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/services/specops_ci_runtime_factory.py",
+        "status": "IMPLEMENTED",
+        "loc": 49,
+        "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -46403,12 +46428,12 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 627,
+      "IMPLEMENTED": 628,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 102,
       "TEST": 390,
       "MIGRATION": 27,
-      "total": 1165
+      "total": 1166
     }
   },
   "reachability": {
@@ -47724,6 +47749,10 @@
       {
         "path": "apps/control-plane/services/specops_ci_authorization_gate.py",
         "status": "TEST_ONLY"
+      },
+      {
+        "path": "apps/control-plane/services/specops_ci_runtime_factory.py",
+        "status": "ORPHAN"
       },
       {
         "path": "apps/control-plane/services/specops_ci_signal_outbox.py",
@@ -51126,9 +51155,9 @@
     "summary": {
       "PRODUCTION": 486,
       "TEST_ONLY": 138,
-      "ORPHAN": 151,
+      "ORPHAN": 152,
       "TEST": 390,
-      "total": 1165
+      "total": 1166
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -51332,6 +51361,7 @@
       "apps/control-plane/services/acquisition_evidence.py",
       "apps/control-plane/services/relation_projection_rebuild.py",
       "apps/control-plane/services/specops_catalog.py",
+      "apps/control-plane/services/specops_ci_runtime_factory.py",
       "apps/control-plane/workflows/__init__.py",
       "apps/economics/__init__.py",
       "apps/intelligence/__init__.py",
@@ -69255,6 +69285,45 @@
         "evidence": {
           "file": "apps/control-plane/services/specops_ci_authorization_gate.py",
           "via": "specops_ci.domain"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "73f024dd7e2cef37",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/specops_ci_runtime_factory.py",
+        "object": "apps/control-plane/db/session.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/specops_ci_runtime_factory.py",
+          "via": "db.session"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "79236fbad9fd49aa",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/specops_ci_runtime_factory.py",
+        "object": "apps/control-plane/services/specops_ci_authorization_gate.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/specops_ci_runtime_factory.py",
+          "via": "services.specops_ci_authorization_gate"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "20b2edd251bf6860",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/services/specops_ci_runtime_factory.py",
+        "object": "apps/specops_ci/orchestration/runtime_ports.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/services/specops_ci_runtime_factory.py",
+          "via": "specops_ci.orchestration.runtime_ports"
         },
         "confidence": 1.0
       },
@@ -117740,44 +117809,44 @@
       }
     ],
     "stats": {
-      "facts_total": 5089,
-      "static_facts": 4789,
+      "facts_total": 5092,
+      "static_facts": 4792,
       "inferred": 300,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1165,
+    "python_modules": 1166,
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3325,
+    "import_edges": 3328,
     "test_files": 393,
     "test_functions": 5558,
-    "untested_modules": 319,
+    "untested_modules": 320,
     "http_routes": 231
   },
   "evidence_stats": {
-    "facts_total": 5089,
-    "static_facts": 4789,
+    "facts_total": 5092,
+    "static_facts": 4792,
     "inferred": 300,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 627,
+    "IMPLEMENTED": 628,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 102,
     "TEST": 390,
     "MIGRATION": 27,
-    "total": 1165
+    "total": 1166
   },
   "reachability_summary": {
     "PRODUCTION": 486,
     "TEST_ONLY": 138,
-    "ORPHAN": 151,
+    "ORPHAN": 152,
     "TEST": 390,
-    "total": 1165
+    "total": 1166
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",
@@ -118030,6 +118099,7 @@
     "apps/control-plane/services/acquisition_evidence.py",
     "apps/control-plane/services/relation_projection_rebuild.py",
     "apps/control-plane/services/specops_catalog.py",
+    "apps/control-plane/services/specops_ci_runtime_factory.py",
     "apps/control-plane/workflows/__init__.py",
     "apps/economics/__init__.py",
     "apps/intelligence/__init__.py",

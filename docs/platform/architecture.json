@@ -1000,6 +1000,7 @@
           "apps/control-plane/services/source_registry.py",
           "apps/control-plane/services/specops_catalog.py",
           "apps/control-plane/services/specops_ci_authorization_gate.py",
+          "apps/control-plane/services/specops_ci_runtime_factory.py",
           "apps/control-plane/services/specops_ci_signal_outbox.py",
           "apps/control-plane/services/temporal_materialization_dispatch.py",
           "apps/control-plane/services/temporal_materialization_service.py",
@@ -1178,7 +1179,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 337
+        "module_count": 338
       },
       {
         "id": "webapp",

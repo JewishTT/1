@@ -9,11 +9,11 @@ committed model no longer matches the tree.
 | Metric | Value |
 |---|---|
 | Components | 20 |
-| Python modules | 1165 |
+| Python modules | 1166 |
 | TypeScript modules | 329 |
 | Rust crates | 9 |
 | Rust source files | 16 |
-| Import edges (local) | 3325 |
+| Import edges (local) | 3328 |
 | Unresolved imports (no local target) | 5 |
 | Unresolved: local | 0 |
 | Unresolved: stale-platform-path | 4 |
@@ -22,7 +22,7 @@ committed model no longer matches the tree.
 | Unresolved: unknown (undeclared) | 0 |
 | Test files | 393 |
 | Test functions | 5558 |
-| Untested platform modules | 319 |
+| Untested platform modules | 320 |
 | HTTP routes | 231 |
 | Contracts (python/docs/root) | 7 / 74 / 12 |
 | Capabilities | 30 |
@@ -52,7 +52,7 @@ committed model no longer matches the tree.
 | admission | 30 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | bench | 16 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | bulk-ingestion | 6 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| control-plane | 278 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| control-plane | 279 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | deploy | 1 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
 | economics | 4 | 0 | Economic subjects, financial flows and economic process analysis over Intelligence. |
 | feedback | 11 | 0 | Recrawl/priority feedback, stopping policy. |

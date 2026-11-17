@@ -8,7 +8,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 |---|---|
 | PRODUCTION | 486 |
 | TEST_ONLY | 138 |
-| ORPHAN | 151 |
+| ORPHAN | 152 |
 | TEST | 390 |
 
 ## Entrypoints (production roots)
@@ -210,7 +210,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**151** modules are imported by neither production nor tests.
+**152** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -275,6 +275,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/services/acquisition_evidence.py` |
 | `apps/control-plane/services/relation_projection_rebuild.py` |
 | `apps/control-plane/services/specops_catalog.py` |
+| `apps/control-plane/services/specops_ci_runtime_factory.py` |
 | `apps/control-plane/workflows/__init__.py` |
 | `apps/economics/__init__.py` |
 | `apps/intelligence/__init__.py` |
