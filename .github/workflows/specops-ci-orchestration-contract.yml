@@ -31,7 +31,7 @@ jobs:
 
       - name: Run SpecOps&CI orchestration contract tests
         env:
-          PYTHONPATH: apps
+          PYTHONPATH: apps:apps/control-plane
         run: |
           python -m pytest apps/specops_ci/orchestration/tests -q
 
