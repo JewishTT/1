@@ -47,3 +47,4 @@
   synthetic ARTEX canary before production rollout.
 - [x] T038 Add unit tests for spec validation, runtime idempotency, graph build and
   rejection-before-executor behavior.
+- [x] T039 Add unit tests for durable decision outbox identity and idempotent enqueue.
