@@ -20,6 +20,10 @@ from db.schema import (
     SpecOpsEngagementAuthorization as AuthorizationRow,
     SpecOpsOperationDecision as DecisionRow,
 )
+from db.specops_ci_signal_outbox import (
+    SPECOPS_DECISION_SIGNAL,
+    enqueue_decision_signal,
+)
 from services.intelligence_access import intelligence_port
 from services.intelligence_reader import (
     IntelligenceEvidenceUnavailable,
@@ -498,7 +502,7 @@ async def get_operation_approval(
     }
 
 
-@router.post("/operations/{operation_id}/steps/{step_id}/decision")
+@router.post("/operations/{operation_id}/steps/{step_id}/decision", status_code=202)
 async def submit_operator_decision(
     operation_id: str,
     step_id: str,
@@ -586,37 +590,36 @@ async def submit_operator_decision(
                     decided_at=now,
                 ))
 
-    signal_payload = {
-        "operation_id": operation_id,
-        "tenant_id": ctx.tenant_id,
-        "authorization_id": pending["authorization_id"],
-        "snapshot_id": pending["snapshot_id"],
-        "step_id": step_id,
-        "spec_digest": pending["spec_digest"],
-        "decision_id": decision_id,
-        "approved": body.approved,
-        "reviewer_id": ctx.user_id,
-        "approval_ref": approval_ref,
-    }
-    try:
-        await handle.signal("provide_operator_decision", signal_payload)
-    except Exception as exc:
-        # The durable decision row is retained. The same request can safely retry
-        # and re-send the signal because the unique decision key is idempotent.
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "code": "DECISION_PERSISTED_SIGNAL_PENDING",
+            signal_payload = {
+                "operation_id": operation_id,
+                "tenant_id": ctx.tenant_id,
+                "authorization_id": pending["authorization_id"],
+                "snapshot_id": pending["snapshot_id"],
+                "step_id": step_id,
+                "spec_digest": pending["spec_digest"],
                 "decision_id": decision_id,
-                "message": "decision was saved; retry this request to re-send the workflow signal",
-            },
-        ) from exc
+                "approved": body.approved,
+                "reviewer_id": ctx.user_id,
+                "approval_ref": approval_ref,
+            }
+            outbox_row = await enqueue_decision_signal(
+                session,
+                tenant_id=ctx.tenant_id,
+                operation_id=operation_id,
+                step_id=step_id,
+                spec_digest=pending["spec_digest"],
+                decision_id=decision_id,
+                payload=signal_payload,
+            )
+
     return {
         "operation_id": operation_id,
         "step_id": step_id,
         "decision_id": decision_id,
         "approved": body.approved,
-        "status": "signal_sent",
+        "signal_name": SPECOPS_DECISION_SIGNAL,
+        "outbox_id": outbox_row.outbox_id,
+        "status": "queued_for_delivery",
     }
 
 
