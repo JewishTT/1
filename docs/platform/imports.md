@@ -11,7 +11,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | Package | Kind | Import sites |
 |---|---|---|
 | `__future__` | stdlib | 1021 |
-| `typing` | stdlib | 434 |
+| `typing` | stdlib | 433 |
 | `dataclasses` | stdlib | 422 |
 | `pathlib` | stdlib | 345 |
 | `pytest` | third-party | 303 |
