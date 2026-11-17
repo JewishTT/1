@@ -18,7 +18,10 @@ try:
     )
 except ModuleNotFoundError as exc:
     if exc.name and exc.name.startswith("langgraph"):
-        pytest.skip("LangGraph worker dependency is installed in the isolated workflow only", allow_module_level=True)
+        pytest.skip(
+            "LangGraph worker dependency is installed in the isolated workflow only",
+            allow_module_level=True,
+        )
     raise
 
 
