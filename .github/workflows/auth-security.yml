@@ -40,18 +40,18 @@ jobs:
           -q
       - name: Run SpecOps&CI authorization, decision API and outbox contracts
         run: |
-          .venv/bin/python -m pytest
-          apps/control-plane/tests/unit/test_specops_ci_api.py
-          apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py
-          apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py
-          -q
-          .venv/bin/python -m ruff check
-          apps/control-plane/api/routes/specops_ci.py
-          apps/control-plane/services/specops_ci_authorization_gate.py
-          apps/control-plane/db/specops_ci_signal_outbox.py
-          apps/control-plane/tests/unit/test_specops_ci_api.py
-          apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py
-          apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py
+          .venv/bin/python -m pytest \
+            apps/control-plane/tests/unit/test_specops_ci_api.py \
+            apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py \
+            apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py \
+            -q
+          .venv/bin/python -m ruff check \
+            apps/control-plane/api/routes/specops_ci.py \
+            apps/control-plane/services/specops_ci_authorization_gate.py \
+            apps/control-plane/db/specops_ci_signal_outbox.py \
+            apps/control-plane/tests/unit/test_specops_ci_api.py \
+            apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py \
+            apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py
 
       - name: Run zero-layer unit and canonical evidence integration contracts
         run: |
