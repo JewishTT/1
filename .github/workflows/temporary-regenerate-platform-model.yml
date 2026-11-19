@@ -2,7 +2,7 @@ name: temporary-regenerate-platform-model
 
 on:
   push:
-    branches: ["codex/claim-projection-outbox", "feat/intelligence-economics-specops-silos"]
+    branches: ["codex/claim-projection-outbox"]
 
 permissions:
   contents: write
