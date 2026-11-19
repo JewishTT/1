@@ -13,7 +13,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-
 SCHEMAS = frozenset({"Person", "Company", "Organization", "Payment", "Asset"})
 SAFE_PROPERTIES: dict[str, frozenset[str]] = {
     "Person": frozenset({"name", "position", "website"}),
