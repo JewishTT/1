@@ -109,7 +109,13 @@ class PythonAstContractTests(unittest.TestCase):
         graph = semantic_docgraph.build_graph(ROOT)
         self.assertEqual(graph["coverage"]["spec_doc_markdown_links"], 0)
         self.assertEqual(graph["spec_doc_link_violations"], [])
-        self.assertEqual(graph["coverage"]["ast_parsed_files"], graph["coverage"]["code_files"])
+        self.assertEqual(
+            graph["coverage"]["ast_parsed_files"],
+            graph["coverage"]["code_files"],
+            msg="Files missing an AST result:\\n" + "\\n".join(
+                graph["coverage"]["ast_unparsed_files"]
+            ),
+        )
         self.assertEqual(graph["coverage"]["ast_coverage_percent"], 100.0)
         self.assertEqual(graph["coverage"]["ast_unparsed_files"], [])
         parsers = {record.get("parser") for record in graph["module_records"].values()}
