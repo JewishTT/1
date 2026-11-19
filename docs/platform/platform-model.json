@@ -35572,7 +35572,7 @@
           "has_tasks": true,
           "has_plan": false,
           "spec_path": "specs/042-specops-durable-orchestration/spec.md",
-          "tasks_checked": 21,
+          "tasks_checked": 22,
           "tasks_total": 32,
           "modules": [],
           "module_count": 0,
@@ -39704,7 +39704,7 @@
       {
         "path": "apps/control-plane/tests/unit/test_specops_ci_api.py",
         "status": "TEST",
-        "loc": 286,
+        "loc": 285,
         "callables": 28,
         "stubs": 0,
         "not_implemented": 0,
