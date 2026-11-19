@@ -44855,7 +44855,7 @@
       {
         "path": "apps/specops_ci/orchestration/client.py",
         "status": "IMPLEMENTED",
-        "loc": 88,
+        "loc": 87,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -44864,7 +44864,7 @@
       {
         "path": "apps/specops_ci/orchestration/contracts.py",
         "status": "IMPLEMENTED",
-        "loc": 276,
+        "loc": 275,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
