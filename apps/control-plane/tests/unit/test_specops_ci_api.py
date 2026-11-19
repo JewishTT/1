@@ -10,7 +10,7 @@ import asyncio
 import sys
 from datetime import UTC, datetime, timedelta
 from types import ModuleType, SimpleNamespace
-from typing import Any
+from typing import Any, Self
 
 import pytest
 from fastapi import FastAPI, HTTPException
@@ -37,7 +37,7 @@ class _Session:
         self.added: list[Any] = []
         self.begin_count = 0
 
-    async def __aenter__(self) -> _Session:
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *_args: object) -> None:
