@@ -21,7 +21,6 @@ from specops_ci.domain import (
     EngagementAuthorization,
 )
 
-
 SPEC_SCHEMA_VERSION = "1"
 MAX_OPERATION_TARGETS = 100
 MAX_OPERATION_STEPS = 32
