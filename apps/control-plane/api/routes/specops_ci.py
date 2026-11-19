@@ -27,6 +27,7 @@ from specops_ci.orchestration.contracts import (
 )
 from specops_ci.service import SPECOPS_CI_PURPOSE, prepare_assessment
 from sqlalchemy import select
+from temporalio.client import RPCError, RPCStatusCode
 
 from api.auth import TenantContext, require_admin, require_analyst
 from composition import get_platform
@@ -389,7 +390,11 @@ async def create_operation(
         try:
             existing = temporal.get_workflow_handle(spec.operation_id)
             await existing.describe()
-        except Exception:
+        except RPCError as exc:
+            # Only NOT_FOUND means this is a genuinely new operation. A Temporal
+            # outage, permission failure or timeout must never look like absence.
+            if exc.status != RPCStatusCode.NOT_FOUND:
+                raise
             existing = None
 
         if existing is not None:
@@ -412,35 +417,14 @@ async def create_operation(
                 "task_queue": "specops-ci-operations",
             }
 
+        # start_operation adopts a workflow after an ambiguous start only if its
+        # tenant, authorization, snapshot and immutable digest all match.
         await start_operation(temporal, spec, authorization, now=now)
     except AssessmentScopeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:
-        # A concurrent submitter may win after our initial describe. Adopt it only
-        # when the existing workflow proves it has the identical immutable digest.
-        try:
-            from workflow.client import connect_temporal
-
-            temporal = await connect_temporal()
-            existing = temporal.get_workflow_handle(spec.operation_id)
-            existing_summary = await existing.query("get_operation_summary")
-            if (
-                isinstance(existing_summary, dict)
-                and existing_summary.get("tenant_id") == ctx.tenant_id
-                and existing_summary.get("authorization_id") == spec.authorization_id
-                and existing_summary.get("snapshot_id") == spec.snapshot_id
-                and existing_summary.get("spec_digest") == spec.digest()
-            ):
-                return {
-                    **existing_summary,
-                    "reused": True,
-                    "workflow_type": "specops-ci-operation-v1",
-                    "task_queue": "specops-ci-operations",
-                }
-        except Exception:
-            pass
         raise HTTPException(
             status_code=503,
             detail={
