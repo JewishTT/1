@@ -14,7 +14,6 @@ from langgraph.types import interrupt
 from specops_ci.orchestration.contracts import OperationSpec, SpecStepKind
 from specops_ci.orchestration.runtime_ports import get_runtime_ports
 
-
 GRAPH_NAME = "specops-ci-operation-v1"
 
 
