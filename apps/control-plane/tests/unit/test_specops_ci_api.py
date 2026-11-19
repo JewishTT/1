@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import ModuleType, SimpleNamespace
 from typing import Any
 
@@ -40,7 +40,7 @@ class _Session:
     async def __aenter__(self) -> _Session:
         return self
 
-    async def __aexit__(self, *_args: Any) -> None:
+    async def __aexit__(self, *_args: object) -> None:
         return None
 
     def begin(self) -> _Session:
@@ -81,7 +81,7 @@ def _client(
 
 
 def _authorization_row() -> SimpleNamespace:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return SimpleNamespace(
         authorization_id="auth-1",
         tenant_id="tenant-1",

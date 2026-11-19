@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
 
-from services.specops_ci_authorization_gate import PostgresSpecOpsAuthorizationGate
 from specops_ci.domain import AssessmentKind
+
+from services.specops_ci_authorization_gate import PostgresSpecOpsAuthorizationGate
 
 
 class _Result:
@@ -25,7 +26,7 @@ class _Session:
     async def __aenter__(self) -> _Session:
         return self
 
-    async def __aexit__(self, *_args: Any) -> None:
+    async def __aexit__(self, *_args: object) -> None:
         return None
 
     async def execute(self, _statement: Any) -> _Result:
@@ -43,7 +44,7 @@ class _SessionFactory:
 
 
 def _authorization(**overrides: Any) -> SimpleNamespace:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     values = {
         "revoked_at": None,
         "source_snapshot_id": "snapshot-1",
@@ -60,7 +61,7 @@ def test_revalidate_requires_current_exact_roster_and_assessment() -> None:
     gate = PostgresSpecOpsAuthorizationGate(
         _SessionFactory([_authorization()])  # type: ignore[arg-type]
     )
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     valid = asyncio.run(gate.revalidate(
         tenant_id="tenant-1",
         authorization_id="auth-1",
@@ -86,7 +87,7 @@ def test_revalidate_requires_current_exact_roster_and_assessment() -> None:
 
 
 def test_revalidate_rejects_revoked_and_expired_authorizations() -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     revoked = _authorization(revoked_at=now)
     gate = PostgresSpecOpsAuthorizationGate(
         _SessionFactory([revoked])  # type: ignore[arg-type]
@@ -103,7 +104,7 @@ def test_revalidate_rejects_revoked_and_expired_authorizations() -> None:
 
 
 def test_operator_decision_must_match_the_durable_row_and_live_authorization() -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     decision = {
         "decision_id": "decision-1",
         "authorization_id": "auth-1",
@@ -129,7 +130,7 @@ def test_operator_decision_must_match_the_durable_row_and_live_authorization() -
 
 
 def test_rejected_decision_is_validly_audited_but_never_approved() -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     decision = {
         "decision_id": "decision-2",
         "authorization_id": "auth-1",

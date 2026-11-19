@@ -7,31 +7,11 @@ must not add discovery, crawling or target expansion.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import select
-
-from api.auth import TenantContext, require_admin, require_analyst
-from composition import get_platform
-from db.schema import (
-    SpecOpsDecisionSignalOutbox as SignalOutboxRow,
-    SpecOpsEngagementAuthorization as AuthorizationRow,
-    SpecOpsOperationDecision as DecisionRow,
-)
-from db.specops_ci_signal_outbox import (
-    SPECOPS_DECISION_SIGNAL,
-    enqueue_decision_signal,
-)
-from services.intelligence_access import intelligence_port
-from services.intelligence_reader import (
-    IntelligenceEvidenceUnavailable,
-    IntelligenceReadDenied,
-    IntelligenceSnapshotBudgetExceeded,
-    IntelligenceSubjectNotFound,
-)
 from shared.contracts.intelligence_feed import IntelligenceQuery
 from specops_ci.domain import (
     AssessmentKind,
@@ -46,6 +26,30 @@ from specops_ci.orchestration.contracts import (
     validate_operation_against_authorization,
 )
 from specops_ci.service import SPECOPS_CI_PURPOSE, prepare_assessment
+from sqlalchemy import select
+
+from api.auth import TenantContext, require_admin, require_analyst
+from composition import get_platform
+from db.schema import (
+    SpecOpsDecisionSignalOutbox as SignalOutboxRow,
+)
+from db.schema import (
+    SpecOpsEngagementAuthorization as AuthorizationRow,
+)
+from db.schema import (
+    SpecOpsOperationDecision as DecisionRow,
+)
+from db.specops_ci_signal_outbox import (
+    SPECOPS_DECISION_SIGNAL,
+    enqueue_decision_signal,
+)
+from services.intelligence_access import intelligence_port
+from services.intelligence_reader import (
+    IntelligenceEvidenceUnavailable,
+    IntelligenceReadDenied,
+    IntelligenceSnapshotBudgetExceeded,
+    IntelligenceSubjectNotFound,
+)
 
 router = APIRouter(prefix="/specops-ci", tags=["specops-ci-silo"])
 MAX_AUTHORIZATION_WINDOW = timedelta(days=30)
@@ -136,10 +140,10 @@ async def create_authorization(
     ctx: Annotated[TenantContext, Depends(require_admin)],
 ) -> dict:
     """An authenticated administrator approves exact targets from a fresh Intelligence view."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if body.expires_at.tzinfo is None or body.expires_at.utcoffset() is None:
         raise HTTPException(status_code=422, detail="expires_at must include a timezone")
-    expiry = body.expires_at.astimezone(timezone.utc)
+    expiry = body.expires_at.astimezone(UTC)
     if not now < expiry <= now + MAX_AUTHORIZATION_WINDOW:
         raise HTTPException(status_code=422, detail="expires_at must be within the next 30 days")
     if len(set(body.target_entity_ids)) != len(body.target_entity_ids):
@@ -205,9 +209,8 @@ async def create_authorization(
         allowed_entity_ids=sorted(authorization.allowed_entity_ids),
         allowed_assessments=sorted(kind.value for kind in authorization.allowed_assessments),
     )
-    async with platform.session_factory() as session:
-        async with session.begin():
-            session.add(row)
+    async with platform.session_factory() as session, session.begin():
+        session.add(row)
     return {
         "authorization_id": row.authorization_id,
         "tenant_id": row.tenant_id,
@@ -243,7 +246,7 @@ async def prepare_authorized_assessment(
         row = result.scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="SpecOps&CI authorization not found")
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if row.revoked_at is not None:
         raise HTTPException(status_code=409, detail="SpecOps&CI authorization has been revoked")
     if not row.issued_at <= now < row.expires_at:
@@ -309,19 +312,18 @@ async def revoke_authorization(
             status_code=503,
             detail="durable PostgreSQL session factory is unavailable",
         )
-    now = datetime.now(timezone.utc)
-    async with platform.session_factory() as session:
-        async with session.begin():
-            result = await session.execute(select(AuthorizationRow).where(
-                AuthorizationRow.authorization_id == authorization_id,
-                AuthorizationRow.tenant_id == ctx.tenant_id,
-            ).with_for_update())
-            row = result.scalar_one_or_none()
-            if row is None:
-                raise HTTPException(status_code=404, detail="SpecOps&CI authorization not found")
-            if row.revoked_at is None:
-                row.revoked_at = now
-                row.revoked_by = ctx.user_id
+    now = datetime.now(UTC)
+    async with platform.session_factory() as session, session.begin():
+        result = await session.execute(select(AuthorizationRow).where(
+            AuthorizationRow.authorization_id == authorization_id,
+            AuthorizationRow.tenant_id == ctx.tenant_id,
+        ).with_for_update())
+        row = result.scalar_one_or_none()
+        if row is None:
+            raise HTTPException(status_code=404, detail="SpecOps&CI authorization not found")
+        if row.revoked_at is None:
+            row.revoked_at = now
+            row.revoked_by = ctx.user_id
     return {
         "authorization_id": row.authorization_id,
         "revoked": True,
@@ -355,7 +357,7 @@ async def create_operation(
         raise HTTPException(status_code=409, detail="SpecOps&CI authorization has been revoked")
 
     authorization = _to_domain(row)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     spec = OperationSpec(
         operation_id=body.operation_id,
         tenant_id=ctx.tenant_id,
@@ -540,87 +542,86 @@ async def submit_operator_decision(
             detail="approval challenge does not match operation step",
         )
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     approval_ref = body.approval_ref.strip()
     if len(approval_ref) < 3:
         raise HTTPException(
             status_code=422,
             detail="approval_ref must contain at least 3 non-space characters",
         )
-    async with platform.session_factory() as session:
-        async with session.begin():
-            auth_result = await session.execute(select(AuthorizationRow).where(
-                AuthorizationRow.authorization_id == pending["authorization_id"],
-                AuthorizationRow.tenant_id == ctx.tenant_id,
-            ).with_for_update())
-            authorization_row = auth_result.scalar_one_or_none()
+    async with platform.session_factory() as session, session.begin():
+        auth_result = await session.execute(select(AuthorizationRow).where(
+            AuthorizationRow.authorization_id == pending["authorization_id"],
+            AuthorizationRow.tenant_id == ctx.tenant_id,
+        ).with_for_update())
+        authorization_row = auth_result.scalar_one_or_none()
+        if (
+            authorization_row is None
+            or authorization_row.revoked_at is not None
+            or not authorization_row.issued_at <= now < authorization_row.expires_at
+            or authorization_row.source_snapshot_id != pending["snapshot_id"]
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="operation authorization is no longer valid",
+            )
+
+        decision_result = await session.execute(select(DecisionRow).where(
+            DecisionRow.tenant_id == ctx.tenant_id,
+            DecisionRow.operation_id == operation_id,
+            DecisionRow.step_id == step_id,
+            DecisionRow.spec_digest == pending["spec_digest"],
+        ).with_for_update())
+        decision_row = decision_result.scalar_one_or_none()
+        if decision_row is not None:
             if (
-                authorization_row is None
-                or authorization_row.revoked_at is not None
-                or not authorization_row.issued_at <= now < authorization_row.expires_at
-                or authorization_row.source_snapshot_id != pending["snapshot_id"]
+                decision_row.approved != body.approved
+                or decision_row.reviewer_id != ctx.user_id
+                or decision_row.approval_ref != approval_ref
             ):
                 raise HTTPException(
                     status_code=409,
-                    detail="operation authorization is no longer valid",
+                    detail="a different durable decision already exists for this step",
                 )
-
-            decision_result = await session.execute(select(DecisionRow).where(
-                DecisionRow.tenant_id == ctx.tenant_id,
-                DecisionRow.operation_id == operation_id,
-                DecisionRow.step_id == step_id,
-                DecisionRow.spec_digest == pending["spec_digest"],
-            ).with_for_update())
-            decision_row = decision_result.scalar_one_or_none()
-            if decision_row is not None:
-                if (
-                    decision_row.approved != body.approved
-                    or decision_row.reviewer_id != ctx.user_id
-                    or decision_row.approval_ref != approval_ref
-                ):
-                    raise HTTPException(
-                        status_code=409,
-                        detail="a different durable decision already exists for this step",
-                    )
-                decision_id = decision_row.decision_id
-            else:
-                decision_id = "scid-" + uuid.uuid4().hex
-                session.add(DecisionRow(
-                    decision_id=decision_id,
-                    tenant_id=ctx.tenant_id,
-                    operation_id=operation_id,
-                    authorization_id=pending["authorization_id"],
-                    snapshot_id=pending["snapshot_id"],
-                    spec_digest=pending["spec_digest"],
-                    step_id=step_id,
-                    approved=body.approved,
-                    reviewer_id=ctx.user_id,
-                    reviewer_role="admin",
-                    approval_ref=approval_ref,
-                    decided_at=now,
-                ))
-
-            signal_payload = {
-                "operation_id": operation_id,
-                "tenant_id": ctx.tenant_id,
-                "authorization_id": pending["authorization_id"],
-                "snapshot_id": pending["snapshot_id"],
-                "step_id": step_id,
-                "spec_digest": pending["spec_digest"],
-                "decision_id": decision_id,
-                "approved": body.approved,
-                "reviewer_id": ctx.user_id,
-                "approval_ref": approval_ref,
-            }
-            outbox_row = await enqueue_decision_signal(
-                session,
+            decision_id = decision_row.decision_id
+        else:
+            decision_id = "scid-" + uuid.uuid4().hex
+            session.add(DecisionRow(
+                decision_id=decision_id,
                 tenant_id=ctx.tenant_id,
                 operation_id=operation_id,
-                step_id=step_id,
+                authorization_id=pending["authorization_id"],
+                snapshot_id=pending["snapshot_id"],
                 spec_digest=pending["spec_digest"],
-                decision_id=decision_id,
-                payload=signal_payload,
-            )
+                step_id=step_id,
+                approved=body.approved,
+                reviewer_id=ctx.user_id,
+                reviewer_role="admin",
+                approval_ref=approval_ref,
+                decided_at=now,
+            ))
+
+        signal_payload = {
+            "operation_id": operation_id,
+            "tenant_id": ctx.tenant_id,
+            "authorization_id": pending["authorization_id"],
+            "snapshot_id": pending["snapshot_id"],
+            "step_id": step_id,
+            "spec_digest": pending["spec_digest"],
+            "decision_id": decision_id,
+            "approved": body.approved,
+            "reviewer_id": ctx.user_id,
+            "approval_ref": approval_ref,
+        }
+        outbox_row = await enqueue_decision_signal(
+            session,
+            tenant_id=ctx.tenant_id,
+            operation_id=operation_id,
+            step_id=step_id,
+            spec_digest=pending["spec_digest"],
+            decision_id=decision_id,
+            payload=signal_payload,
+        )
 
     return {
         "operation_id": operation_id,

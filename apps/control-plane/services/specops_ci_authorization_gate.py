@@ -6,9 +6,10 @@ and a read-only assessment evaluator must still be supplied by the worker deploy
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+from specops_ci.domain import AssessmentKind
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -16,7 +17,6 @@ from db.schema import (
     SpecOpsEngagementAuthorization,
     SpecOpsOperationDecision,
 )
-from specops_ci.domain import AssessmentKind
 
 
 class PostgresSpecOpsAuthorizationGate:
@@ -40,7 +40,7 @@ class PostgresSpecOpsAuthorizationGate:
             operation_expiry = datetime.fromisoformat(operation_expires_at)
         except (TypeError, ValueError):
             return False
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if (
             operation_expiry.tzinfo is None
             or operation_expiry.utcoffset() is None
@@ -97,7 +97,7 @@ class PostgresSpecOpsAuthorizationGate:
         ):
             return False
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         async with self._session_factory() as session:
             decision_result = await session.execute(
                 select(SpecOpsOperationDecision).where(
