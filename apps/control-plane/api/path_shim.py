@@ -52,7 +52,7 @@ _APPS = Path(__file__).resolve().parents[2]  # apps/ (parents: api -> control-pl
 # intended precedence once applied.
 _SOURCES = ("shared", "science", "", "economics", "specops_ci")
 
-for _name in _SOURCES:
+for _name in reversed(_SOURCES):
     _DIR = str(_APPS / _name) if _name else str(_APPS)
     while _DIR in sys.path:
         sys.path.remove(_DIR)
