@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, Self
 
 from specops_ci.domain import AssessmentKind
 
@@ -23,7 +23,7 @@ class _Session:
     def __init__(self, responses: list[Any]) -> None:
         self._responses = responses
 
-    async def __aenter__(self) -> _Session:
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *_args: object) -> None:
