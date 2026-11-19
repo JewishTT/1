@@ -6,7 +6,7 @@ can therefore submit/query workflows without installing the experimental worker 
 from __future__ import annotations
 
 import os
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 from temporalio.client import Client, WorkflowHandle
