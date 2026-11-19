@@ -46,7 +46,6 @@ from specops_ci.orchestration.contracts import (
     validate_operation_against_authorization,
 )
 from specops_ci.service import SPECOPS_CI_PURPOSE, prepare_assessment
-from specops_ci.service import SPECOPS_CI_PURPOSE, prepare_assessment
 
 router = APIRouter(prefix="/specops-ci", tags=["specops-ci-silo"])
 MAX_AUTHORIZATION_WINDOW = timedelta(days=30)
