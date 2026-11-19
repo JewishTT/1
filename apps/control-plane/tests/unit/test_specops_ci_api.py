@@ -65,7 +65,6 @@ class _SessionFactory:
 
 
 def _client(
-    monkeypatch: pytest.MonkeyPatch,
     *,
     roles: frozenset[Role],
     tenant_id: str = "tenant-1",
