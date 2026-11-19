@@ -1,6 +1,6 @@
 # Import graph
 
-1166 Python modules, 3328 resolved local edges.
+1167 Python modules, 3331 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,26 +10,26 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 1021 |
-| `typing` | stdlib | 433 |
+| `__future__` | stdlib | 1022 |
+| `typing` | stdlib | 434 |
 | `dataclasses` | stdlib | 422 |
 | `pathlib` | stdlib | 345 |
-| `pytest` | third-party | 303 |
-| `sys` | stdlib | 271 |
+| `pytest` | third-party | 304 |
+| `sys` | stdlib | 272 |
 | `collections` | stdlib | 258 |
-| `datetime` | stdlib | 241 |
+| `datetime` | stdlib | 242 |
 | `json` | stdlib | 222 |
 | `sqlalchemy` | third-party | 185 |
 | `hashlib` | stdlib | 148 |
 | `enum` | stdlib | 124 |
 | `re` | stdlib | 113 |
-| `fastapi` | third-party | 91 |
+| `fastapi` | third-party | 93 |
 | `os` | stdlib | 86 |
-| `asyncio` | stdlib | 84 |
+| `asyncio` | stdlib | 85 |
 | `urllib` | stdlib | 68 |
 | `uuid` | stdlib | 56 |
 | `pydantic` | third-party | 45 |
-| `types` | stdlib | 43 |
+| `types` | stdlib | 44 |
 | `math` | stdlib | 42 |
 | `time` | stdlib | 40 |
 | `importlib` | stdlib | 37 |

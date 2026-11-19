@@ -1094,6 +1094,7 @@
           "apps/control-plane/tests/unit/test_search_fusion_api.py",
           "apps/control-plane/tests/unit/test_series_lifecycle.py",
           "apps/control-plane/tests/unit/test_source_query_store.py",
+          "apps/control-plane/tests/unit/test_specops_ci_api.py",
           "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
           "apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py",
           "apps/control-plane/tests/unit/test_sse_stream.py",
@@ -1179,7 +1180,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 338
+        "module_count": 339
       },
       {
         "id": "webapp",

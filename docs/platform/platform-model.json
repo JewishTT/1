@@ -227,7 +227,7 @@
     {
       "name": "control-plane",
       "description": "FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.",
-      "python_modules": 279,
+      "python_modules": 280,
       "typescript_modules": 0,
       "modules": [
         "apps.control-plane",
@@ -1262,15 +1262,15 @@
     }
   ],
   "import_graph": {
-    "module_count": 1166,
-    "edge_count": 3328,
+    "module_count": 1167,
+    "edge_count": 3331,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 1021,
+      "stdlib:__future__": 1022,
       "stdlib:abc": 5,
       "stdlib:argparse": 22,
       "stdlib:ast": 29,
-      "stdlib:asyncio": 84,
+      "stdlib:asyncio": 85,
       "stdlib:base64": 12,
       "stdlib:binascii": 3,
       "stdlib:bisect": 1,
@@ -1282,7 +1282,7 @@
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 422,
-      "stdlib:datetime": 241,
+      "stdlib:datetime": 242,
       "stdlib:decimal": 16,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1319,15 +1319,15 @@
       "stdlib:statistics": 3,
       "stdlib:struct": 6,
       "stdlib:subprocess": 19,
-      "stdlib:sys": 271,
+      "stdlib:sys": 272,
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 24,
       "stdlib:time": 40,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
-      "stdlib:types": 43,
-      "stdlib:typing": 433,
+      "stdlib:types": 44,
+      "stdlib:typing": 434,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 68,
@@ -1356,7 +1356,7 @@
       "third-party:eth_account": 2,
       "third-party:eth_utils": 7,
       "third-party:extruct": 1,
-      "third-party:fastapi": 91,
+      "third-party:fastapi": 93,
       "third-party:google": 6,
       "third-party:gudhi": 8,
       "third-party:h3": 2,
@@ -1376,7 +1376,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 303,
+      "third-party:pytest": 304,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -8936,6 +8936,21 @@
         "from": "apps/control-plane/tests/unit/test_source_query_store.py",
         "to": "apps/control-plane/db/source_query_store.py",
         "via": "db.source_query_store"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "to": "apps/control-plane/api/auth.py",
+        "via": "api.auth"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "to": "apps/control-plane/api/routes/specops_ci.py",
+        "via": "api.routes.specops_ci"
+      },
+      {
+        "from": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "to": "apps/control-plane/db/schema.py",
+        "via": "db.schema"
       },
       {
         "from": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
@@ -21071,6 +21086,22 @@
         ]
       },
       {
+        "path": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "tests": 5,
+        "test_names": [
+          "test_operator_decision_requires_admin_role",
+          "test_admin_decision_and_signal_intent_are_written_in_one_transaction",
+          "test_existing_decision_is_idempotently_reused",
+          "test_delivery_status_is_not_visible_across_tenants",
+          "test_operation_lookup_hides_workflows_owned_by_another_tenant"
+        ],
+        "targets": [
+          "apps/control-plane/api/auth.py",
+          "apps/control-plane/api/routes/__init__.py",
+          "apps/control-plane/db/schema.py"
+        ]
+      },
+      {
         "path": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
         "tests": 4,
         "test_names": [
@@ -27187,7 +27218,7 @@
         ]
       }
     ],
-    "total": 5558
+    "total": 5563
   },
   "contracts": {
     "python": [
@@ -34016,6 +34047,7 @@
             "apps/control-plane/tests/unit/test_search_fusion_api.py",
             "apps/control-plane/tests/unit/test_series_lifecycle.py",
             "apps/control-plane/tests/unit/test_source_query_store.py",
+            "apps/control-plane/tests/unit/test_specops_ci_api.py",
             "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
             "apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py",
             "apps/control-plane/tests/unit/test_sse_stream.py",
@@ -34101,7 +34133,7 @@
             "apps/projection/tests/unit/test_topological_invariant.py",
             "apps/projection/tests/unit/test_validated.py"
           ],
-          "module_count": 338
+          "module_count": 339
         },
         {
           "id": "webapp",
@@ -39670,6 +39702,15 @@
         "status": "TEST",
         "loc": 176,
         "callables": 18,
+        "stubs": 0,
+        "not_implemented": 0,
+        "markers": []
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "status": "TEST",
+        "loc": 286,
+        "callables": 28,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -46431,9 +46472,9 @@
       "IMPLEMENTED": 628,
       "DECLARATION_ONLY": 19,
       "PACKAGE_INIT": 102,
-      "TEST": 390,
+      "TEST": 391,
       "MIGRATION": 27,
-      "total": 1166
+      "total": 1167
     }
   },
   "reachability": {
@@ -48124,6 +48165,10 @@
       },
       {
         "path": "apps/control-plane/tests/unit/test_source_query_store.py",
+        "status": "TEST"
+      },
+      {
+        "path": "apps/control-plane/tests/unit/test_specops_ci_api.py",
         "status": "TEST"
       },
       {
@@ -51156,8 +51201,8 @@
       "PRODUCTION": 486,
       "TEST_ONLY": 138,
       "ORPHAN": 152,
-      "TEST": 390,
-      "total": 1166
+      "TEST": 391,
+      "total": 1167
     },
     "test_only": [
       "apps/acquisition/adapters/_ingest.py",
@@ -73471,6 +73516,45 @@
         "evidence": {
           "file": "apps/control-plane/tests/unit/test_source_query_store.py",
           "via": "db.source_query_store"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "a6b746842046ab98",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+          "via": "api.auth"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "fc102b0b982745cb",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "object": "apps/control-plane/api/routes/specops_ci.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+          "via": "api.routes.specops_ci"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "c1a34ce76df414ff",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+          "via": "db.schema"
         },
         "confidence": 1.0
       },
@@ -109588,6 +109672,42 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "0ce0bce8318eb009",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "object": "apps/control-plane/api/auth.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "e98a114863020abb",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "object": "apps/control-plane/api/routes/__init__.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "50e404181beee762",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "object": "apps/control-plane/db/schema.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/control-plane/tests/unit/test_specops_ci_api.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "d850d023632a8e5a",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
@@ -117809,27 +117929,27 @@
       }
     ],
     "stats": {
-      "facts_total": 5092,
-      "static_facts": 4792,
+      "facts_total": 5098,
+      "static_facts": 4798,
       "inferred": 300,
       "intended": 0
     }
   },
   "counts": {
     "components": 20,
-    "python_modules": 1166,
+    "python_modules": 1167,
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3328,
-    "test_files": 393,
-    "test_functions": 5558,
+    "import_edges": 3331,
+    "test_files": 394,
+    "test_functions": 5563,
     "untested_modules": 320,
     "http_routes": 231
   },
   "evidence_stats": {
-    "facts_total": 5092,
-    "static_facts": 4792,
+    "facts_total": 5098,
+    "static_facts": 4798,
     "inferred": 300,
     "intended": 0
   },
@@ -117837,16 +117957,16 @@
     "IMPLEMENTED": 628,
     "DECLARATION_ONLY": 19,
     "PACKAGE_INIT": 102,
-    "TEST": 390,
+    "TEST": 391,
     "MIGRATION": 27,
-    "total": 1166
+    "total": 1167
   },
   "reachability_summary": {
     "PRODUCTION": 486,
     "TEST_ONLY": 138,
     "ORPHAN": 152,
-    "TEST": 390,
-    "total": 1166
+    "TEST": 391,
+    "total": 1167
   },
   "reachability_entrypoints": [
     "apps/acquisition/_measure_coverage.py",

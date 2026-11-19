@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5092,
-    "static_facts": 4792,
+    "facts_total": 5098,
+    "static_facts": 4798,
     "inferred": 300,
     "intended": 0
   },
@@ -20370,6 +20370,45 @@
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_source_query_store.py",
         "via": "db.source_query_store"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a6b746842046ab98",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "via": "api.auth"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "fc102b0b982745cb",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+      "object": "apps/control-plane/api/routes/specops_ci.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "via": "api.routes.specops_ci"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "c1a34ce76df414ff",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+        "via": "db.schema"
       },
       "confidence": 1.0
     },
@@ -56483,6 +56522,42 @@
       "method": "import_and_name_scan",
       "evidence": {
         "file": "apps/control-plane/tests/unit/test_source_query_store.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0ce0bce8318eb009",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+      "object": "apps/control-plane/api/auth.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "e98a114863020abb",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+      "object": "apps/control-plane/api/routes/__init__.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_api.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "50e404181beee762",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/control-plane/tests/unit/test_specops_ci_api.py",
+      "object": "apps/control-plane/db/schema.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/control-plane/tests/unit/test_specops_ci_api.py"
       },
       "confidence": 1.0
     },
