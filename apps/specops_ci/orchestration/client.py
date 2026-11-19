@@ -6,7 +6,7 @@ can therefore submit/query workflows without installing the experimental worker 
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Any
 
 from temporalio.client import Client, WorkflowHandle
@@ -16,7 +16,6 @@ from specops_ci.orchestration.contracts import (
     OperationSpec,
     validate_operation_against_authorization,
 )
-
 
 SPECOPS_CI_WORKFLOW_TYPE = "specops-ci-operation-v1"
 DEFAULT_TASK_QUEUE = "specops-ci-operations"
@@ -36,7 +35,7 @@ async def start_operation(
     reject revoked records before calling this helper. Each worker Activity independently
     revalidates it again immediately before reading or writing the ARTEX graph adapter.
     """
-    current_time = now or datetime.now(timezone.utc)
+    current_time = now or datetime.now(UTC)
     validate_operation_against_authorization(
         spec,
         authorization,
@@ -69,7 +68,7 @@ async def start_operation(
             existing = client.get_workflow_handle(spec.operation_id)
             summary = await existing.query("get_operation_summary")
         except Exception:
-            raise start_error
+            raise start_error from None
         if (
             isinstance(summary, dict)
             and summary.get("operation_id") == spec.operation_id
