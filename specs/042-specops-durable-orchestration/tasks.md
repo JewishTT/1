@@ -19,7 +19,7 @@
 - [x] T013 Add API to query pending approval challenges.
 - [x] T014 Persist authenticated admin decisions before sending Temporal Signals.
 - [x] T015 Make decision submission idempotent for the same operation/step/spec digest.
-- [ ] T016 Add tests for PostgreSQL gate and HTTP tenant/admin authorization behavior.
+- [x] T016 Add tests for PostgreSQL gate and HTTP tenant/admin authorization behavior.
 - [x] T017 Add transactional decision outbox and lease-based Signal relay for automatic
   recovery after Temporal outages.
 - [x] T018 Add tenant-scoped API endpoint for signal delivery status.
