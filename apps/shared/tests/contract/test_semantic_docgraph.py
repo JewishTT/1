@@ -112,7 +112,7 @@ class PythonAstContractTests(unittest.TestCase):
         self.assertEqual(
             graph["coverage"]["ast_parsed_files"],
             graph["coverage"]["code_files"],
-            msg="Files missing an AST result:\\n" + "\\n".join(
+            msg="Files missing an AST result:\n" + "\n".join(
                 graph["coverage"]["ast_unparsed_files"]
             ),
         )
