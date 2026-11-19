@@ -128,8 +128,8 @@ def _install_operation_handle(
     monkeypatch.setattr(specops_ci, "_get_operation_handles", get_handles)
 
 
-def test_operator_decision_requires_admin_role(monkeypatch: pytest.MonkeyPatch) -> None:
-    with _client(monkeypatch, roles=frozenset({Role.ANALYST})) as client:
+def test_operator_decision_requires_admin_role() -> None:
+    with _client(roles=frozenset({Role.ANALYST})) as client:
         response = client.post(
             "/api/v1/specops-ci/operations/sci-op-123/steps/coverage/decision",
             json={"approved": True, "approval_ref": "ticket:SEC-123"},
@@ -238,7 +238,6 @@ def test_delivery_status_is_not_visible_across_tenants(
 
     monkeypatch.setattr(specops_ci, "get_platform", get_platform)
     with _client(
-        monkeypatch,
         roles=frozenset({Role.ANALYST}),
         tenant_id="tenant-2",
     ) as client:
