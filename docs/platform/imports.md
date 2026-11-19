@@ -1,6 +1,6 @@
 # Import graph
 
-1167 Python modules, 3330 resolved local edges.
+1167 Python modules, 3331 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -43,7 +43,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `numpy` | third-party | 23 |
 | `argparse` | stdlib | 22 |
 | `tempfile` | stdlib | 21 |
-| `temporalio` | third-party | 20 |
+| `temporalio` | third-party | 21 |
 | `subprocess` | stdlib | 19 |
 | `decimal` | stdlib | 16 |
 | `shutil` | stdlib | 16 |
