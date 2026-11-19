@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from typing import Any
 
 import pytest
-
 from specops_ci.domain import AssessmentKind
 from specops_ci.orchestration.contracts import SpecStepKind
 from specops_ci.orchestration.runtime_ports import (
@@ -81,7 +80,7 @@ def test_runtime_revalidates_scope_and_records_idempotent_graph_result() -> None
         operation_id="operation-1",
         spec_digest="a" * 64,
         snapshot_id="snapshot-1",
-        operation_expires_at=(datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+        operation_expires_at=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         step=sample_step(),
     ))
 
