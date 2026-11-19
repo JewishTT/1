@@ -1,0 +1,56 @@
+name: temporary-specops-ruff-repair
+
+on:
+  push:
+    branches: ["feat/intelligence-economics-specops-silos"]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install the locked workspace
+        run: uv sync --locked --all-packages --all-groups
+      - name: Apply safe Ruff autofixes to the touched Python surfaces
+        run: |
+          .venv/bin/ruff check --fix \
+            apps/specops_ci/orchestration \
+            apps/control-plane/api/routes/specops_ci.py \
+            apps/control-plane/services/specops_ci_authorization_gate.py \
+            apps/control-plane/db/specops_ci_signal_outbox.py \
+            apps/control-plane/tests/unit/test_specops_ci_api.py \
+            apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py \
+            apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py \
+            apps/acquisition/industry_adapters \
+            apps/acquisition/tests/unit/test_industry_osint_adapters.py || true
+      - name: Commit the safe lint fixes
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/specops_ci/orchestration \
+            apps/control-plane/api/routes/specops_ci.py \
+            apps/control-plane/services/specops_ci_authorization_gate.py \
+            apps/control-plane/db/specops_ci_signal_outbox.py \
+            apps/control-plane/tests/unit/test_specops_ci_api.py \
+            apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py \
+            apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py \
+            apps/acquisition/industry_adapters \
+            apps/acquisition/tests/unit/test_industry_osint_adapters.py
+          if git diff --cached --quiet; then
+            echo "No Ruff autofixes were required."
+          else
+            git commit -m "style: apply safe Ruff autofixes [skip ci]"
+            git push origin "$BRANCH"
+          fi
