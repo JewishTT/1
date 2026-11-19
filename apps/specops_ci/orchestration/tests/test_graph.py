@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 import pytest
 
@@ -32,7 +32,7 @@ def sample_spec() -> OperationSpec:
         authorization_id="authorization-a",
         snapshot_id="snapshot-a",
         title="Review detection coverage",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
         target_entity_ids=("entity-a",),
         steps=(
             SpecStep(
