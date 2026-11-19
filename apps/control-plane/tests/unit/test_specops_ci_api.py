@@ -7,10 +7,10 @@ requiring a live PostgreSQL or Temporal service.
 from __future__ import annotations
 
 import asyncio
+import sys
 from datetime import datetime, timedelta, timezone
 from types import ModuleType, SimpleNamespace
 from typing import Any
-import sys
 
 import pytest
 from fastapi import FastAPI, HTTPException
