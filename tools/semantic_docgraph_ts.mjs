@@ -14,7 +14,7 @@ try {
   process.stderr.write("TypeScript compiler AST is unavailable. Run npm ci in apps/webapp first.\n");
   process.exit(2);
 }
-const roots = ["apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs"];
+const roots = ["apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs", "spec-ops legacy"];
 const excluded = new Set([
   ".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache",
   ".ruff_cache", "target", "dist", "build", "tmp", "logs", "donors",
