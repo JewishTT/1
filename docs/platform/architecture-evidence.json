@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5098,
-    "static_facts": 4798,
+    "facts_total": 5097,
+    "static_facts": 4797,
     "inferred": 300,
     "intended": 0
   },
@@ -9905,19 +9905,6 @@
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ci.py",
         "via": "specops_ci.orchestration.contracts"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "b488e82b646aa42d",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/control-plane/api/routes/specops_ci.py",
-      "object": "apps/specops_ci/service.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/control-plane/api/routes/specops_ci.py",
-        "via": "specops_ci.service"
       },
       "confidence": 1.0
     },
@@ -44562,7 +44549,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ci.py",
-        "line": 483
+        "line": 482
       },
       "confidence": 1.0
     },
@@ -44575,7 +44562,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ci.py",
-        "line": 637
+        "line": 636
       },
       "confidence": 1.0
     },
@@ -45602,7 +45589,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ci.py",
-        "line": 227
+        "line": 226
       },
       "confidence": 1.0
     },
@@ -45615,7 +45602,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ci.py",
-        "line": 134
+        "line": 133
       },
       "confidence": 1.0
     },
@@ -45628,7 +45615,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ci.py",
-        "line": 301
+        "line": 300
       },
       "confidence": 1.0
     },
@@ -46161,7 +46148,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ci.py",
-        "line": 334
+        "line": 333
       },
       "confidence": 1.0
     },
@@ -46200,7 +46187,7 @@
       "method": "regex_decorator",
       "evidence": {
         "file": "apps/control-plane/api/routes/specops_ci.py",
-        "line": 510
+        "line": 509
       },
       "confidence": 1.0
     },
