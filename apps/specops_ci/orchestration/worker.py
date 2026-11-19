@@ -34,7 +34,9 @@ def _load_runtime_ports() -> Any:
     factory = getattr(importlib.import_module(module_name), factory_name)
     ports = factory()
     if asyncio.iscoroutine(ports):
-        raise TypeError("runtime factory must be synchronous; initialize async clients in the factory")
+        raise TypeError(
+            "runtime factory must be synchronous; initialize async clients in the factory"
+        )
     return ports
 
 
