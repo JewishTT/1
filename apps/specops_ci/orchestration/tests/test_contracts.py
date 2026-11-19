@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 import pytest
-
 from specops_ci.domain import (
     AssessmentKind,
     AssessmentScopeError,
@@ -18,8 +17,7 @@ from specops_ci.orchestration.contracts import (
     validate_operation_against_authorization,
 )
 
-
-NOW = datetime(2026, 11, 16, 10, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 11, 16, 10, 0, tzinfo=UTC)
 
 
 def make_authorization(
