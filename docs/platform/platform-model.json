@@ -44199,7 +44199,7 @@
       {
         "path": "apps/shared/tests/contract/test_semantic_docgraph.py",
         "status": "TEST",
-        "loc": 139,
+        "loc": 145,
         "callables": 8,
         "stubs": 0,
         "not_implemented": 0,
