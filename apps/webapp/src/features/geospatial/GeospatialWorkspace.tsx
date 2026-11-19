@@ -26,9 +26,10 @@ function resolveEmbedUrl(raw: string | undefined): string | null {
   }
 }
 
-const EMBED_URL = resolveEmbedUrl(import.meta.env.VITE_GEV_EMBED_URL);
-
 export function GeospatialWorkspace() {
+  // Read the deployment setting at render time so test/runtime env overrides are
+  // respected; URL validation remains centralized and fail-closed.
+  const embedUrl = resolveEmbedUrl(import.meta.env.VITE_GEV_EMBED_URL);
   return (
     <main className={styles.page} data-testid="geospatial-workspace">
       <header className={styles.header}>
@@ -43,11 +44,11 @@ export function GeospatialWorkspace() {
         <span className={styles.scope}>NO PERSON CONTEXT</span>
       </header>
 
-      {EMBED_URL ? (
+      {embedUrl ? (
         <section className={styles.frameShell} aria-label="God's Eye View spatial workspace">
           <iframe
             className={styles.frame}
-            src={EMBED_URL}
+            src={embedUrl}
             title="God's Eye View — public spatial context"
             loading="lazy"
             referrerPolicy="no-referrer"
