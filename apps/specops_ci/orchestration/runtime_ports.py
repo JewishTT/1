@@ -7,7 +7,7 @@ concrete adapter and fail closed when none is configured.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Protocol
 
 from specops_ci.domain import AssessmentKind
@@ -150,7 +150,7 @@ class ArtexSpecOpsRuntime:
             return False
         if expires_at.tzinfo is None or expires_at.utcoffset() is None:
             return False
-        if not datetime.now(timezone.utc) < expires_at:
+        if not datetime.now(UTC) < expires_at:
             return False
         return await self._authorization.revalidate(
             tenant_id=tenant_id,
