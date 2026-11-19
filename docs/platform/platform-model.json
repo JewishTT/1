@@ -36354,7 +36354,7 @@
       {
         "path": "apps/acquisition/industry_adapters/followthemoney.py",
         "status": "IMPLEMENTED",
-        "loc": 145,
+        "loc": 144,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
@@ -44165,7 +44165,7 @@
       {
         "path": "apps/shared/tests/contract/test_platform_model.py",
         "status": "TEST",
-        "loc": 323,
+        "loc": 342,
         "callables": 21,
         "stubs": 0,
         "not_implemented": 0,
@@ -44873,7 +44873,7 @@
       {
         "path": "apps/specops_ci/orchestration/graph.py",
         "status": "IMPLEMENTED",
-        "loc": 263,
+        "loc": 262,
         "callables": 16,
         "stubs": 0,
         "not_implemented": 0,
@@ -44891,7 +44891,7 @@
       {
         "path": "apps/specops_ci/orchestration/tests/test_contracts.py",
         "status": "TEST",
-        "loc": 194,
+        "loc": 192,
         "callables": 11,
         "stubs": 0,
         "not_implemented": 0,
@@ -44909,7 +44909,7 @@
       {
         "path": "apps/specops_ci/orchestration/tests/test_runtime_ports.py",
         "status": "TEST",
-        "loc": 148,
+        "loc": 147,
         "callables": 14,
         "stubs": 0,
         "not_implemented": 0,
@@ -44918,7 +44918,7 @@
       {
         "path": "apps/specops_ci/orchestration/worker.py",
         "status": "IMPLEMENTED",
-        "loc": 71,
+        "loc": 73,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
@@ -44927,7 +44927,7 @@
       {
         "path": "apps/specops_ci/orchestration/workflow.py",
         "status": "IMPLEMENTED",
-        "loc": 152,
+        "loc": 153,
         "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
