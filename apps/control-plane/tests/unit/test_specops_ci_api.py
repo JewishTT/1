@@ -150,7 +150,7 @@ def test_admin_decision_and_signal_intent_are_written_in_one_transaction(
         return platform
 
     monkeypatch.setattr(specops_ci, "get_platform", get_platform)
-    with _client(monkeypatch, roles=frozenset({Role.ADMIN})) as client:
+    with _client(roles=frozenset({Role.ADMIN})) as client:
         response = client.post(
             "/api/v1/specops-ci/operations/sci-op-123/steps/coverage/decision",
             json={"approved": True, "approval_ref": "  ticket:SEC-123  "},
@@ -213,7 +213,7 @@ def test_existing_decision_is_idempotently_reused(
         return platform
 
     monkeypatch.setattr(specops_ci, "get_platform", get_platform)
-    with _client(monkeypatch, roles=frozenset({Role.ADMIN})) as client:
+    with _client(roles=frozenset({Role.ADMIN})) as client:
         response = client.post(
             "/api/v1/specops-ci/operations/sci-op-123/steps/coverage/decision",
             json={"approved": False, "approval_ref": "ticket:SEC-123"},
