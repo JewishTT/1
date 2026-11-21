@@ -1,5 +1,7 @@
 # Implementation Plan: Acquisition Integration — Five Runtime Families on One Capture → Observation → EventEnvelope Seam
 
+> **Decision supersession (2026-11):** The historical D-01/O-1 broker deliberation below is closed by ADR-0026 and Feature 043. Redpanda is the sole broker runtime; the `confluent-kafka` Python package is a Kafka-protocol client, not a Confluent broker dependency. Canonical bootstrap is `KAFKA_BOOTSTRAP_SERVERS`; legacy broker aliases and competing broker profiles are retired. Current migration/acceptance state lives in `specs/043-redpanda-only-backbone-and-efficiency/spec.md`.
+
 **Branch**: `023-acquisition-integration-searxng` | **Date**: 2026-09-29 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `specs/023-acquisition-integration-searxng/spec.md`
