@@ -35,7 +35,7 @@ from _prove_readback import read_back
 from sources.catalogue import CONTACT_LEVELS, load_catalogue
 from sources.connector import SourceConnector, tasks_for
 from parsers.families import parse_source
-from config.settings import get_settings
+from config.kafka import kafka_bootstrap_servers\nfrom config.settings import get_settings
 from domain.capture import CaptureTimeBasis
 from events.content_router import ContentRouter
 from events.kafka import IdempotentProducer
@@ -53,7 +53,7 @@ from zero.type_detector import TypeDetector
 
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance-public-sources")
 INVESTIGATION = "INV-PUBLIC-SOURCE-MATRIX"
-BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
+BROKERS = kafka_bootstrap_servers()
 S3_ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 S3_ACCESS = os.environ.get("COGNITIVE_MINIO_ACCESS_KEY", "demo")
 S3_SECRET = os.environ.get("COGNITIVE_MINIO_SECRET_KEY", "demopass")
