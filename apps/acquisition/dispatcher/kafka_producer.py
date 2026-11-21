@@ -33,7 +33,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-BROKER_ENV = "COGNITIVE_KAFKA_BROKERS"
+BROKER_ENV = "KAFKA_BOOTSTRAP_SERVERS"
 DEFAULT_BROKER = "localhost:19092"  # Feature 024 D1=a: Redpanda transport
 DEFAULT_PARTITIONS = 3
 DEFAULT_REPLICATION = 1
