@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5103,
-    "static_facts": 4803,
+    "facts_total": 5099,
+    "static_facts": 4799,
     "inferred": 300,
     "intended": 0
   },
@@ -34128,84 +34128,6 @@
       "confidence": 1.0
     },
     {
-      "fact_id": "54ddb19c4eb9b5ef",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/shared/events/kafka.py",
-      "object": "apps/shared/config/kafka.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/shared/events/kafka.py",
-        "via": "config.kafka"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "47cbece29dfa7902",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/shared/events/kafka.py",
-      "object": "apps/shared/config/settings.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/shared/events/kafka.py",
-        "via": "config.settings"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "08bf08a1ab75b894",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/shared/events/kafka.py",
-      "object": "apps/shared/domain/observation_identity.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/shared/events/kafka.py",
-        "via": "domain.observation_identity"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "c74119d0264f642e",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/shared/events/kafka.py",
-      "object": "apps/shared/events/dlq.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/shared/events/kafka.py",
-        "via": "events.dlq"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "2897ed58177ae0ec",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/shared/events/kafka.py",
-      "object": "apps/shared/events/event_envelope_pb2.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/shared/events/kafka.py",
-        "via": "events.event_envelope_pb2"
-      },
-      "confidence": 1.0
-    },
-    {
-      "fact_id": "02f091c7cf4a3ae6",
-      "kind": "MODULE_IMPORTS_MODULE",
-      "subject": "apps/shared/events/kafka.py",
-      "object": "apps/shared/events/topics.py",
-      "status": "STATIC_FACT",
-      "method": "python_ast+import_resolution",
-      "evidence": {
-        "file": "apps/shared/events/kafka.py",
-        "via": "events.topics"
-      },
-      "confidence": 1.0
-    },
-    {
       "fact_id": "837d769fff0d3405",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/shared/events/observation_gate.py",
@@ -36958,6 +36880,32 @@
       "evidence": {
         "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
         "via": "config.kafka"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bf242517d5a2b1be",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+      "object": "apps/shared/events/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "via": "events.kafka"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bf242517d5a2b1be",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+      "object": "apps/shared/events/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "via": "events.kafka"
       },
       "confidence": 1.0
     },

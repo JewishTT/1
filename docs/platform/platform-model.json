@@ -1263,11 +1263,11 @@
   ],
   "import_graph": {
     "module_count": 1167,
-    "edge_count": 3334,
+    "edge_count": 3330,
     "external": {
       "declared-not-installed:ahocorasick": 1,
-      "stdlib:__future__": 1022,
-      "stdlib:abc": 5,
+      "stdlib:__future__": 1021,
+      "stdlib:abc": 4,
       "stdlib:argparse": 22,
       "stdlib:ast": 29,
       "stdlib:asyncio": 85,
@@ -1276,13 +1276,13 @@
       "stdlib:bisect": 1,
       "stdlib:calendar": 1,
       "stdlib:codecs": 2,
-      "stdlib:collections": 258,
+      "stdlib:collections": 257,
       "stdlib:concurrent": 4,
       "stdlib:contextlib": 5,
       "stdlib:copy": 1,
       "stdlib:csv": 4,
       "stdlib:dataclasses": 422,
-      "stdlib:datetime": 242,
+      "stdlib:datetime": 241,
       "stdlib:decimal": 16,
       "stdlib:difflib": 2,
       "stdlib:email": 1,
@@ -1300,7 +1300,7 @@
       "stdlib:io": 25,
       "stdlib:ipaddress": 8,
       "stdlib:itertools": 11,
-      "stdlib:json": 222,
+      "stdlib:json": 221,
       "stdlib:logging": 25,
       "stdlib:math": 42,
       "stdlib:os": 86,
@@ -1323,11 +1323,11 @@
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 24,
-      "stdlib:time": 41,
+      "stdlib:time": 40,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
-      "stdlib:types": 44,
-      "stdlib:typing": 434,
+      "stdlib:types": 45,
+      "stdlib:typing": 433,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
       "stdlib:urllib": 68,
@@ -1347,7 +1347,7 @@
       "third-party:boto3": 1,
       "third-party:botocore": 2,
       "third-party:charset_normalizer": 1,
-      "third-party:confluent_kafka": 16,
+      "third-party:confluent_kafka": 15,
       "third-party:cryptography": 4,
       "third-party:docx": 2,
       "third-party:duckdb": 5,
@@ -1378,7 +1378,7 @@
       "third-party:pypdf": 2,
       "third-party:pytest": 305,
       "third-party:rdflib": 2,
-      "third-party:redis": 2,
+      "third-party:redis": 1,
       "third-party:river": 1,
       "third-party:scrapy": 1,
       "third-party:selectolax": 1,
@@ -14228,36 +14228,6 @@
         "via": "domain.stream_events"
       },
       {
-        "from": "apps/shared/events/kafka.py",
-        "to": "apps/shared/config/kafka.py",
-        "via": "config.kafka"
-      },
-      {
-        "from": "apps/shared/events/kafka.py",
-        "to": "apps/shared/config/settings.py",
-        "via": "config.settings"
-      },
-      {
-        "from": "apps/shared/events/kafka.py",
-        "to": "apps/shared/domain/observation_identity.py",
-        "via": "domain.observation_identity"
-      },
-      {
-        "from": "apps/shared/events/kafka.py",
-        "to": "apps/shared/events/event_envelope_pb2.py",
-        "via": "events.event_envelope_pb2"
-      },
-      {
-        "from": "apps/shared/events/kafka.py",
-        "to": "apps/shared/events/dlq.py",
-        "via": "events.dlq"
-      },
-      {
-        "from": "apps/shared/events/kafka.py",
-        "to": "apps/shared/events/topics.py",
-        "via": "events.topics"
-      },
-      {
         "from": "apps/shared/events/observation_gate.py",
         "to": "apps/shared/domain/__init__.py",
         "via": "domain"
@@ -15316,6 +15286,16 @@
         "from": "apps/shared/tests/unit/test_kafka_bootstrap.py",
         "to": "apps/shared/config/kafka.py",
         "via": "config.kafka"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "to": "apps/shared/events/kafka.py",
+        "via": "events.kafka"
+      },
+      {
+        "from": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "to": "apps/shared/events/kafka.py",
+        "via": "events.kafka"
       },
       {
         "from": "apps/shared/tests/unit/test_kafka_bootstrap.py",
@@ -25836,7 +25816,7 @@
       },
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
-        "tests": 7,
+        "tests": 9,
         "test_names": [
           "test_canonical_bootstrap_normalizes_broker_list",
           "test_unset_bootstrap_uses_local_redpanda_default",
@@ -25844,7 +25824,9 @@
           "test_redpanda_producer_uses_durable_batched_defaults",
           "test_compose_has_redpanda_only_and_no_legacy_kafka_profile",
           "test_redpanda_consumer_is_bounded_and_manually_committed",
-          "test_redpanda_consumer_rejects_unbounded_or_invalid_identity"
+          "test_redpanda_consumer_rejects_unbounded_or_invalid_identity",
+          "test_consumer_constructor_applies_shared_redpanda_policy",
+          "test_producer_flush_surfaces_async_delivery_error"
         ],
         "targets": [
           "apps/shared/config/kafka.py",
@@ -27238,7 +27220,7 @@
         ]
       }
     ],
-    "total": 5567
+    "total": 5569
   },
   "contracts": {
     "python": [
@@ -43646,11 +43628,11 @@
       },
       {
         "path": "apps/shared/events/kafka.py",
-        "status": "IMPLEMENTED",
-        "loc": 335,
-        "callables": 22,
-        "stubs": 2,
-        "not_implemented": 1,
+        "status": "DECLARATION_ONLY",
+        "loc": 0,
+        "callables": 0,
+        "stubs": 0,
+        "not_implemented": 0,
         "markers": []
       },
       {
@@ -44595,8 +44577,8 @@
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
         "status": "TEST",
-        "loc": 77,
-        "callables": 7,
+        "loc": 141,
+        "callables": 16,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -46501,8 +46483,8 @@
       }
     ],
     "summary": {
-      "IMPLEMENTED": 628,
-      "DECLARATION_ONLY": 19,
+      "IMPLEMENTED": 627,
+      "DECLARATION_ONLY": 20,
       "PACKAGE_INIT": 102,
       "TEST": 391,
       "MIGRATION": 27,
@@ -52135,7 +52117,7 @@
             "primary": "apps/shared/events/kafka.py",
             "missing": [],
             "reachability": "PRODUCTION",
-            "maturity": "IMPLEMENTED"
+            "maturity": "DECLARATION_ONLY"
           },
           {
             "id": "bulk-ingestion",
@@ -87306,84 +87288,6 @@
         "confidence": 1.0
       },
       {
-        "fact_id": "54ddb19c4eb9b5ef",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/shared/events/kafka.py",
-        "object": "apps/shared/config/kafka.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/shared/events/kafka.py",
-          "via": "config.kafka"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "47cbece29dfa7902",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/shared/events/kafka.py",
-        "object": "apps/shared/config/settings.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/shared/events/kafka.py",
-          "via": "config.settings"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "08bf08a1ab75b894",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/shared/events/kafka.py",
-        "object": "apps/shared/domain/observation_identity.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/shared/events/kafka.py",
-          "via": "domain.observation_identity"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "c74119d0264f642e",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/shared/events/kafka.py",
-        "object": "apps/shared/events/dlq.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/shared/events/kafka.py",
-          "via": "events.dlq"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "2897ed58177ae0ec",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/shared/events/kafka.py",
-        "object": "apps/shared/events/event_envelope_pb2.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/shared/events/kafka.py",
-          "via": "events.event_envelope_pb2"
-        },
-        "confidence": 1.0
-      },
-      {
-        "fact_id": "02f091c7cf4a3ae6",
-        "kind": "MODULE_IMPORTS_MODULE",
-        "subject": "apps/shared/events/kafka.py",
-        "object": "apps/shared/events/topics.py",
-        "status": "STATIC_FACT",
-        "method": "python_ast+import_resolution",
-        "evidence": {
-          "file": "apps/shared/events/kafka.py",
-          "via": "events.topics"
-        },
-        "confidence": 1.0
-      },
-      {
         "fact_id": "837d769fff0d3405",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/shared/events/observation_gate.py",
@@ -90136,6 +90040,32 @@
         "evidence": {
           "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
           "via": "config.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "bf242517d5a2b1be",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "object": "apps/shared/events/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+          "via": "events.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "bf242517d5a2b1be",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "object": "apps/shared/events/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+          "via": "events.kafka"
         },
         "confidence": 1.0
       },
@@ -118024,8 +117954,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5103,
-      "static_facts": 4803,
+      "facts_total": 5099,
+      "static_facts": 4799,
       "inferred": 300,
       "intended": 0
     }
@@ -118036,21 +117966,21 @@
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3334,
+    "import_edges": 3330,
     "test_files": 394,
-    "test_functions": 5567,
+    "test_functions": 5569,
     "untested_modules": 320,
     "http_routes": 231
   },
   "evidence_stats": {
-    "facts_total": 5103,
-    "static_facts": 4803,
+    "facts_total": 5099,
+    "static_facts": 4799,
     "inferred": 300,
     "intended": 0
   },
   "maturity_summary": {
-    "IMPLEMENTED": 628,
-    "DECLARATION_ONLY": 19,
+    "IMPLEMENTED": 627,
+    "DECLARATION_ONLY": 20,
     "PACKAGE_INIT": 102,
     "TEST": 391,
     "MIGRATION": 27,

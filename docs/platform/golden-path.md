@@ -25,7 +25,7 @@ Each capability is checked against the tree (`platform_model/golden_path.yaml`, 
 | `frontier` — Durable frontier | READY | `apps/control-plane/services/frontier.py` | PRODUCTION | IMPLEMENTED |
 | `observation-gate` — Observation gate (content-addressed, immutable) | READY | `apps/shared/events/observation_gate.py` | PRODUCTION | IMPLEMENTED |
 | `artifact-sink` — Artifact sink | READY | `apps/acquisition/artifact_sink.py` | PRODUCTION | IMPLEMENTED |
-| `kafka-transport` — Kafka/Redpanda transport | READY | `apps/shared/events/kafka.py` | PRODUCTION | IMPLEMENTED |
+| `kafka-transport` — Kafka/Redpanda transport | READY | `apps/shared/events/kafka.py` | PRODUCTION | DECLARATION_ONLY |
 | `bulk-ingestion` — Bulk historical ingestion (CC / Wayback / WARC) | TEST_ONLY | `apps/bulk-ingestion/backfill.py` | TEST_ONLY | IMPLEMENTED |
 | `lakehouse` — Lakehouse (columnar / object layout) | ORPHAN | `apps/projection/lakehouse/__init__.py` | ORPHAN | PACKAGE_INIT |
 | `region-backpressure` — Region backpressure | TEST_ONLY | `apps/acquisition/dispatcher/regional.py` | TEST_ONLY | IMPLEMENTED |
