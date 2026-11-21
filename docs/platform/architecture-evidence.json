@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5099,
-    "static_facts": 4799,
+    "facts_total": 5100,
+    "static_facts": 4800,
     "inferred": 300,
     "intended": 0
   },
@@ -36880,6 +36880,19 @@
       "evidence": {
         "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
         "via": "config.kafka"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bf242517d5a2b1be",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+      "object": "apps/shared/events/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "via": "events.kafka"
       },
       "confidence": 1.0
     },

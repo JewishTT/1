@@ -1263,7 +1263,7 @@
   ],
   "import_graph": {
     "module_count": 1167,
-    "edge_count": 3330,
+    "edge_count": 3331,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 1021,
@@ -1326,7 +1326,7 @@
       "stdlib:time": 40,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
-      "stdlib:types": 45,
+      "stdlib:types": 46,
       "stdlib:typing": 433,
       "stdlib:unicodedata": 6,
       "stdlib:unittest": 1,
@@ -15303,6 +15303,11 @@
         "via": "events.kafka"
       },
       {
+        "from": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "to": "apps/shared/events/kafka.py",
+        "via": "events.kafka"
+      },
+      {
         "from": "apps/shared/tests/unit/test_layer_boundaries.py",
         "to": "apps/shared/tools/layer_boundaries.py",
         "via": "tools.layer_boundaries"
@@ -25816,7 +25821,7 @@
       },
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
-        "tests": 9,
+        "tests": 10,
         "test_names": [
           "test_canonical_bootstrap_normalizes_broker_list",
           "test_unset_bootstrap_uses_local_redpanda_default",
@@ -25826,7 +25831,8 @@
           "test_redpanda_consumer_is_bounded_and_manually_committed",
           "test_redpanda_consumer_rejects_unbounded_or_invalid_identity",
           "test_consumer_constructor_applies_shared_redpanda_policy",
-          "test_producer_flush_surfaces_async_delivery_error"
+          "test_producer_flush_surfaces_async_delivery_error",
+          "test_delivery_error_buffer_is_bounded_and_overflow_is_reported"
         ],
         "targets": [
           "apps/shared/config/kafka.py",
@@ -27220,7 +27226,7 @@
         ]
       }
     ],
-    "total": 5569
+    "total": 5570
   },
   "contracts": {
     "python": [
@@ -44577,8 +44583,8 @@
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
         "status": "TEST",
-        "loc": 141,
-        "callables": 16,
+        "loc": 170,
+        "callables": 18,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -90083,6 +90089,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "bf242517d5a2b1be",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "object": "apps/shared/events/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+          "via": "events.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "6b9d8be432111ebd",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/shared/tests/unit/test_layer_boundaries.py",
@@ -117954,8 +117973,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5099,
-      "static_facts": 4799,
+      "facts_total": 5100,
+      "static_facts": 4800,
       "inferred": 300,
       "intended": 0
     }
@@ -117966,15 +117985,15 @@
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3330,
+    "import_edges": 3331,
     "test_files": 394,
-    "test_functions": 5569,
+    "test_functions": 5570,
     "untested_modules": 320,
     "http_routes": 231
   },
   "evidence_stats": {
-    "facts_total": 5099,
-    "static_facts": 4799,
+    "facts_total": 5100,
+    "static_facts": 4800,
     "inferred": 300,
     "intended": 0
   },
