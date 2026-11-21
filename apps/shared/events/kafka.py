@@ -103,7 +103,7 @@ class IdempotentProducer:
         )
         # librdkafka delivery callbacks run during poll/flush. Capture failures
         # here because raising inside a callback is not propagated to the caller.
-        self._delivery_errors: list[str] = []
+        self._delivery_errors: list[str] = []\n        self._delivery_error_overflow = 0
 
     @staticmethod
     def _producer_config(bootstrap_servers: str) -> dict[str, Any]:
@@ -153,7 +153,7 @@ class IdempotentProducer:
             if err is None:
                 return
             failure = KafkaException(err)
-            self._delivery_errors.append(f"{envelope.event_id}: {failure}")
+            if len(self._delivery_errors) < 128:\n                self._delivery_errors.append(f"{envelope.event_id}: {failure}")\n            else:\n                self._delivery_error_overflow += 1
             if on_error is not None:
                 try:
                     on_error(envelope, failure)
