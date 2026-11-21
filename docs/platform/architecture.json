@@ -2629,6 +2629,18 @@
         "modules": [],
         "module_count": 0,
         "capabilities": []
+      },
+      {
+        "id": "043-redpanda-only-backbone-and-efficiency",
+        "has_spec": true,
+        "has_tasks": false,
+        "has_plan": false,
+        "spec_path": "specs/043-redpanda-only-backbone-and-efficiency/spec.md",
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [],
+        "module_count": 0,
+        "capabilities": []
       }
     ]
   },
@@ -2895,7 +2907,7 @@
   "summary": {
     "contexts": 12,
     "context_edges": 37,
-    "specs": 35,
+    "specs": 36,
     "flows": 1,
     "rule_violations": 18
   }

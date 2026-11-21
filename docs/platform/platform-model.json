@@ -35582,6 +35582,18 @@
           "modules": [],
           "module_count": 0,
           "capabilities": []
+        },
+        {
+          "id": "043-redpanda-only-backbone-and-efficiency",
+          "has_spec": true,
+          "has_tasks": false,
+          "has_plan": false,
+          "spec_path": "specs/043-redpanda-only-backbone-and-efficiency/spec.md",
+          "tasks_checked": 0,
+          "tasks_total": 0,
+          "modules": [],
+          "module_count": 0,
+          "capabilities": []
         }
       ]
     },
@@ -35848,7 +35860,7 @@
     "summary": {
       "contexts": 12,
       "context_edges": 37,
-      "specs": 35,
+      "specs": 36,
       "flows": 1,
       "rule_violations": 18
     }
@@ -103876,6 +103888,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "0095e36ee8911251",
+        "kind": "SPEC_EXISTS",
+        "subject": "043-redpanda-only-backbone-and-efficiency",
+        "object": "specs/043-redpanda-only-backbone-and-efficiency/spec.md",
+        "status": "STATIC_FACT",
+        "method": "filesystem",
+        "evidence": {
+          "file": "specs/043-redpanda-only-backbone-and-efficiency/spec.md"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "b82428d1da3543cc",
         "kind": "TABLE_CLASS_DEFINED",
         "subject": "AcquisitionTask",
@@ -117929,8 +117953,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5098,
-      "static_facts": 4798,
+      "facts_total": 5099,
+      "static_facts": 4799,
       "inferred": 300,
       "intended": 0
     }
@@ -117948,8 +117972,8 @@
     "http_routes": 231
   },
   "evidence_stats": {
-    "facts_total": 5098,
-    "static_facts": 4798,
+    "facts_total": 5099,
+    "static_facts": 4799,
     "inferred": 300,
     "intended": 0
   },

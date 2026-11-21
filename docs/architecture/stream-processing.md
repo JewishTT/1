@@ -20,7 +20,7 @@ Bus contract (enforced by the protocol and its tests):
 
 | Layer | Technology | Role | Where |
 | --- | --- | --- | --- |
-| Transport | Kafka (KRaft) / Redpanda | Topics, consumer groups, Schema Registry | compose profiles `core` / `streaming` |
+| Transport | Redpanda (Kafka-compatible API) | Topics, consumer groups, built-in Schema Registry | compose service `redpanda`; no alternate broker |
 | Stateful operators | Flink | Temporal windows, joins, change/pattern detection, counters | `apps/projection/streams/jobs.py` |
 | Series store | ClickHouse `ReplacingMergeTree` | `entity_series` rows | `apps/control-plane/services/series_lifecycle.py` |
 | Operational state | PostgreSQL 16 | investigations, frontier, decisions, entity_stream (append-only) | control-plane |

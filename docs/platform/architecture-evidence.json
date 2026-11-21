@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5098,
-    "static_facts": 4798,
+    "facts_total": 5099,
+    "static_facts": 4799,
     "inferred": 300,
     "intended": 0
   },
@@ -50726,6 +50726,18 @@
       "method": "filesystem",
       "evidence": {
         "file": "specs/042-specops-durable-orchestration/spec.md"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0095e36ee8911251",
+      "kind": "SPEC_EXISTS",
+      "subject": "043-redpanda-only-backbone-and-efficiency",
+      "object": "specs/043-redpanda-only-backbone-and-efficiency/spec.md",
+      "status": "STATIC_FACT",
+      "method": "filesystem",
+      "evidence": {
+        "file": "specs/043-redpanda-only-backbone-and-efficiency/spec.md"
       },
       "confidence": 1.0
     },
