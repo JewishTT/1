@@ -38758,7 +38758,7 @@
       {
         "path": "apps/control-plane/services/observation_consumer_runner.py",
         "status": "IMPLEMENTED",
-        "loc": 168,
+        "loc": 166,
         "callables": 6,
         "stubs": 0,
         "not_implemented": 0,
