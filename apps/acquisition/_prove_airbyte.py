@@ -22,6 +22,8 @@ from shutil import copyfile
 from datetime import UTC, datetime
 from pathlib import Path
 
+from config.kafka import kafka_bootstrap_servers
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -252,5 +254,4 @@ async def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(asyncio.run(main()))from config.kafka import kafka_bootstrap_servers
-
+    raise SystemExit(asyncio.run(main()))
