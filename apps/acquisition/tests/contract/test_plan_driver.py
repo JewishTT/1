@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "shared"))
 
 import pytest
 from adapters.registry import REGISTRY, register
+from dispatcher.kafka_producer import KafkaProducer, ProducerError
 from dispatcher.plan_driver import (
     ContractViolation,
     PlanDispatcher,
@@ -391,3 +392,69 @@ class TestIndustryRuntimeRegistration:
         opted_in = plan("example.org", only_keyless=False, categories=[definition.category])
         assert all(item.runtime_ref != "theharvester" for item in keyless)
         assert any(item.runtime_ref == "theharvester" for item in opted_in)
+
+
+class _FlushClient:
+    def __init__(self, callback=None, remaining=0):
+        self.callback = callback
+        self.remaining = remaining
+        self.polls = 0
+
+    def flush(self, _timeout):
+        if self.callback is not None:
+            self.callback()
+        return self.remaining
+
+    def poll(self, _timeout):
+        self.polls += 1
+        return 0
+
+    def produce(self, *_args, **_kwargs):
+        return None
+
+
+def _bare_kafka_producer(client):
+    producer = KafkaProducer.__new__(KafkaProducer)
+    producer._client = client
+    producer._acked = []
+    producer._delivery_errors = []
+    producer._delivery_error_overflow = 0
+    return producer
+
+
+def test_acquisition_producer_flush_surfaces_async_delivery_error():
+    client = _FlushClient()
+    producer = _bare_kafka_producer(client)
+    producer._on_delivery(RuntimeError("broker unavailable"), None)
+    with pytest.raises(ProducerError, match="broker unavailable") as exc:
+        producer.flush()
+    assert exc.value.code == "delivery_failed"
+    assert producer._delivery_errors == []
+
+
+def test_acquisition_producer_bounds_delivery_error_buffer():
+    producer = _bare_kafka_producer(_FlushClient())
+    for index in range(140):
+        producer._on_delivery(RuntimeError(f"failure-{index}"), None)
+    assert len(producer._delivery_errors) == 128
+    assert producer._delivery_error_overflow == 12
+    with pytest.raises(ProducerError, match="12 additional delivery error"):
+        producer.flush()
+
+
+def test_acquisition_producer_backpressures_when_local_queue_is_full():
+    class QueueClient(_FlushClient):
+        def __init__(self):
+            super().__init__()
+            self.attempts = 0
+
+        def produce(self, *_args, **_kwargs):
+            self.attempts += 1
+            if self.attempts == 1:
+                raise BufferError("queue full")
+
+    client = QueueClient()
+    producer = _bare_kafka_producer(client)
+    producer.produce("acquisition", {"event_id": "evt-1"}, key="task-1")
+    assert client.attempts == 2
+    assert client.polls >= 2

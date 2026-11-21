@@ -85,6 +85,18 @@ EXPECTED_PAGES = (
 #: failure.
 KNOWN_BROKEN_PLATFORM_IMPORTS = frozenset()
 
+#: LangGraph is intentionally installed only in the isolated SpecOps worker image,
+#: not in the control-plane workspace. These imports are therefore unresolved by the
+#: root import scanner but are covered by the worker's pinned requirements and CI.
+KNOWN_ISOLATED_WORKER_IMPORTS = frozenset(
+    {
+        ("apps/specops_ci/orchestration/graph.py", "langgraph.graph"),
+        ("apps/specops_ci/orchestration/graph.py", "langgraph.types"),
+        ("apps/specops_ci/orchestration/workflow.py", "langgraph.checkpoint.memory"),
+        ("apps/specops_ci/orchestration/workflow.py", "langgraph.types"),
+    }
+)
+
 #: Platform features the tree documents as not landed yet. The import is guarded and the
 #: tests that need it are skipped.
 KNOWN_GUARDED_GAPS = frozenset(
@@ -227,11 +239,18 @@ def test_the_model_covers_the_platform(model: dict) -> None:
 
 
 def test_no_broken_platform_imports(model: dict) -> None:
-    broken = {
+    unresolved = {
         (u["from"], u["import"])
         for u in model["import_graph"]["unresolved"]
         if u.get("kind") in ("local", "stale-platform-path", "guarded-local")
     }
+    isolated = unresolved & set(KNOWN_ISOLATED_WORKER_IMPORTS)
+    assert isolated == set(KNOWN_ISOLATED_WORKER_IMPORTS), (
+        "the isolated SpecOps worker import boundary changed.\n"
+        f"  new: {sorted(isolated - set(KNOWN_ISOLATED_WORKER_IMPORTS))}\n"
+        f"  gone: {sorted(set(KNOWN_ISOLATED_WORKER_IMPORTS) - isolated)}"
+    )
+    broken = unresolved - isolated
     assert broken == set(KNOWN_BROKEN_PLATFORM_IMPORTS), (
         "the set of broken platform imports changed.\n"
         f"  new: {sorted(broken - set(KNOWN_BROKEN_PLATFORM_IMPORTS))}\n"

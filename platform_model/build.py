@@ -38,7 +38,7 @@ OUT = ROOT / "docs" / "platform"
 OUT_JSON = OUT / "platform-model.json"
 OUT_MODULES = OUT / "modules.jsonl"
 
-SCAN_ROOTS = ("apps", "bench", "tools", "deploy", "platform_model")
+SCAN_ROOTS = ("apps", "bench", "tools", "deploy", "platform_model", "spec-ops legacy")
 EXTRA_ROOT_FILES = ("conftest.py",)
 
 #: path parts that mark a file as "installed dependency", not platform code.
@@ -79,7 +79,7 @@ IMPORT_ROOTS = {
     "feedback": "apps/feedback",
     "science": "apps/science",
     "zero": "apps/zero/zero",
-    "specops": "apps/specops",
+    "specops": "spec-ops legacy/apps/specops",
     "api": "apps/control-plane/api",
     "db": "apps/control-plane/db",
     "services": "apps/control-plane/services",
@@ -104,7 +104,10 @@ COMPONENTS = {
     "feedback": ("apps/feedback", "Recrawl/priority feedback, stopping policy."),
     "science": ("apps/science", "Context operators, fabric, retrieval economics, abstraction ladder."),
     "zero": ("apps/zero", "Zero-layer contact harvesting from arbitrary seeds."),
-    "specops": ("apps/specops", "Isolated spec-ops lab profile (never in the routine path)."),
+    "intelligence": ("apps/intelligence", "Foundational entity, relation and evidence intelligence read model."),
+    "economics": ("apps/economics", "Economic subjects, financial flows and economic process analysis over Intelligence."),
+    "specops_ci": ("apps/specops_ci", "Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots."),
+    "specops-legacy": ("spec-ops legacy", "Archived former SpecOps implementation and transition adapters; not a new collection silo."),
     "bulk-ingestion": ("apps/bulk-ingestion", "Common Crawl / Wayback / WARC / dataset backfill profiles."),
     "webapp": ("apps/webapp", "React analyst surfaces: investigation, search, entity, finding, ops, lineage."),
     "bench": ("bench", "E2E smoke harness, micro-benchmarks, knowledge-quality harness."),
@@ -642,6 +645,8 @@ def _is_test_path(path: str) -> bool:
 
 def component_of(path: str) -> str:
     parts = path.split("/")
+    if parts and parts[0] == "spec-ops legacy":
+        return "specops-legacy"
     if len(parts) >= 2 and parts[0] == "apps":
         if parts[1] == "shared":
             return "shared"

@@ -22,7 +22,8 @@ CAPABILITY_REFERENCES: tuple[CapabilityReference, ...] = (
     CapabilityReference(
         "domain-registration-posture", "TheBigBrother", "domain_oracle",
         "reimplement-with-allowlist",
-        "RDAP and DNS posture are useful, but upstream runtime lacks Cognitive egress and provenance controls.",
+        "RDAP and DNS posture are useful, but upstream runtime lacks Cognitive egress "
+        "and provenance controls.",
     ),
     CapabilityReference(
         "tls-certificate-posture", "TheBigBrother", "ssl_sentinel",
@@ -37,12 +38,15 @@ CAPABILITY_REFERENCES: tuple[CapabilityReference, ...] = (
     CapabilityReference(
         "entity-economic-interchange", "FollowTheMoney", "entity-model",
         "optional-interchange",
-        "Use a curated schema/property allowlist and a separate provenance sidecar; never auto-merge identities.",
+        "Use a curated schema/property allowlist and a separate provenance sidecar; "
+        "never auto-merge identities.",
     ),
 )
 
 _BLOCKED_MODULES: dict[str, str] = {
-    "face_matcher": "biometric identification and face matching are not part of the connector fabric",
+    "face_matcher": (
+        "biometric identification and face matching are not part of the connector fabric"
+    ),
     "cam_vector": "camera discovery and surveillance pivots are not permitted in this integration",
     "stealer_parser": "stolen credentials and infostealer logs are excluded",
     "breach_vault": "private breach and credential data are excluded",

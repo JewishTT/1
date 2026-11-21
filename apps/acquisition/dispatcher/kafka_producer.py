@@ -29,15 +29,20 @@ Publication is acknowledged, not fire-and-forget
 from __future__ import annotations
 
 import json
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-BROKER_ENV = "COGNITIVE_KAFKA_BROKERS"
+from config.kafka import redpanda_producer_config
+
+BROKER_ENV = "KAFKA_BOOTSTRAP_SERVERS"
 DEFAULT_BROKER = "localhost:19092"  # Feature 024 D1=a: Redpanda transport
 DEFAULT_PARTITIONS = 3
 DEFAULT_REPLICATION = 1
 PUBLISH_TIMEOUT_S = 15.0
+PRODUCE_QUEUE_TIMEOUT_S = 10.0
+MAX_DELIVERY_ERRORS = 128
 
 
 def brokers() -> list[str]:
@@ -147,14 +152,11 @@ class KafkaProducer:
             from confluent_kafka import Producer as _Producer
 
             self._client = _Producer(
-                {
-                    "bootstrap.servers": ",".join(brokers()),
-                    "enable.idempotence": True,
-                    "acks": "all",
-                    "compression.type": "snappy",
-                }
+                redpanda_producer_config(",".join(brokers()), compression="snappy")
             )
         self._acked: list[DeliveryResult] = []
+        self._delivery_errors: list[str] = []
+        self._delivery_error_overflow = 0
 
     @property
     def client(self) -> Any:
@@ -168,9 +170,21 @@ class KafkaProducer:
                 f"refusing to publish to {topic} without a key: unkeyed traffic would "
                 "break per-task ordering",
             )
-        self._client.produce(
-            topic, value=envelope_bytes(envelope), key=key, on_delivery=self._on_delivery
-        )
+        deadline = time.monotonic() + PRODUCE_QUEUE_TIMEOUT_S
+        while True:
+            try:
+                self._client.produce(
+                    topic, value=envelope_bytes(envelope), key=key, on_delivery=self._on_delivery
+                )
+                self._client.poll(0)
+                return
+            except BufferError as exc:
+                if time.monotonic() >= deadline:
+                    raise ProducerError(
+                        "producer_queue_full",
+                        f"Redpanda producer queue remained full for {PRODUCE_QUEUE_TIMEOUT_S}s",
+                    ) from exc
+                self._client.poll(0.1)
 
     def publish_sync(
         self, topic: str, envelope: Any, *, key: str, event_type: str = ""
@@ -192,8 +206,22 @@ class KafkaProducer:
 
     def flush(self, timeout: float = 10.0) -> int:
         self._acked.clear()
-        remaining = self._client.flush(timeout)
-        return int(remaining or 0)
+        remaining = int(self._client.flush(timeout) or 0)
+        if remaining:
+            raise ProducerError(
+                "delivery_timeout",
+                f"{remaining} message(s) remained queued after {timeout}s flush",
+            )
+        if self._delivery_errors or self._delivery_error_overflow:
+            errors = self._delivery_errors
+            overflow = self._delivery_error_overflow
+            self._delivery_errors = []
+            self._delivery_error_overflow = 0
+            detail = "; ".join(errors)
+            if overflow:
+                detail += f"; {overflow} additional delivery error(s) coalesced"
+            raise ProducerError("delivery_failed", detail or "broker delivery failed")
+        return 0
 
     def drain(self) -> tuple[DeliveryResult, ...]:
         """Every delivery the broker acknowledged since the last drain.
@@ -212,6 +240,11 @@ class KafkaProducer:
 
     def _on_delivery(self, err: Any, msg: Any) -> None:
         if err is not None:
+            message = str(err)
+            if len(self._delivery_errors) < MAX_DELIVERY_ERRORS:
+                self._delivery_errors.append(message)
+            else:
+                self._delivery_error_overflow += 1
             return
         self._acked.append(
             DeliveryResult(

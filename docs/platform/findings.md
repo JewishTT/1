@@ -60,7 +60,7 @@ _None: every declared capability has a module in the tree._
 
 ## Untested modules
 
-291 platform modules are not imported by any test. Sample:
+320 platform modules are not imported by any test. Sample:
 
 | Module |
 |---|
@@ -107,8 +107,12 @@ _None: every declared capability has a module in the tree._
 
 ## Unresolved imports (by evidence)
 
-0 platform imports have no resolved target (local/stale/guarded-local); 1 tracked guarded gaps; 0 undeclared (not platform/stdlib/installed/declared).
+4 platform imports have no resolved target (local/stale/guarded-local); 1 tracked guarded gaps; 0 undeclared (not platform/stdlib/installed/declared).
 
 | From | Import | Kind |
 |---|---|---|
 | `apps/shared/tests/unit/test_relation_schema.py` | `domain.context_validation` | guarded-gap |
+| `apps/specops_ci/orchestration/graph.py` | `langgraph.graph` | stale-platform-path |
+| `apps/specops_ci/orchestration/graph.py` | `langgraph.types` | stale-platform-path |
+| `apps/specops_ci/orchestration/workflow.py` | `langgraph.checkpoint.memory` | stale-platform-path |
+| `apps/specops_ci/orchestration/workflow.py` | `langgraph.types` | stale-platform-path |

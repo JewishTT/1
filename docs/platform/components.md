@@ -150,7 +150,7 @@ apps.bulk-ingestion.tests.unit.test_historical_replay
 
 FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API.
 
-Python modules: **265** · TypeScript modules: **0**
+Python modules: **280** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -166,9 +166,11 @@ apps.control-plane.api.routes.connectors
 apps.control-plane.api.routes.discovery
 apps.control-plane.api.routes.discovery_strategy
 apps.control-plane.api.routes.dossier
+apps.control-plane.api.routes.economics
 apps.control-plane.api.routes.entities
 apps.control-plane.api.routes.fabric
 apps.control-plane.api.routes.findings
+apps.control-plane.api.routes.intelligence
 apps.control-plane.api.routes.investigation_context
 apps.control-plane.api.routes.investigations
 apps.control-plane.api.routes.manual_assertions
@@ -188,13 +190,11 @@ apps.control-plane.api.routes.science_tda
 apps.control-plane.api.routes.science_temporal
 apps.control-plane.api.routes.search
 apps.control-plane.api.routes.search_rebuild
+apps.control-plane.api.routes.specops_ci
 apps.control-plane.api.routes.specops_counterintel
 apps.control-plane.api.routes.specops_cryptotx
 apps.control-plane.api.routes.specops_emulation
 apps.control-plane.api.routes.specops_engagement
-apps.control-plane.api.routes.specops_forensics
-apps.control-plane.api.routes.specops_ghostline
-apps.control-plane.api.routes.specops_lab
 ```
 
 </details>
@@ -209,6 +209,23 @@ Python modules: **1** · TypeScript modules: **0**
 
 ```
 apps.deploy.minio-init.init-buckets
+```
+
+</details>
+
+## `economics`
+
+Economic subjects, financial flows and economic process analysis over Intelligence.
+
+Python modules: **4** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.economics
+apps.economics.domain
+apps.economics.service
+apps.economics.tests.test_domain
 ```
 
 </details>
@@ -233,6 +250,23 @@ apps.feedback.stopping
 apps.feedback.tests.test_branches
 apps.feedback.tests.test_feedback
 apps.feedback.tests.test_frontier_loop
+```
+
+</details>
+
+## `intelligence`
+
+Foundational entity, relation and evidence intelligence read model.
+
+Python modules: **4** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.intelligence
+apps.intelligence.ports
+apps.intelligence.tests.test_feed_contract
+apps.intelligence.tests.test_postgres_reader
 ```
 
 </details>
@@ -440,7 +474,7 @@ apps.science.context.query_binding
 
 Contracts, events, domain invariants, storage, security — the substrate every app imports.
 
-Python modules: **200** · TypeScript modules: **0**
+Python modules: **202** · TypeScript modules: **0**
 
 <details><summary>module sample</summary>
 
@@ -453,6 +487,7 @@ apps.shared.contracts
 apps.shared.contracts.canonical
 apps.shared.contracts.error_codes
 apps.shared.contracts.evidence_span
+apps.shared.contracts.intelligence_feed
 apps.shared.contracts.operator_result
 apps.shared.contracts.projection_manifest
 apps.shared.contracts.stage_outcome
@@ -484,60 +519,86 @@ apps.shared.domain.relation_candidate
 apps.shared.domain.relation_claim
 apps.shared.domain.relation_claim_material
 apps.shared.domain.relation_identity
-apps.shared.domain.relation_participant
 ```
 
 </details>
 
-## `specops`
+## `specops-legacy`
 
-Isolated spec-ops lab profile (never in the routine path).
+Archived former SpecOps implementation and transition adapters; not a new collection silo.
 
-Python modules: **68** · TypeScript modules: **0**
+Python modules: **81** · TypeScript modules: **46**
 
 <details><summary>module sample</summary>
 
 ```
-apps.specops
-apps.specops.counterintel
-apps.specops.cryptotx
-apps.specops.cryptotx.approvals
-apps.specops.cryptotx.chains
-apps.specops.cryptotx.chains.base
-apps.specops.cryptotx.chains.bitcoin
-apps.specops.cryptotx.chains.ethereum
-apps.specops.cryptotx.chains.registry
-apps.specops.cryptotx.chains.tron
-apps.specops.cryptotx.cli
-apps.specops.cryptotx.config
-apps.specops.cryptotx.errors
-apps.specops.cryptotx.executor
-apps.specops.cryptotx.hd
-apps.specops.cryptotx.models
-apps.specops.cryptotx.planner
-apps.specops.cryptotx.store
-apps.specops.cryptotx.swaps
-apps.specops.cryptotx.swaps.base
-apps.specops.cryptotx.swaps.evm
-apps.specops.cryptotx.swaps.router
-apps.specops.cryptotx.swaps.thorchain
-apps.specops.cryptotx.swaps.tron
-apps.specops.cryptotx.vault
-apps.specops.emulation
-apps.specops.engagement
-apps.specops.engagement.config
-apps.specops.engagement.fabric
-apps.specops.engagement.funnel
-apps.specops.engagement.taxonomy
-apps.specops.forensics
-apps.specops.ghostline
-apps.specops.ghostline.catalog
-apps.specops.ghostline.config
-apps.specops.ghostline.engine
-apps.specops.ghostline.ledger
-apps.specops.ghostline.loader
-apps.specops.ghostline.redaction
-apps.specops.ghostline.runtime
+spec-ops legacy.apps.specops
+spec-ops legacy.apps.specops.counterintel
+spec-ops legacy.apps.specops.cryptotx
+spec-ops legacy.apps.specops.cryptotx.approvals
+spec-ops legacy.apps.specops.cryptotx.chains
+spec-ops legacy.apps.specops.cryptotx.chains.base
+spec-ops legacy.apps.specops.cryptotx.chains.bitcoin
+spec-ops legacy.apps.specops.cryptotx.chains.ethereum
+spec-ops legacy.apps.specops.cryptotx.chains.registry
+spec-ops legacy.apps.specops.cryptotx.chains.tron
+spec-ops legacy.apps.specops.cryptotx.cli
+spec-ops legacy.apps.specops.cryptotx.config
+spec-ops legacy.apps.specops.cryptotx.errors
+spec-ops legacy.apps.specops.cryptotx.executor
+spec-ops legacy.apps.specops.cryptotx.hd
+spec-ops legacy.apps.specops.cryptotx.models
+spec-ops legacy.apps.specops.cryptotx.planner
+spec-ops legacy.apps.specops.cryptotx.store
+spec-ops legacy.apps.specops.cryptotx.swaps
+spec-ops legacy.apps.specops.cryptotx.swaps.base
+spec-ops legacy.apps.specops.cryptotx.swaps.evm
+spec-ops legacy.apps.specops.cryptotx.swaps.router
+spec-ops legacy.apps.specops.cryptotx.swaps.thorchain
+spec-ops legacy.apps.specops.cryptotx.swaps.tron
+spec-ops legacy.apps.specops.cryptotx.vault
+spec-ops legacy.apps.specops.emulation
+spec-ops legacy.apps.specops.engagement
+spec-ops legacy.apps.specops.engagement.config
+spec-ops legacy.apps.specops.engagement.fabric
+spec-ops legacy.apps.specops.engagement.funnel
+spec-ops legacy.apps.specops.engagement.taxonomy
+spec-ops legacy.apps.specops.forensics
+spec-ops legacy.apps.specops.ghostline
+spec-ops legacy.apps.specops.ghostline.catalog
+spec-ops legacy.apps.specops.ghostline.config
+spec-ops legacy.apps.specops.ghostline.engine
+spec-ops legacy.apps.specops.ghostline.ledger
+spec-ops legacy.apps.specops.ghostline.loader
+spec-ops legacy.apps.specops.ghostline.redaction
+spec-ops legacy.apps.specops.ghostline.runtime
+```
+
+</details>
+
+## `specops_ci`
+
+Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots.
+
+Python modules: **14** · TypeScript modules: **0**
+
+<details><summary>module sample</summary>
+
+```
+apps.specops_ci
+apps.specops_ci.domain
+apps.specops_ci.orchestration
+apps.specops_ci.orchestration.client
+apps.specops_ci.orchestration.contracts
+apps.specops_ci.orchestration.graph
+apps.specops_ci.orchestration.runtime_ports
+apps.specops_ci.orchestration.tests.test_contracts
+apps.specops_ci.orchestration.tests.test_graph
+apps.specops_ci.orchestration.tests.test_runtime_ports
+apps.specops_ci.orchestration.worker
+apps.specops_ci.orchestration.workflow
+apps.specops_ci.service
+apps.specops_ci.tests.test_scope
 ```
 
 </details>

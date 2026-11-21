@@ -30,6 +30,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from config.kafka import kafka_bootstrap_servers
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -42,7 +44,7 @@ from runtime.searxng import PAGE_CAPTURE_PREFIX, SearXNGRuntime  # noqa: E402
 from storage.s3 import ObjectStore  # noqa: E402
 
 SEARXNG_URL = os.environ.get("COGNITIVE_SEARXNG_URL", "http://127.0.0.1:18090")
-BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
+BROKERS = kafka_bootstrap_servers()
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-searxng-smoke"

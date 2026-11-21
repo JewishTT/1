@@ -1,0 +1,40 @@
+name: specops-ci-orchestration-contract
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: specops-ci-orchestration
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  orchestration-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install isolated Temporal and LangGraph worker dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r apps/specops_ci/orchestration/requirements-dev.txt
+
+      - name: Run SpecOps&CI orchestration contract tests
+        env:
+          PYTHONPATH: apps:apps/control-plane
+        run: |
+          python -m pytest apps/specops_ci/orchestration/tests -q
+
+      - name: Lint SpecOps&CI orchestration modules
+        run: |
+          python -m ruff check apps/specops_ci/orchestration

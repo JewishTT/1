@@ -15,7 +15,7 @@ Feature 024 owner decision **D1=a** makes that Governance decision: Redpanda bec
 
 ## Decision
 
-1. **Runtime**: Redpanda is the only broker in the `core` profile. Confluent Kafka is demoted to a `legacy-kafka` profile, retained for comparison and for the duration of the ADR amendment sweep.
+1. **Runtime**: Redpanda is the only broker/runtime in all supported compose and CI profiles. No Confluent Kafka service, comparison profile, or dual-broker matrix is retained.
 2. **Protocol**: unchanged. `EventEnvelope` remains 16 fields of Protocol Buffers. Nothing in this ADR alters the event contract.
 3. **Pinning**: the Redpanda image is pinned by digest. An unpinned `:latest` tag in transport configuration is a defect. (Resolves the pre-existing `redpandadata/redpanda:latest`.)
 4. **Baseline**: the Constitution Technology Baseline is amended from "Apache Kafka (KRaft)" to "Kafka-compatible protocol; Redpanda runtime (pinned by digest)".
@@ -24,12 +24,12 @@ Feature 024 owner decision **D1=a** makes that Governance decision: Redpanda bec
 ## Consequences
 
 **Positive**
-- One broker in `core`. The previous split — Kafka on `:9092` in `core`, Redpanda on `:19092` in `streaming` — meant acceptance ran against a different broker than the default configuration, and no single setting made the tests meaningful.
+- One broker in `core`. The prior split and the temporary Confluent comparison profile are retired. Acceptance and production-like local paths use the same Redpanda runtime.
 - Digest pinning makes transport runs reproducible, which the platform's replayability and determinism requirements need at the transport layer, not only above it.
 - The wire protocol is unchanged, so no producer or consumer was rewritten.
 
 **Costs, accepted**
-- The 24 ADRs naming Kafka as transport are now imprecise. An amendment sweep is required; each ADR is reviewed individually rather than bulk-edited.
+- Protocol-level references to Kafka remain valid where they describe the Kafka wire/client API. Any reference naming Apache Kafka as the broker/runtime is an architecture defect and must be corrected in source documentation.
 - `test_infra_connectivity.py` previously asserted against two listeners (`test_kafka_list_topics`, `test_redpanda_list_topics`). Under one broker these become two names for one listener. Both names are retained deliberately so the pre-024 test baseline stays comparable; the file documents that they are not two brokers.
 - Redpanda's schema registry is served at `:18081` rather than Confluent's `:8081`. Default configuration changed; any external tooling pinned to `:8081` must be updated.
 
@@ -41,7 +41,7 @@ Feature 024 owner decision **D1=a** makes that Governance decision: Redpanda bec
 
 **(b) Keep Kafka as the declared transport, Redpanda as a dev substitute.** Rejected: it preserves the exact split that made the pre-024 baseline ambiguous — the default configuration and the acceptance run target different brokers, and neither is the declared one.
 
-**(c) Support both with an explicit profile matrix.** Rejected: it keeps two brokers in the codebase permanently and leaves every future test ambiguous about which one it proves. A matrix is a permanent tax for a temporary migration need.
+**(c) Support both broker products with an explicit profile matrix.** Rejected: it permanently multiplies operational and CI states and makes runtime evidence ambiguous. Redpanda is canonical; Kafka compatibility is a protocol/client property, not a second deployment.
 
 ## Verification
 

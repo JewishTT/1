@@ -19,13 +19,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "interpretation"))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+from config.kafka import kafka_bootstrap_servers
 from confluent_kafka import Consumer
 from events import event_envelope_pb2 as pb
 from storage.s3 import ObjectStore
 
 from interpretation.observation_consumer import ObservationConsumer
 
-BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
+BROKERS = kafka_bootstrap_servers()
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 GROUP = f"searxng-consumer-{os.getpid()}"

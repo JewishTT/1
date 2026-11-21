@@ -91,13 +91,13 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/science/robustness/perturb.py` | Perturbation grid for robustness analysis (T128, US6, FR-011). |
 | `apps/science/robustness/report.py` | Flip rates, sensitivity and noise regions (T129, US6, FR-011). |
 | `apps/science/tests/contract/test_robustness_contract.py` | Contract tests: robustness + experiment registry (T126, US6). |
-| `apps/shared/config/kafka.py` | One broker-address convention shared by every Kafka-compatible client. |
+| `apps/shared/config/kafka.py` | Canonical Redpanda bootstrap resolver for Kafka-protocol clients. |
 | `apps/shared/events/bus.py` | Hermetic EventBus protocol + MemoryEventBus (feature: nervous-system). |
 | `apps/shared/events/evidence_store_guard.py` | Evidence-storage enforcement for observation publication. |
 | `apps/shared/events/kafka.py` | Idempotent Kafka producer/consumer base (T010, R-7, I-11). |
 | `apps/shared/events/observation_gate.py` | Observation gate (T031, FR-002, I-1/I-5). |
 | `apps/shared/tests/unit/test_evidence_store_guard.py` | WP-C T040/T045: an observation may not be published without resolvable evidence. |
-| `apps/shared/tests/unit/test_kafka_bootstrap.py` | Shared broker resolution tests for Redpanda producer/consumer configuration. |
+| `apps/shared/tests/unit/test_kafka_bootstrap.py` | Canonical Redpanda bootstrap configuration contracts. |
 | `apps/shared/tests/unit/test_observation_gate_identity.py` | The gate itself: §160's ``observation_id random`` blocker, pinned behaviourally. |
 | `apps/zero/zero/observation_gate.py` | Zero-layer observation gate (spec/010 FR-009, FR-012) — immutable output. |
 

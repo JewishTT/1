@@ -7,7 +7,7 @@ importantly, the systems it does **not** claim to have connected.
 
 1. Acquisition producers, the acquisition worker and the observation consumer
    resolve their broker list through the same setting: `KAFKA_BOOTSTRAP_SERVERS`.
-   `COGNITIVE_KAFKA_BROKERS` remains a compatibility fallback only.
+   There is no retired `COGNITIVE_KAFKA_BROKERS` fallback; the single setting points to Redpanda.
 2. The observation consumer reads immutable captured bytes, then the deterministic
    extractor and resolver run over those bytes. Tenzir remains an additive
    normalization sidecar; it does not author entity identity or relation claims.

@@ -22,6 +22,8 @@ from shutil import copyfile
 from datetime import UTC, datetime
 from pathlib import Path
 
+from config.kafka import kafka_bootstrap_servers
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -40,7 +42,7 @@ IMAGE = os.environ.get(
 )
 _CONFIG_ROOT = os.environ.get("COGNITIVE_AIRBYTE_CFG", "").strip()
 MOUNT = Path(_CONFIG_ROOT).expanduser() if _CONFIG_ROOT else Path(tempfile.mkdtemp(prefix="cognitive-airbyte-"))
-BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
+BROKERS = kafka_bootstrap_servers()
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-airbyte-smoke"

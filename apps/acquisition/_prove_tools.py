@@ -22,6 +22,8 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+from config.kafka import kafka_bootstrap_servers
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -33,7 +35,7 @@ from events.observation_gate import ObservationGate  # noqa: E402
 from runtime.external_tool import TOOL_DEFINITIONS, ExternalToolRuntime  # noqa: E402
 from storage.s3 import ObjectStore  # noqa: E402
 
-BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
+BROKERS = kafka_bootstrap_servers()
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-tools-smoke"

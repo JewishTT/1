@@ -93,7 +93,7 @@ def _start_workers(output_dir: Path) -> list[subprocess.Popen[Any]]:
     except Exception:
         _stop_workers(workers)
         raise
-    # Give both consumers time to join the one canonical Kafka topic before dispatch.
+    # Give both consumers time to join the canonical Redpanda topic before dispatch.
     for _attempt in range(10):
         failed = [process for process in workers if process.poll() is not None]
         if failed:

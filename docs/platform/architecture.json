@@ -565,74 +565,6 @@
         ],
         "modules": [
           "apps/deploy/minio-init/init-buckets.py",
-          "apps/specops/__init__.py",
-          "apps/specops/counterintel.py",
-          "apps/specops/cryptotx/__init__.py",
-          "apps/specops/cryptotx/approvals.py",
-          "apps/specops/cryptotx/chains/__init__.py",
-          "apps/specops/cryptotx/chains/base.py",
-          "apps/specops/cryptotx/chains/bitcoin.py",
-          "apps/specops/cryptotx/chains/ethereum.py",
-          "apps/specops/cryptotx/chains/registry.py",
-          "apps/specops/cryptotx/chains/tron.py",
-          "apps/specops/cryptotx/cli.py",
-          "apps/specops/cryptotx/config.py",
-          "apps/specops/cryptotx/errors.py",
-          "apps/specops/cryptotx/executor.py",
-          "apps/specops/cryptotx/hd.py",
-          "apps/specops/cryptotx/models.py",
-          "apps/specops/cryptotx/planner.py",
-          "apps/specops/cryptotx/store.py",
-          "apps/specops/cryptotx/swaps/__init__.py",
-          "apps/specops/cryptotx/swaps/base.py",
-          "apps/specops/cryptotx/swaps/evm.py",
-          "apps/specops/cryptotx/swaps/router.py",
-          "apps/specops/cryptotx/swaps/thorchain.py",
-          "apps/specops/cryptotx/swaps/tron.py",
-          "apps/specops/cryptotx/vault.py",
-          "apps/specops/emulation.py",
-          "apps/specops/engagement/__init__.py",
-          "apps/specops/engagement/config.py",
-          "apps/specops/engagement/fabric.py",
-          "apps/specops/engagement/funnel.py",
-          "apps/specops/engagement/taxonomy.py",
-          "apps/specops/forensics.py",
-          "apps/specops/ghostline/__init__.py",
-          "apps/specops/ghostline/catalog.py",
-          "apps/specops/ghostline/config.py",
-          "apps/specops/ghostline/engine.py",
-          "apps/specops/ghostline/ledger.py",
-          "apps/specops/ghostline/loader.py",
-          "apps/specops/ghostline/redaction.py",
-          "apps/specops/ghostline/runtime.py",
-          "apps/specops/ghostline/service.py",
-          "apps/specops/ghostline/telephony.py",
-          "apps/specops/ghostline/voices.py",
-          "apps/specops/lab/__init__.py",
-          "apps/specops/lab/artifacts.py",
-          "apps/specops/lab/audit.py",
-          "apps/specops/lab/boundary.py",
-          "apps/specops/lab/engine.py",
-          "apps/specops/lab/models.py",
-          "apps/specops/lab/phishingclub.py",
-          "apps/specops/lab/readiness.py",
-          "apps/specops/phishing.py",
-          "apps/specops/roe/__init__.py",
-          "apps/specops/roe/gate.py",
-          "apps/specops/social.py",
-          "apps/specops/tests/conftest.py",
-          "apps/specops/tests/test_cryptotx_api.py",
-          "apps/specops/tests/test_cryptotx_core.py",
-          "apps/specops/tests/test_cryptotx_executor.py",
-          "apps/specops/tests/test_cryptotx_swaps.py",
-          "apps/specops/tests/test_engagement.py",
-          "apps/specops/tests/test_ghostline.py",
-          "apps/specops/tests/test_lab_engine.py",
-          "apps/specops/tests/test_lab_phishingclub.py",
-          "apps/specops/tests/test_roe_gate.py",
-          "apps/specops/tests/test_specops_ghostline_routers.py",
-          "apps/specops/tests/test_specops_lab_router.py",
-          "apps/specops/tests/test_specops_routers.py",
           "bench/bench/__init__.py",
           "bench/bench/harness.py",
           "bench/chaos/__init__.py",
@@ -677,7 +609,7 @@
           "tools/strip_zero_inventory.py",
           "tools/tests/test_repo_hygiene.py"
         ],
-        "module_count": 112
+        "module_count": 44
       },
       {
         "id": "orchestration-temporal",
@@ -703,6 +635,7 @@
           "apps/shared/contracts/canonical.py",
           "apps/shared/contracts/error_codes.py",
           "apps/shared/contracts/evidence_span.py",
+          "apps/shared/contracts/intelligence_feed.py",
           "apps/shared/contracts/operator_result.py",
           "apps/shared/contracts/projection_manifest.py",
           "apps/shared/contracts/stage_outcome.py",
@@ -812,6 +745,7 @@
           "apps/shared/tests/contract/__init__.py",
           "apps/shared/tests/contract/test_correlation.py",
           "apps/shared/tests/contract/test_domain_invariants.py",
+          "apps/shared/tests/contract/test_domain_silo_boundaries.py",
           "apps/shared/tests/contract/test_donor_registry.py",
           "apps/shared/tests/contract/test_entity_fabric.py",
           "apps/shared/tests/contract/test_error_codes.py",
@@ -896,7 +830,7 @@
           "apps/shared/workflow/__init__.py",
           "apps/shared/workflow/client.py"
         ],
-        "module_count": 200
+        "module_count": 202
       },
       {
         "id": "projection-query",
@@ -917,8 +851,10 @@
           "apps/control-plane/api/routes/discovery.py",
           "apps/control-plane/api/routes/discovery_strategy.py",
           "apps/control-plane/api/routes/dossier.py",
+          "apps/control-plane/api/routes/economics.py",
           "apps/control-plane/api/routes/fabric.py",
           "apps/control-plane/api/routes/findings.py",
+          "apps/control-plane/api/routes/intelligence.py",
           "apps/control-plane/api/routes/investigation_context.py",
           "apps/control-plane/api/routes/manual_assertions.py",
           "apps/control-plane/api/routes/metrics.py",
@@ -937,6 +873,7 @@
           "apps/control-plane/api/routes/science_temporal.py",
           "apps/control-plane/api/routes/search.py",
           "apps/control-plane/api/routes/search_rebuild.py",
+          "apps/control-plane/api/routes/specops_ci.py",
           "apps/control-plane/api/routes/specops_counterintel.py",
           "apps/control-plane/api/routes/specops_cryptotx.py",
           "apps/control-plane/api/routes/specops_emulation.py",
@@ -1004,11 +941,15 @@
           "apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py",
           "apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py",
           "apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py",
+          "apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py",
+          "apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py",
+          "apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py",
           "apps/control-plane/db/relation_candidate_store.py",
           "apps/control-plane/db/relation_claim_store.py",
           "apps/control-plane/db/schema.py",
           "apps/control-plane/db/session.py",
           "apps/control-plane/db/source_query_store.py",
+          "apps/control-plane/db/specops_ci_signal_outbox.py",
           "apps/control-plane/db/temporal_materialization.py",
           "apps/control-plane/modifier/__init__.py",
           "apps/control-plane/modifier/mismatch.py",
@@ -1034,6 +975,8 @@
           "apps/control-plane/services/entity_pipeline.py",
           "apps/control-plane/services/event_bus.py",
           "apps/control-plane/services/frontier.py",
+          "apps/control-plane/services/intelligence_access.py",
+          "apps/control-plane/services/intelligence_reader.py",
           "apps/control-plane/services/interpretation_bridge.py",
           "apps/control-plane/services/layer0_pipeline.py",
           "apps/control-plane/services/materialization_outbox_relay.py",
@@ -1056,6 +999,9 @@
           "apps/control-plane/services/series_lifecycle.py",
           "apps/control-plane/services/source_registry.py",
           "apps/control-plane/services/specops_catalog.py",
+          "apps/control-plane/services/specops_ci_authorization_gate.py",
+          "apps/control-plane/services/specops_ci_runtime_factory.py",
+          "apps/control-plane/services/specops_ci_signal_outbox.py",
           "apps/control-plane/services/temporal_materialization_dispatch.py",
           "apps/control-plane/services/temporal_materialization_service.py",
           "apps/control-plane/services/temporal_port.py",
@@ -1148,6 +1094,9 @@
           "apps/control-plane/tests/unit/test_search_fusion_api.py",
           "apps/control-plane/tests/unit/test_series_lifecycle.py",
           "apps/control-plane/tests/unit/test_source_query_store.py",
+          "apps/control-plane/tests/unit/test_specops_ci_api.py",
+          "apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py",
+          "apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py",
           "apps/control-plane/tests/unit/test_sse_stream.py",
           "apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py",
           "apps/control-plane/tests/unit/test_temporal_materialization_persistence.py",
@@ -1231,7 +1180,7 @@
           "apps/projection/tests/unit/test_topological_invariant.py",
           "apps/projection/tests/unit/test_validated.py"
         ],
-        "module_count": 324
+        "module_count": 339
       },
       {
         "id": "webapp",
@@ -1568,6 +1517,7 @@
       "api.example.com",
       "api.example.org",
       "api.md",
+      "api.routes.connectors",
       "api.routes.search_rebuild",
       "api.tavily.com",
       "app.py",
@@ -1601,6 +1551,7 @@
       "bad..example.org",
       "bad.com",
       "bad.py",
+      "batch.size",
       "bbot.event",
       "bbot.recon",
       "bench.json",
@@ -1713,6 +1664,7 @@
       "dc.title",
       "decision.recorded",
       "default.html",
+      "delivery.timeout.ms",
       "details.full_name",
       "details.linkedin",
       "details.twitter",
@@ -1724,10 +1676,7 @@
       "discovery.link_edge_provider",
       "discovery.seed",
       "dispatcher.regional",
-      "domain.context_validation",
-      "domain.mention_occurrence_index",
-      "domain.predicate_signature",
-      "domain.relation_claim_material"
+      "domain.context_validation"
     ]
   },
   "context_map": {
@@ -1736,7 +1685,7 @@
         "from": "ingestion",
         "to": "platform-shared",
         "type": "direct",
-        "via_import": "domain.capture"
+        "via_import": "config.kafka"
       },
       {
         "from": "ingestion",
@@ -1824,12 +1773,6 @@
       },
       {
         "from": "projection-query",
-        "to": "ops-deploy",
-        "type": "direct",
-        "via_import": "specops.counterintel"
-      },
-      {
-        "from": "projection-query",
         "to": "interpretation",
         "type": "direct",
         "via_import": "parsers.families"
@@ -1856,7 +1799,7 @@
         "from": "interpretation",
         "to": "platform-shared",
         "type": "direct",
-        "via_import": "events.event_envelope_pb2"
+        "via_import": "config.kafka"
       },
       {
         "from": "interpretation",
@@ -1905,12 +1848,6 @@
         "to": "ops-deploy",
         "type": "direct",
         "via_import": "platform_model.gaps"
-      },
-      {
-        "from": "ops-deploy",
-        "to": "projection-query",
-        "type": "direct",
-        "via_import": "api.main"
       },
       {
         "from": "ops-deploy",
@@ -2491,14 +2428,14 @@
         "tasks_checked": 37,
         "tasks_total": 58,
         "modules": [
-          "apps/specops/__init__.py",
-          "apps/specops/emulation.py",
-          "apps/specops/forensics.py",
-          "apps/specops/phishing.py",
-          "apps/specops/roe/__init__.py",
-          "apps/specops/roe/gate.py",
-          "apps/specops/tests/conftest.py",
-          "apps/specops/tests/test_roe_gate.py"
+          "spec-ops legacy/apps/specops/__init__.py",
+          "spec-ops legacy/apps/specops/emulation.py",
+          "spec-ops legacy/apps/specops/forensics.py",
+          "spec-ops legacy/apps/specops/phishing.py",
+          "spec-ops legacy/apps/specops/roe/__init__.py",
+          "spec-ops legacy/apps/specops/roe/gate.py",
+          "spec-ops legacy/apps/specops/tests/conftest.py",
+          "spec-ops legacy/apps/specops/tests/test_roe_gate.py"
         ],
         "module_count": 8,
         "capabilities": []
@@ -2576,11 +2513,12 @@
         "tasks_total": 53,
         "modules": [
           "apps/control-plane/api/routes/specops_ghostline.py",
-          "apps/specops/ghostline/__init__.py",
-          "apps/specops/tests/test_ghostline.py",
-          "apps/specops/tests/test_specops_ghostline_routers.py"
+          "spec-ops legacy/apps/specops/ghostline/__init__.py",
+          "spec-ops legacy/apps/specops/tests/test_ghostline.py",
+          "spec-ops legacy/apps/specops/tests/test_specops_ghostline_routers.py",
+          "spec-ops legacy/mirror/apps/control-plane/api/routes/specops_ghostline.py"
         ],
-        "module_count": 4,
+        "module_count": 5,
         "capabilities": []
       },
       {
@@ -2594,14 +2532,15 @@
         "modules": [
           "apps/control-plane/api/routes/specops_engagement.py",
           "apps/shared/tests/contract/test_single_publication_path.py",
-          "apps/specops/engagement/__init__.py",
-          "apps/specops/engagement/config.py",
-          "apps/specops/engagement/fabric.py",
-          "apps/specops/engagement/funnel.py",
-          "apps/specops/engagement/taxonomy.py",
-          "apps/specops/tests/test_engagement.py"
+          "spec-ops legacy/apps/specops/engagement/__init__.py",
+          "spec-ops legacy/apps/specops/engagement/config.py",
+          "spec-ops legacy/apps/specops/engagement/fabric.py",
+          "spec-ops legacy/apps/specops/engagement/funnel.py",
+          "spec-ops legacy/apps/specops/engagement/taxonomy.py",
+          "spec-ops legacy/apps/specops/tests/test_engagement.py",
+          "spec-ops legacy/mirror/apps/control-plane/api/routes/specops_engagement.py"
         ],
-        "module_count": 8,
+        "module_count": 9,
         "capabilities": []
       },
       {
@@ -2658,12 +2597,49 @@
         "tasks_total": 60,
         "modules": [
           "apps/control-plane/api/routes/specops_lab.py",
-          "apps/specops/lab/__init__.py",
-          "apps/specops/lab/models.py",
-          "apps/specops/tests/test_lab_engine.py",
-          "apps/specops/tests/test_specops_lab_router.py"
+          "spec-ops legacy/apps/specops/lab/__init__.py",
+          "spec-ops legacy/apps/specops/lab/models.py",
+          "spec-ops legacy/apps/specops/tests/test_lab_engine.py",
+          "spec-ops legacy/apps/specops/tests/test_specops_lab_router.py",
+          "spec-ops legacy/mirror/apps/control-plane/api/routes/specops_lab.py"
         ],
-        "module_count": 5,
+        "module_count": 6,
+        "capabilities": []
+      },
+      {
+        "id": "041-domain-silo-boundaries",
+        "has_spec": true,
+        "has_tasks": true,
+        "has_plan": true,
+        "spec_path": "specs/041-domain-silo-boundaries/spec.md",
+        "tasks_checked": 16,
+        "tasks_total": 30,
+        "modules": [],
+        "module_count": 0,
+        "capabilities": []
+      },
+      {
+        "id": "042-specops-durable-orchestration",
+        "has_spec": true,
+        "has_tasks": true,
+        "has_plan": false,
+        "spec_path": "specs/042-specops-durable-orchestration/spec.md",
+        "tasks_checked": 22,
+        "tasks_total": 32,
+        "modules": [],
+        "module_count": 0,
+        "capabilities": []
+      },
+      {
+        "id": "043-redpanda-only-backbone-and-efficiency",
+        "has_spec": true,
+        "has_tasks": false,
+        "has_plan": false,
+        "spec_path": "specs/043-redpanda-only-backbone-and-efficiency/spec.md",
+        "tasks_checked": 0,
+        "tasks_total": 0,
+        "modules": [],
+        "module_count": 0,
         "capabilities": []
       }
     ]
@@ -2833,6 +2809,30 @@
     ],
     "violations": [
       {
+        "type": "broken-import",
+        "from": "apps/specops_ci/orchestration/graph.py",
+        "import": "langgraph.graph",
+        "kind": "stale-platform-path"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/specops_ci/orchestration/graph.py",
+        "import": "langgraph.types",
+        "kind": "stale-platform-path"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/specops_ci/orchestration/workflow.py",
+        "import": "langgraph.checkpoint.memory",
+        "kind": "stale-platform-path"
+      },
+      {
+        "type": "broken-import",
+        "from": "apps/specops_ci/orchestration/workflow.py",
+        "import": "langgraph.types",
+        "kind": "stale-platform-path"
+      },
+      {
         "type": "competing-writers",
         "object": "observation",
         "table": "observations"
@@ -2906,9 +2906,9 @@
   },
   "summary": {
     "contexts": 12,
-    "context_edges": 39,
-    "specs": 33,
+    "context_edges": 37,
+    "specs": 36,
     "flows": 1,
-    "rule_violations": 14
+    "rule_violations": 18
   }
 }

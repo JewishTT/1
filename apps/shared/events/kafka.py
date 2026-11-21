@@ -7,7 +7,9 @@ repeatedly failing records go to DLQ/QUARANTINE lanes (``topics.py``).
 
 from __future__ import annotations
 
+import asyncio
 import json
+import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -15,6 +17,7 @@ from typing import Any
 
 from confluent_kafka import Consumer, KafkaError, KafkaException, Producer
 
+from config.kafka import redpanda_consumer_config, redpanda_producer_config
 from config.settings import get_settings
 from domain.observation_identity import derive_event_id
 from events import event_envelope_pb2 as pb
@@ -92,10 +95,21 @@ class IdempotentProducer:
     """Envelope producer with registry validation + callback error routing."""
 
     def __init__(self, bootstrap_servers: str | None = None) -> None:
+        # Redpanda tuning is deliberately conservative and protocol-compatible.
+        # Durable semantics (acks/idempotence) take precedence over raw throughput.
         self._producer = Producer(
-            {"bootstrap.servers": bootstrap_servers or get_settings().kafka.bootstrap_servers}
+            self._producer_config(
+                bootstrap_servers or get_settings().kafka.bootstrap_servers
+            )
         )
-        self._pending: dict[str, Callable[[Envelope, str], None]] = {}
+        # librdkafka delivery callbacks run during poll/flush. Capture failures
+        # here because raising inside a callback is not propagated to the caller.
+        self._delivery_errors: list[str] = []
+        self._delivery_error_overflow = 0
+
+    @staticmethod
+    def _producer_config(bootstrap_servers: str) -> dict[str, Any]:
+        return redpanda_producer_config(bootstrap_servers, compression="zstd")
 
     def produce(
         self,
@@ -105,15 +119,37 @@ class IdempotentProducer:
         key: str | None = None,
         on_error: Callable[[Envelope, Exception], None] | None = None,
     ) -> None:
-        self._producer.produce(
-            topic,
-            envelope.SerializeToString(),
-            key=(key or envelope.event_id).encode(),
-            callback=self._on_delivery(envelope, on_error),
-        )
+        payload = envelope.SerializeToString()
+        message_key = (key or envelope.event_id).encode()
+        callback = self._on_delivery(envelope, on_error)
+        # A bounded wait applies backpressure instead of losing events or growing
+        # an unbounded application-side queue when broker throughput falls behind.
+        deadline = time.monotonic() + 10.0
+        while True:
+            try:
+                self._producer.produce(topic, payload, key=message_key, callback=callback)
+                self._producer.poll(0)
+                return
+            except BufferError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("Redpanda producer queue remained full for 10 seconds")
+                self._producer.poll(0.1)
 
     def flush(self, timeout_s: float = 10.0) -> None:
-        self._producer.flush(timeout_s)
+        outstanding = self._producer.flush(timeout_s)
+        if outstanding:
+            raise TimeoutError(
+                f"Redpanda producer flush timed out with {outstanding} message(s) pending"
+            )
+        if self._delivery_errors or self._delivery_error_overflow:
+            failures = self._delivery_errors
+            overflow = self._delivery_error_overflow
+            self._delivery_errors = []
+            self._delivery_error_overflow = 0
+            detail = "; ".join(failures)
+            if overflow:
+                detail += f"; {overflow} additional delivery error(s) coalesced"
+            raise RuntimeError("Redpanda delivery failure(s): " + detail)
 
     def _on_delivery(
         self,
@@ -121,13 +157,24 @@ class IdempotentProducer:
         on_error: Callable[[Envelope, Exception], None] | None,
     ) -> Callable[[Any, Any], None]:
         def _cb(err, msg) -> None:  # noqa: ANN001
-            if err is not None:
-                if on_error is None:
-                    raise KafkaException(err)
-                on_error(envelope, KafkaException(err))
-
+            if err is None:
+                return
+            failure = KafkaException(err)
+            if len(self._delivery_errors) < 128:
+                self._delivery_errors.append(f"{envelope.event_id}: {failure}")
+            else:
+                self._delivery_error_overflow += 1
+            if on_error is not None:
+                try:
+                    on_error(envelope, failure)
+                except Exception as callback_error:
+                    if len(self._delivery_errors) < 128:
+                        self._delivery_errors.append(
+                            f"{envelope.event_id}: error handler failed: {callback_error}"
+                        )
+                    else:
+                        self._delivery_error_overflow += 1
         return _cb
-
 
 class Deduplicator(ABC):
     """Durable claim-once primitive: the backbone of at-least-once safety (FR-012).
@@ -203,12 +250,10 @@ class IdempotentConsumer(ABC):
         quarantine: QuarantineStore | None = None,
     ) -> None:
         self._consumer = Consumer(
-            {
-                "bootstrap.servers": bootstrap_servers or get_settings().kafka.bootstrap_servers,
-                "group.id": group_id,
-                "auto.offset.reset": "earliest",
-                "enable.auto.commit": False,
-            }
+            redpanda_consumer_config(
+                bootstrap_servers=bootstrap_servers or get_settings().kafka.bootstrap_servers,
+                group_id=group_id,
+            )
         )
         self._consumer.subscribe(topics)
         if deduplicator is None:
@@ -264,6 +309,11 @@ class IdempotentConsumer(ABC):
             return False
         try:
             await self.handle(envelope, raw)
+        except asyncio.CancelledError:
+            # Shutdown/rebalance cancellation must not strand a durable claim.
+            # The offset remains uncommitted, so the broker can redeliver safely.
+            await self._dedup.release(key)
+            raise
         except Exception as exc:
             await self._dedup.release(key)
             self._route_quarantine(envelope, raw, exc)

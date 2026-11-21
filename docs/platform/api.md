@@ -31,6 +31,12 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 | POST | `/enrich` | 116 |
 | GET | `/{entity_ref}` | 190 |
 
+## `economics` — `apps/control-plane/api/routes/economics.py`
+
+| Method | Path | Line |
+|---|---|---|
+| GET | `/subjects/{subject_ref}` | 22 |
+
 ## `entities` — `apps/control-plane/api/routes/entities.py`
 
 | Method | Path | Line |
@@ -94,6 +100,12 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 |---|---|---|
 | GET | `/{finding_id}` | 85 |
 | GET | `/{finding_id}/lineage` | 97 |
+
+## `intelligence` — `apps/control-plane/api/routes/intelligence.py`
+
+| Method | Path | Line |
+|---|---|---|
+| GET | `/snapshots/{subject_ref}` | 23 |
 
 ## `investigation_context` — `apps/control-plane/api/routes/investigation_context.py`
 
@@ -267,6 +279,18 @@ Extracted from `@router.<method>` decorators in `apps/control-plane/api/routes/`
 | Method | Path | Line |
 |---|---|---|
 | POST | `/rebuild` | 206 |
+
+## `specops_ci` — `apps/control-plane/api/routes/specops_ci.py`
+
+| Method | Path | Line |
+|---|---|---|
+| POST | `/authorizations` | 136 |
+| POST | `/assessments/prepare` | 228 |
+| POST | `/authorizations/{authorization_id}/revoke` | 302 |
+| POST | `/operations` | 334 |
+| GET | `/operations/{operation_id}/approval` | 466 |
+| POST | `/operations/{operation_id}/steps/{step_id}/decision` | 493 |
+| GET | `/operations/{operation_id}/decisions/{decision_id}/delivery` | 619 |
 
 ## `specops_counterintel` — `apps/control-plane/api/routes/specops_counterintel.py`
 

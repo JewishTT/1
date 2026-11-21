@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-CODE_ROOTS = ("apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs")
+CODE_ROOTS = ("apps", "bench", "benchmarks", "tools", "platform_model", "implementation", "specs", "spec-ops legacy")
 DOC_ROOTS = ("docs", "specs", ".opencode", ".specify")
 SOURCE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rs", ".proto", ".sql", ".css", ".scss", ".html"}
 AST_PARSERS = {"python-ast", "typescript-compiler-ast", "rust-syn-ast", "postcss-ast", "parse5-ast", "sqlglot-ast", "protobuf-descriptor-ast"}

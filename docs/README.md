@@ -21,12 +21,12 @@ Raw observations are immutable and content-addressed; every analytical result re
 
 | Metric | Value |
 |---|---|
-| Components | 17 |
-| Python / TypeScript / Rust modules | 1115 / 283 / 16 |
-| HTTP routes | 222 |
+| Components | 20 |
+| Python / TypeScript / Rust modules | 1167 / 329 / 16 |
+| HTTP routes | 231 |
 | Event types → lanes | 99 → 29 |
 | Capabilities (WIRED / TEST_ONLY) | 30 |
-| Test files / functions | 381 / 5514 |
+| Test files / functions | 394 / 5575 |
 
 Full breakdown, per-component module counts and the unresolved-import ledger: [`platform/index.md`](platform/index.md).
 
@@ -62,16 +62,19 @@ Full breakdown, per-component module counts and the unresolved-import ledger: [`
 | `admission` | 30 | 0 | 0 | Blocking/resolution, assertion extraction, source independence, calibrated admission. |
 | `bench` | 16 | 0 | 0 | E2E smoke harness, micro-benchmarks, knowledge-quality harness. |
 | `bulk-ingestion` | 6 | 0 | 0 | Common Crawl / Wayback / WARC / dataset backfill profiles. |
-| `control-plane` | 265 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
+| `control-plane` | 280 | 0 | 0 | FastAPI control plane: investigations, context engine, frontier, review, query planner, HTTP API. |
 | `deploy` | 1 | 0 | 0 | Docker Compose dev topology, Grafana, k8s configs. |
+| `economics` | 4 | 0 | 0 | Economic subjects, financial flows and economic process analysis over Intelligence. |
 | `feedback` | 11 | 0 | 0 | Recrawl/priority feedback, stopping policy. |
+| `intelligence` | 4 | 0 | 0 | Foundational entity, relation and evidence intelligence read model. |
 | `interpretation` | 120 | 0 | 0 | Parsers, deterministic entity-extraction stack, NER/normalization, candidate aggregation. |
 | `platform_model` | 13 | 0 | 0 | The generator that produces docs/platform from the tree. |
 | `projection` | 67 | 0 | 0 | Graph abstraction, search/analytics projectors, snapshots, TDA. |
 | `root` | 1 | 0 | 0 | Repo-root wiring: pytest conftest and the import roots it installs. |
 | `science` | 139 | 0 | 0 | Context operators, fabric, retrieval economics, abstraction ladder. |
-| `shared` | 200 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
-| `specops` | 68 | 0 | 0 | Isolated spec-ops lab profile (never in the routine path). |
+| `shared` | 202 | 0 | 0 | Contracts, events, domain invariants, storage, security — the substrate every app imports. |
+| `specops-legacy` | 81 | 46 | 0 | Archived former SpecOps implementation and transition adapters; not a new collection silo. |
+| `specops_ci` | 14 | 0 | 0 | Authorized SpecOps and counterintelligence domain consuming Intelligence snapshots. |
 | `tools` | 14 | 0 | 1 | Generators, capability/owner/donor tools, probes. |
 | `webapp` | 0 | 283 | 0 | React analyst surfaces: investigation, search, entity, finding, ops, lineage. |
 | `zero` | 40 | 0 | 0 | Zero-layer contact harvesting from arbitrary seeds. |

@@ -4,14 +4,14 @@ Generated from the scanner's per-body flags. This separates *the symbol exists* 
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 597 |
+| IMPLEMENTED | 628 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
-| DECLARATION_ONLY | 18 |
-| PACKAGE_INIT | 98 |
-| MIGRATION | 24 |
-| TEST | 378 |
+| DECLARATION_ONLY | 19 |
+| PACKAGE_INIT | 102 |
+| MIGRATION | 27 |
+| TEST | 391 |
 
 **0** modules are present but not really built (STUB / NOT_IMPLEMENTED / PRIMITIVE).
 
@@ -28,6 +28,7 @@ A non-``__init__`` module with no callables is either a data/declaration module 
 | `apps/acquisition/source_query_set.py` | 0 | — |
 | `apps/shared/conftest.py` | 2 | — |
 | `apps/zero/zero/harvesters/modules.py` | 18 | — |
+| `apps/intelligence/ports.py` | 19 | — |
 | `apps/projection/path_shim.py` | 20 | — |
 | `tools/strip_zero_inventory.py` | 22 | — |
 | `apps/projection/search/tantivy_backend.py` | 23 | — |
@@ -37,7 +38,7 @@ A non-``__init__`` module with no callables is either a data/declaration module 
 | `apps/shared/events/event_envelope_pb2.py` | 37 | — |
 | `tools/append_zero_frontend_a.py` | 47 | — |
 | `apps/acquisition/_probe_catalogue.py` | 51 | — |
-| `apps/control-plane/api/path_shim.py` | 60 | — |
+| `apps/control-plane/api/path_shim.py` | 69 | — |
 | `tools/fix_zero_layer_doc.py` | 87 | — |
 | `tools/append_zero_inventory.py` | 98 | — |
 | `apps/shared/domain/signal_basis.py` | 148 | — |

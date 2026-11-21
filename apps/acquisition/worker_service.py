@@ -44,21 +44,21 @@ def _postgres_dsn() -> str:
 
 
 def _consumer_config() -> dict[str, Any]:
-    from config.kafka import kafka_bootstrap_servers
+    from config.kafka import kafka_bootstrap_servers, redpanda_consumer_config
 
-    brokers = kafka_bootstrap_servers()
-    group_id = os.environ.get("COGNITIVE_ACQUISITION_GROUP", "cognitive-acquisition-http-v1").strip()
+    group_id = os.environ.get(
+        "COGNITIVE_ACQUISITION_GROUP",
+        "cognitive-acquisition-http-v1",
+    ).strip()
     if not group_id:
         raise RuntimeError("COGNITIVE_ACQUISITION_GROUP must be non-empty")
-    return {
-        "bootstrap.servers": brokers,
-        "group.id": group_id,
-        "enable.auto.commit": False,
-        "enable.auto.offset.store": False,
-        "auto.offset.reset": os.environ.get("COGNITIVE_ACQUISITION_OFFSET_RESET", "earliest"),
-        "allow.auto.create.topics": False,
-        "partition.assignment.strategy": "cooperative-sticky",
-    }
+    config = redpanda_consumer_config(
+        bootstrap_servers=kafka_bootstrap_servers(),
+        group_id=group_id,
+        auto_offset_reset=os.environ.get("COGNITIVE_ACQUISITION_OFFSET_RESET", "earliest"),
+    )
+    config["allow.auto.create.topics"] = False
+    return config
 
 
 async def run_worker(*, consumer: Any | None = None, max_messages: int | None = None) -> int:

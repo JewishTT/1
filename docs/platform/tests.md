@@ -1,6 +1,6 @@
 # Tests
 
-381 test files, 5514 test functions. 291 platform modules are not targeted by any test.
+394 test files, 5575 test functions. 320 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -8,7 +8,7 @@
 
 | File | Tests | Targets |
 |---|---|---|
-| `apps/acquisition/tests/contract/test_plan_driver.py` | 23 | `apps/acquisition/adapters/registry.py`, `apps/acquisition/dispatcher/plan_driver.py`, `apps/acquisition/dispatcher/scheduler.py`, `apps/acquisition/sources/catalogue.py` |
+| `apps/acquisition/tests/contract/test_plan_driver.py` | 26 | `apps/acquisition/adapters/registry.py`, `apps/acquisition/dispatcher/kafka_producer.py`, `apps/acquisition/dispatcher/plan_driver.py`, `apps/acquisition/dispatcher/scheduler.py` |
 | `apps/acquisition/tests/contract/test_scheduler.py` | 11 | `apps/acquisition/adapters/registry.py`, `apps/acquisition/dispatcher/scheduler.py` |
 | `apps/acquisition/tests/integration/test_adapters_gate.py` | 5 | `apps/acquisition/adapters/commoncrawl/index.py`, `apps/acquisition/adapters/scrapy/stream.py`, `apps/acquisition/adapters/warc/collect.py`, `apps/shared/events/content_router.py` |
 | `apps/acquisition/tests/integration/test_backpressure.py` | 6 | `apps/control-plane/services/throttle.py` |
@@ -92,7 +92,7 @@
 | `apps/control-plane/tests/test_research_case_invariants.py` | 13 | `apps/control-plane/_prove_person_research_case.py`, `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/context_engine/obligations.py` |
 | `apps/control-plane/tests/test_research_case_projection.py` | 6 | `apps/control-plane/services/research_case_projection.py` |
 | `apps/control-plane/tests/test_research_case_reports.py` | 5 | `apps/control-plane/services/research_case_artifacts.py`, `apps/control-plane/services/research_case_reports.py`, `apps/shared/contracts/evidence_span.py` |
-| `apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/specops/roe/gate.py` |
+| `apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `spec-ops legacy/apps/specops/roe/gate.py` |
 | `apps/control-plane/tests/test_type_signal_bridge.py` | 3 | `apps/control-plane/services/interpretation_bridge.py` |
 | `apps/control-plane/tests/test_zero_layer_service.py` | 3 | `apps/control-plane/services/zero_layer.py` |
 | `apps/control-plane/tests/unit/test_action_memory.py` | 19 | `apps/control-plane/context_engine/engine.py`, `apps/control-plane/context_engine/obligations.py`, `apps/control-plane/context_engine/store.py`, `apps/shared/contracts/stage_outcome.py` |
@@ -145,6 +145,9 @@
 | `apps/control-plane/tests/unit/test_search_fusion_api.py` | 5 | `apps/control-plane/api/main.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/services/query_planner.py` |
 | `apps/control-plane/tests/unit/test_series_lifecycle.py` | 10 | `apps/control-plane/services/series_lifecycle.py` |
 | `apps/control-plane/tests/unit/test_source_query_store.py` | 7 | `apps/acquisition/entity_search.py`, `apps/acquisition/source_query_set.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/source_query_store.py` |
+| `apps/control-plane/tests/unit/test_specops_ci_api.py` | 5 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `apps/control-plane/db/schema.py` |
+| `apps/control-plane/tests/unit/test_specops_ci_authorization_gate.py` | 4 | `apps/control-plane/services/specops_ci_authorization_gate.py`, `apps/specops_ci/domain.py` |
+| `apps/control-plane/tests/unit/test_specops_ci_signal_outbox.py` | 3 | `apps/control-plane/db/specops_ci_signal_outbox.py` |
 | `apps/control-plane/tests/unit/test_sse_stream.py` | 8 | `apps/control-plane/api/main.py`, `apps/control-plane/api/sse.py` |
 | `apps/control-plane/tests/unit/test_temporal_materialization_dispatch.py` | 2 | `apps/control-plane/services/__init__.py` |
 | `apps/control-plane/tests/unit/test_temporal_materialization_persistence.py` | 9 | `apps/control-plane/db/materialization_cursor.py`, `apps/control-plane/db/schema.py`, `apps/control-plane/db/temporal_materialization.py`, `apps/shared/domain/dynamics.py` |
@@ -155,9 +158,12 @@
 | `apps/control-plane/tests/unit/test_us3_ops.py` | 7 | `apps/control-plane/services/audit.py`, `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/tests/unit/test_wheel_package_manifest.py` | 1 | — |
 | `apps/control-plane/tests/unit/test_workflows.py` | 16 | `apps/control-plane/services/__init__.py`, `apps/control-plane/workflows/__init__.py`, `apps/control-plane/workflows/investigation.py`, `apps/control-plane/workflows/temporal_materialization.py` |
+| `apps/economics/tests/test_domain.py` | 3 | `apps/economics/domain.py`, `apps/shared/contracts/intelligence_feed.py` |
 | `apps/feedback/tests/test_branches.py` | 10 | `apps/feedback/feedback/__init__.py`, `apps/feedback/feedback/branch/entity.py`, `apps/feedback/feedback/branch/finding.py`, `apps/feedback/feedback/branch/source.py` |
 | `apps/feedback/tests/test_feedback.py` | 8 | `apps/feedback/feedback_engine.py`, `apps/feedback/stopping.py` |
 | `apps/feedback/tests/test_frontier_loop.py` | 2 | `apps/control-plane/db/schema.py`, `apps/control-plane/db/session.py`, `apps/control-plane/services/frontier.py`, `apps/feedback/feedback/__init__.py` |
+| `apps/intelligence/tests/test_feed_contract.py` | 3 | `apps/shared/contracts/intelligence_feed.py` |
+| `apps/intelligence/tests/test_postgres_reader.py` | 3 | `apps/control-plane/services/intelligence_reader.py`, `apps/shared/contracts/intelligence_feed.py` |
 | `apps/interpretation/tests/conftest.py` | 0 | `apps/interpretation/dictionaries/build_mini.py` |
 | `apps/interpretation/tests/contract/__init__.py` | 0 | — |
 | `apps/interpretation/tests/contract/test_dictionary_entities.py` | 7 | `apps/interpretation/dictionaries/__init__.py`, `apps/interpretation/extractors/dictionary_entities.py`, `apps/interpretation/extractors/orgs.py`, `apps/interpretation/extractors/places.py` |
@@ -282,6 +288,7 @@
 | `apps/shared/tests/contract/__init__.py` | 0 | — |
 | `apps/shared/tests/contract/test_correlation.py` | 4 | `apps/shared/domain/__init__.py` |
 | `apps/shared/tests/contract/test_domain_invariants.py` | 12 | `apps/shared/domain/__init__.py` |
+| `apps/shared/tests/contract/test_domain_silo_boundaries.py` | 2 | — |
 | `apps/shared/tests/contract/test_donor_registry.py` | 28 | — |
 | `apps/shared/tests/contract/test_entity_fabric.py` | 46 | `apps/shared/domain/dynamics.py`, `apps/shared/domain/fabric.py`, `apps/shared/domain/hypergraph.py` |
 | `apps/shared/tests/contract/test_error_codes.py` | 54 | `apps/shared/contracts/canonical.py`, `apps/shared/contracts/error_codes.py` |
@@ -332,10 +339,10 @@
 | `apps/shared/tests/unit/test_evidence_lineage.py` | 16 | `apps/shared/domain/evidence_lineage.py`, `apps/shared/domain/relation_claim.py`, `apps/shared/domain/relation_identity.py` |
 | `apps/shared/tests/unit/test_evidence_store_guard.py` | 10 | `apps/shared/events/evidence_store_guard.py` |
 | `apps/shared/tests/unit/test_fusion.py` | 26 | `apps/shared/scoring/fusion.py` |
-| `apps/shared/tests/unit/test_idempotent_consumer.py` | 8 | `apps/shared/events/__init__.py`, `apps/shared/events/dlq.py`, `apps/shared/events/kafka.py` |
+| `apps/shared/tests/unit/test_idempotent_consumer.py` | 9 | `apps/shared/events/__init__.py`, `apps/shared/events/dlq.py`, `apps/shared/events/kafka.py` |
 | `apps/shared/tests/unit/test_ids.py` | 8 | `apps/shared/ids/__init__.py` |
 | `apps/shared/tests/unit/test_investigation_context.py` | 37 | `apps/shared/domain/investigation_context.py` |
-| `apps/shared/tests/unit/test_kafka_bootstrap.py` | 3 | `apps/shared/config/kafka.py` |
+| `apps/shared/tests/unit/test_kafka_bootstrap.py` | 11 | `apps/shared/config/kafka.py`, `apps/shared/events/kafka.py` |
 | `apps/shared/tests/unit/test_layer_boundaries.py` | 9 | `apps/shared/tools/layer_boundaries.py` |
 | `apps/shared/tests/unit/test_measured_values.py` | 19 | `apps/shared/observability/measured.py` |
 | `apps/shared/tests/unit/test_mention_occurrence_index.py` | 20 | `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/predicate_signature.py`, `apps/shared/domain/relation_identity.py` |
@@ -356,19 +363,10 @@
 | `apps/shared/tests/unit/test_temporal_metrics.py` | 9 | `apps/shared/domain/temporal_metrics.py` |
 | `apps/shared/tests/unit/test_type_signal.py` | 8 | `apps/shared/semantic/type_signal.py`, `apps/shared/semantic/vocabularies.py` |
 | `apps/shared/tests/unit/websearch/test_websearch.py` | 23 | `apps/shared/websearch/__init__.py`, `apps/shared/websearch/contracts.py`, `apps/shared/websearch/discovery.py`, `apps/shared/websearch/providers.py` |
-| `apps/specops/tests/conftest.py` | 0 | `apps/specops/ghostline/config.py`, `apps/specops/ghostline/runtime.py` |
-| `apps/specops/tests/test_cryptotx_api.py` | 1 | `apps/control-plane/api/main.py`, `apps/specops/cryptotx/config.py` |
-| `apps/specops/tests/test_cryptotx_core.py` | 7 | `apps/specops/cryptotx/__init__.py`, `apps/specops/cryptotx/approvals.py`, `apps/specops/cryptotx/errors.py`, `apps/specops/cryptotx/models.py` |
-| `apps/specops/tests/test_cryptotx_executor.py` | 6 | `apps/specops/cryptotx/approvals.py`, `apps/specops/cryptotx/chains/base.py`, `apps/specops/cryptotx/config.py`, `apps/specops/cryptotx/errors.py` |
-| `apps/specops/tests/test_cryptotx_swaps.py` | 8 | `apps/specops/cryptotx/config.py`, `apps/specops/cryptotx/errors.py`, `apps/specops/cryptotx/models.py`, `apps/specops/cryptotx/swaps/base.py` |
-| `apps/specops/tests/test_engagement.py` | 26 | `apps/specops/engagement/__init__.py`, `apps/specops/engagement/config.py`, `apps/specops/engagement/fabric.py` |
-| `apps/specops/tests/test_ghostline.py` | 36 | `apps/specops/ghostline/catalog.py`, `apps/specops/ghostline/config.py`, `apps/specops/ghostline/engine.py`, `apps/specops/ghostline/ledger.py` |
-| `apps/specops/tests/test_lab_engine.py` | 7 | `apps/specops/engagement/config.py`, `apps/specops/engagement/fabric.py`, `apps/specops/lab/audit.py`, `apps/specops/lab/boundary.py` |
-| `apps/specops/tests/test_lab_phishingclub.py` | 3 | `apps/specops/lab/__init__.py` |
-| `apps/specops/tests/test_roe_gate.py` | 11 | `apps/specops/roe/gate.py` |
-| `apps/specops/tests/test_specops_ghostline_routers.py` | 26 | `apps/control-plane/api/main.py` |
-| `apps/specops/tests/test_specops_lab_router.py` | 8 | `apps/control-plane/api/main.py`, `apps/control-plane/api/routes/specops_lab.py`, `apps/specops/engagement/config.py`, `apps/specops/engagement/fabric.py` |
-| `apps/specops/tests/test_specops_routers.py` | 10 | `apps/control-plane/api/main.py` |
+| `apps/specops_ci/orchestration/tests/test_contracts.py` | 9 | `apps/specops_ci/domain.py`, `apps/specops_ci/orchestration/contracts.py` |
+| `apps/specops_ci/orchestration/tests/test_graph.py` | 5 | `apps/specops_ci/orchestration/contracts.py`, `apps/specops_ci/orchestration/graph.py`, `apps/specops_ci/orchestration/workflow.py` |
+| `apps/specops_ci/orchestration/tests/test_runtime_ports.py` | 4 | `apps/specops_ci/domain.py`, `apps/specops_ci/orchestration/contracts.py`, `apps/specops_ci/orchestration/runtime_ports.py` |
+| `apps/specops_ci/tests/test_scope.py` | 3 | `apps/shared/contracts/intelligence_feed.py`, `apps/specops_ci/domain.py` |
 | `apps/zero/tests/conftest.py` | 0 | `apps/zero/zero/type_detector.py` |
 | `apps/zero/tests/test_cc_capture.py` | 14 | `apps/shared/network/cc_session.py`, `apps/zero/zero/cc_capture.py` |
 | `apps/zero/tests/test_enrichment.py` | 26 | `apps/zero/zero/enrichment/feedback.py`, `apps/zero/zero/enrichment/modules.py`, `apps/zero/zero/harvesters/contracts.py`, `apps/zero/zero/type_detector.py` |
@@ -387,6 +385,21 @@
 | `bench/tests/test_scale_scale.py` | 3 | — |
 | `implementation/tests/test_contract_files.py` | 4 | — |
 | `implementation/tests/test_person_case_lark.py` | 2 | — |
+| `spec-ops legacy/apps/specops/tests/conftest.py` | 0 | `spec-ops legacy/apps/specops/ghostline/config.py`, `spec-ops legacy/apps/specops/ghostline/runtime.py` |
+| `spec-ops legacy/apps/specops/tests/test_cryptotx_api.py` | 1 | `apps/control-plane/api/main.py`, `spec-ops legacy/apps/specops/cryptotx/config.py` |
+| `spec-ops legacy/apps/specops/tests/test_cryptotx_core.py` | 7 | `spec-ops legacy/apps/specops/cryptotx/__init__.py`, `spec-ops legacy/apps/specops/cryptotx/approvals.py`, `spec-ops legacy/apps/specops/cryptotx/errors.py`, `spec-ops legacy/apps/specops/cryptotx/models.py` |
+| `spec-ops legacy/apps/specops/tests/test_cryptotx_executor.py` | 6 | `spec-ops legacy/apps/specops/cryptotx/approvals.py`, `spec-ops legacy/apps/specops/cryptotx/chains/base.py`, `spec-ops legacy/apps/specops/cryptotx/config.py`, `spec-ops legacy/apps/specops/cryptotx/errors.py` |
+| `spec-ops legacy/apps/specops/tests/test_cryptotx_swaps.py` | 8 | `spec-ops legacy/apps/specops/cryptotx/config.py`, `spec-ops legacy/apps/specops/cryptotx/errors.py`, `spec-ops legacy/apps/specops/cryptotx/models.py`, `spec-ops legacy/apps/specops/cryptotx/swaps/base.py` |
+| `spec-ops legacy/apps/specops/tests/test_engagement.py` | 26 | `spec-ops legacy/apps/specops/engagement/__init__.py`, `spec-ops legacy/apps/specops/engagement/config.py`, `spec-ops legacy/apps/specops/engagement/fabric.py` |
+| `spec-ops legacy/apps/specops/tests/test_ghostline.py` | 36 | `spec-ops legacy/apps/specops/ghostline/catalog.py`, `spec-ops legacy/apps/specops/ghostline/config.py`, `spec-ops legacy/apps/specops/ghostline/engine.py`, `spec-ops legacy/apps/specops/ghostline/ledger.py` |
+| `spec-ops legacy/apps/specops/tests/test_lab_engine.py` | 7 | `spec-ops legacy/apps/specops/engagement/config.py`, `spec-ops legacy/apps/specops/engagement/fabric.py`, `spec-ops legacy/apps/specops/lab/audit.py`, `spec-ops legacy/apps/specops/lab/boundary.py` |
+| `spec-ops legacy/apps/specops/tests/test_lab_phishingclub.py` | 3 | `spec-ops legacy/apps/specops/lab/__init__.py` |
+| `spec-ops legacy/apps/specops/tests/test_roe_gate.py` | 11 | `spec-ops legacy/apps/specops/roe/gate.py` |
+| `spec-ops legacy/apps/specops/tests/test_specops_ghostline_routers.py` | 26 | `apps/control-plane/api/main.py` |
+| `spec-ops legacy/apps/specops/tests/test_specops_lab_router.py` | 8 | `apps/control-plane/api/main.py`, `apps/control-plane/api/routes/specops_lab.py`, `spec-ops legacy/apps/specops/engagement/config.py`, `spec-ops legacy/apps/specops/engagement/fabric.py` |
+| `spec-ops legacy/apps/specops/tests/test_specops_routers.py` | 10 | `apps/control-plane/api/main.py` |
+| `spec-ops legacy/mirror/apps/control-plane/tests/test_specops_roe_auth.py` | 4 | `apps/control-plane/api/auth.py`, `apps/control-plane/api/routes/__init__.py`, `spec-ops legacy/apps/specops/roe/gate.py` |
+| `spec-ops legacy/mirror/apps/shared/tests/contract/test_specops_lab_boundary.py` | 1 | — |
 | `specs/021-entity-relation-extraction-finalization/repair/tools/test_reference_check.py` | 200 | — |
 | `tools/tests/test_repo_hygiene.py` | 2 | `tools/repo_hygiene.py` |
 
@@ -439,7 +452,9 @@
 | `apps/control-plane/api/routes/connectors.py` |
 | `apps/control-plane/api/routes/discovery.py` |
 | `apps/control-plane/api/routes/discovery_strategy.py` |
+| `apps/control-plane/api/routes/economics.py` |
 | `apps/control-plane/api/routes/fabric.py` |
+| `apps/control-plane/api/routes/intelligence.py` |
 | `apps/control-plane/api/routes/investigation_context.py` |
 | `apps/control-plane/api/routes/investigations.py` |
 | `apps/control-plane/api/routes/manual_assertions.py` |
@@ -452,5 +467,3 @@
 | `apps/control-plane/api/routes/science_causal.py` |
 | `apps/control-plane/api/routes/science_claims.py` |
 | `apps/control-plane/api/routes/science_hypotheses.py` |
-| `apps/control-plane/api/routes/science_review.py` |
-| `apps/control-plane/api/routes/science_robustness.py` |

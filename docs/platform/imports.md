@@ -1,6 +1,6 @@
 # Import graph
 
-1115 Python modules, 3202 resolved local edges.
+1167 Python modules, 3344 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -10,46 +10,46 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 
 | Package | Kind | Import sites |
 |---|---|---|
-| `__future__` | stdlib | 978 |
-| `dataclasses` | stdlib | 414 |
-| `typing` | stdlib | 405 |
-| `pathlib` | stdlib | 343 |
-| `pytest` | third-party | 292 |
-| `sys` | stdlib | 271 |
-| `collections` | stdlib | 250 |
-| `json` | stdlib | 220 |
-| `datetime` | stdlib | 217 |
-| `sqlalchemy` | third-party | 174 |
-| `hashlib` | stdlib | 145 |
-| `enum` | stdlib | 121 |
-| `re` | stdlib | 109 |
-| `os` | stdlib | 83 |
-| `asyncio` | stdlib | 78 |
-| `fastapi` | third-party | 74 |
+| `__future__` | stdlib | 1022 |
+| `typing` | stdlib | 434 |
+| `dataclasses` | stdlib | 422 |
+| `pathlib` | stdlib | 345 |
+| `pytest` | third-party | 305 |
+| `sys` | stdlib | 272 |
+| `collections` | stdlib | 258 |
+| `datetime` | stdlib | 242 |
+| `json` | stdlib | 222 |
+| `sqlalchemy` | third-party | 185 |
+| `hashlib` | stdlib | 148 |
+| `enum` | stdlib | 124 |
+| `re` | stdlib | 113 |
+| `fastapi` | third-party | 93 |
+| `asyncio` | stdlib | 87 |
+| `os` | stdlib | 86 |
 | `urllib` | stdlib | 68 |
-| `uuid` | stdlib | 54 |
+| `uuid` | stdlib | 56 |
+| `types` | stdlib | 46 |
+| `pydantic` | third-party | 45 |
 | `math` | stdlib | 42 |
-| `types` | stdlib | 42 |
-| `time` | stdlib | 40 |
-| `pydantic` | third-party | 36 |
-| `importlib` | stdlib | 35 |
+| `time` | stdlib | 42 |
+| `importlib` | stdlib | 37 |
+| `alembic` | third-party | 32 |
 | `httpx` | third-party | 30 |
-| `alembic` | third-party | 29 |
-| `ast` | stdlib | 28 |
+| `ast` | stdlib | 29 |
 | `io` | stdlib | 25 |
-| `logging` | stdlib | 24 |
+| `logging` | stdlib | 25 |
 | `threading` | stdlib | 24 |
 | `inspect` | stdlib | 23 |
 | `numpy` | third-party | 23 |
 | `argparse` | stdlib | 22 |
 | `tempfile` | stdlib | 21 |
+| `temporalio` | third-party | 21 |
 | `subprocess` | stdlib | 19 |
+| `decimal` | stdlib | 16 |
 | `shutil` | stdlib | 16 |
 | `confluent_kafka` | third-party | 16 |
 | `warcio` | third-party | 15 |
-| `decimal` | stdlib | 14 |
-| `temporalio` | third-party | 13 |
-| `base64` | stdlib | 11 |
+| `base64` | stdlib | 12 |
 
 ## Optional capability probes
 
@@ -63,6 +63,21 @@ that is switched off in this environment.
 | `pyshacl` | 1 |
 | `pyzbar` | 1 |
 | `tantivy` | 1 |
+
+## Platform imports with no resolved target
+
+The import names a platform package that does not exist at the resolved target. Classified by proof:
+
+* `local` — no target found; treated as a potential defect until proven otherwise.
+* `stale-platform-path` — the module still exists under a different root; a rename that did not reach the importer.
+* `guarded-local` — the import is inside a `try`, so it does not crash, but the feature behind it is silently switched off.
+
+| From | Import | Kind |
+|---|---|---|
+| `apps/specops_ci/orchestration/graph.py` | `langgraph.graph` | stale-platform-path |
+| `apps/specops_ci/orchestration/graph.py` | `langgraph.types` | stale-platform-path |
+| `apps/specops_ci/orchestration/workflow.py` | `langgraph.checkpoint.memory` | stale-platform-path |
+| `apps/specops_ci/orchestration/workflow.py` | `langgraph.types` | stale-platform-path |
 
 ## Import roots
 
@@ -107,6 +122,7 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `domain` | `apps/shared/domain/__init__.py` |
 | `donor` | `apps/shared/donor/__init__.py` |
 | `econ` | `apps/science/econ/__init__.py` |
+| `economics` | `apps/economics/__init__.py` |
 | `engine` | `apps/admission/engine/__init__.py` |
 | `errors` | `apps/science/errors.py` |
 | `events` | `apps/shared/events/__init__.py` |
@@ -157,10 +173,12 @@ Top-level name → the directory it resolves to, taken from the platform's own `
 | `semantic` | `apps/shared/semantic/__init__.py` |
 | `semantic_path` | `apps/control-plane/semantic_path/__init__.py` |
 | `services` | `apps/control-plane/services/__init__.py` |
+| `shared` | `apps/shared` |
 | `sims` | `apps/science/sims/__init__.py` |
 | `sources` | `apps/acquisition/sources/__init__.py` |
 | `spatial` | `apps/projection/spatial` |
-| `specops` | `apps/specops/__init__.py` |
+| `specops` | `spec-ops legacy/apps/specops/__init__.py` |
+| `specops_ci` | `apps/specops_ci/__init__.py` |
 | `stopping` | `apps/feedback/stopping.py` |
 | `storage` | `apps/shared/storage/__init__.py` |
 | `store` | `apps/science/store.py` |

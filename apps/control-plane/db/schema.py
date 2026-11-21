@@ -691,6 +691,139 @@ class Finding(Base):
     )
 
 
+class SpecOpsEngagementAuthorization(Base):
+    """Durable, tenant-scoped approval bound to one Intelligence snapshot and roster."""
+
+    __tablename__ = "specops_ci_authorizations"
+
+    authorization_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    subject_entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_snapshot_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    approved_by: Mapped[str] = mapped_column(String(128), nullable=False)
+    approval_ref: Mapped[str] = mapped_column(String(256), nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    max_hops: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    allowed_entity_ids: Mapped[list] = mapped_column(JSONB, nullable=False)
+    allowed_assessments: Mapped[list] = mapped_column(JSONB, nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_by: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_specops_ci_auth_tenant"),
+        CheckConstraint("approved_by <> ''", name="ck_specops_ci_auth_approver"),
+        CheckConstraint("approval_ref <> ''", name="ck_specops_ci_auth_approval_ref"),
+        CheckConstraint("expires_at > issued_at", name="ck_specops_ci_auth_window"),
+        CheckConstraint("max_hops BETWEEN 0 AND 8", name="ck_specops_ci_auth_hops"),
+        CheckConstraint(
+            "jsonb_typeof(allowed_entity_ids) = 'array' AND jsonb_array_length(allowed_entity_ids) > 0",
+            name="ck_specops_ci_auth_entities",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(allowed_assessments) = 'array' AND jsonb_array_length(allowed_assessments) > 0",
+            name="ck_specops_ci_auth_assessments",
+        ),
+        Index("ix_specops_ci_auth_tenant_expiry", "tenant_id", "expires_at"),
+        Index("ix_specops_ci_auth_snapshot", "tenant_id", "source_snapshot_id"),
+    )
+
+
+class SpecOpsOperationDecision(Base):
+    """Append-only, tenant-bound operator decision for one immutable operation step."""
+
+    __tablename__ = "specops_ci_operation_decisions"
+
+    decision_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    operation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    authorization_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    snapshot_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    spec_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    step_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    approved: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    reviewer_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    reviewer_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    approval_ref: Mapped[str] = mapped_column(String(256), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint("tenant_id <> ''", name="ck_specops_ci_decision_tenant"),
+        CheckConstraint("reviewer_id <> ''", name="ck_specops_ci_decision_reviewer"),
+        CheckConstraint("reviewer_role = 'admin'", name="ck_specops_ci_decision_role"),
+        CheckConstraint("approval_ref <> ''", name="ck_specops_ci_decision_approval_ref"),
+        UniqueConstraint(
+            "tenant_id",
+            "operation_id",
+            "step_id",
+            "spec_digest",
+            name="uq_specops_ci_operation_step_decision",
+        ),
+        Index("ix_specops_ci_decision_tenant_operation", "tenant_id", "operation_id"),
+        Index("ix_specops_ci_decision_authorization", "tenant_id", "authorization_id"),
+    )
+
+
+class SpecOpsDecisionSignalOutbox(Base):
+    """Durable delivery record for Temporal signals carrying immutable admin decisions."""
+
+    __tablename__ = "specops_ci_decision_signal_outbox"
+
+    outbox_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    operation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    step_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    spec_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    decision_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    signal_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="PENDING")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        UniqueConstraint("decision_id", name="uq_specops_ci_outbox_decision"),
+        CheckConstraint("tenant_id <> ''", name="ck_specops_ci_outbox_tenant"),
+        CheckConstraint(
+            "status IN ('PENDING', 'DISPATCHING', 'FAILED', 'DISPATCHED')",
+            name="ck_specops_ci_outbox_status",
+        ),
+        CheckConstraint("attempts >= 0", name="ck_specops_ci_outbox_attempts"),
+        Index(
+            "ix_specops_ci_outbox_ready",
+            "status",
+            "available_at",
+            "lease_until",
+        ),
+        Index(
+            "ix_specops_ci_outbox_tenant_operation",
+            "tenant_id",
+            "operation_id",
+        ),
+        UniqueConstraint(
+            "tenant_id",
+            "operation_id",
+            "step_id",
+            "spec_digest",
+            name="uq_specops_ci_outbox_step_digest",
+        ),
+    )
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
 

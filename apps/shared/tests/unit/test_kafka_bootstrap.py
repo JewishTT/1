@@ -1,33 +1,185 @@
-"""Shared broker resolution tests for Redpanda producer/consumer configuration."""
+"""Canonical Redpanda bootstrap configuration contracts."""
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
+import pytest
+
 APP_SHARED = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(APP_SHARED))
 
-from config.kafka import kafka_bootstrap_servers
+from config.kafka import kafka_bootstrap_servers, redpanda_consumer_config
+from events.kafka import IdempotentConsumer, IdempotentProducer
 
 
-def test_canonical_kafka_setting_wins_over_legacy_alias(monkeypatch) -> None:
+def test_canonical_bootstrap_normalizes_broker_list(monkeypatch) -> None:
     monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", "redpanda-a:19092, redpanda-b:19092")
-    monkeypatch.setenv("COGNITIVE_KAFKA_BROKERS", "old-kafka:9092")
     assert kafka_bootstrap_servers() == "redpanda-a:19092,redpanda-b:19092"
 
 
-def test_legacy_alias_remains_a_compatibility_fallback(monkeypatch) -> None:
+def test_unset_bootstrap_uses_local_redpanda_default(monkeypatch) -> None:
     monkeypatch.delenv("KAFKA_BOOTSTRAP_SERVERS", raising=False)
-    monkeypatch.setenv("COGNITIVE_KAFKA_BROKERS", "legacy:19092")
-    assert kafka_bootstrap_servers() == "legacy:19092"
+    assert kafka_bootstrap_servers() == "localhost:19092"
 
 
-def test_empty_broker_list_fails_closed(monkeypatch) -> None:
+def test_empty_bootstrap_fails_closed(monkeypatch) -> None:
     monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", " , ")
-    monkeypatch.delenv("COGNITIVE_KAFKA_BROKERS", raising=False)
-    try:
+    with pytest.raises(RuntimeError, match="KAFKA_BOOTSTRAP_SERVERS"):
         kafka_bootstrap_servers()
-    except RuntimeError as exc:
-        assert "KAFKA_BOOTSTRAP_SERVERS" in str(exc)
-    else:
-        raise AssertionError("empty broker configuration must be rejected")
+
+
+def test_redpanda_producer_uses_durable_batched_defaults() -> None:
+    config = IdempotentProducer._producer_config("redpanda:19092")
+    assert config["bootstrap.servers"] == "redpanda:19092"
+    assert config["enable.idempotence"] is True
+    assert config["acks"] == "all"
+    assert config["compression.type"] == "zstd"
+    assert config["linger.ms"] == 5
+    assert config["batch.size"] == 65_536
+    assert config["queue.buffering.max.kbytes"] == 16_384
+    assert config["max.in.flight.requests.per.connection"] == 5
+    assert config["socket.keepalive.enable"] is True
+
+
+def test_compose_has_redpanda_only_and_no_legacy_kafka_profile() -> None:
+    repository_root = APP_SHARED.parents[1]
+    compose = (repository_root / "apps" / "deploy" / "docker-compose.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "redpandadata/redpanda@sha256:" in compose
+    assert "confluentinc/cp-kafka" not in compose
+    assert "cp-schema-registry" not in compose
+    assert "legacy-kafka" not in compose
+
+
+def test_redpanda_consumer_is_bounded_and_manually_committed() -> None:
+    config = redpanda_consumer_config(
+        bootstrap_servers="redpanda:19092", group_id="observation-worker"
+    )
+    assert config["enable.auto.commit"] is False
+    assert config["enable.auto.offset.store"] is False
+    assert "max.poll.records" not in config  # librdkafka supports this only for share consumers
+    assert config["max.poll.interval.ms"] >= config["session.timeout.ms"]
+    assert config["fetch.max.bytes"] >= config["max.partition.fetch.bytes"]
+    assert config["queued.max.messages.kbytes"] > 0
+    assert config["partition.assignment.strategy"] == "cooperative-sticky"
+    assert config["fetch.wait.max.ms"] == 50
+
+
+def test_redpanda_consumer_rejects_unbounded_or_invalid_identity() -> None:
+    with pytest.raises(ValueError, match="bootstrap servers and consumer group"):
+        redpanda_consumer_config(bootstrap_servers="", group_id="")
+    with pytest.raises(ValueError, match="auto.offset.reset"):
+        redpanda_consumer_config(
+            bootstrap_servers="redpanda:19092", group_id="test", auto_offset_reset="random"
+        )
+
+
+def test_consumer_constructor_applies_shared_redpanda_policy(monkeypatch) -> None:
+    import events.kafka as event_module
+
+    captured: dict[str, object] = {}
+
+    class FakeConsumer:
+        def __init__(self, config):
+            captured.update(config)
+
+        def subscribe(self, topics):
+            captured["topics"] = topics
+
+    class DurableDeduplicator:
+        async def claim(self, key: str) -> bool:
+            return True
+
+        async def release(self, key: str) -> None:
+            return None
+
+    class ExampleConsumer(IdempotentConsumer):
+        def idempotency_key(self, envelope):
+            return envelope.event_id
+
+        async def handle(self, envelope, raw):
+            return None
+
+    monkeypatch.setattr(event_module, "Consumer", FakeConsumer)
+    ExampleConsumer(
+        "case-observation", ["observations"], "redpanda:19092",
+        deduplicator=DurableDeduplicator(),
+    )
+
+    assert captured["bootstrap.servers"] == "redpanda:19092"
+    assert captured["group.id"] == "case-observation"
+    assert captured["enable.auto.commit"] is False
+    assert captured["enable.auto.offset.store"] is False
+    assert captured["partition.assignment.strategy"] == "cooperative-sticky"
+    assert captured["topics"] == ["observations"]
+
+
+def test_producer_flush_surfaces_async_delivery_error(monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    import events.kafka as event_module
+
+    class FakeProducer:
+        def flush(self, timeout):
+            return 0
+
+    monkeypatch.setattr(event_module, "KafkaException", RuntimeError)
+    producer = IdempotentProducer.__new__(IdempotentProducer)
+    producer._producer = FakeProducer()
+    producer._delivery_errors = []
+    producer._delivery_error_overflow = 0
+    envelope = SimpleNamespace(event_id="event-42")
+    callback = producer._on_delivery(envelope, None)
+
+    callback(RuntimeError("broker unavailable"), None)
+
+    with pytest.raises(RuntimeError, match="event-42.*broker unavailable"):
+        producer.flush()
+    assert producer._delivery_errors == []
+
+
+def test_delivery_error_buffer_is_bounded_and_overflow_is_reported(monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    import events.kafka as event_module
+
+    class FakeProducer:
+        def flush(self, timeout):
+            return 0
+
+    monkeypatch.setattr(event_module, "KafkaException", RuntimeError)
+    producer = IdempotentProducer.__new__(IdempotentProducer)
+    producer._producer = FakeProducer()
+    producer._delivery_errors = []
+    producer._delivery_error_overflow = 0
+
+    for index in range(140):
+        callback = producer._on_delivery(
+            SimpleNamespace(event_id=f"event-{index}"), None
+        )
+        callback(RuntimeError("broker unavailable"), None)
+
+    assert len(producer._delivery_errors) == 128
+    assert producer._delivery_error_overflow == 12
+    with pytest.raises(RuntimeError, match="12 additional delivery error"):
+        producer.flush()
+    assert producer._delivery_errors == []
+    assert producer._delivery_error_overflow == 0
+
+
+def test_live_acceptance_proofs_use_the_single_bootstrap_contract() -> None:
+    repository_root = APP_SHARED.parents[1]
+    proof_paths = (
+        "apps/acquisition/_prove_backbone.py",
+        "apps/acquisition/_prove_tools.py",
+        "apps/acquisition/_prove_airbyte.py",
+        "apps/acquisition/_prove_searxng.py",
+        "apps/acquisition/_prove_public_source_matrix.py",
+        "apps/interpretation/_consume_searxng.py",
+    )
+    for relative_path in proof_paths:
+        source = (repository_root / relative_path).read_text(encoding="utf-8")
+        assert "COGNITIVE_KAFKA_BROKERS" not in source, relative_path
+        assert "kafka_bootstrap_servers()" in source, relative_path

@@ -6,10 +6,10 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 468 |
-| TEST_ONLY | 137 |
-| ORPHAN | 132 |
-| TEST | 378 |
+| PRODUCTION | 486 |
+| TEST_ONLY | 138 |
+| ORPHAN | 152 |
+| TEST | 391 |
 
 ## Entrypoints (production roots)
 
@@ -33,6 +33,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/semantic_path/record_corpus.py` |
 | `apps/control-plane/services/observation_consumer_runner.py` |
 | `apps/control-plane/services/pow_run.py` |
+| `apps/control-plane/services/specops_ci_signal_outbox.py` |
 | `apps/control-plane/services/worker_pools.py` |
 | `apps/control-plane/workflows/worker.py` |
 | `apps/deploy/minio-init/init-buckets.py` |
@@ -43,7 +44,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/interpretation/tools/gliner_relex_smoke.py` |
 | `apps/shared/datasets/build.py` |
 | `apps/shared/tools/layer_boundaries.py` |
-| `apps/specops/cryptotx/cli.py` |
+| `apps/specops_ci/orchestration/worker.py` |
 | `bench/bench/harness.py` |
 | `bench/chaos/bench_replay.py` |
 | `bench/collection/bench_collection.py` |
@@ -55,6 +56,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/run.py` |
 | `bench/science/bench_structural.py` |
 | `platform_model/build.py` |
+| `spec-ops legacy/apps/specops/cryptotx/cli.py` |
 | `tools/repo_hygiene.py` |
 | `tools/semantic_docgraph.py` |
 | `tools/specs/build_capability_matrix.py` |
@@ -63,7 +65,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Test-only modules (production never reaches them)
 
-**137** modules are reached only by tests.
+**138** modules are reached only by tests.
 
 | Module |
 |---|
@@ -111,6 +113,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/services/dispatcher.py` |
 | `apps/control-plane/services/layer0_pipeline.py` |
 | `apps/control-plane/services/relation_projection_relay.py` |
+| `apps/control-plane/services/specops_ci_authorization_gate.py` |
 | `apps/feedback/feedback/__init__.py` |
 | `apps/feedback/feedback/branch/__init__.py` |
 | `apps/feedback/feedback/branch/entity.py` |
@@ -197,17 +200,17 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/websearch/discovery.py` |
 | `apps/shared/websearch/providers.py` |
 | `apps/shared/websearch/relevance.py` |
-| `apps/specops/cryptotx/planner.py` |
 | `apps/zero/zero/harvesters/git.py` |
 | `apps/zero/zero/harvesters/image.py` |
 | `apps/zero/zero/harvesters/phone.py` |
 | `apps/zero/zero/harvesters/url.py` |
 | `apps/zero/zero/harvesters/username.py` |
 | `apps/zero/zero/resolution/fellegi_sunter.py` |
+| `spec-ops legacy/apps/specops/cryptotx/planner.py` |
 
 ## Orphan modules (nothing imports them)
 
-**132** modules are imported by neither production nor tests.
+**152** modules are imported by neither production nor tests.
 
 | Module |
 |---|
@@ -262,6 +265,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/db/migrations/versions/034_durable_investigation_contexts.py` |
 | `apps/control-plane/db/migrations/versions/035_interpretation_mentions_and_entity_versions.py` |
 | `apps/control-plane/db/migrations/versions/036_candidate_resolution_enum_types.py` |
+| `apps/control-plane/db/migrations/versions/037_specops_ci_authorizations.py` |
+| `apps/control-plane/db/migrations/versions/038_specops_ci_operation_decisions.py` |
+| `apps/control-plane/db/migrations/versions/039_specops_ci_decision_signal_outbox.py` |
 | `apps/control-plane/semantic_path/__init__.py` |
 | `apps/control-plane/semantic_path/signal_corpus.py` |
 | `apps/control-plane/semantic_path/signal_corpus_baseline.py` |
@@ -269,7 +275,11 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/control-plane/services/acquisition_evidence.py` |
 | `apps/control-plane/services/relation_projection_rebuild.py` |
 | `apps/control-plane/services/specops_catalog.py` |
+| `apps/control-plane/services/specops_ci_runtime_factory.py` |
 | `apps/control-plane/workflows/__init__.py` |
+| `apps/economics/__init__.py` |
+| `apps/intelligence/__init__.py` |
+| `apps/intelligence/ports.py` |
 | `apps/interpretation/__init__.py` |
 | `apps/interpretation/evidence/__init__.py` |
 | `apps/interpretation/extractors/__init__.py` |
@@ -319,12 +329,8 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `apps/shared/semantic/shacl.py` |
 | `apps/shared/storage/__init__.py` |
 | `apps/shared/workflow/__init__.py` |
-| `apps/specops/__init__.py` |
-| `apps/specops/cryptotx/__init__.py` |
-| `apps/specops/cryptotx/chains/__init__.py` |
-| `apps/specops/cryptotx/swaps/__init__.py` |
-| `apps/specops/ghostline/__init__.py` |
-| `apps/specops/roe/__init__.py` |
+| `apps/specops_ci/__init__.py` |
+| `apps/specops_ci/orchestration/__init__.py` |
 | `apps/zero/zero/__init__.py` |
 | `apps/zero/zero/enrichment/__init__.py` |
 | `apps/zero/zero/harvesters/__init__.py` |
@@ -335,6 +341,23 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 | `bench/fixtures/extraction/_generate.py` |
 | `conftest.py` |
 | `platform_model/facts.py` |
+| `spec-ops legacy/apps/specops/__init__.py` |
+| `spec-ops legacy/apps/specops/cryptotx/__init__.py` |
+| `spec-ops legacy/apps/specops/cryptotx/chains/__init__.py` |
+| `spec-ops legacy/apps/specops/cryptotx/swaps/__init__.py` |
+| `spec-ops legacy/apps/specops/ghostline/__init__.py` |
+| `spec-ops legacy/apps/specops/roe/__init__.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_counterintel.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_cryptotx.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_emulation.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_engagement.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_forensics.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_ghostline.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_lab.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_phishing.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_roe.py` |
+| `spec-ops legacy/mirror/apps/control-plane/api/routes/specops_social.py` |
+| `spec-ops legacy/mirror/apps/control-plane/services/specops_catalog.py` |
 | `tools/__init__.py` |
 | `tools/append_zero_frontend_a.py` |
 | `tools/append_zero_frontend_b.py` |
