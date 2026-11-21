@@ -40,7 +40,7 @@ IMAGE = os.environ.get(
 )
 _CONFIG_ROOT = os.environ.get("COGNITIVE_AIRBYTE_CFG", "").strip()
 MOUNT = Path(_CONFIG_ROOT).expanduser() if _CONFIG_ROOT else Path(tempfile.mkdtemp(prefix="cognitive-airbyte-"))
-BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
+BROKERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-airbyte-smoke"
