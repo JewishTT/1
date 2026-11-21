@@ -8,6 +8,8 @@ repeatedly failing records go to DLQ/QUARANTINE lanes (``topics.py``).
 from __future__ import annotations
 
 import json
+import os
+import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -92,10 +94,27 @@ class IdempotentProducer:
     """Envelope producer with registry validation + callback error routing."""
 
     def __init__(self, bootstrap_servers: str | None = None) -> None:
+        # Redpanda tuning is deliberately conservative and protocol-compatible.
+        # Durable semantics (acks/idempotence) take precedence over raw throughput.
         self._producer = Producer(
-            {"bootstrap.servers": bootstrap_servers or get_settings().kafka.bootstrap_servers}
+            self._producer_config(
+                bootstrap_servers or get_settings().kafka.bootstrap_servers
+            )
         )
         self._pending: dict[str, Callable[[Envelope, str], None]] = {}
+
+    @staticmethod
+    def _producer_config(bootstrap_servers: str) -> dict[str, Any]:
+        return {
+            "bootstrap.servers": bootstrap_servers,
+            "enable.idempotence": True,
+            "acks": "all",
+            "compression.type": "zstd",
+            "linger.ms": 5,
+            "batch.size": 65_536,
+            "queue.buffering.max.kbytes": 16_384,
+            "delivery.timeout.ms": 120_000,
+        }
 
     def produce(
         self,
@@ -105,15 +124,28 @@ class IdempotentProducer:
         key: str | None = None,
         on_error: Callable[[Envelope, Exception], None] | None = None,
     ) -> None:
-        self._producer.produce(
-            topic,
-            envelope.SerializeToString(),
-            key=(key or envelope.event_id).encode(),
-            callback=self._on_delivery(envelope, on_error),
-        )
+        payload = envelope.SerializeToString()
+        message_key = (key or envelope.event_id).encode()
+        callback = self._on_delivery(envelope, on_error)
+        # A bounded wait applies backpressure instead of losing events or growing
+        # an unbounded application-side queue when broker throughput falls behind.
+        deadline = time.monotonic() + 10.0
+        while True:
+            try:
+                self._producer.produce(topic, payload, key=message_key, callback=callback)
+                self._producer.poll(0)
+                return
+            except BufferError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("Redpanda producer queue remained full for 10 seconds")
+                self._producer.poll(0.1)
 
     def flush(self, timeout_s: float = 10.0) -> None:
-        self._producer.flush(timeout_s)
+        outstanding = self._producer.flush(timeout_s)
+        if outstanding:
+            raise TimeoutError(
+                f"Redpanda producer flush timed out with {outstanding} message(s) pending"
+            )
 
     def _on_delivery(
         self,
