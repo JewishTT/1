@@ -167,3 +167,19 @@ def test_delivery_error_buffer_is_bounded_and_overflow_is_reported(monkeypatch) 
         producer.flush()
     assert producer._delivery_errors == []
     assert producer._delivery_error_overflow == 0
+
+
+def test_live_acceptance_proofs_use_the_single_bootstrap_contract() -> None:
+    repository_root = APP_SHARED.parents[1]
+    proof_paths = (
+        "apps/acquisition/_prove_backbone.py",
+        "apps/acquisition/_prove_tools.py",
+        "apps/acquisition/_prove_airbyte.py",
+        "apps/acquisition/_prove_searxng.py",
+        "apps/acquisition/_prove_public_source_matrix.py",
+        "apps/interpretation/_consume_searxng.py",
+    )
+    for relative_path in proof_paths:
+        source = (repository_root / relative_path).read_text(encoding="utf-8")
+        assert "COGNITIVE_KAFKA_BROKERS" not in source, relative_path
+        assert "kafka_bootstrap_servers()" in source, relative_path
