@@ -57,7 +57,6 @@ def redpanda_consumer_config(
         "auto.offset.reset": auto_offset_reset,
         "enable.auto.commit": False,
         "enable.auto.offset.store": False,
-        "max.poll.records": 200,
         "max.poll.interval.ms": 300_000,
         "session.timeout.ms": 45_000,
         "heartbeat.interval.ms": 3_000,
