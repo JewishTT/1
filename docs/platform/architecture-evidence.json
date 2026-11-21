@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5112,
-    "static_facts": 4812,
+    "facts_total": 5114,
+    "static_facts": 4814,
     "inferred": 300,
     "intended": 0
   },
@@ -3054,6 +3054,19 @@
       "evidence": {
         "file": "apps/acquisition/tests/contract/test_plan_driver.py",
         "via": "adapters.registry"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "b2c1f16351d96279",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
+      "object": "apps/acquisition/dispatcher/kafka_producer.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/tests/contract/test_plan_driver.py",
+        "via": "dispatcher.kafka_producer"
       },
       "confidence": 1.0
     },
@@ -51838,6 +51851,18 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
       "object": "apps/acquisition/adapters/registry.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/acquisition/tests/contract/test_plan_driver.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "bd435684f1ba7b0e",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/acquisition/tests/contract/test_plan_driver.py",
+      "object": "apps/acquisition/dispatcher/kafka_producer.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
