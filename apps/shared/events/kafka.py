@@ -18,6 +18,7 @@ from typing import Any
 from confluent_kafka import Consumer, KafkaError, KafkaException, Producer
 
 from config.settings import get_settings
+from config.kafka import redpanda_producer_config
 from domain.observation_identity import derive_event_id
 from events import event_envelope_pb2 as pb
 from events.dlq import DLQRecord, QuarantineStore
@@ -105,16 +106,7 @@ class IdempotentProducer:
 
     @staticmethod
     def _producer_config(bootstrap_servers: str) -> dict[str, Any]:
-        return {
-            "bootstrap.servers": bootstrap_servers,
-            "enable.idempotence": True,
-            "acks": "all",
-            "compression.type": "zstd",
-            "linger.ms": 5,
-            "batch.size": 65_536,
-            "queue.buffering.max.kbytes": 16_384,
-            "delivery.timeout.ms": 120_000,
-        }
+        return redpanda_producer_config(bootstrap_servers, compression="zstd")
 
     def produce(
         self,
