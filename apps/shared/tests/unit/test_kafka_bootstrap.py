@@ -114,3 +114,26 @@ def test_consumer_constructor_applies_shared_redpanda_policy(monkeypatch) -> Non
     assert captured["enable.auto.offset.store"] is False
     assert captured["partition.assignment.strategy"] == "cooperative-sticky"
     assert captured["topics"] == ["observations"]
+
+
+def test_producer_flush_surfaces_async_delivery_error(monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    import events.kafka as event_module
+
+    class FakeProducer:
+        def flush(self, timeout):
+            return 0
+
+    monkeypatch.setattr(event_module, "KafkaException", RuntimeError)
+    producer = IdempotentProducer.__new__(IdempotentProducer)
+    producer._producer = FakeProducer()
+    producer._delivery_errors = []
+    envelope = SimpleNamespace(event_id="event-42")
+    callback = producer._on_delivery(envelope, None)
+
+    callback(RuntimeError("broker unavailable"), None)
+
+    with pytest.raises(RuntimeError, match="event-42.*broker unavailable"):
+        producer.flush()
+    assert producer._delivery_errors == []
