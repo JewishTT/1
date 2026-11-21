@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 
 DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:19092"
-LEGACY_BROKER_ENV = "COGNITIVE_KAFKA_BROKERS"
+LEGACY_BROKER_ENV = "KAFKA_BOOTSTRAP_SERVERS"
 
 
 def kafka_bootstrap_servers() -> str:
