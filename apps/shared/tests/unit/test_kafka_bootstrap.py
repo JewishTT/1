@@ -10,7 +10,7 @@ APP_SHARED = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(APP_SHARED))
 
 from config.kafka import kafka_bootstrap_servers, redpanda_consumer_config
-from events.kafka import IdempotentProducer
+from events.kafka import IdempotentConsumer, IdempotentProducer
 
 
 def test_canonical_bootstrap_normalizes_broker_list(monkeypatch) -> None:
@@ -74,3 +74,43 @@ def test_redpanda_consumer_rejects_unbounded_or_invalid_identity() -> None:
         redpanda_consumer_config(
             bootstrap_servers="redpanda:19092", group_id="test", auto_offset_reset="random"
         )
+
+
+def test_consumer_constructor_applies_shared_redpanda_policy(monkeypatch) -> None:
+    import events.kafka as event_module
+
+    captured: dict[str, object] = {}
+
+    class FakeConsumer:
+        def __init__(self, config):
+            captured.update(config)
+
+        def subscribe(self, topics):
+            captured["topics"] = topics
+
+    class DurableDeduplicator:
+        async def claim(self, key: str) -> bool:
+            return True
+
+        async def release(self, key: str) -> None:
+            return None
+
+    class ExampleConsumer(IdempotentConsumer):
+        def idempotency_key(self, envelope):
+            return envelope.event_id
+
+        async def handle(self, envelope, raw):
+            return None
+
+    monkeypatch.setattr(event_module, "Consumer", FakeConsumer)
+    ExampleConsumer(
+        "case-observation", ["observations"], "redpanda:19092",
+        deduplicator=DurableDeduplicator(),
+    )
+
+    assert captured["bootstrap.servers"] == "redpanda:19092"
+    assert captured["group.id"] == "case-observation"
+    assert captured["enable.auto.commit"] is False
+    assert captured["enable.auto.offset.store"] is False
+    assert captured["partition.assignment.strategy"] == "cooperative-sticky"
+    assert captured["topics"] == ["observations"]
