@@ -59,7 +59,7 @@ def test_redpanda_consumer_is_bounded_and_manually_committed() -> None:
     )
     assert config["enable.auto.commit"] is False
     assert config["enable.auto.offset.store"] is False
-    assert config["max.poll.records"] == 200
+    assert "max.poll.records" not in config  # librdkafka supports this only for share consumers
     assert config["max.poll.interval.ms"] >= config["session.timeout.ms"]
     assert config["fetch.max.bytes"] >= config["max.partition.fetch.bytes"]
     assert config["queued.max.messages.kbytes"] > 0
