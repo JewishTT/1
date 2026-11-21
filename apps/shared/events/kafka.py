@@ -101,7 +101,9 @@ class IdempotentProducer:
                 bootstrap_servers or get_settings().kafka.bootstrap_servers
             )
         )
-        # librdkafka delivery callbacks run during poll/flush. Capture failures\n        # here because raising inside a callback is not propagated to the caller.\n        self._delivery_errors: list[str] = []
+        # librdkafka delivery callbacks run during poll/flush. Capture failures
+        # here because raising inside a callback is not propagated to the caller.
+        self._delivery_errors: list[str] = []
 
     @staticmethod
     def _producer_config(bootstrap_servers: str) -> dict[str, Any]:
