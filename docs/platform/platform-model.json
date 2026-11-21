@@ -43017,7 +43017,7 @@
       {
         "path": "apps/shared/config/settings.py",
         "status": "IMPLEMENTED",
-        "loc": 95,
+        "loc": 94,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
