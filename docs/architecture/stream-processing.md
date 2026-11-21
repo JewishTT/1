@@ -6,7 +6,7 @@ Referenced by `apps/shared/events/bus.py` and `apps/shared/events/topics.py`. Re
 
 ## The substrate
 
-The control plane runs on one deterministic event bus (`EventBus` protocol, `apps/shared/events/bus.py`). Phase 1 is the hermetic `MemoryEventBus` (tests and local runs need no broker); phase 2 binds the same protocol to a Redpanda adapter — a transport swap, never a semantic change.
+The control plane exposes a deterministic `EventBus` protocol (`apps/shared/events/bus.py`) and a hermetic `MemoryEventBus` for unit tests. Production acquisition/interpretation paths use the Redpanda-backed Kafka-compatible producer/consumer layer. A production adapter that routes every domain event through the same durable bus contract is still an explicit integration gate; memory mode is not evidence of broker durability.
 
 Bus contract (enforced by the protocol and its tests):
 
