@@ -33,8 +33,7 @@ class KafkaSettings(BaseSettings):
     Redpanda service in apps/deploy/docker-compose.yml (profile `core`):
     broker 19092, schema registry 18081.
 
-    To compare against Confluent Kafka, start the `legacy-kafka` profile and
-    override KAFKA_BOOTSTRAP_SERVERS / KAFKA_SCHEMA_REGISTRY_URL.
+    No alternate Kafka broker profile is shipped; Redpanda is the sole runtime.
     """
 
     bootstrap_servers: str = "localhost:19092"
