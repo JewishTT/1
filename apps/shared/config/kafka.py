@@ -34,6 +34,8 @@ def redpanda_producer_config(
         "batch.size": 65_536,
         "queue.buffering.max.kbytes": 16_384,
         "delivery.timeout.ms": 120_000,
+        "max.in.flight.requests.per.connection": 5,
+        "socket.keepalive.enable": True,
     }
 
 
@@ -59,6 +61,9 @@ def redpanda_consumer_config(
         "max.poll.interval.ms": 300_000,
         "session.timeout.ms": 45_000,
         "heartbeat.interval.ms": 3_000,
+        "partition.assignment.strategy": "cooperative-sticky",
+        "fetch.wait.max.ms": 50,
+        "fetch.min.bytes": 1_024,
         "fetch.max.bytes": 8_388_608,
         "max.partition.fetch.bytes": 1_048_576,
         "queued.max.messages.kbytes": 16_384,
