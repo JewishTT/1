@@ -9,7 +9,7 @@ import pytest
 APP_SHARED = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(APP_SHARED))
 
-from config.kafka import kafka_bootstrap_servers
+from config.kafka import kafka_bootstrap_servers, redpanda_consumer_config
 from events.kafka import IdempotentProducer
 
 
@@ -49,3 +49,24 @@ def test_compose_has_redpanda_only_and_no_legacy_kafka_profile() -> None:
     assert "confluentinc/cp-kafka" not in compose
     assert "cp-schema-registry" not in compose
     assert "legacy-kafka" not in compose
+
+
+def test_redpanda_consumer_is_bounded_and_manually_committed() -> None:
+    config = redpanda_consumer_config(
+        bootstrap_servers="redpanda:19092", group_id="observation-worker"
+    )
+    assert config["enable.auto.commit"] is False
+    assert config["enable.auto.offset.store"] is False
+    assert config["max.poll.records"] == 200
+    assert config["max.poll.interval.ms"] >= config["session.timeout.ms"]
+    assert config["fetch.max.bytes"] >= config["max.partition.fetch.bytes"]
+    assert config["queued.max.messages.kbytes"] > 0
+
+
+def test_redpanda_consumer_rejects_unbounded_or_invalid_identity() -> None:
+    with pytest.raises(ValueError, match="bootstrap servers and consumer group"):
+        redpanda_consumer_config(bootstrap_servers="", group_id="")
+    with pytest.raises(ValueError, match="auto.offset.reset"):
+        redpanda_consumer_config(
+            bootstrap_servers="redpanda:19092", group_id="test", auto_offset_reset="random"
+        )
