@@ -129,6 +129,7 @@ def test_producer_flush_surfaces_async_delivery_error(monkeypatch) -> None:
     producer = IdempotentProducer.__new__(IdempotentProducer)
     producer._producer = FakeProducer()
     producer._delivery_errors = []
+    producer._delivery_error_overflow = 0
     envelope = SimpleNamespace(event_id="event-42")
     callback = producer._on_delivery(envelope, None)
 
