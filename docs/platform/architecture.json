@@ -1551,6 +1551,7 @@
       "bad..example.org",
       "bad.com",
       "bad.py",
+      "batch.size",
       "bbot.event",
       "bbot.recon",
       "bench.json",
@@ -1663,6 +1664,7 @@
       "dc.title",
       "decision.recorded",
       "default.html",
+      "delivery.timeout.ms",
       "details.full_name",
       "details.linkedin",
       "details.twitter",
@@ -1674,9 +1676,7 @@
       "discovery.link_edge_provider",
       "discovery.seed",
       "dispatcher.regional",
-      "domain.context_validation",
-      "domain.mention_occurrence_index",
-      "domain.predicate_signature"
+      "domain.context_validation"
     ]
   },
   "context_map": {

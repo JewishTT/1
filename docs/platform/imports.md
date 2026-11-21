@@ -1,6 +1,6 @@
 # Import graph
 
-1167 Python modules, 3331 resolved local edges.
+1167 Python modules, 3332 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -14,7 +14,7 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `typing` | stdlib | 434 |
 | `dataclasses` | stdlib | 422 |
 | `pathlib` | stdlib | 345 |
-| `pytest` | third-party | 304 |
+| `pytest` | third-party | 305 |
 | `sys` | stdlib | 272 |
 | `collections` | stdlib | 258 |
 | `datetime` | stdlib | 242 |
@@ -24,14 +24,14 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `enum` | stdlib | 124 |
 | `re` | stdlib | 113 |
 | `fastapi` | third-party | 93 |
-| `os` | stdlib | 86 |
+| `os` | stdlib | 87 |
 | `asyncio` | stdlib | 85 |
 | `urllib` | stdlib | 68 |
 | `uuid` | stdlib | 56 |
 | `pydantic` | third-party | 45 |
 | `types` | stdlib | 44 |
 | `math` | stdlib | 42 |
-| `time` | stdlib | 40 |
+| `time` | stdlib | 41 |
 | `importlib` | stdlib | 37 |
 | `alembic` | third-party | 32 |
 | `httpx` | third-party | 30 |

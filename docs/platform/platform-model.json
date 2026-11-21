@@ -1263,7 +1263,7 @@
   ],
   "import_graph": {
     "module_count": 1167,
-    "edge_count": 3331,
+    "edge_count": 3332,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 1022,
@@ -1303,7 +1303,7 @@
       "stdlib:json": 222,
       "stdlib:logging": 25,
       "stdlib:math": 42,
-      "stdlib:os": 86,
+      "stdlib:os": 87,
       "stdlib:pathlib": 345,
       "stdlib:queue": 1,
       "stdlib:random": 6,
@@ -1323,7 +1323,7 @@
       "stdlib:sysconfig": 1,
       "stdlib:tempfile": 21,
       "stdlib:threading": 24,
-      "stdlib:time": 40,
+      "stdlib:time": 41,
       "stdlib:tokenize": 1,
       "stdlib:tomllib": 5,
       "stdlib:types": 44,
@@ -1376,7 +1376,7 @@
       "third-party:pydantic_settings": 1,
       "third-party:pymorphy3": 1,
       "third-party:pypdf": 2,
-      "third-party:pytest": 304,
+      "third-party:pytest": 305,
       "third-party:rdflib": 2,
       "third-party:redis": 2,
       "third-party:river": 1,
@@ -15308,6 +15308,11 @@
         "via": "config.kafka"
       },
       {
+        "from": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "to": "apps/shared/events/kafka.py",
+        "via": "events.kafka"
+      },
+      {
         "from": "apps/shared/tests/unit/test_layer_boundaries.py",
         "to": "apps/shared/tools/layer_boundaries.py",
         "via": "tools.layer_boundaries"
@@ -25821,14 +25826,16 @@
       },
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
-        "tests": 3,
+        "tests": 4,
         "test_names": [
-          "test_canonical_kafka_setting_wins_over_legacy_alias",
-          "test_legacy_alias_remains_a_compatibility_fallback",
-          "test_empty_broker_list_fails_closed"
+          "test_canonical_bootstrap_normalizes_broker_list",
+          "test_unset_bootstrap_uses_local_redpanda_default",
+          "test_empty_bootstrap_fails_closed",
+          "test_redpanda_producer_uses_durable_batched_defaults"
         ],
         "targets": [
-          "apps/shared/config/kafka.py"
+          "apps/shared/config/kafka.py",
+          "apps/shared/events/kafka.py"
         ]
       },
       {
@@ -27218,7 +27225,7 @@
         ]
       }
     ],
-    "total": 5563
+    "total": 5564
   },
   "contracts": {
     "python": [
@@ -34504,6 +34511,7 @@
         "bad..example.org",
         "bad.com",
         "bad.py",
+        "batch.size",
         "bbot.event",
         "bbot.recon",
         "bench.json",
@@ -34616,6 +34624,7 @@
         "dc.title",
         "decision.recorded",
         "default.html",
+        "delivery.timeout.ms",
         "details.full_name",
         "details.linkedin",
         "details.twitter",
@@ -34627,9 +34636,7 @@
         "discovery.link_edge_provider",
         "discovery.seed",
         "dispatcher.regional",
-        "domain.context_validation",
-        "domain.mention_occurrence_index",
-        "domain.predicate_signature"
+        "domain.context_validation"
       ]
     },
     "context_map": {
@@ -43020,7 +43027,7 @@
       {
         "path": "apps/shared/config/kafka.py",
         "status": "IMPLEMENTED",
-        "loc": 23,
+        "loc": 18,
         "callables": 1,
         "stubs": 0,
         "not_implemented": 0,
@@ -43627,8 +43634,8 @@
       {
         "path": "apps/shared/events/kafka.py",
         "status": "IMPLEMENTED",
-        "loc": 313,
-        "callables": 21,
+        "loc": 345,
+        "callables": 22,
         "stubs": 2,
         "not_implemented": 1,
         "markers": []
@@ -44575,8 +44582,8 @@
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
         "status": "TEST",
-        "loc": 34,
-        "callables": 3,
+        "loc": 41,
+        "callables": 4,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -90094,6 +90101,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "bf242517d5a2b1be",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "object": "apps/shared/events/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+          "via": "events.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "6b9d8be432111ebd",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/shared/tests/unit/test_layer_boundaries.py",
@@ -115864,6 +115884,18 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "a2daf1feb3e1fcd5",
+        "kind": "TEST_TARGETS_MODULE",
+        "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "object": "apps/shared/events/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "import_and_name_scan",
+        "evidence": {
+          "file": "apps/shared/tests/unit/test_kafka_bootstrap.py"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "21f8b74e61e94fb0",
         "kind": "TEST_TARGETS_MODULE",
         "subject": "apps/shared/tests/unit/test_layer_boundaries.py",
@@ -117953,8 +117985,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5099,
-      "static_facts": 4799,
+      "facts_total": 5101,
+      "static_facts": 4801,
       "inferred": 300,
       "intended": 0
     }
@@ -117965,15 +117997,15 @@
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3331,
+    "import_edges": 3332,
     "test_files": 394,
-    "test_functions": 5563,
+    "test_functions": 5564,
     "untested_modules": 320,
     "http_routes": 231
   },
   "evidence_stats": {
-    "facts_total": 5099,
-    "static_facts": 4799,
+    "facts_total": 5101,
+    "static_facts": 4801,
     "inferred": 300,
     "intended": 0
   },

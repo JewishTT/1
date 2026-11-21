@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5099,
-    "static_facts": 4799,
+    "facts_total": 5101,
+    "static_facts": 4801,
     "inferred": 300,
     "intended": 0
   },
@@ -36936,6 +36936,19 @@
       "confidence": 1.0
     },
     {
+      "fact_id": "bf242517d5a2b1be",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+      "object": "apps/shared/events/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+        "via": "events.kafka"
+      },
+      "confidence": 1.0
+    },
+    {
       "fact_id": "6b9d8be432111ebd",
       "kind": "MODULE_IMPORTS_MODULE",
       "subject": "apps/shared/tests/unit/test_layer_boundaries.py",
@@ -62698,6 +62711,18 @@
       "kind": "TEST_TARGETS_MODULE",
       "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
       "object": "apps/shared/config/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "import_and_name_scan",
+      "evidence": {
+        "file": "apps/shared/tests/unit/test_kafka_bootstrap.py"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a2daf1feb3e1fcd5",
+      "kind": "TEST_TARGETS_MODULE",
+      "subject": "apps/shared/tests/unit/test_kafka_bootstrap.py",
+      "object": "apps/shared/events/kafka.py",
       "status": "STATIC_FACT",
       "method": "import_and_name_scan",
       "evidence": {
