@@ -4,11 +4,11 @@ Generated from the scanner's per-body flags. This separates *the symbol exists* 
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 627 |
+| IMPLEMENTED | 628 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
-| DECLARATION_ONLY | 20 |
+| DECLARATION_ONLY | 19 |
 | PACKAGE_INIT | 102 |
 | MIGRATION | 27 |
 | TEST | 391 |
@@ -26,7 +26,6 @@ A non-``__init__`` module with no callables is either a data/declaration module 
 | Module | LOC | Markers |
 |---|---|---|
 | `apps/acquisition/source_query_set.py` | 0 | — |
-| `apps/shared/events/kafka.py` | 0 | — |
 | `apps/shared/conftest.py` | 2 | — |
 | `apps/zero/zero/harvesters/modules.py` | 18 | — |
 | `apps/intelligence/ports.py` | 19 | — |

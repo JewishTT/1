@@ -94,7 +94,7 @@ shape the specs describe; the gaps page records where the shape is not yet execu
 | `apps/shared/config/kafka.py` | Canonical Redpanda bootstrap resolver for Kafka-protocol clients. |
 | `apps/shared/events/bus.py` | Hermetic EventBus protocol + MemoryEventBus (feature: nervous-system). |
 | `apps/shared/events/evidence_store_guard.py` | Evidence-storage enforcement for observation publication. |
-| `apps/shared/events/kafka.py` |  |
+| `apps/shared/events/kafka.py` | Idempotent Kafka producer/consumer base (T010, R-7, I-11). |
 | `apps/shared/events/observation_gate.py` | Observation gate (T031, FR-002, I-1/I-5). |
 | `apps/shared/tests/unit/test_evidence_store_guard.py` | WP-C T040/T045: an observation may not be published without resolvable evidence. |
 | `apps/shared/tests/unit/test_kafka_bootstrap.py` | Canonical Redpanda bootstrap configuration contracts. |

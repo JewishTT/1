@@ -8,20 +8,20 @@ A verified snapshot of the platform's true state. Every number is derived from t
 |---|---|
 | Components | 20 |
 | Python / TypeScript / Rust modules | 1167 / 329 / 16 |
-| Resolved import edges | 3337 |
+| Resolved import edges | 3343 |
 | HTTP routes / routers | 231 / 39 |
 | Test files / functions | 394 / 5571 |
-| Evidence facts (static) | 5106 |
+| Evidence facts (static) | 5112 |
 
 ## Implementation maturity
 
 | Status | Modules |
 |---|---|
-| IMPLEMENTED | 627 |
+| IMPLEMENTED | 628 |
 | PRIMITIVE | 0 |
 | STUB | 0 |
 | NOT_IMPLEMENTED | 0 |
-| DECLARATION_ONLY | 20 |
+| DECLARATION_ONLY | 19 |
 | PACKAGE_INIT | 102 |
 | MIGRATION | 27 |
 | TEST | 391 |
