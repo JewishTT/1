@@ -43099,7 +43099,7 @@
       {
         "path": "apps/shared/config/kafka.py",
         "status": "IMPLEMENTED",
-        "loc": 71,
+        "loc": 70,
         "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
