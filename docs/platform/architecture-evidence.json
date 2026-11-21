@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5101,
-    "static_facts": 4801,
+    "facts_total": 5103,
+    "static_facts": 4803,
     "inferred": 300,
     "intended": 0
   },
@@ -2222,6 +2222,19 @@
       "evidence": {
         "file": "apps/acquisition/dispatcher/__init__.py",
         "via": "scheduler"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "cd8f98352bb2ec7b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/dispatcher/kafka_producer.py",
+      "object": "apps/shared/config/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/dispatcher/kafka_producer.py",
+        "via": "config.kafka"
       },
       "confidence": 1.0
     },
@@ -34111,6 +34124,19 @@
       "evidence": {
         "file": "apps/shared/events/fabric_events.py",
         "via": "events.topics"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "54ddb19c4eb9b5ef",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/shared/events/kafka.py",
+      "object": "apps/shared/config/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/shared/events/kafka.py",
+        "via": "config.kafka"
       },
       "confidence": 1.0
     },

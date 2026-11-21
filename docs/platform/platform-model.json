@@ -1263,7 +1263,7 @@
   ],
   "import_graph": {
     "module_count": 1167,
-    "edge_count": 3332,
+    "edge_count": 3334,
     "external": {
       "declared-not-installed:ahocorasick": 1,
       "stdlib:__future__": 1022,
@@ -1303,7 +1303,7 @@
       "stdlib:json": 222,
       "stdlib:logging": 25,
       "stdlib:math": 42,
-      "stdlib:os": 87,
+      "stdlib:os": 86,
       "stdlib:pathlib": 345,
       "stdlib:queue": 1,
       "stdlib:random": 6,
@@ -1956,6 +1956,11 @@
         "from": "apps/acquisition/dispatcher/__init__.py",
         "to": "apps/acquisition/dispatcher/scheduler.py",
         "via": "scheduler"
+      },
+      {
+        "from": "apps/acquisition/dispatcher/kafka_producer.py",
+        "to": "apps/shared/config/kafka.py",
+        "via": "config.kafka"
       },
       {
         "from": "apps/acquisition/dispatcher/kafka_producer.py",
@@ -14224,6 +14229,11 @@
       },
       {
         "from": "apps/shared/events/kafka.py",
+        "to": "apps/shared/config/kafka.py",
+        "via": "config.kafka"
+      },
+      {
+        "from": "apps/shared/events/kafka.py",
         "to": "apps/shared/config/settings.py",
         "via": "config.settings"
       },
@@ -25826,12 +25836,13 @@
       },
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
-        "tests": 4,
+        "tests": 5,
         "test_names": [
           "test_canonical_bootstrap_normalizes_broker_list",
           "test_unset_bootstrap_uses_local_redpanda_default",
           "test_empty_bootstrap_fails_closed",
-          "test_redpanda_producer_uses_durable_batched_defaults"
+          "test_redpanda_producer_uses_durable_batched_defaults",
+          "test_compose_has_redpanda_only_and_no_legacy_kafka_profile"
         ],
         "targets": [
           "apps/shared/config/kafka.py",
@@ -27225,7 +27236,7 @@
         ]
       }
     ],
-    "total": 5564
+    "total": 5565
   },
   "contracts": {
     "python": [
@@ -36297,7 +36308,7 @@
       {
         "path": "apps/acquisition/dispatcher/kafka_producer.py",
         "status": "IMPLEMENTED",
-        "loc": 229,
+        "loc": 226,
         "callables": 13,
         "stubs": 0,
         "not_implemented": 0,
@@ -43027,8 +43038,8 @@
       {
         "path": "apps/shared/config/kafka.py",
         "status": "IMPLEMENTED",
-        "loc": 18,
-        "callables": 1,
+        "loc": 38,
+        "callables": 2,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -43634,7 +43645,7 @@
       {
         "path": "apps/shared/events/kafka.py",
         "status": "IMPLEMENTED",
-        "loc": 345,
+        "loc": 336,
         "callables": 22,
         "stubs": 2,
         "not_implemented": 1,
@@ -44582,8 +44593,8 @@
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
         "status": "TEST",
-        "loc": 41,
-        "callables": 4,
+        "loc": 52,
+        "callables": 5,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -55387,6 +55398,19 @@
         "evidence": {
           "file": "apps/acquisition/dispatcher/__init__.py",
           "via": "scheduler"
+        },
+        "confidence": 1.0
+      },
+      {
+        "fact_id": "cd8f98352bb2ec7b",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/acquisition/dispatcher/kafka_producer.py",
+        "object": "apps/shared/config/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/acquisition/dispatcher/kafka_producer.py",
+          "via": "config.kafka"
         },
         "confidence": 1.0
       },
@@ -87280,6 +87304,19 @@
         "confidence": 1.0
       },
       {
+        "fact_id": "54ddb19c4eb9b5ef",
+        "kind": "MODULE_IMPORTS_MODULE",
+        "subject": "apps/shared/events/kafka.py",
+        "object": "apps/shared/config/kafka.py",
+        "status": "STATIC_FACT",
+        "method": "python_ast+import_resolution",
+        "evidence": {
+          "file": "apps/shared/events/kafka.py",
+          "via": "config.kafka"
+        },
+        "confidence": 1.0
+      },
+      {
         "fact_id": "47cbece29dfa7902",
         "kind": "MODULE_IMPORTS_MODULE",
         "subject": "apps/shared/events/kafka.py",
@@ -117985,8 +118022,8 @@
       }
     ],
     "stats": {
-      "facts_total": 5101,
-      "static_facts": 4801,
+      "facts_total": 5103,
+      "static_facts": 4803,
       "inferred": 300,
       "intended": 0
     }
@@ -117997,15 +118034,15 @@
     "typescript_modules": 329,
     "rust_modules": 16,
     "rust_crates": 9,
-    "import_edges": 3332,
+    "import_edges": 3334,
     "test_files": 394,
-    "test_functions": 5564,
+    "test_functions": 5565,
     "untested_modules": 320,
     "http_routes": 231
   },
   "evidence_stats": {
-    "facts_total": 5101,
-    "static_facts": 4801,
+    "facts_total": 5103,
+    "static_facts": 4803,
     "inferred": 300,
     "intended": 0
   },
