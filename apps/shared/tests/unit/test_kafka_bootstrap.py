@@ -38,3 +38,14 @@ def test_redpanda_producer_uses_durable_batched_defaults() -> None:
     assert config["linger.ms"] == 5
     assert config["batch.size"] == 65_536
     assert config["queue.buffering.max.kbytes"] == 16_384
+
+
+def test_compose_has_redpanda_only_and_no_legacy_kafka_profile() -> None:
+    repository_root = APP_SHARED.parents[1]
+    compose = (repository_root / "apps" / "deploy" / "docker-compose.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "redpandadata/redpanda@sha256:" in compose
+    assert "confluentinc/cp-kafka" not in compose
+    assert "cp-schema-registry" not in compose
+    assert "legacy-kafka" not in compose
