@@ -159,10 +159,10 @@ class IdempotentProducer:
             if err is None:
                 return
             failure = KafkaException(err)
-            if len(self._delivery_errors) < 128:\n                if len(self._delivery_errors) < 128:
+            if len(self._delivery_errors) < 128:
                 self._delivery_errors.append(f"{envelope.event_id}: {failure}")
             else:
-                self._delivery_error_overflow += 1\n            else:\n                self._delivery_error_overflow += 1
+                self._delivery_error_overflow += 1
             if on_error is not None:
                 try:
                     on_error(envelope, failure)
@@ -173,5 +173,4 @@ class IdempotentProducer:
                         )
                     else:
                         self._delivery_error_overflow += 1
-        return _cb
-)
+        return _cb)
