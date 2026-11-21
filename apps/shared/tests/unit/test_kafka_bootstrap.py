@@ -38,6 +38,8 @@ def test_redpanda_producer_uses_durable_batched_defaults() -> None:
     assert config["linger.ms"] == 5
     assert config["batch.size"] == 65_536
     assert config["queue.buffering.max.kbytes"] == 16_384
+    assert config["max.in.flight.requests.per.connection"] == 5
+    assert config["socket.keepalive.enable"] is True
 
 
 def test_compose_has_redpanda_only_and_no_legacy_kafka_profile() -> None:
@@ -61,6 +63,8 @@ def test_redpanda_consumer_is_bounded_and_manually_committed() -> None:
     assert config["max.poll.interval.ms"] >= config["session.timeout.ms"]
     assert config["fetch.max.bytes"] >= config["max.partition.fetch.bytes"]
     assert config["queued.max.messages.kbytes"] > 0
+    assert config["partition.assignment.strategy"] == "cooperative-sticky"
+    assert config["fetch.wait.max.ms"] == 50
 
 
 def test_redpanda_consumer_rejects_unbounded_or_invalid_identity() -> None:
