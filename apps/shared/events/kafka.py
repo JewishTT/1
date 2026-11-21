@@ -16,7 +16,7 @@ from typing import Any
 
 from confluent_kafka import Consumer, KafkaError, KafkaException, Producer
 
-from config.kafka import redpanda_producer_config
+from config.kafka import redpanda_consumer_config, redpanda_producer_config
 from config.settings import get_settings
 from domain.observation_identity import derive_event_id
 from events import event_envelope_pb2 as pb
@@ -226,12 +226,11 @@ class IdempotentConsumer(ABC):
         quarantine: QuarantineStore | None = None,
     ) -> None:
         self._consumer = Consumer(
-            {
-                "bootstrap.servers": bootstrap_servers or get_settings().kafka.bootstrap_servers,
-                "group.id": group_id,
-                "auto.offset.reset": "earliest",
-                "enable.auto.commit": False,
-            }
+            redpanda_consumer_config(
+                bootstrap_servers=bootstrap_servers or get_settings().kafka.bootstrap_servers,
+                group_id=group_id,
+                auto_offset_reset="earliest",
+            )
         )
         self._consumer.subscribe(topics)
         if deduplicator is None:
