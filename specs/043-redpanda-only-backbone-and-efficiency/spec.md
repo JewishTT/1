@@ -15,13 +15,13 @@
 - [x] Remove the Confluent Kafka broker and Confluent Schema Registry services/profile from Compose.
 - [x] Remove legacy broker volume and profile references from canonical topology documentation.
 - [x] Make Redpanda's built-in Kafka API and Schema Registry the sole local/CI runtime.
-- [x] Remove the retired COGNITIVE_KAFKA_BROKERS compatibility environment alias.
+- [x] Remove the retired COGNITIVE_KAFKA_BROKERS compatibility environment alias.\n  - [x] Migrate live acceptance proof scripts and acquisition-live workflow environment to `KAFKA_BOOTSTRAP_SERVERS`; add a static contract to prevent regression.
 - [ ] Sweep Helm/Kubernetes, Terraform, container entrypoints, testcontainers, fixtures, CI services, scripts and developer docs for alternate Kafka service endpoints and stale :9092/:8081 defaults.
 - [x] Add a regression contract on canonical Compose proving the pinned Redpanda service and absence of Confluent Kafka/Schema Registry/legacy profile. Enumerating every deployment profile remains open.
 - [ ] Confirm all deployed environments point to managed/self-hosted Redpanda endpoints with TLS/SASL, ACLs, tenant-aware topic policy and secrets sourced from the approved secret manager.
 
 ### Client and event path
-- [ ] Audit all producers/consumers for explicit delivery callbacks, bounded queues, poll/flush behavior, cancellation and graceful shutdown.
+- [ ] Audit all producers/consumers for explicit delivery callbacks, bounded queues, poll/flush behavior, cancellation and graceful shutdown.\n  - [x] Shared producer now retains asynchronous delivery failures in a capped buffer and surfaces them from `flush`; bounded queue pressure backpressures rather than drops.\n  - [x] Live acceptance consumers/proofs use the canonical bootstrap resolver (backbone, tools, Airbyte, SearXNG and public-source matrix).\n  - [ ] Remaining application-specific consumer shutdown, cancellation, pause/resume and durable commit ordering require a worker-by-worker audit.
 - [x] Establish shared producer defaults: compression, batching, linger, queue bounds, idempotent producer, delivery timeout and in-flight safety. Defaults are conservative and correctness-first; benchmark tuning remains open.
 - [x] Establish bounded consumer poll/fetch/queue defaults, manual commit + manual offset store, and heartbeat/max-poll alignment. Cooperative rebalance, retry budget and pause/resume backpressure remain open.
 - [ ] Centralize topic creation/partition/retention/cleanup policies and key selection; document ordering guarantees per aggregate.
