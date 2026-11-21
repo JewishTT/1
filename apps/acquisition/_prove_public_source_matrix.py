@@ -35,7 +35,8 @@ from _prove_readback import read_back
 from sources.catalogue import CONTACT_LEVELS, load_catalogue
 from sources.connector import SourceConnector, tasks_for
 from parsers.families import parse_source
-from config.kafka import kafka_bootstrap_servers\nfrom config.settings import get_settings
+from config.kafka import kafka_bootstrap_servers
+from config.settings import get_settings
 from domain.capture import CaptureTimeBasis
 from events.content_router import ContentRouter
 from events.kafka import IdempotentProducer
