@@ -8,7 +8,6 @@ repeatedly failing records go to DLQ/QUARANTINE lanes (``topics.py``).
 from __future__ import annotations
 
 import json
-import os
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
@@ -17,8 +16,8 @@ from typing import Any
 
 from confluent_kafka import Consumer, KafkaError, KafkaException, Producer
 
-from config.settings import get_settings
 from config.kafka import redpanda_producer_config
+from config.settings import get_settings
 from domain.observation_identity import derive_event_id
 from events import event_envelope_pb2 as pb
 from events.dlq import DLQRecord, QuarantineStore
