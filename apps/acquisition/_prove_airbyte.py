@@ -40,7 +40,7 @@ IMAGE = os.environ.get(
 )
 _CONFIG_ROOT = os.environ.get("COGNITIVE_AIRBYTE_CFG", "").strip()
 MOUNT = Path(_CONFIG_ROOT).expanduser() if _CONFIG_ROOT else Path(tempfile.mkdtemp(prefix="cognitive-airbyte-"))
-BROKERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+BROKERS = kafka_bootstrap_servers()
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-airbyte-smoke"
@@ -252,4 +252,5 @@ async def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(asyncio.run(main()))
+    raise SystemExit(asyncio.run(main()))from config.kafka import kafka_bootstrap_servers
+
