@@ -36,7 +36,7 @@ def consume(topic: str, key: str, timeout_s: float = 25.0) -> list[dict]:
     import time
 
     from config.kafka import kafka_bootstrap_servers
-from confluent_kafka import Consumer
+    from confluent_kafka import Consumer
 
     consumer = Consumer(
         {
