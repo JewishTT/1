@@ -17,13 +17,13 @@
 - [x] Make Redpanda's built-in Kafka API and Schema Registry the sole local/CI runtime.
 - [x] Remove the retired COGNITIVE_KAFKA_BROKERS compatibility environment alias.
 - [ ] Sweep Helm/Kubernetes, Terraform, container entrypoints, testcontainers, fixtures, CI services, scripts and developer docs for alternate Kafka service endpoints and stale :9092/:8081 defaults.
-- [ ] Add a topology contract that enumerates every supported profile and fails if a Kafka broker or second Schema Registry is present.
+- [x] Add a regression contract on canonical Compose proving the pinned Redpanda service and absence of Confluent Kafka/Schema Registry/legacy profile. Enumerating every deployment profile remains open.
 - [ ] Confirm all deployed environments point to managed/self-hosted Redpanda endpoints with TLS/SASL, ACLs, tenant-aware topic policy and secrets sourced from the approved secret manager.
 
 ### Client and event path
 - [ ] Audit all producers/consumers for explicit delivery callbacks, bounded queues, poll/flush behavior, cancellation and graceful shutdown.
-- [ ] Establish shared producer defaults: compression, batching, linger, queue bounds, idempotent producer, delivery timeout and in-flight safety; tune from measured workloads rather than guessed values.
-- [ ] Establish consumer defaults: bounded poll batches, explicit offset commit only after durable effect, cooperative rebalance, heartbeat/max-poll alignment, retry budget and pause/resume backpressure.
+- [x] Establish shared producer defaults: compression, batching, linger, queue bounds, idempotent producer, delivery timeout and in-flight safety. Defaults are conservative and correctness-first; benchmark tuning remains open.
+- [x] Establish bounded consumer poll/fetch/queue defaults, manual commit + manual offset store, and heartbeat/max-poll alignment. Cooperative rebalance, retry budget and pause/resume backpressure remain open.
 - [ ] Centralize topic creation/partition/retention/cleanup policies and key selection; document ordering guarantees per aggregate.
 - [ ] Validate schema compatibility and registration in CI against Redpanda's built-in registry; add schema evolution and rollback fixtures.
 - [ ] Verify transactional outbox → broker → consumer inbox path, duplicate delivery, poison record quarantine, DLQ replay, broker restart and consumer rebalance.
