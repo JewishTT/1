@@ -139,10 +139,15 @@ class IdempotentProducer:
             raise TimeoutError(
                 f"Redpanda producer flush timed out with {outstanding} message(s) pending"
             )
-        if self._delivery_errors:
+        if self._delivery_errors or self._delivery_error_overflow:
             failures = self._delivery_errors
+            overflow = self._delivery_error_overflow
             self._delivery_errors = []
-            raise RuntimeError("Redpanda delivery failure(s): " + "; ".join(failures))
+            self._delivery_error_overflow = 0
+            detail = "; ".join(failures)
+            if overflow:
+                detail += f"; {overflow} additional delivery error(s) coalesced"
+            raise RuntimeError("Redpanda delivery failure(s): " + detail)
 
     def _on_delivery(
         self,
@@ -153,13 +158,19 @@ class IdempotentProducer:
             if err is None:
                 return
             failure = KafkaException(err)
-            if len(self._delivery_errors) < 128:\n                self._delivery_errors.append(f"{envelope.event_id}: {failure}")\n            else:\n                self._delivery_error_overflow += 1
+            if len(self._delivery_errors) < 128:\n                if len(self._delivery_errors) < 128:
+                self._delivery_errors.append(f"{envelope.event_id}: {failure}")
+            else:
+                self._delivery_error_overflow += 1\n            else:\n                self._delivery_error_overflow += 1
             if on_error is not None:
                 try:
                     on_error(envelope, failure)
                 except Exception as callback_error:
-                    self._delivery_errors.append(
-                        f"{envelope.event_id}: error handler failed: {callback_error}"
-                    )
+                    if len(self._delivery_errors) < 128:
+                        self._delivery_errors.append(
+                            f"{envelope.event_id}: error handler failed: {callback_error}"
+                        )
+                    else:
+                        self._delivery_error_overflow += 1
         return _cb
 )
