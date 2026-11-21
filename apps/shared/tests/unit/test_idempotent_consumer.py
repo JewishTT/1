@@ -13,6 +13,8 @@ and installs the dedup/quarantine wiring directly, so these are hermetic.
 
 from __future__ import annotations
 
+import asyncio
+
 import sys
 from pathlib import Path
 
@@ -158,3 +160,24 @@ async def test_deduplicator_claim_is_once():
     assert await d.claim("k") is False
     await d.release("k")
     assert await d.claim("k") is True
+
+
+@pytest.mark.asyncio
+async def test_cancellation_releases_durable_claim_for_redelivery():
+    started = asyncio.Event()
+    never_finish = asyncio.Event()
+
+    async def blocked(_envelope, _raw):
+        started.set()
+        await never_finish.wait()
+
+    consumer = make(blocked, quarantine=QuarantineStore())
+    env = envelope("evt-cancel")
+    task = asyncio.create_task(consumer._process(env, b"{}"))
+    await started.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    # Cancellation did not commit or poison the idempotency key.
+    assert await consumer._dedup.claim(env.event_id) is True
