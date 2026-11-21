@@ -31,53 +31,6 @@ services:
         condition: service_started
     restart: "no"
 
-  # Feature 024 / D1=a: Redpanda is the canonical transport. Confluent Kafka remains
-  # available under the "legacy-kafka" profile for comparison and for the
-  # Kafka-based ADRs being amended, but it is NO LONGER part of `core` -- bringing
-  # up `core` must yield exactly one broker. See services/redpanda.
-  kafka:
-    profiles: ["legacy-kafka"]
-    image: confluentinc/cp-kafka:7.7.0
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: controller,broker
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
-      # Dual advertised listeners: INTERNAL for in-network clients (brokers,
-      # schema registry), HOST for the compose host (localhost:9092). Without
-      # this the broker advertises localhost and in-network clients can't reach it.
-      KAFKA_LISTENERS: HOST://0.0.0.0:9092,INTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
-      KAFKA_ADVERTISED_LISTENERS: HOST://localhost:9092,INTERNAL://kafka:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: HOST:PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      CLUSTER_ID: cognitive-local
-    ports: ["9092:9092"]
-    volumes: [kafka-data:/var/lib/kafka/data]
-    healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
-      interval: 10s
-      timeout: 10s
-      retries: 30
-
-  schema-registry:
-    profiles: ["legacy-kafka"]
-    image: confluentinc/cp-schema-registry:7.7.0
-    depends_on: [kafka]
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9093
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-    ports: ["8081:8081"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-
   postgres:
     profiles: ["core"]
     image: postgres:16-alpine
@@ -317,7 +270,6 @@ volumes:
   phishingclub-config:
   phishingclub-data:
   minio-data:
-  kafka-data:
   postgres-data:
   opensearch-data:
   clickhouse-data:
