@@ -1,6 +1,6 @@
 # Tests
 
-394 test files, 5565 test functions. 320 platform modules are not targeted by any test.
+394 test files, 5567 test functions. 320 platform modules are not targeted by any test.
 
 `Targets` is resolved through the platform's own import roots, so a test that imports a package by its bare name resolves to the module it exercises. A target is reachability, not behavioural coverage.
 
@@ -342,7 +342,7 @@
 | `apps/shared/tests/unit/test_idempotent_consumer.py` | 8 | `apps/shared/events/__init__.py`, `apps/shared/events/dlq.py`, `apps/shared/events/kafka.py` |
 | `apps/shared/tests/unit/test_ids.py` | 8 | `apps/shared/ids/__init__.py` |
 | `apps/shared/tests/unit/test_investigation_context.py` | 37 | `apps/shared/domain/investigation_context.py` |
-| `apps/shared/tests/unit/test_kafka_bootstrap.py` | 5 | `apps/shared/config/kafka.py`, `apps/shared/events/kafka.py` |
+| `apps/shared/tests/unit/test_kafka_bootstrap.py` | 7 | `apps/shared/config/kafka.py`, `apps/shared/events/kafka.py` |
 | `apps/shared/tests/unit/test_layer_boundaries.py` | 9 | `apps/shared/tools/layer_boundaries.py` |
 | `apps/shared/tests/unit/test_measured_values.py` | 19 | `apps/shared/observability/measured.py` |
 | `apps/shared/tests/unit/test_mention_occurrence_index.py` | 20 | `apps/shared/domain/mention_occurrence_index.py`, `apps/shared/domain/predicate_signature.py`, `apps/shared/domain/relation_identity.py` |

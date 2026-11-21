@@ -25836,13 +25836,15 @@
       },
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
-        "tests": 5,
+        "tests": 7,
         "test_names": [
           "test_canonical_bootstrap_normalizes_broker_list",
           "test_unset_bootstrap_uses_local_redpanda_default",
           "test_empty_bootstrap_fails_closed",
           "test_redpanda_producer_uses_durable_batched_defaults",
-          "test_compose_has_redpanda_only_and_no_legacy_kafka_profile"
+          "test_compose_has_redpanda_only_and_no_legacy_kafka_profile",
+          "test_redpanda_consumer_is_bounded_and_manually_committed",
+          "test_redpanda_consumer_rejects_unbounded_or_invalid_identity"
         ],
         "targets": [
           "apps/shared/config/kafka.py",
@@ -27236,7 +27238,7 @@
         ]
       }
     ],
-    "total": 5565
+    "total": 5567
   },
   "contracts": {
     "python": [
@@ -43038,8 +43040,8 @@
       {
         "path": "apps/shared/config/kafka.py",
         "status": "IMPLEMENTED",
-        "loc": 38,
-        "callables": 2,
+        "loc": 71,
+        "callables": 3,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -43645,7 +43647,7 @@
       {
         "path": "apps/shared/events/kafka.py",
         "status": "IMPLEMENTED",
-        "loc": 336,
+        "loc": 335,
         "callables": 22,
         "stubs": 2,
         "not_implemented": 1,
@@ -44593,8 +44595,8 @@
       {
         "path": "apps/shared/tests/unit/test_kafka_bootstrap.py",
         "status": "TEST",
-        "loc": 52,
-        "callables": 5,
+        "loc": 77,
+        "callables": 7,
         "stubs": 0,
         "not_implemented": 0,
         "markers": []
@@ -118036,7 +118038,7 @@
     "rust_crates": 9,
     "import_edges": 3334,
     "test_files": 394,
-    "test_functions": 5565,
+    "test_functions": 5567,
     "untested_modules": 320,
     "http_routes": 231
   },
