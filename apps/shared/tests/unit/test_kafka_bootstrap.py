@@ -138,3 +138,32 @@ def test_producer_flush_surfaces_async_delivery_error(monkeypatch) -> None:
     with pytest.raises(RuntimeError, match="event-42.*broker unavailable"):
         producer.flush()
     assert producer._delivery_errors == []
+
+
+def test_delivery_error_buffer_is_bounded_and_overflow_is_reported(monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    import events.kafka as event_module
+
+    class FakeProducer:
+        def flush(self, timeout):
+            return 0
+
+    monkeypatch.setattr(event_module, "KafkaException", RuntimeError)
+    producer = IdempotentProducer.__new__(IdempotentProducer)
+    producer._producer = FakeProducer()
+    producer._delivery_errors = []
+    producer._delivery_error_overflow = 0
+
+    for index in range(140):
+        callback = producer._on_delivery(
+            SimpleNamespace(event_id=f"event-{index}"), None
+        )
+        callback(RuntimeError("broker unavailable"), None)
+
+    assert len(producer._delivery_errors) == 128
+    assert producer._delivery_error_overflow == 12
+    with pytest.raises(RuntimeError, match="12 additional delivery error"):
+        producer.flush()
+    assert producer._delivery_errors == []
+    assert producer._delivery_error_overflow == 0
