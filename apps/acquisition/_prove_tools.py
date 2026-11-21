@@ -33,7 +33,7 @@ from events.observation_gate import ObservationGate  # noqa: E402
 from runtime.external_tool import TOOL_DEFINITIONS, ExternalToolRuntime  # noqa: E402
 from storage.s3 import ObjectStore  # noqa: E402
 
-BROKERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+BROKERS = kafka_bootstrap_servers()
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-tools-smoke"
@@ -261,4 +261,5 @@ async def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(asyncio.run(main()))
+    raise SystemExit(asyncio.run(main()))from config.kafka import kafka_bootstrap_servers
+
