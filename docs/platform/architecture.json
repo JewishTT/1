@@ -1685,7 +1685,7 @@
         "from": "ingestion",
         "to": "platform-shared",
         "type": "direct",
-        "via_import": "domain.capture"
+        "via_import": "config.kafka"
       },
       {
         "from": "ingestion",
@@ -1799,7 +1799,7 @@
         "from": "interpretation",
         "to": "platform-shared",
         "type": "direct",
-        "via_import": "events.event_envelope_pb2"
+        "via_import": "config.kafka"
       },
       {
         "from": "interpretation",
