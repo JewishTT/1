@@ -6,9 +6,9 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 | Status | Modules |
 |---|---|
-| PRODUCTION | 485 |
+| PRODUCTION | 486 |
 | TEST_ONLY | 138 |
-| ORPHAN | 153 |
+| ORPHAN | 152 |
 | TEST | 391 |
 
 ## Entrypoints (production roots)
@@ -17,6 +17,7 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 |---|
 | `apps/acquisition/_measure_coverage.py` |
 | `apps/acquisition/_prove_airbyte.py` |
+| `apps/acquisition/_prove_backbone.py` |
 | `apps/acquisition/_prove_blockchain_sources.py` |
 | `apps/acquisition/_prove_commoncrawl.py` |
 | `apps/acquisition/_prove_public_source_matrix.py` |
@@ -209,12 +210,11 @@ The import graph says A imports B; that is not the same as *B runs*. This walks 
 
 ## Orphan modules (nothing imports them)
 
-**153** modules are imported by neither production nor tests.
+**152** modules are imported by neither production nor tests.
 
 | Module |
 |---|
 | `apps/acquisition/_probe_catalogue.py` |
-| `apps/acquisition/_prove_backbone.py` |
 | `apps/acquisition/adapters/discovery/commoncrawl_index.py` |
 | `apps/acquisition/adapters/discovery/crtsh.py` |
 | `apps/acquisition/adapters/discovery/linkgraph.py` |

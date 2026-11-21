@@ -1,7 +1,7 @@
 {
   "stats": {
-    "facts_total": 5101,
-    "static_facts": 4801,
+    "facts_total": 5106,
+    "static_facts": 4806,
     "inferred": 300,
     "intended": 0
   },
@@ -1013,6 +1013,71 @@
       "evidence": {
         "file": "apps/acquisition/_prove_airbyte.py",
         "via": "storage.s3"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "629d64995744385e",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_backbone.py",
+      "object": "apps/acquisition/dispatcher/kafka_producer.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_backbone.py",
+        "via": "dispatcher.kafka_producer"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "a3dfc6f75f778e4b",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_backbone.py",
+      "object": "apps/acquisition/sources/connector.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_backbone.py",
+        "via": "sources.connector"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "9ecf7a366e1b3fe4",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_backbone.py",
+      "object": "apps/acquisition/sources/executor.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_backbone.py",
+        "via": "sources.executor"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "d2f160f1d705f7a5",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_backbone.py",
+      "object": "apps/shared/config/kafka.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_backbone.py",
+        "via": "config.kafka"
+      },
+      "confidence": 1.0
+    },
+    {
+      "fact_id": "0581b341dffe51e0",
+      "kind": "MODULE_IMPORTS_MODULE",
+      "subject": "apps/acquisition/_prove_backbone.py",
+      "object": "apps/shared/events/topics.py",
+      "status": "STATIC_FACT",
+      "method": "python_ast+import_resolution",
+      "evidence": {
+        "file": "apps/acquisition/_prove_backbone.py",
+        "via": "events.topics"
       },
       "confidence": 1.0
     },

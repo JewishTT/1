@@ -1,6 +1,6 @@
 # Import graph
 
-1167 Python modules, 3332 resolved local edges.
+1167 Python modules, 3337 resolved local edges.
 
 Imports are classified against the platform's own import roots, the standard library,
 the packages installed in the interpreter that ran the generator, and the distributions
@@ -18,20 +18,20 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `sys` | stdlib | 272 |
 | `collections` | stdlib | 257 |
 | `datetime` | stdlib | 241 |
-| `json` | stdlib | 220 |
+| `json` | stdlib | 221 |
 | `sqlalchemy` | third-party | 185 |
 | `hashlib` | stdlib | 148 |
 | `enum` | stdlib | 124 |
 | `re` | stdlib | 113 |
 | `fastapi` | third-party | 93 |
-| `os` | stdlib | 85 |
-| `asyncio` | stdlib | 84 |
+| `os` | stdlib | 86 |
+| `asyncio` | stdlib | 85 |
 | `urllib` | stdlib | 68 |
 | `uuid` | stdlib | 56 |
 | `types` | stdlib | 46 |
 | `pydantic` | third-party | 45 |
 | `math` | stdlib | 42 |
-| `time` | stdlib | 39 |
+| `time` | stdlib | 40 |
 | `importlib` | stdlib | 37 |
 | `alembic` | third-party | 32 |
 | `httpx` | third-party | 30 |
@@ -47,8 +47,8 @@ declared in the workspace manifests. A name in none of those is a defect, not a 
 | `subprocess` | stdlib | 19 |
 | `decimal` | stdlib | 16 |
 | `shutil` | stdlib | 16 |
+| `confluent_kafka` | third-party | 15 |
 | `warcio` | third-party | 15 |
-| `confluent_kafka` | third-party | 14 |
 | `base64` | stdlib | 12 |
 
 ## Optional capability probes
