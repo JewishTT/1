@@ -33,7 +33,7 @@ class KafkaSettings(BaseSettings):
     Redpanda service in apps/deploy/docker-compose.yml (profile `core`):
     broker 19092, schema registry 18081.
 
-    No alternate Kafka broker profile is shipped; Redpanda is the sole runtime.
+    Redpanda is the sole supported broker runtime; no Confluent profile or fallback exists.
     """
 
     bootstrap_servers: str = "localhost:19092"
