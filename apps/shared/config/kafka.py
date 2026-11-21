@@ -8,7 +8,7 @@ LEGACY_BROKER_ENV = "COGNITIVE_KAFKA_BROKERS"
 
 
 def kafka_bootstrap_servers() -> str:
-    """Resolve canonical configuration before the legacy compatibility alias."""
+    """Resolve the canonical Redpanda bootstrap endpoints for Kafka-protocol clients."""
     raw = (
         os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
         or os.environ.get(LEGACY_BROKER_ENV)
@@ -17,6 +17,6 @@ def kafka_bootstrap_servers() -> str:
     brokers = [item.strip() for item in raw.split(",") if item.strip()]
     if not brokers:
         raise RuntimeError(
-            "KAFKA_BOOTSTRAP_SERVERS must contain at least one broker address"
+            "KAFKA_BOOTSTRAP_SERVERS (Redpanda) must contain at least one broker address"
         )
     return ",".join(brokers)
