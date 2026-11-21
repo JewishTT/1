@@ -25,7 +25,7 @@ from storage.s3 import ObjectStore
 
 from interpretation.observation_consumer import ObservationConsumer
 
-BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
+BROKERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 GROUP = f"searxng-consumer-{os.getpid()}"
