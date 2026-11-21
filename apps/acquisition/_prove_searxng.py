@@ -30,6 +30,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from config.kafka import kafka_bootstrap_servers
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -151,8 +153,7 @@ async def main() -> int:
     # -- §23.10/11: the event is really in Redpanda ---------------------------
     print("\n4. REDPANDA (§23.10, §23.11)")
     producer.flush(timeout_s=60)
-    from config.kafka import kafka_bootstrap_servers
-from confluent_kafka.admin import AdminClient
+    from confluent_kafka.admin import AdminClient
 
     admin = AdminClient({"bootstrap.servers": BROKERS})
     meta = admin.list_topics(timeout=20)
