@@ -42,7 +42,7 @@ from runtime.searxng import PAGE_CAPTURE_PREFIX, SearXNGRuntime  # noqa: E402
 from storage.s3 import ObjectStore  # noqa: E402
 
 SEARXNG_URL = os.environ.get("COGNITIVE_SEARXNG_URL", "http://127.0.0.1:18090")
-BROKERS = os.environ.get("COGNITIVE_KAFKA_BROKERS", "localhost:19092")
+BROKERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-searxng-smoke"
