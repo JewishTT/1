@@ -42,7 +42,7 @@ from runtime.searxng import PAGE_CAPTURE_PREFIX, SearXNGRuntime  # noqa: E402
 from storage.s3 import ObjectStore  # noqa: E402
 
 SEARXNG_URL = os.environ.get("COGNITIVE_SEARXNG_URL", "http://127.0.0.1:18090")
-BROKERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+BROKERS = kafka_bootstrap_servers()
 ENDPOINT = os.environ.get("COGNITIVE_MINIO_ENDPOINT", "http://localhost:9000")
 TENANT = os.environ.get("COGNITIVE_TENANT", "acceptance")
 INVESTIGATION = "int-searxng-smoke"
@@ -151,7 +151,8 @@ async def main() -> int:
     # -- §23.10/11: the event is really in Redpanda ---------------------------
     print("\n4. REDPANDA (§23.10, §23.11)")
     producer.flush(timeout_s=60)
-    from confluent_kafka.admin import AdminClient
+    from config.kafka import kafka_bootstrap_servers
+from confluent_kafka.admin import AdminClient
 
     admin = AdminClient({"bootstrap.servers": BROKERS})
     meta = admin.list_topics(timeout=20)
