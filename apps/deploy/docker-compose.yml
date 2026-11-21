@@ -1,7 +1,7 @@
 name: cognitive-dev
 
 # COGNITIVE dev topology (T005): single-node self-hosted stack.
-# Dev profiles (T136): `core` (data plane: minio/postgres/kafka/redis/temporal),
+# Dev profiles (T136): `core` (data plane: minio/postgres/redpanda/redis/temporal),
 # `streaming` (redpanda/flink/nessie), `collectors` (browsertrix), `analytics`
 # (opensearch/clickhouse/neo4j). Run e.g.: docker compose --profile core --profile analytics up -d
 
