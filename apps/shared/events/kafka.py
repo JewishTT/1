@@ -250,7 +250,7 @@ class IdempotentConsumer(ABC):
     ) -> None:
         self._consumer = Consumer(
             redpanda_consumer_config(
-                bootstrap_servers or get_settings().kafka.bootstrap_servers,
+                bootstrap_servers=bootstrap_servers or get_settings().kafka.bootstrap_servers,
                 group_id=group_id,
             )
         )
