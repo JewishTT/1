@@ -33,6 +33,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from config.kafka import redpanda_producer_config
+
 BROKER_ENV = "KAFKA_BOOTSTRAP_SERVERS"
 DEFAULT_BROKER = "localhost:19092"  # Feature 024 D1=a: Redpanda transport
 DEFAULT_PARTITIONS = 3
@@ -147,12 +149,7 @@ class KafkaProducer:
             from confluent_kafka import Producer as _Producer
 
             self._client = _Producer(
-                {
-                    "bootstrap.servers": ",".join(brokers()),
-                    "enable.idempotence": True,
-                    "acks": "all",
-                    "compression.type": "snappy",
-                }
+                redpanda_producer_config(",".join(brokers()), compression="snappy")
             )
         self._acked: list[DeliveryResult] = []
 
