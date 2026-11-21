@@ -7,6 +7,7 @@ repeatedly failing records go to DLQ/QUARANTINE lanes (``topics.py``).
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from abc import ABC, abstractmethod
@@ -308,6 +309,11 @@ class IdempotentConsumer(ABC):
             return False
         try:
             await self.handle(envelope, raw)
+        except asyncio.CancelledError:
+            # Shutdown/rebalance cancellation must not strand a durable claim.
+            # The offset remains uncommitted, so the broker can redeliver safely.
+            await self._dedup.release(key)
+            raise
         except Exception as exc:
             await self._dedup.release(key)
             self._route_quarantine(envelope, raw, exc)
