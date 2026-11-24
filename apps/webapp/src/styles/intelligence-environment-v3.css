@@ -1,0 +1,164 @@
+/* Intelligence Environment v3 — structural polish layer.
+ * Uses the canonical semantic tokens; no local palette or fake telemetry.
+ * The layer sharpens hierarchy and navigation while preserving existing
+ * route contracts, state stores and analyst workflows.
+ */
+.ui-root {
+  --ie-frame: var(--ui-border-strong);
+  --ie-rule: var(--ui-border);
+  --ie-label: var(--ui-text-muted);
+  --ie-panel: var(--ui-surface-1);
+  --ie-panel-active: var(--ui-surface-2);
+}
+
+.ui-root .ui-shell {
+  min-height: 100dvh;
+  height: 100dvh;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.ui-root .ui-topbar {
+  box-shadow: none;
+  border-bottom: 1px solid var(--ie-frame);
+}
+
+.ui-root .ui-topbar-main {
+  min-height: 52px;
+  padding-inline: clamp(12px, 1.8vw, 28px);
+}
+
+.ui-root .ui-brand-mark {
+  position: relative;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-color: var(--ie-frame);
+  background: var(--ui-bg);
+}
+
+.ui-root .ui-brand-mark::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: -1px;
+  inset-block: 4px;
+  width: 2px;
+  background: var(--ui-accent);
+}
+
+.ui-root .ui-brand {
+  font-size: 13px;
+  font-weight: 760;
+  letter-spacing: .19em;
+}
+
+.ui-root .ui-command-mark {
+  border-inline-start: 1px solid var(--ie-frame);
+  padding-inline-start: 12px;
+  color: var(--ui-text-secondary);
+}
+
+.ui-root .ui-topbar-state {
+  max-width: none;
+  padding-inline: clamp(12px, 1.8vw, 28px);
+  background: var(--ui-bg);
+}
+
+.ui-root .ui-topbar-work {
+  gap: clamp(12px, 2vw, 28px);
+}
+
+.ui-root .ui-topbar-counts {
+  gap: 14px;
+}
+
+.ui-root .ui-count-value {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.ui-root .ui-count-label {
+  font-size: 8px;
+  letter-spacing: .09em;
+}
+
+.ui-root .ui-command-strip {
+  min-height: 26px;
+  padding-inline: clamp(12px, 1.8vw, 28px);
+  letter-spacing: .09em;
+}
+
+.ui-root .ui-shell-body {
+  min-height: 0;
+}
+
+.ui-root .ui-shell-main {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.ui-root .ui-primary-nav {
+  border-inline-end: 1px solid var(--ie-rule);
+}
+
+.ui-root .ui-primary-nav-module[data-active="true"] {
+  background: var(--ui-accent-wash);
+}
+
+.ui-root .ui-primary-nav-module-marker {
+  width: 2px;
+  background: var(--ui-accent);
+}
+
+.ui-root :where(.ui-canvas-head, .ui-workspace-header, .ui-page-header) {
+  border-bottom: 1px solid var(--ie-rule);
+}
+
+.ui-root :where(.ui-pane, .ui-panel, .ui-card, .ui-section, .ui-evidence-card) {
+  border-color: var(--ie-rule);
+}
+
+.ui-root :where(.ui-pane-title, .ui-section-kicker, .ui-eyebrow) {
+  letter-spacing: .13em;
+}
+
+.ui-root :where(.ui-button, button) {
+  min-height: 30px;
+}
+
+.ui-root :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1279px) {
+  .ui-root .ui-topbar-state { max-width: none; }
+  .ui-root .ui-topbar-work { gap: 10px; }
+}
+
+@media (max-width: 767px) {
+  .ui-root .ui-topbar-main {
+    padding-inline: 10px;
+  }
+  .ui-root .ui-topbar-state {
+    padding-inline: 10px;
+  }
+  .ui-root .ui-command-strip {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .ui-root .ui-shell-main {
+    scrollbar-gutter: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-root *, .ui-root *::before, .ui-root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
